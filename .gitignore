@@ -64,6 +64,10 @@ node_modules/
 # disposable, never committed.
 .venv/
 
+# Claude Code settings for this working copy (permission rules for the agent). Local
+# tooling configuration, not part of the public product.
+.claude/
+
 # Durable protected tree (INFRA-030). The folders + .gitkeep placeholders are
 # tracked (so they exist on a fresh clone), and the small committed domain-seed
 # assets stay tracked, but RUNTIME-GENERATED durable contents are ignored
