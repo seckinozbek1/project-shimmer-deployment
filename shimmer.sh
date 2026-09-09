@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+# ===========================================================================
+# Project Shimmer master launcher (macOS / Linux). Takes you from a fresh clone
+# to a running review. One script, three entry paths: CLI review, chat, server.
+#
+# ALL it does, in order: find Python, build/activate a local .venv, install
+# dependencies, run the readiness preflight (API keys + Qwen + models, reused
+# from scripts/preflight.py so nothing is duplicated), then show a plain menu.
+#
+# It never prints an API key value. The Windows twin is shimmer.bat.
+# ===========================================================================
+
+set -u
+cd "$(dirname "$0")"
+
+# --- 1. Find Python (python3.9, then python3, then python) -----------------
+PYTHON_CMD=""
+for cand in python3.9 python3 python; do
+    if command -v "$cand" >/dev/null 2>&1; then
+        PYTHON_CMD="$cand"
+        break
+    fi
+done
+if [ -z "$PYTHON_CMD" ]; then
+    echo
+    echo "Could not find Python 3.9 or newer on this machine."
+    echo "Install it from https://www.python.org/downloads/ (or your package"
+    echo "manager), make sure it is on your PATH, then run this script again."
+    exit 1
+fi
+echo "Using Python: $PYTHON_CMD"
+
+# --- 2. Virtual environment (.venv in the repo root) -----------------------
+if [ ! -f ".venv/bin/activate" ]; then
+    echo "Creating a local virtual environment in .venv ..."
+    if ! "$PYTHON_CMD" -m venv .venv; then
+        echo "Failed to create the virtual environment. See the error above."
+        exit 1
+    fi
+fi
+# venv activate scripts can touch unset vars on older shells; relax nounset here.
+set +u
+# shellcheck disable=SC1091
+. ".venv/bin/activate"
+set -u
+
+# --- 3. Dependencies -------------------------------------------------------
+echo "Installing dependencies (this is quick after the first run) ..."
+if ! python -m pip install -r requirements.txt --quiet; then
+    echo "Dependency installation failed. See the error above."
+    exit 1
+fi
+
+# --- 3b. CUDA torch swap (only when a GPU is present but torch is CPU-only) -
+# A bare `torch==2.5.1` from PyPI installs the CPU-only wheel, which makes the local
+# Qwen redactor run on CPU (slow). If a CUDA GPU is physically present (nvidia-smi
+# succeeds) but torch reports no CUDA, replace the CPU wheel with the CUDA build.
+# Probe exit codes: 0 = CUDA already available (skip), 1 = torch present but CPU-only
+# (swap if GPU present), 2 = torch absent (skip).
+torch_rc=0
+python -c "import importlib.util,sys; sys.exit(2) if importlib.util.find_spec('torch') is None else sys.exit(0 if __import__('torch').cuda.is_available() else 1)" || torch_rc=$?
+if [ "$torch_rc" -eq 1 ]; then
+    if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
+        echo "A CUDA GPU is present but torch is CPU-only. Installing the CUDA build (large download, one time) ..."
+        if python -m pip install "torch==2.5.1+cu121" --index-url https://download.pytorch.org/whl/cu121; then
+            echo "CUDA torch installed. The Qwen redactor will use the GPU."
+        else
+            echo "CUDA torch install failed; continuing with CPU-only torch. Redaction will be slow."
+        fi
+    else
+        echo "No NVIDIA GPU detected by nvidia-smi; keeping the CPU-only torch build."
+    fi
+fi
+
+# --- 4. Readiness preflight (reuses scripts/preflight.py) ------------------
+# preflight checks API keys (loaded from the external config, never the repo),
+# Qwen redaction reachability, the GPU, and live model ids. Exit codes:
+#   2 = no config / keys found (cannot continue)
+#   1 = some check FAILED (review the bill of health, then decide)
+#   0 = ready
+echo
+echo "Running the readiness preflight ..."
+python -X utf8 scripts/preflight.py
+PREFLIGHT_RC=$?
+if [ "$PREFLIGHT_RC" -eq 2 ]; then
+    echo
+    echo "Cannot continue: API keys / config were not found. Follow the"
+    echo "instructions printed above, then run this script again."
+    exit 1
+elif [ "$PREFLIGHT_RC" -ne 0 ]; then
+    echo
+    printf "Preflight reported issues above. Continue to the menu anyway? [y/N]: "
+    read -r cont
+    case "$cont" in
+        y|Y) ;;
+        *) exit 0 ;;
+    esac
+fi
+
+# --- 5. Menu ---------------------------------------------------------------
+while true; do
+    echo
+    echo "========================================="
+    echo "  Project Shimmer"
+    echo "========================================="
+    echo "  [1] Run a review (CLI)"
+    echo "  [2] Open the chat interface"
+    echo "  [3] Start the server"
+    echo "  [4] Run the verify gate"
+    echo "  [5] Import documents (set up files and cutoff, no run)"
+    echo "  [Q] Quit"
+    echo
+    printf "Choose an option [1-5, Q]: "
+    read -r choice
+    case "$choice" in
+        1)
+            # Two task modes: review an existing document, or draft a memo from a question.
+            printf "What would you like to do? [R] Review existing documents  [D] Draft a memo from a question  [R/D]: "
+            read -r taskmode
+            case "$taskmode" in
+                d|D)
+                    # Draft mode skips document intake: grounding is already in
+                    # input/context/ (import it via [5] first if needed). The question
+                    # is one quoted argument, so spaces are fine. Normal mode default.
+                    printf "Enter your question or brief for the memo: "
+                    read -r draftq
+                    if [ -z "$draftq" ]; then
+                        echo "No question entered. Returning to the menu."
+                    else
+                        echo
+                        echo "Drafting a memo, then reviewing it ..."
+                        echo "(Add --help for all options.)"
+                        python scripts/pipeline.py --task draft --question "$draftq" \
+                            --sensitivity-layer-inactive-override --no-redaction-override "$@"
+                    fi
+                    ;;
+                *)
+                    # The intake wizard scans/classifies/places documents, sets the cutoff,
+                    # and collects the run flags (mode, parallelism, caps). It writes the flags
+                    # to a temp file; a non-zero exit means the operator cancelled, no run.
+                    WIZ_FLAGS_FILE="${TMPDIR:-/tmp}/shimmer_review_flags.$$"
+                    rm -f "$WIZ_FLAGS_FILE"
+                    if python scripts/intake_wizard.py --emit-flags "$WIZ_FLAGS_FILE"; then
+                        WIZ_FLAGS=""
+                        [ -f "$WIZ_FLAGS_FILE" ] && WIZ_FLAGS="$(cat "$WIZ_FLAGS_FILE")"
+                        rm -f "$WIZ_FLAGS_FILE"
+                        echo
+                        echo "Running the review ..."
+                        echo "(Add --help for all options.)"
+                        # WIZ_FLAGS is intentionally unquoted: it word-splits into separate
+                        # simple flag tokens (no spaces within any token).
+                        # shellcheck disable=SC2086
+                        python scripts/pipeline.py $WIZ_FLAGS "$@"
+                    else
+                        echo "Review setup cancelled. Returning to the menu."
+                        rm -f "$WIZ_FLAGS_FILE"
+                    fi
+                    ;;
+            esac
+            ;;
+        2)
+            echo
+            echo "Opening the chat interface. Close its window to return here."
+            python scripts/chat.py
+            ;;
+        3)
+            echo
+            if [ -z "${SHIMMER_TOKEN_HASH:-}" ]; then
+                echo "No server access token is configured (SHIMMER_TOKEN_HASH is not set)."
+                echo "An open server would let anyone in, so one is required."
+                printf "Generate a token now? [Y/n]: "
+                read -r gen
+                case "$gen" in
+                    n|N) ;;
+                    *)
+                        echo
+                        python -c "import secrets, hashlib; t=secrets.token_hex(32); print('Token (share once, keep private):', t); print('Hash (set as SHIMMER_TOKEN_HASH):', hashlib.sha256(t.encode()).hexdigest())"
+                        echo
+                        echo "Copy the hash above and set it, then choose [3] again:"
+                        echo "    export SHIMMER_TOKEN_HASH=<the hash>"
+                        ;;
+                esac
+            else
+                echo "Starting the server on http://localhost:8000 ..."
+                echo "Press Ctrl+C to stop it and return here."
+                python scripts/server.py
+            fi
+            ;;
+        4)
+            echo
+            echo "Running the verify gate ..."
+            python -X utf8 scripts/verify_session1.py
+            ;;
+        5)
+            echo
+            python scripts/intake_wizard.py --import-only
+            ;;
+        q|Q)
+            echo
+            echo "Goodbye."
+            exit 0
+            ;;
+        *)
+            echo "Not a valid choice. Please pick 1, 2, 3, 4, 5, or Q."
+            ;;
+    esac
+done

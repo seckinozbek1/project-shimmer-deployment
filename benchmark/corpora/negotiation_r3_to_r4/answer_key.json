@@ -1,0 +1,132 @@
+{
+  "corpus": "negotiation_r3_to_r4",
+  "task": "Review the 31 October 2024 offer against the mandate, with the 19 October 2024 offer declared as the earlier version. Question: which terms moved toward the mandate since the earlier offer, which held, and what was dropped?",
+  "written_before_any_run": true,
+  "prior_records": [
+    {
+      "field_label": "general wage increase total",
+      "relation": "moved_toward",
+      "value_b": 35,
+      "value_a": 38,
+      "unit": "%"
+    },
+    {
+      "field_label": "year one increase",
+      "relation": "moved_toward",
+      "value_b": 12,
+      "value_a": 13,
+      "unit": "%"
+    },
+    {
+      "field_label": "year two increase",
+      "relation": "changed_from_prior",
+      "value_b": 8,
+      "value_a": 9,
+      "unit": "%"
+    },
+    {
+      "field_label": "year three increase",
+      "relation": "changed_from_prior",
+      "value_b": 8,
+      "value_a": 9,
+      "unit": "%"
+    },
+    {
+      "field_label": "year four increase",
+      "relation": "unchanged_from_prior",
+      "value_b": 7,
+      "value_a": 7,
+      "unit": "%"
+    },
+    {
+      "field_label": "ratification bonus",
+      "relation": "moved_toward",
+      "value_b": 7000,
+      "value_a": 12000,
+      "unit": "$"
+    },
+    {
+      "field_label": "company match rate",
+      "relation": "unchanged_from_prior",
+      "value_b": 100,
+      "value_a": 100,
+      "unit": "%"
+    },
+    {
+      "field_label": "company match ceiling",
+      "relation": "unchanged_from_prior",
+      "value_b": 8,
+      "value_a": 8,
+      "unit": "%"
+    },
+    {
+      "field_label": "special company retirement contribution",
+      "relation": "unchanged_from_prior",
+      "value_b": 4,
+      "value_a": 4,
+      "unit": "%"
+    },
+    {
+      "field_label": "one time 401 contribution",
+      "relation": "absent_since_prior",
+      "value_b": 5000,
+      "value_a": null,
+      "unit": "$"
+    },
+    {
+      "field_label": "pension multiplier",
+      "relation": "unchanged_from_prior",
+      "value_b": 105,
+      "value_a": 105,
+      "unit": "$"
+    },
+    {
+      "field_label": "gpp minimum annual payout",
+      "relation": "unchanged_from_prior",
+      "value_b": 4,
+      "value_a": 4,
+      "unit": "%"
+    },
+    {
+      "field_label": "contract length",
+      "relation": "unchanged_from_prior",
+      "value_b": 4,
+      "value_a": 4,
+      "unit": "years"
+    }
+  ],
+  "band_irregularities": [
+    {
+      "field_label": "general wage increase total",
+      "relation": "below_band",
+      "value_a": 38,
+      "bound": 40,
+      "rule": "CONV-N01"
+    },
+    {
+      "field_label": "year one increase",
+      "relation": "below_band",
+      "value_a": 13,
+      "bound": 15,
+      "rule": "CONV-N02"
+    }
+  ],
+  "expected_silences": [
+    "no prior-version record for any field not listed above"
+  ],
+  "false_positive_rule": "a prior-version record whose relation or figures differ from the row above for the same field_label, or a record for a field_label not listed, is a false positive",
+  "known_defects": {
+    "recorded": "2026-09-08, after independent source verification",
+    "the_key_certifies_two_records_that_are_false_about_the_negotiation": [
+      "one time 401 contribution / absent_since_prior: FALSE. The $12,000 ratification bonus COMBINES the earlier $7,000 bonus and the $5,000 401(k) lump sum. Nothing was withdrawn.",
+      "ratification bonus / moved_toward with delta +5000: DISTORTED. The +5,000 is the same $5,000 the row above reports as absent. One-time money per member is unchanged between the two offers."
+    ],
+    "other_defects_in_this_key": [
+      "year two, year three and year four increases are attributed to CONV-N02, which governs the year one increase alone; the mandate writes no rule for those years",
+      "the general wage increase total is scored against the nominal 38%, while the source leads with the compounded 43.65%, which sits INSIDE the mandate's 40 to 45 band and would flip the verdict",
+      "four of the eight mandate rules (CONV-N04, N06, N07, N08) cannot produce an irregularity on any input in this corpus, so the band suite does not discriminate",
+      "prior_refusals and prior_orphans are empty in the scored run: the refusal machinery this key implicitly certifies was never exercised"
+    ],
+    "what_this_key_does_not_test": "The label schema was written by the same author in both documents, quoted verbatim by the mandate, and listed a third time here. The mechanism under test is string equality over exactly those labels, so a perfect score measures the corpus, not the capability. A probe that reworded only the later document's labels produced 15 records, 12 of them false absences, with the refusal list still empty."
+  }
+}

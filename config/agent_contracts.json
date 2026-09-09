@@ -1,0 +1,378 @@
+{
+  "version": "1.2.0",
+  "created": "2026-05-26",
+  "description": "Per-agent output schemas under the CANONICAL INTER-AGENT ENVELOPE (INFRA-037). Every agent emits ONE wrapper as body.payload: {\"agent\": str, \"doc_id\": str, \"items\": [ flat item, ... ]}. items is ALWAYS a list (singleton -> one element; nothing to report -> []). Each item is STRICTLY FLAT: values are scalars or arrays of scalars only -- no nested objects, no arrays of objects (structure is expressed as MORE items). Per-item CORE fields are enforced globally by AgentWrapper, not repeated per contract: model-owned ref, kind, confidence (CONFIDENT|UNCERTAIN), optional verdict, and ref_ids (flat citation array); runtime-owned item_id, revision, ts (stamped by make_envelope). The `fields`/`required` below are this agent's per-item AGENT-SPECIFIC flat fields. Convention-review agents must carry ref_ids (Part XVIII Section B). ref_ids may also carry WEB-REF-* ids (search-discovered web references minted from the structured web-source fields, INFRA-042), cited exactly like a REF-*.",
+  "envelope": "canonical/v1 (INFRA-037): {agent, doc_id, items:[flat items]}; core per item = item_id(runtime), revision(runtime), ts(runtime), ref, kind, confidence, verdict(optional), ref_ids",
+  "finding_record": {
+    "description": "The typed inter-agent Finding record. Agents do not communicate with each other in natural language: a finding is stated in fields, and the sentence written for a person travels as `explanation`, which no other agent reads. One canonical-envelope item, so strictly flat: a measured quantity is a number field plus a unit-string field, never a nested object. The record's verdict lives in `record_verdict`, not in `verdict`: every agent already has a `verdict` field with its own declared values, and the verifiability gate fires on exactly those values, so the record must not overwrite them.",
+    "fields": [
+      "rule_id",
+      "source_rule_id",
+      "unit_id",
+      "value_a",
+      "unit_a",
+      "value_b",
+      "unit_b",
+      "relation",
+      "record_verdict",
+      "source_refs",
+      "explanation",
+      "field_label",
+      "delta",
+      "band_distance_change",
+      "provenance"
+    ],
+    "required": [
+      "rule_id",
+      "unit_id",
+      "relation",
+      "record_verdict"
+    ],
+    "relations": [
+      "sum_mismatch",
+      "above_band",
+      "below_band",
+      "missing_field",
+      "product_mismatch",
+      "ratio_out_of_range",
+      "date_window",
+      "licence_missing",
+      "changed_from_prior",
+      "unchanged_from_prior",
+      "moved_toward",
+      "moved_away",
+      "absent_since_prior"
+    ],
+    "verdicts": [
+      "ok",
+      "irregular"
+    ],
+    "says": {
+      "rule_id": "the CONV-* id of the rule this finding applies, exactly as it appears in the convention registry you were given",
+      "source_rule_id": "the operator's own id for that same rule when the registry entry carries one, so the finding can be attributed to the rule as it was written",
+      "unit_id": "the id of the unit of the document this finding is about",
+      "value_a": "the figure the document states, as a number with no separators",
+      "unit_a": "the unit of value_a, as a short string",
+      "value_b": "the figure it is compared against, as a number: a stated total, a band bound, or the same field's figure in the earlier version of the document",
+      "unit_b": "the unit of value_b",
+      "relation": "what kind of comparison this is, one of the declared relations: a disagreement between two figures of this document, or (changed_from_prior, unchanged_from_prior, moved_toward, moved_away, absent_since_prior) a comparison of a field with the same field in an operator-declared earlier version of the document",
+      "record_verdict": "ok when the unit satisfies the rule, irregular when it does not. This is the record's OWN verdict field and is separate from your agent verdict: keep setting `verdict` from your own contract's list as well. A comparison with the earlier version is always ok: movement is information, not an irregularity",
+      "source_refs": "the REF-* or WEB-REF-* ids this finding rests on",
+      "explanation": "one or two sentences for the person reading the review; no other agent reads this field",
+      "field_label": "optional: the document's own label for the field value_a was read from, as words",
+      "delta": "optional: value_a minus value_b, only when both carry the same unit",
+      "band_distance_change": "optional: how far the field moved relative to the band the rule states, now minus the earlier version; negative is toward the band, positive away, zero unchanged; omit when no single band applies",
+      "provenance": "optional: computed when the pipeline minted this record from figures it read itself; leave it unset when you write the record"
+    }
+  },
+  "contracts": {
+    "PROCESSOR": {
+      "item_kind": "extraction",
+      "fields": {
+        "section_id": "string",
+        "draft_text": "string",
+        "extraction_method": "string",
+        "claims_referenced": "array of claim_id strings",
+        "open_questions": "array of strings",
+        "ref_ids": "array of REF-* strings (optional)"
+      },
+      "required": [
+        "section_id",
+        "draft_text",
+        "extraction_method"
+      ]
+    },
+    "VERIFIER": {
+      "item_kind": "finding",
+      "fields": {
+        "paragraph": "int",
+        "finding": "MATCH | DIVERGENCE | ADDITION | OMISSION",
+        "original": "string",
+        "output": "string",
+        "severity": "low | medium | high",
+        "reasoning": "string",
+        "ref_ids": "array of REF-* strings (required in convention review)",
+        "finding_record": "OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, rule_id, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object."
+      },
+      "required": [
+        "paragraph",
+        "finding",
+        "severity",
+        "reasoning"
+      ]
+    },
+    "FACT_CHECKER": {
+      "item_kind": "finding",
+      "fields": {
+        "claim_id": "string",
+        "original_text": "string",
+        "verdict": "CONFIRMED | DISPUTED | OUTDATED | UNVERIFIABLE",
+        "evidence": "string",
+        "source_url": "string | null (a URL here mints a WEB-REF-* added to ref_ids, INFRA-042)",
+        "search_method": "string",
+        "ref_ids": "array of REF-* strings (required in convention review)",
+        "finding_record": "OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, rule_id, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object."
+      },
+      "required": [
+        "claim_id",
+        "verdict",
+        "search_method"
+      ]
+    },
+    "PRACTICE_AUDITOR": {
+      "item_kind": "finding (use kind='absence' for absence-detection items)",
+      "fields": {
+        "procedure_id": "string",
+        "procedure_text": "string",
+        "verdict": "ALIGNED | ANTI_PATTERN | OUTDATED | NO_REFERENCE_AVAILABLE | COMPLIANT | VIOLATION | AMBIGUOUS",
+        "reference_source": "string | null (a URL or named source here mints a WEB-REF-*, INFRA-042)",
+        "reference_url": "string | null (a URL here mints a WEB-REF-*, INFRA-042)",
+        "recommendation": "string",
+        "conv_id": "CONV-* string (required in convention review)",
+        "severity": "required | recommended | advisory",
+        "ref_ids": "array of REF-* strings (required in convention review)",
+        "finding_record": "OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, rule_id, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object."
+      },
+      "required": [
+        "procedure_id",
+        "verdict"
+      ],
+      "directives": [
+        "After reviewing what the document contains, consult the structural inventory in your context package (work_payload.structural_inventory). For any element present in more than half the corpus documents but absent from this operational document, emit an ADDITIONAL item with kind='absence', verdict='VIOLATION', ref='document-level', and ref_ids citing the corpus documents where the element appears. The recommendation should explain what structural element is missing and which corpus documents establish it as standard practice."
+      ]
+    },
+    "LEGAL_ANALYST": {
+      "item_kind": "finding (use kind='absence' for absent legal mechanisms)",
+      "fields": {
+        "claim_id": "string",
+        "legal_basis": "string",
+        "precedent_cited": "array of strings",
+        "regulatory_framework": "array of strings",
+        "verdict": "GROUNDED | THIN | UNSUPPORTED | OUT_OF_SCOPE",
+        "reasoning": "string",
+        "ref_ids": "array of REF-* strings (optional)",
+        "finding_record": "OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, rule_id, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object."
+      },
+      "required": [
+        "claim_id",
+        "verdict",
+        "reasoning"
+      ],
+      "directives": [
+        "After reviewing what the document contains, consult the structural inventory in your context package (work_payload.structural_inventory). For any legal mechanism (redress, conformity assessment, post-market monitoring, definitions, prohibitions, transparency obligations) present in more than half the corpus documents but absent from this operational document, emit an ADDITIONAL item with kind='absence', verdict='THIN' or 'UNSUPPORTED', explaining in the reasoning that the absence is the issue, and ref_ids citing the corpus documents where the mechanism appears."
+      ]
+    },
+    "STYLE_GUARDIAN": {
+      "item_kind": "finding",
+      "fields": {
+        "segment_id": "string",
+        "register_target": "string",
+        "register_observed": "string",
+        "deviation": "NONE | MINOR | MAJOR",
+        "suggested_edit": "string | null",
+        "rationale": "string",
+        "conv_id": "CONV-* string (required in convention review)",
+        "ref_ids": "array of REF-* strings (required in convention review)",
+        "finding_record": "OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, rule_id, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object."
+      },
+      "required": [
+        "segment_id",
+        "register_target",
+        "register_observed",
+        "deviation"
+      ]
+    },
+    "ARCHIVIST": {
+      "item_kind": "index (per-document) or inventory (one item per corpus governance element)",
+      "fields": {
+        "title": "string | null",
+        "date": "string | null",
+        "chronology_position": "int",
+        "reference_chain": "array of document_id strings",
+        "index_tags": "array of strings",
+        "element": "string (inventory items: the governance element name)",
+        "description": "string (inventory items)",
+        "document_count": "int (inventory items: how many corpus docs contain the element)",
+        "document_names": "array of strings (inventory items: which corpus docs)"
+      },
+      "required": [],
+      "max_output_tokens": 4096,
+      "directives": [
+        "When work_payload.task == 'corpus_level_analysis', emit ONE item per governance element with kind='inventory': fields element, description, document_count, and document_names (a flat array of strings). Cover risk classification, conformity assessment, post-market monitoring, redress mechanisms, transparency obligations, human oversight, prohibited practices, environmental provisions, data flow provisions, definitions sections, and any other structural pattern seen in multiple documents. Indexing structural patterns across documents is indexing (within your DOES set), not analysis."
+      ]
+    },
+    "INST_FINDER": {
+      "note": "AUDIT-ONLY (intentional): this agent's corpus-level output is posted to the bus for auditability but is intentionally NOT consumed by any downstream agent or deliverable yet. This is by design, not a dropped handoff; it is a candidate input for future integration (e.g. an institution graph). Do not treat the missing downstream reader as a bug.",
+      "item_kind": "institution",
+      "fields": {
+        "topic": "string",
+        "name": "string",
+        "role": "string",
+        "evidence_in_text": "string",
+        "registry_addition": "boolean"
+      },
+      "required": [
+        "name",
+        "role"
+      ]
+    },
+    "CITATION_RESOLVER": {
+      "note": "AUDIT-ONLY (intentional): this agent's corpus-level output is posted to the bus for auditability but is intentionally NOT consumed by any downstream agent or deliverable yet. This is by design, not a dropped handoff; it is a candidate input for future integration (e.g. a cross-document citation graph). Do not treat the missing downstream reader as a bug.",
+      "item_kind": "citation",
+      "fields": {
+        "source_document": "string",
+        "target_document": "string | null",
+        "citation_form": "string",
+        "resolved": "boolean"
+      },
+      "required": [
+        "source_document",
+        "resolved"
+      ]
+    },
+    "SPEECH_ACT_TAGGER": {
+      "item_kind": "tag",
+      "fields": {
+        "utterance_id": "string",
+        "text": "string",
+        "speech_act": "string",
+        "force": "string"
+      },
+      "required": [
+        "utterance_id",
+        "speech_act"
+      ]
+    },
+    "REDACTOR": {
+      "item_kind": "redaction (one item per proposed redaction; items:[] means nothing to redact)",
+      "fields": {
+        "kind": "redaction (REQUIRED value — every redaction item MUST set kind=\"redaction\", never \"finding\")",
+        "segment_id": "string",
+        "span": "string (the exact text to redact, verbatim)",
+        "category": "string (the matched rule's category, verbatim)",
+        "replacement": "string (the replacement token, e.g. [REDACTED])",
+        "method": "string (REDACT)",
+        "rule_id": "string (the id of the operator/default rule that matched this span, e.g. CONV-006 or RED-DFLT-001)"
+      },
+      "required": [
+        "span",
+        "category"
+      ]
+    },
+    "AMENDMENT_DRAFTER": {
+      "item_kind": "amendment (one item per amendment)",
+      "fields": {
+        "location": "REF-* of the flagged passage",
+        "convention_ref": "CONV-* that triggers this amendment",
+        "context_refs": "array of REF-* from the context corpus supporting the amendment",
+        "finding_type": "terminology | red_flag | rephrasing | citation_style | structural | borrowing | value_alignment | factual | procedural",
+        "original_text": "string — the exact text being amended",
+        "proposed_text": "string | null — proposed replacement (null if flag-only)",
+        "action": "flag | rephrase | reject | annotate",
+        "comment": "string, must contain >=1 CONV-* and >=1 REF-* (empty registry per INFRA-042: >=1 REF-* or >=1 WEB-REF-*, no CONV required)",
+        "severity": "required | recommended | advisory",
+        "ref_ids": "array of REF-* or WEB-REF-* strings (all citations; >=1 required)"
+      },
+      "required": [
+        "location",
+        "convention_ref",
+        "original_text",
+        "action",
+        "comment",
+        "ref_ids"
+      ],
+      "field_forms": {
+        "location": {
+          "form": "REF_ID_OR_DOCUMENT_LEVEL",
+          "says": "a REF-* id such as REF-0001, copied from the reference index, or the exact sentinel 'document-level' when the finding is that something is absent and so has no anchor in the document"
+        },
+        "convention_ref": {
+          "form": "CONV_ID",
+          "says": "a single CONV-* id from the convention registry, such as CONV-007, and nothing else in the field"
+        },
+        "comment": {
+          "form": "CITES_CONV_AND_REF",
+          "says": "prose that spells out at least one CONV-* id and at least one REF-* id inside the text itself, not only in the other fields"
+        }
+      }
+    },
+    "EDITOR_CLERK": {
+      "item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "fields": {
+        "ref": "string (the REF-*/location/element this observation comments on)",
+        "verdict": "sound | concern | serious_concern (the ONLY permitted editorial verdicts; no other value is valid)",
+        "rationale": "string (the editorial reasoning, free-text prose)"
+      },
+      "required": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_HEAD_OF_UNIT": {
+      "item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "fields": {
+        "ref": "string (the REF-*/location/element this observation comments on)",
+        "verdict": "sound | concern | serious_concern (the ONLY permitted editorial verdicts; no other value is valid)",
+        "rationale": "string (the editorial reasoning, free-text prose)"
+      },
+      "required": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_HEAD_OF_SECTION": {
+      "item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "fields": {
+        "ref": "string (the REF-*/location/element this observation comments on)",
+        "verdict": "sound | concern | serious_concern (the ONLY permitted editorial verdicts; no other value is valid)",
+        "rationale": "string (the editorial reasoning, free-text prose)"
+      },
+      "required": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_HEAD_OF_DEPARTMENT": {
+      "item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "fields": {
+        "ref": "string (the REF-*/location/element this observation comments on)",
+        "verdict": "sound | concern | serious_concern (the ONLY permitted editorial verdicts; no other value is valid)",
+        "rationale": "string (the editorial reasoning, free-text prose)"
+      },
+      "required": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_DEPUTY_DG": {
+      "item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "fields": {
+        "ref": "string (the REF-*/location/element this observation comments on)",
+        "verdict": "sound | concern | serious_concern (the ONLY permitted editorial verdicts; no other value is valid)",
+        "rationale": "string (the editorial reasoning, free-text prose)"
+      },
+      "required": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_DG": {
+      "item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "fields": {
+        "ref": "string (the REF-*/location/element this observation comments on)",
+        "verdict": "sound | concern | serious_concern (the ONLY permitted editorial verdicts; no other value is valid)",
+        "rationale": "string (the editorial reasoning, free-text prose)"
+      },
+      "required": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    }
+  }
+}

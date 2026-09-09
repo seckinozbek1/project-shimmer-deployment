@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Terms that must not appear in Shimmer's CODE surface: scripts/, config/ contracts and registries, tests/ and tools/. Operator-owned and operator-editable. The check that reads this file (verify_session1 check 174, the vocabulary probe) holds no term list of its own, so a new operator domain is protected by editing this file, not by editing code. That is the whole point: check_22's hardcoded regex still guards a PREVIOUS operator domain and catches none of the 81 leaks the audit in docs/audit/DOMAIN_LEAK_deddc23.md found.",
+  "how_severity_works": "Per family. 'fail' turns the gate red. 'warn' reports without blocking. The four descriptive families below carry an EXISTING backlog and are seeded at warn so the probe can be landed at all; promote a family to fail once its backlog is cleared. 'reserved' is seeded at fail because it is measured clean today, so it stays clean.",
+  "matching": "Case-insensitive, whole word, except an ALL-CAPS term which matches case-sensitively: 'TRY' as a currency code matched Python's try: keyword 365 times before that rule existed. A 'stems' entry matches the word and any suffix of it. A match falling inside an 'allow' phrase on the same line is dropped.",
+  "never_scanned": "input/ and benchmark/ are operator material and are never scanned. config/convention_registry.json is gitignored and is generated at BOOT from input/conventions/, so its content is operator input rather than a shipped default, and it is exempt for the same reason.",
+  "families": {
+    "reserved": {
+      "severity": "fail",
+      "description": "Measured clean across the code surface. The probe keeps them clean.",
+      "terms": ["hectare", "licence", "sowing", "harvest", "irrigation", "grain",
+                "moisture", "antitrust", "cartel", "statute", "Turkiye", "Thrace",
+                "Aegean", "Grain Board"],
+      "note": "On this probe's first run it caught a previous-domain word sitting inside check 22's own hardcoded regex in verify_session1.py. That word is not repeated here. The regex was removed and its terms moved into the `previous_domain` family above, so no domain word is written into code anywhere.",
+      "stems": ["penalt"]
+    },
+    "legal": {
+      "severity": "warn",
+      "description": "Existing backlog. See docs/audit/DOMAIN_LEAK_deddc23.md.",
+      "terms": ["merger", "dominance", "turnover", "undertaking", "jurisdiction",
+                "precedent_cited", "legal_basis", "regulatory_framework"],
+      "stems": ["regulat"]
+    },
+    "agricultural": {
+      "severity": "warn",
+      "description": "Existing backlog, mostly comments quoting the operator's corpus.",
+      "terms": ["wheat", "parcel"],
+      "stems": []
+    },
+    "currency_country": {
+      "severity": "warn",
+      "description": "Existing backlog. ALL-CAPS codes match case-sensitively.",
+      "terms": ["EUR", "USD", "GBP", "JPY", "CHF", "CNY", "Anatolia", "Turkish"],
+      "stems": []
+    },
+    "institution": {
+      "severity": "warn",
+      "description": "Existing backlog, mostly claim_classifier's hardcoded acronym list.",
+      "terms": ["OECD", "UNESCO", "UNDP", "ASEAN", "NATO", "WTO", "Director General"],
+      "stems": []
+    }
+  },
+  "allow": [
+    "LAW-0", "LAW-I", "LAW-II", "LAW-III", "LAW-IV", "LAW-V", "LAW-VI",
+    "seed law", "seed defaults", "editorial_board", "task force charter",
+    "domain_vocabulary"
+  ],
+  "exempt_path_prefixes": [
+    "scripts/archived/",
+    "config/convention_registry.json"
+  ],
+  "exempt_name_prefixes": ["download_", "retry_"]
+}

@@ -1,0 +1,5 @@
+{
+  "schema_version": "1.0.0",
+  "description": "The relative tolerance used to decide whether a field that appears to be dropped since the earlier version might instead be the same field under a new label. Deliberately separate from paired_review.REL_TOLERANCE, which tests floating-point equality (the same number, restated); this tolerance tests whether a new label's value is close enough to the vanished label's value to be plausibly the same fact, not identical to it. Tighter than a value that would blur distinct fields in the same section together, looser than an equality test. Refusing is always allowed; a loose value here hides a genuine removal by refusing too rarely, a tight value causes more refusals when a rename also changed the figure. See docs/fix/STEP_G1_REPORT.md for the reasoning behind the shipped default.",
+  "rename_rel_tolerance": 0.02
+}

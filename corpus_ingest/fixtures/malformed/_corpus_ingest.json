@@ -1,0 +1,76 @@
+{
+  "ingest_run_id": "ingest-fixture-malformed-0001",
+  "generated_at": "2026-01-15T10:00:00Z",
+  "cases": [
+    {
+      "file": "case_alpha-2021.md",
+      "case_id": "CASE-1001",
+      "title": "Alpha Holdings Merger Review",
+      "citation": "Competition Authority of Synthetica, Decision 12/2021",
+      "jurisdiction": "Synthetica",
+      "date": "2021-03-14",
+      "language": "en",
+      "source_verification": {
+        "status": "verified",
+        "url": "https://example.org/synthetica/cases/alpha-2021"
+      },
+      "role": "operational"
+    },
+    {
+      "file": "case_beta-2024.md",
+      "case_id": "CASE-1002",
+      "title": "Beta Telecom Abuse of Dominance",
+      "citation": "Competition Authority of Synthetica, Decision 47/2024",
+      "jurisdiction": "Synthetica",
+      "date": "2024-09-02",
+      "language": "ar",
+      "source_verification": {
+        "status": "verified",
+        "url": ""
+      },
+      "role": "context_grounding"
+    },
+    {
+      "file": "case_gamma-2021.md",
+      "case_id": "CASE-1003",
+      "title": "Gamma Industries",
+      "citation": "Competition Authority of Synthetica, Decision 19/2021",
+      "jurisdiction": "Synthetica",
+      "date": "2019-05-05",
+      "language": "en",
+      "source_verification": {
+        "status": "unverified",
+        "url": ""
+      },
+      "role": "context_grounding"
+    },
+    {
+      "file": "case epsilon 2023.md",
+      "case_id": "CASE-1004",
+      "title": "Epsilon Group",
+      "citation": "Competition Authority of Synthetica, Decision 31/2023",
+      "jurisdiction": "Synthetica",
+      "date": "2023-07-21",
+      "language": "en",
+      "source_verification": {
+        "status": "failed",
+        "url": ""
+      },
+      "role": "context_grounding"
+    },
+    {
+      "file": "case_zeta-2020.md",
+      "case_id": "CASE-1005",
+      "title": "Zeta Partners",
+      "citation": "Competition Authority of Synthetica, Decision 8/2020",
+      "jurisdiction": "Synthetica",
+      "date": "2020-11-30",
+      "language": "en",
+      "source_verification": {
+        "status": "verified",
+        "url": "https://example.org/synthetica/cases/zeta-2020"
+      },
+      "role": "context_grounding"
+    }
+  ]
+}

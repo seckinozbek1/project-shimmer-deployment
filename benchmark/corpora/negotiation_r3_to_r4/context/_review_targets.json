@@ -1,0 +1,13 @@
+{
+  "targets": [
+    "company_a_union_b_offer_2024_10_31.md"
+  ],
+  "grounding": [
+    "company_a_union_b_offer_2024_10_19.md"
+  ],
+  "prior": [
+    "company_a_union_b_offer_2024_10_19.md"
+  ],
+  "source": "operator",
+  "resolved_at": ""
+}

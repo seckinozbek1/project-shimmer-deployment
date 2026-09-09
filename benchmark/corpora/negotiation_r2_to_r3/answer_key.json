@@ -1,0 +1,85 @@
+{
+  "corpus": "negotiation_r2_to_r3",
+  "task": "Review the 19 October 2024 offer against the mandate, with the 23 September 2024 offer declared as the earlier version. Question: which terms moved toward the mandate since the earlier offer, which held, and what was dropped?",
+  "written_before_any_run": true,
+  "prior_records": [
+    {
+      "field_label": "general wage increase total",
+      "relation": "moved_toward",
+      "value_b": 30,
+      "value_a": 35,
+      "unit": "%"
+    },
+    {
+      "field_label": "ratification bonus",
+      "relation": "moved_toward",
+      "value_b": 6000,
+      "value_a": 7000,
+      "unit": "$"
+    },
+    {
+      "field_label": "company match rate",
+      "relation": "unchanged_from_prior",
+      "value_b": 100,
+      "value_a": 100,
+      "unit": "%"
+    },
+    {
+      "field_label": "company match ceiling",
+      "relation": "unchanged_from_prior",
+      "value_b": 8,
+      "value_a": 8,
+      "unit": "%"
+    },
+    {
+      "field_label": "special company retirement contribution",
+      "relation": "unchanged_from_prior",
+      "value_b": 4,
+      "value_a": 4,
+      "unit": "%"
+    },
+    {
+      "field_label": "contract length",
+      "relation": "unchanged_from_prior",
+      "value_b": 4,
+      "value_a": 4,
+      "unit": "years"
+    }
+  ],
+  "band_irregularities": [
+    {
+      "field_label": "general wage increase total",
+      "relation": "below_band",
+      "value_a": 35,
+      "bound": 40,
+      "rule": "CONV-N01"
+    },
+    {
+      "field_label": "year one increase",
+      "relation": "below_band",
+      "value_a": 12,
+      "bound": 15,
+      "rule": "CONV-N02"
+    },
+    {
+      "field_label": "ratification bonus",
+      "relation": "below_band",
+      "value_a": 7000,
+      "bound": 10000,
+      "rule": "CONV-N03"
+    }
+  ],
+  "expected_silences": [
+    "year one to year four increase, one-time 401(k) contribution, pension multiplier and GPP minimum annual payout are NEW in the 19 October offer: no prior-version record and no refusal for them",
+    "nothing was dropped between these two offers: no absent_since_prior record"
+  ],
+  "false_positive_rule": "a prior-version record whose relation or figures differ from the row above for the same field_label, or a record for a field_label not listed, is a false positive",
+  "known_defects": {
+    "recorded": "2026-09-08, after independent source verification",
+    "other_defects_in_this_key": [
+      "the expected_silences entry certifies as CORRECT the fact that four newly appearing terms (the per-year increases, the one-time 401(k) contribution, the pension multiplier and the GPP minimum) produce neither a record nor a refusal. That is an expectation written to the implementation, not to the negotiating task: a term that ARRIVES between rounds is structurally invisible, because orphans are computed only over the earlier document and the relation set has absent_since_prior with no counterpart.",
+      "the per-year schedule of the 23 September offer was reported on the day (12% then 6% + 6% + 6%) and was omitted from the corpus, which is why those terms count as new here at all"
+    ],
+    "what_this_key_does_not_test": "Same circularity as the paired corpus: one author supplied the labels in both documents, the mandate quoting them, and this key listing them again."
+  }
+}

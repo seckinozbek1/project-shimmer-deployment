@@ -1,0 +1,159 @@
+**/config.py
+**/*config*.py
+**/*key*
+# The four shipped corpus answer keys are not credential material: they are the
+# committed, held-out scoring keys benchmark/corpora/ carries by design (README
+# section H, "Test corpora from other domains"). **/*key* would otherwise
+# silently drop them because their filename contains "key". Re-included by
+# exact path, not by a wider pattern, so any other future *key* file stays
+# excluded unless it is added here deliberately, one path at a time.
+!benchmark/corpora/catalogue_records/answer_key.json
+!benchmark/corpora/clinical_reference/answer_key.json
+!benchmark/corpora/negotiation_r2_to_r3/answer_key.json
+!benchmark/corpora/negotiation_r3_to_r4/answer_key.json
+**/*secret*
+**/*credential*
+**/.env*
+*.env
+.env_path
+api_keys*/
+input/context/*.pdf
+# input/operational/ is populated by the pipeline at RUNTIME from input/context/
+# (genesis Part XVIII): its contents are derived, never manually authored, so the
+# whole folder is ignored except the .gitkeep placeholder (re-included by the
+# **/.gitkeep rule below). Only the .gitkeep keeps the dir on a fresh clone.
+input/operational/*
+input/conventions/*
+# Generated build artifact: BOOT regenerates config/convention_registry.json from
+# input/conventions/ on every run. The SOURCE is the tracked source of truth (see
+# the re-include below); this generated registry is ignored so the tree does not
+# re-dirty each run.
+config/convention_registry.json
+# Runtime artifacts of the document role resolution chain (MEMO) and draft mode: the
+# per-run review-targets manifest (regenerated each run by resolve_review_roles, and
+# cleared for system_draft runs) and any generated draft memos. A draft memo is named
+# draft_memo_<slug>.<ext> (the draft_memo_ prefix is what makes it matchable here without
+# catching the tracked corpus *.md). Deployment-local, never source to commit.
+input/context/_review_targets.json
+input/context/draft_memo_*
+output/*
+output/**/*
+# Per-run output isolation (Part XXVII §A / INFRA-032): every run writes into its
+# own output/runs/<UTC-timestamp>__<run-id>/ folder. All run contents are
+# disposable and ignored; only the placeholders are tracked so output/ and
+# output/runs/ exist on a fresh clone (.gitkeep re-included by the rule below).
+!output/.gitkeep
+!output/runs/
+!output/runs/.gitkeep
+snapshots/*
+snapshots/**/*
+presentations/*
+!presentations/README.md
+*.pkl
+*.pyc
+__pycache__/
+*.tar
+*.zip
+*.log
+# Stray temp files from interrupted atomic writes (tmp + replace) used by the
+# constitution engine, cost tracker, verification cache, and reference builder.
+# An interrupted write must never surface as a tracked artifact.
+*.tmp
+node_modules/
+# Local Python virtualenv created by the shimmer.bat / shimmer.sh launcher. Per-machine,
+# disposable, never committed.
+.venv/
+
+# Durable protected tree (INFRA-030). The folders + .gitkeep placeholders are
+# tracked (so they exist on a fresh clone), and the small committed domain-seed
+# assets stay tracked, but RUNTIME-GENERATED durable contents are ignored
+# (large caches + per-deployment learnings + governance ledgers stay local):
+durable/cache/embedding_store.pkl
+durable/learnings/institution_registry.json
+durable/learnings/search_strategy_learnings.json
+durable/learnings/discovered_apis.json
+durable/learnings/document_dates.json
+durable/learnings/spawn_log.jsonl
+durable/governance/model_approvals.json
+durable/governance/constitution_guard_log.jsonl
+durable/governance/redaction_waivers.jsonl
+durable/governance/sensitivity_overrides.jsonl
+durable/governance/redaction_format_warnings.jsonl
+# The LAW-IV outbound masking audit trail (INFRA-041). Written by
+# sensitivity_layer._write_exposure_ledger when the masking layer is active. It was
+# the one governance ledger this list did not name (recorded as an OBSERVATION in
+# docs/audit/REALITY_MAP_P4_7372321.md section 4.1); it does not exist on disk yet
+# because the layer is inactive, and it is ignored here so it can never be committed
+# once it does. Governance state, never source.
+durable/governance/exposure_ledger.jsonl
+
+# OGE ontology stores: the append-master JSONL stores (provisions.jsonl,
+# delta_proposals.jsonl) are tracked, but graph.json and gnn_state.json are DERIVED
+# (the graph is rebuilt from provisions and the GNN state is recomputed every run),
+# so they are ignored to avoid per-run churn of regenerable artifacts.
+ontology/stores/graph.json
+ontology/stores/gnn_state.json
+
+# Local-only working prompt / job-spec files (scratch prompts, sequenced job specs).
+# The tracked project_rules.md is re-included below. `prompts/*` (not `prompts/`) so the
+# directory itself is not excluded and the re-include is honored.
+prompts/*
+
+# Re-includes (must come after the rules they negate)
+!prompts/project_rules.md
+!scripts/guard_secrets.py
+!**/.gitkeep
+# The conventions framework is the tracked source of truth (operator-authored rules
+# that define what the system reviews and redacts); these files are un-ignored from
+# input/conventions/*, the generated registry stays ignored above.
+!input/conventions/review_conventions.md
+!input/conventions/review_mandate.md
+
+# shimmer-fix repo only: fix-chain and audit reports generated by future /fix or /audit
+# runs are local working output, not committed by default (the reports already tracked
+# as of this rule's introduction stay tracked; only NEW files matching these patterns
+# are excluded going forward). Commit a future report deliberately with `git add -f` if
+# it should become part of the record.
+docs/fix/*
+docs/audit/*
+docs/DELTA_*.md
+!docs/fix/PRODUCTIZATION_FIX_REPORT.md
+!docs/fix/STEP_1_REPORT.md
+!docs/fix/STEP_2_REPORT.md
+!docs/fix/STEP_3_REPORT.md
+!docs/fix/STEP_4_REPORT.md
+!docs/fix/STEP_5_REPORT.md
+!docs/fix/STEP_6_REPORT.md
+!docs/fix/STEP_7_REPORT.md
+!docs/fix/STEP_8_REPORT.md
+!docs/fix/STEP_9_REPORT.md
+!docs/fix/STEP_10_REPORT.md
+!docs/fix/STEP_11_REPORT.md
+!docs/fix/STEP_A_REPORT.md
+!docs/fix/STEP_B_REPORT.md
+!docs/fix/STEP_C_REPORT.md
+!docs/fix/STEP_D_REPORT.md
+!docs/fix/STEP_E_REPORT.md
+!docs/fix/STEP_F_REPORT.md
+!docs/fix/STEP_G_REPORT.md
+!docs/fix/STEP_H_REPORT.md
+!docs/fix/STEP_L1_REPORT.md
+!docs/fix/STEP_L2_REPORT.md
+!docs/fix/STEP_L3_REPORT.md
+!docs/fix/STEP_L4_REPORT.md
+!docs/fix/STEP_L5_REPORT.md
+!docs/fix/STEP_D1_REPORT.md
+!docs/audit/REALITY_MAP_P1_7372321.md
+!docs/audit/REALITY_MAP_P2_7372321.md
+!docs/audit/REALITY_MAP_P3_7372321.md
+!docs/audit/REALITY_MAP_P4_7372321.md
+!docs/DELTA_MODEL_APPROVAL_REPAIR_DRAFT.md
+!docs/INFRA_042_DELTA_DRAFT.md
+!docs/INFRA_043_DELTA_DRAFT.md
+!docs/MASKING_DELTA_DRAFT.md
+!docs/DELTA_LOCAL_PROFILE_DRAFT.md
+
+# Benchmark answer key, control document, ledger scripts and the frozen scorer.
+# Never committed. Only the scorer reads the key (S6); the contamination probe
+# scans config/, scripts/, tests/ and the harness fixtures, never this directory.
+benchmark/keys/

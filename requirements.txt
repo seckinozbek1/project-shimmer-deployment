@@ -1,0 +1,74 @@
+# Project Shimmer: external Python dependencies (py -3.9)
+# Versions pinned to those currently installed in the working environment.
+# Standard-library modules and in-repo modules under scripts/ are excluded.
+
+# Model provider SDKs (REQUIRED). agent_wrapper.call_claude / call_gpt and the
+#   model gate (model_registry.list_available_models) import these directly. Without
+#   them every claude_api / openai_api agent degrades to "cannot verify / no key" and
+#   generation returns no text. They are not transitive deps of anything else here, so
+#   they MUST be listed explicitly or a fresh .venv cannot reach the API.
+anthropic==0.87.0
+openai==2.38.0
+
+# transformers backs the local Qwen redactor (agent_wrapper.call_qwen / _load_qwen
+#   import it directly). It is currently pulled in transitively by sentence-transformers,
+#   but a directly-imported package belongs here explicitly so the redactor never depends
+#   on a transitive chain.
+transformers==4.52.3
+
+# Input-format support (shared text_extract family: .pdf/.docx/.html/.htm/
+#   .txt/.md/.rst/.log/.json). Heavy libs are imported lazily; a missing one
+#   degrades to a clear warning + skip rather than a crash.
+# PDF parsing (corpus intake, document dating, embedding store)
+pypdf==6.10.2
+
+# .docx: tracked-changes generation (AMENDMENT_DRAFTER deliverables) AND
+#   .docx input extraction (text_extract)
+python-docx==1.2.0
+lxml==6.1.0
+
+# .html/.htm input extraction (text_extract); uses the builtin html.parser
+beautifulsoup4==4.12.3
+
+# Draft-resolution PDF builder
+fpdf2==2.8.4
+
+# Semantic retrieval layer (Part XXI embedding store)
+sentence-transformers==4.1.0
+numpy==2.0.2
+
+# Multilingual support (INFRA-028): per-document language detection drives
+#   per-language embedding-model selection, and direction-aware .docx output.
+# langdetect is offline + lightweight (no network, no large model); imported
+#   lazily (if absent, documents are treated as 'und', the English default model)
+#   and script-based RTL/LTR direction still works (it needs no library).
+langdetect==1.0.9
+# Non-English embedding model is a sentence-transformers model id downloaded at
+#   runtime (no pip package): sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+#   (if unavailable, embedding_store degrades to the English default with a warning).
+
+# Free web-search cascade (external reference discovery)
+ddgs==9.8.0
+
+# OGE GNN engine (build B3): local numeric compute over the Tier-1 knowledge graph.
+# GPU is OPTIONAL (warn-not-fail): runs on CPU when no CUDA device is present. The installed
+# build is the CUDA wheel (2.5.1+cu121); the pin follows the requirements.txt convention of the
+# bare PyPI version (no local build string). No model API calls -- this is local autograd only.
+torch==2.5.1
+
+# M3 FastAPI front door (scripts/server.py, the thin token-gated dock). See
+#   FRONT_DOOR.md for the run/tunnel/handoff guide.
+# productization STEP 10: PINNED. These three were left unpinned with a comment
+#   saying they were "not yet installed in the working environment", which stopped
+#   being true once the front door shipped: they ARE installed here and more than
+#   twenty gate checks now import fastapi (the whole /submit, /status, /queue,
+#   /results, /approvals and console surface). Unpinned, a fresh clone resolved
+#   them to whatever was newest on PyPI that day, so the gate's own dependencies
+#   drifted per install. Versions below are the ones installed in this venv,
+#   read from pip, not guessed.
+# python-multipart is required by FastAPI to parse multipart file uploads (/submit).
+#   It is imported by fastapi, not directly by anything under scripts/, and is
+#   pinned here for the same reason: a fresh clone must get a known version.
+fastapi==0.128.8
+uvicorn[standard]==0.39.0
+python-multipart==0.0.20

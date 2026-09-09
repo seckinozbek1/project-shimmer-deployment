@@ -1,0 +1,16 @@
+{
+  "corpus": "clinical_reference",
+  "document": "result_sheet.md",
+  "written": "2026-09-07T20:57 local, BEFORE any deliverable from a run of this corpus was opened",
+  "held_out": "The pipeline never reads benchmark/. This key is consulted only by tools/score_corpus.py after a run, and the scorer matches mechanically on unit id and rule id.",
+  "task_given_to_the_pipeline": "Review result_sheet.md against the five rules in lab_conventions.md, grounded in analyte_reference_ranges.md. For every rule, find every result it applies to, check it, and report each violation with the figures that conflict, the rule it breaks (by the operator's own id), and the reference passage it rests on.",
+  "planted": [
+    {"unit": "RES-ALDER",  "rule": "CONV-L01", "what": "measured value above the upper bound of its reference range", "relation": "above_band"},
+    {"unit": "RES-BIRCH",  "rule": "CONV-L01", "what": "measured value below the lower bound of its reference range", "relation": "below_band"},
+    {"unit": "RES-ELDER",  "rule": "CONV-L01", "what": "measured value above the upper bound of its reference range", "relation": "above_band"},
+    {"unit": "RES-FIRTH",  "rule": "CONV-L02", "what": "result states no sample identifier", "relation": "missing_field"},
+    {"unit": "sheet",      "rule": "CONV-L03", "what": "per-laboratory counts do not sum to the declared total", "relation": "sum_mismatch"}
+  ],
+  "clean": ["RES-CEDAR", "RES-DAMSON"],
+  "notes": "Five planted defects across six results plus the sheet header. Two results are clean distractors: any amendment against them is a false positive. The sheet-level count defect lives in the header block above the first heading, which the unit splitter may or may not treat as a unit; it is planted honestly and scored honestly either way."
+}

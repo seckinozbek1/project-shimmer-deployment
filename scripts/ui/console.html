@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Project Shimmer operator console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #111; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
+  section { margin-bottom: 1.5rem; }
+  label { display: block; margin: 0.5rem 0 0.2rem; font-weight: 600; }
+  input[type=text], input[type=password], textarea { width: 100%; padding: 0.4rem; box-sizing: border-box; }
+  input[type=file] { margin-top: 0.2rem; }
+  button { padding: 0.4rem 0.9rem; margin-top: 0.6rem; cursor: pointer; }
+  table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
+  th, td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: left; font-size: 0.9rem; }
+  th { background: #f2f2f2; }
+  .status-completed { color: #1a7a1a; }
+  .status-governance { color: #9a6a00; }
+  .status-failed { color: #a30000; }
+  .status-neutral { color: #555; }
+  .note { font-size: 0.85rem; color: #555; }
+  .sensitive-explain { font-size: 0.85rem; background: #fafafa; border: 1px solid #ddd; padding: 0.5rem; margin-top: 0.3rem; }
+  .msg { padding: 0.4rem; margin-top: 0.5rem; font-size: 0.9rem; }
+  .msg-ok { background: #e6f4e6; }
+  .msg-err { background: #fbe6e6; }
+  pre.loglines { background: #111; color: #ddd; padding: 0.6rem; max-height: 200px; overflow: auto; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<h1>Project Shimmer operator console</h1>
+<p class="note">
+  A thin dock over <code>scripts/server.py</code>. The token below is kept only in this
+  page's memory for the current session (never written to a URL, never persisted to
+  storage); reload the page and you must re-enter it.
+</p>
+
+<section>
+  <h2>Access token</h2>
+  <label for="token">Bearer token</label>
+  <input type="password" id="token" placeholder="paste the token given to you out of band">
+  <button id="saveTokenBtn">Use this token</button>
+  <div id="tokenMsg" class="msg" style="display:none"></div>
+</section>
+
+<section>
+  <h2>Submit a run</h2>
+  <label for="task">Task</label>
+  <select id="task">
+    <option value="review">review (upload documents)</option>
+    <option value="draft">draft (generate a memo from a question)</option>
+  </select>
+
+  <label for="files">Files (review task; the case files plus the sidecar)</label>
+  <input type="file" id="files" multiple>
+
+  <label for="question">Question (required for draft; optional framing question for review)</label>
+  <textarea id="question" rows="3" placeholder="the memo question/brief"></textarea>
+
+  <label>
+    <input type="checkbox" id="sensitive"> This run is sensitive
+  </label>
+  <div class="sensitive-explain">
+    A <strong>non-sensitive</strong> run (unchecked, the default) sends document text to
+    cloud providers (Claude, GPT) and waives redaction for this run.
+    A <strong>sensitive</strong> run (checked) keeps redaction on, but today it refuses to
+    start (exit code 6) because the full LAW-IV masking layer ships inactive until the
+    operator activates it; this checkbox does not activate it, it only declares intent.
+  </div>
+
+  <button id="submitBtn">Submit</button>
+  <div id="submitMsg" class="msg" style="display:none"></div>
+</section>
+
+<section>
+  <h2>Pending approvals</h2>
+  <p class="note">A governed decision (e.g. a deprecated-model swap) parked by a
+    <code>--operator-channel file</code> run, waiting for APPROVE / DENY / DEFER.</p>
+  <button id="refreshApprovalsBtn">Refresh</button>
+  <table id="approvalsTable">
+    <thead><tr><th>run_id</th><th>topic</th><th>asked_at</th><th>decision</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Runs</h2>
+  <button id="refreshRunsBtn">Refresh</button>
+  <table id="runsTable">
+    <thead><tr><th>run_id</th><th>task</th><th>status</th><th>submitted_at</th><th>exit_code</th><th>detail</th><th>log</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p class="note">
+    The log column is the run's complete merged stdout/stderr, relative to the server's
+    output root (<code>SHIMMER_OUTPUT_DIR</code>, default <code>output/runs/</code>); open
+    it on the machine running the server, there is no download route for it.
+  </p>
+  <p class="note">
+    Status vocabulary: <code>completed</code> is success. <code>blocked</code>,
+    <code>stopped_model_approval</code>, <code>stopped_redaction_gate</code> and
+    <code>refused_sensitivity_layer_inactive</code> are governance outcomes, not errors,
+    the pipeline refused or paused on purpose. Note: exit code 5 (<code>blocked</code>) is
+    also used for a draft-mode generation failure; check the log tail to tell which one
+    happened. <code>snapshot_conflict</code>, <code>operator_abort</code>,
+    <code>interrupted</code> (server restarted mid-run) and <code>failed</code> (including
+    a run timeout) round out the vocabulary.
+  </p>
+</section>
+
+<script>
+(function () {
+  var token = null;
+
+  function setMsg(el, text, ok) {
+    el.textContent = text;
+    el.className = 'msg ' + (ok ? 'msg-ok' : 'msg-err');
+    el.style.display = 'block';
+  }
+
+  function authHeaders() {
+    var h = {};
+    if (token) h['Authorization'] = 'Bearer ' + token;
+    return h;
+  }
+
+  document.getElementById('saveTokenBtn').addEventListener('click', function () {
+    var v = document.getElementById('token').value.trim();
+    if (!v) { setMsg(document.getElementById('tokenMsg'), 'enter a token first', false); return; }
+    token = v;
+    document.getElementById('token').value = '';
+    setMsg(document.getElementById('tokenMsg'), 'token set for this session (not stored, not in any URL)', true);
+  });
+
+  function statusClass(status) {
+    if (status === 'completed') return 'status-completed';
+    if (['blocked', 'stopped_model_approval', 'stopped_redaction_gate',
+         'refused_sensitivity_layer_inactive'].indexOf(status) !== -1) return 'status-governance';
+    if (['failed', 'snapshot_conflict', 'operator_abort'].indexOf(status) !== -1) return 'status-failed';
+    return 'status-neutral';
+  }
+
+  function refreshRuns() {
+    fetch('/runs', { headers: authHeaders() })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var tbody = document.querySelector('#runsTable tbody');
+        tbody.innerHTML = '';
+        (data.jobs || data.runs || []).forEach(function (j) {
+          var tr = document.createElement('tr');
+          var cls = statusClass(j.status);
+          var logPath = j.run_id ? (j.run_id + '/logs/pipeline_stdout.log') : '';
+          tr.innerHTML =
+            '<td>' + (j.run_id || '') + '</td>' +
+            '<td>' + (j.task || '') + '</td>' +
+            '<td class="' + cls + '">' + (j.status || '') + '</td>' +
+            '<td>' + (j.submitted_at || '') + '</td>' +
+            '<td>' + (j.exit_code === null || j.exit_code === undefined ? '' : j.exit_code) + '</td>' +
+            '<td>' + (j.error ? String(j.error).slice(0, 200) : '') + '</td>' +
+            '<td><code>' + logPath + '</code></td>';
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(function () { /* silent: token not set yet, or server unreachable */ });
+  }
+
+  function refreshApprovals() {
+    fetch('/approvals', { headers: authHeaders() })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var tbody = document.querySelector('#approvalsTable tbody');
+        tbody.innerHTML = '';
+        (data.approvals || []).forEach(function (a) {
+          var tr = document.createElement('tr');
+          var td4 = document.createElement('td');
+          var approveBtn = document.createElement('button');
+          approveBtn.textContent = 'APPROVE';
+          var denyBtn = document.createElement('button');
+          denyBtn.textContent = 'DENY';
+          [approveBtn, denyBtn].forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var decision = btn.textContent;
+              fetch('/approvals/' + encodeURIComponent(a.run_id), {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                body: JSON.stringify({ decision: decision, rationale: 'decided via console' }),
+              }).then(function () { refreshApprovals(); refreshRuns(); });
+            });
+          });
+          td4.appendChild(approveBtn);
+          td4.appendChild(denyBtn);
+          tr.innerHTML =
+            '<td>' + (a.run_id || '') + '</td>' +
+            '<td>' + (a.topic || '') + '</td>' +
+            '<td>' + (a.asked_at || '') + '</td>';
+          tr.appendChild(td4);
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(function () { /* silent */ });
+  }
+
+  document.getElementById('refreshRunsBtn').addEventListener('click', refreshRuns);
+  document.getElementById('refreshApprovalsBtn').addEventListener('click', refreshApprovals);
+
+  document.getElementById('submitBtn').addEventListener('click', function () {
+    var task = document.getElementById('task').value;
+    var question = document.getElementById('question').value;
+    var sensitive = document.getElementById('sensitive').checked;
+    var files = document.getElementById('files').files;
+    var fd = new FormData();
+    fd.append('task', task);
+    if (question) fd.append('question', question);
+    fd.append('sensitive', sensitive ? 'true' : 'false');
+    for (var i = 0; i < files.length; i++) fd.append('files', files[i]);
+
+    fetch('/submit', { method: 'POST', headers: authHeaders(), body: fd })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (res.ok) {
+          setMsg(document.getElementById('submitMsg'),
+            'queued: run_id=' + res.body.run_id, true);
+          refreshRuns();
+        } else {
+          setMsg(document.getElementById('submitMsg'),
+            'rejected: ' + JSON.stringify(res.body.detail || res.body), false);
+        }
+      })
+      .catch(function (e) { setMsg(document.getElementById('submitMsg'), String(e), false); });
+  });
+})();
+</script>
+</body>
+</html>

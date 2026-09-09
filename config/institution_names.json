@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "description": "The institution names scripts/claim_classifier.py recognizes for the 'institutional' claim type and for institution entity extraction. Operator-editable: replace this list with your own set of real-world institution names relevant to your domain; the classifier reads it at load time and carries no vocabulary of its own. Shipped with the same default names the classifier used when this list was still hardcoded in code, so behaviour is unchanged on first run.",
+  "names": [
+    "United Nations", "UN", "General Assembly", "Security Council", "World Bank",
+    "IMF", "WTO", "WHO", "UNESCO", "UNHCR", "ICC", "ICJ", "EU", "NATO", "OECD",
+    "G20", "G7", "African Union", "ASEAN", "OAS", "ISO", "IEEE", "IETF", "OIC",
+    "UNDP", "ITU", "WEF", "GPAI"
+  ]
+}

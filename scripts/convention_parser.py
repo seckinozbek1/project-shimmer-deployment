@@ -1,0 +1,278 @@
+"""Convention parser (genesis Part XVIII Section E).
+
+Reads files in input/conventions/, extracts individual rules from markdown
+headers / numbered lists / prose, classifies into categories discovered
+from the document structure (no predefined list), assigns severity and
+action via language cues, writes config/convention_registry.json.
+
+Deterministic. No LLM call. Idempotent: a rerun produces the same IDs
+when the source files have not changed.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Iterable
+
+import text_extract
+
+
+_TEXT_EXTENSIONS = {".md", ".txt", ".rst", ".log"}
+_JSON_EXTENSIONS = {".json"}
+# Binary / markup formats: extract plain text via the shared extractor, then
+# parse it with the same markdown / list / prose logic as native text files.
+_EXTRACT_EXTENSIONS = {".pdf", ".docx", ".html", ".htm"}
+
+
+_SEVERITY_PATTERNS = [
+    ("required",    re.compile(r"\b(must|shall|required|mandatory|prohibited|forbidden|no\s+exception)\b", re.IGNORECASE)),
+    ("recommended", re.compile(r"\b(should|recommended|expected|ought to|encouraged)\b", re.IGNORECASE)),
+    ("advisory",    re.compile(r"\b(may|consider|optional|where applicable|if appropriate)\b", re.IGNORECASE)),
+]
+
+
+_ACTION_PATTERNS = [
+    ("redact",   re.compile(r"\b(redact|mask|conceal|withhold|remove\s+from\s+output|do not (?:print|publish|disclose|reveal))\b", re.IGNORECASE)),
+    ("reject",   re.compile(r"\b(reject|do not accept|disallow|prohibit)\b", re.IGNORECASE)),
+    ("rephrase", re.compile(r"\b(rephrase|rewrite|replace|substitute|use\s+\S+\s+instead)\b", re.IGNORECASE)),
+    ("flag",     re.compile(r"\b(flag|alert|warn|require\s+review|escalate)\b", re.IGNORECASE)),
+    ("annotate", re.compile(r"\b(annotate|note|comment|footnote|add\s+citation)\b", re.IGNORECASE)),
+]
+
+
+_DEFAULT_CATEGORY = "unclassified"
+
+
+@dataclass
+class ConventionRule:
+    id: str
+    category: str
+    rule: str
+    source_file: str
+    source_location: str
+    severity: str
+    action: str
+
+    def as_dict(self):
+        return {"id": self.id, "category": self.category, "rule": self.rule,
+                "source_file": self.source_file, "source_location": self.source_location,
+                "severity": self.severity, "action": self.action}
+
+
+@dataclass
+class ConventionRegistry:
+    source_files: list = field(default_factory=list)
+    conventions: list = field(default_factory=list)
+
+    def as_dict(self):
+        return {
+            "schema_version": "1.0.0",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source_files": self.source_files,
+            "conventions": [c.as_dict() for c in self.conventions],
+        }
+
+
+def parse_conventions(project_root: Path) -> ConventionRegistry:
+    """Parse every file in input/conventions/ into a registry."""
+    in_dir = project_root / "input" / "conventions"
+    registry = ConventionRegistry()
+    if not in_dir.exists():
+        return registry
+    seq = [0]
+    for path in sorted(in_dir.iterdir()):
+        if not path.is_file():
+            continue
+        ext = path.suffix.lower()
+        if ext in _JSON_EXTENSIONS:
+            registry.source_files.append(path.name)
+            registry.conventions.extend(_parse_json(path, seq))
+        elif ext in _TEXT_EXTENSIONS:
+            registry.source_files.append(path.name)
+            registry.conventions.extend(_parse_text(path, seq))
+        elif ext in _EXTRACT_EXTENSIONS:
+            registry.source_files.append(path.name)
+            registry.conventions.extend(_parse_extracted(path, seq))
+        else:
+            # No silent drop: an unrecognized file in input/conventions/ warns.
+            text_extract.warn_unsupported(path, where="input/conventions")
+    return registry
+
+
+def write_registry(project_root: Path, registry: ConventionRegistry) -> Path:
+    path = project_root / "config" / "convention_registry.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(registry.as_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def _next_id(seq):
+    seq[0] += 1
+    return f"CONV-{seq[0]:03d}"
+
+
+def _classify_severity(text):
+    for label, rx in _SEVERITY_PATTERNS:
+        if rx.search(text):
+            return label
+    return "advisory"
+
+
+def _classify_action(text):
+    for label, rx in _ACTION_PATTERNS:
+        if rx.search(text):
+            return label
+    return "flag"
+
+
+def _parse_json(path, seq):
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    if isinstance(data, dict) and "conventions" in data:
+        items = data["conventions"]
+    elif isinstance(data, list):
+        items = data
+    else:
+        return []
+    out = []
+    for i, item in enumerate(items):
+        if not isinstance(item, dict):
+            continue
+        rule = str(item.get("rule") or item.get("text") or "").strip()
+        if not rule:
+            continue
+        out.append(ConventionRule(
+            id=item.get("id") or _next_id(seq),
+            category=str(item.get("category") or _DEFAULT_CATEGORY).strip().lower(),
+            rule=rule, source_file=path.name,
+            source_location=str(item.get("source_location") or f"item {i+1}"),
+            severity=str(item.get("severity") or _classify_severity(rule)).lower(),
+            action=str(item.get("action") or _classify_action(rule)).lower(),
+        ))
+    return out
+
+
+def _parse_text(path, seq):
+    text = path.read_text(encoding="utf-8", errors="replace")
+    return _parse_text_lines(text, path.name, seq)
+
+
+def _parse_text_lines(text, source_name, seq):
+    out = []
+    current_category = _DEFAULT_CATEGORY
+    current_section = "preamble"
+    line_num = 0
+    para_buffer = []
+
+    def flush(buffer, category, section, location):
+        if not buffer:
+            return []
+        joined = " ".join(b.strip() for b in buffer).strip()
+        if not joined:
+            return []
+        return [ConventionRule(
+            id=_next_id(seq), category=category, rule=joined,
+            source_file=source_name, source_location=location,
+            severity=_classify_severity(joined), action=_classify_action(joined),
+        )]
+
+    for raw_line in text.splitlines():
+        line_num += 1
+        line = raw_line.rstrip()
+        if _is_markdown_heading(line):
+            out.extend(flush(para_buffer, current_category, current_section,
+                             f"line {line_num - len(para_buffer)}"))
+            para_buffer = []
+            current_category = _normalize_category(line)
+            current_section = line.lstrip("# ").strip().lower()
+            continue
+        if _is_list_item(line):
+            out.extend(flush(para_buffer, current_category, current_section,
+                             f"line {line_num - len(para_buffer)}"))
+            para_buffer = []
+            stripped = _strip_list_marker(line)
+            if stripped:
+                out.append(ConventionRule(
+                    id=_next_id(seq), category=current_category, rule=stripped,
+                    source_file=source_name, source_location=f"line {line_num}",
+                    severity=_classify_severity(stripped), action=_classify_action(stripped),
+                ))
+            continue
+        if not line.strip():
+            out.extend(flush(para_buffer, current_category, current_section,
+                             f"line {line_num - len(para_buffer)}"))
+            para_buffer = []
+            continue
+        para_buffer.append(line)
+    out.extend(flush(para_buffer, current_category, current_section,
+                     f"line {line_num - len(para_buffer) + 1}"))
+    return [r for r in out if r.rule and len(r.rule) >= 16]
+
+
+def _parse_extracted(path, seq):
+    # .pdf / .docx / .html / .htm: pull plain text via the shared extractor and
+    # run it through the same structural parser as native text files. No temp
+    # file is written (the source name is preserved on each rule).
+    text = text_extract.extract_text(path)
+    if not text.strip():
+        return []
+    return _parse_text_lines(text, path.name, seq)
+
+
+def _is_markdown_heading(line):
+    return bool(re.match(r"^#{1,6}\s+\S", line))
+
+
+def _is_list_item(line):
+    return bool(re.match(r"^\s*(?:[-*+]|\d+[.)])\s+\S", line))
+
+
+def _strip_list_marker(line):
+    return re.sub(r"^\s*(?:[-*+]|\d+[.)])\s+", "", line).strip()
+
+
+_CATEGORY_KEYWORDS = {
+    "terminology":     ("terminology", "term", "vocabulary", "wording"),
+    "red_flags":       ("red flag", "flag", "warning", "alert"),
+    "rephrasing":      ("rephrase", "rewrite", "rephrasing", "language"),
+    "citation_style":  ("citation", "cite", "reference", "borrowing"),
+    "structural":      ("structure", "structural", "format", "section"),
+    "value_alignment": ("value", "alignment", "ethics", "principles"),
+    "borrowing":       ("borrow", "external", "foreign", "attribution"),
+}
+
+
+_HEADING_RULE_ID = re.compile(r"\bconv-[a-z0-9]+(?:-[a-z0-9]+)*\b", re.IGNORECASE)
+
+
+def _normalize_category(heading):
+    """The category a convention heading declares.
+
+    An OPERATOR'S OWN RULE ID, when the heading carries one, is the category and
+    nothing else is consulted. That id is what finding_record.source_rule_id_for
+    reads back so a finding can be attributed to the rule as the operator wrote
+    it, and it must survive verbatim.
+
+    It did not, before this: the keyword table below was consulted FIRST, on the
+    whole heading, so an operator slug that happened to contain one of a handful
+    of English words was silently reclassified. The second corpus this parser was
+    ever pointed at wrote "conv-value-in-range", the word "value" matched the
+    "value_alignment" bucket (which is about ethics), the operator's id was
+    overwritten, and attribution for every finding under that rule was lost.
+    Nothing warned. The keyword table is English and is kept only for a heading
+    that carries no id at all, where it is the sole signal there is.
+    """
+    h = heading.lstrip("# ").strip().lower()
+    own = _HEADING_RULE_ID.search(h)
+    if own:
+        return own.group(0)
+    for cat, keys in _CATEGORY_KEYWORDS.items():
+        if any(k in h for k in keys):
+            return cat
+    return h.split()[0] if h else _DEFAULT_CATEGORY

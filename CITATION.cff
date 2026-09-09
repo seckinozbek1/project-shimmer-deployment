@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Project Shimmer"
+authors:
+  - family-names: Ozbek
+    given-names: Seckin
+repository-code: "https://github.com/seckinozbek1/project-shimmer-deployment"
+license: MIT
+date-released: "2026-01-01"

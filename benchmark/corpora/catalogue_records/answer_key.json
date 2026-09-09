@@ -1,0 +1,16 @@
+{
+  "corpus": "catalogue_records",
+  "document": "catalogue_records.md",
+  "written": "2026-09-07T20:57 local, BEFORE any run of this corpus was started",
+  "held_out": "The pipeline never reads benchmark/. This key is consulted only by tools/score_corpus.py after a run, and the scorer matches mechanically on unit id and rule id.",
+  "task_given_to_the_pipeline": "Review catalogue_records.md against the seven rules in cataloguing_conventions.md, grounded in metadata_element_reference.md. There are no quantities anywhere: every rule is about a field being present, a value being drawn from a controlled vocabulary, or two fields agreeing. For every rule, find every record it applies to, check it, and report each violation naming the record, the field or vocabulary it conflicts with, the rule (by the operator's own id), and the reference passage.",
+  "planted": [
+    {"unit": "CAT-BIRCH",  "rule": "CONV-M01", "what": "record states no creator", "relation": "missing_field"},
+    {"unit": "CAT-BIRCH",  "rule": "CONV-M05", "what": "rights term is attribution but no creator is named to credit", "relation": "missing_field"},
+    {"unit": "CAT-CEDAR",  "rule": "CONV-M02", "what": "type 'Recording' is not in the permitted resource types", "relation": "vocabulary"},
+    {"unit": "CAT-DAMSON", "rule": "CONV-M04", "what": "rights term is restricted but no source is stated", "relation": "missing_field"},
+    {"unit": "CAT-ELDER",  "rule": "CONV-M03", "what": "rights term is closed, which requires a named publisher, and none is stated", "relation": "missing_field"}
+  ],
+  "clean": ["CAT-ALDER", "CAT-FIRTH"],
+  "notes": "Five planted defects across four records. Two records are clean distractors. Three of the five are conditional rules (a field required only because of another field's value), which the arithmetic path cannot compute and which therefore go to the model; the two that a structural check can reach are the missing creator (M01) and the vocabulary miss (M02). A finding under M03 for CAT-DAMSON (restricted requires a source) is also accepted as satisfying the M04 planted entry, since the two rules overlap by design."
+}
