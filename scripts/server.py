@@ -1550,6 +1550,96 @@ async def cancel_run(run_id: str):
     return _run_record(job, RUNS_DIR / run_id)
 
 
+@app.post("/runs/{run_id}/approval", dependencies=[Depends(verify_token)])
+async def answer_approval(run_id: str, body: dict):
+    """api STEP B3: record a human's decision on one run's pending governed
+    question.
+
+    Body: {"decision": "...", "rationale": "..."}. `decision` is required and
+    non-empty; `rationale` is optional. The value of `decision` is written
+    through VERBATIM, never validated against a fixed enum here: the code
+    that decides whether a decision counts as an approval
+    (model_registry.enforce_current_models / constitution_guard._is_approved)
+    already exists, is read back by the pipeline SUBPROCESS's own polling
+    file-operator handler, and is not duplicated or second-guessed here.
+
+    FIRST GOVERNANCE CONSTRAINT: this route WRITES the decision and nothing
+    else. It never imports model_registry or constitution_guard, never calls
+    _is_approved, never itself changes a run's state. Whether the run
+    actually resumes, and which way the gate went, is decided entirely by
+    the pipeline subprocess the next time its poll loop reads this file
+    (_make_file_operator_handler, roughly every 2 seconds); this route
+    cannot see or wait for that, only write the file the poll loop reads.
+
+    SECOND GOVERNANCE CONSTRAINT: the response says the decision was
+    RECORDED, never that it was approved. It carries `recorded: true` and
+    `run_state`, the run's state as it stood the instant BEFORE this write
+    (deliberately read before, not after: _pending_approval_for reports
+    "awaiting_approval" only while approval_decision.json does not yet
+    exist, so reading run_state after writing that file would report
+    "running" -- correctly, since nothing is pending anymore, but that would
+    silently answer a different question than "what was true when the
+    caller asked"; the response is about the request that was just made, not
+    about a race against the pipeline's next poll) -- never a claim about
+    what the decision meant or what happened as a result. A caller that
+    wants to see the EFFECT of the decision polls GET /runs/{run_id}
+    afterward, exactly as it would for any other state change on this
+    surface.
+
+    404 for a malformed run_id, or a well-formed one with no pending
+    approval on disk at all. 409 if this exact approval has ALREADY been
+    answered: a decision file already sitting beside the pending file means
+    a human answered this escalation once already (the pipeline's own
+    handler deletes any stale decision file before writing the NEXT
+    pending_approval.json for a later escalation, so "both files present"
+    is unambiguous: this one was already answered and not yet consumed).
+    400 if `decision` is missing or empty."""
+    if not _RUN_ID_RE.match(run_id):
+        raise HTTPException(status_code=404, detail="run_id not found")
+    run_dir = RUNS_DIR / run_id
+    audit_dir = run_dir / "audit"
+    pending_path = audit_dir / "pending_approval.json"
+    decision_path = audit_dir / "approval_decision.json"
+    if not pending_path.exists():
+        raise HTTPException(status_code=404, detail="no pending approval for this run_id")
+    if decision_path.exists():
+        raise HTTPException(
+            status_code=409,
+            detail=f"run_id {run_id!r} already has a recorded decision for this "
+                   f"approval; answering the same pending question twice is refused")
+
+    decision = str(body.get("decision", "")).strip()
+    rationale = str(body.get("rationale", "")).strip()
+    if not decision:
+        raise HTTPException(status_code=400, detail="'decision' is required")
+
+    # run_state is read BEFORE the write below, not after: _pending_approval_for
+    # (and so _state_for_job) reads "awaiting_approval" precisely because
+    # decision_path does not exist yet; the write below is what answers the
+    # question, so the state that was TRUE going into this call -- the run was
+    # genuinely waiting -- is what the response reports, not a state computed
+    # a moment later that the write itself would have already changed.
+    with JOBS_LOCK:
+        job = _find_job(run_id)
+        run_state = _state_for_job(dict(job), run_dir) if job is not None else None
+
+    decided_at = _now_iso()
+    record = {"decision": decision, "rationale": rationale, "decided_at": decided_at}
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    tmp = decision_path.with_suffix(decision_path.suffix + ".tmp")
+    tmp.write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(decision_path)
+
+    return JSONResponse(status_code=202, content={
+        "run_id": run_id,
+        "recorded": True,
+        "decision": decision,
+        "rationale": rationale,
+        "decided_at": decided_at,
+        "run_state": run_state,
+    })
+
+
 @app.get("/findings/{run_id}", dependencies=[Depends(verify_token)])
 async def findings(run_id: str):
     """The run's typed Finding records as JSON: the structured review itself.

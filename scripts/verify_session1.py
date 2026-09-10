@@ -12949,6 +12949,313 @@ def check_187_a_queued_and_a_running_run_can_both_be_cancelled():
                "path is live code")
 
 
+def check_188_a_pending_approval_is_visible_on_status_and_answerable_once():
+    """api STEP B3: POST /runs/{run_id}/approval, and the pending_approval
+    object GET /runs/{run_id} already carries (built in api STEP B1), with NO
+    real pipeline subprocess ever spawned (S1: subprocess.Popen replaced by
+    _BlockingLinePopen) and no model loaded.
+
+    The fake Popen never runs the real pipeline, so it never runs the real
+    file-operator handler either; the fixture writes <run>/audit/
+    pending_approval.json itself, in the EXACT shape
+    _make_file_operator_handler writes it (topic/payload/asked_at), while the
+    worker thread is genuinely parked mid-subprocess -- proving the status
+    route reads this file off disk rather than assuming anything about how
+    it got there.
+
+    Asserted, driven through the real _start_next_job -> background thread ->
+    _run_job path:
+      - once pending_approval.json exists, GET /runs/{run_id} reports
+        state="awaiting_approval" and pending_approval carrying topic,
+        message (pulled out of payload), payload, asked_at,
+        default_on_timeout="DEFERRED" and a computed timeout_at -- the SAME
+        call that reports the run is waiting also carries what it is being
+        asked, satisfying "learn from the same call";
+      - POST .../approval with a decision is accepted (202), writes
+        approval_decision.json at the EXACT path
+        (_make_file_operator_handler's own decision_path) and in the exact
+        shape (decision/rationale/decided_at) the real handler reads back,
+        and the response says recorded: true and run_state, NEVER a claim
+        that the decision was approved -- checked by scanning the entire
+        response body for the substring "approved" (case-insensitive) and
+        failing if it appears anywhere;
+      - answering an approval for a run_id that has NO pending_approval.json
+        at all is refused 404;
+      - answering the SAME approval a second time is refused 409, and the
+        first decision file (checked by decided_at) is left byte-unchanged
+        by the refused second attempt;
+      - GET /runs/{run_id} after the decision is written still reports
+        state != "awaiting_approval" (pending_approval.json now has a sibling
+        decision file, so it is no longer "pending" by the same rule
+        _pending_approvals() already used before this step).
+    NEUTRALISE AND RESTORE: with the second-answer guard disabled (the
+    decision_path.exists() check in answer_approval short-circuited to
+    False), answering the same approval twice SUCCEEDS both times and the
+    second write overwrites the first (proven by comparing decided_at
+    before and after); restoring the guard brings the 409 back and the
+    original decision survives an identical second attempt."""
+    try:
+        import fastapi  # noqa: F401
+    except ImportError:
+        return _ok("fastapi absent: check_188 requires fastapi, skipped as N/A")
+
+    from fastapi.testclient import TestClient
+    import hashlib as _hl
+    import os as _os
+    import subprocess as _subprocess
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_api_b3_") as tmp:
+        runs_dir = Path(tmp) / "runs"
+        server = _step6_server_module(runs_dir)
+        server.RUNS_DIR = runs_dir
+
+        saved_tok = _os.environ.get("SHIMMER_TOKEN_HASH")
+        saved_popen = _subprocess.Popen
+        try:
+            tok = "gate-api-b3-token"
+            _os.environ["SHIMMER_TOKEN_HASH"] = _hl.sha256(tok.encode("utf-8")).hexdigest()
+            client = TestClient(server.app)
+            headers = {"Authorization": f"Bearer {tok}"}
+
+            fake = {}
+
+            def _factory(*a, **k):
+                p = _BlockingLinePopen(*a, returncode=0, **k)
+                fake["proc"] = p
+                return p
+
+            _subprocess.Popen = _factory
+            server.subprocess.Popen = _factory
+
+            resp = client.post("/submit", headers=headers,
+                                data={"task": "draft", "question": "gate check q"})
+            if resp.status_code != 202:
+                return _fail(f"/submit returned {resp.status_code}: {resp.text[:200]}")
+            run_id = resp.json()["run_id"]
+
+            def _wait_for_status(want, timeout=5.0):
+                deadline = time.monotonic() + timeout
+                while time.monotonic() < deadline:
+                    with server.JOBS_LOCK:
+                        job = server._find_job(run_id)
+                        status_now = job.get("status") if job else None
+                    if status_now in want:
+                        return status_now
+                    time.sleep(0.02)
+                raise AssertionError(f"run {run_id} never reached one of {want} "
+                                     f"within {timeout}s")
+
+            _wait_for_status({"running"})
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline and "proc" not in fake:
+                time.sleep(0.02)
+            if "proc" not in fake:
+                return _fail("the worker never reached Popen")
+
+            # Write pending_approval.json ourselves, in the EXACT shape
+            # _make_file_operator_handler writes it (pipeline.py:2631-2634):
+            # a fresh escalation, no decision file yet.
+            run_dir = runs_dir / run_id
+            audit_dir = run_dir / "audit"
+            audit_dir.mkdir(parents=True, exist_ok=True)
+            asked_at = server._now_iso()
+            pending_record = {
+                "topic": "MODEL_DEPRECATED",
+                "payload": {
+                    "agent": "GATE_AGENT", "backend": "anthropic",
+                    "dead_model": "claude-gate-check-old",
+                    "proposed_replacement": "claude-gate-check-new",
+                    "message": "Agent GATE_AGENT is assigned model "
+                               "'claude-gate-check-old'; retired by the provider. "
+                               "Proposed current replacement: "
+                               "'claude-gate-check-new'.",
+                },
+                "asked_at": asked_at,
+            }
+            (audit_dir / "pending_approval.json").write_text(
+                json.dumps(pending_record, indent=2, ensure_ascii=False),
+                encoding="utf-8")
+
+            # --- The status call carries the pending question. ---
+            status_body = client.get(f"/runs/{run_id}", headers=headers).json()
+            if status_body.get("state") != "awaiting_approval":
+                return _fail(f"state={status_body.get('state')!r} with "
+                             f"pending_approval.json present, expected "
+                             f"'awaiting_approval'")
+            pa = status_body.get("pending_approval")
+            if not isinstance(pa, dict):
+                return _fail(f"pending_approval is not an object: {pa!r}")
+            if pa.get("topic") != "MODEL_DEPRECATED":
+                return _fail(f"pending_approval.topic={pa.get('topic')!r}")
+            if "claude-gate-check-new" not in (pa.get("message") or ""):
+                return _fail(f"pending_approval.message does not carry the "
+                             f"proposed replacement: {pa.get('message')!r}")
+            if pa.get("payload", {}).get("dead_model") != "claude-gate-check-old":
+                return _fail(f"pending_approval.payload is not the structured "
+                             f"detail written to disk: {pa.get('payload')!r}")
+            if pa.get("default_on_timeout") != "DEFERRED":
+                return _fail(f"default_on_timeout={pa.get('default_on_timeout')!r}, "
+                             f"expected 'DEFERRED'")
+            if not pa.get("timeout_at"):
+                return _fail("pending_approval.timeout_at was not computed")
+
+            # --- Answer a run_id with NO pending approval at all: 404. ---
+            absent = "20200101_000000__ffffff"
+            r404 = client.post(f"/runs/{absent}/approval", headers=headers,
+                               json={"decision": "APPROVE"})
+            if r404.status_code != 404:
+                return _fail(f"answering an unknown run_id returned "
+                             f"{r404.status_code}, expected 404")
+
+            # --- Answer the real pending approval: accepted. ---
+            r1 = client.post(f"/runs/{run_id}/approval", headers=headers,
+                             json={"decision": "APPROVE", "rationale": "gate check"})
+            if r1.status_code != 202:
+                return _fail(f"answering the pending approval returned "
+                             f"{r1.status_code}, expected 202: {r1.text[:300]}")
+            b1 = r1.json()
+            if b1.get("recorded") is not True:
+                return _fail(f"response does not carry recorded=true: {b1!r}")
+            if "approved" in json.dumps(b1).lower():
+                return _fail(f"the response claims approval, not just recording: {b1!r}")
+            if b1.get("run_state") != "awaiting_approval":
+                return _fail(f"run_state={b1.get('run_state')!r}, expected "
+                             f"'awaiting_approval' (the state going INTO this call)")
+
+            decision_path = audit_dir / "approval_decision.json"
+            if not decision_path.exists():
+                return _fail("approval_decision.json was not written")
+            on_disk = json.loads(decision_path.read_text(encoding="utf-8"))
+            if on_disk.get("decision") != "APPROVE":
+                return _fail(f"approval_decision.json decision={on_disk.get('decision')!r}")
+            if on_disk.get("rationale") != "gate check":
+                return _fail(f"approval_decision.json rationale={on_disk.get('rationale')!r}")
+            first_decided_at = on_disk.get("decided_at")
+            if not first_decided_at:
+                return _fail("approval_decision.json has no decided_at")
+
+            # --- Answer the SAME approval again: refused, 409. ---
+            r2 = client.post(f"/runs/{run_id}/approval", headers=headers,
+                             json={"decision": "DENY", "rationale": "should not land"})
+            if r2.status_code != 409:
+                return _fail(f"answering the same approval twice returned "
+                             f"{r2.status_code}, expected 409: {r2.text[:300]}")
+            after_refused = json.loads(decision_path.read_text(encoding="utf-8"))
+            if after_refused.get("decision") != "APPROVE":
+                return _fail(f"the refused second attempt overwrote the first "
+                             f"decision: now {after_refused.get('decision')!r}")
+            if after_refused.get("decided_at") != first_decided_at:
+                return _fail("the refused second attempt changed decided_at")
+
+            # --- GET /runs/{run_id} no longer reports awaiting_approval. ---
+            after_body = client.get(f"/runs/{run_id}", headers=headers).json()
+            if after_body.get("state") == "awaiting_approval":
+                return _fail("state is still 'awaiting_approval' after the decision "
+                             "was recorded, but a decision file now exists")
+
+            # NEUTRALISE: disable the second-answer guard on a FRESH pending
+            # approval (the first one is already answered).
+            asked_at2 = server._now_iso()
+            pending_record2 = dict(pending_record, asked_at=asked_at2)
+            pending2_dir = audit_dir
+            decision2_path = pending2_dir / "approval_decision.json"
+            # Simulate the pipeline's own handler starting a NEW escalation:
+            # delete any stale decision file, write a fresh pending file.
+            decision2_path.unlink()
+            (pending2_dir / "pending_approval.json").write_text(
+                json.dumps(pending_record2, indent=2, ensure_ascii=False),
+                encoding="utf-8")
+
+            r3 = client.post(f"/runs/{run_id}/approval", headers=headers,
+                             json={"decision": "APPROVE", "rationale": "second escalation"})
+            if r3.status_code != 202:
+                return _fail(f"answering the fresh second escalation returned "
+                             f"{r3.status_code}, expected 202: {r3.text[:300]}")
+            second_decided_at = json.loads(
+                decision2_path.read_text(encoding="utf-8")).get("decided_at")
+
+            saved_exists = Path.exists
+            try:
+                def _neutralised_exists(self):
+                    if self == decision2_path:
+                        return False
+                    return saved_exists(self)
+                Path.exists = _neutralised_exists
+
+                r4 = client.post(f"/runs/{run_id}/approval", headers=headers,
+                                 json={"decision": "DENY", "rationale": "should now land"})
+                if r4.status_code != 202:
+                    return _fail(f"with the second-answer guard neutralised, "
+                                 f"answering twice returned {r4.status_code}, "
+                                 f"expected 202 (the guard should have been "
+                                 f"bypassed)")
+            finally:
+                Path.exists = saved_exists
+
+            neutralised_disk = json.loads(decision2_path.read_text(encoding="utf-8"))
+            if neutralised_disk.get("decided_at") == second_decided_at:
+                return _fail("with the guard neutralised, the second write did not "
+                             "actually overwrite the first: the neutralisation did "
+                             "not reach the real write path")
+
+            # RESTORE (already restored above via finally); prove the guard is
+            # back by writing a THIRD fresh escalation and answering it twice.
+            asked_at3 = server._now_iso()
+            pending_record3 = dict(pending_record, asked_at=asked_at3)
+            decision3_path = audit_dir / "approval_decision.json"
+            decision3_path.unlink()
+            (audit_dir / "pending_approval.json").write_text(
+                json.dumps(pending_record3, indent=2, ensure_ascii=False),
+                encoding="utf-8")
+            r5 = client.post(f"/runs/{run_id}/approval", headers=headers,
+                             json={"decision": "APPROVE", "rationale": "third escalation"})
+            if r5.status_code != 202:
+                return _fail(f"answering the third fresh escalation returned "
+                             f"{r5.status_code}, expected 202")
+            r6 = client.post(f"/runs/{run_id}/approval", headers=headers,
+                             json={"decision": "DENY", "rationale": "should be refused"})
+            if r6.status_code != 409:
+                return _fail(f"after restoring, answering the third escalation "
+                             f"twice returned {r6.status_code}, expected 409: "
+                             f"the guard did not come back")
+
+            # Release the fake subprocess and wait for _run_job's background
+            # thread to finish (closing the log file it holds open) BEFORE
+            # the TemporaryDirectory context manager tries to clean up on
+            # exit; otherwise the cleanup can race an open file handle.
+            fake["proc"].release()
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline:
+                with server.JOBS_LOCK:
+                    job = server._find_job(run_id)
+                    status_now = job.get("status") if job else None
+                if status_now not in ("queued", "running"):
+                    break
+                time.sleep(0.02)
+        except AssertionError as e:
+            return _fail(str(e))
+        finally:
+            _subprocess.Popen = saved_popen
+            server.subprocess.Popen = saved_popen
+            if saved_tok is None:
+                _os.environ.pop("SHIMMER_TOKEN_HASH", None)
+            else:
+                _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
+
+    return _ok("once pending_approval.json exists, GET /runs/{run_id} reports "
+               "state=awaiting_approval and pending_approval carrying topic, message, "
+               "payload, asked_at, default_on_timeout='DEFERRED' and a computed "
+               "timeout_at from the SAME call; answering it writes "
+               "approval_decision.json at the exact path and shape the pipeline's "
+               "own handler reads, returns 202 with recorded=true and run_state (the "
+               "response body never contains the substring 'approved'); answering an "
+               "unknown run_id is refused 404; answering the same approval twice is "
+               "refused 409 and the original decision file is byte-unchanged; "
+               "neutralising the second-answer guard lets a second write overwrite the "
+               "first (proving the guard is live code, not incidental), and restoring "
+               "it brings the 409 back")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -13138,6 +13445,7 @@ CHECKS = [
     ("185 a reworded label refuses instead of fabricating an absence (G2)", check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence),
     ("186 a run reports queued, then running, then a distinguishable terminal state (api B1)", check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state),
     ("187 a queued and a running run can both be cancelled (api B2)", check_187_a_queued_and_a_running_run_can_both_be_cancelled),
+    ("188 a pending approval is visible on status and answerable once (api B3)", check_188_a_pending_approval_is_visible_on_status_and_answerable_once),
 ]
 
 
