@@ -130,11 +130,18 @@
         "recommendation": "string",
         "severity": "required | recommended | advisory",
         "ref_ids": "array of REF-* strings (required in convention review)",
-        "finding_record": "OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object. The rule this compares against is procedure_id, above, already required: do not set a second rule_id field."
+        "relation": "REQUIRED, not optional: what kind of comparison or defect this finding states. One of the declared relations (see the top-level finding_record block), e.g. missing_field, type_mismatch, sum_mismatch. This is not a second copy of verdict: verdict says ALIGNED/VIOLATION/etc, relation says WHAT KIND of thing you found.",
+        "record_verdict": "REQUIRED, not optional: \"ok\" or \"irregular\". This is the finding record's OWN verdict field, separate from your verdict field above (keep setting both; they are not the same field under two names). Set record_verdict=\"irregular\" exactly when your own verdict names a problem (VIOLATION, ANTI_PATTERN, OUTDATED); set it \"ok\" when your verdict is COMPLIANT or ALIGNED.",
+        "explanation": "REQUIRED, not optional: one or two sentences, for the person reading the review, naming the SPECIFIC field, value, or passage that is wrong and why. \"CONV-005 was violated\" is not an explanation; \"Type states 'Image', which is not one of Text/Sound/Dataset/Collection\" is. A verdict with no explanation tells a reader nothing they can act on.",
+        "field_label": "optional: the document's own label for the field this finding is about, as words, e.g. \"Rights\" or \"Creator\". Always this name, never \"field\": no other name is read for this.",
+        "finding_record": "The full shape this agent's own required relation/record_verdict/explanation above belong to (see the top-level finding_record block for every optional field beyond those three, e.g. unit_id, value_a/unit_a, value_b/unit_b). Emit every field as an ordinary item field, not as a nested object. The rule this compares against is procedure_id, above, already required: do not set a second rule_id field.\n\nA FILLED EXAMPLE, the actual shape a real item takes, not a template: a record missing its Creator field looks like {\"ref\": \"REF-0065\", \"kind\": \"finding\", \"confidence\": \"CONFIDENT\", \"procedure_id\": \"CONV-004\", \"verdict\": \"VIOLATION\", \"relation\": \"missing_field\", \"record_verdict\": \"irregular\", \"field_label\": \"Creator\", \"explanation\": \"Record CAT-ALDER has no Creator field, which CONV-004 requires for attribution.\", \"ref_ids\": [\"REF-0065\"]}. Every one of relation, record_verdict and explanation is present, plainly, not left for a later pass to add."
       },
       "required": [
         "procedure_id",
-        "verdict"
+        "verdict",
+        "relation",
+        "record_verdict",
+        "explanation"
       ],
       "directives": [
         "After reviewing what the document contains, consult the structural inventory in your context package (work_payload.structural_inventory). For any element present in more than half the corpus documents but absent from this operational document, emit an ADDITIONAL item with kind='absence', verdict='VIOLATION', ref='document-level', and ref_ids citing the corpus documents where the element appears. The recommendation should explain what structural element is missing and which corpus documents establish it as standard practice."

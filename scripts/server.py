@@ -1006,6 +1006,55 @@ def _amendment_refusals_for_run(run_dir):
     return out
 
 
+def _contract_violations_for_run(run_dir):
+    """Every CONTRACT_VIOLATION on this run's bus: a call whose output did not
+    match its agent's own contract at all, so nothing usable was produced.
+
+    Found live: PRACTICE_AUDITOR's real output tonight was mostly thin,
+    assertions with no relation/record_verdict/explanation, valid enough to
+    post but too bare to act on, and every one of those calls that fails
+    outright (raises no valid item at all, this event) had nowhere a reader
+    could see it either, the same invisibility the amendment-refusals route
+    closed for a different case (a valid, irregular finding that could not
+    become an amendment). This closes it for the other case: a call that
+    produced NOTHING usable, not even a thin finding. Between the two
+    routes, whatever a call produced now has a path to visibility: a real
+    amendment, a refused finding, or a failed contract, never silently
+    absent from all three.
+
+    CONTRACT_VIOLATION carries no doc_id (agent_wrapper.py's own message
+    shape, unlike AGENT_OUTPUT/AMENDMENT_REFUSED, which are per-document):
+    a call can fail before the agent's response is ever attributed to one.
+    Read-only, same file-read pattern as _bus_findings/_amendment_refusals_for_run."""
+    bus = run_dir / "logs" / "agent_bus.jsonl"
+    if not bus.is_file():
+        return []
+    out = []
+    try:
+        lines = bus.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            msg = json.loads(line)
+        except ValueError:
+            continue
+        body = msg.get("body")
+        if not isinstance(body, dict) or body.get("event") != "CONTRACT_VIOLATION":
+            continue
+        out.append({
+            "agent": msg.get("sender") or "",
+            "backend": body.get("backend") or "",
+            "model": body.get("model") or "",
+            "missing_fields": list(body.get("missing_fields") or []),
+            "timestamp": msg.get("timestamp"),
+        })
+    return out
+
+
 def _pairing_map(run_dir):
     """This run's pairing map as written, keyed by document id, or {}."""
     path = run_dir / "audit" / "pairing_map.json"
@@ -2114,6 +2163,30 @@ async def amendment_refusals(run_id: str):
     run_dir = _validated_run_dir(run_id)
     items = _amendment_refusals_for_run(run_dir)
     return {"run_id": run_id, "count": len(items), "refusals": items}
+
+
+@app.get("/runs/{run_id}/contract-violations", dependencies=[Depends(verify_token)])
+async def contract_violations(run_id: str):
+    """A call whose output did not match its agent's own contract at all, so
+    nothing usable was produced, not even a thin finding.
+
+    Found live: after finding_record's fields were made required for
+    PRACTICE_AUDITOR (relation, record_verdict, explanation, closing a
+    different gap where most of its real output asserted a violation with no
+    supporting content), the honest next question is what a stricter
+    contract costs: some calls that used to pass a looser bar now genuinely
+    fail it. This route, together with /runs/{run_id}/amendment-refusals,
+    closes the last gap in visibility: a call now produces exactly one of
+    three outcomes a reader can see somewhere, a real amendment, a refused
+    finding, or a failed contract, never silently absent from all three.
+
+    Read-only, non-mutating, reads the bus the same way /findings, /pairs
+    and /amendment-refusals do. 404 for a malformed/unknown run_id. 200 with
+    an empty list, not an error, when nothing failed its contract, the
+    common, expected case."""
+    run_dir = _validated_run_dir(run_id)
+    items = _contract_violations_for_run(run_dir)
+    return {"run_id": run_id, "count": len(items), "violations": items}
 
 
 @app.get("/rules/{rule_id}", dependencies=[Depends(verify_token)])

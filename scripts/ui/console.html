@@ -2122,15 +2122,43 @@ function amendmentRefusalsHtml(refusals, human) {
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
 }
 
+function contractViolationsHtml(violations, human) {
+  /* Same disappears-when-empty discipline: a call that failed its contract
+     entirely (not even a thin finding came out of it) is real to report,
+     never a placeholder. Together with amendmentRefusalsHtml, this closes
+     the last gap: whatever a call produced now has exactly one visible
+     outcome, a real amendment, a refused finding, or a failed contract. */
+  if (!violations || violations.length === 0) return "";
+  var rows = violations.map(function (v) {
+    var missing = (v.missing_fields || []).join(", ");
+    return human
+      ? '<li>' + escapeHtml(v.agent || "") + ' produced nothing usable: ' + escapeHtml(missing) + '</li>'
+      : '<li class="mono">' + escapeHtml(v.agent || "") + ' (' + escapeHtml(v.model || "") + '): ' + escapeHtml(missing) + '</li>';
+  }).join("");
+  var heading = human
+    ? "Calls that produced nothing usable (" + violations.length + ")"
+    : "contract_violations (" + violations.length + ")";
+  var note = human
+    ? "Each of these calls failed its agent's own contract outright, no finding at all, thin or otherwise, came out of it."
+    : "Every CONTRACT_VIOLATION on this run's bus; see GET /runs/{run_id}/contract-violations.";
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
+}
+
 function loadFindings(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "findings-holder";
   var refusalHolder = document.createElement("div");
   refusalHolder.id = "amendment-refusals-holder";
+  var violationHolder = document.createElement("div");
+  violationHolder.id = "contract-violations-holder";
   app.appendChild(holder);
   app.appendChild(refusalHolder);
+  app.appendChild(violationHolder);
   apiJson("/runs/" + encodeURIComponent(runId) + "/amendment-refusals").then(function (refRes) {
     refusalHolder.innerHTML = refRes.ok ? amendmentRefusalsHtml(refRes.body.refusals, isHumanView()) : "";
+  });
+  apiJson("/runs/" + encodeURIComponent(runId) + "/contract-violations").then(function (violRes) {
+    violationHolder.innerHTML = violRes.ok ? contractViolationsHtml(violRes.body.violations, isHumanView()) : "";
   });
   Promise.all([
     apiJson("/runs/" + encodeURIComponent(runId) + "/findings"),
