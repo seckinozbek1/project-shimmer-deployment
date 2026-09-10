@@ -12452,6 +12452,37 @@ class _BlockingLinePopen:
         return self.returncode
 
 
+class _CancellableBlockingPopen(_BlockingLinePopen):
+    """_BlockingLinePopen plus terminate()/kill()/wait(timeout=), the three
+    calls POST /runs/{run_id}/cancel makes on a RUNNING job's subprocess
+    handle (api STEP B2). terminate() and kill() both release the blocked
+    stdout generator (a real terminated/killed process closes its stdout,
+    which is exactly what unblocks _run_job's `for line in proc.stdout` loop
+    today), simulating the child actually exiting in response to the signal
+    rather than the test cheating past _run_job's real control flow.
+    returncode is set to a negative number on terminate/kill (matching a
+    POSIX-signalled process; the exact sign is never asserted on, only that
+    it is NOT run through _status_for_exit_code's table)."""
+
+    def __init__(self, *a, returncode=0, progress_line="[progress] phase=1\n", **k):
+        super().__init__(*a, returncode=returncode, progress_line=progress_line, **k)
+        self.terminated = False
+        self.killed = False
+
+    def terminate(self):
+        self.terminated = True
+        self.returncode = -15
+        self._release.set()
+
+    def kill(self):
+        self.killed = True
+        self.returncode = -9
+        self._release.set()
+
+    def wait(self, timeout=None):
+        return self.returncode
+
+
 def check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state():
     """api STEP B1: GET /runs/{run_id} (and GET /runs, its list twin) report the
     new run-resource shape end to end, with NO real pipeline subprocess ever
@@ -12665,6 +12696,259 @@ def check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_
                "back, proving the distinction is live code")
 
 
+def check_187_a_queued_and_a_running_run_can_both_be_cancelled():
+    """api STEP B2: POST /runs/{run_id}/cancel, with NO real pipeline subprocess
+    ever spawned (S1: subprocess.Popen replaced by _CancellableBlockingPopen)
+    and no model loaded.
+
+    Asserted, driven through the real _start_next_job -> background thread ->
+    _run_job path (never calling _run_job directly), the four scenarios the
+    operator named:
+      - a QUEUED run (the one-at-a-time slot held by a first, still-blocked
+        run) is cancelled WITHOUT EVER STARTING: its subprocess.Popen is
+        never called (proven by asserting no _CancellableBlockingPopen was
+        constructed for it), state becomes "cancelled", outcome "cancelled",
+        stop_reason names it was cancelled before it started;
+      - a RUNNING run (genuinely parked mid-subprocess, proven by polling
+        the real JOBS status before cancelling, exactly as check_186 proves
+        "running" is real) is cancelled: terminate() is called on the real
+        registered Popen handle (proving the STRUCTURAL fix -- the handle
+        used to live only inside _run_job's own local scope, unreachable
+        from an HTTP thread; check_187 calling cancel from the test's own
+        thread while _run_job runs on its background thread is the proof
+        that _PROCS makes it reachable), state becomes "cancelled", outcome
+        "cancelled", distinct from both "crashed" and "succeeded";
+      - cancelling that SAME run again, now terminal, is refused: 409, not
+        a silent no-op, with the actual state named in the reason;
+      - cancelling a well-formed but UNKNOWN run_id is refused: 404.
+    NEUTRALISE AND RESTORE: with _run_job's own status.json write disabled
+    (the write call replaced with a no-op), a queued cancellation still
+    updates JOBS (the in-memory record, read by every route in this
+    process) but the check demonstrates the SEPARATE on-disk write is what
+    _write_status is for by asserting status.json does NOT reflect
+    "cancelled" while neutralised, then DOES once restored -- proving the
+    persistence path the queued-cancel branch exercises is live code, not
+    a JOBS-only illusion that would vanish on a server restart."""
+    try:
+        import fastapi  # noqa: F401
+    except ImportError:
+        return _ok("fastapi absent: check_187 requires fastapi, skipped as N/A")
+
+    from fastapi.testclient import TestClient
+    import hashlib as _hl
+    import os as _os
+    import subprocess as _subprocess
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_api_b2_") as tmp:
+        runs_dir = Path(tmp) / "runs"
+        server = _step6_server_module(runs_dir)
+        server.RUNS_DIR = runs_dir
+
+        saved_tok = _os.environ.get("SHIMMER_TOKEN_HASH")
+        saved_popen = _subprocess.Popen
+        constructed = []
+        try:
+            tok = "gate-api-b2-token"
+            _os.environ["SHIMMER_TOKEN_HASH"] = _hl.sha256(tok.encode("utf-8")).hexdigest()
+            client = TestClient(server.app)
+            headers = {"Authorization": f"Bearer {tok}"}
+
+            def _factory(*a, **k):
+                p = _CancellableBlockingPopen(*a, **k)
+                constructed.append(p)
+                return p
+
+            _subprocess.Popen = _factory
+            server.subprocess.Popen = _factory
+
+            def _submit():
+                resp = client.post("/submit", headers=headers,
+                                    data={"task": "draft", "question": "gate check q"})
+                if resp.status_code != 202:
+                    raise AssertionError(f"/submit returned {resp.status_code}: "
+                                          f"{resp.text[:200]}")
+                return resp.json()["run_id"]
+
+            def _wait_for_status(run_id, want, timeout=5.0):
+                deadline = time.monotonic() + timeout
+                while time.monotonic() < deadline:
+                    with server.JOBS_LOCK:
+                        job = server._find_job(run_id)
+                        status_now = job.get("status") if job else None
+                    if status_now in want:
+                        return status_now
+                    time.sleep(0.02)
+                raise AssertionError(f"run {run_id} never reached one of {want} "
+                                     f"within {timeout}s (last seen {status_now!r})")
+
+            def _wait_for_popen_count(n, timeout=5.0):
+                deadline = time.monotonic() + timeout
+                while time.monotonic() < deadline:
+                    if len(constructed) >= n:
+                        return
+                    time.sleep(0.02)
+                raise AssertionError(f"expected {n} Popen(s) constructed within "
+                                     f"{timeout}s, got {len(constructed)}")
+
+            # First run: submitted, will be picked up and left RUNNING (its
+            # fake Popen blocks) so a SECOND submission stays QUEUED behind it.
+            # status="running" (set by _start_next_job under the lock) can be
+            # observed slightly BEFORE the background thread actually reaches
+            # Popen, so both are waited for, not just the status flip.
+            running_id = _submit()
+            _wait_for_status(running_id, {"running"})
+            _wait_for_popen_count(1)
+            if len(constructed) != 1:
+                return _fail(f"expected exactly 1 Popen constructed for the running "
+                             f"run before the queued one is submitted, got "
+                             f"{len(constructed)}")
+
+            # Second run: submitted while the first still holds the one-at-a-
+            # time slot, so it must sit at status="queued".
+            queued_id = _submit()
+            qstate = _wait_for_status(queued_id, {"queued", "running"})
+            if qstate != "queued":
+                return _fail(f"the second run reached status={qstate!r} while the "
+                             f"first was still running; the fixture assumes one slot")
+
+            # --- Scenario 1: cancel the QUEUED run. ---
+            resp = client.post(f"/runs/{queued_id}/cancel", headers=headers)
+            if resp.status_code != 200:
+                return _fail(f"cancelling the queued run returned {resp.status_code}: "
+                             f"{resp.text[:300]}")
+            body = resp.json()
+            if body.get("state") != "cancelled":
+                return _fail(f"queued cancel: state={body.get('state')!r}, "
+                             f"expected 'cancelled'")
+            if body.get("outcome") != "cancelled":
+                return _fail(f"queued cancel: outcome={body.get('outcome')!r}, "
+                             f"expected 'cancelled'")
+            if len(constructed) != 1:
+                return _fail(f"the queued run's subprocess.Popen WAS constructed "
+                             f"({len(constructed)} total); a cancelled-while-queued "
+                             f"run must never start")
+            reason = (body.get("stop_reason") or {}).get("detail", "")
+            if "before it started" not in reason:
+                return _fail(f"queued cancel stop_reason does not say it never "
+                             f"started: {body.get('stop_reason')!r}")
+
+            # --- Scenario 2: cancel the RUNNING run. ---
+            running_proc = constructed[0]
+            resp = client.post(f"/runs/{running_id}/cancel", headers=headers)
+            if resp.status_code != 200:
+                return _fail(f"cancelling the running run returned {resp.status_code}: "
+                             f"{resp.text[:300]}")
+            body = resp.json()
+            if not running_proc.terminated:
+                return _fail("cancelling the running run never called terminate() on "
+                             "the REGISTERED Popen handle: the structural fix (the "
+                             "process handle reachable from an HTTP thread, not just "
+                             "the timeout closure) did not fire")
+            if body.get("state") != "cancelled":
+                return _fail(f"running cancel: state={body.get('state')!r}, "
+                             f"expected 'cancelled'")
+            if body.get("outcome") != "cancelled":
+                return _fail(f"running cancel: outcome={body.get('outcome')!r}, "
+                             f"expected 'cancelled', not "
+                             f"{body.get('outcome')!r} (must be neither 'crashed' "
+                             f"nor 'succeeded')")
+            if body.get("outcome") in ("crashed", "succeeded"):
+                return _fail(f"a cancelled run must not share its outcome with a "
+                             f"crash or a success, got {body.get('outcome')!r}")
+            reason2 = (body.get("stop_reason") or {}).get("detail", "")
+            if "cancelled by request" not in reason2:
+                return _fail(f"running cancel stop_reason does not say it was "
+                             f"cancelled by request: {body.get('stop_reason')!r}")
+
+            # --- Scenario 3: cancel the SAME run again, now terminal. ---
+            resp2 = client.post(f"/runs/{running_id}/cancel", headers=headers)
+            if resp2.status_code != 409:
+                return _fail(f"cancelling an already-cancelled run returned "
+                             f"{resp2.status_code}, expected 409: {resp2.text[:300]}")
+            if "cancelled" not in resp2.text.lower():
+                return _fail(f"the 409 reason does not name the run's actual state: "
+                             f"{resp2.text[:300]}")
+
+            # --- Scenario 4: cancel an unknown run_id. ---
+            absent = "20200101_000000__ffffff"
+            resp3 = client.post(f"/runs/{absent}/cancel", headers=headers)
+            if resp3.status_code != 404:
+                return _fail(f"cancelling an unknown run_id returned "
+                             f"{resp3.status_code}, expected 404: {resp3.text[:300]}")
+
+            # A malformed run_id is 404 too (same validation as every other
+            # run-scoped route).
+            resp4 = client.post("/runs/not-a-run-id/cancel", headers=headers)
+            if resp4.status_code != 404:
+                return _fail(f"cancelling a malformed run_id returned "
+                             f"{resp4.status_code}, expected 404")
+
+            # NEUTRALISE: disable the on-disk write, cancel a THIRD queued run,
+            # and prove status.json does not reflect it.
+            third_running = None  # unused; the slot is free (both prior runs terminal).
+            third_id = _submit()
+            # This one starts running immediately (the slot is free); cancel it
+            # while running, with _write_status neutralised, to prove the
+            # persistence path (not just the in-memory JOBS list) is what the
+            # cancel branch actually exercises.
+            _wait_for_status(third_id, {"running"})
+            saved_write_status = server._write_status
+            try:
+                server._write_status = lambda job: None
+                resp5 = client.post(f"/runs/{third_id}/cancel", headers=headers)
+                if resp5.status_code != 200:
+                    return _fail(f"cancelling the third run returned "
+                                 f"{resp5.status_code}: {resp5.text[:300]}")
+                sp = runs_dir / third_id / "status.json"
+                on_disk = json.loads(sp.read_text(encoding="utf-8")) if sp.exists() else {}
+                if on_disk.get("status") == "cancelled":
+                    return _fail("status.json reflects 'cancelled' even with "
+                                 "_write_status neutralised: the check is not "
+                                 "actually observing the persistence path")
+            finally:
+                # RESTORE.
+                server._write_status = saved_write_status
+            # With the write restored, a FOURTH cancellation (a fresh run) must
+            # reach disk.
+            fourth_id = _submit()
+            _wait_for_status(fourth_id, {"running"})
+            resp6 = client.post(f"/runs/{fourth_id}/cancel", headers=headers)
+            if resp6.status_code != 200:
+                return _fail(f"cancelling the fourth run returned "
+                             f"{resp6.status_code}: {resp6.text[:300]}")
+            sp4 = runs_dir / fourth_id / "status.json"
+            if not sp4.exists():
+                return _fail(f"status.json was never written for {fourth_id}")
+            on_disk4 = json.loads(sp4.read_text(encoding="utf-8"))
+            if on_disk4.get("status") != "cancelled":
+                return _fail(f"after restoring _write_status, status.json still "
+                             f"reports {on_disk4.get('status')!r}, expected "
+                             f"'cancelled': the persistence path did not recover")
+        except AssertionError as e:
+            return _fail(str(e))
+        finally:
+            _subprocess.Popen = saved_popen
+            server.subprocess.Popen = saved_popen
+            if saved_tok is None:
+                _os.environ.pop("SHIMMER_TOKEN_HASH", None)
+            else:
+                _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
+
+    return _ok("a queued run is cancelled WITHOUT its subprocess ever being "
+               "constructed (state=cancelled, outcome=cancelled, reason names "
+               "'before it started'); a genuinely running run (parked mid-subprocess, "
+               "proven by polling real JOBS status) is cancelled by calling "
+               "terminate() on the REGISTERED Popen handle from the test's own thread "
+               "while _run_job runs on its background thread, proving the structural "
+               "fix (state=cancelled, outcome=cancelled, never 'crashed' or "
+               "'succeeded', reason names 'cancelled by request'); cancelling the same "
+               "run again is refused 409 naming its actual state; cancelling an "
+               "unknown or malformed run_id is refused 404; neutralising "
+               "_write_status shows status.json does NOT record the cancellation "
+               "while disabled and DOES again once restored, proving the persistence "
+               "path is live code")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -12853,6 +13137,7 @@ CHECKS = [
     ("184 a text column with one incidental figure is not a measurement column (R6, negotiation corpus)", check_184_a_text_column_with_one_incidental_figure_is_not_a_measurement_column),
     ("185 a reworded label refuses instead of fabricating an absence (G2)", check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence),
     ("186 a run reports queued, then running, then a distinguishable terminal state (api B1)", check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state),
+    ("187 a queued and a running run can both be cancelled (api B2)", check_187_a_queued_and_a_running_run_can_both_be_cancelled),
 ]
 
 

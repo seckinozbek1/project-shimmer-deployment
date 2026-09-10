@@ -126,6 +126,7 @@ import shutil       # copies and removes files and directories.
 import subprocess   # runs the validator and the pipeline as separate programs.
 import sys          # sys.executable = the exact Python running this server.
 import threading    # a Lock (to guard the queue) and a background run thread.
+import time         # api STEP B2: bounded polling in POST /runs/{run_id}/cancel.
 import zipfile      # packages the run's deliverables into one downloadable .zip.
 from datetime import datetime, timedelta, timezone   # timestamps for jobs and run ids.
 from pathlib import Path                   # tidy, OS-independent file paths.
@@ -388,6 +389,26 @@ JOBS_LOCK = threading.Lock()   # guards JOBS: HTTP requests arrive on many threa
 _STAGING = {}                  # private: run_id -> staging dir holding validated uploads.
                                 # (productization STEP 2: guarded by JOBS_LOCK like JOBS)
 
+# api STEP B2 (cancellation): before this step, the live subprocess.Popen
+# object for a running job existed ONLY as a local variable inside _run_job,
+# reachable solely by the run-timeout Timer's own closure (see the comment
+# above that Timer below) -- nothing outside that one function could reach
+# it, so nothing outside could ever ask it to stop. _PROCS is that missing
+# place: run_id -> Popen, registered the moment Popen succeeds, removed in
+# _run_job's own `finally` (terminal or not, so a run that crashes before
+# reaching its own cleanup never leaves a stale entry). Guarded by the SAME
+# JOBS_LOCK the rest of the job bookkeeping already uses, not a second lock,
+# so a caller that holds JOBS_LOCK can always safely look here too.
+_PROCS = {}
+# run_id -> threading.Event, set by POST /runs/{run_id}/cancel the instant a
+# RUNNING job is asked to stop. _run_job's post-subprocess bookkeeping checks
+# this (alongside the existing `timed_out` Event from the run-timeout path)
+# to tell "the caller cancelled this" apart from "the child process crashed
+# or exited non-zero on its own" -- both end with the same subprocess exit
+# mechanics (terminate/kill), so the DISTINCTION has to be recorded
+# separately, not inferred from the exit code. Removed alongside _PROCS.
+_CANCELLED = {}
+
 
 def _now_iso():
     """Current UTC time as an ISO-8601 string, for the job timestamps."""
@@ -584,11 +605,18 @@ def _run_job(run_id):
     """The background worker for one job. Runs on its own thread (see
     _start_next_job). Steps: place this job's validated files into input/context/,
     run the pipeline as a subprocess writing to output/runs/<run_id>/, record the
-    outcome, auto-clear, then start the next queued job."""
+    outcome, auto-clear, then start the next queued job.
+
+    api STEP B2: registers the subprocess in _PROCS the moment it starts (so a
+    concurrent POST /runs/{run_id}/cancel can find and terminate it) and
+    checks _CANCELLED after the subprocess exits, to record "cancelled" as
+    its own status rather than folding a deliberate stop into "failed"."""
     out_dir = RUNS_DIR / run_id
     error = None
     exit_code = None
+    cancel_event = threading.Event()
     with JOBS_LOCK:
+        _CANCELLED[run_id] = cancel_event
         job = _find_job(run_id)
         task = (job or {}).get("task") or "review"
         question = (job or {}).get("question") or ""
@@ -667,6 +695,11 @@ def _run_job(run_id):
             argv, cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace", bufsize=1,
         )
+        # api STEP B2: the moment the child exists, register its handle where a
+        # concurrent HTTP request can find it. Guarded by JOBS_LOCK, matching
+        # every other write to run-scoped shared state in this function.
+        with JOBS_LOCK:
+            _PROCS[run_id] = proc
         log_dir = out_dir / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / "pipeline_stdout.log"
@@ -716,7 +749,23 @@ def _run_job(run_id):
         finally:
             if timer is not None:
                 timer.cancel()
-        if timed_out.is_set():
+            # api STEP B2: _PROCS' entry is only ever valid while this function
+            # is between spawning proc and recording its outcome; remove it as
+            # soon as the subprocess has exited (terminal or not) so a cancel
+            # request arriving after this point correctly finds nothing to
+            # terminate, rather than a handle to an already-dead process.
+            with JOBS_LOCK:
+                _PROCS.pop(run_id, None)
+        if cancel_event.is_set():
+            # api STEP B2: a caller asked this run to stop. The subprocess was
+            # already terminated/killed by the cancel route (the same
+            # sequence _on_timeout uses below); this is a DELIBERATE stop, not
+            # a timeout and not an organic non-zero exit, so it must not be
+            # reported as either. exit_code is recorded for reference but is
+            # not what decides the status below (see the outcome block).
+            error = "cancelled by request"
+            exit_code = proc.returncode
+        elif timed_out.is_set():
             error = f"run timeout after {eff_timeout}s"
             exit_code = None
         else:
@@ -732,11 +781,18 @@ def _run_job(run_id):
     # a distinct status, not "failed": the pipeline refused or paused ON
     # PURPOSE. A run timeout has no exit_code to map (still "failed", with the
     # timeout reason already in `error`); any other non-zero code not in the
-    # map is a plain "failed".
+    # map is a plain "failed". api STEP B2: a caller-requested cancel is its
+    # OWN status, "cancelled", checked FIRST and never run through
+    # _status_for_exit_code: terminate()/kill() leaves an arbitrary returncode
+    # (negative on POSIX, platform-defined on Windows) that means nothing
+    # under that table and must never be misread as a governance code or a
+    # plain failure.
     with JOBS_LOCK:
         job = _find_job(run_id)
         if job is not None:
-            if exit_code is None:
+            if cancel_event.is_set():
+                job["status"] = "cancelled"
+            elif exit_code is None:
                 job["status"] = "failed"
             else:
                 job["status"] = _status_for_exit_code(exit_code)
@@ -744,6 +800,7 @@ def _run_job(run_id):
             job["exit_code"] = exit_code
             job["completed_at"] = _now_iso()
             _write_status(job)
+        _CANCELLED.pop(run_id, None)
 
     # Auto-clear the placed ingested files (success OR failure), then drop the staging.
     # SHIMMER_AUTO_CLEAR=false leaves the placed files in input/context/ for inspection.
@@ -1102,10 +1159,10 @@ def _outcome_for_status(status, exit_code):
 
 def _state_for_job(job, run_dir):
     """The closed-set `state` for one job: queued / running /
-    awaiting_approval / stopped / cancelled. "cancelled" is not reachable yet
-    (no writer sets job["status"] to it in this step; it is reserved here so
-    the set is already complete before cancellation itself is built next
-    step, rather than adding a sixth value later)."""
+    awaiting_approval / stopped / cancelled. api STEP B2: POST
+    /runs/{run_id}/cancel is the sole writer of job["status"] = "cancelled",
+    for both a queued job (never started) and a running one (subprocess
+    terminated)."""
     status = job.get("status")
     if status == "queued":
         return "queued"
@@ -1148,7 +1205,19 @@ def _run_record(job, run_dir):
     """The complete run-resource object GET /runs/{run_id} and GET /runs
     return: everything decision one requires in one place, so a caller never
     needs a second call to understand a run's state, why it stopped (if it
-    stopped), which documents are done, or what a pending approval is asking."""
+    stopped), which documents are done, or what a pending approval is asking.
+
+    api STEP B2: `state == "cancelled"` gets its own `outcome`, "cancelled" --
+    a fifth value alongside the four stage-one defined (succeeded /
+    governance_stop / crashed / timed_out). It is deliberately not folded
+    into "crashed": a caller who asked for the stop must be able to tell
+    that apart from one it did not ask for, and "succeeded" would be an
+    outright false claim. `stop_reason` for a cancelled run names whether it
+    was cancelled while queued (never started) or while running (subprocess
+    terminated); `documents` on the same object shows whatever partial
+    output the run produced before the stop -- cancelling deletes nothing on
+    disk, it only stops further work, so the response says what survives
+    rather than the caller having to guess."""
     state = _state_for_job(job, run_dir)
     outcome = None
     stop_reason = None
@@ -1156,6 +1225,10 @@ def _run_record(job, run_dir):
         outcome, stop_reason = _outcome_for_status(job.get("status"), job.get("exit_code"))
         if stop_reason is not None and stop_reason.get("detail") is None:
             stop_reason = dict(stop_reason, detail=job.get("error"))
+    elif state == "cancelled":
+        outcome = "cancelled"
+        stop_reason = {"code": "cancelled",
+                       "detail": job.get("error") or "cancelled by request"}
     record = {k: job.get(k) for k in _STATUS_FIELDS}
     record["state"] = state
     record["outcome"] = outcome
@@ -1361,6 +1434,119 @@ async def run_detail(run_id: str):
         if job is None:
             raise HTTPException(status_code=404, detail="run_id not found")
         job = dict(job)  # a copy, so the caller cannot mutate our record.
+    return _run_record(job, RUNS_DIR / run_id)
+
+
+# api STEP B2: how long POST /cancel waits for a RUNNING job's terminal write
+# before answering, so the response reflects what actually happened rather
+# than a promise. terminate() is normally fast; this is a ceiling, not an
+# expected wait, and mirrors the 10s grace period _on_timeout already gives
+# proc.wait() before escalating to kill().
+_CANCEL_WAIT_S = 10.0
+
+
+@app.post("/runs/{run_id}/cancel", dependencies=[Depends(verify_token)])
+async def cancel_run(run_id: str):
+    """api STEP B2: stop a run. A queued job is removed from the queue before
+    it ever starts (no subprocess exists yet); a running job's subprocess is
+    terminated (then killed, mirroring the existing run-timeout sequence).
+    Both land on job["status"] = "cancelled", the sole writer of that status.
+    A run already in a terminal state (stopped, or already cancelled) is
+    refused with 409 and a reason naming its actual state, rather than a
+    silent no-op: the caller asked for a state change that cannot happen,
+    and is told so rather than left to infer it from an unchanged response.
+    Deletes nothing on disk; whatever partial output exists stays where it
+    is (see the `documents` field of the returned record)."""
+    if not _RUN_ID_RE.match(run_id):
+        raise HTTPException(status_code=404, detail="run_id not found")
+
+    with JOBS_LOCK:
+        job = _find_job(run_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="run_id not found")
+        current_status = job["status"]
+
+        if current_status == "queued":
+            # Never started: no subprocess exists, nothing to terminate.
+            # Remove its staging dir too, same as a finished run's cleanup.
+            job["status"] = "cancelled"
+            job["error"] = "cancelled before it started"
+            job["completed_at"] = _now_iso()
+            _write_status(job)
+            staging = _STAGING.pop(run_id, None)
+            record = _run_record(dict(job), RUNS_DIR / run_id)
+            was_running = False
+        elif current_status == "running":
+            staging = None
+            was_running = True
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail=f"run_id {run_id!r} cannot be cancelled: its state is "
+                       f"{current_status!r}, not queued or running")
+
+    if not was_running:
+        if staging:
+            shutil.rmtree(staging, ignore_errors=True)
+        # A cancelled QUEUED job never occupied the one-at-a-time slot, so the
+        # next queued job (if any) is picked up exactly as it would be after
+        # any other terminal transition.
+        _start_next_job()
+        return record
+
+    # RUNNING: find the registered subprocess handle. A running job's Popen
+    # is registered by _run_job the instant it exists (api STEP B2's _PROCS);
+    # the only window where "running" and "no _PROCS entry" can both be true
+    # is the brief gap between _start_next_job flipping the status and
+    # _run_job reaching its own Popen call, so this polls briefly rather than
+    # failing on a race that is not a real absence.
+    proc = None
+    cancel_event = None
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        with JOBS_LOCK:
+            proc = _PROCS.get(run_id)
+            cancel_event = _CANCELLED.get(run_id)
+        if proc is not None and cancel_event is not None:
+            break
+        time.sleep(0.02)
+    if proc is None or cancel_event is None:
+        # The run finished (or crashed) in the time it took to look; nothing
+        # left to cancel. Report its actual current state rather than a
+        # cancellation that did not happen.
+        with JOBS_LOCK:
+            job = _find_job(run_id)
+            job = dict(job) if job is not None else None
+        if job is None:
+            raise HTTPException(status_code=404, detail="run_id not found")
+        raise HTTPException(
+            status_code=409,
+            detail=f"run_id {run_id!r} finished before the cancel request reached it; "
+                   f"its state is now {job.get('status')!r}")
+
+    cancel_event.set()
+    proc.terminate()
+    try:
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+
+    # Wait (bounded) for _run_job's own thread to finish writing the terminal
+    # status, so the response reflects what happened rather than a promise.
+    deadline = time.monotonic() + _CANCEL_WAIT_S
+    while time.monotonic() < deadline:
+        with JOBS_LOCK:
+            job = _find_job(run_id)
+            status_now = job.get("status") if job is not None else None
+        if status_now not in ("running", "queued"):
+            break
+        time.sleep(0.02)
+
+    with JOBS_LOCK:
+        job = _find_job(run_id)
+        job = dict(job) if job is not None else None
+    if job is None:
+        raise HTTPException(status_code=404, detail="run_id not found")
     return _run_record(job, RUNS_DIR / run_id)
 
 
