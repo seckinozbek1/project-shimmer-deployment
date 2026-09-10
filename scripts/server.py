@@ -73,6 +73,11 @@ Unset means the default shown in (parentheses). Set them before launching the se
                                       input/context/ after each run (the sidecar is the manifest).
                                       false leaves the placed files in place for inspection.
   SHIMMER_OUTPUT_DIR   (output/runs/) custom root folder for the per-run output directories.
+  SHIMMER_CONVENTION_REGISTRY (config/convention_registry.json) custom path to the convention
+                                      registry _pairs_view and GET /rules/{rule_id} read for a
+                                      rule's operator-own id and its own text. Overridable for
+                                      the same reason SHIMMER_OUTPUT_DIR is: a test harness needs
+                                      its own throwaway registry, never the real repository's.
   SHIMMER_LOG_LEVEL    (info)         uvicorn log level: "debug", "info", or "warning".
   SHIMMER_RUN_TIMEOUT_S (0)           integer seconds; 0 means unbounded (prior behavior). When
                                       set, a run's pipeline subprocess is terminated (then killed)
@@ -960,7 +965,36 @@ def _pairing_map(run_dir):
     return data if isinstance(data, dict) else {}
 
 
-def _pairs_view(pairing):
+# A custom SHIMMER_CONVENTION_REGISTRY, else the default location
+# convention_parser.write_registry itself writes to. Overridable for the
+# same reason SHIMMER_OUTPUT_DIR is: a test harness (tools/console_preview.py)
+# needs to point this at its own throwaway registry rather than ever writing
+# into the real repository's config/ directory.
+CONVENTION_REGISTRY_PATH = Path(os.environ.get("SHIMMER_CONVENTION_REGISTRY")
+                                 or (ROOT / "config" / "convention_registry.json"))
+
+
+def _load_convention_registry():
+    """The current convention registry (config/convention_registry.json, the
+    same file convention_parser.write_registry produces, generated at BOOT
+    from input/conventions/), or {} when it does not exist or does not parse.
+
+    Read fresh on every call rather than cached at import: the registry can
+    change between server starts (a fresh BOOT after input/conventions/ is
+    edited) and this server process is long-lived, so a cached copy could go
+    stale for the life of the process. The file is small (one JSON document
+    of rule text) and this is called at most once per /pairs or /rules
+    request, not in a hot loop."""
+    if not CONVENTION_REGISTRY_PATH.is_file():
+        return {}
+    try:
+        data = json.loads(CONVENTION_REGISTRY_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _pairs_view(pairing, convention_registry=None):
     """One document's pairing map with every document-derived string removed.
 
     Kept: the counts, the unit ids, the rule ids, and the REASON each rule was
@@ -971,16 +1005,32 @@ def _pairs_view(pairing):
     `fields_present` and `field_vocabulary` (the document's own field labels).
     `missing_field_findings` is reduced to a count, because those are Finding
     records and /runs/{run_id}/findings is where Finding records are served;
-    shipping them in a second shape here would be two answers to one question."""
+    shipping them in a second shape here would be two answers to one question.
+
+    console fresh-eyes fix: a paired/rejected entry now also carries
+    `source_rule_id`, the operator's own id for that rule (finding_record.
+    source_rule_id_for, the SAME lookup a Finding record already uses to
+    carry this, called here for the same reason). Before this fix the pairing
+    map was the one place on this surface that showed a rule only by its
+    registry number (CONV-001) while findings for the identical rule showed
+    the operator's own id (CONV-A02) beside it: two numbering schemes for one
+    rule on one screen. Empty string when the registry has no such rule (the
+    function's own documented behavior), never invented."""
+    import finding_record as _fr
+    registry = convention_registry if convention_registry is not None else {}
+
+    def _paired_or_rejected(p):
+        rid = p.get("rule_id")
+        return {"rule_id": rid, "source_rule_id": _fr.source_rule_id_for(rid, registry),
+                "reason": p.get("reason")}
+
     units = []
     for entry in pairing.get("units") or []:
         units.append({
             "unit_id": entry.get("unit_id"),
             "kind": entry.get("kind"),
-            "paired": [{"rule_id": p.get("rule_id"), "reason": p.get("reason")}
-                       for p in entry.get("paired") or []],
-            "rejected": [{"rule_id": p.get("rule_id"), "reason": p.get("reason")}
-                         for p in entry.get("rejected") or []],
+            "paired": [_paired_or_rejected(p) for p in entry.get("paired") or []],
+            "rejected": [_paired_or_rejected(p) for p in entry.get("rejected") or []],
             "undecided": list(entry.get("undecided") or []),
             # R6: integers only; the labels and reasons carry document text.
             "prior_hit_count": int((entry.get("prior_comparisons") or {}).get("hit_count") or 0),
@@ -1273,6 +1323,14 @@ def _run_record(job, run_dir):
                                   if state == "awaiting_approval" else None)
     record["documents"] = _documents_for_run(job["run_id"], run_dir)
     record["log_url"] = f"/runs/{job['run_id']}/log"
+    # console fresh-eyes fix: whether a log exists must be knowable up front,
+    # not only by making the GET and reading its status code. Without this
+    # field the console's Log section could only ever be a bare "Load log"
+    # button, silent about whether anything is behind it until clicked --
+    # the exact silent-absence failure this surface exists to avoid,
+    # reintroduced in the one section meant to explain every other one. Same
+    # cheap on-disk check _documents_for_run already makes for deliverables/.
+    record["has_log"] = (run_dir / "logs" / "pipeline_stdout.log").is_file()
     record.update(_review_progress(run_dir, job.get("review_mode")))
     return record
 
@@ -1841,8 +1899,63 @@ async def pairs(run_id: str):
     whose map was never written (a wide-mode run that failed before phase 5.5)
     is a 200 with an empty documents list."""
     run_dir = _validated_run_dir(run_id)
-    docs = [_pairs_view(p) for p in _pairing_map(run_dir).values() if isinstance(p, dict)]
+    registry = _load_convention_registry()
+    docs = [_pairs_view(p, registry) for p in _pairing_map(run_dir).values() if isinstance(p, dict)]
     return {"run_id": run_id, "document_count": len(docs), "documents": docs}
+
+
+@app.get("/rules/{rule_id}", dependencies=[Depends(verify_token)])
+async def rule_text(rule_id: str):
+    """console fresh-eyes addition: a rule identifier shown anywhere on the
+    console (a finding's citation, the developer findings table, a pairing-map
+    chip) should be openable, showing the rule as the operator wrote it, not
+    just its id. Not run-scoped: a rule's text does not vary per run, it is
+    the CURRENT registry's content (config/convention_registry.json,
+    regenerated at BOOT from input/conventions/).
+
+    Matches by EITHER id the caller might have: the registry's own id
+    (CONV-007) or the operator's own id (CONV-A02, recovered from `category`
+    the same way finding_record.source_rule_id_for does for a Finding
+    record). Whichever one matched, the response is keyed the same way
+    everywhere else a rule appears on this surface: `source_rule_id` when the
+    registry has one, `id` as the only honest fallback when it does not, so
+    there is exactly one naming rule for a rule identifier across the whole
+    console, not a third scheme introduced by this route.
+
+    404, with a `detail` distinct from every other 404 on this surface,
+    for a rule_id the CURRENT registry does not have: a finding or a
+    pairing-map entry can cite a rule id an EARLIER registry had (the
+    registry regenerates at BOOT and could differ from what was in force
+    when the citing run executed), and that mismatch is itself a fact worth
+    a reader seeing, not a silently empty panel."""
+    import finding_record as _fr
+    registry = _load_convention_registry()
+    conventions = registry.get("conventions") or []
+    match = None
+    wanted_upper = (rule_id or "").upper()
+    for c in conventions:
+        if not isinstance(c, dict):
+            continue
+        if c.get("id") == rule_id:
+            match = c
+            break
+        if str(c.get("category") or "").upper() == wanted_upper:
+            match = c
+            break
+    if match is None:
+        raise HTTPException(
+            status_code=404,
+            detail="no rule with this id in the current registry")
+    source_rule_id = _fr.source_rule_id_for(match.get("id"), registry)
+    return {
+        "id": match.get("id"),
+        "source_rule_id": source_rule_id,
+        "rule": match.get("rule"),
+        "severity": match.get("severity"),
+        "action": match.get("action"),
+        "source_file": match.get("source_file"),
+        "source_location": match.get("source_location"),
+    }
 
 
 # ---------------------------------------------------------------------------

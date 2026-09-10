@@ -490,6 +490,31 @@ details.pairs-doc[open] summary::before { content: "▾ "; }
   margin: 0.15rem 0.3rem 0.15rem 0;
 }
 
+/* A rule identifier is openable everywhere it appears: a finding's citation,
+   the developer table's Rule column, a pairing-map chip (see JS ruleLinkHtml/
+   wireRuleLinks). Same underline-on-hover vocabulary as any other link, not
+   a new visual language; the panel it opens reuses .notice's hairline-box
+   pattern, appended inline rather than a new page. */
+a.rule-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+a.rule-link:hover { text-decoration-style: solid; }
+.rule-panel { display: block; }
+.rule-panel-body {
+  border: 1px solid var(--hairline-strong);
+  border-left: 3px solid var(--ink);
+  padding: 0.6rem 0.75rem;
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.85rem;
+  max-width: 34rem;
+}
+.rule-panel-head { margin-bottom: 0.35rem; display: flex; gap: 0.5rem; align-items: baseline; }
+.rule-panel-body p { margin: 0; }
+
 /* ---------------------------------------------------------------------
    LOG VIEWER
 --------------------------------------------------------------------- */
@@ -780,6 +805,12 @@ function mutedParen(text) {
   return '<span class="muted mono" style="font-size:0.8rem">(' + escapeHtml(text) + ')</span>';
 }
 
+/* mutedParen's own wrapper, for callers that already have escaped/built
+   HTML inside (a clickable rule-id span), never escaping twice. */
+function mutedParenHtml(html) {
+  return '<span class="muted mono" style="font-size:0.8rem">(' + html + ')</span>';
+}
+
 function nextActionSentenceHuman(run) {
   var state = run.state, outcome = run.outcome;
   if (state === "queued") {
@@ -788,7 +819,7 @@ function nextActionSentenceHuman(run) {
   if (state === "running") {
     var prog = parseProgress(run.progress);
     var idx = phaseIndex(prog.phase);
-    var pname = phaseHumanName(prog.phase);
+    var pname = phaseHumanName(prog.phase, run.task);
     var stepText = (idx >= 0) ? (", phase " + (idx + 1) + " of " + PHASES.length + ', "' + escapeHtml(pname || currentPhaseName(prog.phase) || "") + '"') : "";
     return '<strong>In progress' + (pname ? ": " + escapeHtml(pname).toLowerCase() : "") + '.</strong> This page updates on its own; it is fine to leave and come back. ' +
       mutedParen("state: running" + stepText);
@@ -885,9 +916,23 @@ function approvalDetailHuman(run) {
    exist as their own phases); 5.5 is conditional on conventions existing.
    See CONSOLE_PLAN.md "Where the progress proportion comes from".
 ======================================================================= */
+/* Phase 3's human label is task-aware, the one phase where review and draft
+   genuinely differ (docs/api/CONSOLE_LAYOUT_PLAN.md "Item 2"): traced
+   PRODUCTION_AGENTS_PER_DOC/CORPUS_LEVEL against their contracts in
+   config/agent_contracts.json. For review, PROCESSOR's own contract
+   (item_kind: "extraction", draft_text, extraction_method,
+   claims_referenced) breaks the document into sections and claims, it does
+   not draft; LEGAL_ANALYST checks each claim is grounded and flags a
+   mechanism common across the corpus but absent from this document. For
+   draft, genesis.md's own Phase 4 description applies literally ("PROCESSOR
+   drafts with all gathered context"), since a draft run's phase 0 memo
+   generation is exactly that. Every other phase's human label already
+   applies equally to both tasks and keeps one shared string. */
 var PHASES = [
   { n: "1", name: "Situation assessment", human: "Reading the document and understanding what it covers" },
-  { n: "3", name: "Content production", human: "(internal drafting step; see the gap noted below)" },
+  { n: "3", name: "Content production",
+    humanReview: "Breaking the document into its parts and checking that its claims are grounded",
+    humanDraft: "Drafting the memo from the question and the material gathered so far" },
   { n: "5", name: "Verification & fact-check", human: "Checking facts and figures for internal consistency" },
   { n: "5.5", name: "Convention review", human: "Checking the document against the rules" },
   { n: "6", name: "Synthesis", human: "Putting the findings together" },
@@ -895,13 +940,6 @@ var PHASES = [
   { n: "7", name: "Audit synthesis", human: "Preparing the final summary and record" },
   { n: "9", name: "Redaction screening", human: "Checking for anything that should stay private" }
 ];
-/* Phase 3's human label is the document's own literal placeholder, not an
-   invented one: docs/api/CONSOLE_LANGUAGE.md "What I could not translate
-   without losing meaning" names this gap explicitly (no screen-facing copy
-   or operator-facing sentence exists anywhere for what phase 3 does for a
-   REVIEW task specifically). The other seven rows, including phase 7, are
-   the document's own settled translations, copied verbatim from its "A
-   phase label" table. */
 
 function phaseIndex(currentPhase) {
   var idx = -1;
@@ -909,9 +947,18 @@ function phaseIndex(currentPhase) {
   return idx;
 }
 
-function phaseHumanName(currentPhase) {
+/* task: "review" or "draft" (run.task); only phase 3 branches on it, every
+   other phase's `human` string is shared and task is ignored for them. */
+function phaseHumanLabel(p, task) {
+  if (p.humanReview || p.humanDraft) {
+    return task === "draft" ? p.humanDraft : p.humanReview;
+  }
+  return p.human;
+}
+
+function phaseHumanName(currentPhase, task) {
   var found = PHASES.filter(function (p) { return p.n === currentPhase; })[0];
-  return found ? found.human : null;
+  return found ? phaseHumanLabel(found, task) : null;
 }
 
 /* Parse the raw "[progress]" body server.py already strips the prefix
@@ -942,14 +989,14 @@ function phaseLadderHtml(currentPhase) {
 /* Human-view phase ladder: the human phase name plus "step N of 8", instead
    of the raw phase number and its developer label. See
    docs/api/CONSOLE_LANGUAGE.md "A phase label". */
-function phaseLadderHumanHtml(currentPhase) {
+function phaseLadderHumanHtml(currentPhase, task) {
   var idx = phaseIndex(currentPhase);
   var items = PHASES.map(function (p, i) {
     var cls = "", mark = "·";
     if (idx >= 0 && i < idx) { cls = "done"; mark = "✓"; }
     else if (i === idx) { cls = "current"; mark = "▶"; }
     return '<li class="' + cls + '"><span class="mark">' + mark + '</span><span>' +
-      'step ' + (i + 1) + ' of ' + PHASES.length + '&nbsp;&nbsp;' + escapeHtml(p.human) + '</span></li>';
+      'step ' + (i + 1) + ' of ' + PHASES.length + '&nbsp;&nbsp;' + escapeHtml(phaseHumanLabel(p, task)) + '</span></li>';
   }).join("");
   return '<ul class="phase-ladder">' + items + '</ul>';
 }
@@ -1461,6 +1508,24 @@ function renderDetailBody(run, allRuns) {
   } else {
     html += '<p class="next-action">' + escapeHtml(nextActionSentence(run)) + '</p>';
   }
+  /* The single partial notice for the whole screen, stated once here rather
+     than repeated in Findings and again in Pairing map (a real, reported
+     duplication of the same fact). isPartialReview is the same computation
+     used below to decide whether to fetch findings/pairs, and this is the
+     only place it is rendered as a sentence; loadFindings/loadPairs no
+     longer carry their own copy of it. Worded by whether the run is still
+     live (running/awaiting_approval: "found so far," since nothing has
+     ended yet) or genuinely terminal-but-not-succeeded (crashed, timed out,
+     stopped by a rule, cancelled: "found before this run ended"). */
+  var isPartialReview = run.state !== "queued" && !(run.state === "stopped" && run.outcome === "succeeded");
+  var isLiveState = run.state === "running" || run.state === "awaiting_approval";
+  if (isPartialReview) {
+    html += '<p class="notice warn" style="margin-top:0.6rem">' + escapeHtml(
+      isLiveState
+        ? (human ? "Anything found or paired below was found so far, not a complete review yet." : "Partial: found so far, this run is still in progress. Not a complete review.")
+        : (human ? "Anything found or paired below was found before this run ended. This is not a complete review." : "Partial: found before this run ended (not stopped/succeeded). Not a complete review.")
+    ) + '</p>';
+  }
   html += '</div>'; // status-block
 
   /* awaiting_approval included: the server derives it from status:"running"
@@ -1472,34 +1537,29 @@ function renderDetailBody(run, allRuns) {
   if (run.state === "running" || run.state === "queued" || run.state === "awaiting_approval") {
     html += '<h2>' + (human ? "Steps" : "Phases") + '</h2>';
     var prog2 = parseProgress(run.progress);
-    html += human ? phaseLadderHumanHtml(prog2.phase) : phaseLadderHtml(prog2.phase);
+    html += human ? phaseLadderHumanHtml(prog2.phase, run.task) : phaseLadderHtml(prog2.phase);
   }
 
   if (run.state === "awaiting_approval" && run.pending_approval) {
     html += renderApprovalBlock(run);
   }
 
+  /* The screen follows what this run actually produced: a section with
+     nothing in it does not stand as a heading with an apology below (the
+     "None finished yet..." message this used to show for every empty
+     state, including queued, where saying anything about documents at all
+     is premature). Documents simply is not there until there is at least
+     one. Same rule for Archive just below: rendered only when at least one
+     document has reached done (renderArchiveSection's own anyDone check),
+     never a heading over "nothing to download yet." Same in both views:
+     presence never differs, only wording. */
   if (run.documents && run.documents.length) {
     html += '<h2>Documents</h2>';
     html += renderDocuments(run);
-  } else {
-    /* The same message in every state, including awaiting_approval and
-       queued, which previously fell through this chain with no branch at
-       all and no Documents heading, silently, while stopped/cancelled/
-       running each had their own separate wording. A reviewer should not
-       find the section simply missing in one state and present with
-       different words in the others; an empty list means the same thing
-       everywhere (no document has reached the point of being checked
-       against a rule yet, or ever, for this run) and now says so the same
-       way everywhere. */
-    html += '<h2>Documents</h2><p class="muted">' +
-      (human
-        ? "None finished yet: documents appear here once a document has been checked against the rules; nothing to show before that."
-        : "None finished yet: documents appear here once the convention review phase has paired them; nothing to show before that.") +
-      '</p>';
   }
 
-  if (run.state === "stopped" || run.state === "cancelled") {
+  var anyDone = (run.documents || []).some(function (d) { return d.status === "done"; });
+  if (anyDone) {
     html += renderArchiveSection(run);
   }
 
@@ -1514,20 +1574,23 @@ function renderDetailBody(run, allRuns) {
      happened. Fetching only on state===stopped/outcome===succeeded silently
      hid that data on every other outcome: the system found something, wrote
      it down, and the interface never asked. queued is the one state this
-     genuinely cannot apply to (nothing has run yet). loadFindings/loadPairs
-     take isPartial themselves, so a non-clean completion is labeled as such
-     rather than presented as a full review. */
+     genuinely cannot apply to (nothing has run yet). isPartialReview is the
+     SAME computation the status block already made above, reused, not
+     recomputed a second time. */
   if (run.state !== "queued") {
-    var isPartialReview = !(run.state === "stopped" && run.outcome === "succeeded");
     loadFindings(run.run_id, isPartialReview);
     loadPairs(run.run_id, isPartialReview);
   }
-  if (run.state === "stopped" || run.state === "cancelled") {
-    var logHolder = document.createElement("div");
-    logHolder.id = "log-panel-holder";
-    app.appendChild(logHolder);
-    renderLogPanel(run.run_id, logHolder);
-  }
+  /* Log renders in every state, per the operator's own instruction: whether
+     a log exists is information the reader wants regardless of state, not
+     only once a run is terminal. A queued run has has_log:false by
+     construction (nothing has run yet); the section still appears and
+     states that plainly, the same one-line absence statement every other
+     logless run gets, rather than the section simply not existing yet. */
+  var logHolder = document.createElement("div");
+  logHolder.id = "log-panel-holder";
+  app.appendChild(logHolder);
+  renderLogPanel(run, logHolder);
 
   var cancelBtn = document.getElementById("cancel-btn");
   if (cancelBtn) cancelBtn.addEventListener("click", function () { confirmCancel(run.run_id); });
@@ -1679,21 +1742,14 @@ function downloadWithToken(url, filename, btn) {
   });
 }
 
+/* Called only when the caller (renderDetailBody) has already confirmed at
+   least one document is done: GET /runs/{run_id}/deliverables 404s outright
+   when nothing exists under deliverables/ yet (server.py's own check), so a
+   button offered with nothing done would point at a download that fails.
+   The section itself does not render at all when that is the case (dropped
+   by the caller), rather than rendering a heading over an empty-state
+   message: whatever exists is shown, and nothing does not get a heading. */
 function renderArchiveSection(run) {
-  /* GET /runs/{run_id}/deliverables 404s outright when nothing exists under
-     deliverables/ yet (server.py's own check: `if not deliv_dir.is_dir() or
-     not any(deliv_dir.rglob("*"))`). A button offered with no document ever
-     having reached "done" would point at a download that fails, the same
-     contradiction as the empty-succeeded next-action sentence above, and
-     for the same underlying reason: an empty or all-in-progress documents
-     array means there is nothing archived, regardless of state/outcome. */
-  var anyDone = (run.documents || []).some(function (d) { return d.status === "done"; });
-  if (!anyDone) {
-    var emptyText = isHumanView()
-      ? "Nothing to download yet. No document has finished."
-      : "No deliverables exist yet for this run.";
-    return '<h2>Archive</h2><p class="muted">' + escapeHtml(emptyText) + '</p>';
-  }
   var isPartial = !(run.state === "stopped" && run.outcome === "succeeded");
   var human = isHumanView();
   var label, noteText;
@@ -1726,14 +1782,72 @@ function figText(value, unit) {
   return unit ? (v + " " + unit) : v;
 }
 
+/* =======================================================================
+   CLICKABLE RULE IDENTIFIERS
+   Every rule id shown anywhere (a finding's citation, the developer
+   findings table, a pairing-map chip) opens the rule's own text as the
+   operator wrote it, GET /rules/{rule_id}. An inline expanding panel
+   directly under the clicked id (the same pattern "Show more" already uses
+   on a long explanation), not a new page: the identifier is already in
+   view and a full navigation away would lose the reader's place.
+======================================================================= */
+var _ruleLinkSeq = 0;
+
+/* rawId: the id to actually query the server with (whichever this record
+   happens to carry, registry or operator's own; the route matches either).
+   shownId: the text already decided for display (source_rule_id when known,
+   rawId as the only honest fallback), unaffected by this change: this
+   function only adds a click target around text already chosen elsewhere. */
+function ruleLinkHtml(rawId, shownId) {
+  if (!rawId) return escapeHtml(shownId || "");
+  _ruleLinkSeq += 1;
+  var linkId = "rule-link-" + _ruleLinkSeq;
+  return '<a href="#" class="rule-link" id="' + linkId + '" data-rule-id="' + escapeHtml(rawId) + '">' +
+    escapeHtml(shownId || rawId) + '</a><span class="rule-panel" id="' + linkId + '-panel" hidden></span>';
+}
+
+function wireRuleLinks(scope) {
+  (scope || document).querySelectorAll(".rule-link").forEach(function (a) {
+    if (a._wired) return;
+    a._wired = true;
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      var panel = document.getElementById(a.id + "-panel");
+      if (!panel) return;
+      if (!panel.hidden) { panel.hidden = true; return; }
+      panel.hidden = false;
+      if (panel._loaded) return;
+      panel._loaded = true;
+      panel.innerHTML = '<span class="muted">Loading…</span>';
+      apiJson("/rules/" + encodeURIComponent(a.getAttribute("data-rule-id"))).then(function (res) {
+        if (!res.ok) {
+          panel.innerHTML = '<div class="notice warn">' + escapeHtml(
+            isHumanView()
+              ? "This rule's own text is not available: " + detailText(res.body) + "."
+              : detailText(res.body)
+          ) + '</div>';
+          return;
+        }
+        var r = res.body;
+        var shown = r.source_rule_id || r.id || "";
+        panel.innerHTML = '<div class="rule-panel-body">' +
+          '<div class="rule-panel-head"><span class="mono">' + escapeHtml(shown) + '</span>' +
+          (r.severity ? ' <span class="muted">' + escapeHtml(r.severity) + '</span>' : '') + '</div>' +
+          '<p>' + escapeHtml(r.rule || "") + '</p>' +
+          '</div>';
+      });
+    });
+  });
+}
+
 function findingRuleParen(f, extra) {
-  var id = f.source_rule_id || f.rule_id || "";
+  var shown = f.source_rule_id || f.rule_id || "";
   var parts = [];
-  if (id) parts.push(id);
-  if (f.unit_id) parts.push(f.unit_id);
+  if (shown) parts.push(ruleLinkHtml(f.rule_id, shown));
+  if (f.unit_id) parts.push(escapeHtml(f.unit_id));
   var text = parts.join(" · "); // middot, per CONSOLE_LANGUAGE.md ("use middot, not em dash")
-  if (extra) text += ', "' + extra + '"';
-  return mutedParen(text);
+  if (extra) text += ', "' + escapeHtml(extra) + '"';
+  return mutedParenHtml(text);
 }
 
 function findingPriorParen(f) {
@@ -1837,37 +1951,31 @@ function findingSentenceHtml(f) {
 /* =======================================================================
    FINDINGS TABLE
 ======================================================================= */
-/* isPartial: true whenever this run's state/outcome is anything other than
-   a clean stopped/succeeded completion (see renderDetailBody's call site).
-   Findings can exist for ANY state once phase 5.5 has paired at least one
-   unit, so this is called regardless of outcome; when isPartial is true and
-   findings exist, the heading and a standing notice say plainly that these
-   were found before the run ended (crashed, timed out, was stopped by a
-   rule, was cancelled, or is still in progress) and are not a complete
-   review, so a reader does not mistake a partial result for a finished one. */
+/* isPartial no longer renders its own notice here (that was a real,
+   reported duplication: the same fact stated once in this section and
+   again in Pairing map). The single notice for the whole screen is in
+   renderDetailBody's status block; this parameter now only decides whether
+   this fetch is expected to be incomplete, kept for future callers that may
+   need it, unused in the render itself.
+   The section follows what the run produced: no heading, nothing, while
+   loading or when there are zero findings, rather than a heading over "No
+   findings." A reader is not told to look at a section with nothing in it. */
 function loadFindings(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "findings-holder";
-  holder.innerHTML = '<h2>Findings</h2><p class="muted">Loading…</p>';
   app.appendChild(holder);
   apiJson("/runs/" + encodeURIComponent(runId) + "/findings").then(function (res) {
     if (!res.ok) { holder.innerHTML = '<h2>Findings</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
     var findings = res.body.findings || [];
-    if (findings.length === 0) { holder.innerHTML = '<h2>Findings</h2><p class="muted">No findings.</p>'; return; }
+    if (findings.length === 0) { holder.innerHTML = ""; return; }
     var heading = '<h2>Findings (' + findings.length + ')</h2>';
-    var partialNotice = isPartial
-      ? '<p class="notice warn" style="margin-bottom:0.75rem">' + escapeHtml(
-          isHumanView()
-            ? "These were found before the run ended. This is not a complete review: the run did not finish cleanly, or is still in progress."
-            : "Partial: found before the run ended (not stopped/succeeded). Not a complete review."
-        ) + '</p>'
-      : "";
     if (isHumanView()) {
-      holder.innerHTML = heading + partialNotice +
+      holder.innerHTML = heading +
         '<ul class="findings-human">' + findings.map(function (f) {
           var cls = f.record_verdict === "irregular" ? "irregular" : (f.record_verdict === "ok" ? "ok" : "");
           return '<li class="finding-human ' + cls + '">' + findingSentenceHtml(f) + '</li>';
         }).join("") + '</ul>';
+      wireRuleLinks(holder);
       return;
     }
     var rows = findings.map(function (f, i) {
@@ -1875,8 +1983,9 @@ function loadFindings(runId, isPartial) {
       var explId = "expl-" + i;
       var explanation = f.explanation || "";
       var long = explanation.length > 140;
+      var ruleShown = f.source_rule_id || f.rule_id || "";
       return '<tr class="' + cls + '">' +
-        '<td class="mono fig">' + escapeHtml(f.source_rule_id || f.rule_id || "") + '</td>' +
+        '<td class="mono fig">' + ruleLinkHtml(f.rule_id, ruleShown) + '</td>' +
         '<td class="mono fig">' + escapeHtml(f.unit_id || "") + '</td>' +
         '<td>' + escapeHtml(f.relation || "") + '</td>' +
         '<td>' + escapeHtml(f.record_verdict || "") + '</td>' +
@@ -1887,7 +1996,7 @@ function loadFindings(runId, isPartial) {
         '</td>' +
       '</tr>';
     }).join("");
-    holder.innerHTML = heading + partialNotice +
+    holder.innerHTML = heading +
       '<table class="findings"><thead><tr>' +
       '<th>Rule</th><th>Unit</th><th>Relation</th><th>Verdict</th><th>Figures</th><th>Explanation</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
@@ -1898,54 +2007,87 @@ function loadFindings(runId, isPartial) {
         btn.remove();
       });
     });
+    wireRuleLinks(holder);
   });
 }
 
 /* =======================================================================
    PAIRING MAP
 ======================================================================= */
-/* isPartial: same meaning and same source as loadFindings' own parameter
-   (renderDetailBody's single isPartialReview computation, passed to both). */
+/* isPartial: same meaning as loadFindings' own parameter, unused in the
+   render itself (the single notice for the whole screen is stated once in
+   renderDetailBody's status block, not repeated here). Follows what the run
+   produced: no heading, nothing, while loading or when there is no map. */
 function loadPairs(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "pairs-holder";
-  holder.innerHTML = '<h2>Pairing map</h2><p class="muted">Loading…</p>';
   app.appendChild(holder);
   apiJson("/runs/" + encodeURIComponent(runId) + "/pairs").then(function (res) {
     if (!res.ok) { holder.innerHTML = '<h2>Pairing map</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
     var docs = res.body.documents || [];
-    if (docs.length === 0) { holder.innerHTML = '<h2>Pairing map</h2><p class="muted">No pairing map for this run.</p>'; return; }
-    var pairsPartialNotice = isPartial
-      ? '<p class="notice warn" style="margin-bottom:0.75rem">' + escapeHtml(
-          isHumanView()
-            ? "This map was built before the run ended. It may not cover every document or unit."
-            : "Partial: built before the run ended (not stopped/succeeded). May not cover every document or unit."
-        ) + '</p>'
-      : "";
-    holder.innerHTML = '<h2>Pairing map</h2>' + pairsPartialNotice + docs.map(function (d) {
+    if (docs.length === 0) { holder.innerHTML = ""; return; }
+    /* A pairing-map rule chip now shows the operator's own id
+       (source_rule_id, wired server-side in _pairs_view), the same
+       identifier findings already show for the identical rule, rather than
+       the bare registry number: before this fix a finding cited CONV-A02
+       and the pairing map cited CONV-001 for the SAME rule on the SAME
+       screen. Clickable, same as a finding's citation (ruleLinkHtml). */
+    function chipHtml(p, extraClass, titlePrefix) {
+      var shown = p.source_rule_id || p.rule_id || "";
+      var title = (titlePrefix ? titlePrefix + ": " : "") + (p.reason || "");
+      return '<span class="rule-chip' + (extraClass ? " " + extraClass : "") + '" title="' + escapeHtml(title) + '">' +
+        ruleLinkHtml(p.rule_id, shown) + '</span>';
+    }
+    holder.innerHTML = '<h2>Pairing map</h2>' + docs.map(function (d) {
       var units = (d.units || []).map(function (u) {
         return '<div class="pairs-unit">' +
           '<span class="uid">' + escapeHtml(u.unit_id) + '</span> (' + escapeHtml(u.kind || "") + ')<br>' +
-          (u.paired || []).map(function (p) { return '<span class="rule-chip" title="' + escapeHtml(p.reason || "") + '">' + escapeHtml(p.rule_id) + '</span>'; }).join("") +
-          (u.rejected || []).map(function (p) { return '<span class="rule-chip muted" title="rejected: ' + escapeHtml(p.reason || "") + '">' + escapeHtml(p.rule_id) + '</span>'; }).join("") +
+          (u.paired || []).map(function (p) { return chipHtml(p, "", ""); }).join("") +
+          (u.rejected || []).map(function (p) { return chipHtml(p, "muted", "rejected"); }).join("") +
         '</div>';
       }).join("");
       return '<details class="pairs-doc"><summary>' + escapeHtml(d.document_id) + ': ' + d.pair_count + ' paired, ' + d.rejected_count + ' rejected, ' + d.undecided_count + ' undecided</summary>' +
         '<div class="pairs-body">' + units + '</div></details>';
     }).join("");
+    wireRuleLinks(holder);
   });
 }
 
 /* =======================================================================
    LOG VIEWER
+   Whether a log exists is known up front from run.has_log (server.py's own
+   is_file() check, sent on every GET /runs/{run_id}), never discovered only
+   by clicking and reading a status code. This is a deliberate exception to
+   "a section disappears when it is empty": the Log heading always renders,
+   in both views, because the absence itself is the information a reader
+   following "see the log" from a crash or governance-stop sentence needs,
+   stated plainly rather than left to a click that might reveal nothing. A
+   button is offered ONLY when has_log is true; when false, the one-line
+   absence statement replaces it, no button, since nothing would load.
 ======================================================================= */
-function renderLogPanel(runId, holder) {
+function renderLogPanel(run, holder) {
+  var runId = run.run_id;
+  if (!run.has_log) {
+    holder.innerHTML = '<h2 id="log-panel">Log</h2><p class="muted">' +
+      escapeHtml("There is no log for this run.") + '</p>';
+    return;
+  }
   holder.innerHTML = '<h2 id="log-panel">Log</h2><button class="button secondary" id="log-load">Load log</button><div id="log-body"></div>';
+  // Uses api() (the raw fetch wrapper), not apiJson(): the log route returns
+  // text/plain, not JSON. On failure, detailText() reads the server's own
+  // reason (the same helper every other failure path on this surface uses)
+  // rather than a bare status code; has_log already ruled out the common
+  // "no log" 404 above, so a failure here is a genuine, less expected one
+  // (e.g. the file was rotated or removed between the record and the click).
   document.getElementById("log-load").addEventListener("click", function () {
     var body = document.getElementById("log-body");
     body.innerHTML = '<p class="muted">Loading…</p>';
     api("/runs/" + encodeURIComponent(runId) + "/log").then(function (r) {
-      if (!r.ok) { body.innerHTML = '<div class="notice error">Could not load the log (' + r.status + ').</div>'; return; }
+      if (!r.ok) {
+        return r.json().catch(function () { return {}; }).then(function (json) {
+          body.innerHTML = '<div class="notice error">' + escapeHtml(detailText(json)) + '</div>';
+        });
+      }
       return r.text().then(function (text) {
         var lines = text.split("\n");
         var shown = lines.length > 400 ? lines.slice(-400).join("\n") : text;

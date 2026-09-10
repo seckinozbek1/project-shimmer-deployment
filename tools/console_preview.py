@@ -35,13 +35,37 @@ sys.path.insert(0, str(ROOT / "scripts"))
 RUNS_DIR = Path(tempfile.mkdtemp(prefix="shimmer_console_preview_"))
 atexit.register(lambda: shutil.rmtree(RUNS_DIR, ignore_errors=True))
 
+REGISTRY_DIR = Path(tempfile.mkdtemp(prefix="shimmer_console_preview_registry_"))
+atexit.register(lambda: shutil.rmtree(REGISTRY_DIR, ignore_errors=True))
+REGISTRY_PATH = REGISTRY_DIR / "convention_registry.json"
+
 TOKEN = secrets.token_hex(16)
 os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(TOKEN.encode()).hexdigest()
 os.environ["SHIMMER_OUTPUT_DIR"] = str(RUNS_DIR)
+os.environ["SHIMMER_CONVENTION_REGISTRY"] = str(REGISTRY_PATH)
 os.environ["SHIMMER_PORT"] = "8731"
 os.environ["SHIMMER_HOST"] = "127.0.0.1"
 os.environ["SHIMMER_LOG_LEVEL"] = "warning"
 os.environ["SHIMMER_APPROVAL_WAIT_S"] = "3600"
+
+# A throwaway registry, never the real repository's config/convention_registry.json
+# (SHIMMER_CONVENTION_REGISTRY points server.py here instead; see server.py's own
+# docstring table and docs/api/CONSOLE_LAYOUT_PLAN.md "Item 3"/"Item 4"). Covers the
+# rule ids the fixtures below already cite, so the pairing-map source_rule_id fix and
+# GET /rules/{rule_id} are both genuinely demonstrable, not just present in the code.
+REGISTRY_PATH.write_text(json.dumps({
+    "schema_version": "1.0.0",
+    "generated_at": datetime.now(timezone.utc).isoformat(),
+    "source_files": ["review_conventions.md"],
+    "conventions": [
+        {"id": "CONV-001", "category": "conv-a02", "rule": "A stated tonnage figure must not exceed the reference table's upper bound for its category.",
+         "source_file": "review_conventions.md", "source_location": "section 2", "severity": "required", "action": "flag"},
+        {"id": "CONV-003", "category": "conv-b01", "rule": "A total must equal the sum of its stated parts, within the configured tolerance.",
+         "source_file": "review_conventions.md", "source_location": "section 3", "severity": "required", "action": "flag"},
+        {"id": "CONV-007", "category": "conv-c03", "rule": "A stated tonnage figure must not fall below the reference table's lower bound for its category.",
+         "source_file": "review_conventions.md", "source_location": "section 4", "severity": "required", "action": "flag"},
+    ],
+}, indent=2), encoding="utf-8")
 
 
 class _FakeProc:
@@ -134,6 +158,21 @@ def _now(offset_minutes=0):
     return (datetime.now(timezone.utc) - timedelta(minutes=offset_minutes)).isoformat()
 
 
+def _write_log(run_dir, lines):
+    """logs/pipeline_stdout.log, the file GET /runs/{id}/log streams and
+    _run_record's has_log field checks for. server.py's _run_job creates
+    this file unconditionally the moment the subprocess starts, before
+    reading any output, so every REAL run past queued has one, even a run
+    that crashed in its first second. Earlier fixtures in this file skipped
+    writing it for every terminal state but one, which is why the console's
+    log panel 404d on all of them, an unrealistic gap in this harness, not a
+    real one in what the pipeline produces (docs/api/CONSOLE_LAYOUT_PLAN.md
+    "Item 1")."""
+    logs = run_dir / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    (logs / "pipeline_stdout.log").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 FIXTURES = []  # (label, run_id), filled in as each _build_* runs.
 
 
@@ -222,11 +261,22 @@ def _build_awaiting_approval_no_content():
 
 def _build_governance_stop():
     run_id = "20260910_120000__90ba01"
+    run_dir = RUNS_DIR / run_id
     _write_status(
-        RUNS_DIR / run_id, run_id, "stopped_model_approval",
+        run_dir, run_id, "stopped_model_approval",
         submitted_at=_now(31), started_at=_now(30), completed_at=_now(20), exit_code=3,
         error="the model gate stopped this run for operator approval",
     )
+    _write_log(run_dir, [
+        "[progress] event=start docs=1 status=running",
+        "[progress] phase=1/9 status=running",
+        "[progress] phase=3/9 status=running",
+        "[progress] phase=5/9 status=running",
+        "[progress] phase=6/9 status=running",
+        "model_gate: a deprecated model assignment needs operator approval",
+        "wait window closed with no decision recorded",
+        "run stopped: stopped_model_approval",
+    ])
     FIXTURES.append(("governance stop (stopped_model_approval)", run_id))
 
 
@@ -236,21 +286,44 @@ def _build_governance_stop_redaction_gate():
     in console.html) rather than one fixed sentence reused for all four, which
     was the bug this fixture exists to demonstrate is fixed."""
     run_id = "20260910_121500__d4d9c1"
+    run_dir = RUNS_DIR / run_id
     _write_status(
-        RUNS_DIR / run_id, run_id, "stopped_redaction_gate",
+        run_dir, run_id, "stopped_redaction_gate",
         submitted_at=_now(28), started_at=_now(27), completed_at=_now(19), exit_code=4,
         error="the redaction gate stopped this run before completion",
     )
+    _write_log(run_dir, [
+        "[progress] event=start docs=1 status=running",
+        "[progress] phase=1/9 status=running",
+        "[progress] phase=3/9 status=running",
+        "[progress] phase=5/9 status=running",
+        "[progress] phase=5.5/9 status=running",
+        "[progress] phase=6/9 status=running",
+        "[progress] phase=6.5/9 status=running",
+        "[progress] phase=7/9 status=running",
+        "[progress] phase=9/9 status=running",
+        "redaction_gate: privacy check stopped the run before completion",
+        "run stopped: stopped_redaction_gate",
+    ])
     FIXTURES.append(("governance stop (stopped_redaction_gate)", run_id))
 
 
 def _build_crashed():
     run_id = "20260910_120100__ca5501"
+    run_dir = RUNS_DIR / run_id
     _write_status(
-        RUNS_DIR / run_id, run_id, "failed",
+        run_dir, run_id, "failed",
         submitted_at=_now(26), started_at=_now(25), completed_at=_now(18), exit_code=1,
         error="Traceback (most recent call last):\n  File \"scripts/pipeline.py\", line 512, in run\n    raise RuntimeError('synthetic crash for console preview')\nRuntimeError: synthetic crash for console preview",
     )
+    _write_log(run_dir, [
+        "[progress] event=start docs=1 status=running",
+        "[progress] phase=1/9 status=running",
+        "Traceback (most recent call last):",
+        "  File \"scripts/pipeline.py\", line 512, in run",
+        "    raise RuntimeError('synthetic crash for console preview')",
+        "RuntimeError: synthetic crash for console preview",
+    ])
     FIXTURES.append(("crashed", run_id))
 
 
@@ -299,26 +372,56 @@ def _build_crashed_with_partial_findings():
         "sender": "PRACTICE_AUDITOR",
         "body": {"payload": {"agent": "PRACTICE_AUDITOR", "doc_id": "case_a", "items": [bus_item]}},
     }) + "\n", encoding="utf-8")
+    _write_log(run_dir, [
+        "[progress] event=start docs=1 status=running",
+        "[progress] phase=1/9 status=running",
+        "[progress] phase=3/9 status=running",
+        "[progress] phase=5/9 status=running",
+        "[progress] phase=5.5/9 status=running",
+        "below_band: CONV-007 (CONV-C03) unit u09, 210.0 kt against 250.0 kt",
+        "[progress] phase=6/9 status=running",
+        "Traceback (most recent call last):",
+        "  File \"scripts/pipeline.py\", line 812, in run",
+        "    raise RuntimeError('synthetic crash after phase 5.5, for console preview')",
+        "RuntimeError: synthetic crash after phase 5.5, for console preview",
+    ])
     FIXTURES.append(("crashed, with partial findings from before the crash", run_id))
 
 
 def _build_timed_out():
     run_id = "20260910_120200__7171e0"
+    run_dir = RUNS_DIR / run_id
     _write_status(
-        RUNS_DIR / run_id, run_id, "failed",
+        run_dir, run_id, "failed",
         submitted_at=_now(91), started_at=_now(90), completed_at=_now(0), exit_code=None,
         error="run exceeded the configured timeout and was terminated",
     )
+    _write_log(run_dir, [
+        "[progress] event=start docs=1 status=running",
+        "[progress] phase=1/9 status=running",
+        "[progress] phase=3/9 status=running",
+        "[progress] phase=5/9 status=running",
+        "[progress] phase=5.5/9 status=running",
+        "[progress] phase=6/9 status=running",
+        "run exceeded the configured timeout, terminating",
+    ])
     FIXTURES.append(("timed out", run_id))
 
 
 def _build_cancelled():
     run_id = "20260910_110402__29c005"
+    run_dir = RUNS_DIR / run_id
     _write_status(
-        RUNS_DIR / run_id, run_id, "cancelled",
+        run_dir, run_id, "cancelled",
         submitted_at=_now(16), started_at=_now(15), completed_at=_now(14), exit_code=-15,
         error="cancelled by operator while running",
     )
+    _write_log(run_dir, [
+        "[progress] event=start docs=1 status=running",
+        "[progress] phase=1/9 status=running",
+        "[progress] phase=3/9 status=running",
+        "cancelled by operator while running",
+    ])
     FIXTURES.append(("cancelled", run_id))
 
 
