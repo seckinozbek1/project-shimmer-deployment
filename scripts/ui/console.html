@@ -739,7 +739,24 @@ function nextActionSentence(run) {
     return "Cancelled: " + cdetail + ".";
   }
   if (state === "stopped") {
-    if (outcome === "succeeded") return "Finished. Start with the findings below, or download the full archive.";
+    if (outcome === "succeeded") {
+      /* documents is always an array on a run record (_run_record ->
+         _documents_for_run, server.py), populated only once phase 5.5 has
+         paired at least one unit; empty here means genuinely nothing was
+         produced (most often: no conventions were loaded for this run,
+         pipeline.py's own "phase_skipped phase=5.5 reason=no_conventions"),
+         not that findings/an archive exist but failed to load. A run this
+         empty must not say "start with the findings below" or "download
+         the archive": both would point at something that is not there
+         (the archive route itself 404s: server.py's own deliverables
+         route requires at least one file under deliverables/). The cause
+         is not asserted here, only that the log explains it, since this
+         function cannot rule out a cause other than missing conventions. */
+      if (!run.documents || run.documents.length === 0) {
+        return "Finished, but no document reached the point of being checked against a rule. Nothing to read below, nothing to download. See the log for why.";
+      }
+      return "Finished. Start with the findings below, or download the full archive.";
+    }
     if (outcome === "governance_stop") {
       var code = run.stop_reason && run.stop_reason.code;
       var sentence = GOVERNANCE_SENTENCES[code] || "The pipeline stopped itself on purpose, under a governance rule.";
@@ -797,6 +814,17 @@ function nextActionSentenceHuman(run) {
   }
   if (state === "stopped") {
     if (outcome === "succeeded") {
+      /* Same structural check as nextActionSentence()'s succeeded branch,
+         same reason: an empty documents array means nothing was actually
+         produced, most often because no rules were loaded for this run,
+         though this function has no way to rule out another cause, so
+         none is named here, only that the log carries it. A rewording,
+         not a filtering, in the other direction too: this empty case must
+         be as visible here as it now is in the developer view, not
+         smoothed over by the reviewer view's plainer language. */
+      if (!run.documents || run.documents.length === 0) {
+        return '<strong>Finished, but nothing was checked.</strong> No document reached the point of being compared against a rule. There is nothing to read below and nothing to download. The log explains why. ' + mutedParen("state: completed, no documents");
+      }
       return '<strong>Finished. No problems stopped the review.</strong> Start with the findings below, or download the full archive. ' + mutedParen("state: completed");
     }
     if (outcome === "governance_stop") {
@@ -1613,6 +1641,20 @@ function downloadWithToken(url, filename, btn) {
 }
 
 function renderArchiveSection(run) {
+  /* GET /runs/{run_id}/deliverables 404s outright when nothing exists under
+     deliverables/ yet (server.py's own check: `if not deliv_dir.is_dir() or
+     not any(deliv_dir.rglob("*"))`). A button offered with no document ever
+     having reached "done" would point at a download that fails, the same
+     contradiction as the empty-succeeded next-action sentence above, and
+     for the same underlying reason: an empty or all-in-progress documents
+     array means there is nothing archived, regardless of state/outcome. */
+  var anyDone = (run.documents || []).some(function (d) { return d.status === "done"; });
+  if (!anyDone) {
+    var emptyText = isHumanView()
+      ? "Nothing to download yet. No document has finished."
+      : "No deliverables exist yet for this run.";
+    return '<h2>Archive</h2><p class="muted">' + escapeHtml(emptyText) + '</p>';
+  }
   var isPartial = !(run.state === "stopped" && run.outcome === "succeeded");
   var human = isHumanView();
   var label, noteText;
