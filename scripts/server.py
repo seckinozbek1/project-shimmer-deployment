@@ -1075,7 +1075,13 @@ def _review_progress(run_dir, review_mode):
 # ---------------------------------------------------------------------------
 def _pending_approval_for(run_dir):
     """The pending governed question for ONE run, or None. Same file-reading
-    rule as _pending_approvals() below (which this now delegates to): a
+    rule as _pending_approvals() below (an independent, duplicated check, NOT
+    a delegation to it -- api STEP B4's own fresh-eyes read of this surface
+    found the two functions reimplementing the identical existence check
+    separately; kept as two functions deliberately for now, since
+    _pending_approvals() feeds GET /approvals' existing, unchanged response
+    shape while this one feeds the richer pending_approval object, and
+    merging them is a scope decision for a future pass, not this one): a
     pending_approval.json with no approval_decision.json yet means a human has
     not answered. Adds `message` (split out of `payload`, since payload may or
     may not carry one depending on the topic; message is what a person reads,
@@ -1175,10 +1181,31 @@ def _state_for_job(job, run_dir):
     return "stopped"
 
 
-def _documents_for_run(run_dir):
+def _documents_for_run(run_id, run_dir):
     """One entry per document the pairing map knows about, each with its own
-    status (not_started / in_progress / done) and deliverables_path (non-null
-    once BP-16's deliverables/<doc_id>/ exists and holds at least one file).
+    status (in_progress / done) and deliverables_url.
+
+    api STEP B4's own fresh-eyes read of this surface found this docstring
+    previously promised a THIRD status, "not_started", that the code has
+    never produced: a document only appears in this list once the pairing
+    map has an entry for it at all, which only happens once phase 5.5 has
+    already paired that document against the rule registry -- by the time
+    an entry exists here, "not started" is no longer a state that document
+    can be in. A document genuinely not started yet (queued behind others,
+    or the run itself still in an earlier phase) is simply ABSENT from this
+    list, not present with a not_started status; the docstring is corrected
+    to the two values the code actually emits rather than inventing
+    handling for a third value nothing here can ever produce.
+
+    api STEP B4: deliverables_url is a REAL fetchable route
+    (GET /runs/{run_id}/deliverables/{doc_id}), not a display string. Before
+    this step it was a bare relative path ("case_a/"), true only as a
+    location inside a zip the caller had already downloaded; a caller
+    reading a status response had no way to act on it directly. Non-null
+    only once BP-16's deliverables/<doc_id>/ exists and holds at least one
+    file, exactly matching what the new per-document route itself requires
+    before it will serve anything.
+
     A run with no pairing map yet (nothing has reached phase 5.5) returns an
     empty list, not an error: "no documents yet" and "unknown run" are
     different answers, matching the empty-but-200 convention every other
@@ -1196,7 +1223,7 @@ def _documents_for_run(run_dir):
         out.append({
             "doc_id": doc_id,
             "status": "done" if done else "in_progress",
-            "deliverables_path": f"{doc_id}/" if done else None,
+            "deliverables_url": f"/runs/{run_id}/deliverables/{doc_id}" if done else None,
         })
     return out
 
@@ -1235,7 +1262,7 @@ def _run_record(job, run_dir):
     record["stop_reason"] = stop_reason
     record["pending_approval"] = (_pending_approval_for(run_dir)
                                   if state == "awaiting_approval" else None)
-    record["documents"] = _documents_for_run(run_dir)
+    record["documents"] = _documents_for_run(job["run_id"], run_dir)
     record["log_url"] = f"/runs/{job['run_id']}/log"
     record.update(_review_progress(run_dir, job.get("review_mode")))
     return record
@@ -1638,6 +1665,163 @@ async def answer_approval(run_id: str, body: dict):
         "decided_at": decided_at,
         "run_state": run_state,
     })
+
+
+def _zip_dir(source_dir):
+    """Zip every file under source_dir into an in-memory buffer, arcnames
+    relative to source_dir (so BP-16's <doc_id>/ subfolders are preserved
+    when source_dir is deliverables/, and a single document's own files sit
+    at the zip root when source_dir is deliverables/<doc_id>/). Returns a
+    seeked-to-0 BytesIO."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in source_dir.rglob("*"):
+            if p.is_file():
+                zf.write(p, arcname=str(p.relative_to(source_dir)))
+    buf.seek(0)
+    return buf
+
+
+@app.get("/runs/{run_id}/deliverables", dependencies=[Depends(verify_token)])
+async def deliverables(run_id: str):
+    """api STEP B4: download a run's deliverables as a single .zip.
+
+    Replaces the completion gate GET /results/{run_id} used (400 until
+    job["status"] == "completed") with one grounded in what GET
+    /runs/{run_id} already shows: `documents[]` there says exactly which
+    documents are "done" and which are not, so a caller who already knows
+    (from that call) that some documents are ready is never blocked from
+    fetching them just because the run overall is not finished yet.
+
+    Zips whatever exists under deliverables/ at call time -- every "done"
+    document's own subfolder, nothing else -- rather than requiring the
+    whole run to be complete first. A run that stopped early (crashed,
+    cancelled, timed out) may leave a PARTIAL archive: fewer documents than
+    were originally submitted, or a document folder missing files a
+    completed run would have written. This is said explicitly, not left for
+    the caller to discover by counting: the response carries an
+    `X-Shimmer-Partial: true` header whenever `state` is not
+    ("stopped" and outcome == "succeeded"), and the same fact is folded into
+    the filename itself (`..._partial.zip` vs `..._deliverables.zip`), so it
+    survives even if a caller only logs the filename and drops headers.
+
+    404 for a malformed or unknown run_id, or one with NOTHING at all under
+    deliverables/ yet (nothing to zip). No completion requirement otherwise:
+    a queued or running run with zero documents done yet is also 404 (there
+    is truly nothing to serve), which reads identically to "unknown run" by
+    design, matching every other run-scoped route's 404 convention on this
+    surface."""
+    if not _RUN_ID_RE.match(run_id):
+        raise HTTPException(status_code=404, detail="run_id not found")
+    with JOBS_LOCK:
+        job = _find_job(run_id)
+        job = dict(job) if job is not None else None
+    if job is None:
+        raise HTTPException(status_code=404, detail="run_id not found")
+
+    run_dir = RUNS_DIR / run_id
+    deliv_dir = run_dir / "deliverables"
+    if not deliv_dir.is_dir() or not any(deliv_dir.rglob("*")):
+        raise HTTPException(status_code=404, detail="no deliverables exist yet for this run")
+
+    record = _run_record(job, run_dir)
+    is_partial = not (record.get("state") == "stopped" and record.get("outcome") == "succeeded")
+
+    buf = _zip_dir(deliv_dir)
+    suffix = "partial" if is_partial else "deliverables"
+    return StreamingResponse(
+        buf, media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{run_id}_{suffix}.zip"',
+            "X-Shimmer-Partial": "true" if is_partial else "false",
+        },
+    )
+
+
+@app.get("/runs/{run_id}/deliverables/{doc_id}", dependencies=[Depends(verify_token)])
+async def document_deliverables(run_id: str, doc_id: str):
+    """api STEP B4: download ONE document's deliverables as a .zip, without
+    fetching the whole run.
+
+    This is the route `documents[].deliverables_url` on GET /runs/{run_id}
+    points at (stage one built that reference; this route is what makes it
+    fetchable rather than a display string). Closes the gap named directly:
+    before this, reading a single finding meant downloading the whole
+    archive and opening it locally, even for a run with many documents
+    where only one was of interest.
+
+    doc_id is NOT validated against _RUN_ID_RE (it is a document id, not a
+    run id, with no fixed mint format); instead it is resolved as
+    deliverables/<doc_id>/ under the run's OWN directory and rejected with
+    404 if that exact subfolder does not exist or is empty -- doc_id is
+    never used to construct a path outside deliverables/<run_id>/ because
+    Path(...).name-style traversal is moot here: the path is built by
+    joining a fixed parent (run_dir / "deliverables") with the literal
+    doc_id segment and then checking .is_dir() at that exact location, so a
+    doc_id containing ".." resolves outside deliverables/ and is caught by
+    the same "does this exact path exist and is it a directory" check as
+    any other wrong id, not specially.
+
+    404 for a malformed or unknown run_id, or a run_id with no such
+    document (whether the run never had it, or that document has not
+    finished yet -- both are simply "not found here" from this route's
+    point of view; GET /runs/{run_id}'s own `documents[]` is where a caller
+    learns WHICH state a not-yet-ready document is in)."""
+    if not _RUN_ID_RE.match(run_id):
+        raise HTTPException(status_code=404, detail="run_id not found")
+    with JOBS_LOCK:
+        job = _find_job(run_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="run_id not found")
+
+    doc_dir = (RUNS_DIR / run_id / "deliverables" / doc_id).resolve()
+    deliv_root = (RUNS_DIR / run_id / "deliverables").resolve()
+    if deliv_root not in doc_dir.parents and doc_dir != deliv_root:
+        raise HTTPException(status_code=404, detail="document not found for this run")
+    if not doc_dir.is_dir() or not any(doc_dir.rglob("*")):
+        raise HTTPException(status_code=404, detail="document not found for this run")
+
+    buf = _zip_dir(doc_dir)
+    return StreamingResponse(
+        buf, media_type="application/zip",
+        headers={"Content-Disposition":
+                 f'attachment; filename="{run_id}_{doc_id}.zip"'},
+    )
+
+
+@app.get("/runs/{run_id}/log", dependencies=[Depends(verify_token)])
+async def run_log(run_id: str):
+    """api STEP B4: the run's complete merged stdout/stderr log, as plain
+    text, streamed from disk. This is what `log_url` on GET /runs/{run_id}
+    has pointed at since stage one; before this route existed that field was
+    a promise with nothing behind it.
+
+    _run_job already writes every line to <run>/logs/pipeline_stdout.log as
+    it arrives (never buffered fully in memory server-side, per the
+    existing comment at that write site); this route streams the same file
+    from disk rather than holding it in memory, so serving a long-running
+    run's log costs no more here than it already did to write it.
+
+    404 for a malformed or unknown run_id, or one with no log file yet (a
+    queued run that has not started, or a run whose subprocess never
+    produced output before exiting)."""
+    if not _RUN_ID_RE.match(run_id):
+        raise HTTPException(status_code=404, detail="run_id not found")
+    with JOBS_LOCK:
+        job = _find_job(run_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="run_id not found")
+
+    log_path = RUNS_DIR / run_id / "logs" / "pipeline_stdout.log"
+    if not log_path.is_file():
+        raise HTTPException(status_code=404, detail="no log written yet for this run")
+
+    def _stream():
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                yield line
+
+    return StreamingResponse(_stream(), media_type="text/plain")
 
 
 @app.get("/findings/{run_id}", dependencies=[Depends(verify_token)])

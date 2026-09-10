@@ -13256,6 +13256,293 @@ def check_188_a_pending_approval_is_visible_on_status_and_answerable_once():
                "it brings the 409 back")
 
 
+def check_189_a_single_document_is_fetchable_and_a_partial_archive_says_so():
+    """api STEP B4: GET /runs/{run_id}/deliverables/{doc_id}, GET
+    /runs/{run_id}/deliverables and GET /runs/{run_id}/log, with NO real
+    pipeline subprocess ever spawned (S1: subprocess.Popen replaced by
+    _BlockingLinePopen) and no model loaded.
+
+    Asserted, driven through the real _start_next_job -> background thread ->
+    _run_job path, on a fixture with TWO documents, one "done" (its own
+    deliverables/<doc_id>/ populated) and one left in progress (no folder at
+    all), mirroring a run that stopped before finishing everything:
+      - GET /runs/{run_id}/deliverables/{doc_id} for the DONE document
+        returns 200, a real zip, containing exactly that document's own
+        file(s) and nothing from the OTHER document (proving the archive is
+        scoped to the one document, not the whole run) -- this is the
+        capability named directly: reading one document without downloading
+        everything;
+      - the SAME route for the NOT-done document is 404: a document that is
+        not finished is not fetchable piecemeal by guessing at a path that
+        does not exist yet;
+      - GET /runs/{run_id}/deliverables (the whole-run route), called WHILE
+        the run is still going (only one of two documents done), returns
+        200, a zip containing only the done document's files, carries
+        X-Shimmer-Partial: true, and the filename contains "partial" --
+        proving a caller cannot mistake this for a complete review;
+      - after the run reaches a terminal state with BOTH documents done
+        (the fixture completes the second document before releasing the
+        fake subprocess), the SAME whole-run route reports
+        X-Shimmer-Partial: false and a filename WITHOUT "partial";
+      - GET /runs/{run_id}/log returns 200, text/plain, and its body
+        contains the [progress] line the fake subprocess emitted, proving
+        it streams the real logged file rather than an empty or synthetic
+        response.
+    NEUTRALISE AND RESTORE: with _zip_dir's own arcname computation broken
+    (patched to write every entry under a literal "WRONG/" prefix instead of
+    the file's real relative path), the per-document zip for the done
+    document no longer contains its file at the expected top-level name --
+    proving the check is actually opening and inspecting the zip contents,
+    not just checking that SOME 200 with SOME bytes came back; restoring the
+    real _zip_dir brings the expected arcname back."""
+    try:
+        import fastapi  # noqa: F401
+    except ImportError:
+        return _ok("fastapi absent: check_189 requires fastapi, skipped as N/A")
+
+    from fastapi.testclient import TestClient
+    import hashlib as _hl
+    import os as _os
+    import subprocess as _subprocess
+    import zipfile as _zipfile
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_api_b4_") as tmp:
+        runs_dir = Path(tmp) / "runs"
+        server = _step6_server_module(runs_dir)
+        server.RUNS_DIR = runs_dir
+
+        saved_tok = _os.environ.get("SHIMMER_TOKEN_HASH")
+        saved_popen = _subprocess.Popen
+        try:
+            tok = "gate-api-b4-token"
+            _os.environ["SHIMMER_TOKEN_HASH"] = _hl.sha256(tok.encode("utf-8")).hexdigest()
+            client = TestClient(server.app)
+            headers = {"Authorization": f"Bearer {tok}"}
+
+            fake = {}
+
+            def _factory(*a, **k):
+                p = _BlockingLinePopen(*a, returncode=0, **k)
+                fake["proc"] = p
+                return p
+
+            _subprocess.Popen = _factory
+            server.subprocess.Popen = _factory
+
+            resp = client.post("/submit", headers=headers,
+                                data={"task": "draft", "question": "gate check q"})
+            if resp.status_code != 202:
+                return _fail(f"/submit returned {resp.status_code}: {resp.text[:200]}")
+            run_id = resp.json()["run_id"]
+
+            def _wait_for_status(want, timeout=5.0):
+                deadline = time.monotonic() + timeout
+                while time.monotonic() < deadline:
+                    with server.JOBS_LOCK:
+                        job = server._find_job(run_id)
+                        status_now = job.get("status") if job else None
+                    if status_now in want:
+                        return status_now
+                    time.sleep(0.02)
+                raise AssertionError(f"run {run_id} never reached one of {want} "
+                                     f"within {timeout}s")
+
+            _wait_for_status({"running"})
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline and "proc" not in fake:
+                time.sleep(0.02)
+            if "proc" not in fake:
+                return _fail("the worker never reached Popen")
+
+            run_dir = runs_dir / run_id
+            audit_dir = run_dir / "audit"
+            audit_dir.mkdir(parents=True, exist_ok=True)
+            deliv_root = run_dir / "deliverables"
+
+            # A pairing map naming TWO documents, mirroring what phase 5.5
+            # writes; _documents_for_run reads document_id from each entry.
+            pairing = {
+                "doc_alpha": {"document_id": "doc_alpha", "unit_count": 1,
+                             "rule_count": 1, "pair_count": 1, "rejected_count": 0,
+                             "undecided_count": 0, "units": []},
+                "doc_beta": {"document_id": "doc_beta", "unit_count": 1,
+                            "rule_count": 1, "pair_count": 1, "rejected_count": 0,
+                            "undecided_count": 0, "units": []},
+            }
+            (audit_dir / "pairing_map.json").write_text(
+                json.dumps(pairing, indent=2), encoding="utf-8")
+
+            # doc_alpha is DONE: its own subfolder holds one real file.
+            alpha_dir = deliv_root / "doc_alpha"
+            alpha_dir.mkdir(parents=True, exist_ok=True)
+            (alpha_dir / "review_findings.md").write_text(
+                "doc_alpha's own findings, gate fixture content",
+                encoding="utf-8")
+            # doc_beta is NOT done yet: no folder at all.
+
+            # --- Per-document fetch: the DONE document. ---
+            r_alpha = client.get(f"/runs/{run_id}/deliverables/doc_alpha",
+                                 headers=headers)
+            if r_alpha.status_code != 200:
+                return _fail(f"fetching the done document returned "
+                             f"{r_alpha.status_code}: {r_alpha.text[:200]}")
+            zf = _zipfile.ZipFile(io.BytesIO(r_alpha.content))
+            names = zf.namelist()
+            if names != ["review_findings.md"]:
+                return _fail(f"the per-document zip's contents are {names!r}, "
+                             f"expected exactly ['review_findings.md']")
+            if zf.read("review_findings.md").decode("utf-8") != \
+               "doc_alpha's own findings, gate fixture content":
+                return _fail("the per-document zip's file content does not match "
+                             "what was written to disk")
+
+            # --- Per-document fetch: the NOT-done document. ---
+            r_beta = client.get(f"/runs/{run_id}/deliverables/doc_beta",
+                                headers=headers)
+            if r_beta.status_code != 404:
+                return _fail(f"fetching the not-done document returned "
+                             f"{r_beta.status_code}, expected 404")
+
+            # --- Whole-run archive WHILE the run is still going: partial. ---
+            r_partial = client.get(f"/runs/{run_id}/deliverables", headers=headers)
+            if r_partial.status_code != 200:
+                return _fail(f"the whole-run archive mid-run returned "
+                             f"{r_partial.status_code}: {r_partial.text[:200]}")
+            if r_partial.headers.get("x-shimmer-partial") != "true":
+                return _fail(f"X-Shimmer-Partial header is "
+                             f"{r_partial.headers.get('x-shimmer-partial')!r}, "
+                             f"expected 'true' for a run still in progress")
+            cd = r_partial.headers.get("content-disposition", "")
+            if "partial" not in cd:
+                return _fail(f"the filename does not say 'partial': {cd!r}")
+            zf2 = _zipfile.ZipFile(io.BytesIO(r_partial.content))
+            partial_names = sorted(zf2.namelist())
+            if partial_names != ["doc_alpha/review_findings.md"]:
+                return _fail(f"the partial archive's contents are "
+                             f"{partial_names!r}, expected only doc_alpha's file "
+                             f"(doc_beta is not done yet)")
+
+            # --- Complete doc_beta, then bring the run to a terminal state. ---
+            beta_dir = deliv_root / "doc_beta"
+            beta_dir.mkdir(parents=True, exist_ok=True)
+            (beta_dir / "review_findings.md").write_text(
+                "doc_beta's own findings, gate fixture content", encoding="utf-8")
+
+            fake["proc"].release()
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline:
+                with server.JOBS_LOCK:
+                    job = server._find_job(run_id)
+                    status_now = job.get("status") if job else None
+                if status_now not in ("queued", "running"):
+                    break
+                time.sleep(0.02)
+            else:
+                raise AssertionError("the run never reached a terminal status")
+            if status_now != "completed":
+                return _fail(f"the fixture run finished with status={status_now!r}, "
+                             f"expected 'completed' (returncode=0)")
+
+            # --- Whole-run archive once complete: NOT partial. ---
+            r_full = client.get(f"/runs/{run_id}/deliverables", headers=headers)
+            if r_full.status_code != 200:
+                return _fail(f"the whole-run archive after completion returned "
+                             f"{r_full.status_code}: {r_full.text[:200]}")
+            if r_full.headers.get("x-shimmer-partial") != "false":
+                return _fail(f"X-Shimmer-Partial is "
+                             f"{r_full.headers.get('x-shimmer-partial')!r} after "
+                             f"the run completed with both documents done, "
+                             f"expected 'false'")
+            cd_full = r_full.headers.get("content-disposition", "")
+            if "partial" in cd_full:
+                return _fail(f"the filename still says 'partial' after completion: "
+                             f"{cd_full!r}")
+            zf3 = _zipfile.ZipFile(io.BytesIO(r_full.content))
+            full_names = sorted(zf3.namelist())
+            if full_names != ["doc_alpha/review_findings.md",
+                              "doc_beta/review_findings.md"]:
+                return _fail(f"the complete archive's contents are {full_names!r}, "
+                             f"expected both documents")
+
+            # --- The log route serves the real logged content. ---
+            r_log = client.get(f"/runs/{run_id}/log", headers=headers)
+            if r_log.status_code != 200:
+                return _fail(f"GET .../log returned {r_log.status_code}: "
+                             f"{r_log.text[:200]}")
+            if "text/plain" not in r_log.headers.get("content-type", ""):
+                return _fail(f"GET .../log content-type is "
+                             f"{r_log.headers.get('content-type')!r}, expected "
+                             f"text/plain")
+            if "[progress]" not in r_log.text:
+                return _fail(f"GET .../log body does not contain the fake "
+                             f"subprocess's own [progress] line: "
+                             f"{r_log.text[:200]!r}")
+
+            # --- 404s: malformed/unknown run_id on every new route. ---
+            absent = "20200101_000000__ffffff"
+            for path in (f"/runs/{absent}/deliverables",
+                        f"/runs/{absent}/deliverables/doc_alpha",
+                        f"/runs/{absent}/log",
+                        "/runs/not-a-run-id/deliverables",
+                        "/runs/not-a-run-id/log"):
+                r = client.get(path, headers=headers)
+                if r.status_code != 404:
+                    return _fail(f"GET {path} returned {r.status_code}, expected 404")
+
+            # NEUTRALISE: break _zip_dir's arcname computation.
+            saved_zip_dir = server._zip_dir
+            try:
+                def _broken_zip_dir(source_dir):
+                    buf = io.BytesIO()
+                    with _zipfile.ZipFile(buf, "w", _zipfile.ZIP_DEFLATED) as zf:
+                        for p in source_dir.rglob("*"):
+                            if p.is_file():
+                                zf.write(p, arcname=f"WRONG/{p.name}")
+                    buf.seek(0)
+                    return buf
+                server._zip_dir = _broken_zip_dir
+
+                r_broken = client.get(f"/runs/{run_id}/deliverables/doc_alpha",
+                                      headers=headers)
+                zf_broken = _zipfile.ZipFile(io.BytesIO(r_broken.content))
+                if "review_findings.md" in zf_broken.namelist():
+                    return _fail("with _zip_dir neutralised, the zip still contains "
+                                 "the file at its correct name: the check is not "
+                                 "actually inspecting zip contents")
+            finally:
+                # RESTORE.
+                server._zip_dir = saved_zip_dir
+            r_restored = client.get(f"/runs/{run_id}/deliverables/doc_alpha",
+                                    headers=headers)
+            zf_restored = _zipfile.ZipFile(io.BytesIO(r_restored.content))
+            if "review_findings.md" not in zf_restored.namelist():
+                return _fail("after restoring _zip_dir, the per-document zip no "
+                             "longer contains the file at its correct name")
+        except AssertionError as e:
+            return _fail(str(e))
+        finally:
+            _subprocess.Popen = saved_popen
+            server.subprocess.Popen = saved_popen
+            if saved_tok is None:
+                _os.environ.pop("SHIMMER_TOKEN_HASH", None)
+            else:
+                _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
+
+    return _ok("GET /runs/{run_id}/deliverables/{doc_id} returns a zip scoped to "
+               "exactly that document's own files for a done document, and 404 for "
+               "one not yet done; GET /runs/{run_id}/deliverables mid-run (one of two "
+               "documents done) returns X-Shimmer-Partial: true and a filename "
+               "containing 'partial', with only the done document's file inside, and "
+               "once both documents are done and the run is complete reports "
+               "X-Shimmer-Partial: false with both files inside and no 'partial' in "
+               "the filename; GET /runs/{run_id}/log streams the real logged "
+               "[progress] line as text/plain; every new route 404s a malformed or "
+               "unknown run_id; neutralising _zip_dir's arcname computation makes the "
+               "per-document zip fail to contain the file at its correct name, "
+               "proving the check inspects real zip contents, and restoring it brings "
+               "the correct contents back")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -13446,6 +13733,7 @@ CHECKS = [
     ("186 a run reports queued, then running, then a distinguishable terminal state (api B1)", check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state),
     ("187 a queued and a running run can both be cancelled (api B2)", check_187_a_queued_and_a_running_run_can_both_be_cancelled),
     ("188 a pending approval is visible on status and answerable once (api B3)", check_188_a_pending_approval_is_visible_on_status_and_answerable_once),
+    ("189 a single document is fetchable and a partial archive says so (api B4)", check_189_a_single_document_is_fetchable_and_a_partial_archive_says_so),
 ]
 
 
