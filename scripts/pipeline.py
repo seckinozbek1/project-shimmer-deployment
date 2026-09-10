@@ -1613,7 +1613,14 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     if not pairing:
         return []
     rules_by_id = {c["id"]: c for c in convention_registry.get("conventions", [])}
-    units_by_id = {u["unit_id"]: u for u in pairing.get("units", [])}
+    # There used to be a second unit map here (units_by_id, keyed off
+    # pairing.get("units", []), the pairing map's OWN entries, which carry no
+    # "text" field at all). It was assigned and never read again in this
+    # function: every real call is built from unit_text below, the single
+    # split_units() call that actually feeds plan_calls. Two parallel maps of
+    # "the same units," one live and one dead, is exactly the shape of trap
+    # that makes an order- or index-based fix (the adjacent-neighbor lookup)
+    # silently land on the wrong one. One map, sourced once, here.
     unit_text = {}
     for unit in pairing_map_mod.split_units(doc["text"], document_id=doc["id"]):
         unit_text[unit["unit_id"]] = unit

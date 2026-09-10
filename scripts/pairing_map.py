@@ -107,6 +107,22 @@ def split_units(text, *, document_id=""):
     document that is one table is split by row, because a row is the natural unit
     of a ledger. Ids are derived from position and heading text, so the same
     document always yields the same ids.
+
+    Every unit also carries "index": its 0-based position in the list this
+    function returns, the SAME position the unit_id's own numeric prefix
+    already encodes (u01, u02, ...), now as a field a caller can read without
+    parsing a string. This is the single source: every caller that re-keys a
+    unit list to a dict on unit_id (paired_review.unit_texts_for,
+    pipeline.py's phase 5.5 and phase 6 unit maps) copies the whole dict by
+    reference, so index survives every one of those re-keyings with no change
+    needed at any of them. Adding it here, once, is what makes "the unit
+    immediately before/after" answerable at all: a dict keyed by unit_id has
+    no memory of order on its own, index is what restores it. index is
+    assigned identically in every branch below (0-based list position, the
+    order units are appended in), never derived from an "i" loop variable
+    directly, because those variables mean different things per branch
+    (0-based for headings, 1-based for rows and tables) and mixing bases
+    across branches would put contradictory numbers in the same field.
     """
     text = text or ""
     headings = [m for m in _HEADING.finditer(text)]
@@ -122,6 +138,7 @@ def split_units(text, *, document_id=""):
                 "title": title,
                 "kind": "section",
                 "text": text[start:end].strip(),
+                "index": len(units),
             })
         return units
 
@@ -134,14 +151,17 @@ def split_units(text, *, document_id=""):
                 "title": "row %d" % i,
                 "kind": "row",
                 "text": header + "\n" + blocks[0][1] + "\n" + row,
+                "index": len(units),
             })
         return units
     for i, block in enumerate(blocks, 1):
         units.append({"unit_id": "u%02d-table" % i, "title": "table %d" % i,
-                      "kind": "table", "text": "\n".join(block)})
+                      "kind": "table", "text": "\n".join(block),
+                      "index": len(units)})
     if not units and text.strip():
         units.append({"unit_id": "u01-document", "title": "document",
-                      "kind": "document", "text": text.strip()})
+                      "kind": "document", "text": text.strip(),
+                      "index": 0})
     return units
 
 
@@ -270,6 +290,7 @@ def pair_units(units, rules, *, vocabulary=None, rank=None, rank_cap=3):
             "unit_id": unit["unit_id"],
             "title": unit.get("title", ""),
             "kind": unit.get("kind", ""),
+            "index": unit.get("index"),
             "fields_present": sorted(" ".join(f) for f in have),
             "paired": paired,
             "rejected": rejected,

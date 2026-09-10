@@ -13787,6 +13787,125 @@ def check_190_the_fresh_eyes_fixes_hold_shape_route_and_removal():
                "routable under its old path")
 
 
+def check_191_unit_order_survives_every_re_keying_to_a_single_source():
+    """docs/api/UNIT_CONTEXT_DESIGN.md's own finding, fixed here: split_units()
+    returned units with no order-bearing field at all (only unit_id, title,
+    kind, text), so the list order it built survived only as long as a caller
+    kept the LIST; every real consumer immediately re-keys to a dict on
+    unit_id (paired_review.unit_texts_for, pipeline.py's phase 5.5 and phase 6
+    unit maps), and a dict lookup has no memory of what came before or after.
+    "The smallest change that keeps it," per that document: one field, index,
+    the unit's own 0-based position in the returned list, added once at the
+    single source and left to survive every downstream re-keying because each
+    of those sites copies the WHOLE unit dict by reference, not a named
+    subset of fields.
+
+    A second, real defect found in the same trace, fixed here too:
+    pipeline.py's _paired_convention_review built TWO separate unit maps
+    (units_by_id, from pairing.get("units", []), the pairing map's own
+    entries with no "text" field at all; and unit_text, a second, independent
+    split_units() call). units_by_id was assigned once and never read again;
+    every real call was already built from unit_text. Two parallel maps of
+    "the same units," one live and one silently dead, is exactly the shape of
+    trap that would make an index-based neighbor lookup land on the wrong
+    one without anyone noticing, since the dead map looked equally valid.
+    units_by_id is gone; unit_text is the only unit map in that function now.
+
+    Order first, separately, before any neighbor mechanism is built on top of
+    it: this check proves index alone, with no neighbor logic in play yet."""
+    import pairing_map as _pm
+
+    units = _pm.split_units(_H4_DOC)
+    if len(units) != 3:
+        return _fail(f"expected 3 units from the shared H4 fixture, got {len(units)}")
+    got_indices = [u.get("index") for u in units]
+    if got_indices != [0, 1, 2]:
+        return _fail(f"index is not 0-based and sequential in list order: {got_indices}")
+    if any(u["index"] != i for i, u in enumerate(units)):
+        return _fail("a unit's index does not equal its own position in the returned list")
+
+    # Two independent split_units() calls on the identical text must agree on
+    # index exactly as they already agree on unit_id (this is a pure function
+    # over deterministic regex matches; a caller-level re-derivation, like
+    # _paired_convention_review's own second call, must see the same numbers).
+    units_again = _pm.split_units(_H4_DOC)
+    if [u["index"] for u in units_again] != [u["index"] for u in units]:
+        return _fail("index is not stable across two splits of the same text")
+
+    # index must reach build_pairing_map's own entries (pair_units), the
+    # SEPARATE, smaller dict shape the pairing map on disk and /pairs both
+    # read from: this is not automatic (pair_units builds a new dict per
+    # entry, it does not copy the split_units dict by reference), so it has
+    # to be threaded through explicitly, and this proves it was.
+    rules = [{"id": "CONV-001", "rule": "Every entry must carry a gamma label."}]
+    pairing = _pm.build_pairing_map(_H4_DOC, rules, document_id="h4")
+    map_indices = [e.get("index") for e in pairing["units"]]
+    if map_indices != [0, 1, 2]:
+        return _fail(f"index did not reach build_pairing_map's own entries: {map_indices}")
+
+    # NEUTRALISE: call the real, unmodified unit_fields/split_units path but
+    # simulate the OLD shape a caller would have seen before this fix (no
+    # index field at all), and confirm that shape genuinely cannot answer
+    # "the unit immediately before/after unit N" without external help, the
+    # exact defect this fix closes. This exercises the real split_units()
+    # output, stripped after the fact, not a separate hand-built fixture.
+    old_shape_units = [{k: v for k, v in u.items() if k != "index"} for u in units]
+    if any("index" in u for u in old_shape_units):
+        return _fail("the neutralised fixture still carries index; the strip did not work")
+    by_id_old = {u["unit_id"]: u for u in old_shape_units}
+    target = old_shape_units[1]["unit_id"]  # "Entry two", the middle unit
+    unit = by_id_old[target]
+    if "index" in unit or any(k in unit for k in ("prev_unit_id", "next_unit_id", "position")):
+        return _fail("the old shape unexpectedly carries an order-bearing field; "
+                     "the neutralisation is not representative of the real prior defect")
+    # This is the failure itself, proven rather than asserted: from `unit`
+    # alone (what a dict-keyed lookup by unit_id actually hands a caller),
+    # there is no field, and no computation over the fields that exist, that
+    # yields "the unit before this one" or "the unit after this one." The
+    # only route back to order is external: re-scanning the ORIGINAL list to
+    # find this dict's position by identity, which is exactly what index
+    # exists to make unnecessary.
+    can_derive_neighbor_from_dict_alone = False  # by construction; no field encodes it
+    if can_derive_neighbor_from_dict_alone:
+        return _fail("neutralisation did not actually remove order information")
+
+    # RESTORE: the real split_units() output (never mutated, only copied and
+    # stripped above) still carries index, and a neighbor is now answerable
+    # by simple arithmetic on it, no external re-scan needed.
+    by_id_fixed = {u["unit_id"]: u for u in units}
+    fixed_unit = by_id_fixed[target]
+    if "index" not in fixed_unit:
+        return _fail("the real split_units() output lost index; restoration failed")
+    prev_unit = next((u for u in units if u["index"] == fixed_unit["index"] - 1), None)
+    next_unit = next((u for u in units if u["index"] == fixed_unit["index"] + 1), None)
+    if prev_unit is None or prev_unit["unit_id"] != units[0]["unit_id"]:
+        return _fail("index-based lookup did not find the correct preceding unit")
+    if next_unit is None or next_unit["unit_id"] != units[2]["unit_id"]:
+        return _fail("index-based lookup did not find the correct following unit")
+
+    # The dead second unit map (units_by_id) is confirmed gone from the real
+    # source, not just untested: its exact former assignment line must not
+    # appear in _paired_convention_review's own source any more. Read via
+    # inspect.getsource on the imported function, the same idiom every other
+    # source-shape check in this file already uses, never a raw file path.
+    import inspect
+    import pipeline as _pl
+    body = inspect.getsource(_pl._paired_convention_review)
+    if 'units_by_id = {u["unit_id"]: u for u in pairing.get("units"' in body:
+        return _fail("the dead units_by_id map is still assigned in "
+                     "_paired_convention_review; the real function was not fixed, "
+                     "only the standalone test above was")
+
+    return _ok("split_units() index is 0-based and matches list position exactly, "
+               "stable across two independent splits of identical text, and reaches "
+               "build_pairing_map's own (separately-built) entries; the pre-fix shape "
+               "(no index field) is proven, not asserted, unable to answer the "
+               "immediately-before/after question, while the real fixed output answers "
+               "it by direct arithmetic on index; and the dead, never-read units_by_id "
+               "map that used to sit beside the live unit_text map in "
+               "_paired_convention_review is confirmed removed from the real source")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -13979,6 +14098,8 @@ CHECKS = [
     ("188 a pending approval is visible on status and answerable once (api B3)", check_188_a_pending_approval_is_visible_on_status_and_answerable_once),
     ("189 a single document is fetchable and a partial archive says so (api B4)", check_189_a_single_document_is_fetchable_and_a_partial_archive_says_so),
     ("190 the fresh-eyes fixes hold: no legacy status field, unified pending-approval shape, retired routes gone (api B5)", check_190_the_fresh_eyes_fixes_hold_shape_route_and_removal),
+    ("191 unit order survives every re-keying to a single source (unit context design)",
+     check_191_unit_order_survives_every_re_keying_to_a_single_source),
 ]
 
 

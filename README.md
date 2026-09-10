@@ -277,6 +277,23 @@ Phase 5.5 runs one of two ways. `--review-mode` selects it; with no flag the def
 The mode changes cost, not correctness: where arithmetic can decide, the finding carries
 Python's numbers whatever the model says about them.
 
+Every unit `split_units()` produces (`scripts/pairing_map.py`) also carries `index`, its
+0-based position in the document's own order. This closed a real gap: a unit dict used to
+carry no order-bearing field at all, so once a caller re-keyed the list to a dict on
+`unit_id` (every real caller does, immediately), the model-facing side of a paired call had
+no way to answer "which unit comes before or after this one," only "which unit is this."
+`index` is added once at the single source (`split_units`) and survives every downstream
+re-keying because each of those sites copies the whole unit dict by reference, never a named
+subset of fields; it reaches `build_pairing_map`'s own entries the same way, threaded
+through explicitly since that dict shape is built fresh, not copied. A second, related
+defect in the same trace: `pipeline.py`'s `_paired_convention_review` used to build two
+separate unit maps, one from the pairing map's own entries (no `text` field, assigned and
+never read again) and one from a second, independent `split_units()` call (the one every
+real call was actually built from). The dead map is gone; there is one unit map in that
+function now, sourced once. See `docs/api/UNIT_CONTEXT_DESIGN.md` for the design this fixes
+the ground for: adjacent-unit context in a paired call, which needs `index` to find "the
+unit immediately before/after," not built until order was fixed and proven separately.
+
 ### Bands from the reference corpus
 
 A rule often states no numbers of its own; it points at a table in the reference corpus.
