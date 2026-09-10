@@ -1,0 +1,78 @@
+# Records, once, what typing `docker run` by hand otherwise requires every
+# time: the GPU, the port, the token hash, and every mounted directory.
+#
+# Two services, one image, one profile each, so `docker compose up` with no
+# profile named starts nothing by accident:
+#
+#   docker compose --profile serve up      the HTTP server (tools/entrypoint.sh serve)
+#   docker compose --profile run run review   one review (tools/entrypoint.sh run)
+#
+# Build the image first (see the Dockerfile for BAKE_WEIGHTS):
+#   docker compose build
+#
+# `verify`, the entrypoint's default command, has no service here: it needs
+# no port, no mounts beyond what the image already carries, and no compose
+# machinery adds anything to `docker run --rm --gpus all shimmer:local verify`.
+
+x-shimmer-common: &shimmer-common
+  image: shimmer:local
+  environment:
+    # Required: the server and the verification gate's local-mode check both
+    # refuse to start without it (server.py: no SHIMMER_TOKEN_HASH, no server).
+    # Set it in the shell before `docker compose up`, never in this file:
+    #   export SHIMMER_TOKEN_HASH=<hash>          (macOS/Linux)
+    #   $env:SHIMMER_TOKEN_HASH = "<hash>"         (Windows PowerShell)
+    - SHIMMER_TOKEN_HASH=${SHIMMER_TOKEN_HASH:?SHIMMER_TOKEN_HASH must be set (see README section I)}
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+  volumes:
+    # config/ is writable, not read-only: an operator-approved model swap
+    # rewrites config/agent_registry.json in place (model_registry.py,
+    # enforce_current_models), so a read-only image root cannot hold it.
+    - ./config:/app/config
+    # Learned/governance state that survives a restart (durable/), the
+    # cross-run learning graph (ontology/stores/), and per-run deliverables
+    # (output/runs/): all written to at runtime, none of them source.
+    - ./durable:/app/durable
+    - ./ontology/stores:/app/ontology/stores
+    - ./output/runs:/app/output/runs
+    # The three-input-type tree: context/conventions/operational, populated
+    # by the operator and by the pipeline (section D).
+    - ./input:/app/input
+    # The model cache: HF_HOME inside the image is /root/.cache/huggingface
+    # (Dockerfile stage 4), the same path embedding_store.py and
+    # agent_wrapper.py already read with no override. Mounting the host's
+    # cache here is what lets the UNBAKED image (the default build) find
+    # weights that already exist on this machine; a baked image finds its
+    # own copy inside the layer and does not need this mount, but leaving
+    # it attached is harmless (the baked files simply are not looked at
+    # twice, since local_files_only lookups hit the image's own copy first
+    # by path, and the mount only ever adds the same files at the same path).
+    #
+    # HOST_HF_CACHE, not `~`: compose does not expand a bare tilde in a
+    # volume path (confirmed with `docker compose config`; a literal `~`
+    # is passed to Docker, which then mounts/creates a folder NAMED `~`
+    # rather than the home directory). Required, not defaulted, because
+    # there is no default that is correct on both Windows and macOS/Linux.
+    # Set it before `docker compose up`:
+    #   export HOST_HF_CACHE=/home/you/.cache/huggingface   (macOS/Linux)
+    #   $env:HOST_HF_CACHE = "$env:USERPROFILE\.cache\huggingface"  (Windows PowerShell)
+    - ${HOST_HF_CACHE:?HOST_HF_CACHE must be set to your host's Hugging Face cache directory}:/root/.cache/huggingface
+
+services:
+  serve:
+    <<: *shimmer-common
+    profiles: ["serve"]
+    command: ["serve"]
+    ports:
+      - "8000:8000"
+
+  review:
+    <<: *shimmer-common
+    profiles: ["run"]
+    command: ["run", "--non-interactive"]
