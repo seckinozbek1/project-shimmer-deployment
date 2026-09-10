@@ -330,7 +330,7 @@ deliberately not `verdict`, which every agent already uses for its own values),
 `source_refs` (`REF-*` / `WEB-REF-*`) and `explanation`. The explanation is for the human
 reader and is stripped from any payload travelling to another agent. The schema lives in
 `config/agent_contracts.json` under `finding_record`; the module reads it rather than
-carrying a second copy. These records are what `GET /findings/{run_id}` serves (section I).
+carrying a second copy. These records are what `GET /runs/{run_id}/findings` serves (section I).
 
 Four **optional** fields were appended by INFRA-044 (none required): `field_label` (the
 document's own label for the field), `delta` (`value_a` minus `value_b`, same unit only),
@@ -373,7 +373,7 @@ with no model call:
    `audit/pairing_map.json` (`prior_comparisons` per unit, `prior_orphans` per document) and
    rendered under "Not comparable".
 5. The records travel as one computed `PRACTICE_AUDITOR` envelope on the bus
-   (`backend=computed`, `model=python`), reach `GET /findings`, and are rendered by one shared
+   (`backend=computed`, `model=python`), reach `GET /runs/{run_id}/findings`, and are rendered by one shared
    renderer (`finding_record.render_prior_comparison`) in **both** `document_summary.md` and
    `review_findings.md`, with the same records carried in `review_data.json` under
    `prior_comparisons`. Only records with `provenance=computed` appear in that section: a
