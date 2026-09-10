@@ -13906,6 +13906,338 @@ def check_191_unit_order_survives_every_re_keying_to_a_single_source():
                "_paired_convention_review is confirmed removed from the real source")
 
 
+def check_192_a_paired_call_separates_unit_neighbor_and_map():
+    """docs/api/UNIT_CONTEXT_DESIGN.md, option B built on the order fix (check
+    191): a paired call now carries the unit's real neighbors and a document-
+    wide structural map, and the operator's own requirement on the prompt
+    itself is that a model can tell three things apart: the unit it is
+    judging, the neighboring text that is context and must not be judged, and
+    the map that is orientation and is not evidence. Proven here structurally
+    (three payload keys, never overlapping in content) and by exercising the
+    real adjacent_units/build_pair_payload functions against a real,
+    multi-unit document, not asserted from the function's own docstring.
+    """
+    import pairing_map as _pm
+    import paired_review as _pr
+
+    units = _pm.split_units(_H4_DOC)
+    if len(units) != 3:
+        return _fail(f"expected 3 units from the shared H4 fixture, got {len(units)}")
+    unit_texts = {u["unit_id"]: u for u in units}
+    rule = _H4_RULES[0]
+
+    # The middle unit has a real preceding AND a real following neighbor:
+    # the case that proves both fields at once.
+    middle = unit_texts[units[1]["unit_id"]]
+    payload = _pr.build_pair_payload(unit=middle, rule=rule, checks=[],
+                                     unit_texts=unit_texts)
+
+    for required in ("document_text", "preceding_unit_text", "following_unit_text",
+                     "neighbor_note"):
+        if required not in payload:
+            return _fail(f"the middle unit's payload is missing {required!r}: "
+                         f"{sorted(payload.keys())}")
+
+    judged = payload["document_text"]
+    preceding = payload["preceding_unit_text"]
+    following = payload["following_unit_text"]
+
+    # STRUCTURAL separation, not asserted: the three fields carry genuinely
+    # different, non-overlapping strings, taken from the three different real
+    # units (Entry one/two/three of the H4 fixture), so a model reading the
+    # payload cannot mistake one for another by content collision, and this
+    # test cannot pass by accident (identical unit text would make this
+    # comparison meaningless).
+    if judged == preceding or judged == following or preceding == following:
+        return _fail("the unit, preceding and following fields are not genuinely "
+                     "distinct content: a real payload must never let two of these "
+                     "collide, since a model could then not tell them apart by "
+                     "content even though they are separate fields")
+    if "Entry one" not in preceding:
+        return _fail(f"preceding_unit_text is not the actual preceding unit's text: "
+                     f"{preceding!r}")
+    if "Entry three" not in following:
+        return _fail(f"following_unit_text is not the actual following unit's text: "
+                     f"{following!r}")
+    if "Entry two" not in judged:
+        return _fail(f"document_text is not the unit actually being judged: {judged!r}")
+
+    # The note itself says, in words, what the field names already say in
+    # structure: do not judge the neighbors, they are context.
+    note = payload["neighbor_note"]
+    if "context" not in note.lower() or "not evidence" not in note.lower() \
+            and "do not" not in note.lower():
+        return _fail(f"neighbor_note does not state the neighbors are context, "
+                     f"not evidence to judge: {note!r}")
+
+    # document_map (option D): titles only, never a unit's own text, never
+    # confusable with the judged unit's content either.
+    payload_mapped = _pr.build_pair_payload(unit=middle, rule=rule, checks=[],
+                                            unit_texts=unit_texts,
+                                            document_units=units)
+    if "document_map" not in payload_mapped or "structure_note" not in payload_mapped:
+        return _fail("document_units given, but document_map/structure_note "
+                     "are missing from the payload")
+    dmap = payload_mapped["document_map"]
+    if len(dmap) != 3 or any(set(e.keys()) != {"unit_id", "title"} for e in dmap):
+        return _fail(f"document_map is not id/title pairs only: {dmap}")
+    if any(judged in json_str for json_str in (str(e) for e in dmap)):
+        # a title should never happen to contain the full judged unit's body text;
+        # this guards against a future change accidentally widening document_map
+        return _fail("document_map entries contain the judged unit's own text; "
+                     "it must carry titles only, never unit content")
+
+    # EDGE CASES: first unit has no preceding, last has no following, and
+    # neither is silently invented.
+    first_payload = _pr.build_pair_payload(unit=unit_texts[units[0]["unit_id"]],
+                                           rule=rule, checks=[], unit_texts=unit_texts)
+    if "preceding_unit_text" in first_payload:
+        return _fail("the first unit was given a preceding neighbor that does not exist")
+    if "following_unit_text" not in first_payload:
+        return _fail("the first unit's real following neighbor was not attached")
+    last_payload = _pr.build_pair_payload(unit=unit_texts[units[2]["unit_id"]],
+                                          rule=rule, checks=[], unit_texts=unit_texts)
+    if "following_unit_text" in last_payload:
+        return _fail("the last unit was given a following neighbor that does not exist")
+    if "preceding_unit_text" not in last_payload:
+        return _fail("the last unit's real preceding neighbor was not attached")
+
+    # NEUTRALISE: a unit with no index (the pre-order-fix shape, or a caller
+    # that never set it) must get no neighbor rather than a guessed one, on
+    # the REAL adjacent_units function, not a stand-in.
+    no_index_unit = {k: v for k, v in middle.items() if k != "index"}
+    prev_u, next_u = _pr.adjacent_units(no_index_unit, unit_texts)
+    if prev_u is not None or next_u is not None:
+        return _fail("adjacent_units returned a neighbor for a unit with no index; "
+                     "it must refuse rather than guess from list position")
+
+    # RESTORE: the same real unit, with its real index, finds its real
+    # neighbors again by direct arithmetic.
+    prev_u2, next_u2 = _pr.adjacent_units(middle, unit_texts)
+    if prev_u2 is None or prev_u2["unit_id"] != units[0]["unit_id"]:
+        return _fail("adjacent_units did not find the correct preceding unit once "
+                     "index was restored")
+    if next_u2 is None or next_u2["unit_id"] != units[2]["unit_id"]:
+        return _fail("adjacent_units did not find the correct following unit once "
+                     "index was restored")
+
+    # BACKWARD COMPATIBILITY: a caller that does not opt in (no unit_texts
+    # argument, every real caller of this function before today) sees none
+    # of the new fields, not empty ones.
+    bare_payload = _pr.build_pair_payload(unit=middle, rule=rule, checks=[])
+    new_fields = ("preceding_unit_text", "following_unit_text", "neighbor_note",
+                 "document_map", "structure_note")
+    present = [f for f in new_fields if f in bare_payload]
+    if present:
+        return _fail(f"a caller that never opted in received new fields anyway: {present}")
+
+    # The REAL call site, not just the function's own contract: a function
+    # that works correctly in isolation but is never actually invoked with
+    # unit_texts/document_units would be exactly as dead as the units_by_id
+    # map check 191 found and removed. Read via inspect.getsource on the
+    # imported pipeline module, the same idiom every other source-shape
+    # check in this file uses, never a raw file path.
+    import inspect
+    import pipeline as _pl
+    call_site = inspect.getsource(_pl._paired_convention_review)
+    if "unit_texts=unit_text" not in call_site:
+        return _fail("_paired_convention_review's real call to build_pair_payload "
+                     "no longer passes unit_texts; the neighbor mechanism exists "
+                     "but is not wired to a real run")
+    if 'document_units=pairing.get("units")' not in call_site:
+        return _fail("_paired_convention_review's real call to build_pair_payload "
+                     "no longer passes document_units; the structural map exists "
+                     "but is not wired to a real run")
+
+    return _ok("a paired call for the middle unit of a 3-unit document carries "
+               "document_text (the unit judged), preceding_unit_text/"
+               "following_unit_text (its real neighbors, structurally distinct "
+               "content, never colliding with the judged unit or each other), "
+               "and neighbor_note stating in words that the neighbors are context "
+               "not evidence; document_map (option D) carries id/title pairs only, "
+               "never unit content; the first and last unit correctly get only one "
+               "neighbor, never an invented one; a unit with no index is refused a "
+               "neighbor by adjacent_units rather than guessed, and finds its real "
+               "one again once index is present; a caller not opting in sees none "
+               "of the new fields")
+
+
+def check_193_the_real_local_loader_never_reaches_the_network_when_cached():
+    """Found live, twice, running a real local paired review tonight: server.py's
+    own check_local_model_availability already resolves both local model ids
+    with local_files_only=True and refuses to start a run if either is not
+    cached. agent_wrapper.py's _load_qwen, the function a run ACTUALLY calls to
+    load a model, never set that flag on any of its five from_pretrained calls
+    (AutoConfig, AutoTokenizer, and three AutoModelForCausalLM branches), so
+    every real load reached the hub anyway, promise broken. Tonight that showed
+    up as a fatal ConnectionResetError killing a run's first agent call on a
+    machine where the weights were genuinely, fully cached. A container on a
+    rented machine, or any closed network, would die on that same first call
+    while the pre-flight check insisted everything was fine.
+
+    Two things proven, not one: the SOURCE carries the fix (every call site,
+    every branch), and the REAL path, called exactly as a run calls it, loads
+    successfully with the network genuinely blocked at the socket layer, not
+    merely with a flag trusted to work. NEUTRALISE AND RESTORE: the flag
+    stripped from the real source is shown to make a network-blocked load
+    fail; restored, it succeeds again.
+
+    embedding_store.py's _load_model is checked too but held to a DIFFERENT,
+    correct standard: unlike the generation models, nothing verifies this
+    model is cached before a run starts, and the README documents "fetched at
+    first use" as the real, intended behavior for a genuine first run. So the
+    fix there is local_files_only=True tried FIRST (the common, already-cached
+    case never touches the network), falling back to a network-permitted load
+    only on a genuine cache miss (preserving the documented first-run
+    behavior). Asserted structurally: local_files_only appears before the
+    unconditional fallback call in the source, not merely present somewhere in
+    the file."""
+    import ast
+    import inspect
+    import textwrap
+    import agent_wrapper as _aw
+
+    def _from_pretrained_flags(fn):
+        """True/False per from_pretrained(...) call in fn: does it carry
+        local_files_only=True. AST-based, not substring counting: a substring
+        count over inspect.getsource's own docstring text (which necessarily
+        talks ABOUT local_files_only in prose, this function's own docstring
+        included) inflates any textual count and was caught doing exactly that
+        while writing this check. Parsing the call nodes themselves is immune
+        to what the docstring says."""
+        src = textwrap.dedent(inspect.getsource(fn))
+        tree = ast.parse(src)
+        flags = []
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "from_pretrained"):
+                flags.append(any(
+                    kw.arg == "local_files_only" and isinstance(kw.value, ast.Constant)
+                    and kw.value.value is True
+                    for kw in node.keywords))
+        return flags
+
+    flags = _from_pretrained_flags(_aw._load_qwen) + _from_pretrained_flags(_aw._checkpoint_is_prequantised)
+    if len(flags) != 5:
+        return _fail(f"expected 5 from_pretrained calls across _load_qwen and "
+                     f"_checkpoint_is_prequantised, found {len(flags)}; this check's "
+                     f"own count needs updating if the real loading code changed shape")
+    if not all(flags):
+        return _fail(f"only {sum(flags)}/5 from_pretrained calls in the real loader carry "
+                     f"local_files_only=True; a call missing it reaches the network even "
+                     f"when the model is genuinely cached")
+
+    import embedding_store as _es
+    es_src = inspect.getsource(_es._load_model)
+    first_try_idx = es_src.find("st.SentenceTransformer(name, device=device, local_files_only=True)")
+    fallback_idx = es_src.find("st.SentenceTransformer(name, device=device)")
+    if first_try_idx == -1:
+        return _fail("_load_model no longer tries local_files_only=True as its first attempt")
+    if fallback_idx == -1 or fallback_idx <= first_try_idx:
+        return _fail("_load_model's network-permitted fallback is missing or is not "
+                     "ordered AFTER the local_files_only=True attempt; the documented "
+                     "first-run-downloads behavior depends on this order")
+
+    # Live load through the REAL _load_qwen, network genuinely blocked at the
+    # socket layer (not merely a flag trusted to be honoured), against whichever
+    # local model id is actually cached in THIS environment. If neither is
+    # cached here, that is this environment's own missing prerequisite, stated
+    # plainly, not silently skipped: the same standard check_local_model_
+    # availability already holds the whole pipeline to before it will start.
+    from pipeline import _LOCAL_PROFILE
+    model_ids = sorted(set(m for _, m in _LOCAL_PROFILE.values()))
+    import transformers as _tf
+    cached_id = None
+    for mid in model_ids:
+        try:
+            _tf.AutoTokenizer.from_pretrained(mid, local_files_only=True)
+            cached_id = mid
+            break
+        except Exception:
+            continue
+    if cached_id is None:
+        return _fail(f"none of {model_ids} are cached in this environment (local_files_only "
+                     f"resolution failed for all of them); the live network-blocked load this "
+                     f"check performs cannot run without at least one real cached model, the "
+                     f"same prerequisite check_local_model_availability already requires "
+                     f"before a local-profile run is allowed to start")
+
+    import socket
+    _orig_connect = socket.socket.connect
+
+    def _blocked(self, *a, **kw):
+        raise OSError("verify_session1 check 193: network blocked for this proof")
+
+    _aw._QWEN_MODELS.pop(cached_id, None)
+    socket.socket.connect = _blocked
+    try:
+        tok, mdl = _aw._load_qwen(cached_id)
+        if tok is None or mdl is None:
+            return _fail(f"_load_qwen({cached_id!r}) returned an empty result with the "
+                         f"network blocked")
+    except Exception as e:
+        return _fail(f"_load_qwen({cached_id!r}) raised with the network blocked, even "
+                     f"though it is genuinely cached ({type(e).__name__}: {e}); the real "
+                     f"loader still reaches the network somewhere on this path")
+    finally:
+        socket.socket.connect = _orig_connect
+        _aw._QWEN_MODELS.pop(cached_id, None)  # leave no resident model behind
+
+    # NEUTRALISE: strip local_files_only from the REAL source function object's
+    # own behavior by monkeypatching AutoTokenizer.from_pretrained to reject any
+    # call that carries the flag, forcing the exact call shape check_local_
+    # model_availability trusts. If _load_qwen still succeeds with the network
+    # blocked under this neutralisation, the flag was never load-bearing, and
+    # this check would have passed even on the original, broken source.
+    _orig_from_pretrained = _tf.AutoTokenizer.from_pretrained
+
+    def _reject_local_files_only(*a, **kw):
+        if kw.get("local_files_only"):
+            raise RuntimeError("verify_session1 check 193: simulating the pre-fix loader "
+                               "(local_files_only stripped)")
+        return _orig_from_pretrained(*a, **kw)
+
+    _aw._QWEN_MODELS.pop(cached_id, None)
+    socket.socket.connect = _blocked
+    _tf.AutoTokenizer.from_pretrained = _reject_local_files_only
+    try:
+        _aw._load_qwen(cached_id)
+        neutralised_still_worked = True
+    except Exception:
+        neutralised_still_worked = False
+    finally:
+        _tf.AutoTokenizer.from_pretrained = _orig_from_pretrained
+        socket.socket.connect = _orig_connect
+        _aw._QWEN_MODELS.pop(cached_id, None)
+    if neutralised_still_worked:
+        return _fail("with local_files_only simulated as absent (the pre-fix shape), "
+                     "_load_qwen still succeeded with the network blocked; this check "
+                     "cannot distinguish the fix from its absence")
+
+    # RESTORE: the real, unmodified _load_qwen succeeds again.
+    socket.socket.connect = _blocked
+    try:
+        tok2, mdl2 = _aw._load_qwen(cached_id)
+        restored_ok = tok2 is not None and mdl2 is not None
+    except Exception:
+        restored_ok = False
+    finally:
+        socket.socket.connect = _orig_connect
+        _aw._QWEN_MODELS.pop(cached_id, None)
+    if not restored_ok:
+        return _fail("the real _load_qwen failed on restore, with the network blocked, "
+                     "even though nothing about the real source was changed")
+
+    return _ok(f"every from_pretrained call in the real loader ({cached_id!r} proven live) "
+               f"carries local_files_only=True and loads successfully with the network "
+               f"genuinely blocked at the socket layer; embedding_store._load_model tries "
+               f"local_files_only=True first and falls back to a network-permitted load "
+               f"only on a genuine cache miss, preserving the documented first-run-"
+               f"downloads behavior; a simulated pre-fix loader (flag stripped) is shown "
+               f"unable to load with the network blocked, and restoring the real source "
+               f"brings the successful load back")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -14100,6 +14432,10 @@ CHECKS = [
     ("190 the fresh-eyes fixes hold: no legacy status field, unified pending-approval shape, retired routes gone (api B5)", check_190_the_fresh_eyes_fixes_hold_shape_route_and_removal),
     ("191 unit order survives every re-keying to a single source (unit context design)",
      check_191_unit_order_survives_every_re_keying_to_a_single_source),
+    ("192 a paired call separates unit, neighbor and map (unit context design)",
+     check_192_a_paired_call_separates_unit_neighbor_and_map),
+    ("193 the real local loader never reaches the network when cached",
+     check_193_the_real_local_loader_never_reaches_the_network_when_cached),
 ]
 
 

@@ -290,9 +290,32 @@ defect in the same trace: `pipeline.py`'s `_paired_convention_review` used to bu
 separate unit maps, one from the pairing map's own entries (no `text` field, assigned and
 never read again) and one from a second, independent `split_units()` call (the one every
 real call was actually built from). The dead map is gone; there is one unit map in that
-function now, sourced once. See `docs/api/UNIT_CONTEXT_DESIGN.md` for the design this fixes
-the ground for: adjacent-unit context in a paired call, which needs `index` to find "the
-unit immediately before/after," not built until order was fixed and proven separately.
+function now, sourced once.
+
+A paired call now also carries the unit's immediate neighbors (`docs/api/UNIT_CONTEXT_DESIGN.md`,
+option B, built on `index` once order was fixed and proven separately, never before): the
+text of the unit immediately before and after the one being judged, under
+`preceding_unit_text`/`following_unit_text`, and a document-wide structural map
+(`document_map`, id/title pairs only, no unit's own text) under option D, reused from the
+same `document_units` list wide mode already builds for a different reason. Each field is
+kept structurally distinct from what is being judged, never merged into `document_text`, so
+a model can tell the unit it is judging from its context by field name alone, before reading
+a word of content: `neighbor_note` and `structure_note` say in words what the field
+separation already says in structure, that the neighbors are context to weigh, not evidence
+to judge or cite, and the map is orientation, not a description of any unit's content. First
+and last units correctly get only one neighbor, never an invented one; a unit with no
+`index` is refused a neighbor rather than guessed from list position.
+
+**The real limit, stated plainly rather than left implicit**: this makes a provision's
+IMMEDIATE neighbor visible to the model judging it. It does nothing for a term defined at
+the start of a document and used, unchanged, at the end: that relationship spans the whole
+document, not one unit's boundary, and neither `preceding_unit_text`/`following_unit_text`
+nor `document_map` (titles only, no content) carries what a distant unit actually says.
+Closing that gap was considered and deliberately deferred, not attempted here: it would need
+either sending far more of the document per call (which is what made wide mode summarize
+rules instead of checking them, the exact failure paired mode was built to avoid) or a real
+cross-run relevance signal telling the pipeline which distant units are worth attaching,
+which the ontology graph and GNN do not yet provide (see below).
 
 ### Bands from the reference corpus
 
@@ -641,14 +664,47 @@ and, for redaction, the local Qwen model with a GPU strongly recommended.
 Setup itself downloads no model weights unless you set `SHIMMER_QWEN_PULL=1`, though it may
 fetch the large CUDA torch wheel. The multi-gigabyte local checkpoints and the multilingual
 embedding model are fetched at first use, so the first run is slow. Do not interrupt it; later
-runs reuse the cached weights.
+runs reuse the cached weights, genuinely offline: `agent_wrapper.py`'s real loader
+(`_load_qwen`, the function every local-profile agent call actually goes through) now passes
+`local_files_only=True` on every `from_pretrained` call, matching `server.py`'s own pre-run
+check, which already resolves the same model ids the same way and refuses to start a run if
+either is missing. Found live, on a real run: before this fix, that promise was one-sided,
+the pre-run check said "cached, you're fine" while the real loader reached the hub on every
+single call anyway, and a routine network hiccup turned into a fatal error killing the run's
+first agent call, on a machine where the weights were genuinely, fully cached. A container on
+a rented machine, or any closed network, would have died the same way while being told
+everything was fine. The embedding model gets a narrower version of the same fix: it tries
+`local_files_only=True` first (so the common, already-cached case never touches the network),
+falling back to a network-permitted load only on a genuine cache miss, since unlike the
+generation models nothing checks this one's cache before a run starts, and "fetched at first
+use" above is real, intended behavior for a genuine first run, not something to break.
 
 **What a first run creates that this repository does not ship**: `.venv/` (the launcher),
 `input/operational/` gets populated from `input/context/` (the pipeline, every run),
 `output/runs/<id>/` (the pipeline, one per run), `durable/` (BOOT, on first run, learned
-reference assets and governance state), and `ontology/stores/` (the pipeline, the cross-run
-learning graph). None of these are source; none of them need to exist before you start; the
-tools that need them create them.
+reference assets and governance state), and `ontology/stores/` (the pipeline, phase 8, end
+of every run: `graph.json` and `gnn_state.json`). None of these are source; none of them
+need to exist before you start; the tools that need them create them.
+
+`ontology/stores/` is unfinished, not dormant, and this is stated plainly rather than left
+for a reader to assume from its place in the architecture: it writes real state every run
+(a graph of documents, findings and the rules they cite, plus a small autoencoder fit over
+that graph's structure) but nothing in the pipeline reads either back. No agent payload, no
+Finding-producing code, and no phase before 8 opens `graph.json` or `gnn_state.json`; the
+only other consumers are the module that builds the next run's graph from the last one (a
+write-path detail, not a review-time read) and the gate's own non-mutating self-tests. It
+is real, executed machinery, not a stub, but it is a write with no reader yet, and should be
+read as exactly that rather than as a working cross-run relevance signal the review already
+draws on.
+
+The `[ontology_gnn]` line each run prints to stdout (`scripts/ontology_gnn.py`) now says
+this plainly too, not only in this README: it used to lead with `loss=`, `weight_delta=`
+and `device=`, the exact vocabulary of a real training run, with the honest caveat sitting
+after them as a parenthetical a reader's eye skips past the numbers to reach. It now leads
+with the words, not the numbers: a self-supervised reconstruction fit with no Tier-2 signal
+yet, explicitly not a trained relevance model. The computation this logs is unchanged, same
+values, same `summary` dict returned to its caller; only what the words say about what those
+values mean was fixed.
 
 To install dependencies without the launcher (for example, in a CI environment that manages
 its own venv):

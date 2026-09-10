@@ -97,9 +97,17 @@ def _checkpoint_is_prequantised(transformers, model_id) -> bool:
     checkpoint carries its own config, transformers' merge_quantization_configs copies
     loading attributes only for GPTQ/AWQ/AutoRound/FbgemmFp8/CompressedTensors, NOT for
     BitsAndBytes, so a passed BitsAndBytesConfig is silently discarded and only emits a
-    warning. Reads config.json only; no weights are touched."""
+    warning. Reads config.json only; no weights are touched.
+
+    local_files_only=True: server.py's own pre-run check already resolves this
+    exact model_id with local_files_only=True and reports it as cached before a
+    run is even allowed to start. A load here that omits the flag reaches out to
+    the hub anyway (a revision check, not a real cache miss) and breaks that
+    promise the moment the network is unreliable or absent, exactly the case a
+    closed-network deployment (a rented container, an air-gapped machine) exists
+    to be immune to. Same flag, same guarantee, every call on this path."""
     try:
-        cfg = transformers.AutoConfig.from_pretrained(model_id)
+        cfg = transformers.AutoConfig.from_pretrained(model_id, local_files_only=True)
     except Exception:
         return False
     return getattr(cfg, "quantization_config", None) is not None
@@ -111,6 +119,19 @@ def _load_qwen(model_id):
     without the lock; the slow path loads under the lock and re-checks, so two
     concurrent first-callers cannot each load a copy. Deterministic and local,
     same from_pretrained arguments as before, only shared.
+
+    local_files_only=True on every from_pretrained call below (tokenizer and
+    model alike): this is the ACTUAL loader a run uses, and server.py's
+    check_local_model_availability already resolves these same model_ids with
+    the same flag before a run is allowed to start, reporting them as cached.
+    Before this fix, this function was the one place that promise was broken:
+    it never set the flag, so every real load reached the hub anyway (found
+    live, twice, when a routine network hiccup here turned into a fatal
+    ConnectionResetError killing the run's very first agent call, on a machine
+    where the weights were already, genuinely, fully cached). A container on a
+    rented machine, or any closed network, would die on that same first call
+    while the pre-flight check insisted everything was fine. Gate check 193
+    proves the fix: this path loads successfully with the network blocked.
 
     Before loading a NEW model_id, any OTHER resident model is evicted so that
     at most one generation model occupies the GPU at a time (L2 memory strategy).
@@ -124,7 +145,7 @@ def _load_qwen(model_id):
         cached = _QWEN_MODELS.get(model_id)        # re-check under the lock
         if cached is None:
             _evict_generation_models(keep_model_id=model_id)
-            tok = transformers.AutoTokenizer.from_pretrained(model_id)
+            tok = transformers.AutoTokenizer.from_pretrained(model_id, local_files_only=True)
             # BP-6 (GPU placement): PIN the 4-bit model fully onto GPU 0. The old
             # device_map="auto" let accelerate offload layers to CPU under VRAM
             # pressure, which ran generation at CPU speed (~1 tok/s). 4-bit NF4 with
@@ -140,7 +161,7 @@ def _load_qwen(model_id):
                     # see _checkpoint_is_prequantised). device_map pins it to GPU 0 as
                     # before; compute dtype comes from the checkpoint's own config.
                     mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                        model_id, device_map={"": 0})
+                        model_id, device_map={"": 0}, local_files_only=True)
                 else:
                     # Quantise on the fly (the original path, unchanged except for
                     # double quant): reads the full fp16 checkpoint through host RAM.
@@ -152,13 +173,14 @@ def _load_qwen(model_id):
                         bnb_4bit_compute_dtype=torch.float16,
                         bnb_4bit_use_double_quant=True)
                     mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                        model_id, quantization_config=bnb, device_map={"": 0})
+                        model_id, quantization_config=bnb, device_map={"": 0},
+                        local_files_only=True)
             else:
                 # No CUDA: unchanged fallback, except torch_dtype. Without it the model
                 # materialises at the fp32 default (a 7B is ~30 GB), which cannot
                 # complete on a 16 GB machine and dies after committing all of it.
                 mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                    model_id, torch_dtype=torch.float16)
+                    model_id, torch_dtype=torch.float16, local_files_only=True)
             # Log the ACTUAL device every run, so a CPU fallback is never silent.
             try:
                 dev = next(mdl.parameters()).device

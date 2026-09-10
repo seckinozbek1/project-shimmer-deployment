@@ -142,25 +142,43 @@ def _ensure_safetensors(name):
 def _load_model(st, name):
     """Load (and cache) a SentenceTransformer by id, pinned to the GPU when present.
     Returns None on failure. On the torch<2.6 pickle-weights block, falls back to a
-    one-time safetensors materialization (see _ensure_safetensors) and retries."""
+    one-time safetensors materialization (see _ensure_safetensors) and retries.
+
+    Tries local_files_only=True FIRST, network-permitted only as the fallback:
+    unlike the generation models (server.py's own pre-run check already resolves
+    those with local_files_only=True and refuses to start a run if they are not
+    cached), nothing checks this model's cache before a run starts, and the
+    README documents "fetched at first use" as the real, intended behavior for a
+    genuinely first run. Forcing local_files_only=True unconditionally would
+    break that documented case. Trying it first means the COMMON case, an
+    already-cached model on every run after the first, never touches the network
+    at all (found live: agent_wrapper.py's generation-model loader was reaching
+    the hub on every call despite being cached, and a routine network hiccup
+    turned that into a fatal error; this function has the same structural gap,
+    just with a softer failure mode today because it already tolerates a load
+    failure). Falling back to the network-permitted path on a genuine cache miss
+    preserves the exact behavior a first run has always had."""
     if name in _MODEL_CACHE:
         return _MODEL_CACHE[name]
     device = _embed_device()
     model = None
     try:
-        model = st.SentenceTransformer(name, device=device)
-    except Exception as e:
-        local = _ensure_safetensors(name)
-        if local is not None:
-            try:
-                model = st.SentenceTransformer(local, device=device,
-                                               model_kwargs={"use_safetensors": True})
-            except Exception as e2:
-                print(f"[embedding_store] WARN: model {name!r} unavailable after safetensors "
-                      f"fallback ({type(e2).__name__}: {e2})", file=sys.stderr, flush=True)
-        else:
-            print(f"[embedding_store] WARN: model {name!r} unavailable "
-                  f"({type(e).__name__}: {e})", file=sys.stderr, flush=True)
+        model = st.SentenceTransformer(name, device=device, local_files_only=True)
+    except Exception:
+        try:
+            model = st.SentenceTransformer(name, device=device)
+        except Exception as e:
+            local = _ensure_safetensors(name)
+            if local is not None:
+                try:
+                    model = st.SentenceTransformer(local, device=device,
+                                                   model_kwargs={"use_safetensors": True})
+                except Exception as e2:
+                    print(f"[embedding_store] WARN: model {name!r} unavailable after safetensors "
+                          f"fallback ({type(e2).__name__}: {e2})", file=sys.stderr, flush=True)
+            else:
+                print(f"[embedding_store] WARN: model {name!r} unavailable "
+                      f"({type(e).__name__}: {e})", file=sys.stderr, flush=True)
     if model is not None:
         # Observability: log the model, its actual device, and embedding dimension,
         # so every run shows the retrieval model loaded on the GPU (or CPU) and at
