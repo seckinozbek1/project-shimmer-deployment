@@ -323,9 +323,22 @@ def gnn_update(graph_path=None, state_path=None, *, device=None, seed=DEFAULT_SE
         "state_path": str(spath),
     }
     if log:
-        print(f"[ontology_gnn] fwd+backprop over delta={delta_size}/{n} nodes "
-              f"(MACHINERY not learning); loss={loss_val:.6f} "
-              f"weight_delta={weight_delta_norm:.6f} device={dev} -> {spath.name}", flush=True)
+        # The words a reader sees FIRST decide what they believe, and "loss=",
+        # "weight_delta=" and "device=" are exactly the vocabulary of a real
+        # training run; "(MACHINERY not learning)" used to sit as a
+        # parenthetical AFTER them, in a reader's eye the numbers carry the
+        # authority and the caveat reads as a footnote easy to skim past.
+        # This computes nothing differently (same reconstruction_loss,
+        # same weight_delta_norm, same summary dict, same gate-check
+        # behavior); only the words describing it changed, to say what the
+        # module's own docstring above already says: this is a self-
+        # supervised reconstruction fit over Tier-1 structure with NO Tier-2
+        # signal yet, proven to execute without error, not proven or claimed
+        # to have learned anything a reader would call learning.
+        print(f"[ontology_gnn] self-supervised reconstruction fit, no Tier-2 signal yet "
+              f"(not a trained relevance model): {delta_size}/{n} node(s) updated this run, "
+              f"reconstruction_loss={loss_val:.6f}, weight_movement={weight_delta_norm:.6f}, "
+              f"device={dev} -> {spath.name}", flush=True)
     return summary
 
 

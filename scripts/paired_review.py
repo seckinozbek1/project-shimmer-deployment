@@ -665,12 +665,69 @@ def disagreements(checks):
 # the judging call
 
 
-def build_pair_payload(*, unit, rule, checks, refs=None, source_rule_id=""):
+def adjacent_units(unit, unit_texts):
+    """The unit immediately before and after `unit`, by index, or None for either.
+
+    docs/api/UNIT_CONTEXT_DESIGN.md, option B: the narrowest addition that can
+    catch a provision that is only wrong, or only sound, beside its neighbor,
+    without giving back wide mode's whole-document framing. `unit_texts` is
+    whatever map the caller already built (pipeline.py's unit_text, keyed by
+    unit_id, every value carrying "index" since the order fix). This function
+    does not care about the map's keys, only its values' own "index" field:
+    it scans for the two values whose index is exactly one less and one more
+    than `unit`'s own, so it works identically whether the caller's dict
+    happens to be keyed by unit_id, by index, or by anything else.
+
+    A unit missing "index" (a caller on the old, pre-fix shape, or a
+    hand-built fixture that never set it) returns (None, None) for both
+    rather than guessing from list position: this function has exactly one
+    source of truth for adjacency, index, and no fallback that could point at
+    the wrong unit while looking like it worked.
+    """
+    idx = unit.get("index")
+    if idx is None:
+        return None, None
+    prev_unit = next((u for u in (unit_texts or {}).values()
+                      if isinstance(u, dict) and u.get("index") == idx - 1), None)
+    next_unit = next((u for u in (unit_texts or {}).values()
+                      if isinstance(u, dict) and u.get("index") == idx + 1), None)
+    return prev_unit, next_unit
+
+
+def build_pair_payload(*, unit, rule, checks, refs=None, source_rule_id="",
+                       unit_texts=None, document_units=None):
     """The work payload for one (unit, rule) pair.
 
     Carries the computed values and NOT the arithmetic. The model is asked whether
     the discrepancy is material and how to state it for a reader; it is never asked
     what the figures add up to, because H1 measured that it cannot do it.
+
+    unit_texts (docs/api/UNIT_CONTEXT_DESIGN.md, option B): when given, the
+    immediately preceding and following unit's own text is attached under
+    NEW, SEPARATELY NAMED fields (preceding_unit_text/following_unit_text),
+    never merged into document_text. This is the operator's own requirement,
+    proven here rather than asserted: a model reading this payload can tell
+    the unit it is judging from its neighbors by FIELD NAME ALONE, before
+    reading a single word of content, because "document_text" (what is being
+    judged, unchanged, still exactly one unit's own text, this function's
+    contract to every existing caller is unbroken) and
+    "preceding_unit_text"/"following_unit_text" (what surrounds it) are
+    different keys carrying different, non-overlapping strings; a payload
+    dict has no way to let two fields collide into one, so this separation
+    holds by construction, not by convention. neighbor_note states in words
+    what the field names already state in structure: read the neighbors for
+    whether they bear on this unit, do not judge the neighbors themselves,
+    do not cite them as the passage under review. Absent when unit_texts is
+    not given (every existing caller of this function before today), so the
+    contract change is additive: a caller that does not opt in sees no new
+    fields at all, not empty ones.
+
+    document_units (docs/api/UNIT_CONTEXT_DESIGN.md, option D, already built
+    into the wide-mode payload at pipeline.py's document_units block, reused
+    here rather than duplicated): the ordered id/title list for the whole
+    document, when given, under "document_map", with structure_note stating
+    plainly it is orientation, not evidence: titles only, no unit's own text,
+    nothing here answers what a neighbor SAYS, only where it sits.
     """
     disagree = disagreements(checks)
     payload = {
@@ -707,6 +764,36 @@ def build_pair_payload(*, unit, rule, checks, refs=None, source_rule_id=""):
         payload["source_rule_id"] = source_rule_id
     if refs:
         payload["reference_index_excerpt"] = refs
+    if unit_texts is not None:
+        prev_unit, next_unit = adjacent_units(unit, unit_texts)
+        if prev_unit is not None:
+            payload["preceding_unit_text"] = prev_unit.get("text", "")
+        if next_unit is not None:
+            payload["following_unit_text"] = next_unit.get("text", "")
+        if prev_unit is not None or next_unit is not None:
+            payload["neighbor_note"] = (
+                "preceding_unit_text and following_unit_text, when present, are the "
+                "units immediately before and after the one you are judging (document_text "
+                "above), given so you can tell whether either one changes what this unit "
+                "means, for example because one creates an exception the other's own text "
+                "does not state, or because one contradicts what this unit states. They "
+                "are context, not evidence: do not evaluate them against the rule, do not "
+                "cite them as the passage under review, and do not treat anything they say "
+                "as this unit's own statement. Your evaluation is still about document_text "
+                "alone, against rule_text alone."
+            )
+    if document_units:
+        payload["document_map"] = [
+            {"unit_id": u.get("unit_id"), "title": u.get("title", "")}
+            for u in document_units
+        ]
+        payload["structure_note"] = (
+            "document_map lists every unit in this document, in order, by id and title "
+            "only: no unit's own text is in it. It is orientation, not evidence, for "
+            "seeing where the unit you are judging sits in the document's overall shape. "
+            "Do not treat it as a summary of what any unit says, and do not cite it as a "
+            "source: it names units, it does not describe their content."
+        )
     return payload
 
 

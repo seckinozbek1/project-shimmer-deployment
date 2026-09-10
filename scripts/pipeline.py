@@ -1683,9 +1683,19 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
         wrapper = _build_wrapper(agent, orch, keys)
+        # docs/api/UNIT_CONTEXT_DESIGN.md, option B reached through D's scaffold:
+        # unit_text (this document's own units, every one carrying index since
+        # the order fix) lets build_pair_payload find this unit's real
+        # neighbors; pairing["units"] (the SAME ordered id/title list wide
+        # mode's document_units already reuses, not rebuilt here) is the
+        # structural map. Both optional on the function's own contract; both
+        # given here because a paired call is exactly the narrow question this
+        # design was built to answer without reopening wide mode's whole-
+        # document framing.
         payload = paired_review_mod.build_pair_payload(
             unit=unit, rule=rule, checks=checks, refs=refs,
-            source_rule_id=source_rule_id)
+            source_rule_id=source_rule_id, unit_texts=unit_text,
+            document_units=pairing.get("units"))
         r = await _run_one(
             wrapper, payload,
             f"{run_objectives}\nOne unit, one rule. Do not perform arithmetic.",
