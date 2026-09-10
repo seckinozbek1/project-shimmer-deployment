@@ -1463,7 +1463,13 @@ function renderDetailBody(run, allRuns) {
   }
   html += '</div>'; // status-block
 
-  if (run.state === "running" || run.state === "queued") {
+  /* awaiting_approval included: the server derives it from status:"running"
+     with a pending approval on top (_state_for_job, server.py), so
+     run.progress is populated exactly as it is for "running" and was
+     already being sent; the console simply never rendered it for this
+     state. A reviewer deciding Approve/Deny needs to see how far the run
+     had gotten before it paused, the same as anyone watching a running run. */
+  if (run.state === "running" || run.state === "queued" || run.state === "awaiting_approval") {
     html += '<h2>' + (human ? "Steps" : "Phases") + '</h2>';
     var prog2 = parseProgress(run.progress);
     html += human ? phaseLadderHumanHtml(prog2.phase) : phaseLadderHtml(prog2.phase);
@@ -1476,12 +1482,19 @@ function renderDetailBody(run, allRuns) {
   if (run.documents && run.documents.length) {
     html += '<h2>Documents</h2>';
     html += renderDocuments(run);
-  } else if (run.state === "stopped" || run.state === "cancelled") {
-    html += '<h2>Documents</h2><p class="muted">No documents reached completion.</p>';
-  } else if (run.state === "running") {
+  } else {
+    /* The same message in every state, including awaiting_approval and
+       queued, which previously fell through this chain with no branch at
+       all and no Documents heading, silently, while stopped/cancelled/
+       running each had their own separate wording. A reviewer should not
+       find the section simply missing in one state and present with
+       different words in the others; an empty list means the same thing
+       everywhere (no document has reached the point of being checked
+       against a rule yet, or ever, for this run) and now says so the same
+       way everywhere. */
     html += '<h2>Documents</h2><p class="muted">' +
       (human
-        ? "None finished yet: documents appear here once the document has been checked against the rules; nothing to show before that."
+        ? "None finished yet: documents appear here once a document has been checked against the rules; nothing to show before that."
         : "None finished yet: documents appear here once the convention review phase has paired them; nothing to show before that.") +
       '</p>';
   }
@@ -1492,9 +1505,22 @@ function renderDetailBody(run, allRuns) {
 
   app.innerHTML = html;
 
-  if (run.state === "stopped" && run.outcome === "succeeded") {
-    loadFindings(run.run_id);
-    loadPairs(run.run_id);
+  /* Findings and the pairing map are fetched whenever they COULD exist, not
+     only on a clean succeeded completion. The server writes both the moment
+     phase 5.5 pairs a unit (_bus_findings/_pairing_map, server.py), with no
+     state/outcome gate of its own; a run that later crashes, times out, is
+     stopped by a rule, is cancelled, or is still running/paused with one
+     document already finished, can carry real findings from before whatever
+     happened. Fetching only on state===stopped/outcome===succeeded silently
+     hid that data on every other outcome: the system found something, wrote
+     it down, and the interface never asked. queued is the one state this
+     genuinely cannot apply to (nothing has run yet). loadFindings/loadPairs
+     take isPartial themselves, so a non-clean completion is labeled as such
+     rather than presented as a full review. */
+  if (run.state !== "queued") {
+    var isPartialReview = !(run.state === "stopped" && run.outcome === "succeeded");
+    loadFindings(run.run_id, isPartialReview);
+    loadPairs(run.run_id, isPartialReview);
   }
   if (run.state === "stopped" || run.state === "cancelled") {
     var logHolder = document.createElement("div");
@@ -1516,7 +1542,20 @@ function renderApprovalBlock(run) {
   var pa = run.pending_approval;
   var human = isHumanView();
   var html = '<h2>' + (human ? "Paused: needs your decision" : "Awaiting your decision") + '</h2>';
-  if (human) {
+  /* A governed pause with no message and no payload is possible (the server
+     does not require either field, _pending_approval_for's own defaults);
+     approvalDetailHuman() would then return an empty string and the
+     developer branch below an empty <p>, leaving Approve/Deny as two bare
+     buttons with nothing above them explaining what is being decided. Named
+     plainly instead of silently showing the choice with no basis for it. */
+  var hasContent = !!((pa.message || pa.topic) || (pa.payload && Object.keys(pa.payload).length));
+  if (!hasContent) {
+    html += '<p class="notice warn">' + escapeHtml(
+      human
+        ? "This run is waiting on a decision, but the system did not record what it needs decided. Check the log before answering; approving or denying blind is not recommended."
+        : "No message or payload was recorded for this pending approval (pending_approval.json carries neither). Check the log before answering."
+    ) + '</p>';
+  } else if (human) {
     /* The payload's raw key/value table is folded into one sentence rather
        than shown as a second, separate block, per CONSOLE_LANGUAGE.md "A
        pending approval": a reviewer deciding Approve/Deny needs to read one
@@ -1798,7 +1837,15 @@ function findingSentenceHtml(f) {
 /* =======================================================================
    FINDINGS TABLE
 ======================================================================= */
-function loadFindings(runId) {
+/* isPartial: true whenever this run's state/outcome is anything other than
+   a clean stopped/succeeded completion (see renderDetailBody's call site).
+   Findings can exist for ANY state once phase 5.5 has paired at least one
+   unit, so this is called regardless of outcome; when isPartial is true and
+   findings exist, the heading and a standing notice say plainly that these
+   were found before the run ended (crashed, timed out, was stopped by a
+   rule, was cancelled, or is still in progress) and are not a complete
+   review, so a reader does not mistake a partial result for a finished one. */
+function loadFindings(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "findings-holder";
   holder.innerHTML = '<h2>Findings</h2><p class="muted">Loading…</p>';
@@ -1807,8 +1854,16 @@ function loadFindings(runId) {
     if (!res.ok) { holder.innerHTML = '<h2>Findings</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
     var findings = res.body.findings || [];
     if (findings.length === 0) { holder.innerHTML = '<h2>Findings</h2><p class="muted">No findings.</p>'; return; }
+    var heading = '<h2>Findings (' + findings.length + ')</h2>';
+    var partialNotice = isPartial
+      ? '<p class="notice warn" style="margin-bottom:0.75rem">' + escapeHtml(
+          isHumanView()
+            ? "These were found before the run ended. This is not a complete review: the run did not finish cleanly, or is still in progress."
+            : "Partial: found before the run ended (not stopped/succeeded). Not a complete review."
+        ) + '</p>'
+      : "";
     if (isHumanView()) {
-      holder.innerHTML = '<h2>Findings (' + findings.length + ')</h2>' +
+      holder.innerHTML = heading + partialNotice +
         '<ul class="findings-human">' + findings.map(function (f) {
           var cls = f.record_verdict === "irregular" ? "irregular" : (f.record_verdict === "ok" ? "ok" : "");
           return '<li class="finding-human ' + cls + '">' + findingSentenceHtml(f) + '</li>';
@@ -1832,7 +1887,7 @@ function loadFindings(runId) {
         '</td>' +
       '</tr>';
     }).join("");
-    holder.innerHTML = '<h2>Findings (' + findings.length + ')</h2>' +
+    holder.innerHTML = heading + partialNotice +
       '<table class="findings"><thead><tr>' +
       '<th>Rule</th><th>Unit</th><th>Relation</th><th>Verdict</th><th>Figures</th><th>Explanation</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
@@ -1849,7 +1904,9 @@ function loadFindings(runId) {
 /* =======================================================================
    PAIRING MAP
 ======================================================================= */
-function loadPairs(runId) {
+/* isPartial: same meaning and same source as loadFindings' own parameter
+   (renderDetailBody's single isPartialReview computation, passed to both). */
+function loadPairs(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "pairs-holder";
   holder.innerHTML = '<h2>Pairing map</h2><p class="muted">Loading…</p>';
@@ -1858,7 +1915,14 @@ function loadPairs(runId) {
     if (!res.ok) { holder.innerHTML = '<h2>Pairing map</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
     var docs = res.body.documents || [];
     if (docs.length === 0) { holder.innerHTML = '<h2>Pairing map</h2><p class="muted">No pairing map for this run.</p>'; return; }
-    holder.innerHTML = '<h2>Pairing map</h2>' + docs.map(function (d) {
+    var pairsPartialNotice = isPartial
+      ? '<p class="notice warn" style="margin-bottom:0.75rem">' + escapeHtml(
+          isHumanView()
+            ? "This map was built before the run ended. It may not cover every document or unit."
+            : "Partial: built before the run ended (not stopped/succeeded). May not cover every document or unit."
+        ) + '</p>'
+      : "";
+    holder.innerHTML = '<h2>Pairing map</h2>' + pairsPartialNotice + docs.map(function (d) {
       var units = (d.units || []).map(function (u) {
         return '<div class="pairs-unit">' +
           '<span class="uid">' + escapeHtml(u.unit_id) + '</span> (' + escapeHtml(u.kind || "") + ')<br>' +

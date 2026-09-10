@@ -42,7 +42,7 @@ deliberately out of scope).
 
 ### What's in this repository
 
-126 tracked files (source, configuration, and test corpora; counted directly from the
+127 tracked files (source, configuration, and test corpora; counted directly from the
 repository tree, not from git, since directory creation and `.gitignore` behavior can differ
 by tool). No compiled bytecode, no run output, and no cache directory is tracked; those are
 excluded by `.gitignore` and, if present locally, are never committed.
@@ -69,8 +69,9 @@ shimmer-deployment/
 │                                          harness for looking at the console, not the product)
 └── docs/
     ├── RUNBOOK.md, THREAT_MODEL.md       operational reference (see above)
-    └── api/CONSOLE_PLAN.md,              the console's design and its two-view
-        CONSOLE_LANGUAGE.md               language, reviewer/developer, field by field
+    └── api/CONSOLE_PLAN.md,              the console's design, its two-view language
+        CONSOLE_LANGUAGE.md,              (reviewer/developer, field by field), and the
+        CONSOLE_STATE_AUDIT.md            audit of every state against what may exist
 ```
 
 **Not shown above because they are not shipped, and a fresh clone does not have them:**
@@ -1206,9 +1207,21 @@ failure; the **developer view** is the original field-level surface (raw `run_id
 `relation`, the full stop_reason detail, the raw pairing/findings tables) and stays fully
 intact under the switch. The reviewer view is a rewording, never a filtering: nothing the
 developer view shows is dropped, only reworded or moved into a small secondary citation.
-Full field-by-field translations for every relation, every state/outcome combination, a run
-identifier, a phase label, a crash, a governance stop, a pending approval and a partial
-archive are recorded in `docs/api/CONSOLE_LANGUAGE.md`, the design rationale (palette,
+Findings and the pairing map are fetched for every state a run can be in except `queued`, not
+only a clean `succeeded` completion: phase 5.5 writes both the moment it pairs a unit, with no
+outcome of its own, so a run that later crashes, times out, is stopped by a rule, is
+cancelled, or is still running or paused for an approval can carry real findings from before
+whatever happened next; both views show them, labeled plainly as found before the run ended
+and not a complete review, rather than the console silently asking only when the run finished
+cleanly and treating everything else as though nothing had been found. A paused run
+(`awaiting_approval`) shows its phase ladder the same as a running one, since it is internally
+still `running` on the server with an approval on top; and a pending approval carrying neither
+a message nor a payload (the server does not require either) says so plainly rather than
+presenting Approve/Deny with nothing above them to decide from. Full field-by-field
+translations for every relation, every state/outcome combination, a run identifier, a phase
+label, a crash, a governance stop, a pending approval and a partial archive are recorded in
+`docs/api/CONSOLE_LANGUAGE.md`; the complete promise/hide audit across every state, outcome
+and data combination in `docs/api/CONSOLE_STATE_AUDIT.md`; the design rationale (palette,
 typography, layout, the dark masthead) in `docs/api/CONSOLE_PLAN.md`. The access token is
 entered once, reached via a quiet "Not signed in" / "Signed in" link (not a permanent field:
 it is needed once per browser tab, not on every screen), kept in `sessionStorage` (survives a

@@ -197,6 +197,29 @@ def _build_awaiting_approval():
     FIXTURES.append(("awaiting_approval", run_id))
 
 
+def _build_awaiting_approval_no_content():
+    """A pending approval with neither message nor payload, the shape
+    _pending_approval_for's own defaults allow (server.py: message defaults
+    to "", payload defaults to {}). Demonstrates the fix for Approve/Deny
+    rendering with nothing above them: the console must say the basis for
+    the decision is missing, not present two bare buttons."""
+    run_id = "20260910_130500__c3f001"
+    run_dir = RUNS_DIR / run_id
+    _write_status(
+        run_dir, run_id, "running",
+        submitted_at=_now(9), started_at=_now(8), completed_at=None,
+        progress="phase=6.5/9 status=running",
+    )
+    audit = run_dir / "audit"
+    audit.mkdir(parents=True, exist_ok=True)
+    (audit / "pending_approval.json").write_text(json.dumps({
+        "topic": "",
+        "asked_at": _now(1),
+        "payload": {},
+    }, indent=2), encoding="utf-8")
+    FIXTURES.append(("awaiting_approval, no message or payload", run_id))
+
+
 def _build_governance_stop():
     run_id = "20260910_120000__90ba01"
     _write_status(
@@ -229,6 +252,54 @@ def _build_crashed():
         error="Traceback (most recent call last):\n  File \"scripts/pipeline.py\", line 512, in run\n    raise RuntimeError('synthetic crash for console preview')\nRuntimeError: synthetic crash for console preview",
     )
     FIXTURES.append(("crashed", run_id))
+
+
+def _build_crashed_with_partial_findings():
+    """A crash AFTER phase 5.5 already ran: real findings and a real pairing
+    map exist on disk for this run despite it never reaching outcome=succeeded.
+    Demonstrates the fix for the hidden-findings gap (CONSOLE_STATE_AUDIT.md):
+    the console must fetch and show these, labeled partial, not hide them
+    because the outcome was not a clean completion."""
+    run_id = "20260910_120300__b7a501"
+    run_dir = RUNS_DIR / run_id
+    _write_status(
+        run_dir, run_id, "failed",
+        submitted_at=_now(35), started_at=_now(34), completed_at=_now(10), exit_code=1,
+        error="Traceback (most recent call last):\n  File \"scripts/pipeline.py\", line 812, in run\n    raise RuntimeError('synthetic crash after phase 5.5, for console preview')\nRuntimeError: synthetic crash after phase 5.5, for console preview",
+    )
+    audit = run_dir / "audit"
+    audit.mkdir(parents=True, exist_ok=True)
+    (audit / "pairing_map.json").write_text(json.dumps({
+        "case_a": {
+            "document_id": "case_a",
+            "unit_count": 1, "rule_count": 1,
+            "pair_count": 1, "rejected_count": 0, "undecided_count": 0,
+            "unmatched_units": [], "missing_field_findings": [],
+            "units": [
+                {
+                    "unit_id": "u09", "kind": "provision",
+                    "paired": [{"rule_id": "CONV-007", "reason": "unit states a figure this rule checks"}],
+                    "rejected": [], "undecided": [],
+                    "prior_comparisons": {"hit_count": 0, "checks": [], "refused": []},
+                },
+            ],
+        },
+    }, indent=2), encoding="utf-8")
+    logs = run_dir / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    bus_item = {
+        "item_id": "f010", "revision": 1,
+        "rule_id": "CONV-007", "source_rule_id": "CONV-C03", "unit_id": "u09",
+        "value_a": 210.0, "unit_a": "kt", "value_b": 250.0, "unit_b": "kt",
+        "relation": "below_band", "record_verdict": "irregular",
+        "source_refs": ["REF-0090"],
+        "explanation": "The stated figure falls below the reference table's lower bound for this category, found before the run crashed in a later phase.",
+    }
+    (logs / "agent_bus.jsonl").write_text(json.dumps({
+        "sender": "PRACTICE_AUDITOR",
+        "body": {"payload": {"agent": "PRACTICE_AUDITOR", "doc_id": "case_a", "items": [bus_item]}},
+    }) + "\n", encoding="utf-8")
+    FIXTURES.append(("crashed, with partial findings from before the crash", run_id))
 
 
 def _build_timed_out():
@@ -353,9 +424,11 @@ def _seed_fixtures():
     _build_queued()
     _build_running()
     _build_awaiting_approval()
+    _build_awaiting_approval_no_content()
     _build_governance_stop()
     _build_governance_stop_redaction_gate()
     _build_crashed()
+    _build_crashed_with_partial_findings()
     _build_timed_out()
     _build_cancelled()
     _build_completed_with_findings()
