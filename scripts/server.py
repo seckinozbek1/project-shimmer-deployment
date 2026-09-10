@@ -127,7 +127,7 @@ import subprocess   # runs the validator and the pipeline as separate programs.
 import sys          # sys.executable = the exact Python running this server.
 import threading    # a Lock (to guard the queue) and a background run thread.
 import zipfile      # packages the run's deliverables into one downloadable .zip.
-from datetime import datetime, timezone   # timestamps for jobs and run ids.
+from datetime import datetime, timedelta, timezone   # timestamps for jobs and run ids.
 from pathlib import Path                   # tidy, OS-independent file paths.
 from typing import List, Optional          # 3.9-safe type hints for FastAPI.
 import uuid                                # a short random suffix for run ids.
@@ -1000,6 +1000,175 @@ def _review_progress(run_dir, review_mode):
 
 
 # ---------------------------------------------------------------------------
+# api STEP B1: the run resource. GET /runs/{run_id} and GET /runs report ONE
+# object per run (_run_record), replacing the separate, thinner shapes GET
+# /status/{run_id} and GET /queue used to return. GET /status and GET /queue
+# stay in place unchanged for this step (cancellation, approval-answering and
+# deliverables are the next steps; nothing about those routes changes here).
+#
+# The new object adds three things the old "status" string alone could not
+# say at once: a closed-set `state` (queued / running / awaiting_approval /
+# stopped / cancelled) that a caller's switch can be exhaustive over; an
+# `outcome` (succeeded / governance_stop / crashed / timed_out) that is
+# populated only once `state` is "stopped", so a governance halt is never
+# reported the same way as a crash; and `pending_approval`, the full pending
+# question (not just its existence), read off the SAME pending_approval.json
+# _pending_approvals() already reads, so GET /runs/{run_id} never needs a
+# second call to GET /approvals to explain why a run is stalled.
+# ---------------------------------------------------------------------------
+def _pending_approval_for(run_dir):
+    """The pending governed question for ONE run, or None. Same file-reading
+    rule as _pending_approvals() below (which this now delegates to): a
+    pending_approval.json with no approval_decision.json yet means a human has
+    not answered. Adds `message` (split out of `payload`, since payload may or
+    may not carry one depending on the topic; message is what a person reads,
+    payload is what a program reads, kept as separate fields rather than
+    mixed, per the human/machine constraint) and `default_on_timeout` /
+    `timeout_at`, computed from SHIMMER_APPROVAL_WAIT_S, the same environment
+    variable the pipeline subprocess's file-operator handler already reads for
+    this exact wait (server.py's own docstring table, SHIMMER_APPROVAL_WAIT_S
+    row); the pipeline's handler unconditionally defaults to DEFERRED on
+    timeout regardless of topic, so default_on_timeout is always that literal
+    string, stated rather than left for a caller to infer from source."""
+    pending_path = run_dir / "audit" / "pending_approval.json"
+    decision_path = run_dir / "audit" / "approval_decision.json"
+    if not pending_path.exists() or decision_path.exists():
+        return None
+    try:
+        record = json.loads(pending_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    payload = record.get("payload") if isinstance(record.get("payload"), dict) else {}
+    asked_at = record.get("asked_at")
+    timeout_at = None
+    if isinstance(asked_at, str):
+        try:
+            asked_dt = datetime.fromisoformat(asked_at)
+            wait_s = _env_int("SHIMMER_APPROVAL_WAIT_S", 3600)
+            timeout_at = (asked_dt + timedelta(seconds=wait_s)).isoformat()
+        except ValueError:
+            timeout_at = None
+    return {
+        "topic": record.get("topic"),
+        "message": payload.get("message") if isinstance(payload.get("message"), str) else "",
+        "payload": payload,
+        "asked_at": asked_at,
+        "default_on_timeout": "DEFERRED",
+        "timeout_at": timeout_at,
+    }
+
+
+# Terminal `status` strings whose outcome is "governance_stop": the pipeline
+# stopped itself ON PURPOSE. Identical set to GOVERNANCE_STATUSES above; kept
+# as a separate name so a reader of _outcome_for_status does not have to trace
+# back to the exit-code table to see which statuses land here.
+_GOVERNANCE_OUTCOME_STATUSES = GOVERNANCE_STATUSES
+# Terminal `status` strings whose outcome is "crashed" rather than a
+# governance stop or a timeout. snapshot_conflict and operator_abort are
+# distinct governance-adjacent outcomes upstream (see _EXIT_STATUS_MAP's own
+# comment) but neither is a rule refusing on purpose mid-review the way the
+# four GOVERNANCE_STATUSES are, and neither is "succeeded"; "crashed" is the
+# nearest of the four `outcome` values and is recorded here explicitly rather
+# than left to a catch-all, so the mapping is auditable in one place.
+# "interrupted" (a server restart mid-run, STEP 2) is not a pipeline decision
+# at all; it is mapped here too, to "crashed", for the same reason: there is
+# no fifth `outcome` value for "the server died", and "crashed" is the
+# closest true statement ("something other than success and other than a
+# rule happened").
+_CRASHED_OUTCOME_STATUSES = {"failed", "snapshot_conflict", "operator_abort", "interrupted"}
+
+
+def _outcome_for_status(status, exit_code):
+    """(outcome, stop_reason) for a TERMINAL `status` string. Only called once
+    `state` has already been decided to be "stopped" (see _run_record); never
+    called for "queued", "running" or "awaiting_approval"."""
+    if status == "completed":
+        return "succeeded", None
+    if status in _GOVERNANCE_OUTCOME_STATUSES:
+        return "governance_stop", {"code": status, "detail": None}
+    if status == "failed" and exit_code is None:
+        # _run_job never observes an exit_code on a run-timeout path (the
+        # subprocess is terminated/killed by the Timer, not waited on for a
+        # code); exit_code is None is exactly and only that path today.
+        return "timed_out", {"code": "run_timeout", "detail": None}
+    if status in _CRASHED_OUTCOME_STATUSES:
+        return "crashed", {"code": status, "detail": None}
+    # Unrecognised status string (should not happen; every writer of
+    # job["status"] uses one of the names above or _status_for_exit_code's
+    # own table). Reported as crashed rather than raising, since a status
+    # route must never itself throw on an unexpected but real job record.
+    return "crashed", {"code": status, "detail": None}
+
+
+def _state_for_job(job, run_dir):
+    """The closed-set `state` for one job: queued / running /
+    awaiting_approval / stopped / cancelled. "cancelled" is not reachable yet
+    (no writer sets job["status"] to it in this step; it is reserved here so
+    the set is already complete before cancellation itself is built next
+    step, rather than adding a sixth value later)."""
+    status = job.get("status")
+    if status == "queued":
+        return "queued"
+    if status == "cancelled":
+        return "cancelled"
+    if status == "running":
+        if _pending_approval_for(run_dir) is not None:
+            return "awaiting_approval"
+        return "running"
+    return "stopped"
+
+
+def _documents_for_run(run_dir):
+    """One entry per document the pairing map knows about, each with its own
+    status (not_started / in_progress / done) and deliverables_path (non-null
+    once BP-16's deliverables/<doc_id>/ exists and holds at least one file).
+    A run with no pairing map yet (nothing has reached phase 5.5) returns an
+    empty list, not an error: "no documents yet" and "unknown run" are
+    different answers, matching the empty-but-200 convention every other
+    run-scoped read on this surface already uses."""
+    out = []
+    deliv_root = run_dir / "deliverables"
+    for pairing in _pairing_map(run_dir).values():
+        if not isinstance(pairing, dict):
+            continue
+        doc_id = pairing.get("document_id")
+        if not doc_id:
+            continue
+        doc_dir = deliv_root / doc_id
+        done = doc_dir.is_dir() and any(p.is_file() for p in doc_dir.rglob("*"))
+        out.append({
+            "doc_id": doc_id,
+            "status": "done" if done else "in_progress",
+            "deliverables_path": f"{doc_id}/" if done else None,
+        })
+    return out
+
+
+def _run_record(job, run_dir):
+    """The complete run-resource object GET /runs/{run_id} and GET /runs
+    return: everything decision one requires in one place, so a caller never
+    needs a second call to understand a run's state, why it stopped (if it
+    stopped), which documents are done, or what a pending approval is asking."""
+    state = _state_for_job(job, run_dir)
+    outcome = None
+    stop_reason = None
+    if state == "stopped":
+        outcome, stop_reason = _outcome_for_status(job.get("status"), job.get("exit_code"))
+        if stop_reason is not None and stop_reason.get("detail") is None:
+            stop_reason = dict(stop_reason, detail=job.get("error"))
+    record = {k: job.get(k) for k in _STATUS_FIELDS}
+    record["state"] = state
+    record["outcome"] = outcome
+    record["stop_reason"] = stop_reason
+    record["pending_approval"] = (_pending_approval_for(run_dir)
+                                  if state == "awaiting_approval" else None)
+    record["documents"] = _documents_for_run(run_dir)
+    record["log_url"] = f"/runs/{job['run_id']}/log"
+    record.update(_review_progress(run_dir, job.get("review_mode")))
+    return record
+
+
+# ---------------------------------------------------------------------------
 # ROUTES (the URLs the server answers). All are token-gated via verify_token.
 # ---------------------------------------------------------------------------
 @app.post("/submit", status_code=202, dependencies=[Depends(verify_token)])
@@ -1174,6 +1343,27 @@ async def status(run_id: str):
     return record
 
 
+@app.get("/runs/{run_id}", dependencies=[Depends(verify_token)])
+async def run_detail(run_id: str):
+    """api STEP B1: the complete run resource, merging what GET /status and one
+    entry of GET /queue used to answer separately into one object (see
+    _run_record's own docstring for the field-by-field reasoning). Same
+    run_id validation and the same 404 behavior as GET /status: a malformed
+    id or an unknown one is 404 either way, so a caller learns nothing about
+    which case it was.
+
+    GET /status/{run_id} is unchanged and still answers alongside this route;
+    nothing about it is removed in this step."""
+    if not _RUN_ID_RE.match(run_id):
+        raise HTTPException(status_code=404, detail="run_id not found")
+    with JOBS_LOCK:
+        job = _find_job(run_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="run_id not found")
+        job = dict(job)  # a copy, so the caller cannot mutate our record.
+    return _run_record(job, RUNS_DIR / run_id)
+
+
 @app.get("/findings/{run_id}", dependencies=[Depends(verify_token)])
 async def findings(run_id: str):
     """The run's typed Finding records as JSON: the structured review itself.
@@ -1311,14 +1501,16 @@ async def health():
 
 @app.get("/runs", dependencies=[Depends(verify_token)])
 async def runs():
-    """Every run's status record, oldest submission first: the same data as
-    /queue (STEP 2's disk-backed JOBS cache), under the name the console uses.
-    Kept as a separate route (rather than reusing /queue) because the STEP 6
-    evidence and acceptance checks name /runs explicitly; the two return the
-    same shape so either can be used interchangeably by a caller."""
+    """api STEP B1: every run as the complete run-resource object (_run_record),
+    oldest submission first. This is the list side of GET /runs/{run_id}: a
+    caller reading this route and a caller reading one run's detail parse an
+    identical per-run shape, so nothing is lost by reading the list instead of
+    polling each run individually. This is a behavior change from before this
+    step, when GET /runs returned the same thin shape as GET /queue (still
+    true of /queue, unchanged in this step; see that route)."""
     with JOBS_LOCK:
-        ordered = sorted(JOBS, key=lambda j: j["submitted_at"])
-        return {"jobs": [dict(j) for j in ordered]}
+        ordered = [dict(j) for j in sorted(JOBS, key=lambda j: j["submitted_at"])]
+    return {"runs": [_run_record(j, RUNS_DIR / j["run_id"]) for j in ordered]}
 
 
 def _pending_approvals():

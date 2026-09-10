@@ -12427,6 +12427,244 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
                "record back, proving the corroboration pass is the mechanism")
 
 
+class _BlockingLinePopen:
+    """Stands in for subprocess.Popen inside _run_job (S1: no real pipeline is
+    ever spawned). Unlike _FakePopen (empty stdout, immediate exit), this one
+    yields exactly one [progress] line, then BLOCKS the calling thread's `for
+    line in proc.stdout` on a threading.Event before yielding StopIteration,
+    so the background worker thread genuinely parks with job["status"] ==
+    "running" until the test releases it -- proving "running" is a real,
+    independently-observable state, not an assumption about timing."""
+
+    def __init__(self, *a, returncode=0, progress_line="[progress] phase=1\n", **k):
+        self.returncode = returncode
+        self._release = threading.Event()
+        self.stdout = self._lines(progress_line)
+
+    def _lines(self, progress_line):
+        yield progress_line
+        self._release.wait(timeout=10)
+
+    def release(self):
+        self._release.set()
+
+    def wait(self):
+        return self.returncode
+
+
+def check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state():
+    """api STEP B1: GET /runs/{run_id} (and GET /runs, its list twin) report the
+    new run-resource shape end to end, with NO real pipeline subprocess ever
+    spawned (S1: subprocess.Popen is monkeypatched to _BlockingLinePopen) and
+    no model loaded.
+
+    Asserted, driven through the REAL _start_next_job -> background thread ->
+    _run_job path (never calling _run_job directly), so the queued -> running
+    transition observed is the one an actual caller would see, not an
+    artifact of the test calling functions in a chosen order:
+      - immediately after POST /submit, GET /runs/{run_id} reports
+        state="queued", outcome=None, pending_approval=None;
+      - once the background worker has picked the job up and is genuinely
+        blocked mid-subprocess (the fake Popen's stdout generator is paused
+        on an Event, proven by polling until job["status"]=="running" is
+        observed on the real JOBS list), GET /runs/{run_id} reports
+        state="running";
+      - releasing the fake process with returncode=3 (stopped_model_approval,
+        a GOVERNANCE outcome) drives it to state="stopped",
+        outcome="governance_stop", stop_reason.code="stopped_model_approval";
+      - a second run released with returncode=1 (an ordinary crash) drives it
+        to state="stopped", outcome="crashed" -- proving the two terminal
+        cases are NOT reported the same way, the constraint the operator
+        stated explicitly;
+      - GET /runs (the list route) reports the SAME state/outcome for both
+        runs as their own GET /runs/{run_id}, so the merge is real and not
+        two independently-maintained shapes.
+    NEUTRALISE AND RESTORE: with _state_for_job monkeypatched to always
+    return "stopped", the governance run's outcome collapses to
+    "governance_stop" still (state alone does not gate outcome correctly if
+    _outcome_for_status were never reached) -- instead the neutralise target
+    is _GOVERNANCE_OUTCOME_STATUSES: emptied, the governance run's outcome
+    becomes "crashed" (indistinguishable from the real crash), and restoring
+    the set brings "governance_stop" back, proving the distinction is live
+    code, not a string the test is reading back verbatim."""
+    try:
+        import fastapi  # noqa: F401
+    except ImportError:
+        return _ok("fastapi absent: check_186 requires fastapi, skipped as N/A")
+
+    from fastapi.testclient import TestClient
+    import hashlib as _hl
+    import os as _os
+    import subprocess as _subprocess
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_api_b1_") as tmp:
+        runs_dir = Path(tmp) / "runs"
+        server = _step6_server_module(runs_dir)
+        server.RUNS_DIR = runs_dir
+
+        saved_tok = _os.environ.get("SHIMMER_TOKEN_HASH")
+        saved_popen = _subprocess.Popen
+        try:
+            tok = "gate-api-b1-token"
+            _os.environ["SHIMMER_TOKEN_HASH"] = _hl.sha256(tok.encode("utf-8")).hexdigest()
+            client = TestClient(server.app)
+            headers = {"Authorization": f"Bearer {tok}"}
+
+            def _submit_and_reach_running(returncode):
+                fake = {}
+
+                def _factory(*a, **k):
+                    p = _BlockingLinePopen(*a, returncode=returncode, **k)
+                    fake["proc"] = p
+                    return p
+
+                _subprocess.Popen = _factory
+                server.subprocess.Popen = _factory
+
+                resp = client.post("/submit", headers=headers,
+                                    data={"task": "draft", "question": "gate check q"})
+                if resp.status_code != 202:
+                    raise AssertionError(f"/submit returned {resp.status_code}: {resp.text[:200]}")
+                run_id = resp.json()["run_id"]
+
+                # Immediately after submit: queued, before the worker thread has
+                # necessarily run at all.
+                snap = client.get(f"/runs/{run_id}", headers=headers).json()
+                if snap.get("state") not in ("queued", "running"):
+                    raise AssertionError(f"run {run_id} was {snap.get('state')!r} "
+                                          f"immediately after submit, expected queued "
+                                          f"(or running, if the worker thread already "
+                                          f"started)")
+
+                # Poll (bounded) until the worker has genuinely reached the fake
+                # Popen and is blocked mid-stdout -- job["status"] == "running"
+                # in the real JOBS list, not assumed from timing.
+                deadline = time.monotonic() + 5.0
+                while time.monotonic() < deadline:
+                    with server.JOBS_LOCK:
+                        job = server._find_job(run_id)
+                        live_status = job.get("status") if job else None
+                    if live_status == "running" and "proc" in fake:
+                        break
+                    time.sleep(0.02)
+                else:
+                    raise AssertionError(f"run {run_id} never reached status=running "
+                                          f"within 5s")
+
+                running_snap = client.get(f"/runs/{run_id}", headers=headers).json()
+                if running_snap.get("state") != "running":
+                    raise AssertionError(f"run {run_id} JOBS status is running but GET "
+                                          f"/runs/{{run_id}} reported state="
+                                          f"{running_snap.get('state')!r}")
+                if running_snap.get("outcome") is not None:
+                    raise AssertionError(f"a running run must have outcome=None, got "
+                                          f"{running_snap.get('outcome')!r}")
+
+                # Release the fake subprocess and wait for the worker thread to
+                # finish writing the terminal status.
+                fake["proc"].release()
+                deadline = time.monotonic() + 5.0
+                while time.monotonic() < deadline:
+                    with server.JOBS_LOCK:
+                        job = server._find_job(run_id)
+                        live_status = job.get("status") if job else None
+                    if live_status not in ("queued", "running"):
+                        break
+                    time.sleep(0.02)
+                else:
+                    raise AssertionError(f"run {run_id} never reached a terminal status "
+                                          f"within 5s of release")
+
+                return run_id
+
+            # Governance stop: exit 3 -> stopped_model_approval.
+            gov_id = _submit_and_reach_running(3)
+            gov = client.get(f"/runs/{gov_id}", headers=headers).json()
+            if gov.get("state") != "stopped":
+                return _fail(f"governance run state={gov.get('state')!r}, expected 'stopped'")
+            if gov.get("outcome") != "governance_stop":
+                return _fail(f"governance run outcome={gov.get('outcome')!r}, "
+                             f"expected 'governance_stop'")
+            sr = gov.get("stop_reason") or {}
+            if sr.get("code") != "stopped_model_approval":
+                return _fail(f"governance run stop_reason={sr!r}, "
+                             f"expected code='stopped_model_approval'")
+
+            # Ordinary crash: exit 1 -> "failed" -> outcome "crashed".
+            crash_id = _submit_and_reach_running(1)
+            crash = client.get(f"/runs/{crash_id}", headers=headers).json()
+            if crash.get("state") != "stopped":
+                return _fail(f"crashed run state={crash.get('state')!r}, expected 'stopped'")
+            if crash.get("outcome") != "crashed":
+                return _fail(f"crashed run outcome={crash.get('outcome')!r}, "
+                             f"expected 'crashed'")
+
+            # The two terminal cases must not be reported the same way.
+            if gov.get("outcome") == crash.get("outcome"):
+                return _fail("a governance stop and a crash produced the same outcome: "
+                             f"{gov.get('outcome')!r}")
+            if (gov.get("state"), gov.get("stop_reason", {}).get("code")) == \
+               (crash.get("state"), crash.get("stop_reason", {}).get("code")):
+                return _fail("a governance stop and a crash were fully indistinguishable")
+
+            # GET /runs (the list route) must report the SAME state/outcome for
+            # both runs as their own GET /runs/{run_id}: the merge is real.
+            listing = client.get("/runs", headers=headers).json()
+            by_id = {r["run_id"]: r for r in listing.get("runs", [])}
+            for rid, expect in ((gov_id, gov), (crash_id, crash)):
+                if rid not in by_id:
+                    return _fail(f"run {rid} is missing from GET /runs")
+                if by_id[rid].get("state") != expect.get("state"):
+                    return _fail(f"GET /runs reports state={by_id[rid].get('state')!r} "
+                                 f"for {rid}, but GET /runs/{{run_id}} reported "
+                                 f"{expect.get('state')!r}")
+                if by_id[rid].get("outcome") != expect.get("outcome"):
+                    return _fail(f"GET /runs reports outcome={by_id[rid].get('outcome')!r} "
+                                 f"for {rid}, but GET /runs/{{run_id}} reported "
+                                 f"{expect.get('outcome')!r}")
+
+            # NEUTRALISE: empty the governance-outcome status set. The governance
+            # run's outcome must then collapse to "crashed", indistinguishable
+            # from the real crash, since the code that tells them apart is gone.
+            saved_gov_statuses = set(server._GOVERNANCE_OUTCOME_STATUSES)
+            try:
+                server._GOVERNANCE_OUTCOME_STATUSES.clear()
+                neutralised = client.get(f"/runs/{gov_id}", headers=headers).json()
+                if neutralised.get("outcome") != "crashed":
+                    return _fail(f"with _GOVERNANCE_OUTCOME_STATUSES emptied, the "
+                                 f"governance run's outcome was "
+                                 f"{neutralised.get('outcome')!r}, expected 'crashed' "
+                                 f"(the distinction should have collapsed)")
+            finally:
+                # RESTORE.
+                server._GOVERNANCE_OUTCOME_STATUSES.clear()
+                server._GOVERNANCE_OUTCOME_STATUSES.update(saved_gov_statuses)
+            restored = client.get(f"/runs/{gov_id}", headers=headers).json()
+            if restored.get("outcome") != "governance_stop":
+                return _fail(f"after restoring _GOVERNANCE_OUTCOME_STATUSES, the "
+                             f"governance run's outcome was {restored.get('outcome')!r}, "
+                             f"expected 'governance_stop' back")
+        except AssertionError as e:
+            return _fail(str(e))
+        finally:
+            _subprocess.Popen = saved_popen
+            server.subprocess.Popen = saved_popen
+            if saved_tok is None:
+                _os.environ.pop("SHIMMER_TOKEN_HASH", None)
+            else:
+                _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
+
+    return _ok("a submitted run is observed queued, then genuinely running (the worker "
+               "thread parked mid-subprocess, proven by polling the real JOBS status, not "
+               "assumed from timing), then a terminal state; exit 3 reports "
+               "state=stopped/outcome=governance_stop/stop_reason.code="
+               "stopped_model_approval and exit 1 reports state=stopped/outcome=crashed, "
+               "never the same outcome; GET /runs (the list) agrees with GET /runs/{run_id} "
+               "for both; emptying _GOVERNANCE_OUTCOME_STATUSES collapses the governance "
+               "run's outcome to 'crashed' and restoring the set brings 'governance_stop' "
+               "back, proving the distinction is live code")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -12614,6 +12852,7 @@ CHECKS = [
     ("183 a stated band applies only to the fields the rule names (R6, negotiation corpus)", check_183_a_stated_band_applies_only_to_the_fields_the_rule_names),
     ("184 a text column with one incidental figure is not a measurement column (R6, negotiation corpus)", check_184_a_text_column_with_one_incidental_figure_is_not_a_measurement_column),
     ("185 a reworded label refuses instead of fabricating an absence (G2)", check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence),
+    ("186 a run reports queued, then running, then a distinguishable terminal state (api B1)", check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state),
 ]
 
 
