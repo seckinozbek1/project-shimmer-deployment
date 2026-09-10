@@ -894,8 +894,8 @@ back as a 400 with the violation report rather than a failed run twenty minutes 
 **Step 2, poll while it works.**
 
 ```
-curl -s "$BASE/status/<run_id>" -H "Authorization: Bearer $TOKEN"
-# -> {"status":"running", "progress":"phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR ...",
+curl -s "$BASE/runs/<run_id>" -H "Authorization: Bearer $TOKEN"
+# -> {"state":"running", "outcome":null, "progress":"phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR ...",
 #     "review_mode":"paired",
 #     "pairs_planned":104, "pairs_arithmetic_only":99, "model_calls":13}
 ```
@@ -904,14 +904,14 @@ Poll every 20 to 30 seconds. The three counters move DURING the run, so a caller
 real progress rather than a spinner: `pairs_planned` is how many (unit, rule) pairs the map
 decided could apply, `model_calls` is how many model calls have been made so far, and
 `pairs_arithmetic_only` is how many pairs Python settled without asking a model. Stop polling
-when `status` leaves `queued`/`running`; see the status table below for what each terminal
-value means, and note that `blocked`, the two `stopped_*` values and
-`refused_sensitivity_layer_inactive` are governance outcomes, not crashes.
+when `state` leaves `queued`/`running`/`awaiting_approval`; see the status table below for
+what each terminal `outcome` means, and note that `governance_stop` is a distinct outcome
+from `crashed`, never rendered the same way.
 
 **Step 3, read the structured review.** This is the part a program consumes.
 
 ```
-curl -s "$BASE/findings/<run_id>" -H "Authorization: Bearer $TOKEN"
+curl -s "$BASE/runs/<run_id>/findings" -H "Authorization: Bearer $TOKEN"
 ```
 
 ```json
@@ -937,7 +937,7 @@ such run".
 **Step 4, if you need to justify a finding, ask why those rules were applied.**
 
 ```
-curl -s "$BASE/pairs/<run_id>" -H "Authorization: Bearer $TOKEN"
+curl -s "$BASE/runs/<run_id>/pairs" -H "Authorization: Bearer $TOKEN"
 ```
 
 Returns the pairing map: per document the counts, and per unit the rules paired and rejected,
@@ -948,31 +948,39 @@ was that one not".
 **Step 5, fetch the human deliverable if a person needs it.**
 
 ```
-curl -s "$BASE/results/<run_id>" -H "Authorization: Bearer $TOKEN" -o results.zip
+curl -s "$BASE/runs/<run_id>/deliverables" -H "Authorization: Bearer $TOKEN" -o results.zip
 ```
 
 A zip in the BP-16 layout: one folder per document with `review_findings.md`,
 `review_data.json`, `tracked_changes.docx`, the two summaries and the reviewed document, plus
-a top-level `_run_summary.md`. Returns 400 if the run has not completed. Use `/findings` and
-`/pairs` for a program and `/results` for a reader.
+a top-level `_run_summary.md`. Not gated on completion: it zips whatever exists under
+`deliverables/` right now (checking `X-Shimmer-Partial` or `documents[]` on `GET
+/runs/<run_id>` tells you whether that is everything or only part of it). To fetch one
+document alone instead of the whole run, use `$BASE/runs/<run_id>/deliverables/<doc_id>`. Use
+`/runs/<run_id>/findings` and `/runs/<run_id>/pairs` for a program and
+`/runs/<run_id>/deliverables` for a reader.
 
 **Step 6, answer a governed decision if one is waiting.** Rare, and only when the pipeline
 pauses on purpose (a deprecated model, a constitution amendment):
 
 ```
 curl -s "$BASE/approvals" -H "Authorization: Bearer $TOKEN"
-curl -s -X POST "$BASE/approvals/<run_id>" -H "Authorization: Bearer $TOKEN" \
+curl -s -X POST "$BASE/runs/<run_id>/approval" -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"decision":"APPROVE","rationale":"..."}'
 ```
 
-The server records the decision and nothing more; it never evaluates it.
+The server records the decision and nothing more; it never evaluates it. The response (202)
+carries `recorded: true` and the run's `run_state` as it stood just before the write, never a
+claim that the decision was approved — poll `GET /runs/<run_id>` afterward to see what the
+pipeline actually did with it.
 
 **Notes a caller needs.** One job runs at a time and the queue drains in submission order, so
-`/status` may sit at `queued` behind someone else's run; `/queue` and `/runs` show the whole
-picture. Run state is written to disk on every transition, so a server restart keeps the run
-history: the in-flight run comes back as `interrupted`, and a run still `queued` at restart
-keeps its record but loses its staged uploads, so resubmit both. Every route taking
+`GET /runs/<run_id>` may report `state: "queued"` behind someone else's run; `GET /runs` shows
+the whole picture. Run state is written to disk on every transition, so a server restart keeps
+the run history: the in-flight run comes back as `interrupted` internally (`state: "stopped"`,
+`outcome: "crashed"` on `GET /runs/<run_id>`), and a run still `queued` at restart keeps its
+record but loses its staged uploads, so resubmit both. Every route taking
 a `run_id` validates it against the server's own mint format and answers 404 for anything
 else, so a malformed or guessed id can never reach a path expression.
 
@@ -1026,24 +1034,26 @@ curl -s -X POST "$BASE/submit" \
   -F "task=draft" \
   -F "question=Is a 20 working-day merger review period consistent with best practice?"
 
-# poll status until it reads "completed" (or "failed")
-curl -s "$BASE/status/<run_id>" -H "Authorization: Bearer $TOKEN"
+# poll until state leaves "queued"/"running"/"awaiting_approval"
+curl -s "$BASE/runs/<run_id>" -H "Authorization: Bearer $TOKEN"
 
 # the structured review: typed Finding records, and the pairing map behind them
-curl -s "$BASE/findings/<run_id>" -H "Authorization: Bearer $TOKEN"
-curl -s "$BASE/pairs/<run_id>"    -H "Authorization: Bearer $TOKEN"
+curl -s "$BASE/runs/<run_id>/findings" -H "Authorization: Bearer $TOKEN"
+curl -s "$BASE/runs/<run_id>/pairs"    -H "Authorization: Bearer $TOKEN"
 
-# download the deliverables zip once completed
-curl -s "$BASE/results/<run_id>" -H "Authorization: Bearer $TOKEN" -o results.zip
+# download the deliverables zip (whatever exists so far; check X-Shimmer-Partial)
+curl -s "$BASE/runs/<run_id>/deliverables" -H "Authorization: Bearer $TOKEN" -o results.zip
 ```
 
-`/findings` and `/pairs` are the machine-readable answer; `/results` is the human one. A run
-with no findings yet is a 200 with an empty list, not a 404: "nothing found" and "no such run"
-are different answers and a poller must be able to tell them apart.
+`/runs/<run_id>/findings` and `/runs/<run_id>/pairs` are the machine-readable answer;
+`/runs/<run_id>/deliverables` is the human one. A run with no findings yet is a 200 with an
+empty list, not a 404: "nothing found" and "no such run" are different answers and a poller
+must be able to tell them apart.
 
 The zip preserves the BP-16 layout: one folder per document plus the top-level
-`_run_summary.md` (section H). Jobs run one at a time; a `/results` call before the run
-completes returns 400, so poll `/status` first.
+`_run_summary.md` (section H). Jobs run one at a time; `/runs/<run_id>/deliverables` is not
+gated on completion (api STEP B4) — it zips whatever documents are done so far, and says so
+via `X-Shimmer-Partial` and the filename when the run has not finished successfully.
 
 **Environment variables.** Most are read once at startup and the resolved subset prints to
 stderr; `SHIMMER_TOKEN_HASH` is read per request, `SHIMMER_BACKEND_PROFILE` is read live on
@@ -1074,23 +1084,24 @@ the child, not this process:
 **Routes.** This table is the complete set the app registers; gate check 167 fails if it and
 the app disagree in either direction.
 
+Every run-scoped route lives under `/runs/{run_id}/...` (api STEP B5): `/status/{run_id}`,
+`/queue`, `/results/{run_id}`, `/findings/{run_id}`, `/pairs/{run_id}` and
+`POST /approvals/{run_id}` were retired outright, each already fully replaced by a route below.
+There is no back-compat alias for any of the retired names; nothing else calls this server yet.
+
 | Method | Route | Auth | Returns |
 |---|---|---|---|
 | `POST` | `/submit` | token | 202 and a run id. Multipart `files` + `task` + optional `question`, `sensitive`, `review_mode`. Draft requires a question, review requires files. Rejects an over-count submission with 400 before any file is written, and an oversized one before it is queued (its staging directory is deleted), per the upload caps above. |
-| `GET` | `/status/{run_id}` | token | One job record: status, timestamps, `task`, `sensitive`, `review_mode`, `exit_code`, `error`, the latest `[progress]` line, and the three live review counters below. |
-| `GET` | `/findings/{run_id}` | token | The run's typed **Finding records** as JSON (section B), including the ok-verdict prior-version records with `field_label`, `delta`, `band_distance_change` and `provenance`; filter on `relation` in `moved_toward` / `moved_away` / `changed_from_prior` / `unchanged_from_prior` / `absent_since_prior` to answer the round question by program. |
-| `GET` | `/pairs/{run_id}` | token | The run's **pairing map**: counts, and per unit the rules paired / rejected with the reason for each plus the undecided rule ids (ids only, no reason), and per unit `prior_hit_count`, `prior_check_count` and `prior_refused_count` (integers only). No document text. |
-| `GET` | `/queue` | token | Every job, oldest submission first (thin shape: `_STATUS_FIELDS` only). |
-| `GET` | `/runs` | token | Every run as the complete run resource (see `/runs/{run_id}` below), oldest submission first. As of api STEP B1 this is no longer the same shape as `/queue`; the two are not interchangeable. |
-| `GET` | `/runs/{run_id}` | token | api STEP B1/B2/B3/B4: one run's complete record in a single call: `state` (`queued` / `running` / `awaiting_approval` / `stopped` / `cancelled`), `outcome` (populated once `state` is `stopped` or `cancelled`: `succeeded` / `governance_stop` / `crashed` / `timed_out` / `cancelled`), `stop_reason`, `pending_approval` (populated once `state` is `awaiting_approval`: `topic`, `message`, `payload`, `asked_at`, `default_on_timeout`, `timeout_at` — the full pending question and what happens if nobody answers, not just its existence), `documents` (per-document `status` and `deliverables_url`, a REAL fetchable route once that document is done, not a display string; nothing is deleted by a cancel, so partial output stays visible here), `log_url`, plus the fields `/status` already returned. |
+| `GET` | `/runs` | token | Every run as the complete run resource (see `/runs/{run_id}` below), oldest submission first. |
+| `GET` | `/runs/{run_id}` | token | api STEP B1/B2/B3/B4/B5: one run's complete record in a single call: `state` (`queued` / `running` / `awaiting_approval` / `stopped` / `cancelled`), `outcome` (populated once `state` is `stopped` or `cancelled`: `succeeded` / `governance_stop` / `crashed` / `timed_out` / `cancelled`), `stop_reason`, `pending_approval` (populated once `state` is `awaiting_approval`: `topic`, `message`, `payload`, `asked_at`, `default_on_timeout`, `timeout_at`), `documents` (per-document `status` and `deliverables_url`, a REAL fetchable route once that document is done, not a display string), `log_url`, plus `task`/`submitted_at`/`started_at`/`completed_at`/`exit_code`/`error`/`progress`/`files`/`sensitive`/`review_mode`/`question`. Does **not** carry the raw internal `status` string (dropped in api STEP B5: `state`/`outcome`/`stop_reason` is the sole vocabulary here, so a caller never has to reconcile two descriptions of the same run). |
+| `GET` | `/runs/{run_id}/findings` | token | The run's typed **Finding records** as JSON (section B), including the ok-verdict prior-version records with `field_label`, `delta`, `band_distance_change` and `provenance`; filter on `relation` in `moved_toward` / `moved_away` / `changed_from_prior` / `unchanged_from_prior` / `absent_since_prior` to answer the round question by program. |
+| `GET` | `/runs/{run_id}/pairs` | token | The run's **pairing map**: counts, and per unit the rules paired / rejected with the reason for each plus the undecided rule ids (ids only, no reason), and per unit `prior_hit_count`, `prior_check_count` and `prior_refused_count` (integers only). No document text. |
 | `POST` | `/runs/{run_id}/cancel` | token | api STEP B2: stops a run. A queued job is removed before it ever starts; a running job's subprocess is terminated (then killed). Both land on `state="cancelled"`. `409` if the run is already in a terminal state (including already cancelled) — refused with a reason naming its actual state, not a silent no-op. `404` for a malformed or unknown `run_id`. Deletes nothing on disk. |
-| `POST` | `/runs/{run_id}/approval` | token | api STEP B3: records a human's decision on the run's pending governed question. Body `decision` + `rationale`; writes `<run>/audit/approval_decision.json` atomically and **nothing else** — never evaluates whether the decision is an approval (that stays entirely with `model_registry`/`constitution_guard`, read back by the pipeline subprocess's own poll loop). `202`, never `200`: the response carries `recorded: true` and the run's `run_state` as it stood the instant *before* the write, and never claims the decision was approved, only that it was recorded. `404` for a malformed `run_id` or one with no pending approval; `409` if this approval was already answered (a decision file already exists); `400` if `decision` is missing or empty. |
+| `POST` | `/runs/{run_id}/approval` | token | api STEP B3: records a human's decision on the run's pending governed question. Body `decision` + `rationale`; writes `<run>/audit/approval_decision.json` atomically and **nothing else** — never evaluates whether the decision is an approval (that stays entirely with `model_registry`/`constitution_guard`, read back by the pipeline subprocess's own poll loop). `202`, never `200`: the response carries `recorded: true` and the run's `run_state` as it stood the instant *before* the write, and never claims the decision was approved, only that it was recorded. `404` for a malformed `run_id` or one with no pending approval; `409` if this approval was already answered (a decision file already exists); `400` if `decision` is missing or empty. This is the sole route that answers a pending approval (api STEP B5 unified it with the retired `POST /approvals/{run_id}`, which wrote the same file but returned `200` with a thinner body and no repeat-answer guard). |
 | `GET` | `/runs/{run_id}/deliverables` | token | api STEP B4: a zip of whatever exists under `deliverables/` right now, not gated on the run being complete (`GET /runs/{run_id}`'s own `documents[]` already says which documents are ready). May be **partial**: carries `X-Shimmer-Partial: true`/`false` and names it in the filename (`..._partial.zip` vs `..._deliverables.zip`) whenever the run did not stop with `outcome=succeeded`. `404` for a malformed/unknown `run_id` or one with nothing under `deliverables/` yet. |
 | `GET` | `/runs/{run_id}/deliverables/{doc_id}` | token | api STEP B4: a zip of ONE document's own deliverables folder — what `documents[].deliverables_url` on `GET /runs/{run_id}` points at. `404` for a malformed/unknown `run_id`, or a `doc_id` this run has no finished folder for (whether it never existed or is simply not done yet; `GET /runs/{run_id}`'s `documents[]` is where a caller learns which). |
 | `GET` | `/runs/{run_id}/log` | token | api STEP B4: the run's complete merged stdout/stderr as `text/plain`, streamed from `<run>/logs/pipeline_stdout.log` — what `log_url` on `GET /runs/{run_id}` has pointed at since api STEP B1. `404` for a malformed/unknown `run_id` or one with no log written yet. |
-| `GET` | `/results/{run_id}` | token | A zip of the deliverables (400 before the run completes). Superseded by `/runs/{run_id}/deliverables` above for new use; kept unchanged, still gated on completion, does not carry the partial-archive signal. |
-| `GET` | `/approvals` | token | Every run currently awaiting a governed decision. |
-| `POST` | `/approvals/{run_id}` | token | The route `/runs/{run_id}/approval` above now replaces for new use; kept unchanged and still functioning (records a human's decision, body `decision` + `rationale`, writes `<run>/audit/approval_decision.json` atomically and nothing else) but does not share that route's 409-on-already-answered check or its `recorded`/`run_state` response fields. |
+| `GET` | `/approvals` | token | Every run currently awaiting a governed decision, each entry carrying the same shape as `GET /runs/{run_id}`'s `pending_approval` field (api STEP B5: previously a thinner, independently-computed shape with no `message`/`default_on_timeout`/`timeout_at`). |
 | `GET` | `/console` | **none** | The operator console HTML. |
 | `GET` | `/health` | **none** | `{"status", "version", "backend_profile", "default_review_mode"}` and nothing else. |
 
@@ -1100,20 +1111,21 @@ unauthenticated liveness probe: it carries no `SHIMMER_` name or value, no path,
 token, only the two enumerated words a caller needs before it can submit (`backend_profile` is
 `local` or `cloud`, `default_review_mode` is `paired` or `wide`).
 
-`/console`, not the bare root: a pre-existing gate check (94) proves `/status` and `/results`
-reject a path-traversal-shaped `run_id` with 404, and every HTTP client normalizes a `..`-bearing
-path client-side before sending, so `GET /status/../..` always arrives at the server as a plain
-request for `/`; a route registered at bare `/` would turn that check's 404 into a false 200.
+`/console`, not the bare root: a pre-existing gate check (94) proves every run-scoped route
+rejects a path-traversal-shaped `run_id` with 404, and every HTTP client normalizes a
+`..`-bearing path client-side before sending, so `GET /runs/../..` always arrives at the server
+as a plain request for `/`; a route registered at bare `/` would turn that check's 404 into a
+false 200.
 
 Every route taking a `run_id` rejects any value not matching the server's own mint format with
-404 before building a path, and `/findings` and `/pairs` return the same 404 for a well-formed id
-with no run folder. Jobs run one at a time; each job's state is also written to
-`<run>/status.json` on every transition (queued, running, then one of the statuses below), so a
-restart does not lose run history; the in-flight run is rewritten `interrupted`, and a run still
-`queued` at restart keeps its record but loses its staged uploads, so the submitter resubmits
-both. The child pipeline's complete merged stdout/stderr
+404 before building a path, and `/runs/{run_id}/findings` and `/runs/{run_id}/pairs` return the
+same 404 for a well-formed id with no run folder. Jobs run one at a time; each job's state is
+also written to `<run>/status.json` on every transition (queued, running, then one of the
+statuses below), so a restart does not lose run history; the in-flight run is rewritten
+`interrupted`, and a run still `queued` at restart keeps its record but loses its staged
+uploads, so the submitter resubmits both. The child pipeline's complete merged stdout/stderr
 streams to `<run>/logs/pipeline_stdout.log` as the run proceeds (not just the 2000-character
-failure tail kept on the job record).
+failure tail kept on the job record), and is fetchable directly via `GET /runs/{run_id}/log`.
 
 **The `review_mode` field and the review counters.** `/submit` accepts `review_mode` (`paired`
 or `wide`, section B). Omitted, it resolves exactly as the pipeline resolves it with no
@@ -1124,8 +1136,8 @@ Unlike `task`, an unrecognised value is **rejected with 400** rather than fallin
 modes differ by roughly an order of magnitude in model calls, and a typo must not buy a wide
 cloud run on the operator's keys.
 
-`/status` carries three counters derived from the run folder on every call, so they move while
-the run is in flight:
+`GET /runs/{run_id}` carries three counters derived from the run folder on every call, so they
+move while the run is in flight:
 
 - `pairs_planned` : every `(unit, rule)` pair the pairing map decided could apply, summed over
   the run's documents.
@@ -1150,21 +1162,26 @@ resolved value is non-sensitive, exactly as the old server-wide `SHIMMER_SENSITI
 **Status vocabulary.** A job is `queued` from `/submit` until the single worker picks it up,
 then `running`, then exactly one terminal status. The server always passes
 `--operator-channel file` to the pipeline subprocess (STEP 6), and every pipeline exit code
-maps to a distinct terminal status instead of the old blanket "failed" on any non-zero exit:
+maps to a distinct terminal status instead of the old blanket "failed" on any non-zero exit.
+This raw `status` string is the internal job field (still what `<run>/status.json` on disk
+records); `GET /runs/{run_id}` and `GET /runs` do **not** return it (api STEP B5), reporting
+`state`/`outcome`/`stop_reason` instead — the table below adds the `state`/`outcome` each
+`status` value maps to.
 
-| Status | Exit | Meaning |
-|---|---|---|
-| `queued` | - | Accepted and waiting; the files are staged, not yet in `input/context/`. |
-| `running` | - | The worker is streaming the child's output. |
-| `completed` | 0 | Success. |
-| `snapshot_conflict` | 2 | `--save-snapshot` only. |
-| `stopped_model_approval` | 3 | Governance outcome. |
-| `stopped_redaction_gate` | 4 | Governance outcome. |
-| `blocked` | 5 | Governance outcome. This code is **overloaded** upstream: a redaction BLOCK at run-end, OR a draft-mode phase-0 generation failure. The exit code alone cannot tell them apart, so check the run's log tail. |
-| `refused_sensitivity_layer_inactive` | 6 | Governance outcome. |
-| `operator_abort` | 7 | The operator declined a meta-signature escalation. |
-| `interrupted` | - | The server restarted while this run was in flight (STEP 2). The submitter resubmits. |
-| `failed` | other | Any other non-zero exit, or a run timeout (`exit_code` is then `null` and the reason is in `error`). |
+| Status | Exit | `state` | `outcome` | Meaning |
+|---|---|---|---|---|
+| `queued` | - | `queued` | - | Accepted and waiting; the files are staged, not yet in `input/context/`. |
+| `running` | - | `running` (or `awaiting_approval`, see `pending_approval` above) | - | The worker is streaming the child's output. |
+| `completed` | 0 | `stopped` | `succeeded` | Success. |
+| `snapshot_conflict` | 2 | `stopped` | `crashed` | `--save-snapshot` only. |
+| `stopped_model_approval` | 3 | `stopped` | `governance_stop` | Governance outcome. |
+| `stopped_redaction_gate` | 4 | `stopped` | `governance_stop` | Governance outcome. |
+| `blocked` | 5 | `stopped` | `governance_stop` | Governance outcome. This code is **overloaded** upstream: a redaction BLOCK at run-end, OR a draft-mode phase-0 generation failure. The exit code alone cannot tell them apart, so check the run's log tail (`GET /runs/{run_id}/log`). |
+| `refused_sensitivity_layer_inactive` | 6 | `stopped` | `governance_stop` | Governance outcome. |
+| `operator_abort` | 7 | `stopped` | `crashed` | The operator declined a meta-signature escalation. |
+| `interrupted` | - | `stopped` | `crashed` | The server restarted while this run was in flight (STEP 2). The submitter resubmits. |
+| `failed` | other | `stopped` | `crashed`, or `timed_out` if `exit_code` is `null` | Any other non-zero exit, or a run timeout (`exit_code` is then `null` and the reason is in `error`). |
+| `cancelled` | any | `cancelled` | `cancelled` | `POST /runs/{run_id}/cancel` was called (api STEP B2); the only status this table produces that no exit code maps to. |
 
 `blocked`, the two `stopped_*` statuses and `refused_sensitivity_layer_inactive` are the four
 governance outcomes, the pipeline refused or paused ON PURPOSE, and the console renders them

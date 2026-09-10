@@ -21,8 +21,9 @@ HOW THE PIECES FIT
    as a SUBPROCESS, writing into its own per-run folder output/runs/<run_id>/.
 4. When the run finishes, the server AUTO-CLEARS the ingested files it placed
    (using the sidecar as the manifest), so nothing stale leaks into the next run.
-5. The collaborator polls /status/<run_id> and /queue, then downloads
-   /results/<run_id>.
+5. The collaborator polls /runs/<run_id> (or /runs, for the whole list), then
+   downloads /runs/<run_id>/deliverables (the whole run) or
+   /runs/<run_id>/deliverables/<doc_id> (one document alone).
 
 HOW TO GENERATE THE TOKEN AND ITS HASH (the operator runs this ONCE)
 ===================================================================
@@ -97,7 +98,7 @@ STEP 6: THE CONSOLE (GET /console)
 The server always passes --operator-channel file to the pipeline subprocess, so a governed
 decision (a deprecated-model swap, a constitution amendment) that would otherwise stop the run
 is instead parked as <run>/audit/pending_approval.json and surfaced at GET /approvals. A human
-decides APPROVE/DENY/DEFER via POST /approvals/{run_id}; the server only WRITES that decision
+decides APPROVE/DENY/DEFER via POST /runs/{run_id}/approval; the server only WRITES that decision
 file, it never itself evaluates a governed decision (that stays in model_registry and
 constitution_guard, unchanged by this server). GET /console serves scripts/ui/console.html: a
 single vanilla-JavaScript page, no framework, no build step, no CDN dependency. NOTE: the STEP
@@ -271,7 +272,7 @@ MAX_UPLOAD_TOTAL_MB = _env_int("SHIMMER_MAX_UPLOAD_TOTAL_MB", 200)  # whole-subm
 MAX_UPLOAD_FILES = _env_int("SHIMMER_MAX_UPLOAD_FILES", 50) # file-count cap per submission
 
 # The server's own run_id mint format ("%Y%m%d_%H%M%S__<6 hex>", see _new_run_id):
-# /status and /results validate against this before building any path from a
+# every run-scoped route validates against this before building any path from a
 # caller-supplied run_id, so a value like "../.." is rejected with 404 before it
 # is ever used in a path expression.
 _RUN_ID_RE = re.compile(r"^\d{8}_\d{6}__[0-9a-f]{6}$")
@@ -384,7 +385,7 @@ async def verify_token(authorization: Optional[str] = Header(default=None)):
 # rather than being reported as still in flight, and an orphaned staging dir for
 # a job that is no longer running is removed. Gate checks 88 to 91 cover exactly
 # that path.
-JOBS = []                      # the public job records (returned by /queue, /status).
+JOBS = []                      # the public job records (returned by /runs, /runs/{run_id}).
 JOBS_LOCK = threading.Lock()   # guards JOBS: HTTP requests arrive on many threads.
 _STAGING = {}                  # private: run_id -> staging dir holding validated uploads.
                                 # (productization STEP 2: guarded by JOBS_LOCK like JOBS)
@@ -431,8 +432,8 @@ def _find_job(run_id):
 # ---------------------------------------------------------------------------
 # STEP 2: run state on disk (productization). The JOBS list above is now a
 # read-through CACHE over a per-run status.json; the file is the durable
-# record, JOBS is what /status and /queue answer from without touching disk
-# on every request. A job dict, plus "exit_code", is what gets written.
+# record, JOBS is what /runs and /runs/{run_id} answer from without touching
+# disk on every request. A job dict, plus "exit_code", is what gets written.
 # ---------------------------------------------------------------------------
 _STATUS_FIELDS = ("run_id", "status", "task", "submitted_at", "started_at",
                    "completed_at", "exit_code", "error", "progress", "files",
@@ -535,7 +536,7 @@ def _rebuild_jobs_from_disk():
 
 def _progress_string(line):
     """Return the `key=value ...` body of a pipeline `[progress]` line, or None for any
-    other line. Stored on the job and returned by GET /status."""
+    other line. Stored on the job and returned by GET /runs/{run_id}."""
     s = line.strip()
     if s.startswith("[progress]"):
         return s[len("[progress]"):].strip()
@@ -673,7 +674,7 @@ def _run_job(run_id):
                 # decision (model-gate stop, constitution amendment) that would
                 # otherwise deny/stop unconditionally under --non-interactive now
                 # parks as <run>/audit/pending_approval.json and waits for a human
-                # to answer via POST /approvals/{run_id} (see GET /approvals).
+                # to answer via POST /runs/{run_id}/approval (see GET /approvals).
                 "--operator-channel", "file",
                 "--review-mode", job_review_mode]
         if question:
@@ -687,7 +688,7 @@ def _run_job(run_id):
         if not job_sensitive:
             argv += ["--sensitivity-layer-inactive-override", "--no-redaction-override"]
         # Stream the merged output so the latest [progress] line can be stored on the job
-        # (returned by GET /status) while the run is in flight. We keep a bounded tail for
+        # (returned by GET /runs/{run_id}) while the run is in flight. We keep a bounded tail for
         # the failure message, AND (productization STEP 6 item 5) write the complete
         # merged stream to <run>/logs/pipeline_stdout.log as it arrives, so the operator
         # can inspect the full run, not just a 2000-character tail.
@@ -819,10 +820,10 @@ def _run_job(run_id):
 # ---------------------------------------------------------------------------
 # api STEP A1: reading the STRUCTURED review back off a finished run.
 #
-# /results ships a zip of markdown and .docx: the right thing for a person, the
-# wrong thing for a consumer program, which then has to parse prose to find out
-# what the review actually decided. The three helpers below read the run's own
-# artifacts and return the TYPED records instead:
+# /runs/{run_id}/deliverables ships a zip of markdown and .docx: the right thing
+# for a person, the wrong thing for a consumer program, which then has to parse
+# prose to find out what the review actually decided. The three helpers below
+# read the run's own artifacts and return the TYPED records instead:
 #
 #   the Finding records   live on the append-only message bus
 #                         (<run>/logs/agent_bus.jsonl), inside the canonical
@@ -844,9 +845,10 @@ def _validated_run_dir(run_id):
     """The run folder for a caller-supplied run_id, or HTTPException(404).
 
     run_id is validated against the server's own mint format FIRST (exactly as
-    /status and /results do, _RUN_ID_RE) so a value like "../.." is rejected
-    before it is ever used in a path expression. A well-formed id with no run
-    folder is the same 404: a caller learns only "not found" either way."""
+    every other run-scoped route does, _RUN_ID_RE) so a value like "../.." is
+    rejected before it is ever used in a path expression. A well-formed id
+    with no run folder is the same 404: a caller learns only "not found"
+    either way."""
     if not _RUN_ID_RE.match(run_id):
         raise HTTPException(status_code=404, detail="run_id not found")
     run_dir = RUNS_DIR / run_id
@@ -968,8 +970,8 @@ def _pairs_view(pairing):
     Dropped: `title` (the unit's own heading, lifted verbatim from the document),
     `fields_present` and `field_vocabulary` (the document's own field labels).
     `missing_field_findings` is reduced to a count, because those are Finding
-    records and /findings is where Finding records are served; shipping them in
-    a second shape here would be two answers to one question."""
+    records and /runs/{run_id}/findings is where Finding records are served;
+    shipping them in a second shape here would be two answers to one question."""
     units = []
     for entry in pairing.get("units") or []:
         units.append({
@@ -1030,7 +1032,7 @@ def _model_call_counts(run_dir):
 
 
 def _review_progress(run_dir, review_mode):
-    """The three counters GET /status adds, derived from the run's own artifacts.
+    """The three counters GET /runs/{run_id} adds, derived from the run's own artifacts.
 
       pairs_planned          every (unit, rule) pair the map decided could apply,
                              summed over the run's documents.
@@ -1058,10 +1060,10 @@ def _review_progress(run_dir, review_mode):
 
 # ---------------------------------------------------------------------------
 # api STEP B1: the run resource. GET /runs/{run_id} and GET /runs report ONE
-# object per run (_run_record), replacing the separate, thinner shapes GET
-# /status/{run_id} and GET /queue used to return. GET /status and GET /queue
-# stay in place unchanged for this step (cancellation, approval-answering and
-# deliverables are the next steps; nothing about those routes changes here).
+# object per run (_run_record), replacing the separate, thinner shapes the
+# now-retired GET /status/{run_id} and GET /queue used to return (both
+# removed in api STEP B5's route-naming pass, once GET /runs/{run_id} and
+# GET /runs were already their strict supersets).
 #
 # The new object adds three things the old "status" string alone could not
 # say at once: a closed-set `state` (queued / running / awaiting_approval /
@@ -1074,16 +1076,13 @@ def _review_progress(run_dir, review_mode):
 # second call to GET /approvals to explain why a run is stalled.
 # ---------------------------------------------------------------------------
 def _pending_approval_for(run_dir):
-    """The pending governed question for ONE run, or None. Same file-reading
-    rule as _pending_approvals() below (an independent, duplicated check, NOT
-    a delegation to it -- api STEP B4's own fresh-eyes read of this surface
-    found the two functions reimplementing the identical existence check
-    separately; kept as two functions deliberately for now, since
-    _pending_approvals() feeds GET /approvals' existing, unchanged response
-    shape while this one feeds the richer pending_approval object, and
-    merging them is a scope decision for a future pass, not this one): a
-    pending_approval.json with no approval_decision.json yet means a human has
-    not answered. Adds `message` (split out of `payload`, since payload may or
+    """The pending governed question for ONE run, or None.
+    _pending_approvals() (used by GET /approvals) now genuinely DELEGATES to
+    this function (api STEP B5, fresh-eyes fix 1e/4d/4e): before that fix it
+    reimplemented the same pending-vs-answered file check independently and
+    returned a thinner shape; both routes now describe the identical pending
+    record the same way. A pending_approval.json with no approval_decision.json
+    yet means a human has not answered. Adds `message` (split out of `payload`, since payload may or
     may not carry one depending on the topic; message is what a person reads,
     payload is what a program reads, kept as separate fields rather than
     mixed, per the human/machine constraint) and `default_on_timeout` /
@@ -1256,7 +1255,17 @@ def _run_record(job, run_dir):
         outcome = "cancelled"
         stop_reason = {"code": "cancelled",
                        "detail": job.get("error") or "cancelled by request"}
-    record = {k: job.get(k) for k in _STATUS_FIELDS}
+    # api STEP B5 (fresh-eyes fix 4a): _STATUS_FIELDS includes "status", the
+    # job's raw internal string (still the actual field job["status"] IS
+    # everywhere else in this file -- _state_for_job, cancellation,
+    # approval-answering, and status.json on disk all still read and write
+    # it, unchanged). It is deliberately EXCLUDED from this HTTP response:
+    # returning both "status" and state/outcome/stop_reason side by side let
+    # a caller read either vocabulary and the two could read as disagreeing
+    # (e.g. status="blocked" beside state="stopped", outcome="governance_stop")
+    # with nothing here to say which one to trust. state/outcome/stop_reason
+    # is the sole vocabulary a caller of this response sees.
+    record = {k: job.get(k) for k in _STATUS_FIELDS if k != "status"}
     record["state"] = state
     record["outcome"] = outcome
     record["stop_reason"] = stop_reason
@@ -1415,45 +1424,16 @@ async def submit(files: List[UploadFile] = File(default=None),
             "review_mode": job_review_mode, "files": names}
 
 
-@app.get("/status/{run_id}", dependencies=[Depends(verify_token)])
-async def status(run_id: str):
-    """Return one job's record (status, timestamps, error if any). 404 if unknown.
-
-    productization STEP 3: run_id is validated against the server's own mint
-    format (_RUN_ID_RE) BEFORE any lookup, so a value like "../.." or any other
-    unexpected shape is rejected with 404 up front rather than reaching the
-    in-memory search (which is safe here since _find_job never builds a path
-    from run_id, but every route accepting a run_id validates the same way for
-    consistency, and /results does build a path from it).
-
-    api STEP A1: the record now also carries three live counters (see
-    _review_progress) alongside `review_mode`, so a poller can watch the review
-    itself advance instead of only its queued/running/completed status. They are
-    derived from the run folder on every call rather than stored on the job,
-    because the pipeline SUBPROCESS is what writes the artifacts they come from.
-    A run folder that does not exist yet yields zeroes, never an error."""
-    if not _RUN_ID_RE.match(run_id):
-        raise HTTPException(status_code=404, detail="run_id not found")
-    with JOBS_LOCK:
-        job = _find_job(run_id)
-        if job is None:
-            raise HTTPException(status_code=404, detail="run_id not found")
-        record = dict(job)  # a copy, so the caller cannot mutate our record.
-    record.update(_review_progress(RUNS_DIR / run_id, record.get("review_mode")))
-    return record
-
-
 @app.get("/runs/{run_id}", dependencies=[Depends(verify_token)])
 async def run_detail(run_id: str):
-    """api STEP B1: the complete run resource, merging what GET /status and one
-    entry of GET /queue used to answer separately into one object (see
-    _run_record's own docstring for the field-by-field reasoning). Same
-    run_id validation and the same 404 behavior as GET /status: a malformed
-    id or an unknown one is 404 either way, so a caller learns nothing about
-    which case it was.
-
-    GET /status/{run_id} is unchanged and still answers alongside this route;
-    nothing about it is removed in this step."""
+    """api STEP B1 (route naming unified in STEP B5): the complete run
+    resource. This route REPLACES the retired GET /status/{run_id} entirely
+    (removed in api STEP B5's route-naming pass: every run-scoped route now
+    lives under /runs/{run_id}/..., and this one, the run's own detail, is
+    what /status/{run_id} used to answer a thinner version of -- a caller
+    that reads a job's status now reads it HERE, via `state`/`outcome`, not
+    at a separate path). A malformed id or an unknown one is 404 either way,
+    so a caller learns nothing about which case it was."""
     if not _RUN_ID_RE.match(run_id):
         raise HTTPException(status_code=404, detail="run_id not found")
     with JOBS_LOCK:
@@ -1824,9 +1804,14 @@ async def run_log(run_id: str):
     return StreamingResponse(_stream(), media_type="text/plain")
 
 
-@app.get("/findings/{run_id}", dependencies=[Depends(verify_token)])
+@app.get("/runs/{run_id}/findings", dependencies=[Depends(verify_token)])
 async def findings(run_id: str):
-    """The run's typed Finding records as JSON: the structured review itself.
+    """api STEP B5: renamed from GET /findings/{run_id} (removed) to unify
+    every run-scoped route under /runs/{run_id}/..., closing the naming
+    split the fresh-eyes read found (a caller could no longer guess this
+    route's path from the pattern of /runs/{run_id}/deliverables and the
+    other newer routes). No change to what this route accepts, computes or
+    returns -- the run's typed Finding records as JSON: the structured review itself.
 
     One object per finding, carrying the registry rule id and the OPERATOR's own
     rule id for it, the unit the finding is about, both figures with their units,
@@ -1843,9 +1828,12 @@ async def findings(run_id: str):
     return {"run_id": run_id, "count": len(records), "findings": records}
 
 
-@app.get("/pairs/{run_id}", dependencies=[Depends(verify_token)])
+@app.get("/runs/{run_id}/pairs", dependencies=[Depends(verify_token)])
 async def pairs(run_id: str):
-    """The run's pairing map: which rules could apply to which units, and why.
+    """api STEP B5: renamed from GET /pairs/{run_id} (removed), same reason
+    as GET /runs/{run_id}/findings above -- unifying every run-scoped route
+    under /runs/{run_id}/.... No change to behavior: the run's pairing map,
+    which rules could apply to which units, and why.
 
     One entry per document, each carrying the counts and, per unit, the rules
     paired / rejected / left undecided with the reason recorded for each. Carries
@@ -1855,60 +1843,6 @@ async def pairs(run_id: str):
     run_dir = _validated_run_dir(run_id)
     docs = [_pairs_view(p) for p in _pairing_map(run_dir).values() if isinstance(p, dict)]
     return {"run_id": run_id, "document_count": len(docs), "documents": docs}
-
-
-@app.get("/queue", dependencies=[Depends(verify_token)])
-async def queue():
-    """Return every job, oldest submission first. Both the operator and the
-    collaborator can see the whole picture: what is queued, what is running, what
-    finished or failed."""
-    with JOBS_LOCK:
-        ordered = sorted(JOBS, key=lambda j: j["submitted_at"])
-        return {"jobs": [dict(j) for j in ordered]}
-
-
-@app.get("/results/{run_id}", dependencies=[Depends(verify_token)])
-async def results(run_id: str):
-    """Download a completed run's deliverables as a single .zip.
-
-    Deliverables are the final output: the amendments, the summaries, the per-agent
-    findings. We return a .zip (rather than JSON) because deliverables include binary
-    files (.docx), which do not fit cleanly in JSON. If the run is not completed yet,
-    we return 400 so the caller knows to wait.
-
-    productization STEP 3: run_id is validated against the server's own mint
-    format (_RUN_ID_RE) BEFORE building run_dir below, so a path-traversal
-    attempt like run_id="../.." is rejected with 404 before it is ever used in
-    a path expression."""
-    if not _RUN_ID_RE.match(run_id):
-        raise HTTPException(status_code=404, detail="run_id not found")
-    with JOBS_LOCK:
-        job = _find_job(run_id)
-        if job is None:
-            raise HTTPException(status_code=404, detail="run_id not found")
-        if job["status"] != "completed":
-            raise HTTPException(status_code=400, detail=f"run not completed (status: {job['status']})")
-
-    run_dir = RUNS_DIR / run_id
-    deliv_dir = run_dir / "deliverables"
-    # Prefer the deliverables folder; fall back to the whole run tree if it is empty.
-    source = deliv_dir if (deliv_dir.is_dir() and any(deliv_dir.iterdir())) else run_dir
-    if not source.is_dir():
-        raise HTTPException(status_code=404, detail="no output found for this run")
-
-    # Build the zip in memory and stream it back. BP-16: deliverables/ now nests one
-    # subfolder per document plus a top-level _run_summary.md; rglob walks the tree
-    # recursively and relative_to() preserves the <doc_id>/ subfolders in the zip.
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for p in source.rglob("*"):
-            if p.is_file():
-                zf.write(p, arcname=str(p.relative_to(source)))
-    buf.seek(0)
-    return StreamingResponse(
-        buf, media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{run_id}_deliverables.zip"'},
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -1925,19 +1859,26 @@ async def console():
     CONFLICT NOTE (recorded per CLAUDE.md's "surface conflicts, do not paper
     over them"): the STEP 6 spec's evidence text names this route "GET /".
     Serving it at the bare root collides with an existing, pre-STEP-6 gate
-    check (94, productization STEP 3d): "GET /status/../.." is verified by
-    every HTTP client (httpx included, RFC 3986 dot-segment removal) into a
-    request for literal path "/" BEFORE it is ever sent, client-side, with no
-    way for server code to tell the two apart; registering a route at "/"
-    would flip that check's first assertion from 404 (no route matched) to
-    200 (the console matched), which is check_94 as it always existed, not
-    something this step may touch (W2: never weaken, skip, or re-order an
-    existing check). Between the spec's literal path and W2 (a repository-wide
-    hard rule for every step), W2 wins: the console is served at /console
-    instead, still ungated, still reachable with one predictable URL, and
-    /status + /results keep exactly their pre-existing traversal behavior
-    (proven by check_94, unmodified) with no route ever registered at bare
-    "/" to collide with it."""
+    check (94, productization STEP 3d, its route list updated in api STEP
+    B5 when /status/{run_id} and /results/{run_id} were retired): a GET to
+    any run-scoped path with a "../.." segment (e.g. "/runs/../..") is
+    collapsed by every HTTP client (httpx included, RFC 3986 dot-segment
+    removal) into a request for literal path "/" BEFORE it is ever sent,
+    client-side, with no way for server code to tell the two apart;
+    registering a route at "/" would flip that check's dot-segment
+    assertion from 404 (no route matched) to 200 (the console matched),
+    which is check_94 as it always existed, not something any step may
+    touch (W2: never weaken, skip, or re-order an existing check). Between
+    the spec's literal path and W2 (a repository-wide hard rule for every
+    step), W2 wins: the console is served at /console instead, still
+    ungated, still reachable with one predictable URL, and every run-scoped
+    route keeps exactly its pre-existing traversal behavior (proven by
+    check_94, unmodified in substance across the api STEP B5 rename) with
+    no route ever registered at bare "/" to collide with it. This reasoning
+    was never specific to /status or /results in the first place -- the
+    client-side collapse applies to any {run_id}-suffixed path, including
+    every route built in api STEPs B1-B4 -- so retiring those two names in
+    STEP B5 changes nothing about why /console lives where it does."""
     if not UI_CONSOLE_PATH.exists():
         raise HTTPException(status_code=500, detail="console.html missing")
     return HTMLResponse(content=UI_CONSOLE_PATH.read_text(encoding="utf-8"))
@@ -1965,42 +1906,41 @@ async def runs():
     oldest submission first. This is the list side of GET /runs/{run_id}: a
     caller reading this route and a caller reading one run's detail parse an
     identical per-run shape, so nothing is lost by reading the list instead of
-    polling each run individually. This is a behavior change from before this
-    step, when GET /runs returned the same thin shape as GET /queue (still
-    true of /queue, unchanged in this step; see that route)."""
+    polling each run individually. GET /queue, which used to return the same
+    JOBS list in a thinner shape, was retired in api STEP B5's route-naming
+    pass once this route was already its strict superset."""
     with JOBS_LOCK:
         ordered = [dict(j) for j in sorted(JOBS, key=lambda j: j["submitted_at"])]
     return {"runs": [_run_record(j, RUNS_DIR / j["run_id"]) for j in ordered]}
 
 
 def _pending_approvals():
-    """Scan RUNS_DIR for every run with a pending_approval.json and NO
-    approval_decision.json yet (a decision file present means it was already
-    answered; _make_file_operator_handler deletes any stale decision file
-    before writing a fresh pending_approval.json for the NEXT escalation, so
-    "pending with no decision file" is exactly "awaiting a human"). Reads
-    directly off disk (not JOBS) since the pending/decision files are written
-    by the pipeline SUBPROCESS, a different process than this server."""
+    """Scan RUNS_DIR for every run with a pending governed question, NOW
+    delegating to _pending_approval_for for the per-run shape (api STEP B5,
+    fresh-eyes fix 1e/4d/4e). Before this fix this function had its own,
+    independent copy of the pending-vs-answered file check and returned a
+    THINNER shape ({run_id, topic, payload, asked_at}, no `message`, no
+    `default_on_timeout`, no `timeout_at`) than _pending_approval_for's
+    {topic, message, payload, asked_at, default_on_timeout, timeout_at} --
+    the same underlying record, described two different ways depending on
+    which route a caller asked. _pending_approval_for's OWN docstring has
+    claimed since api STEP B1 that this function "delegates to" it, which
+    was never true until now; this fix makes that claim true rather than
+    correcting the claim to match the old, duplicated code.
+
+    RESPONSE SHAPE CHANGE: GET /approvals' entries gain `message`,
+    `default_on_timeout` and `timeout_at` that they did not carry before.
+    Nothing is removed; this is additive."""
     out = []
     if not RUNS_DIR.is_dir():
         return out
     for run_dir in sorted(RUNS_DIR.iterdir()):
         if not run_dir.is_dir():
             continue
-        pending_path = run_dir / "audit" / "pending_approval.json"
-        decision_path = run_dir / "audit" / "approval_decision.json"
-        if not pending_path.exists() or decision_path.exists():
+        pending = _pending_approval_for(run_dir)
+        if pending is None:
             continue
-        try:
-            record = json.loads(pending_path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            continue
-        out.append({
-            "run_id": run_dir.name,
-            "topic": record.get("topic"),
-            "payload": record.get("payload"),
-            "asked_at": record.get("asked_at"),
-        })
+        out.append(dict(pending, run_id=run_dir.name))
     return out
 
 
@@ -2009,40 +1949,6 @@ async def approvals():
     """Every run currently awaiting a governed decision (see _pending_approvals).
     An empty list is the common case: most runs never hit a governed decision."""
     return {"approvals": _pending_approvals()}
-
-
-@app.post("/approvals/{run_id}", dependencies=[Depends(verify_token)])
-async def decide_approval(run_id: str, body: dict):
-    """Record a human's decision on one run's pending governed question.
-
-    Body: {"decision": "APPROVE"|"DENY"|"DEFER"..., "rationale": "..."}. Writes
-    <run>/audit/approval_decision.json ATOMICALLY (temp file then replace, the
-    same pattern as _write_status) and does nothing else: this route NEVER
-    itself evaluates whether the decision is an approval (that stays entirely
-    in model_registry.enforce_current_models / constitution_guard._is_approved,
-    read back by the pipeline subprocess's file-operator-handler poll loop).
-    Gate check (c) proves this by hashing config/ and durable/governance/
-    before and after a call here and asserting neither tree changed."""
-    if not _RUN_ID_RE.match(run_id):
-        raise HTTPException(status_code=404, detail="run_id not found")
-    run_dir = RUNS_DIR / run_id
-    audit_dir = run_dir / "audit"
-    pending_path = audit_dir / "pending_approval.json"
-    if not pending_path.exists():
-        raise HTTPException(status_code=404, detail="no pending approval for this run_id")
-
-    decision = str(body.get("decision", "")).strip()
-    rationale = str(body.get("rationale", "")).strip()
-    if not decision:
-        raise HTTPException(status_code=400, detail="'decision' is required")
-
-    record = {"decision": decision, "rationale": rationale, "decided_at": _now_iso()}
-    audit_dir.mkdir(parents=True, exist_ok=True)
-    decision_path = audit_dir / "approval_decision.json"
-    tmp = decision_path.with_suffix(decision_path.suffix + ".tmp")
-    tmp.write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
-    tmp.replace(decision_path)
-    return {"run_id": run_id, "decision": decision, "rationale": rationale}
 
 
 # ---------------------------------------------------------------------------

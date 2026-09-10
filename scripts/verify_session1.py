@@ -3016,6 +3016,15 @@ def check_81_front_door_server():
     installed), fall back to AST structural verification of the same facts from
     source. Both paths PASS. Non-mutating: no server is started, no HTTP call is
     made, and the temporary env change is restored.
+
+    api STEP B5: the four ROUTES this check names were updated when
+    /status/{run_id}, /queue and /results/{run_id} were retired in the
+    route-naming pass (every run-scoped route now lives under
+    /runs/{run_id}/...); the PROPERTY under test -- the front door exists,
+    is structurally sound, and is token-gated -- is unchanged, so this check
+    now names their replacements (GET /runs/{run_id}, GET
+    /runs/{run_id}/deliverables) instead of weakening or dropping the
+    assertion.
     """
     server_path = SCRIPTS / "server.py"
     if not server_path.exists():
@@ -3026,8 +3035,8 @@ def check_81_front_door_server():
     except SyntaxError as e:
         return _fail(f"server.py does not parse: {e}")
 
-    needed = {("post", "/submit"), ("get", "/status/{run_id}"),
-              ("get", "/queue"), ("get", "/results/{run_id}")}
+    needed = {("post", "/submit"), ("get", "/runs/{run_id}"),
+              ("get", "/runs"), ("get", "/runs/{run_id}/deliverables")}
 
     # Routes from the @app.<method>("<path>") decorators in source.
     decl = set()
@@ -3616,10 +3625,17 @@ def check_89_status_json_completed_exit_code():
 
 
 def check_90_status_json_interrupted_on_reimport():
-    """productization STEP 2c: a hand-written status.json left in "running" state
-    (simulating a server process that died mid-run) is rewritten to "interrupted"
-    by _rebuild_jobs_from_disk() at a fresh module import, and both /status and
-    /queue reflect it. No subprocess is ever spawned for this check."""
+    """productization STEP 2c, UPDATED in api STEP B5: a hand-written
+    status.json left in "running" state (simulating a server process that
+    died mid-run) is rewritten to "interrupted" by _rebuild_jobs_from_disk()
+    at a fresh module import, and both GET /runs/{run_id} and GET /runs
+    reflect it (the retired /status/{run_id} and /queue's replacements,
+    since api STEP B5's route-naming pass; api STEP B5 also dropped the raw
+    `status` field from these two routes' response, so this check now
+    asserts on `state`, which "interrupted" maps to "stopped" under -- the
+    on-disk status.json itself still says "interrupted" verbatim, checked
+    directly against the file). No subprocess is ever spawned for this
+    check."""
     try:
         import fastapi  # noqa: F401
     except ImportError:
@@ -3652,21 +3668,26 @@ def check_90_status_json_interrupted_on_reimport():
             client = TestClient(server.app)
             headers = {"Authorization": f"Bearer {tok}"}
 
-            resp = client.get(f"/status/{run_id}", headers=headers)
+            resp = client.get(f"/runs/{run_id}", headers=headers)
             if resp.status_code != 200:
-                return _fail(f"/status returned {resp.status_code}: {resp.text[:300]}")
-            if resp.json().get("status") != "interrupted":
-                return _fail(f"/status status is {resp.json().get('status')!r}, expected 'interrupted'")
+                return _fail(f"/runs/{{run_id}} returned {resp.status_code}: {resp.text[:300]}")
+            body = resp.json()
+            if body.get("state") != "stopped" or body.get("outcome") != "crashed":
+                return _fail(f"/runs/{{run_id}} reports state={body.get('state')!r} "
+                             f"outcome={body.get('outcome')!r}, expected "
+                             f"state='stopped' outcome='crashed' (interrupted maps here)")
 
-            resp = client.get("/queue", headers=headers)
+            resp = client.get("/runs", headers=headers)
             if resp.status_code != 200:
-                return _fail(f"/queue returned {resp.status_code}: {resp.text[:300]}")
-            jobs = resp.json().get("jobs", [])
-            match = next((j for j in jobs if j.get("run_id") == run_id), None)
+                return _fail(f"/runs returned {resp.status_code}: {resp.text[:300]}")
+            listed = resp.json().get("runs", [])
+            match = next((j for j in listed if j.get("run_id") == run_id), None)
             if match is None:
-                return _fail(f"/queue does not list run {run_id}")
-            if match.get("status") != "interrupted":
-                return _fail(f"/queue lists status {match.get('status')!r}, expected 'interrupted'")
+                return _fail(f"/runs does not list run {run_id}")
+            if match.get("state") != "stopped" or match.get("outcome") != "crashed":
+                return _fail(f"/runs lists state={match.get('state')!r} "
+                             f"outcome={match.get('outcome')!r}, expected "
+                             f"state='stopped' outcome='crashed'")
 
             on_disk = json.loads((run_dir / "status.json").read_text(encoding="utf-8"))
             if on_disk.get("status") != "interrupted":
@@ -3677,8 +3698,11 @@ def check_90_status_json_interrupted_on_reimport():
             else:
                 _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
 
-    return _ok("a hand-written 'running' status.json becomes 'interrupted' at reimport; "
-               "/status and /queue both reflect it, and the rewrite is persisted to disk")
+    return _ok("a hand-written 'running' status.json becomes 'interrupted' on disk at "
+               "reimport (checked directly against the file); GET /runs/{run_id} and GET "
+               "/runs both report state='stopped' outcome='crashed' for it, the mapping "
+               "api STEP B5's state/outcome vocabulary gives the retired 'interrupted' "
+               "status string")
 
 
 def check_91_orphaned_staging_dir_removed_at_import():
@@ -3846,10 +3870,26 @@ def check_93_upload_caps_reject_before_write():
 
 
 def check_94_run_id_path_traversal_rejected():
-    """productization STEP 3d: /status and /results reject a run_id that does
-    not match the server's own mint format (^\\d{8}_\\d{6}__[0-9a-f]{6}$) with
-    404 before building any path from it. Proves with run_id="../.." on both
-    routes."""
+    """productization STEP 3d, UPDATED in api STEP B5: run-scoped routes
+    reject a run_id that does not match the server's own mint format
+    (^\\d{8}_\\d{6}__[0-9a-f]{6}$) with 404 before building any path from it.
+
+    /status/{run_id} and /results/{run_id}, this check's original two
+    routes, were retired in api STEP B5's route-naming pass; their
+    replacements (GET /runs/{run_id} and GET /runs/{run_id}/deliverables)
+    are what this check now drives with run_id="../.."; both must still
+    404. NOTE (unchanged from before this update, restated since it is
+    easy to misread): a GET to "/runs/../.." is collapsed by the HTTP
+    CLIENT itself (RFC 3986 dot-segment removal) into a request for the
+    literal path "/" before it is ever sent -- so this assertion proves
+    "no route is registered at bare /" (true for any of this server's
+    routes, old or new; see console()'s own CONFLICT NOTE), not that
+    _RUN_ID_RE specifically rejected the value "../..". The SEPARATE
+    well-shaped-but-unknown-id assertion below is what actually exercises
+    _RUN_ID_RE's real rejection path: it sends a syntactically valid path
+    segment (no dot-segments for the client to collapse) that the regex
+    correctly recognizes as well-formed, so the 404 there comes from the
+    normal "no such run" branch, not from a collapsed URL."""
     try:
         import fastapi  # noqa: F401
     except ImportError:
@@ -3871,14 +3911,16 @@ def check_94_run_id_path_traversal_rejected():
             client = TestClient(server.app)
             headers = {"Authorization": f"Bearer {tok}"}
 
-            for route in ("/status/../..", "/results/../.."):
+            for route in ("/runs/../..", "/runs/../../deliverables"):
                 resp = client.get(route, headers=headers)
                 if resp.status_code != 404:
                     return _fail(f"GET {route} returned {resp.status_code}, expected 404")
 
             # A run_id that is the right SHAPE but simply unknown still 404s
-            # (proves the regex gate does not mask the normal not-found path).
-            resp = client.get("/status/20260101_000000__abcdef", headers=headers)
+            # (proves the regex gate does not mask the normal not-found path,
+            # and is the assertion that actually exercises _RUN_ID_RE's own
+            # rejection logic, per this check's updated docstring).
+            resp = client.get("/runs/20260101_000000__abcdef", headers=headers)
             if resp.status_code != 404:
                 return _fail(f"a well-shaped but unknown run_id returned {resp.status_code}, expected 404")
         finally:
@@ -3887,8 +3929,11 @@ def check_94_run_id_path_traversal_rejected():
             else:
                 _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
 
-    return _ok("run_id='../..' returns 404 on both /status and /results before any "
-               "path is built; a well-shaped but unknown run_id still 404s normally")
+    return _ok("GET /runs/../.. and GET /runs/../../deliverables both 404 (no route at "
+               "bare /, the client-side dot-segment collapse); a well-shaped but unknown "
+               "run_id on GET /runs/{run_id} also 404s, which is the assertion that "
+               "actually exercises _RUN_ID_RE's rejection path rather than the URL "
+               "normalization the dot-segment case depends on")
 
 
 def check_95_provider_error_scrubbed():
@@ -4423,19 +4468,26 @@ def _step6_server_module(runs_dir):
 
 
 def check_104_routes_require_token_except_health():
-    """productization STEP 6 gate check (a): every route except /health (and
-    the console shell /console, which the browser cannot pre-authenticate
-    before it has a token) returns 401 without an Authorization header.
-    /health and /console are the two deliberately-ungated routes (see their
-    docstrings in server.py; /console, not bare /, per the CONFLICT NOTE in
-    server.py::console's docstring: registering a route at bare "/" would
-    flip check_94's "GET /status/../.." case from a real 404 (no route
-    matched "/") to a false 200 (the console would match), since every HTTP
-    client normalizes ".." out of the URL before sending, client-side, with
-    no way for server code to distinguish the two -- and check_94, from an
-    earlier step, is never modified to accommodate a later step, per W2);
-    every OTHER route (/submit, /status/<x>, /queue, /results/<x>, /runs,
-    /approvals, POST /approvals/<x>) must still 401."""
+    """productization STEP 6 gate check (a), UPDATED in api STEP B5: every
+    route except /health (and the console shell /console, which the browser
+    cannot pre-authenticate before it has a token) returns 401 without an
+    Authorization header. /health and /console are the two
+    deliberately-ungated routes (see their docstrings in server.py; /console,
+    not bare /, per the CONFLICT NOTE in server.py::console's docstring:
+    registering a route at bare "/" would flip check_94's dot-segment-
+    collapse case from a real 404 (no route matched "/") to a false 200 (the
+    console would match), since every HTTP client normalizes ".." out of the
+    URL before sending, client-side, with no way for server code to
+    distinguish the two -- and check_94, from an earlier step, is never
+    modified to accommodate a later step, per W2); every OTHER route must
+    still 401. The route LIST here was updated when /status/{run_id},
+    /queue, /results/{run_id} and POST /approvals/{run_id} were retired in
+    the api STEP B5 route-naming pass: this now exercises their
+    replacements (/runs/{run_id}, /runs/{run_id}/deliverables,
+    POST /runs/{run_id}/approval) plus the two renamed reads
+    (/runs/{run_id}/findings, /runs/{run_id}/pairs) and the three routes
+    added in api STEP B2-B4 (cancel, the per-document deliverables route,
+    the log route) that this check never covered before."""
     try:
         import fastapi  # noqa: F401
     except ImportError:
@@ -4454,14 +4506,19 @@ def check_104_routes_require_token_except_health():
             _os.environ["SHIMMER_TOKEN_HASH"] = "irrelevant-hash-no-auth-header-sent"
             client = TestClient(server.app)
 
+            fixture_id = "20260101_000000__abcdef"
             gated = [
                 ("post", "/submit", {"data": {"task": "review"}}),
-                ("get", "/status/20260101_000000__abcdef", {}),
-                ("get", "/queue", {}),
-                ("get", "/results/20260101_000000__abcdef", {}),
+                ("get", f"/runs/{fixture_id}", {}),
                 ("get", "/runs", {}),
+                ("get", f"/runs/{fixture_id}/findings", {}),
+                ("get", f"/runs/{fixture_id}/pairs", {}),
+                ("get", f"/runs/{fixture_id}/deliverables", {}),
+                ("get", f"/runs/{fixture_id}/deliverables/some_doc", {}),
+                ("get", f"/runs/{fixture_id}/log", {}),
+                ("post", f"/runs/{fixture_id}/cancel", {}),
+                ("post", f"/runs/{fixture_id}/approval", {"json": {"decision": "DENY"}}),
                 ("get", "/approvals", {}),
-                ("post", "/approvals/20260101_000000__abcdef", {"json": {"decision": "DENY"}}),
             ]
             for method, path, kwargs in gated:
                 resp = getattr(client, method)(path, **kwargs)
@@ -4475,8 +4532,10 @@ def check_104_routes_require_token_except_health():
                 _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
 
     return _ok("every route except /health (and the console shell /console) returns 401 "
-               "with no Authorization header: /submit, /status, /queue, /results, "
-               "/runs, /approvals (GET+POST) all confirmed")
+               "with no Authorization header: /submit, /runs, /runs/{run_id}, "
+               "/runs/{run_id}/findings, /runs/{run_id}/pairs, "
+               "/runs/{run_id}/deliverables (both forms), /runs/{run_id}/log, "
+               "/runs/{run_id}/cancel, /runs/{run_id}/approval, /approvals all confirmed")
 
 
 def check_105_health_route_leaks_nothing():
@@ -4551,8 +4610,13 @@ def _hash_tree(root: Path) -> str:
 
 
 def check_106_approval_post_writes_decision_only():
-    """productization STEP 6 gate check (c): POST /approvals/{run_id} writes
-    <run>/audit/approval_decision.json and changes NOTHING under config/ or
+    """productization STEP 6 gate check (c), UPDATED in api STEP B5: POST
+    /approvals/{run_id} was retired in the STEP B5 route-naming pass (every
+    run-scoped route now lives under /runs/{run_id}/...); this check now
+    calls its replacement, POST /runs/{run_id}/approval, and expects that
+    route's own response shape (202, not the retired route's 200). The
+    property under test is unchanged: writing <run>/audit/
+    approval_decision.json changes NOTHING under config/ or
     durable/governance/ (hashed before and after with _hash_tree, over the
     REAL repo trees, proving this route never touches governed state; it only
     relays a human's decision to a file the pipeline subprocess polls)."""
@@ -4587,10 +4651,10 @@ def check_106_approval_post_writes_decision_only():
             _os.environ["SHIMMER_TOKEN_HASH"] = _hl.sha256(tok.encode("utf-8")).hexdigest()
             client = TestClient(server.app)
             headers = {"Authorization": f"Bearer {tok}"}
-            resp = client.post(f"/approvals/{run_id}", headers=headers,
+            resp = client.post(f"/runs/{run_id}/approval", headers=headers,
                                 json={"decision": "APPROVE", "rationale": "gate test"})
-            if resp.status_code != 200:
-                return _fail(f"POST /approvals/{{run_id}} returned {resp.status_code}: {resp.text[:300]}")
+            if resp.status_code != 202:
+                return _fail(f"POST /runs/{{run_id}}/approval returned {resp.status_code}: {resp.text[:300]}")
 
             decision_path = run_dir / "audit" / "approval_decision.json"
             if not decision_path.exists():
@@ -4607,11 +4671,11 @@ def check_106_approval_post_writes_decision_only():
     config_hash_after = _hash_tree(CONFIG)
     governance_hash_after = _hash_tree(ROOT / "durable" / "governance")
     if config_hash_after != config_hash_before:
-        return _fail("config/ tree changed after POST /approvals/{run_id}")
+        return _fail("config/ tree changed after POST /runs/{run_id}/approval")
     if governance_hash_after != governance_hash_before:
-        return _fail("durable/governance/ tree changed after POST /approvals/{run_id}")
+        return _fail("durable/governance/ tree changed after POST /runs/{run_id}/approval")
 
-    return _ok("POST /approvals/{run_id} writes approval_decision.json; config/ and "
+    return _ok("POST /runs/{run_id}/approval writes approval_decision.json; config/ and "
                "durable/governance/ hash identically before and after (hashed over "
                "the real repo trees)")
 
@@ -9471,9 +9535,12 @@ def _a1_fixture_run(runs_dir, run_id=_A1_RUN_ID, *, review_mode="paired"):
 
 
 def check_163_findings_and_pairs_round_trip_from_a_run():
-    """api STEP A1 (b, c): GET /findings/{run_id} returns the run's typed Finding
-    records and GET /pairs/{run_id} returns its pairing map, both read from a
-    fixture run directory through the real app.
+    """api STEP A1 (b, c), paths updated in api STEP B5: GET
+    /runs/{run_id}/findings (renamed from /findings/{run_id}) returns the
+    run's typed Finding records and GET /runs/{run_id}/pairs (renamed from
+    /pairs/{run_id}) returns its pairing map, both read from a fixture run
+    directory through the real app. The rename is path-only; every
+    assertion below is unchanged.
 
     Four things are proven, not just "a 200 came back":
       - the FIELDS a consumer needs are present and carry the values that were on
@@ -9513,7 +9580,7 @@ def check_163_findings_and_pairs_round_trip_from_a_run():
             client = TestClient(server.app)
             headers = {"Authorization": f"Bearer {tok}"}
 
-            r = client.get(f"/findings/{_A1_RUN_ID}", headers=headers)
+            r = client.get(f"/runs/{_A1_RUN_ID}/findings", headers=headers)
             if r.status_code != 200:
                 return _fail(f"/findings returned {r.status_code}: {r.text[:300]}")
             body = r.json()
@@ -9545,7 +9612,7 @@ def check_163_findings_and_pairs_round_trip_from_a_run():
             if any(r_.get("kind") == "extraction" for r_ in recs):
                 return _fail("an item that is not a Finding record was reported as one")
 
-            r = client.get(f"/pairs/{_A1_RUN_ID}", headers=headers)
+            r = client.get(f"/runs/{_A1_RUN_ID}/pairs", headers=headers)
             if r.status_code != 200:
                 return _fail(f"/pairs returned {r.status_code}: {r.text[:300]}")
             praw = r.text
@@ -9584,8 +9651,8 @@ def check_163_findings_and_pairs_round_trip_from_a_run():
             map_aside = map_path.with_suffix(".aside")
             bus_path.rename(bus_aside)
             map_path.rename(map_aside)
-            n_find = client.get(f"/findings/{_A1_RUN_ID}", headers=headers).json()
-            n_pairs = client.get(f"/pairs/{_A1_RUN_ID}", headers=headers).json()
+            n_find = client.get(f"/runs/{_A1_RUN_ID}/findings", headers=headers).json()
+            n_pairs = client.get(f"/runs/{_A1_RUN_ID}/pairs", headers=headers).json()
             if n_find.get("count") != 0:
                 return _fail(f"with the bus removed /findings still reported "
                              f"{n_find.get('count')} finding(s): the route is not reading it")
@@ -9595,8 +9662,8 @@ def check_163_findings_and_pairs_round_trip_from_a_run():
             # RESTORE.
             bus_aside.rename(bus_path)
             map_aside.rename(map_path)
-            r_find = client.get(f"/findings/{_A1_RUN_ID}", headers=headers).json()
-            r_pairs = client.get(f"/pairs/{_A1_RUN_ID}", headers=headers).json()
+            r_find = client.get(f"/runs/{_A1_RUN_ID}/findings", headers=headers).json()
+            r_pairs = client.get(f"/runs/{_A1_RUN_ID}/pairs", headers=headers).json()
             if r_find.get("count") != 2 or r_pairs.get("document_count") != 1:
                 return _fail(f"after restoring the artifacts the routes did not recover: "
                              f"findings={r_find.get('count')} "
@@ -9618,8 +9685,10 @@ def check_163_findings_and_pairs_round_trip_from_a_run():
 
 
 def check_164_run_scoped_routes_reject_unknown_ids_and_need_a_token():
-    """api STEP A1 (b, c): the two new run-scoped routes validate run_id exactly as
-    /status and /results already do, and sit behind the same token gate.
+    """api STEP A1 (b, c), paths updated in api STEP B5: the two run-scoped
+    routes (renamed from /findings/{run_id} and /pairs/{run_id} to
+    /runs/{run_id}/findings and /runs/{run_id}/pairs) validate run_id exactly
+    as every other run-scoped route does, and sit behind the same token gate.
 
     Asserted: a path-traversal-shaped id and a well-formed id with no run folder
     are both 404 (a caller learns only "not found" either way); no Authorization
@@ -9651,43 +9720,43 @@ def check_164_run_scoped_routes_reject_unknown_ids_and_need_a_token():
             headers = {"Authorization": f"Bearer {tok}"}
 
             for route in ("findings", "pairs"):
-                if client.get(f"/{route}/{_A1_RUN_ID}").status_code != 401:
-                    return _fail(f"/{route}/<id> answered without a token")
+                if client.get(f"/runs/{_A1_RUN_ID}/{route}").status_code != 401:
+                    return _fail(f"/runs/<id>/{route} answered without a token")
                 # A malformed id: rejected by _RUN_ID_RE before any path is built.
-                if client.get(f"/{route}/not-a-run-id", headers=headers).status_code != 404:
-                    return _fail(f"/{route}/<malformed id> was not 404")
+                if client.get(f"/runs/not-a-run-id/{route}", headers=headers).status_code != 404:
+                    return _fail(f"/runs/<malformed id>/{route} was not 404")
                 # Well-formed, but no such run.
                 absent = "20200101_000000__ffffff"
-                if client.get(f"/{route}/{absent}", headers=headers).status_code != 404:
-                    return _fail(f"/{route}/<absent but well-formed id> was not 404")
-                if client.get(f"/{route}/{_A1_RUN_ID}", headers=headers).status_code != 200:
-                    return _fail(f"/{route}/<fixture id> was not 200 before neutralising")
+                if client.get(f"/runs/{absent}/{route}", headers=headers).status_code != 404:
+                    return _fail(f"/runs/<absent but well-formed id>/{route} was not 404")
+                if client.get(f"/runs/{_A1_RUN_ID}/{route}", headers=headers).status_code != 200:
+                    return _fail(f"/runs/<fixture id>/{route} was not 200 before neutralising")
 
             # NEUTRALISE: the run folder goes away, the id stays well-formed.
             aside = run_dir.with_name(run_dir.name + "_aside")
             run_dir.rename(aside)
             for route in ("findings", "pairs"):
-                code = client.get(f"/{route}/{_A1_RUN_ID}", headers=headers).status_code
+                code = client.get(f"/runs/{_A1_RUN_ID}/{route}", headers=headers).status_code
                 if code != 404:
-                    return _fail(f"with the run folder gone /{route} answered {code}, "
-                                 f"expected 404")
+                    return _fail(f"with the run folder gone /runs/<id>/{route} answered "
+                                 f"{code}, expected 404")
             # RESTORE.
             aside.rename(run_dir)
             for route in ("findings", "pairs"):
-                code = client.get(f"/{route}/{_A1_RUN_ID}", headers=headers).status_code
+                code = client.get(f"/runs/{_A1_RUN_ID}/{route}", headers=headers).status_code
                 if code != 200:
-                    return _fail(f"after restoring the run folder /{route} answered {code}, "
-                                 f"expected 200")
+                    return _fail(f"after restoring the run folder /runs/<id>/{route} "
+                                 f"answered {code}, expected 200")
         finally:
             if saved_tok is None:
                 _os.environ.pop("SHIMMER_TOKEN_HASH", None)
             else:
                 _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
 
-    return _ok("GET /findings and GET /pairs are 401 without a token, 404 for a "
-               "malformed run_id and for a well-formed id with no run folder, 200 for "
-               "the fixture run, 404 again once its folder is moved aside and 200 once "
-               "it is restored")
+    return _ok("GET /runs/{run_id}/findings and GET /runs/{run_id}/pairs are 401 without "
+               "a token, 404 for a malformed run_id and for a well-formed id with no run "
+               "folder, 200 for the fixture run, 404 again once its folder is moved aside "
+               "and 200 once it is restored")
 
 
 class _ArgvCapturingFakePopen(_FakePopen):
@@ -9830,13 +9899,16 @@ def check_165_review_mode_is_accepted_and_reaches_the_child():
 
 
 def check_166_status_counters_and_health_expose_the_review_shape():
-    """api STEP A1 (d, e): GET /status carries three live counters and GET /health
-    carries the backend profile and the default review mode.
+    """api STEP A1 (d, e), path updated in api STEP B5: GET /runs/{run_id}
+    (the retired GET /status/{run_id}'s replacement) carries three live
+    counters and GET /health carries the backend profile and the default
+    review mode.
 
     Asserted:
-      - /status reports pairs_planned from the run's pairing map, model_calls from
-        its cost ledger, and pairs_arithmetic_only as the pairs the run settled
-        without a judging call (7 planned, 2 judged in phase 5.5, so 5);
+      - GET /runs/{run_id} reports pairs_planned from the run's pairing map,
+        model_calls from its cost ledger, and pairs_arithmetic_only as the
+        pairs the run settled without a judging call (7 planned, 2 judged in
+        phase 5.5, so 5);
       - in WIDE mode pairs_arithmetic_only is null, not a number: a phase-5.5 call
         there is a whole-document review, and subtracting it from a pair count
         would be arithmetic on unlike things;
@@ -9872,13 +9944,14 @@ def check_166_status_counters_and_health_expose_the_review_shape():
             client = TestClient(server.app)
             headers = {"Authorization": f"Bearer {tok}"}
 
-            body = client.get(f"/status/{_A1_RUN_ID}", headers=headers).json()
+            body = client.get(f"/runs/{_A1_RUN_ID}", headers=headers).json()
             for field, want in (("review_mode", "paired"), ("pairs_planned", 7),
                                 ("model_calls", 3), ("pairs_arithmetic_only", 5)):
                 if body.get(field) != want:
-                    return _fail(f"/status {field} is {body.get(field)!r}, expected {want!r}")
+                    return _fail(f"/runs/{{run_id}} {field} is {body.get(field)!r}, "
+                                 f"expected {want!r}")
 
-            wide = client.get(f"/status/{wide_id}", headers=headers).json()
+            wide = client.get(f"/runs/{wide_id}", headers=headers).json()
             if wide.get("pairs_arithmetic_only") is not None:
                 return _fail(f"in wide mode pairs_arithmetic_only is "
                              f"{wide.get('pairs_arithmetic_only')!r}, expected null")
@@ -9889,15 +9962,15 @@ def check_166_status_counters_and_health_expose_the_review_shape():
             cost_path = run_dir / "logs" / "cost_tracker.jsonl"
             saved_cost = cost_path.read_text(encoding="utf-8")
             cost_path.write_text("", encoding="utf-8")
-            n = client.get(f"/status/{_A1_RUN_ID}", headers=headers).json()
+            n = client.get(f"/runs/{_A1_RUN_ID}", headers=headers).json()
             if n.get("model_calls") != 0 or n.get("pairs_arithmetic_only") != 7:
-                return _fail(f"with the cost ledger emptied /status reported "
+                return _fail(f"with the cost ledger emptied /runs/{{run_id}} reported "
                              f"model_calls={n.get('model_calls')!r} "
                              f"pairs_arithmetic_only={n.get('pairs_arithmetic_only')!r}, "
                              f"expected 0 and 7: the counters are not read from the run")
             # RESTORE.
             cost_path.write_text(saved_cost, encoding="utf-8")
-            r = client.get(f"/status/{_A1_RUN_ID}", headers=headers).json()
+            r = client.get(f"/runs/{_A1_RUN_ID}", headers=headers).json()
             if r.get("model_calls") != 3 or r.get("pairs_arithmetic_only") != 5:
                 return _fail("the counters did not recover after restoring the cost ledger")
 
@@ -9930,7 +10003,7 @@ def check_166_status_counters_and_health_expose_the_review_shape():
             else:
                 _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
 
-    return _ok("GET /status adds pairs_planned=7, model_calls=3 and "
+    return _ok("GET /runs/{run_id} carries pairs_planned=7, model_calls=3 and "
                "pairs_arithmetic_only=5 read live from the run's pairing map and cost "
                "ledger, reports pairs_arithmetic_only as null in wide mode where the "
                "subtraction would be meaningless, and follows the ledger when it is "
@@ -13543,6 +13616,177 @@ def check_189_a_single_document_is_fetchable_and_a_partial_archive_says_so():
                "the correct contents back")
 
 
+def check_190_the_fresh_eyes_fixes_hold_shape_route_and_removal():
+    """api STEP B5: proves the three fresh-eyes fixes that could silently
+    regress without a dedicated check (a renamed field nothing reads, and a
+    behavior-preserving path rename, do not get one; these three change
+    RESPONSE SHAPE or ROUTE EXISTENCE, which a console author would notice
+    only by breaking):
+
+      (a) GET /runs/{run_id} and GET /runs no longer carry the raw `status`
+          field (fix 5, dropped so state/outcome/stop_reason is the sole
+          vocabulary a caller reads) -- checked directly for its ABSENCE,
+          which a check that only asserts what IS present would miss
+          entirely; NEUTRALISE AND RESTORE: with the field re-added by
+          patching _run_record to also set record["status"] = job["status"],
+          the check demonstrates it would catch the field's return, then
+          removes the patch and confirms it is gone again;
+
+      (b) GET /approvals' entries now carry the SAME richer shape as GET
+          /runs/{run_id}'s pending_approval object (fix 2: message,
+          default_on_timeout, timeout_at, previously absent from /approvals)
+          -- checked field-by-field against the embedded object for the
+          same run, not just "some fields exist somewhere";
+
+      (c) every retired route (GET /status/{run_id}, GET /queue, GET
+          /results/{run_id}, POST /approvals/{run_id}) is genuinely gone --
+          404, not silently still answering under its old path -- checked
+          directly by calling each one.
+
+    No real pipeline subprocess is spawned; this check reads fixture run
+    directories directly off disk (the same pattern _a1_fixture_run uses),
+    never calling _run_job."""
+    try:
+        import fastapi  # noqa: F401
+    except ImportError:
+        return _ok("fastapi absent: check_190 requires fastapi, skipped as N/A")
+
+    from fastapi.testclient import TestClient
+    import hashlib as _hl
+    import os as _os
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_api_b5_") as tmp:
+        runs_dir = Path(tmp) / "runs"
+        run_dir = _a1_fixture_run(runs_dir)
+
+        # A pending approval on the fixture run, for check (b).
+        audit_dir = run_dir / "audit"
+        audit_dir.mkdir(parents=True, exist_ok=True)
+        (audit_dir / "pending_approval.json").write_text(json.dumps({
+            "topic": "MODEL_DEPRECATED",
+            "payload": {"agent": "GATE_AGENT", "dead_model": "old-model",
+                        "proposed_replacement": "new-model",
+                        "message": "Agent GATE_AGENT is assigned model 'old-model'; "
+                                   "retired. Proposed replacement: 'new-model'."},
+            "asked_at": "2026-09-07T12:00:00+00:00",
+        }, indent=2), encoding="utf-8")
+        server = _step6_server_module(runs_dir)
+        server.RUNS_DIR = runs_dir
+
+        # status.json for this fixture is "completed" by default (_a1_fixture_run's
+        # own on-disk write); the JOBS entry _rebuild_jobs_from_disk() produced at
+        # the import above reflects that. Set the LIVE JOBS entry to "running"
+        # directly (a plain on-disk edit would be rewritten back to "interrupted"
+        # by the same import-time rebuild, since there is no live process behind
+        # it -- exactly what check_90 tests) so _state_for_job sees a pending
+        # approval and reports awaiting_approval, matching a run genuinely paused
+        # on a governed decision.
+        with server.JOBS_LOCK:
+            job = server._find_job(_A1_RUN_ID)
+            if job is None:
+                return _fail(f"fixture setup: {_A1_RUN_ID} not found in JOBS after import")
+            job["status"] = "running"
+
+        saved_tok = _os.environ.get("SHIMMER_TOKEN_HASH")
+        try:
+            tok = "gate-api-b5-token"
+            _os.environ["SHIMMER_TOKEN_HASH"] = _hl.sha256(tok.encode("utf-8")).hexdigest()
+            client = TestClient(server.app)
+            headers = {"Authorization": f"Bearer {tok}"}
+
+            # --- (a) `status` is absent from GET /runs/{run_id} and GET /runs. ---
+            detail = client.get(f"/runs/{_A1_RUN_ID}", headers=headers).json()
+            if "status" in detail:
+                return _fail(f"GET /runs/{{run_id}} still carries 'status': "
+                             f"{detail.get('status')!r} (fix 5 not applied)")
+            if detail.get("state") != "awaiting_approval":
+                return _fail(f"fixture setup: state={detail.get('state')!r}, "
+                             f"expected 'awaiting_approval'")
+            listing = client.get("/runs", headers=headers).json()
+            match = next((r for r in listing.get("runs", [])
+                         if r.get("run_id") == _A1_RUN_ID), None)
+            if match is None:
+                return _fail("GET /runs does not list the fixture run")
+            if "status" in match:
+                return _fail(f"GET /runs still carries 'status' per entry: "
+                             f"{match.get('status')!r} (fix 5 not applied)")
+
+            # NEUTRALISE: patch _run_record to re-add the field, proving this
+            # check would catch its return.
+            saved_run_record = server._run_record
+            try:
+                def _leaky_run_record(job, run_dir_arg):
+                    record = saved_run_record(job, run_dir_arg)
+                    record["status"] = job.get("status")
+                    return record
+                server._run_record = _leaky_run_record
+                leaked = client.get(f"/runs/{_A1_RUN_ID}", headers=headers).json()
+                if "status" not in leaked:
+                    return _fail("neutralising _run_record to re-add 'status' had no "
+                                 "effect: this check is not actually reading the live "
+                                 "response")
+            finally:
+                # RESTORE.
+                server._run_record = saved_run_record
+            restored = client.get(f"/runs/{_A1_RUN_ID}", headers=headers).json()
+            if "status" in restored:
+                return _fail("'status' is still present after restoring _run_record")
+
+            # --- (b) GET /approvals carries the SAME richer shape as pending_approval. ---
+            approvals_body = client.get("/approvals", headers=headers).json()
+            entries = approvals_body.get("approvals") or []
+            entry = next((e for e in entries if e.get("run_id") == _A1_RUN_ID), None)
+            if entry is None:
+                return _fail(f"GET /approvals does not list the fixture run: "
+                             f"{entries!r}")
+            pending_from_detail = detail.get("pending_approval") or {}
+            for field in ("topic", "message", "payload", "asked_at",
+                          "default_on_timeout", "timeout_at"):
+                if field not in entry:
+                    return _fail(f"GET /approvals entry is missing {field!r} (fix 2 "
+                                 f"not applied): {sorted(entry)}")
+                if entry.get(field) != pending_from_detail.get(field):
+                    return _fail(f"GET /approvals entry.{field}={entry.get(field)!r} "
+                                 f"disagrees with GET /runs/{{run_id}}'s "
+                                 f"pending_approval.{field}="
+                                 f"{pending_from_detail.get(field)!r}: the two are not "
+                                 f"describing the same record the same way")
+            if "new-model" not in (entry.get("message") or ""):
+                return _fail(f"GET /approvals entry.message does not carry the "
+                             f"proposed replacement: {entry.get('message')!r}")
+
+            # --- (c) every retired route is genuinely gone. ---
+            retired = [
+                ("get", f"/status/{_A1_RUN_ID}"),
+                ("get", "/queue"),
+                ("get", f"/results/{_A1_RUN_ID}"),
+                ("post", f"/approvals/{_A1_RUN_ID}"),
+                ("get", f"/findings/{_A1_RUN_ID}"),
+                ("get", f"/pairs/{_A1_RUN_ID}"),
+            ]
+            for method, path in retired:
+                kwargs = {"json": {"decision": "APPROVE"}} if method == "post" else {}
+                resp = getattr(client, method)(path, headers=headers, **kwargs)
+                if resp.status_code != 404:
+                    return _fail(f"{method.upper()} {path} returned {resp.status_code}, "
+                                 f"expected 404 (this route should be retired)")
+        finally:
+            if saved_tok is None:
+                _os.environ.pop("SHIMMER_TOKEN_HASH", None)
+            else:
+                _os.environ["SHIMMER_TOKEN_HASH"] = saved_tok
+
+    return _ok("GET /runs/{run_id} and GET /runs no longer carry the raw 'status' field "
+               "(checked for its absence, then a neutralising patch that re-adds it is "
+               "shown to be caught, then restored); GET /approvals' entries now carry the "
+               "identical richer shape (topic/message/payload/asked_at/"
+               "default_on_timeout/timeout_at) as GET /runs/{run_id}'s pending_approval "
+               "object for the same run, field-by-field; every retired route "
+               "(/status/{run_id}, /queue, /results/{run_id}, POST /approvals/{run_id}, "
+               "/findings/{run_id}, /pairs/{run_id}) answers 404, not silently still "
+               "routable under its old path")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -13634,7 +13878,7 @@ CHECKS = [
     ("87 LAW-III enforced: auditor backend differs from producer backend (productization STEP 1c)", check_87_law_iii_family_split_enforced),
     ("88 server writes status.json on submit (queued/running seen live) (productization STEP 2a)", check_88_status_json_written_on_submit),
     ("89 server status.json reads completed+exit_code after stubbed worker (productization STEP 2b)", check_89_status_json_completed_exit_code),
-    ("90 a running status.json becomes interrupted at reimport; /status + /queue agree (productization STEP 2c)", check_90_status_json_interrupted_on_reimport),
+    ("90 a running status.json becomes interrupted at reimport; GET /runs/{run_id} + /runs agree (productization STEP 2c)", check_90_status_json_interrupted_on_reimport),
     ("91 orphaned staging dir for a non-running job removed at import (productization STEP 2d)", check_91_orphaned_staging_dir_removed_at_import),
     ("92 provider call timeout yields CallResult(ok=False, timeout error) (productization STEP 3a)", check_92_provider_timeout),
     ("93 oversized upload returns 400, no staging dir left behind (productization STEP 3c)", check_93_upload_caps_reject_before_write),
@@ -13650,7 +13894,7 @@ CHECKS = [
     ("103 summary counts SKIP separately; exit 0 when only PASS+SKIP present (productization STEP 5)", check_103_summary_counts_skip_separately),
     ("104 every route except /health returns 401 without a token (productization STEP 6a)", check_104_routes_require_token_except_health),
     ("105 /health returns 200 ungated; body leaks no SHIMMER_/path/hash (productization STEP 6b)", check_105_health_route_leaks_nothing),
-    ("106 POST /approvals/{run_id} writes the decision file only; config/+durable/governance/ untouched (productization STEP 6c)", check_106_approval_post_writes_decision_only),
+    ("106 POST /runs/{run_id}/approval writes the decision file only; config/+durable/governance/ untouched (productization STEP 6c, path updated in api STEP B5)", check_106_approval_post_writes_decision_only),
     ("107 file operator handler relays, never decides; enforce_current_models decides (productization STEP 6d)", check_107_file_operator_handler_relays_not_decides),
     ("108 exit-code map: 5 -> blocked, 3 -> stopped_model_approval (productization STEP 6e)", check_108_exit_code_map_blocked_and_stopped_model_approval),
     ("109 served console HTML leaks no token/key pattern/env value (productization STEP 6f)", check_109_served_html_leaks_nothing),
@@ -13710,7 +13954,7 @@ CHECKS = [
     ("163 /findings and /pairs round-trip the typed review from a run (api A1)", check_163_findings_and_pairs_round_trip_from_a_run),
     ("164 the run-scoped read routes need a token and 404 an unknown run (api A1)", check_164_run_scoped_routes_reject_unknown_ids_and_need_a_token),
     ("165 review_mode is accepted, defaulted like the pipeline, and reaches the child (api A1)", check_165_review_mode_is_accepted_and_reaches_the_child),
-    ("166 /status counters and /health expose the review shape (api A1)", check_166_status_counters_and_health_expose_the_review_shape),
+    ("166 GET /runs/{run_id} counters and /health expose the review shape (api A1)", check_166_status_counters_and_health_expose_the_review_shape),
     ("167 README route table equals the routes the app registers (api A2)", check_167_readme_route_table_matches_the_app),
     ("168 reference-table ranges parse with their units, key columns learned (refine R1a)", check_168_reference_table_ranges_parse_with_their_units),
     ("169 a unit outside its row band yields a Finding with no model (refine R1b/c)", check_169_a_unit_outside_its_row_band_yields_a_finding_with_no_model),
@@ -13734,6 +13978,7 @@ CHECKS = [
     ("187 a queued and a running run can both be cancelled (api B2)", check_187_a_queued_and_a_running_run_can_both_be_cancelled),
     ("188 a pending approval is visible on status and answerable once (api B3)", check_188_a_pending_approval_is_visible_on_status_and_answerable_once),
     ("189 a single document is fetchable and a partial archive says so (api B4)", check_189_a_single_document_is_fetchable_and_a_partial_archive_says_so),
+    ("190 the fresh-eyes fixes hold: no legacy status field, unified pending-approval shape, retired routes gone (api B5)", check_190_the_fresh_eyes_fixes_hold_shape_route_and_removal),
 ]
 
 
