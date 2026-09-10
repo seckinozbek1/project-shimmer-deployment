@@ -11,6 +11,8 @@
 !benchmark/corpora/clinical_reference/answer_key.json
 !benchmark/corpora/negotiation_r2_to_r3/answer_key.json
 !benchmark/corpora/negotiation_r3_to_r4/answer_key.json
+!benchmark/corpora/device_log_review/answer_key.json
+!benchmark/corpora/device_log_review_clean/answer_key.json
 **/*secret*
 **/*credential*
 **/.env*

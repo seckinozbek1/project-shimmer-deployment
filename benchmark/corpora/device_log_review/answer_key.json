@@ -1,0 +1,115 @@
+{
+  "corpus": "device_log_review",
+  "document": "device_log_flawed.md",
+  "written": "2026-09-11 local, BEFORE any deliverable from a run of this corpus was opened",
+  "held_out": "The pipeline never reads benchmark/. This key is consulted only by tools/score_corpus.py after a run, and the scorer matches mechanically on unit id and rule id.",
+  "task_given_to_the_pipeline": "Review device_log_flawed.md against the eight rules in device_conventions.md, grounded in device_class_reference.md. The document's own glossary section states the standard fault window, service interval and calibration authority definitions used by several rules. For every rule, find every entry it applies to, check it against the rule, the reference material, the glossary, and the entries immediately beside it, and report each violation with the figures that conflict, the rule it breaks (by the operator's own id), and the reference passage it rests on.",
+  "limitation": "This corpus and its answer key were both authored by the same process that built the pipeline fixes being measured against it. A score against a self-authored key is weaker evidence than a score against a corpus and key written independently: the author of a test cannot be fully blind to what the test is designed to catch. It is included because, before this corpus, there was no measurement corpus for adjacent-context or long-range flaws in this benchmark set at all, and a self-authored measurement is worth more than no measurement, held to that lower standard explicitly rather than presented as independent verification.",
+  "corpus_size": {
+    "units": 19,
+    "note": "18 device entries plus 1 glossary unit, per pairing_map.split_units() on device_log_flawed.md, u01 through u19.",
+    "conventions": 8
+  },
+  "design_note": "Neighbour-dependent flaws split into two genuinely different tests, not one. 'Reads sound alone, contradicted by its neighbour' (ELDER, IVY, LARCH) is a real recall test: the pipeline SHOULD flag these, and only does so correctly by reading the neighbour after them. 'Reads wrong alone, sound with its neighbour' (BIRCH, HOLLY, DAMSON) is the opposite in what counts as correct: nothing should be flagged there at all, since the neighbour before them states a real exception that clears the reading. Putting BIRCH/HOLLY/DAMSON in planted would score the pipeline as correct only if it incorrectly flags them, which inverts what 'correct' means. They are listed under precision_test below instead: an amendment against any of them is a false positive, scored through the SAME false-positive path the scorer already has for the clean list, kept separate here only so a reader can see which false positives are specifically the neighbour-exception test and which are ordinary distractors.",
+  "planted": [
+    {
+      "unit": "UNIT-ELDER",
+      "depends_on": "UNIT-FIRTH",
+      "kind": "neighbour-dependent, reads sound alone but contradicted by its neighbour",
+      "rule": "CONV-D06",
+      "what": "ELDER states a reading of 47 units with a valid signature and reads as a clean entry in isolation, but FIRTH, the entry immediately after it, states that ELDER's device was re-read immediately afterward and returned 71, and that the 47 figure was a transcription error that should not be carried forward. Reading ELDER alone misses this.",
+      "relation": "changed_from_prior"
+    },
+    {
+      "unit": "UNIT-IVY",
+      "depends_on": "UNIT-JUNIPER",
+      "kind": "neighbour-dependent, reads sound alone but contradicted by its neighbour",
+      "rule": "CONV-D06",
+      "what": "IVY states a reading of 45 units, within the standard tolerance band, and reads as a clean entry in isolation, but JUNIPER, the entry immediately after it, states that the sensor supplying IVY's reading was flagged faulty by the rack controller three hours before that reading was logged, so the reading is not valid and should not be filed as reviewed. Reading IVY alone misses this.",
+      "relation": null
+    },
+    {
+      "unit": "UNIT-LARCH",
+      "depends_on": "UNIT-MAPLE",
+      "kind": "neighbour-dependent, reads sound alone but contradicted by its neighbour",
+      "rule": "CONV-D06",
+      "what": "LARCH states a reading of 44 units with a valid signature and reads as a clean entry in isolation, but MAPLE, the entry immediately after it, states that LARCH's device was formally decommissioned two days before the log date on that entry, so the reading is not a valid device reading and should not be reviewed as one. Reading LARCH alone misses this.",
+      "relation": null
+    },
+    {
+      "unit": "UNIT-TEASEL",
+      "depends_on": "glossary (unit u01, this document's own start)",
+      "kind": "long-range, term defined near the start conflicts with its use near the end",
+      "rule": "CONV-D04",
+      "what": "TEASEL logs a fault at 2026-06-01 09:00, acknowledged at 2026-06-03 09:00, a 48-hour gap. The glossary, at the very start of the document, states the standard fault window as 24 hours. TEASEL is 16 of 19 units away from the definition it depends on.",
+      "relation": "date_window"
+    },
+    {
+      "unit": "UNIT-VETCH",
+      "depends_on": "glossary (unit u01, this document's own start)",
+      "kind": "long-range, term defined near the start conflicts with its use near the end",
+      "rule": "CONV-D05",
+      "what": "VETCH logs calibration visits on 2026-01-01 and 2026-06-01, a 151-day gap. The glossary, at the very start of the document, states the standard service interval as 90 days. VETCH is 18 of 19 units away, the last unit in the document, from the definition it depends on.",
+      "relation": "date_window"
+    },
+    {
+      "unit": "UNIT-SPRUCE",
+      "depends_on": "glossary (unit u01, this document's own start)",
+      "kind": "long-range, term defined near the start conflicts with its use near the end",
+      "rule": "CONV-D03",
+      "what": "SPRUCE's calibration authority signature is from 'R. Vance, engineering lead', with no certificate stated. The glossary, at the very start of the document, states that only a technician holding a current calibration certificate may sign a calibration record as complete. SPRUCE is 16 of 19 units away from the definition it depends on.",
+      "relation": null
+    },
+    {
+      "unit": "UNIT-OAK",
+      "depends_on": null,
+      "kind": "self-contained, visible in one unit alone",
+      "rule": "CONV-D07",
+      "what": "OAK states a logged reading of 39 units and, in the same entry, a note that the reading was confirmed at 52 units on manual recheck, superseding the logged figure. Two different values for the same field within one unit, visible without reading any other unit.",
+      "relation": null
+    },
+    {
+      "unit": "UNIT-PINE",
+      "depends_on": null,
+      "kind": "self-contained, visible in one unit alone",
+      "rule": "CONV-D02",
+      "what": "PINE is a Class-A sensor with no calibration authority signature field at all. CONV-D02 requires the field for every Class-A entry. Visible from PINE's own text against the rule, without reading any other unit.",
+      "relation": "missing_field"
+    },
+    {
+      "unit": "UNIT-ROWAN",
+      "depends_on": null,
+      "kind": "self-contained, visible in one unit alone",
+      "rule": "CONV-D01",
+      "what": "ROWAN states a reading of 61 units and, in the same entry, a note claiming the reading is within the standard tolerance band, 20 to 60 units. 61 is outside the range its own note claims it falls inside, visible without reading any other unit.",
+      "relation": "above_band"
+    }
+  ],
+  "precision_test": [
+    {
+      "unit": "UNIT-BIRCH",
+      "depends_on": "UNIT-ALDER",
+      "kind": "neighbour-dependent, reads wrong alone but sound with its neighbour",
+      "rule": "CONV-D01",
+      "what": "Reading (65) is outside the standard Class-B tolerance band (20-60) and would read as a violation in isolation, but ALDER, the entry immediately before it, states a widened batch tolerance band (20-68) that BIRCH's reading falls inside. Correctly sound only when read together with ALDER. An amendment against BIRCH is a false positive: the correct outcome is no finding at all."
+    },
+    {
+      "unit": "UNIT-HOLLY",
+      "depends_on": "UNIT-GORSE",
+      "kind": "neighbour-dependent, reads wrong alone but sound with its neighbour",
+      "rule": "CONV-D01",
+      "what": "Reading (128) is outside the standard Class-C tolerance band (70-110) and would read as a violation in isolation, but GORSE, the entry immediately before it, states a locally adjusted rack range (90-130) that HOLLY's reading falls inside. Correctly sound only when read together with GORSE. An amendment against HOLLY is a false positive: the correct outcome is no finding at all."
+    },
+    {
+      "unit": "UNIT-DAMSON",
+      "depends_on": "UNIT-CEDAR",
+      "kind": "neighbour-dependent, reads wrong alone but sound with its neighbour",
+      "rule": "CONV-D02",
+      "what": "DAMSON carries no calibration authority signature field, which would read as a missing required field in isolation, but CEDAR, the entry immediately before it, states that the signature field applies only to Class-A sensors and Class-B sensors are exempt. DAMSON is Class-B. Correctly exempt only when read together with CEDAR. An amendment against DAMSON is a false positive: the correct outcome is no finding at all."
+    }
+  ],
+  "clean": [
+    "UNIT-ALDER", "UNIT-CEDAR", "UNIT-GORSE", "UNIT-FIRTH", "UNIT-JUNIPER", "UNIT-MAPLE"
+  ],
+  "notes": "9 planted defects (real recall test, the pipeline should flag these) plus 3 precision_test entries (the pipeline should flag NOTHING there; an amendment against one is a false positive by the same mechanism as the clean list) across 18 device entries plus the glossary unit. Six units listed as clean are the NEIGHBOURS a planted or precision_test entry depends on, not defects themselves: ALDER, CEDAR and GORSE correctly state real local exceptions that clear their dependent neighbour (BIRCH, DAMSON, HOLLY, in precision_test), and FIRTH, JUNIPER and MAPLE correctly report a real correction that makes their dependent neighbour (ELDER, IVY, LARCH, in planted) unsound; an amendment filed directly against any of these six units, rather than against the unit whose defect or clearance they explain, is a false positive. Several planted relation values are null rather than a finding_record relation: several of these flaws (a decommissioned-device contradiction, an invalid calibration signature, an internal figure contradiction) are logical, not arithmetic, and do not map onto the closed finding_record relation set (sum_mismatch, above_band, etc.); a real wide-mode agent is expected to state one of these as a free-text relation value of its own choosing, same as PRACTICE_AUDITOR's real output tonight used 'type_mismatch', a value outside the declared set. Scoring for these entries goes through the scorer's via_rule path (unit + operator rule id on a real amendment), not via_bus (which requires an exact relation-string match); this is documented, not hidden: recall for a null-relation entry can only be proven by an amendment actually being built, not by a bus-only finding with no amendment. device_log_clean.md is the clean twin: every planted and precision_test defect repaired, every other detail unchanged, scored separately as its own corpus run with an empty planted list and a clean list naming all 18 device entries, to measure false positives on a genuinely clean input."
+}
