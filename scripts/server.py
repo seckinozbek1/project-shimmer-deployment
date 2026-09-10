@@ -1288,17 +1288,30 @@ def _amendment_view(a):
     so nothing here is optional to include, only optional to be non-empty.
 
     original_text: the document's actual passage as of paired_review.py's
-    amendment_from_finding fix (the source fix, not a display workaround);
-    a run produced BEFORE that fix still has the old shape (original_text
-    byte-equal to the finding's own unit_id, exactly what the old code
-    wrote: str(item.get("unit_id") or document_level)) sitting in its own
-    review_data.json on disk. Detected by comparing original_text against
-    finding_unit_id directly, not by a marker string or an id-shaped
-    pattern: no prefix was ever written to distinguish the two on disk, and
-    a real document passage happening to be a unit-id LOOKING string cannot
-    be ruled out by pattern alone, but a real passage being byte-identical
-    to its own finding's unit_id is not a real possibility, so equality is
-    the honest, reliable test.
+    amendment_from_finding fix (the source fix, not a display workaround).
+    Two non-passage shapes exist on disk and both must be caught: the OLD
+    pre-fix shape (original_text byte-equal to the finding's own unit_id,
+    exactly what the old code wrote: str(item.get("unit_id") or
+    document_level)), and the NEW fix's own fallback ("unit id %s (text not
+    available)" % unit_id), which amendment_from_finding writes when
+    unit_texts has no entry for this finding's unit_id. That miss is real
+    and was found on a real run, not a hypothetical: a WIDE-mode agent
+    (PRACTICE_AUDITOR) states its own finding's unit_id as the document's
+    own identifier for the record it is describing (e.g. "CAT-BIRCH", the
+    Identifier: field value), not the pipeline's internal split_units id
+    (e.g. "u02-record-cat-birch") that unit_texts is keyed by, so the two
+    never match and the fallback fires for every wide-mode finding. Fixing
+    that gap belongs in the agent contract (config/agent_contracts.json's
+    finding_record.says.unit_id is silent on which id space to use) or in
+    paired mode's own arithmetic path (plan_calls / compute_checks, whose
+    findings DO carry the matching structural id already); it is not a
+    display fix, so this is not the place it is fixed. What IS this
+    function's job: never claim either non-passage shape is a real passage.
+    Detected by testing whether original_text equals the finding's own
+    unit_id, OR matches the documented fallback template with that same
+    unit_id substituted in: neither is pattern-guessing, both are exact
+    reproductions of strings amendment_from_finding is known to write, so a
+    real document passage cannot collide with either by chance.
     proposed_text: null unless a model or --amendment-polish supplied one;
     passed through as null, never invented, the console's own job to say
     "no proposed wording" for that case.
@@ -1314,11 +1327,14 @@ def _amendment_view(a):
     original_text = a.get("original_text") or ""
     finding_unit_id = a.get("finding_unit_id")
     is_bare_unit_id = bool(finding_unit_id) and original_text == str(finding_unit_id)
+    is_fallback_wrapper = (bool(finding_unit_id)
+                           and original_text == "unit id %s (text not available)" % finding_unit_id)
+    is_not_a_passage = is_bare_unit_id or is_fallback_wrapper
     return {
         "convention_ref": a.get("convention_ref"),
         "source_rule_id": a.get("source_convention_ref") or a.get("convention_ref"),
         "original_text": original_text,
-        "original_text_is_passage": bool(original_text) and not is_bare_unit_id,
+        "original_text_is_passage": bool(original_text) and not is_not_a_passage,
         "proposed_text": a.get("proposed_text"),
         "comment": a.get("comment") or "",
         "action": a.get("action"),

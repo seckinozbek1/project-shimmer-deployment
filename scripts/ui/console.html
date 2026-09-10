@@ -2006,17 +2006,23 @@ function findingSentenceHtml(f) {
    rule already settled for every other section on this surface.
 ======================================================================= */
 function amendmentOriginalHtml(a, human) {
-  /* original_text_is_passage is false either for a run produced before the
-     source fix in paired_review.py's amendment_from_finding (the bare unit
-     id sitting in an old run's own review_data.json on disk), or when the
-     server genuinely has nothing (empty original_text). Both cases say so
-     plainly rather than presenting a unit id as if it were document prose. */
+  /* original_text_is_passage is false for more than one reason, and this
+     view cannot tell which: a run produced before the source fix in
+     paired_review.py's amendment_from_finding (the bare unit id sitting in
+     an old run's own review_data.json), a run made AFTER that fix where the
+     finding's own unit_id still did not match any unit the document was
+     split into (found on a real run: a wide-mode agent stating its own
+     finding's unit_id as the document's own identifier for the record, not
+     the pipeline's internal split id), or the server genuinely has nothing
+     (empty original_text). The wording says only what is true in every
+     case: the passage was not carried, not why, since guessing a cause
+     this view cannot verify would be its own kind of overclaiming. */
   if (a.original_text_is_passage && a.original_text) {
     return escapeHtml(a.original_text);
   }
   var note = human
-    ? "The original wording was not recorded for this amendment (an older run, before this was fixed)."
-    : "original_text not a passage (pre-fix run; raw value: " + (a.original_text || "(empty)") + ")";
+    ? "The original wording was not recorded for this amendment."
+    : "original_text not a passage (raw value: " + (a.original_text || "(empty)") + ")";
   return '<span class="muted">' + escapeHtml(note) + '</span>';
 }
 
