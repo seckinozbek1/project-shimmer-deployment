@@ -1277,6 +1277,93 @@ def _documents_for_run(run_id, run_dir):
     return out
 
 
+def _amendment_view(a):
+    """One amendment, projected to the fields a reader deciding whether to
+    accept a correction needs: the passage as it stands, the passage as
+    proposed, the rule it rests on in the operator's own identifier, and the
+    reasoning. Console fresh-eyes addition (the last thing the pipeline
+    produces that no view showed): the operator's own requirement is that
+    these four travel TOGETHER, since an unexplained correction is worth
+    less than an explained one and a reader must be able to tell them apart,
+    so nothing here is optional to include, only optional to be non-empty.
+
+    original_text: the document's actual passage as of paired_review.py's
+    amendment_from_finding fix (the source fix, not a display workaround);
+    a run produced BEFORE that fix still has the old shape (original_text
+    byte-equal to the finding's own unit_id, exactly what the old code
+    wrote: str(item.get("unit_id") or document_level)) sitting in its own
+    review_data.json on disk. Detected by comparing original_text against
+    finding_unit_id directly, not by a marker string or an id-shaped
+    pattern: no prefix was ever written to distinguish the two on disk, and
+    a real document passage happening to be a unit-id LOOKING string cannot
+    be ruled out by pattern alone, but a real passage being byte-identical
+    to its own finding's unit_id is not a real possibility, so equality is
+    the honest, reliable test.
+    proposed_text: null unless a model or --amendment-polish supplied one;
+    passed through as null, never invented, the console's own job to say
+    "no proposed wording" for that case.
+    source_rule_id: the operator's own id (source_convention_ref, already
+    stamped by finding_record.source_rule_id_for at write time for a
+    computed amendment); convention_ref (the registry id) is the only
+    honest fallback when absent, the same rule every other rule id on this
+    surface already follows.
+    comment: the reasoning. Required by both the computed and model-drafted
+    contracts (agent_contracts.json's own "required" list for both paths),
+    so this is never expected to be empty; if it somehow is, that is stated
+    plainly rather than shown as a blank field."""
+    original_text = a.get("original_text") or ""
+    finding_unit_id = a.get("finding_unit_id")
+    is_bare_unit_id = bool(finding_unit_id) and original_text == str(finding_unit_id)
+    return {
+        "convention_ref": a.get("convention_ref"),
+        "source_rule_id": a.get("source_convention_ref") or a.get("convention_ref"),
+        "original_text": original_text,
+        "original_text_is_passage": bool(original_text) and not is_bare_unit_id,
+        "proposed_text": a.get("proposed_text"),
+        "comment": a.get("comment") or "",
+        "action": a.get("action"),
+        "severity": a.get("severity"),
+        "finding_unit_id": a.get("finding_unit_id"),
+        "finding_rule_id": a.get("finding_rule_id"),
+        "ref_ids": list(a.get("ref_ids") or []),
+        "derived_from": a.get("derived_from") or "",
+    }
+
+
+def _amendments_for_run(run_id, run_dir):
+    """Every amendment across every DONE document of this run, read from
+    each document's own deliverables/<doc_id>/review_data.json (BP-16, the
+    same master file amendment_render.write_amendment_deliverables writes
+    verbatim and review_findings.md/tracked_changes.docx are pure renders
+    of). Read-only, non-mutating, the same pattern /findings and /pairs
+    already use. A document still in_progress has no review_data.json yet
+    (write_amendment_deliverables runs once per document, at the end of
+    that document's own phase 6/9), so only done documents are read; an
+    empty list is correct and expected until at least one document
+    finishes, not an error."""
+    import run_context as _rc
+    out = []
+    for doc in _documents_for_run(run_id, run_dir):
+        if doc["status"] != "done":
+            continue
+        path = run_dir / "deliverables" / doc["doc_id"] / _rc.DELIVERABLE_FILENAMES["amendments_json"]
+        if not path.is_file():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        amendments = payload.get("amendments") if isinstance(payload, dict) else None
+        if not isinstance(amendments, list):
+            continue
+        for a in amendments:
+            if isinstance(a, dict):
+                view = _amendment_view(a)
+                view["doc_id"] = doc["doc_id"]
+                out.append(view)
+    return out
+
+
 def _run_record(job, run_dir):
     """The complete run-resource object GET /runs/{run_id} and GET /runs
     return: everything decision one requires in one place, so a caller never
@@ -1902,6 +1989,29 @@ async def pairs(run_id: str):
     registry = _load_convention_registry()
     docs = [_pairs_view(p, registry) for p in _pairing_map(run_dir).values() if isinstance(p, dict)]
     return {"run_id": run_id, "document_count": len(docs), "documents": docs}
+
+
+@app.get("/runs/{run_id}/amendments", dependencies=[Depends(verify_token)])
+async def amendments(run_id: str):
+    """console fresh-eyes addition: the last thing the pipeline produces
+    that no view showed. An amendment (a proposed correction, tied to a
+    Finding) is written to deliverables/<doc_id>/review_data.json for every
+    document that finishes phase 6, shipped in every archive, and until this
+    route existed, never answerable by any API call: a reviewer who wanted
+    to see the correction the system actually proposed had to download the
+    archive and open the file by hand.
+
+    Read-only, non-mutating, same pattern as /findings and /pairs: reads
+    whatever is already on disk for every DONE document of this run (a
+    document still in_progress has no review_data.json yet). 404 for a
+    malformed/unknown run_id. 200 with an empty list, not an error, when no
+    document has finished yet or no document produced an irregular finding
+    (an amendment only exists for one, amendment_from_finding's own gate):
+    "nothing produced" and "unknown run" are different answers, matching the
+    empty-but-200 convention every other run-scoped read here already uses."""
+    run_dir = _validated_run_dir(run_id)
+    items = _amendments_for_run(run_id, run_dir)
+    return {"run_id": run_id, "count": len(items), "amendments": items}
 
 
 @app.get("/rules/{rule_id}", dependencies=[Depends(verify_token)])

@@ -515,6 +515,22 @@ a.rule-link:hover { text-decoration-style: solid; }
 .rule-panel-head { margin-bottom: 0.35rem; display: flex; gap: 0.5rem; align-items: baseline; }
 .rule-panel-body p { margin: 0; }
 
+/* A proposed correction, directly under its own finding. Same hairline-box
+   vocabulary as .rule-panel-body and .notice, not a new visual language;
+   left-rule in --peach (the palette's one deliberately-bold hue, per
+   CONSOLE_PLAN.md's boldness section) since a proposed change is exactly
+   the kind of thing worth a reader's attention without calling it an error. */
+.amendment-block {
+  border: 1px solid var(--hairline-strong);
+  border-left: 3px solid var(--peach);
+  padding: 0.55rem 0.75rem;
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.85rem;
+}
+.amendment-block p { margin: 0.25rem 0; }
+.amendment-label { font-weight: 600; margin-bottom: 0.35rem; display: flex; gap: 0.4rem; align-items: baseline; }
+.amendment-field-label { color: var(--quiet-text); }
+
 /* ---------------------------------------------------------------------
    LOG VIEWER
 --------------------------------------------------------------------- */
@@ -1866,6 +1882,20 @@ function findingSentenceHtml(f) {
   var irregular = f.record_verdict === "irregular";
 
   if (rel === "sum_mismatch") {
+    /* sum_mismatch is one of the few relations that can be EITHER verdict
+       (most others, above_band etc., only ever fire when something is
+       wrong): docs/api/CONSOLE_LANGUAGE.md's own approved template only
+       ever specified the ok case, "The total checks out," which this
+       branch used to return unconditionally, mislabeling a real
+       mismatch as agreement. Found while verifying the amendments pass
+       against a fixture that finally exercised sum_mismatch+irregular
+       together; fixed here rather than left, per the same rule this whole
+       pass has followed for every other defect found along the way. */
+    if (irregular) {
+      return '<strong>The total does not check out.</strong> The stated total, ' + escapeHtml(a) +
+        ', does not match what its parts add up to, ' + escapeHtml(b) + '. ' +
+        findingRuleParen(f, "irregular");
+    }
     return '<strong>The total checks out.</strong> The stated total, ' + escapeHtml(a) +
       ', matches what its parts add up to, ' + escapeHtml(b) + ', within the tolerance the rule allows. ' +
       findingRuleParen(f);
@@ -1885,14 +1915,32 @@ function findingSentenceHtml(f) {
       findingRuleParen(f, "irregular");
   }
   if (rel === "product_mismatch") {
-    return '<strong>The stated total doesn\'t match the calculation behind it.</strong> The document states a total of ' + escapeHtml(a) +
-      '. Quantity times unit price works out to ' + escapeHtml(b) + '. ' +
-      findingRuleParen(f, "irregular");
+    /* Bidirectional, same class of fix as sum_mismatch above:
+       paired_review.py's own product_mismatch check carries "agrees":
+       _close(computed, vc), ok when the arithmetic matches. */
+    if (irregular) {
+      return '<strong>The stated total doesn\'t match the calculation behind it.</strong> The document states a total of ' + escapeHtml(a) +
+        '. Quantity times unit price works out to ' + escapeHtml(b) + '. ' +
+        findingRuleParen(f, "irregular");
+    }
+    return '<strong>The stated total matches the calculation behind it.</strong> The document states a total of ' + escapeHtml(a) +
+      '. Quantity times unit price works out to ' + escapeHtml(b) + ', within the tolerance the rule allows. ' +
+      findingRuleParen(f);
   }
   if (rel === "ratio_out_of_range") {
-    return '<strong>This ratio is outside the range the rule allows.</strong> The document states a ratio of ' + escapeHtml(a) +
+    /* Bidirectional: paired_review.py assigns this SAME relation name for a
+       ratio that IS in range (agrees=True, "in range is still computed" so
+       the pair counts as settled rather than sent to a model), not only for
+       one that is out of range. The relation's own name names the CHECK,
+       not always its outcome; the verdict says which way it went. */
+    if (irregular) {
+      return '<strong>This ratio is outside the range the rule allows.</strong> The document states a ratio of ' + escapeHtml(a) +
+        '. The rule permits ' + escapeHtml(b) + '. ' +
+        findingRuleParen(f, "irregular");
+    }
+    return '<strong>This ratio is within the range the rule allows.</strong> The document states a ratio of ' + escapeHtml(a) +
       '. The rule permits ' + escapeHtml(b) + '. ' +
-      findingRuleParen(f, "irregular");
+      findingRuleParen(f);
   }
   if (rel === "date_window") {
     return '<strong>This date is outside the window the rule requires.</strong> The document states ' + escapeHtml(a) +
@@ -1949,6 +1997,62 @@ function findingSentenceHtml(f) {
 }
 
 /* =======================================================================
+   AMENDMENTS: a proposed correction, shown directly under its own finding.
+   The operator's own requirement: the passage as it stands, the passage as
+   proposed, the rule in the operator's own id, and the reasoning, TOGETHER,
+   never any one of the four alone, since an unexplained correction is worth
+   less than an explained one and a reader must be able to tell them apart.
+   Both views carry the same four facts; only the wording differs, per the
+   rule already settled for every other section on this surface.
+======================================================================= */
+function amendmentOriginalHtml(a, human) {
+  /* original_text_is_passage is false either for a run produced before the
+     source fix in paired_review.py's amendment_from_finding (the bare unit
+     id sitting in an old run's own review_data.json on disk), or when the
+     server genuinely has nothing (empty original_text). Both cases say so
+     plainly rather than presenting a unit id as if it were document prose. */
+  if (a.original_text_is_passage && a.original_text) {
+    return escapeHtml(a.original_text);
+  }
+  var note = human
+    ? "The original wording was not recorded for this amendment (an older run, before this was fixed)."
+    : "original_text not a passage (pre-fix run; raw value: " + (a.original_text || "(empty)") + ")";
+  return '<span class="muted">' + escapeHtml(note) + '</span>';
+}
+
+function amendmentHumanHtml(a) {
+  var proposed = a.proposed_text
+    ? escapeHtml(a.proposed_text)
+    : '<span class="muted">No proposed wording was given for this correction.</span>';
+  var reasoning = a.comment
+    ? escapeHtml(a.comment)
+    : '<span class="muted">No reasoning was recorded for this proposal.</span>';
+  var ruleShown = a.source_rule_id || a.convention_ref || "";
+  return '<div class="amendment-block">' +
+    '<p class="amendment-label">Proposed correction ' + (ruleShown ? ruleLinkHtml(a.convention_ref, ruleShown) : "") + '</p>' +
+    '<p><span class="amendment-field-label">As it stands:</span> ' + amendmentOriginalHtml(a, true) + '</p>' +
+    '<p><span class="amendment-field-label">Proposed:</span> ' + proposed + '</p>' +
+    '<p><span class="amendment-field-label">Why:</span> ' + reasoning + '</p>' +
+    '</div>';
+}
+
+function amendmentDeveloperHtml(a) {
+  var proposed = a.proposed_text
+    ? escapeHtml(a.proposed_text)
+    : '<span class="muted">proposed_text: null</span>';
+  var reasoning = a.comment
+    ? escapeHtml(a.comment)
+    : '<span class="muted">comment: empty</span>';
+  var ruleShown = a.source_rule_id || a.convention_ref || "";
+  return '<div class="amendment-block">' +
+    '<p class="amendment-label mono">amendment ' + (ruleShown ? ruleLinkHtml(a.convention_ref, ruleShown) : "") + '</p>' +
+    '<p><span class="amendment-field-label">original_text:</span> ' + amendmentOriginalHtml(a, false) + '</p>' +
+    '<p><span class="amendment-field-label">proposed_text:</span> ' + proposed + '</p>' +
+    '<p><span class="amendment-field-label">comment:</span> ' + reasoning + '</p>' +
+    '</div>';
+}
+
+/* =======================================================================
    FINDINGS TABLE
 ======================================================================= */
 /* isPartial no longer renders its own notice here (that was a real,
@@ -1960,20 +2064,41 @@ function findingSentenceHtml(f) {
    The section follows what the run produced: no heading, nothing, while
    loading or when there are zero findings, rather than a heading over "No
    findings." A reader is not told to look at a section with nothing in it. */
+/* Amendments are fetched alongside findings (GET /runs/{run_id}/amendments,
+   the same isPartial state this call is already made under) and joined
+   client-side by unit_id+rule_id (finding_unit_id/finding_rule_id on the
+   amendment side), so each irregular finding's proposed correction renders
+   directly under its own row/sentence, never as a separate section: an
+   amendment with no finding to attach to (should not happen; every one is
+   built from a finding) is silently unshown rather than orphaned on screen. */
+function amendmentKey(unitId, ruleId) { return (unitId || "") + " " + (ruleId || ""); }
+
 function loadFindings(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "findings-holder";
   app.appendChild(holder);
-  apiJson("/runs/" + encodeURIComponent(runId) + "/findings").then(function (res) {
+  Promise.all([
+    apiJson("/runs/" + encodeURIComponent(runId) + "/findings"),
+    apiJson("/runs/" + encodeURIComponent(runId) + "/amendments"),
+  ]).then(function (results) {
+    var res = results[0], amendRes = results[1];
     if (!res.ok) { holder.innerHTML = '<h2>Findings</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
     var findings = res.body.findings || [];
     if (findings.length === 0) { holder.innerHTML = ""; return; }
+    var byKey = {};
+    if (amendRes.ok) {
+      (amendRes.body.amendments || []).forEach(function (a) {
+        byKey[amendmentKey(a.finding_unit_id, a.finding_rule_id)] = a;
+      });
+    }
     var heading = '<h2>Findings (' + findings.length + ')</h2>';
     if (isHumanView()) {
       holder.innerHTML = heading +
         '<ul class="findings-human">' + findings.map(function (f) {
           var cls = f.record_verdict === "irregular" ? "irregular" : (f.record_verdict === "ok" ? "ok" : "");
-          return '<li class="finding-human ' + cls + '">' + findingSentenceHtml(f) + '</li>';
+          var amend = byKey[amendmentKey(f.unit_id, f.rule_id)];
+          return '<li class="finding-human ' + cls + '">' + findingSentenceHtml(f) +
+            (amend ? amendmentHumanHtml(amend) : "") + '</li>';
         }).join("") + '</ul>';
       wireRuleLinks(holder);
       return;
@@ -1984,6 +2109,7 @@ function loadFindings(runId, isPartial) {
       var explanation = f.explanation || "";
       var long = explanation.length > 140;
       var ruleShown = f.source_rule_id || f.rule_id || "";
+      var amend = byKey[amendmentKey(f.unit_id, f.rule_id)];
       return '<tr class="' + cls + '">' +
         '<td class="mono fig">' + ruleLinkHtml(f.rule_id, ruleShown) + '</td>' +
         '<td class="mono fig">' + escapeHtml(f.unit_id || "") + '</td>' +
@@ -1993,6 +2119,7 @@ function loadFindings(runId, isPartial) {
         '<td class="explanation">' +
           '<span class="' + (long ? "truncated" : "") + '" id="' + explId + '">' + escapeHtml(explanation) + '</span>' +
           (long ? '<br><button class="expand-toggle" data-target="' + explId + '">Show more</button>' : '') +
+          (amend ? amendmentDeveloperHtml(amend) : "") +
         '</td>' +
       '</tr>';
     }).join("");

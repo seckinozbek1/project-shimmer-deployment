@@ -1307,8 +1307,30 @@ def pairs_from_map(pairing, *, cap_per_unit=None):
 # a computed finding must reach the deliverable even if every model call fails
 
 
-def amendment_from_finding(item, *, document_level="document-level"):
+def amendment_from_finding(item, *, document_level="document-level", unit_texts=None):
     """Build an amendment from a typed Finding record, with no model involved.
+
+    unit_texts: the {unit_id: {"text": ..., ...}} map unit_texts_for(doc["text"],
+    doc["id"]) already builds in pipeline.py, from the SAME document split that
+    produced this finding's own unit_id. Passed in rather than recomputed here,
+    since the caller (ensure_amendments_for_findings) already has it once per
+    document and this function is called once per finding.
+
+    Console fresh-eyes finding: original_text used to be str(unit_id) (e.g.
+    "u09"), not the document's actual passage, even though the operator's own
+    instruction is "change THIS passage to THAT", and the text was available
+    the whole time, the document is read and split into units before any
+    finding is computed, this function simply never received the result. That
+    was not a display gap; it was data computed and then dropped before it
+    ever reached the record that claims to describe the passage. Fixed at the
+    source: when unit_texts has this finding's unit_id, original_text is the
+    unit's actual text (the whole unit split_units produced, a section, a
+    table row, or a table block, never only the single line the figure sits
+    on, since the pipeline does not identify a narrower span than the unit
+    itself). Falls back to the unit id, prefixed to say plainly what it is,
+    only if unit_texts is not given or does not have this id (a defensive
+    path for a caller that has not been updated, not the expected case for a
+    real run through pipeline.py).
 
     H7's first scored run is why this exists. Python computed four arithmetic
     disagreements with certainty, AMENDMENT_DRAFTER then failed its contract
@@ -1339,6 +1361,7 @@ def amendment_from_finding(item, *, document_level="document-level"):
     refs = [str(r) for r in (item.get("source_refs") or []) if r]
     location = refs[0] if refs else document_level
     explanation = str(item.get("explanation") or "").strip()
+    unit_id = item.get("unit_id")
     # The comment must carry at least one CONV-* and one REF-*, and it is the
     # human-facing sentence, so it says what was computed and what it rests on.
     # The operator's own id goes in the SENTENCE, not only in a field. A reader
@@ -1365,13 +1388,16 @@ def amendment_from_finding(item, *, document_level="document-level"):
     parts.append("Computed in code from the figures in this unit, not judged by a model.")
     parts.append("Grounded in %s." % citation)
     comment = " ".join(parts)
+    unit_record = (unit_texts or {}).get(unit_id) if unit_id else None
+    unit_text = str(unit_record.get("text") or "").strip() if isinstance(unit_record, dict) else ""
+    original_text = unit_text if unit_text else ("unit id %s (text not available)" % (unit_id or document_level))
     amendment = {
         "ref": location,
         "kind": "amendment",
         "confidence": item.get("confidence") or "CONFIDENT",
         "location": location,
         "convention_ref": rule_id,
-        "original_text": str(item.get("unit_id") or document_level),
+        "original_text": original_text,
         "proposed_text": None,
         "action": "flag",
         "comment": comment,
@@ -1450,8 +1476,16 @@ def _computed_sentence(item):
             % (a, unit_a, b, unit_b))
 
 
-def ensure_amendments_for_findings(amendments, findings, *, document_level="document-level"):
+def ensure_amendments_for_findings(amendments, findings, *, document_level="document-level",
+                                   unit_texts=None):
     """Add an amendment for every irregular Finding not already represented.
+
+    unit_texts: passed straight through to amendment_from_finding (see its own
+    docstring): the {unit_id: {"text": ...}} map the caller already built once
+    per document from unit_texts_for(doc["text"], doc["id"]), so a computed
+    amendment's original_text is the document's actual passage, not its unit
+    id. Optional, defaults to None (amendment_from_finding's own fallback),
+    for any caller not yet passing it.
 
     Returns (amendments, added). An amendment the model wrote is never replaced;
     this only fills gaps, so a working drafter is unaffected and a failed one no
@@ -1472,7 +1506,7 @@ def ensure_amendments_for_findings(amendments, findings, *, document_level="docu
         key = (str(item.get("unit_id") or ""), str(item.get("rule_id") or ""))
         if key in covered:
             continue
-        built = amendment_from_finding(item, document_level=document_level)
+        built = amendment_from_finding(item, document_level=document_level, unit_texts=unit_texts)
         if built is None:
             continue
         out.append(built)

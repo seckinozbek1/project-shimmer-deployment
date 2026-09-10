@@ -2033,12 +2033,20 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # amendment the arithmetic did not produce cannot exist by
             # construction, which is stronger than validating one away afterwards.
             raw_amendments = []
-            _polish_unit_texts = paired_review_mod.unit_texts_for(doc["text"], doc["id"])
+            # console fresh-eyes fix: computed once here (was computed twice in
+            # this same function, once for the polish pass and again below for
+            # suppress_contradicted_amendments, both from the same doc["text"]/
+            # doc["id"]); now also threaded into ensure_amendments_for_findings
+            # so a computed amendment's original_text is the document's actual
+            # passage, not its bare unit id. The text was already being
+            # computed in this scope; it was simply never passed to the one
+            # call that needed it to describe the passage it is about.
+            _unit_texts = paired_review_mod.unit_texts_for(doc["text"], doc["id"])
             _polish_rules = {c["id"]: c for c in convention_registry.get("conventions", [])}
             if amendment_polish:
                 for _agent_name, _group in list(upstream_findings.items()):
                     _group2, _n = await _polish_findings(
-                        orch, keys, doc, _group, _polish_rules, _polish_unit_texts,
+                        orch, keys, doc, _group, _polish_rules, _unit_texts,
                         run_objectives, convention_registry)
                     upstream_findings[_agent_name] = _group2
                     if _n:
@@ -2060,11 +2068,10 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # writing valid JSON. The first scored run had AMENDMENT_DRAFTER fail
             # its contract and four certain arithmetic findings were discarded.
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
-                raw_amendments, all_upstream)
+                raw_amendments, all_upstream, unit_texts=_unit_texts)
             # structure H7: arithmetic outranks the model where arithmetic can
             # decide. The control run had the drafter invent a sum violation on a
             # clean document that Python had already computed as correct.
-            _unit_texts = paired_review_mod.unit_texts_for(doc["text"], doc["id"])
             _vocab = set()
             for _u in _unit_texts.values():
                 _vocab |= pairing_map_mod.unit_fields(_u.get("text", ""))

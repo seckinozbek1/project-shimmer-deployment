@@ -507,6 +507,30 @@ def _build_completed_with_findings():
     deliv.mkdir(parents=True, exist_ok=True)
     (deliv / "review_findings.md").write_text("# Findings\n\nSee the findings table.\n", encoding="utf-8")
     (deliv / "document_summary.md").write_text("# Summary\n\nSynthetic fixture for console preview.\n", encoding="utf-8")
+    # review_data.json: the amendment matching f001 (the one irregular finding
+    # above; f002 is record_verdict=ok, amendment_from_finding's own gate
+    # never builds one for that case). original_text is the real passage
+    # (docs/api/CONSOLE_LAYOUT_PLAN.md's source fix, unit_texts_for), proving
+    # the common case: all four required facts present together.
+    (deliv / "review_data.json").write_text(json.dumps({
+        "amendments": [
+            {
+                "ref": "REF-0012", "kind": "amendment", "confidence": "CONFIDENT",
+                "location": "REF-0012", "convention_ref": "CONV-001",
+                "source_convention_ref": "CONV-A02",
+                "original_text": "## Article 2, quota volume\n\nThe declared quota volume for this category is 120 tonnes, "
+                                  "consistent with the operational plan submitted alongside this filing.",
+                "proposed_text": "The declared quota volume for this category is 100 tonnes, "
+                                 "consistent with the operational plan submitted alongside this filing.",
+                "action": "flag", "severity": "required", "finding_type": "factual",
+                "ref_ids": ["REF-0012"], "derived_from": "computed_finding",
+                "finding_unit_id": "u01", "finding_rule_id": "CONV-001",
+                "comment": "The computed value is 120.0 tonnes, above the reference bound of 100.0 tonnes. "
+                           "Computed in code from the figures in this unit, not judged by a model. "
+                           "Grounded in CONV-001 (CONV-A02) at REF-0012.",
+            },
+        ],
+    }, indent=2), encoding="utf-8")
     FIXTURES.append(("completed, with findings", run_id))
 
 
@@ -523,6 +547,100 @@ def _build_same_document_earlier_run():
     FIXTURES.append(("completed, same document, a day earlier", run_id))
 
 
+def _build_completed_amendment_edge_cases():
+    """A separate completed run demonstrating the two amendment edge cases
+    the operator's own requirement names explicitly: a proposal with no
+    reasoning recorded (must be said plainly, never shown as though
+    complete), and an amendment produced BEFORE the source fix in
+    paired_review.py's amendment_from_finding, still carrying the OLD shape
+    (a bare unit id in original_text) exactly as it would sit on disk in a
+    real run predating that fix. derived_from=computed_finding with
+    original_text NOT starting "unit id " and not real prose (the raw old
+    value) is exactly the shape server.py's _amendment_view flags via
+    original_text_is_passage."""
+    run_id = "20260910_150000__ac1d01"
+    run_dir = RUNS_DIR / run_id
+    _write_status(run_dir, run_id, "completed",
+                   submitted_at=_now(5), started_at=_now(4), completed_at=_now(1), exit_code=0)
+    audit = run_dir / "audit"
+    audit.mkdir(parents=True, exist_ok=True)
+    (audit / "pairing_map.json").write_text(json.dumps({
+        "case_a": {
+            "document_id": "case_a", "unit_count": 2, "rule_count": 2,
+            "pair_count": 2, "rejected_count": 0, "undecided_count": 0,
+            "unmatched_units": [], "missing_field_findings": [],
+            "units": [
+                {"unit_id": "u05", "kind": "provision",
+                 "paired": [{"rule_id": "CONV-001", "reason": "unit states a figure this rule checks"}],
+                 "rejected": [], "undecided": [],
+                 "prior_comparisons": {"hit_count": 0, "checks": [], "refused": []}},
+                {"unit_id": "u06", "kind": "provision",
+                 "paired": [{"rule_id": "CONV-003", "reason": "unit states a figure this rule checks"}],
+                 "rejected": [], "undecided": [],
+                 "prior_comparisons": {"hit_count": 0, "checks": [], "refused": []}},
+            ],
+        },
+    }, indent=2), encoding="utf-8")
+    logs = run_dir / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    bus_items = [
+        {"item_id": "f020", "revision": 1, "rule_id": "CONV-001", "source_rule_id": "CONV-A02",
+         "unit_id": "u05", "value_a": 300.0, "unit_a": "tonnes", "value_b": 100.0, "unit_b": "tonnes",
+         "relation": "above_band", "record_verdict": "irregular", "source_refs": ["REF-0050"],
+         "explanation": "No reasoning was supplied with this proposal (synthetic, for the console preview)."},
+        {"item_id": "f021", "revision": 1, "rule_id": "CONV-003", "source_rule_id": "CONV-B01",
+         "unit_id": "u06", "value_a": 90.0, "unit_a": "EUR", "value_b": 60.0, "unit_b": "EUR",
+         "relation": "sum_mismatch", "record_verdict": "irregular", "source_refs": ["REF-0060"],
+         "explanation": "The stated total does not match its parts (synthetic, for the console preview)."},
+    ]
+    bus_lines = [json.dumps({"sender": "PRACTICE_AUDITOR",
+                             "body": {"payload": {"agent": "PRACTICE_AUDITOR", "doc_id": "case_a", "items": [it]}}})
+                 for it in bus_items]
+    (logs / "agent_bus.jsonl").write_text("\n".join(bus_lines) + "\n", encoding="utf-8")
+    deliv = run_dir / "deliverables" / "case_a"
+    deliv.mkdir(parents=True, exist_ok=True)
+    (deliv / "review_findings.md").write_text("# Findings\n", encoding="utf-8")
+    (deliv / "document_summary.md").write_text("# Summary\n", encoding="utf-8")
+    (deliv / "review_data.json").write_text(json.dumps({
+        "amendments": [
+            # Edge case one: no reasoning recorded (comment deliberately
+            # empty, which the real contract requires >=1 CONV-*/REF-* in,
+            # so this shape should not occur from a real run; included to
+            # prove the console says so rather than showing a blank field
+            # as though the proposal were complete).
+            {
+                "ref": "REF-0050", "kind": "amendment", "confidence": "CONFIDENT",
+                "location": "REF-0050", "convention_ref": "CONV-001",
+                "source_convention_ref": "CONV-A02",
+                "original_text": "## Article 5, secondary quota\n\nThe secondary quota volume is 300 tonnes.",
+                "proposed_text": "The secondary quota volume is 100 tonnes.",
+                "action": "flag", "severity": "required", "finding_type": "factual",
+                "ref_ids": ["REF-0050"], "derived_from": "computed_finding",
+                "finding_unit_id": "u05", "finding_rule_id": "CONV-001",
+                "comment": "",
+            },
+            # Edge case two: the PRE-FIX shape, original_text is a bare unit
+            # id (what amendment_from_finding wrote before the source fix),
+            # exactly as it would still sit in a real run's review_data.json
+            # produced before this session's change.
+            {
+                "ref": "REF-0060", "kind": "amendment", "confidence": "CONFIDENT",
+                "location": "REF-0060", "convention_ref": "CONV-003",
+                "source_convention_ref": "CONV-B01",
+                "original_text": "u06",
+                "proposed_text": None,
+                "action": "flag", "severity": "required", "finding_type": "factual",
+                "ref_ids": ["REF-0060"], "derived_from": "computed_finding",
+                "finding_unit_id": "u06", "finding_rule_id": "CONV-003",
+                "comment": "The computed value is 90.0 EUR against a stated 60.0 EUR. "
+                           "Computed in code from the figures in this unit, not judged by a model. "
+                           "Grounded in CONV-003 (CONV-B01) at REF-0060.",
+            },
+        ],
+    }, indent=2), encoding="utf-8")
+    FIXTURES.append(("completed, amendment edge cases (no reasoning, pre-fix)", run_id))
+
+
 def _seed_fixtures():
     _build_queued()
     _build_running()
@@ -535,6 +653,7 @@ def _seed_fixtures():
     _build_timed_out()
     _build_cancelled()
     _build_completed_with_findings()
+    _build_completed_amendment_edge_cases()
     _build_same_document_earlier_run()
 
     # _rebuild_jobs_from_disk() already ran once at `import server` above,
