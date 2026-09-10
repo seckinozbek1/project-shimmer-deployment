@@ -42,7 +42,7 @@ deliberately out of scope).
 
 ### What's in this repository
 
-125 tracked files (source, configuration, and test corpora; counted directly from the
+126 tracked files (source, configuration, and test corpora; counted directly from the
 repository tree, not from git, since directory creation and `.gitignore` behavior can differ
 by tool). No compiled bytecode, no run output, and no cache directory is tracked; those are
 excluded by `.gitignore` and, if present locally, are never committed.
@@ -55,7 +55,8 @@ shimmer-deployment/
 ├── shimmer.bat, shimmer.sh               the launcher: builds .venv, installs deps, menu
 ├── scripts/                              the pipeline, the 18 agent modules, the server,
 │                                          the gate (scripts/verify_session1.py), harness/,
-│                                          sensitivity_layer/, ui/ (the operator console)
+│                                          sensitivity_layer/, ui/ (the console, one HTML
+│                                          file plus its vendored typeface)
 ├── corpus_ingest/                        the external corpus ingestion contract, validator,
 │                                          and its own test fixtures
 ├── config/                               governance and compiled config (constitution,
@@ -64,9 +65,12 @@ shimmer-deployment/
 ├── benchmark/corpora/                    the four shipped test corpora and their answer
 │                                          keys (see "Test corpora from other domains", H)
 ├── tools/                                run wrappers: run_local_demo, stage_corpus,
-│                                          score_corpus
+│                                          score_corpus, console_preview (a throwaway local
+│                                          harness for looking at the console, not the product)
 └── docs/
-    └── RUNBOOK.md, THREAT_MODEL.md       operational reference (see above)
+    ├── RUNBOOK.md, THREAT_MODEL.md       operational reference (see above)
+    └── api/CONSOLE_PLAN.md,              the console's design and its two-view
+        CONSOLE_LANGUAGE.md               language, reviewer/developer, field by field
 ```
 
 **Not shown above because they are not shipped, and a fresh clone does not have them:**
@@ -972,7 +976,7 @@ curl -s -X POST "$BASE/runs/<run_id>/approval" -H "Authorization: Bearer $TOKEN"
 
 The server records the decision and nothing more; it never evaluates it. The response (202)
 carries `recorded: true` and the run's `run_state` as it stood just before the write, never a
-claim that the decision was approved — poll `GET /runs/<run_id>` afterward to see what the
+claim that the decision was approved: poll `GET /runs/<run_id>` afterward to see what the
 pipeline actually did with it.
 
 **Notes a caller needs.** One job runs at a time and the queue drains in submission order, so
@@ -1052,7 +1056,7 @@ must be able to tell them apart.
 
 The zip preserves the BP-16 layout: one folder per document plus the top-level
 `_run_summary.md` (section H). Jobs run one at a time; `/runs/<run_id>/deliverables` is not
-gated on completion (api STEP B4) — it zips whatever documents are done so far, and says so
+gated on completion (api STEP B4): it zips whatever documents are done so far, and says so
 via `X-Shimmer-Partial` and the filename when the run has not finished successfully.
 
 **Environment variables.** Most are read once at startup and the resolved subset prints to
@@ -1096,11 +1100,11 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `GET` | `/runs/{run_id}` | token | api STEP B1/B2/B3/B4/B5: one run's complete record in a single call: `state` (`queued` / `running` / `awaiting_approval` / `stopped` / `cancelled`), `outcome` (populated once `state` is `stopped` or `cancelled`: `succeeded` / `governance_stop` / `crashed` / `timed_out` / `cancelled`), `stop_reason`, `pending_approval` (populated once `state` is `awaiting_approval`: `topic`, `message`, `payload`, `asked_at`, `default_on_timeout`, `timeout_at`), `documents` (per-document `status` and `deliverables_url`, a REAL fetchable route once that document is done, not a display string), `log_url`, plus `task`/`submitted_at`/`started_at`/`completed_at`/`exit_code`/`error`/`progress`/`files`/`sensitive`/`review_mode`/`question`. Does **not** carry the raw internal `status` string (dropped in api STEP B5: `state`/`outcome`/`stop_reason` is the sole vocabulary here, so a caller never has to reconcile two descriptions of the same run). |
 | `GET` | `/runs/{run_id}/findings` | token | The run's typed **Finding records** as JSON (section B), including the ok-verdict prior-version records with `field_label`, `delta`, `band_distance_change` and `provenance`; filter on `relation` in `moved_toward` / `moved_away` / `changed_from_prior` / `unchanged_from_prior` / `absent_since_prior` to answer the round question by program. |
 | `GET` | `/runs/{run_id}/pairs` | token | The run's **pairing map**: counts, and per unit the rules paired / rejected with the reason for each plus the undecided rule ids (ids only, no reason), and per unit `prior_hit_count`, `prior_check_count` and `prior_refused_count` (integers only). No document text. |
-| `POST` | `/runs/{run_id}/cancel` | token | api STEP B2: stops a run. A queued job is removed before it ever starts; a running job's subprocess is terminated (then killed). Both land on `state="cancelled"`. `409` if the run is already in a terminal state (including already cancelled) — refused with a reason naming its actual state, not a silent no-op. `404` for a malformed or unknown `run_id`. Deletes nothing on disk. |
-| `POST` | `/runs/{run_id}/approval` | token | api STEP B3: records a human's decision on the run's pending governed question. Body `decision` + `rationale`; writes `<run>/audit/approval_decision.json` atomically and **nothing else** — never evaluates whether the decision is an approval (that stays entirely with `model_registry`/`constitution_guard`, read back by the pipeline subprocess's own poll loop). `202`, never `200`: the response carries `recorded: true` and the run's `run_state` as it stood the instant *before* the write, and never claims the decision was approved, only that it was recorded. `404` for a malformed `run_id` or one with no pending approval; `409` if this approval was already answered (a decision file already exists); `400` if `decision` is missing or empty. This is the sole route that answers a pending approval (api STEP B5 unified it with the retired `POST /approvals/{run_id}`, which wrote the same file but returned `200` with a thinner body and no repeat-answer guard). |
+| `POST` | `/runs/{run_id}/cancel` | token | api STEP B2: stops a run. A queued job is removed before it ever starts; a running job's subprocess is terminated (then killed). Both land on `state="cancelled"`. `409` if the run is already in a terminal state (including already cancelled), refused with a reason naming its actual state, not a silent no-op. `404` for a malformed or unknown `run_id`. Deletes nothing on disk. |
+| `POST` | `/runs/{run_id}/approval` | token | api STEP B3: records a human's decision on the run's pending governed question. Body `decision` + `rationale`; writes `<run>/audit/approval_decision.json` atomically and **nothing else**, never evaluates whether the decision is an approval (that stays entirely with `model_registry`/`constitution_guard`, read back by the pipeline subprocess's own poll loop). `202`, never `200`: the response carries `recorded: true` and the run's `run_state` as it stood the instant *before* the write, and never claims the decision was approved, only that it was recorded. `404` for a malformed `run_id` or one with no pending approval; `409` if this approval was already answered (a decision file already exists); `400` if `decision` is missing or empty. This is the sole route that answers a pending approval (api STEP B5 unified it with the retired `POST /approvals/{run_id}`, which wrote the same file but returned `200` with a thinner body and no repeat-answer guard). |
 | `GET` | `/runs/{run_id}/deliverables` | token | api STEP B4: a zip of whatever exists under `deliverables/` right now, not gated on the run being complete (`GET /runs/{run_id}`'s own `documents[]` already says which documents are ready). May be **partial**: carries `X-Shimmer-Partial: true`/`false` and names it in the filename (`..._partial.zip` vs `..._deliverables.zip`) whenever the run did not stop with `outcome=succeeded`. `404` for a malformed/unknown `run_id` or one with nothing under `deliverables/` yet. |
-| `GET` | `/runs/{run_id}/deliverables/{doc_id}` | token | api STEP B4: a zip of ONE document's own deliverables folder — what `documents[].deliverables_url` on `GET /runs/{run_id}` points at. `404` for a malformed/unknown `run_id`, or a `doc_id` this run has no finished folder for (whether it never existed or is simply not done yet; `GET /runs/{run_id}`'s `documents[]` is where a caller learns which). |
-| `GET` | `/runs/{run_id}/log` | token | api STEP B4: the run's complete merged stdout/stderr as `text/plain`, streamed from `<run>/logs/pipeline_stdout.log` — what `log_url` on `GET /runs/{run_id}` has pointed at since api STEP B1. `404` for a malformed/unknown `run_id` or one with no log written yet. |
+| `GET` | `/runs/{run_id}/deliverables/{doc_id}` | token | api STEP B4: a zip of ONE document's own deliverables folder, what `documents[].deliverables_url` on `GET /runs/{run_id}` points at. `404` for a malformed/unknown `run_id`, or a `doc_id` this run has no finished folder for (whether it never existed or is simply not done yet; `GET /runs/{run_id}`'s `documents[]` is where a caller learns which). |
+| `GET` | `/runs/{run_id}/log` | token | api STEP B4: the run's complete merged stdout/stderr as `text/plain`, streamed from `<run>/logs/pipeline_stdout.log`, what `log_url` on `GET /runs/{run_id}` has pointed at since api STEP B1. `404` for a malformed/unknown `run_id` or one with no log written yet. |
 | `GET` | `/approvals` | token | Every run currently awaiting a governed decision, each entry carrying the same shape as `GET /runs/{run_id}`'s `pending_approval` field (api STEP B5: previously a thinner, independently-computed shape with no `message`/`default_on_timeout`/`timeout_at`). |
 | `GET` | `/console` | **none** | The operator console HTML. |
 | `GET` | `/health` | **none** | `{"status", "version", "backend_profile", "default_review_mode"}` and nothing else. |
@@ -1165,7 +1169,7 @@ then `running`, then exactly one terminal status. The server always passes
 maps to a distinct terminal status instead of the old blanket "failed" on any non-zero exit.
 This raw `status` string is the internal job field (still what `<run>/status.json` on disk
 records); `GET /runs/{run_id}` and `GET /runs` do **not** return it (api STEP B5), reporting
-`state`/`outcome`/`stop_reason` instead — the table below adds the `state`/`outcome` each
+`state`/`outcome`/`stop_reason` instead: the table below adds the `state`/`outcome` each
 `status` value maps to.
 
 | Status | Exit | `state` | `outcome` | Meaning |
@@ -1187,16 +1191,38 @@ records); `GET /runs/{run_id}` and `GET /runs` do **not** return it (api STEP B5
 governance outcomes, the pipeline refused or paused ON PURPOSE, and the console renders them
 distinctly from a genuine crash.
 
-**The operator console** (`GET /console`, served from `scripts/ui/console.html`, vanilla JavaScript,
-no framework, no build step, no CDN dependency) lets a human submit runs, watch `/runs`, and
-answer a pending approval from `/approvals` without a terminal. The token is entered once in
-the page, kept only in page memory for that session (never a URL, never persisted to storage),
-and sent as the `Authorization: Bearer` header on every call the page makes. A governed
-decision that would otherwise stop a `--non-interactive` run unconditionally (e.g. a
-deprecated-model swap `enforce_current_models` cannot auto-resolve) is instead parked by
-`pipeline.py`'s file-backed operator channel (`--operator-channel file`,
+**The console** (`GET /console`, served from `scripts/ui/console.html`, one file, vanilla
+JavaScript, no framework, no build step, no CDN dependency) lets a human submit runs, watch
+them, answer a pending approval, read findings, browse the pairing map, and download
+deliverables, without a terminal. It ships two complete views of the same data, switched with
+a labeled control in the masthead and remembered per browser tab: the **reviewer view** (the
+default, on every first load) reworks every developer-facing fact into plain language, a
+finding reads as a sentence naming what was checked and against what rather than a row of
+field codes, a run is named from what was submitted (`files[0]`, or the question for a
+draft) rather than shown only as its run id, a crash says the review did not finish and
+nothing was lost rather than showing a traceback, and a governance stop, a system fault and a
+timeout each get their own distinct wording so a stop-on-purpose is never confused with a
+failure; the **developer view** is the original field-level surface (raw `run_id`, `rule_id`,
+`relation`, the full stop_reason detail, the raw pairing/findings tables) and stays fully
+intact under the switch. The reviewer view is a rewording, never a filtering: nothing the
+developer view shows is dropped, only reworded or moved into a small secondary citation.
+Full field-by-field translations for every relation, every state/outcome combination, a run
+identifier, a phase label, a crash, a governance stop, a pending approval and a partial
+archive are recorded in `docs/api/CONSOLE_LANGUAGE.md`, the design rationale (palette,
+typography, layout, the dark masthead) in `docs/api/CONSOLE_PLAN.md`. The access token is
+entered once, reached via a quiet "Not signed in" / "Signed in" link (not a permanent field:
+it is needed once per browser tab, not on every screen), kept in `sessionStorage` (survives a
+reload of the same tab, cleared when the tab closes, never a URL, never `localStorage`), and
+sent as the `Authorization: Bearer` header on every call the page makes. `tools/console_preview.py`
+is a throwaway local harness (explicitly marked as not part of the product) that starts a real
+server with the pipeline subprocess stubbed out, no model call, and seeds one run in each
+reachable state, for looking at the console without spending a real run: `py -3.9 -X utf8
+tools/console_preview.py`, then open the URL and use the token it prints; Ctrl+C throws away
+all of it. A governed decision that would otherwise stop a `--non-interactive` run
+unconditionally (e.g. a deprecated-model swap `enforce_current_models` cannot auto-resolve) is
+instead parked by `pipeline.py`'s file-backed operator channel (`--operator-channel file`,
 `scripts/pipeline.py::_make_file_operator_handler`) as `<run>/audit/pending_approval.json`; the
-console's Approvals section lists it, and APPROVE/DENY writes
+console's approval block on that run's own page shows it, and Approve/Deny writes
 `<run>/audit/approval_decision.json`, which the waiting pipeline subprocess polls for and
 relays verbatim into an `OperatorDecision`. The handler and this server route never evaluate
 the decision themselves: that stays entirely in `model_registry.enforce_current_models` and

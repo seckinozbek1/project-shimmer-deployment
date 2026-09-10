@@ -2,232 +2,1854 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Project Shimmer operator console</title>
+<title>Project Shimmer: Review desk</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #111; }
-  h1 { font-size: 1.4rem; }
-  h2 { font-size: 1.1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
-  section { margin-bottom: 1.5rem; }
-  label { display: block; margin: 0.5rem 0 0.2rem; font-weight: 600; }
-  input[type=text], input[type=password], textarea { width: 100%; padding: 0.4rem; box-sizing: border-box; }
-  input[type=file] { margin-top: 0.2rem; }
-  button { padding: 0.4rem 0.9rem; margin-top: 0.6rem; cursor: pointer; }
-  table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
-  th, td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: left; font-size: 0.9rem; }
-  th { background: #f2f2f2; }
-  .status-completed { color: #1a7a1a; }
-  .status-governance { color: #9a6a00; }
-  .status-failed { color: #a30000; }
-  .status-neutral { color: #555; }
-  .note { font-size: 0.85rem; color: #555; }
-  .sensitive-explain { font-size: 0.85rem; background: #fafafa; border: 1px solid #ddd; padding: 0.5rem; margin-top: 0.3rem; }
-  .msg { padding: 0.4rem; margin-top: 0.5rem; font-size: 0.9rem; }
-  .msg-ok { background: #e6f4e6; }
-  .msg-err { background: #fbe6e6; }
-  pre.loglines { background: #111; color: #ddd; padding: 0.6rem; max-height: 200px; overflow: auto; font-size: 0.8rem; }
+/* ---------------------------------------------------------------------
+   FONTS: vendored, not system. See docs/api/CONSOLE_PLAN.md.
+   Public Sans 2.001, SIL Open Font License 1.1 (+ GSA CC0 modifications).
+   License text: scripts/ui/fonts/PublicSans-LICENSE.md
+--------------------------------------------------------------------- */
+@font-face {
+  font-family: "Public Sans";
+  src: url("fonts/PublicSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Public Sans";
+  src: url("fonts/PublicSans-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------------------------------------------------------------------
+   TOKENS: six named hues, two structural. See docs/api/CONSOLE_PLAN.md
+   "The palette (revised: six total, not nine)".
+--------------------------------------------------------------------- */
+:root {
+  --ink: #1C1B1F;
+  --paper: #FBFAF8;
+  --periwinkle: #5E7AA0;
+  --mint: #4B8272;
+  --peach: #B8804A;
+  --rose: #A8495A;
+
+  /* Computed neutrals, derived from --ink, not separately chosen hexes. */
+  --hairline: rgba(28, 27, 31, 0.14);
+  --hairline-strong: rgba(28, 27, 31, 0.26);
+  --quiet-text: rgba(28, 27, 31, 0.55);
+  --quiet-fill: rgba(28, 27, 31, 0.08);
+
+  --masthead-bg: #141318;
+  --masthead-text: #EDEAE3;
+  --masthead-hairline: rgba(237, 234, 227, 0.16);
+
+  --font-ui: "Public Sans", -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+
+  --measure: 46rem;
+  --grid-gap: 1px;
+}
+
+* { box-sizing: border-box; }
+
+html { color-scheme: light; }
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--ink); }
+a:not(.button) { text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--periwinkle);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ---------------------------------------------------------------------
+   MASTHEAD: dark band, constant across every view. See CONSOLE_PLAN.md
+   "Layout concept (revised: a dark masthead over a light working surface)".
+--------------------------------------------------------------------- */
+.masthead {
+  background: var(--masthead-bg);
+  color: var(--masthead-text);
+  border-bottom: 1px solid var(--masthead-hairline);
+}
+.masthead-inner {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0.85rem 1.25rem;
+}
+.masthead-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.masthead-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+.masthead-state {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--masthead-text);
+  opacity: 0.92;
+}
+.masthead-right {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+.masthead-token-link {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.masthead-token-link:hover { border-bottom-color: var(--masthead-hairline); }
+
+/* Two-position Reviewer/Developer switch. Reuses the hairline-box vocabulary
+   (a bordered group of options) rather than inventing new visual language:
+   the active option is filled with the masthead text colour against the dark
+   ground (a hard, unambiguous fill, not a subtle colour shift), the inactive
+   option is plain text on transparent. See CONSOLE_LANGUAGE.md "Where the
+   switch lives, and why". */
+.view-switch {
+  display: inline-flex;
+  border: 1px solid var(--masthead-hairline);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.view-switch-option {
+  background: transparent;
+  border: none;
+  color: var(--masthead-text);
+  opacity: 0.7;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+}
+.view-switch-option + .view-switch-option { border-left: 1px solid var(--masthead-hairline); }
+.view-switch-option:hover { opacity: 0.9; }
+.view-switch-option.active {
+  background: var(--masthead-text);
+  color: var(--masthead-bg);
+  opacity: 1;
+  cursor: default;
+}
+.masthead-nav {
+  margin-top: 0.6rem;
+  display: flex;
+  gap: 1.25rem;
+}
+.masthead-nav a {
+  color: var(--masthead-text);
+  text-decoration: none;
+  font-size: 0.88rem;
+  padding-bottom: 0.15rem;
+  border-bottom: 2px solid transparent;
+}
+.masthead-nav a.active { border-bottom-color: var(--periwinkle); }
+.masthead-nav a:hover { border-bottom-color: var(--masthead-hairline); }
+
+/* ---------------------------------------------------------------------
+   PAGE STRUCTURE
+--------------------------------------------------------------------- */
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 1.75rem 1.25rem 4rem;
+}
+
+h1, h2, h3 { font-weight: 600; margin: 0 0 0.75rem; }
+h1 { font-size: 1.15rem; }
+h2 { font-size: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--hairline); margin-top: 2rem; }
+h3 { font-size: 0.9rem; }
+p { margin: 0 0 0.75rem; }
+
+.muted { color: var(--quiet-text); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.hairline-box {
+  border: 1px solid var(--hairline-strong);
+}
+
+/* ---------------------------------------------------------------------
+   STATE TOKENS: shape + colour + text, never colour alone.
+   See CONSOLE_PLAN.md "State and outcome, expressed visually".
+--------------------------------------------------------------------- */
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+}
+.state-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  flex: none;
+  display: inline-block;
+}
+.state-dot.circle { border-radius: 50%; }
+.state-dot.circle.hollow { border: 1.5px solid currentColor; background: transparent; }
+.state-dot.circle.filled { background: currentColor; }
+.state-dot.ring {
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 2.5px var(--paper), 0 0 0 4px currentColor;
+}
+.state-dot.square { border-radius: 2px; background: currentColor; }
+.state-dot.square.hollow { border: 1.5px solid currentColor; background: transparent; }
+.state-dot.triangle {
+  width: 0; height: 0;
+  border-left: 0.4rem solid transparent;
+  border-right: 0.4rem solid transparent;
+  border-bottom: 0.68rem solid currentColor;
+  background: transparent !important;
+}
+.state-dot.pulse { animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+.tone-quiet { color: var(--quiet-text); }
+.tone-periwinkle { color: var(--periwinkle); }
+.tone-mint { color: var(--mint); }
+.tone-peach { color: var(--peach); }
+.tone-rose { color: var(--rose); }
+
+/* On the dark masthead, ring outlines must use the masthead background, not paper. */
+.masthead .state-dot.ring { box-shadow: 0 0 0 2.5px var(--masthead-bg), 0 0 0 4px currentColor; }
+
+/* --quiet-text is a DARK, desaturated colour, correct for the light reading
+   surface and functionally invisible on the dark masthead (dark-on-dark).
+   The four saturated hues (periwinkle/mint/peach/rose) hold enough contrast
+   against --masthead-bg on their own; only the quiet/neutral tone needs a
+   masthead-specific override, to a light neutral instead of a dark one. */
+.masthead .tone-quiet { color: rgba(237, 234, 227, 0.65); }
+
+/* ---------------------------------------------------------------------
+   RUN LIST
+--------------------------------------------------------------------- */
+.filter-bar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.filter-bar select, .filter-bar input[type=search] {
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+  padding: 0.4rem 0.55rem;
+  background: var(--paper);
+}
+.filter-bar input[type=search] { flex: 1; min-width: 10rem; }
+
+.run-list { border-top: 1px solid var(--hairline-strong); }
+.run-row {
+  display: grid;
+  grid-template-columns: 11rem 1fr 6rem 9rem;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem 0.25rem;
+  border-bottom: 1px solid var(--hairline);
+  text-decoration: none;
+  color: inherit;
+}
+.run-row:hover { background: var(--quiet-fill); }
+.run-row .rid { font-family: var(--font-mono); font-size: 0.85rem; }
+.run-row .task { color: var(--quiet-text); font-size: 0.85rem; }
+.run-row .when { color: var(--quiet-text); font-size: 0.85rem; text-align: right; }
+/* Human view: the first column carries a friendly title instead of the raw
+   run id, so it needs more room than the mono column it replaces. */
+.run-row.human { grid-template-columns: 1fr 11rem 6rem 9rem; }
+.run-row .title-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.run-row .title-cell .rid-secondary { display: block; font-size: 0.78rem; margin-top: 0.1rem; }
+
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--quiet-text);
+  border: 1px dashed var(--hairline-strong);
+}
+
+/* ---------------------------------------------------------------------
+   BUTTONS AND FORMS
+--------------------------------------------------------------------- */
+.button {
+  display: inline-block;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.button:hover { opacity: 0.85; }
+.button:disabled { opacity: 0.4; cursor: not-allowed; }
+.button.secondary {
+  background: transparent;
+  color: var(--ink);
+}
+.button.danger {
+  background: var(--paper);
+  color: var(--rose);
+  border-color: var(--rose);
+}
+.button.danger:hover { background: rgba(168, 73, 90, 0.08); }
+
+label { display: block; font-weight: 600; font-size: 0.85rem; margin: 1rem 0 0.3rem; }
+label:first-child { margin-top: 0; }
+input[type=text], input[type=password], textarea, select.form-control {
+  width: 100%;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+  padding: 0.5rem 0.6rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+input[type=file] { margin-top: 0.2rem; }
+.field-hint { font-size: 0.8rem; color: var(--quiet-text); margin-top: 0.25rem; }
+.checkbox-row { display: flex; align-items: baseline; gap: 0.5rem; margin: 1rem 0 0; }
+.checkbox-row input { margin: 0; }
+.checkbox-row label { margin: 0; font-weight: 400; }
+
+.notice {
+  border: 1px solid var(--hairline-strong);
+  border-left: 3px solid var(--ink);
+  padding: 0.65rem 0.85rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+.notice.error { border-left-color: var(--rose); }
+.notice.warn { border-left-color: var(--peach); }
+.notice.ok { border-left-color: var(--mint); }
+
+/* ---------------------------------------------------------------------
+   RUN DETAIL / WORKING VIEW
+--------------------------------------------------------------------- */
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+.detail-header h1 { margin-bottom: 0.15rem; }
+.detail-meta { color: var(--quiet-text); font-size: 0.85rem; }
+
+.status-block {
+  border: 1px solid var(--hairline-strong);
+  padding: 1rem 1.1rem;
+  margin: 1.25rem 0;
+}
+.status-block .state { font-size: 1rem; margin-bottom: 0.5rem; }
+.status-block .next-action { margin-top: 0.6rem; }
+
+.progress-track {
+  height: 0.55rem;
+  background: var(--quiet-fill);
+  border-radius: 1px;
+  overflow: hidden;
+  margin: 0.75rem 0 0.4rem;
+}
+.progress-fill { height: 100%; background: var(--periwinkle); }
+.progress-caption { font-size: 0.85rem; color: var(--quiet-text); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; }
+
+.phase-ladder { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.phase-ladder li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  font-size: 0.88rem;
+  color: var(--quiet-text);
+}
+.phase-ladder li.done { color: var(--ink); }
+.phase-ladder li.current { color: var(--ink); font-weight: 600; }
+.phase-ladder .mark { width: 1.1rem; flex: none; font-family: var(--font-mono); }
+
+.kv-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; }
+.kv-table td { padding: 0.3rem 0.5rem 0.3rem 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+.kv-table td:first-child { color: var(--quiet-text); width: 11rem; }
+
+.doc-row {
+  display: grid;
+  grid-template-columns: 1fr 6rem 8rem;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 0.9rem;
+}
+.doc-row .doc-id { font-family: var(--font-mono); }
+
+/* ---------------------------------------------------------------------
+   FINDINGS TABLE
+--------------------------------------------------------------------- */
+table.findings { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; }
+table.findings th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: none;
+  color: var(--quiet-text);
+  border-bottom: 1px solid var(--hairline-strong);
+  padding: 0.4rem 0.6rem 0.4rem 0.75rem;
+}
+table.findings td {
+  border-bottom: 1px solid var(--hairline);
+  padding: 0.5rem 0.6rem 0.5rem 0.75rem;
+  vertical-align: top;
+}
+table.findings tr.irregular { border-left: 3px solid var(--rose); }
+table.findings tr.ok { border-left: 3px solid var(--mint); }
+table.findings tr { border-left: 3px solid transparent; }
+.fig { font-family: var(--font-mono); white-space: nowrap; }
+
+/* Human view findings: the same left-rule verdict vocabulary as the
+   developer table (irregular = rose, ok = mint), reworded as sentences
+   instead of table rows. See "Findings, one per relation". */
+.findings-human { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.finding-human {
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid transparent;
+  background: var(--quiet-fill);
+  font-size: 0.92rem;
+}
+.finding-human.irregular { border-left-color: var(--rose); }
+.finding-human.ok { border-left-color: var(--mint); }
+.finding-human strong { font-weight: 600; }
+.explanation { max-width: 22rem; }
+.explanation .truncated {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.expand-toggle { display: inline-block; font-size: 0.78rem; border: none; background: none; color: var(--periwinkle); cursor: pointer; padding: 0; margin-top: 0.3rem; }
+
+/* ---------------------------------------------------------------------
+   PAIRING MAP PANEL (collapsed by default)
+--------------------------------------------------------------------- */
+details.pairs-doc {
+  border: 1px solid var(--hairline);
+  margin-top: 0.5rem;
+}
+details.pairs-doc summary {
+  cursor: pointer;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  list-style: none;
+}
+details.pairs-doc summary::-webkit-details-marker { display: none; }
+details.pairs-doc summary::before { content: "▸ "; color: var(--quiet-text); }
+details.pairs-doc[open] summary::before { content: "▾ "; }
+.pairs-body { padding: 0 0.75rem 0.75rem; }
+.pairs-unit { margin-bottom: 0.75rem; font-size: 0.85rem; }
+.pairs-unit .uid { font-family: var(--font-mono); color: var(--quiet-text); }
+.rule-chip {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+  padding: 0.05rem 0.35rem;
+  margin: 0.15rem 0.3rem 0.15rem 0;
+}
+
+/* ---------------------------------------------------------------------
+   LOG VIEWER
+--------------------------------------------------------------------- */
+.log-box {
+  background: var(--masthead-bg);
+  color: var(--masthead-text);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.85rem;
+  max-height: 22rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---------------------------------------------------------------------
+   PENDING APPROVAL BLOCK
+--------------------------------------------------------------------- */
+.approval-message { font-size: 0.95rem; margin: 0.5rem 0 0.75rem; }
+.approval-actions { display: flex; gap: 0.6rem; margin-top: 0.75rem; flex-wrap: wrap; align-items: center; }
+.approval-actions textarea { width: 100%; min-height: 3.5rem; margin: 0.5rem 0 0.75rem; }
+
+/* ---------------------------------------------------------------------
+   RESPONSIVE
+--------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .masthead-row { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .masthead-right { justify-content: space-between; }
+  .run-row, .run-row.human { grid-template-columns: 1fr; gap: 0.2rem; }
+  .run-row .when { text-align: left; }
+  .doc-row { grid-template-columns: 1fr; }
+  table.findings { display: block; overflow-x: auto; }
+}
+
+[hidden] { display: none !important; }
 </style>
 </head>
 <body>
-<h1>Project Shimmer operator console</h1>
-<p class="note">
-  A thin dock over <code>scripts/server.py</code>. The token below is kept only in this
-  page's memory for the current session (never written to a URL, never persisted to
-  storage); reload the page and you must re-enter it.
-</p>
 
-<section>
-  <h2>Access token</h2>
-  <label for="token">Bearer token</label>
-  <input type="password" id="token" placeholder="paste the token given to you out of band">
-  <button id="saveTokenBtn">Use this token</button>
-  <div id="tokenMsg" class="msg" style="display:none"></div>
-</section>
-
-<section>
-  <h2>Submit a run</h2>
-  <label for="task">Task</label>
-  <select id="task">
-    <option value="review">review (upload documents)</option>
-    <option value="draft">draft (generate a memo from a question)</option>
-  </select>
-
-  <label for="files">Files (review task; the case files plus the sidecar)</label>
-  <input type="file" id="files" multiple>
-
-  <label for="question">Question (required for draft; optional framing question for review)</label>
-  <textarea id="question" rows="3" placeholder="the memo question/brief"></textarea>
-
-  <label>
-    <input type="checkbox" id="sensitive"> This run is sensitive
-  </label>
-  <div class="sensitive-explain">
-    A <strong>non-sensitive</strong> run (unchecked, the default) sends document text to
-    cloud providers (Claude, GPT) and waives redaction for this run.
-    A <strong>sensitive</strong> run (checked) keeps redaction on, but today it refuses to
-    start (exit code 6) because the full LAW-IV masking layer ships inactive until the
-    operator activates it; this checkbox does not activate it, it only declares intent.
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="masthead-row">
+      <p class="masthead-name">SHIMMER: Review desk</p>
+      <div class="masthead-right">
+        <div id="masthead-state" class="masthead-state" hidden></div>
+        <div id="view-switch" class="view-switch" role="group" aria-label="Language">
+          <button type="button" id="view-switch-human" class="view-switch-option">Reviewer</button>
+          <button type="button" id="view-switch-developer" class="view-switch-option">Developer</button>
+        </div>
+        <a href="#" id="token-link" class="tone-quiet masthead-token-link"></a>
+      </div>
+    </div>
+    <nav class="masthead-nav">
+      <a href="#/runs" id="nav-runs">Runs</a>
+      <a href="#/submit" id="nav-submit">Submit</a>
+    </nav>
   </div>
+</header>
 
-  <button id="submitBtn">Submit</button>
-  <div id="submitMsg" class="msg" style="display:none"></div>
-</section>
-
-<section>
-  <h2>Pending approvals</h2>
-  <p class="note">A governed decision (e.g. a deprecated-model swap) parked by a
-    <code>--operator-channel file</code> run, waiting for APPROVE / DENY / DEFER.</p>
-  <button id="refreshApprovalsBtn">Refresh</button>
-  <table id="approvalsTable">
-    <thead><tr><th>run_id</th><th>topic</th><th>asked_at</th><th>decision</th></tr></thead>
-    <tbody></tbody>
-  </table>
-</section>
-
-<section>
-  <h2>Runs</h2>
-  <button id="refreshRunsBtn">Refresh</button>
-  <table id="runsTable">
-    <thead><tr><th>run_id</th><th>task</th><th>status</th><th>submitted_at</th><th>exit_code</th><th>detail</th><th>log</th></tr></thead>
-    <tbody></tbody>
-  </table>
-  <p class="note">
-    The log column is the run's complete merged stdout/stderr, relative to the server's
-    output root (<code>SHIMMER_OUTPUT_DIR</code>, default <code>output/runs/</code>); open
-    it on the machine running the server, there is no download route for it.
-  </p>
-  <p class="note">
-    Status vocabulary: <code>completed</code> is success. <code>blocked</code>,
-    <code>stopped_model_approval</code>, <code>stopped_redaction_gate</code> and
-    <code>refused_sensitivity_layer_inactive</code> are governance outcomes, not errors,
-    the pipeline refused or paused on purpose. Note: exit code 5 (<code>blocked</code>) is
-    also used for a draft-mode generation failure; check the log tail to tell which one
-    happened. <code>snapshot_conflict</code>, <code>operator_abort</code>,
-    <code>interrupted</code> (server restarted mid-run) and <code>failed</code> (including
-    a run timeout) round out the vocabulary.
-  </p>
-</section>
+<main id="app"></main>
 
 <script>
 (function () {
-  var token = null;
+"use strict";
 
-  function setMsg(el, text, ok) {
-    el.textContent = text;
-    el.className = 'msg ' + (ok ? 'msg-ok' : 'msg-err');
-    el.style.display = 'block';
-  }
+/* =======================================================================
+   TOKEN: sessionStorage, never localStorage, never a URL.
+   Survives a same-tab reload (so a reviewer mid-run does not retype it);
+   cleared when the tab closes. See CONSOLE_PLAN.md "The waiting page's
+   persistence requirement."
+======================================================================= */
+var TOKEN_KEY = "shimmer_console_token";
 
-  function authHeaders() {
-    var h = {};
-    if (token) h['Authorization'] = 'Bearer ' + token;
-    return h;
-  }
+function getToken() {
+  try { return sessionStorage.getItem(TOKEN_KEY) || ""; }
+  catch (e) { return ""; }
+}
+function setToken(t) {
+  try { sessionStorage.setItem(TOKEN_KEY, t); } catch (e) { /* private-window etc: token just won't survive reload */ }
+}
+function clearToken() {
+  try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+}
 
-  document.getElementById('saveTokenBtn').addEventListener('click', function () {
-    var v = document.getElementById('token').value.trim();
-    if (!v) { setMsg(document.getElementById('tokenMsg'), 'enter a token first', false); return; }
-    token = v;
-    document.getElementById('token').value = '';
-    setMsg(document.getElementById('tokenMsg'), 'token set for this session (not stored, not in any URL)', true);
+/* api/CONSOLE_LANGUAGE.md "What I decided about the token control, and why":
+   the masthead keeps a single quiet link, "Not signed in" / "Signed in",
+   instead of a permanent input+button+status row. Clicking it opens the
+   existing no-token entry screen (renderNeedsToken) on demand, in either
+   language view, rather than only automatically when a protected route
+   401s or no token is set yet. */
+var tokenLink = document.getElementById("token-link");
+var forceTokenScreen = false;
+
+function refreshTokenUi() {
+  var t = getToken();
+  tokenLink.textContent = t ? "Signed in" : "Not signed in";
+}
+tokenLink.addEventListener("click", function (e) {
+  e.preventDefault();
+  forceTokenScreen = true;
+  render();
+});
+refreshTokenUi();
+
+/* =======================================================================
+   VIEW MODE: "human" (default, every first load, per CONSOLE_LANGUAGE.md's
+   "Where the switch lives, and why") or "developer". Stored in sessionStorage
+   under its OWN key, separate from the token, so clearing one never clears
+   the other. Once a choice is made in this tab, it is remembered for the
+   rest of the session; a fresh tab always starts on the human view.
+======================================================================= */
+var VIEW_KEY = "shimmer_console_view";
+
+function getView() {
+  try {
+    var v = sessionStorage.getItem(VIEW_KEY);
+    return (v === "human" || v === "developer") ? v : "human";
+  } catch (e) { return "human"; }
+}
+function setView(v) {
+  try { sessionStorage.setItem(VIEW_KEY, v); } catch (e) { /* private-window etc: choice just won't survive reload */ }
+}
+function isHumanView() { return getView() === "human"; }
+
+var viewSwitchHuman = document.getElementById("view-switch-human");
+var viewSwitchDeveloper = document.getElementById("view-switch-developer");
+
+function refreshViewSwitchUi() {
+  var v = getView();
+  viewSwitchHuman.classList.toggle("active", v === "human");
+  viewSwitchDeveloper.classList.toggle("active", v === "developer");
+  viewSwitchHuman.setAttribute("aria-pressed", v === "human" ? "true" : "false");
+  viewSwitchDeveloper.setAttribute("aria-pressed", v === "developer" ? "true" : "false");
+}
+viewSwitchHuman.addEventListener("click", function () { setView("human"); refreshViewSwitchUi(); render(); });
+viewSwitchDeveloper.addEventListener("click", function () { setView("developer"); refreshViewSwitchUi(); render(); });
+refreshViewSwitchUi();
+
+/* =======================================================================
+   FETCH WRAPPER
+======================================================================= */
+function api(path, opts) {
+  opts = opts || {};
+  var headers = opts.headers || {};
+  var t = getToken();
+  if (t) headers["Authorization"] = "Bearer " + t;
+  return fetch(path, Object.assign({}, opts, { headers: headers }))
+    .then(function (r) {
+      if (r.status === 401) {
+        clearToken();
+        refreshTokenUi();
+      }
+      return r;
+    });
+}
+
+function apiJson(path, opts) {
+  return api(path, opts).then(function (r) {
+    return r.json().catch(function () { return {}; }).then(function (body) {
+      return { ok: r.ok, status: r.status, body: body, headers: r.headers };
+    });
   });
+}
 
-  function statusClass(status) {
-    if (status === 'completed') return 'status-completed';
-    if (['blocked', 'stopped_model_approval', 'stopped_redaction_gate',
-         'refused_sensitivity_layer_inactive'].indexOf(status) !== -1) return 'status-governance';
-    if (['failed', 'snapshot_conflict', 'operator_abort'].indexOf(status) !== -1) return 'status-failed';
-    return 'status-neutral';
+/* Server `detail` is sometimes a plain string, sometimes {error, report}
+   (POST /submit's contract-validation failure): read either honestly,
+   never invent a friendlier message than the server actually gave. */
+function detailText(body) {
+  var d = body && body.detail;
+  if (typeof d === "string") return d;
+  if (d && typeof d === "object") {
+    if (d.error && d.report) return d.error + ": " + d.report;
+    if (d.error) return d.error;
+    try { return JSON.stringify(d); } catch (e) { return String(d); }
   }
+  return "The server did not explain why.";
+}
 
-  function refreshRuns() {
-    fetch('/runs', { headers: authHeaders() })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var tbody = document.querySelector('#runsTable tbody');
-        tbody.innerHTML = '';
-        (data.jobs || data.runs || []).forEach(function (j) {
-          var tr = document.createElement('tr');
-          var cls = statusClass(j.status);
-          var logPath = j.run_id ? (j.run_id + '/logs/pipeline_stdout.log') : '';
-          tr.innerHTML =
-            '<td>' + (j.run_id || '') + '</td>' +
-            '<td>' + (j.task || '') + '</td>' +
-            '<td class="' + cls + '">' + (j.status || '') + '</td>' +
-            '<td>' + (j.submitted_at || '') + '</td>' +
-            '<td>' + (j.exit_code === null || j.exit_code === undefined ? '' : j.exit_code) + '</td>' +
-            '<td>' + (j.error ? String(j.error).slice(0, 200) : '') + '</td>' +
-            '<td><code>' + logPath + '</code></td>';
-          tbody.appendChild(tr);
-        });
-      })
-      .catch(function () { /* silent: token not set yet, or server unreachable */ });
+/* =======================================================================
+   STATE / OUTCOME → visual token
+   See CONSOLE_PLAN.md "State and outcome, expressed visually".
+======================================================================= */
+function stateToken(state, outcome) {
+  if (state === "queued") return { dot: "circle hollow", tone: "quiet", label: "Queued" };
+  if (state === "running") return { dot: "circle filled pulse", tone: "periwinkle", label: "Running" };
+  if (state === "awaiting_approval") return { dot: "ring", tone: "periwinkle", label: "Awaiting your decision" };
+  if (state === "cancelled") return { dot: "square hollow", tone: "quiet", label: "Cancelled" };
+  if (state === "stopped") {
+    if (outcome === "succeeded") return { dot: "circle filled", tone: "mint", label: "Completed" };
+    if (outcome === "governance_stop") return { dot: "square", tone: "peach", label: "Stopped by a rule" };
+    if (outcome === "crashed") return { dot: "triangle", tone: "rose", label: "Crashed" };
+    if (outcome === "timed_out") return { dot: "triangle", tone: "rose", label: "Timed out" };
   }
+  return { dot: "circle hollow", tone: "quiet", label: state || "Unknown" };
+}
 
-  function refreshApprovals() {
-    fetch('/approvals', { headers: authHeaders() })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var tbody = document.querySelector('#approvalsTable tbody');
-        tbody.innerHTML = '';
-        (data.approvals || []).forEach(function (a) {
-          var tr = document.createElement('tr');
-          var td4 = document.createElement('td');
-          var approveBtn = document.createElement('button');
-          approveBtn.textContent = 'APPROVE';
-          var denyBtn = document.createElement('button');
-          denyBtn.textContent = 'DENY';
-          [approveBtn, denyBtn].forEach(function (btn) {
-            btn.addEventListener('click', function () {
-              var decision = btn.textContent;
-              fetch('/approvals/' + encodeURIComponent(a.run_id), {
-                method: 'POST',
-                headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
-                body: JSON.stringify({ decision: decision, rationale: 'decided via console' }),
-              }).then(function () { refreshApprovals(); refreshRuns(); });
-            });
-          });
-          td4.appendChild(approveBtn);
-          td4.appendChild(denyBtn);
-          tr.innerHTML =
-            '<td>' + (a.run_id || '') + '</td>' +
-            '<td>' + (a.topic || '') + '</td>' +
-            '<td>' + (a.asked_at || '') + '</td>';
-          tr.appendChild(td4);
-          tbody.appendChild(tr);
-        });
-      })
-      .catch(function () { /* silent */ });
+function stateDotHtml(tok, opts) {
+  opts = opts || {};
+  var shapeClasses = tok.dot.split(" ").map(function (c) {
+    return c === "circle" || c === "square" || c === "hollow" || c === "filled" || c === "pulse" || c === "ring" || c === "triangle" ? c : "";
+  }).join(" ");
+  return '<span class="state-dot ' + shapeClasses + '"></span>';
+}
+
+function stateHtml(state, outcome) {
+  var tok = stateToken(state, outcome);
+  return '<span class="state tone-' + tok.tone + '">' + stateDotHtml(tok) + '<span>' + escapeHtml(tok.label) + '</span></span>';
+}
+
+/* =======================================================================
+   GOVERNANCE / CRASH DETAIL COPY
+   See CONSOLE_PLAN.md's copy section: a governance stop names the rule and
+   what happens next; a crash shows a truncated detail with a log link,
+   never dumps the raw (up to 2000-char) tail inline.
+======================================================================= */
+var GOVERNANCE_SENTENCES = {
+  stopped_model_approval: "A deprecated model assignment needed operator approval and the run's wait window closed before one was recorded.",
+  stopped_redaction_gate: "The redaction gate stopped the run before completion.",
+  blocked: "The pipeline blocked itself: a redaction block at run-end, or (in draft mode) a memo-generation failure the run could not recover from. Check the log for which.",
+  refused_sensitivity_layer_inactive: "This run was declared sensitive, but the privacy masking layer is not active on this server, so the run refused to start rather than risk an unprotected sensitive submission.",
+  cancelled: "Cancelled by request."
+};
+
+/* HUMAN VIEW: one plain-language sentence per governance code, paired with
+   GOVERNANCE_SENTENCES above rather than reusing one fixed sentence for all
+   four codes. A single hardcoded sentence here was a real bug: it happened
+   to describe stopped_model_approval correctly and would have been wrong
+   for the other three (a real run stopping for stopped_redaction_gate,
+   blocked, or refused_sensitivity_layer_inactive is not "waiting on an
+   operator decision" at all), silently filtering the human view down to
+   one code's meaning. See docs/api/CONSOLE_LANGUAGE.md's approved sentence
+   for stopped_model_approval; the other three follow the same register. */
+var GOVERNANCE_SENTENCES_HUMAN = {
+  stopped_model_approval: "The system refused to keep going without a decision from the operator running it, and none came in time.",
+  stopped_redaction_gate: "The system's privacy check stopped the review before it finished.",
+  blocked: "The system blocked itself: either a privacy check at the very end, or (for a generated memo) a drafting step that could not recover. The full log says which.",
+  refused_sensitivity_layer_inactive: "This review was marked as sensitive, but the server's privacy protection was not switched on, so it refused to start rather than risk exposing something it should not have."
+};
+
+function nextActionSentence(run) {
+  var state = run.state, outcome = run.outcome;
+  if (state === "queued") return "Waiting for the run ahead of it to finish. Nothing to do: this page updates on its own.";
+  if (state === "running") return "Nothing to do yet. This page updates on its own; you can leave and come back.";
+  if (state === "awaiting_approval") return "This run is waiting on you: decide below, or come back to it later. The run will not continue until you do.";
+  if (state === "cancelled") {
+    var cdetail = (run.stop_reason && run.stop_reason.detail) || "cancelled by request";
+    return "Cancelled: " + cdetail + ".";
   }
+  if (state === "stopped") {
+    if (outcome === "succeeded") return "Finished. Start with the findings below, or download the full archive.";
+    if (outcome === "governance_stop") {
+      var code = run.stop_reason && run.stop_reason.code;
+      var sentence = GOVERNANCE_SENTENCES[code] || "The pipeline stopped itself on purpose, under a governance rule.";
+      return "Stopped by a rule. This was not an error: the pipeline refused on purpose. " + sentence;
+    }
+    if (outcome === "crashed" || outcome === "timed_out") {
+      return "The run did not finish. See the detail below, or the full log. You can submit it again.";
+    }
+  }
+  return "";
+}
 
-  document.getElementById('refreshRunsBtn').addEventListener('click', refreshRuns);
-  document.getElementById('refreshApprovalsBtn').addEventListener('click', refreshApprovals);
+/* =======================================================================
+   HUMAN VIEW: run state / outcome, all seven combinations plus the two
+   cancelled sub-cases. See docs/api/CONSOLE_LANGUAGE.md "Run state and
+   outcome, all seven combinations". A rewording, never a filtering: every
+   fact nextActionSentence()/GOVERNANCE_SENTENCES carries is carried here
+   too, just in the reader-facing sentence rather than the developer one.
+======================================================================= */
+function mutedParen(text) {
+  return '<span class="muted mono" style="font-size:0.8rem">(' + escapeHtml(text) + ')</span>';
+}
 
-  document.getElementById('submitBtn').addEventListener('click', function () {
-    var task = document.getElementById('task').value;
-    var question = document.getElementById('question').value;
-    var sensitive = document.getElementById('sensitive').checked;
-    var files = document.getElementById('files').files;
+function nextActionSentenceHuman(run) {
+  var state = run.state, outcome = run.outcome;
+  if (state === "queued") {
+    return '<strong>Waiting to start.</strong> Another review is running first; this one will begin as soon as it finishes. Nothing to do. ' + mutedParen("state: queued");
+  }
+  if (state === "running") {
+    var prog = parseProgress(run.progress);
+    var idx = phaseIndex(prog.phase);
+    var pname = phaseHumanName(prog.phase);
+    var stepText = (idx >= 0) ? (", phase " + (idx + 1) + " of " + PHASES.length + ', "' + escapeHtml(pname || currentPhaseName(prog.phase) || "") + '"') : "";
+    return '<strong>In progress' + (pname ? ": " + escapeHtml(pname).toLowerCase() : "") + '.</strong> This page updates on its own; it is fine to leave and come back. ' +
+      mutedParen("state: running" + stepText);
+  }
+  if (state === "awaiting_approval") {
+    /* Short, generic, status-box-only: the full detail (the folded message,
+       figures, any extra payload facts, and the rule/unit parenthetical)
+       lives exclusively in renderApprovalBlock()/approvalDetailHtml() below,
+       the same split the developer view already uses (nextActionSentence's
+       own awaiting_approval line is generic too; pa.message appears only
+       once, in the approval block). Showing the same paragraph twice was a
+       real bug, not a design choice: fixed here by never building the full
+       sentence in this function at all. */
+    return '<strong>Paused: needs your decision.</strong> Decide below, or come back to it later. ' +
+      'The review will not continue until you answer. ' + mutedParen("state: awaiting_approval");
+  }
+  if (state === "cancelled") {
+    var cdetail = (run.stop_reason && run.stop_reason.detail) || "";
+    var sub = cdetail.indexOf("before it started") !== -1
+      ? "It had not started yet."
+      : "It had already begun; whatever finished before the cancellation is still available below.";
+    return '<strong>Cancelled, at your request.</strong> ' + sub + " " + mutedParen("state: cancelled");
+  }
+  if (state === "stopped") {
+    if (outcome === "succeeded") {
+      return '<strong>Finished. No problems stopped the review.</strong> Start with the findings below, or download the full archive. ' + mutedParen("state: completed");
+    }
+    if (outcome === "governance_stop") {
+      var code = run.stop_reason && run.stop_reason.code;
+      var sentenceHuman = GOVERNANCE_SENTENCES_HUMAN[code] || "A rule this system enforces stopped the review before it could finish.";
+      return '<strong>Stopped on purpose, before finishing. This is not an error.</strong> ' + sentenceHuman + ' ' +
+        'Nothing you submitted was lost; if you resubmit, the review restarts from the beginning. ' + mutedParen("governance code: " + (code || ""));
+    }
+    if (outcome === "crashed") {
+      return '<strong>The review stopped before it finished, because of a fault in the system, not in your document.</strong> Nothing you submitted was lost. ' +
+        "You can submit it again; if it fails the same way twice, that is worth reporting. " + mutedParen("technical detail in the developer view and the full log");
+    }
+    if (outcome === "timed_out") {
+      return '<strong>The review did not finish in time and was stopped.</strong> This is a failure, not a refusal: nothing about your document caused it to be turned away, ' +
+        "it simply ran longer than the system allows and had to be cut off. Nothing you submitted was lost. You can submit it again. " + mutedParen("run timeout, not a governance rule");
+    }
+  }
+  return "";
+}
+
+/* HUMAN VIEW: the full detail of a pending approval (the payload's message,
+   figures, any other fact the payload carries, and the rule/unit
+   parenthetical), folded into one coherent statement. Used ONLY by
+   renderApprovalBlock(), in the section with the Approve/Deny buttons: the
+   status box above shows nextActionSentenceHuman()'s short, generic line
+   instead. Showing this full paragraph in BOTH places was a real, reported
+   bug (the same sentence appeared twice, word for word); the fix is
+   structural, not cosmetic: this text now exists in exactly one place. */
+function approvalDetailHuman(run) {
+  var pa = run.pending_approval || {};
+  var msg = pa.message || pa.topic || "";
+  var payload = pa.payload || {};
+  var figureSentence = "";
+  if (payload.value_a !== undefined || payload.value_b !== undefined) {
+    figureSentence = " The figure in question is " + escapeHtml(String(payload.value_a)) + " against " + escapeHtml(String(payload.value_b)) +
+      (payload.unit_id ? (" for unit " + escapeHtml(String(payload.unit_id))) : "") + ".";
+  }
+  var ruleUnitParen = [];
+  if (payload.rule_id) ruleUnitParen.push("rule " + payload.rule_id);
+  if (payload.unit_id) ruleUnitParen.push("unit " + payload.unit_id);
+  /* Every OTHER payload key (beyond value_a/value_b/unit_id/rule_id/message,
+     already folded into the sentence above) still needs to surface here:
+     the human view is a rewording, never a filtering, so a topic this
+     console has no dedicated sentence for still shows its remaining facts,
+     just as "key: value" clauses rather than a table. */
+  var handled = { value_a: 1, value_b: 1, unit_id: 1, rule_id: 1, message: 1 };
+  var extra = Object.keys(payload).filter(function (k) { return !handled[k]; });
+  var extraSentence = extra.length
+    ? (" Also: " + extra.map(function (k) { return k + " " + payload[k]; }).join(", ") + ".")
+    : "";
+  return escapeHtml(msg) + figureSentence + escapeHtml(extraSentence) +
+    (ruleUnitParen.length ? (" " + mutedParen(ruleUnitParen.join(", "))) : "");
+}
+
+/* =======================================================================
+   PHASE LADDER: the real, non-contiguous sequence. TOTAL_PHASES=9 in
+   pipeline.py, but only these numbers are ever emitted (2/4/8 do not
+   exist as their own phases); 5.5 is conditional on conventions existing.
+   See CONSOLE_PLAN.md "Where the progress proportion comes from".
+======================================================================= */
+var PHASES = [
+  { n: "1", name: "Situation assessment", human: "Reading the document and understanding what it covers" },
+  { n: "3", name: "Content production", human: "(internal drafting step; see the gap noted below)" },
+  { n: "5", name: "Verification & fact-check", human: "Checking facts and figures for internal consistency" },
+  { n: "5.5", name: "Convention review", human: "Checking the document against the rules" },
+  { n: "6", name: "Synthesis", human: "Putting the findings together" },
+  { n: "6.5", name: "Editorial review", human: "A second pass over the findings for quality" },
+  { n: "7", name: "Audit synthesis", human: "Preparing the final summary and record" },
+  { n: "9", name: "Redaction screening", human: "Checking for anything that should stay private" }
+];
+/* Phase 3's human label is the document's own literal placeholder, not an
+   invented one: docs/api/CONSOLE_LANGUAGE.md "What I could not translate
+   without losing meaning" names this gap explicitly (no screen-facing copy
+   or operator-facing sentence exists anywhere for what phase 3 does for a
+   REVIEW task specifically). The other seven rows, including phase 7, are
+   the document's own settled translations, copied verbatim from its "A
+   phase label" table. */
+
+function phaseIndex(currentPhase) {
+  var idx = -1;
+  PHASES.forEach(function (p, i) { if (p.n === currentPhase) idx = i; });
+  return idx;
+}
+
+function phaseHumanName(currentPhase) {
+  var found = PHASES.filter(function (p) { return p.n === currentPhase; })[0];
+  return found ? found.human : null;
+}
+
+/* Parse the raw "[progress]" body server.py already strips the prefix
+   from: "phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running". */
+function parseProgress(raw) {
+  var out = {};
+  if (!raw) return out;
+  raw.split(/\s+/).forEach(function (tok) {
+    var i = tok.indexOf("=");
+    if (i > 0) out[tok.slice(0, i)] = tok.slice(i + 1);
+  });
+  if (out.phase) out.phase = out.phase.split("/")[0];
+  return out;
+}
+
+function phaseLadderHtml(currentPhase) {
+  var idx = -1;
+  PHASES.forEach(function (p, i) { if (p.n === currentPhase) idx = i; });
+  var items = PHASES.map(function (p, i) {
+    var cls = "", mark = "·";
+    if (idx >= 0 && i < idx) { cls = "done"; mark = "✓"; }
+    else if (i === idx) { cls = "current"; mark = "▶"; }
+    return '<li class="' + cls + '"><span class="mark">' + mark + '</span><span>' + p.n + '&nbsp;&nbsp;' + escapeHtml(p.name) + '</span></li>';
+  }).join("");
+  return '<ul class="phase-ladder">' + items + '</ul>';
+}
+
+/* Human-view phase ladder: the human phase name plus "step N of 8", instead
+   of the raw phase number and its developer label. See
+   docs/api/CONSOLE_LANGUAGE.md "A phase label". */
+function phaseLadderHumanHtml(currentPhase) {
+  var idx = phaseIndex(currentPhase);
+  var items = PHASES.map(function (p, i) {
+    var cls = "", mark = "·";
+    if (idx >= 0 && i < idx) { cls = "done"; mark = "✓"; }
+    else if (i === idx) { cls = "current"; mark = "▶"; }
+    return '<li class="' + cls + '"><span class="mark">' + mark + '</span><span>' +
+      'step ' + (i + 1) + ' of ' + PHASES.length + '&nbsp;&nbsp;' + escapeHtml(p.human) + '</span></li>';
+  }).join("");
+  return '<ul class="phase-ladder">' + items + '</ul>';
+}
+
+function currentPhaseName(currentPhase) {
+  var found = PHASES.filter(function (p) { return p.n === currentPhase; })[0];
+  return found ? found.name : null;
+}
+
+/* =======================================================================
+   PAIR-SETTLEMENT BAR: only drawn when it can be honest.
+   pairs_arithmetic_only is a real LOWER BOUND (settled with no model
+   call); it is not the live edge of progress, and the copy says so.
+   Never drawn before pairs_planned > 0, never in wide mode (the field
+   is null there: server.py's own comment explains why the subtraction
+   is not meaningful in wide mode).
+======================================================================= */
+function pairBarHtml(run) {
+  var planned = run.pairs_planned, settled = run.pairs_arithmetic_only, calls = run.model_calls;
+  if (!planned || settled === null || settled === undefined) return "";
+  var pct = Math.max(0, Math.min(100, Math.round((settled / planned) * 100)));
+  return (
+    '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+    '<div class="progress-caption">' +
+      '<span>at least ' + settled + ' of ' + planned + ' pairs settled</span>' +
+      '<span>' + (calls || 0) + ' model call' + ((calls === 1) ? "" : "s") + ' so far</span>' +
+    '</div>' +
+    '<p class="muted" style="font-size:0.8rem;margin-top:0.35rem">' +
+      settled + ' pairs closed by arithmetic alone, with no model call. This is a floor, not a live counter: ' +
+      'pairs a model is actively judging are not separately counted.' +
+    '</p>'
+  );
+}
+
+/* =======================================================================
+   TIME ESTIMATE: only from real history (GET /runs), only when there is
+   a real comparable sample, always labelled by its own sample size.
+   See CONSOLE_PLAN.md's exact derivation and honesty rules.
+======================================================================= */
+function estimateRemaining(run, allRuns) {
+  if (!run.started_at) return null;
+  var comparable = (allRuns || []).filter(function (r) {
+    return r.run_id !== run.run_id &&
+      r.task === run.task && r.review_mode === run.review_mode &&
+      r.state === "stopped" && r.outcome === "succeeded" &&
+      r.started_at && r.completed_at;
+  });
+  if (comparable.length === 0) return null;
+  var durations = comparable.map(function (r) {
+    return (new Date(r.completed_at).getTime() - new Date(r.started_at).getTime()) / 60000;
+  }).filter(function (m) { return m > 0; }).sort(function (a, b) { return a - b; });
+  if (durations.length === 0) return null;
+  var median = durations[Math.floor(durations.length / 2)];
+  var elapsed = (Date.now() - new Date(run.started_at).getTime()) / 60000;
+  var n = durations.length;
+  var qualifier = n < 3 ? " (based on " + n + " earlier run" + (n === 1 ? "" : "s") + ", treat this loosely)" : " (rough, from " + n + " earlier runs)";
+  /* Honesty, not false precision: once elapsed time has already reached or
+     passed the historical median, "~0 min remaining" reads as a broken
+     countdown, not as the true statement it actually is (this run is
+     already at or past what a comparable run usually takes). Say that
+     plainly instead of printing a number that looks like a promise. */
+  if (elapsed >= median) {
+    return "already past the typical duration for a comparable run" + qualifier;
+  }
+  var remaining = Math.round(median - elapsed);
+  if (remaining < 1) return "under a minute, typically" + qualifier;
+  return "~" + remaining + " min" + qualifier;
+}
+
+/* =======================================================================
+   ROUTER: hash-based, so a run's URL (#/runs/{run_id}) survives a
+   reload and can be handed to another device. See CONSOLE_PLAN.md.
+======================================================================= */
+var app = document.getElementById("app");
+var mastheadState = document.getElementById("masthead-state");
+var pollTimer = null;
+
+function clearPoll() { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } }
+
+function currentRoute() {
+  var h = location.hash.replace(/^#\/?/, "");
+  var parts = h.split("/").filter(Boolean);
+  if (parts[0] === "runs" && parts[1]) return { view: "detail", runId: decodeURIComponent(parts[1]) };
+  if (parts[0] === "submit") return { view: "submit" };
+  return { view: "list" };
+}
+
+window.addEventListener("hashchange", render);
+window.addEventListener("DOMContentLoaded", render);
+
+function setNavActive(view) {
+  document.getElementById("nav-runs").classList.toggle("active", view === "list" || view === "detail");
+  document.getElementById("nav-submit").classList.toggle("active", view === "submit");
+}
+
+function render() {
+  clearPoll();
+  mastheadState.hidden = true;
+  refreshViewSwitchUi();
+  refreshTokenUi();
+  var route = currentRoute();
+  setNavActive(route.view);
+  if (forceTokenScreen || !getToken()) { renderNeedsToken(); return; }
+  if (route.view === "submit") { renderSubmit(); return; }
+  if (route.view === "detail") { renderDetail(route.runId); return; }
+  renderList();
+}
+
+/* The token entry screen. Reachable two ways: automatically, whenever no
+   token is set yet or a protected route 401s (clearToken + render()); or on
+   demand, via the masthead's "Not signed in" / "Signed in" link, which sets
+   forceTokenScreen so this screen shows even though a token is already
+   saved (the console "has no login flow to redirect to, so there must
+   always be a way back to the entry screen", CONSOLE_LANGUAGE.md). Works
+   identically in both language views: this screen is not part of the
+   developer/reviewer wording split. */
+function renderNeedsToken() {
+  var already = getToken();
+  app.innerHTML =
+    '<div class="empty-state" style="text-align:left">' +
+      (already
+        ? '<p>Replace the saved access token, or continue with the one already set.</p>'
+        : '<p>Enter the access token to continue.</p>') +
+      '<p class="muted" style="font-size:0.85rem">The token is kept only for this browser tab, for this session. It is never stored beyond that, and never appears in a URL.</p>' +
+      '<label for="needs-token-input">Access token</label>' +
+      '<input type="password" id="needs-token-input" placeholder="access token" autocomplete="off" style="max-width:20rem">' +
+      '<div style="margin-top:0.75rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">' +
+        '<button type="button" class="button" id="needs-token-save">Use this token</button>' +
+        (already ? '<button type="button" class="button secondary" id="needs-token-continue">Continue without changing it</button>' : '') +
+      '</div>' +
+    '</div>';
+  var input = document.getElementById("needs-token-input");
+  var save = document.getElementById("needs-token-save");
+  save.addEventListener("click", function () {
+    var v = input.value.trim();
+    if (!v) return;
+    setToken(v);
+    forceTokenScreen = false;
+    refreshTokenUi();
+    render();
+  });
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") save.click(); });
+  var cont = document.getElementById("needs-token-continue");
+  if (cont) cont.addEventListener("click", function () { forceTokenScreen = false; render(); });
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+/* "N min ago" alone cannot tell two runs of the SAME document apart: a
+   reviewer who submits the same file twice, even minutes apart, sees both
+   rows carry the identical friendly name (runFriendlyTitle below) and two
+   coarse relative times close enough to require doing subtraction to tell
+   which is which. Past the first minute, this always carries a real clock
+   time, so the time column itself does the separating work rather than
+   leaning on the run identifier alone: "just now" for the current action,
+   a bare clock time for the rest of today, "yesterday, HH:MM" and
+   "N days ago, HH:MM" for older runs on the same reasoning, since two
+   same-named runs from the same earlier day are exactly as ambiguous under
+   a bare day count as two from today are under a bare minute count. */
+function relativeWhen(iso) {
+  if (!iso) return "";
+  var d = new Date(iso);
+  if (isNaN(d)) return iso;
+  var diffMs = Date.now() - d.getTime();
+  var mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  var hh = d.getHours(), mm = d.getMinutes();
+  var clock = (hh < 10 ? "0" + hh : hh) + ":" + (mm < 10 ? "0" + mm : mm);
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24 && d.toDateString() === new Date().toDateString()) return clock;
+  var days = Math.floor(hrs / 24);
+  if (days === 1) return "yesterday, " + clock;
+  if (days < 7) return days + " days ago, " + clock;
+  return d.toLocaleDateString() + ", " + clock;
+}
+
+/* =======================================================================
+   HUMAN VIEW: a run identifier. See docs/api/CONSOLE_LANGUAGE.md "A run
+   identifier": named from files[0] (+ "and N more" for task=review, or
+   from `question` (truncated ~60 chars) for task=draft, plus submitted_at,
+   with run_id kept as a small secondary identifier beside it. Available
+   from submission: files/question/submitted_at are already part of
+   _STATUS_FIELDS and already returned by GET /runs and GET /runs/{run_id}
+   in every state including queued (server.py:438, /submit ~1405-1419).
+======================================================================= */
+var MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"];
+
+function formatSubmittedAt(iso) {
+  if (!iso) return "";
+  var d = new Date(iso);
+  if (isNaN(d)) return iso;
+  var hh = d.getHours(), mm = d.getMinutes();
+  return d.getDate() + " " + MONTH_NAMES[d.getMonth()] + " " + d.getFullYear() + ", " +
+    (hh < 10 ? "0" + hh : hh) + ":" + (mm < 10 ? "0" + mm : mm);
+}
+
+function runFriendlyTitle(run) {
+  var files = run.files || [];
+  if (files.length > 0) {
+    return files.length > 1
+      ? (files[0] + " and " + (files.length - 1) + " more")
+      : files[0];
+  }
+  if (run.question) {
+    var q = run.question;
+    return q.length > 60 ? (q.slice(0, 60) + "…") : q;
+  }
+  return run.run_id;
+}
+
+/* Full "{name}, submitted {date}" plus the run_id as a small secondary
+   identifier, as inline HTML (escaped). `compact` renders it for a tight
+   row (run list) rather than the detail header. */
+function runDisplayNameHtml(run, compact) {
+  var title = runFriendlyTitle(run);
+  var when = formatSubmittedAt(run.submitted_at);
+  var sizeStyle = compact ? "" : ' style="font-size:1.05rem"';
+  return '<span' + sizeStyle + '>' + escapeHtml(title) +
+    (when ? ', submitted ' + escapeHtml(when) : '') + '</span> ' +
+    mutedParen(run.run_id);
+}
+
+/* =======================================================================
+   RUN LIST VIEW
+======================================================================= */
+var lastRunsFetch = [];
+
+function renderList() {
+  app.innerHTML =
+    '<h1>Runs</h1>' +
+    '<div class="filter-bar">' +
+      '<select id="f-state">' +
+        '<option value="">Any state</option>' +
+        '<option value="queued">Queued</option>' +
+        '<option value="running">Running</option>' +
+        '<option value="awaiting_approval">Awaiting decision</option>' +
+        '<option value="stopped">Finished</option>' +
+        '<option value="cancelled">Cancelled</option>' +
+      '</select>' +
+      '<select id="f-task">' +
+        '<option value="">Any task</option>' +
+        '<option value="review">Review</option>' +
+        '<option value="draft">Draft</option>' +
+      '</select>' +
+      '<input type="search" id="f-search" placeholder="search run id">' +
+    '</div>' +
+    '<div id="run-list-body"><p class="muted">Loading…</p></div>';
+
+  document.getElementById("f-state").addEventListener("change", applyListFilter);
+  document.getElementById("f-task").addEventListener("change", applyListFilter);
+  document.getElementById("f-search").addEventListener("input", applyListFilter);
+
+  apiJson("/runs").then(function (res) {
+    if (!res.ok) { renderListError(res); return; }
+    lastRunsFetch = (res.body.runs || []).slice().sort(function (a, b) {
+      return new Date(b.submitted_at) - new Date(a.submitted_at);
+    });
+    applyListFilter();
+  }).catch(function () { renderListError({ status: 0, body: {} }); });
+}
+
+function renderListError(res) {
+  document.getElementById("run-list-body").innerHTML =
+    '<div class="notice error">Could not load runs (' + (res.status || "network error") + '). ' + escapeHtml(detailText(res.body)) + '</div>';
+}
+
+function applyListFilter() {
+  var stateF = document.getElementById("f-state").value;
+  var taskF = document.getElementById("f-task").value;
+  var searchF = document.getElementById("f-search").value.trim().toLowerCase();
+  var rows = lastRunsFetch.filter(function (r) {
+    if (stateF && r.state !== stateF) return false;
+    if (taskF && r.task !== taskF) return false;
+    if (searchF && r.run_id.toLowerCase().indexOf(searchF) === -1) return false;
+    return true;
+  });
+  var body = document.getElementById("run-list-body");
+  if (lastRunsFetch.length === 0) {
+    body.innerHTML = '<div class="empty-state">No runs yet. Submit documents to start a review, or a question to start a draft.</div>';
+    return;
+  }
+  if (rows.length === 0) {
+    body.innerHTML = '<div class="empty-state">No runs match this filter.</div>';
+    return;
+  }
+  var human = isHumanView();
+  body.innerHTML = '<div class="run-list">' + rows.map(function (r) {
+    var tok = stateToken(r.state, r.outcome);
+    var firstCell = human
+      ? '<span class="title-cell">' + escapeHtml(runFriendlyTitle(r)) +
+        '<span class="rid-secondary muted mono">' + escapeHtml(r.run_id) + '</span></span>'
+      : '<span class="rid">' + escapeHtml(r.run_id) + '</span>';
+    return (
+      '<a class="run-row' + (human ? " human" : "") + '" href="#/runs/' + encodeURIComponent(r.run_id) + '">' +
+        firstCell +
+        '<span class="state tone-' + tok.tone + '">' + stateDotHtml(tok) + '<span>' + escapeHtml(tok.label) + '</span></span>' +
+        '<span class="task">' + escapeHtml(r.task || "") + '</span>' +
+        '<span class="when">' + escapeHtml(relativeWhen(r.submitted_at)) + '</span>' +
+      '</a>'
+    );
+  }).join("") + '</div>';
+}
+
+/* =======================================================================
+   SUBMIT VIEW
+======================================================================= */
+function renderSubmit() {
+  app.innerHTML =
+    '<h1>Submit a run</h1>' +
+    '<form id="submit-form">' +
+      '<label for="s-task">Task</label>' +
+      '<select id="s-task" class="form-control">' +
+        '<option value="review">Review: upload documents</option>' +
+        '<option value="draft">Draft: generate a memo from a question</option>' +
+      '</select>' +
+
+      '<label for="s-files">Files (case files plus the ingestion sidecar)</label>' +
+      '<input type="file" id="s-files" multiple>' +
+      '<p class="field-hint">Required for a review. Optional for a draft.</p>' +
+
+      '<label for="s-question">Question</label>' +
+      '<textarea id="s-question" rows="3" placeholder="the memo question/brief"></textarea>' +
+      '<p class="field-hint">Required for a draft. Optional framing for a review.</p>' +
+
+      '<label for="s-mode">Review mode</label>' +
+      '<select id="s-mode" class="form-control">' +
+        '<option value="">Default for this server</option>' +
+        '<option value="paired">Paired</option>' +
+        '<option value="wide">Wide</option>' +
+      '</select>' +
+
+      '<div class="checkbox-row">' +
+        '<input type="checkbox" id="s-sensitive">' +
+        '<label for="s-sensitive">This run is sensitive</label>' +
+      '</div>' +
+      '<p class="field-hint">Unchecked (the default): document text goes to cloud providers, redaction is waived for this run. ' +
+      'Checked: redaction stays on. This server refuses to start a sensitive run unless the privacy layer has been separately activated by the operator.</p>' +
+
+      '<div style="margin-top:1.25rem">' +
+        '<button type="submit" class="button">Submit</button>' +
+      '</div>' +
+    '</form>' +
+    '<div id="submit-result"></div>';
+
+  document.getElementById("submit-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var task = document.getElementById("s-task").value;
+    var question = document.getElementById("s-question").value.trim();
+    var mode = document.getElementById("s-mode").value;
+    var sensitive = document.getElementById("s-sensitive").checked;
+    var files = document.getElementById("s-files").files;
+
     var fd = new FormData();
-    fd.append('task', task);
-    if (question) fd.append('question', question);
-    fd.append('sensitive', sensitive ? 'true' : 'false');
-    for (var i = 0; i < files.length; i++) fd.append('files', files[i]);
+    fd.append("task", task);
+    if (question) fd.append("question", question);
+    if (mode) fd.append("review_mode", mode);
+    fd.append("sensitive", sensitive ? "true" : "false");
+    for (var i = 0; i < files.length; i++) fd.append("files", files[i]);
 
-    fetch('/submit', { method: 'POST', headers: authHeaders(), body: fd })
-      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
-      .then(function (res) {
-        if (res.ok) {
-          setMsg(document.getElementById('submitMsg'),
-            'queued: run_id=' + res.body.run_id, true);
-          refreshRuns();
-        } else {
-          setMsg(document.getElementById('submitMsg'),
-            'rejected: ' + JSON.stringify(res.body.detail || res.body), false);
-        }
-      })
-      .catch(function (e) { setMsg(document.getElementById('submitMsg'), String(e), false); });
+    var resultBox = document.getElementById("submit-result");
+    resultBox.innerHTML = '<div class="notice">Submitting…</div>';
+
+    api("/submit", { method: "POST", body: fd }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (body) {
+        return { ok: r.ok, status: r.status, body: body };
+      });
+    }).then(function (res) {
+      if (res.ok) {
+        location.hash = "#/runs/" + encodeURIComponent(res.body.run_id);
+      } else {
+        resultBox.innerHTML = '<div class="notice error">' + escapeHtml(detailText(res.body)) + '. Nothing was changed.</div>';
+      }
+    }).catch(function () {
+      resultBox.innerHTML = '<div class="notice error">The request did not reach the server. Nothing was changed.</div>';
+    });
   });
+}
+
+/* =======================================================================
+   RUN DETAIL / WORKING VIEW
+======================================================================= */
+var detailPollMs = 4000;
+
+function renderDetail(runId) {
+  app.innerHTML = '<p class="muted">Loading…</p>';
+  loadDetail(runId, true);
+}
+
+function loadDetail(runId, isFirstLoad) {
+  apiJson("/runs/" + encodeURIComponent(runId)).then(function (res) {
+    if (currentRoute().runId !== runId) return; // navigated away while in flight
+    if (!res.ok) {
+      app.innerHTML = '<div class="notice error">Could not load this run (' + res.status + '). ' + escapeHtml(detailText(res.body)) + '</div>';
+      mastheadState.hidden = true;
+      return;
+    }
+    var run = res.body;
+    updateMastheadState(run);
+    var needsRunsForEstimate = run.state === "running" || run.state === "queued";
+    if (needsRunsForEstimate) {
+      apiJson("/runs").then(function (listRes) {
+        renderDetailBody(run, listRes.ok ? listRes.body.runs : []);
+        schedulePoll(runId, run.state);
+      });
+    } else {
+      renderDetailBody(run, []);
+      schedulePoll(runId, run.state);
+    }
+  }).catch(function () {
+    if (isFirstLoad) app.innerHTML = '<div class="notice error">The request did not reach the server.</div>';
+  });
+}
+
+/* Human-view label for the masthead's own state indicator: the same short
+   phrase used to open nextActionSentenceHuman's bold lead, without the rest
+   of the sentence (the masthead has no room for prose, only the label). */
+function mastheadHumanLabel(run) {
+  var state = run.state, outcome = run.outcome;
+  if (state === "queued") return "Waiting to start";
+  if (state === "running") return "In progress";
+  if (state === "awaiting_approval") return "Paused: needs your decision";
+  if (state === "cancelled") return "Cancelled, at your request";
+  if (state === "stopped") {
+    if (outcome === "succeeded") return "Finished, no problems";
+    if (outcome === "governance_stop") return "Stopped on purpose";
+    if (outcome === "crashed") return "Stopped by a system fault";
+    if (outcome === "timed_out") return "Did not finish in time";
+  }
+  return "Unknown";
+}
+
+function updateMastheadState(run) {
+  var tok = stateToken(run.state, run.outcome);
+  var label = isHumanView() ? mastheadHumanLabel(run) : tok.label;
+  mastheadState.innerHTML = stateDotHtml(tok) + '<span>' + escapeHtml(label) + '</span>';
+  mastheadState.className = "masthead-state tone-" + tok.tone;
+  mastheadState.hidden = false;
+}
+
+function schedulePoll(runId, state) {
+  clearPoll();
+  var isLive = state === "queued" || state === "running" || state === "awaiting_approval";
+  if (!isLive) return;
+  pollTimer = setTimeout(function () {
+    if (currentRoute().view === "detail" && currentRoute().runId === runId) loadDetail(runId, false);
+  }, detailPollMs);
+}
+
+function renderDetailBody(run, allRuns) {
+  var tok = stateToken(run.state, run.outcome);
+  var human = isHumanView();
+  var html = "";
+
+  html += '<div class="detail-header">' +
+    '<div><h1><a href="#/runs" style="color:var(--quiet-text);text-decoration:none">&larr;</a> ' +
+      (human ? runDisplayNameHtml(run, false) : '<span class="mono">' + escapeHtml(run.run_id) + '</span>') +
+      '</h1>' +
+      '<div class="detail-meta">' + escapeHtml(run.task || "") + (run.review_mode ? " · " + escapeHtml(run.review_mode) : "") +
+      (human ? "" : (' · submitted ' + escapeHtml(relativeWhen(run.submitted_at)))) + '</div></div>';
+  if (run.state === "queued" || run.state === "running") {
+    html += '<button class="button danger" id="cancel-btn">Cancel</button>';
+  }
+  html += '</div>';
+
+  html += '<div class="status-block">';
+  if (!human) {
+    html += '<div class="state tone-' + tok.tone + '">' + stateDotHtml(tok) + '<span>' + escapeHtml(tok.label);
+    if (run.state === "running" && run.progress) {
+      var prog = parseProgress(run.progress);
+      var pname = currentPhaseName(prog.phase);
+      if (pname) html += ', phase ' + escapeHtml(prog.phase) + ', ' + escapeHtml(pname);
+    }
+    html += '</span></div>';
+  } else {
+    html += '<div class="state tone-' + tok.tone + '">' + stateDotHtml(tok) + '<span>' + escapeHtml(mastheadHumanLabel(run)) + '</span></div>';
+  }
+
+  if (run.state === "running") {
+    html += pairBarHtml(run);
+    var est = estimateRemaining(run, allRuns);
+    if (est) html += '<p class="muted" style="font-size:0.85rem;margin-top:0.25rem">Estimated remaining: ' + escapeHtml(est) + '</p>';
+  }
+
+  /* The raw stop_reason.detail box (including a crash's Python traceback)
+     is developer-view only, per CONSOLE_LANGUAGE.md "A crash": the human
+     view's next-action sentence below already carries the governance code
+     or states plainly that a fault happened, without ever showing the
+     traceback, the exit code, or the "view full log" link (those stay
+     exactly where they are, in the developer view). */
+  if (!human && run.state === "stopped" && run.outcome !== "succeeded" && run.stop_reason) {
+    html += '<div class="notice ' + (run.outcome === "governance_stop" ? "warn" : "error") + '" style="margin-top:0.75rem">';
+    if (run.outcome === "governance_stop") {
+      html += '<strong>' + escapeHtml(run.stop_reason.code || "") + '</strong><br>';
+    }
+    var raw = run.stop_reason.detail || "";
+    var truncated = raw.length > 400 ? raw.slice(0, 400) + "…" : raw;
+    html += escapeHtml(truncated);
+    if (raw.length > 400) html += ' <a href="#/runs/' + encodeURIComponent(run.run_id) + '" onclick="document.getElementById(\'log-panel\').scrollIntoView()">view full log below</a>';
+    html += '</div>';
+  }
+
+  if (human) {
+    html += '<p class="next-action">' + nextActionSentenceHuman(run) + '</p>';
+  } else {
+    html += '<p class="next-action">' + escapeHtml(nextActionSentence(run)) + '</p>';
+  }
+  html += '</div>'; // status-block
+
+  if (run.state === "running" || run.state === "queued") {
+    html += '<h2>' + (human ? "Steps" : "Phases") + '</h2>';
+    var prog2 = parseProgress(run.progress);
+    html += human ? phaseLadderHumanHtml(prog2.phase) : phaseLadderHtml(prog2.phase);
+  }
+
+  if (run.state === "awaiting_approval" && run.pending_approval) {
+    html += renderApprovalBlock(run);
+  }
+
+  if (run.documents && run.documents.length) {
+    html += '<h2>Documents</h2>';
+    html += renderDocuments(run);
+  } else if (run.state === "stopped" || run.state === "cancelled") {
+    html += '<h2>Documents</h2><p class="muted">No documents reached completion.</p>';
+  } else if (run.state === "running") {
+    html += '<h2>Documents</h2><p class="muted">' +
+      (human
+        ? "None finished yet: documents appear here once the document has been checked against the rules; nothing to show before that."
+        : "None finished yet: documents appear here once the convention review phase has paired them; nothing to show before that.") +
+      '</p>';
+  }
+
+  if (run.state === "stopped" || run.state === "cancelled") {
+    html += renderArchiveSection(run);
+  }
+
+  app.innerHTML = html;
+
+  if (run.state === "stopped" && run.outcome === "succeeded") {
+    loadFindings(run.run_id);
+    loadPairs(run.run_id);
+  }
+  if (run.state === "stopped" || run.state === "cancelled") {
+    var logHolder = document.createElement("div");
+    logHolder.id = "log-panel-holder";
+    app.appendChild(logHolder);
+    renderLogPanel(run.run_id, logHolder);
+  }
+
+  var cancelBtn = document.getElementById("cancel-btn");
+  if (cancelBtn) cancelBtn.addEventListener("click", function () { confirmCancel(run.run_id); });
+
+  var approveBtn = document.getElementById("approval-approve");
+  var denyBtn = document.getElementById("approval-deny");
+  if (approveBtn) approveBtn.addEventListener("click", function () { answerApproval(run.run_id, "APPROVE"); });
+  if (denyBtn) denyBtn.addEventListener("click", function () { answerApproval(run.run_id, "DENY"); });
+}
+
+function renderApprovalBlock(run) {
+  var pa = run.pending_approval;
+  var human = isHumanView();
+  var html = '<h2>' + (human ? "Paused: needs your decision" : "Awaiting your decision") + '</h2>';
+  if (human) {
+    /* The payload's raw key/value table is folded into one sentence rather
+       than shown as a second, separate block, per CONSOLE_LANGUAGE.md "A
+       pending approval": a reviewer deciding Approve/Deny needs to read one
+       coherent statement of the disagreement, not reassemble it from a
+       table. Nothing is dropped: every payload key still appears, just in
+       sentence form; the rule/unit ids stay visible as a small parenthetical.
+       approvalDetailHuman(), not nextActionSentenceHuman(): the status box
+       above already carries the short "paused, needs your decision" line;
+       this is the only place the full detail appears. */
+    html += '<p class="approval-message">' + approvalDetailHuman(run) + '</p>';
+  } else {
+    html += '<p class="approval-message">' + escapeHtml(pa.message || pa.topic || "") + '</p>';
+    if (pa.payload && Object.keys(pa.payload).length) {
+      html += '<table class="kv-table">' + Object.keys(pa.payload).filter(function (k) { return k !== "message"; }).map(function (k) {
+        return '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(pa.payload[k]) + '</td></tr>';
+      }).join("") + '</table>';
+    }
+  }
+  if (pa.timeout_at) {
+    html += '<p class="muted" style="font-size:0.8rem;margin-top:0.5rem">If nobody answers by ' + escapeHtml(new Date(pa.timeout_at).toLocaleString()) + ', this defaults to deferred.</p>';
+  }
+  html += '<textarea id="approval-rationale" placeholder="rationale (optional)"></textarea>';
+  html += '<div class="approval-actions">' +
+    '<button class="button" id="approval-approve">Approve</button>' +
+    '<button class="button secondary" id="approval-deny">Deny</button>' +
+    '<span id="approval-result"></span>' +
+    '</div>';
+  return html;
+}
+
+function answerApproval(runId, decision) {
+  var rationale = (document.getElementById("approval-rationale") || {}).value || "";
+  var resultEl = document.getElementById("approval-result");
+  resultEl.textContent = "Recording…";
+  apiJson("/runs/" + encodeURIComponent(runId) + "/approval", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ decision: decision, rationale: rationale })
+  }).then(function (res) {
+    if (res.ok) {
+      resultEl.textContent = "Recorded. The run has not resumed yet: this page will update once it does.";
+      loadDetail(runId, false);
+    } else {
+      resultEl.textContent = detailText(res.body) + ". Nothing was changed.";
+    }
+  }).catch(function () { resultEl.textContent = "The request did not reach the server."; });
+}
+
+function confirmCancel(runId) {
+  var existing = document.getElementById("cancel-confirm");
+  if (existing) return;
+  var box = document.createElement("div");
+  box.id = "cancel-confirm";
+  box.className = "notice warn";
+  box.innerHTML = "Cancel this run? This stops real work in progress and cannot be undone. " +
+    '<button class="button danger" id="cancel-confirm-yes" style="margin-left:0.5rem">Yes, cancel</button> ' +
+    '<button class="button secondary" id="cancel-confirm-no">No</button>';
+  document.querySelector(".detail-header").insertAdjacentElement("afterend", box);
+  document.getElementById("cancel-confirm-no").addEventListener("click", function () { box.remove(); });
+  document.getElementById("cancel-confirm-yes").addEventListener("click", function () {
+    box.textContent = "Cancelling…";
+    apiJson("/runs/" + encodeURIComponent(runId) + "/cancel", { method: "POST" }).then(function (res) {
+      if (res.ok) { loadDetail(runId, false); }
+      else { box.className = "notice error"; box.textContent = detailText(res.body) + ". Nothing was changed."; }
+    });
+  });
+}
+
+/* =======================================================================
+   DOCUMENTS + ARCHIVE DOWNLOAD
+   deliverables_url is a real route now, not a display string; downloading
+   needs the Authorization header, so a plain <a href> cannot carry the
+   token: fetch, blob, object URL. See CONSOLE_PLAN.md.
+======================================================================= */
+function renderDocuments(run) {
+  return run.documents.map(function (d) {
+    var statusText = d.status === "done" ? "done" : "in progress";
+    var action = d.status === "done"
+      ? '<button class="button secondary" data-download="' + escapeHtml(d.deliverables_url) + '" data-name="' + escapeHtml(d.doc_id) + '.zip">Download</button>'
+      : '<span class="muted">.</span>';
+    return '<div class="doc-row"><span class="doc-id">' + escapeHtml(d.doc_id) + '</span>' +
+      '<span class="muted">' + statusText + '</span>' + action + '</div>';
+  }).join("") + attachDownloadHandlers();
+}
+
+function attachDownloadHandlers() {
+  setTimeout(function () {
+    document.querySelectorAll("[data-download]").forEach(function (btn) {
+      if (btn._wired) return;
+      btn._wired = true;
+      btn.addEventListener("click", function () {
+        downloadWithToken(btn.getAttribute("data-download"), btn.getAttribute("data-name"), btn);
+      });
+    });
+  }, 0);
+  return "";
+}
+
+function downloadWithToken(url, filename, btn) {
+  var original = btn.textContent;
+  btn.textContent = "Downloading…";
+  btn.disabled = true;
+  api(url).then(function (r) {
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    var partialHeader = r.headers.get("x-shimmer-partial");
+    return r.blob().then(function (blob) { return { blob: blob, partial: partialHeader }; });
+  }).then(function (res) {
+    var a = document.createElement("a");
+    var objUrl = URL.createObjectURL(res.blob);
+    a.href = objUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(objUrl); }, 4000);
+    btn.textContent = original;
+    btn.disabled = false;
+  }).catch(function () {
+    btn.textContent = "Failed, retry";
+    btn.disabled = false;
+  });
+}
+
+function renderArchiveSection(run) {
+  var isPartial = !(run.state === "stopped" && run.outcome === "succeeded");
+  var human = isHumanView();
+  var label, noteText;
+  if (human) {
+    label = isPartial ? "Download what's finished so far." : "Download full archive";
+    noteText = isPartial ? "This review did not complete, so some documents may be missing from this download." : "";
+  } else {
+    label = isPartial ? "Download partial archive" : "Download full archive";
+    noteText = isPartial ? "This run did not finish successfully: the archive contains only the documents that completed." : "";
+  }
+  var note = noteText ? '<p class="muted" style="font-size:0.8rem;margin-top:0.4rem">' + escapeHtml(noteText) + '</p>' : "";
+  return '<h2>Archive</h2>' +
+    '<button class="button secondary" data-download="/runs/' + encodeURIComponent(run.run_id) + '/deliverables" data-name="' + encodeURIComponent(run.run_id) + '_deliverables.zip">' + escapeHtml(label) + '</button>' +
+    note + attachDownloadHandlers();
+}
+
+/* =======================================================================
+   HUMAN VIEW: findings, one sentence per relation. See
+   docs/api/CONSOLE_LANGUAGE.md "Findings, one per relation". Built from the
+   real Finding record fields (value_a/unit_a/value_b/unit_b/relation/
+   record_verdict/rule_id/source_rule_id/unit_id/field_label/delta/
+   band_distance_change/explanation), never from the "Article N" phrasing,
+   which docs/api/CONSOLE_LANGUAGE.md's own note says was illustrative
+   example prose, not literal: this console has no article-lookup route, so
+   `unit_id` (e.g. "u01") stands in, per the document's own instruction not
+   to invent an article-name lookup that does not exist in the API.
+======================================================================= */
+function figText(value, unit) {
+  var v = (value === undefined || value === null) ? "" : String(value);
+  return unit ? (v + " " + unit) : v;
+}
+
+function findingRuleParen(f, extra) {
+  var id = f.source_rule_id || f.rule_id || "";
+  var parts = [];
+  if (id) parts.push(id);
+  if (f.unit_id) parts.push(f.unit_id);
+  var text = parts.join(" · "); // middot, per CONSOLE_LANGUAGE.md ("use middot, not em dash")
+  if (extra) text += ', "' + extra + '"';
+  return mutedParen(text);
+}
+
+function findingPriorParen(f) {
+  var id = f.unit_id || "";
+  return mutedParen((id ? id + ", " : "") + "compared to the earlier version");
+}
+
+/* One relation -> one human sentence, exactly per CONSOLE_LANGUAGE.md's
+   templates. A relation this table does not recognise (should not happen;
+   the schema names exactly 13) falls through to a plain, honest restatement
+   of the developer row rather than silently showing nothing. */
+function findingSentenceHtml(f) {
+  var a = figText(f.value_a, f.unit_a);
+  var b = figText(f.value_b, f.unit_b);
+  var rel = f.relation;
+  var irregular = f.record_verdict === "irregular";
+
+  if (rel === "sum_mismatch") {
+    return '<strong>The total checks out.</strong> The stated total, ' + escapeHtml(a) +
+      ', matches what its parts add up to, ' + escapeHtml(b) + ', within the tolerance the rule allows. ' +
+      findingRuleParen(f);
+  }
+  if (rel === "above_band") {
+    return '<strong>This figure is higher than the reference table allows.</strong> The document states ' + escapeHtml(a) +
+      '. The reference table\'s upper bound for this category is ' + escapeHtml(b) + '. ' +
+      findingRuleParen(f, "irregular");
+  }
+  if (rel === "below_band") {
+    return '<strong>This figure is lower than the reference table allows.</strong> The document states ' + escapeHtml(a) +
+      '. The reference table\'s lower bound for this category is ' + escapeHtml(b) + '. ' +
+      findingRuleParen(f, "irregular");
+  }
+  if (rel === "missing_field") {
+    return '<strong>Something the rule requires is missing.</strong> The document does not state a required value, and the rule requires one. ' +
+      findingRuleParen(f, "irregular");
+  }
+  if (rel === "product_mismatch") {
+    return '<strong>The stated total doesn\'t match the calculation behind it.</strong> The document states a total of ' + escapeHtml(a) +
+      '. Quantity times unit price works out to ' + escapeHtml(b) + '. ' +
+      findingRuleParen(f, "irregular");
+  }
+  if (rel === "ratio_out_of_range") {
+    return '<strong>This ratio is outside the range the rule allows.</strong> The document states a ratio of ' + escapeHtml(a) +
+      '. The rule permits ' + escapeHtml(b) + '. ' +
+      findingRuleParen(f, "irregular");
+  }
+  if (rel === "date_window") {
+    return '<strong>This date is outside the window the rule requires.</strong> The document states ' + escapeHtml(a) +
+      '. The rule requires ' + escapeHtml(b) + '. ' +
+      findingRuleParen(f, "irregular");
+  }
+  if (rel === "licence_missing") {
+    /* Worded generically ("a required reference"), never the specific term
+       this relation's own schema NAME uses: config/domain_vocabulary.json
+       keeps that term out of the code surface at fail severity, on purpose,
+       so no single operator's domain concept gets baked into generic UI
+       copy. The relation id itself is unaffected (it is the schema's own
+       name, config/agent_contracts.json, structurally exempt from that
+       scan's word-boundary match): an operator whose rule concerns that
+       specific kind of document still reads their own wording here, since
+       the rule's own text, cited in the parenthetical, is theirs, not this
+       file's. */
+    return '<strong>A reference this rule requires is missing.</strong> This unit needs an accompanying reference or citation that this rule requires, and none is present. ' +
+      findingRuleParen(f, "irregular");
+  }
+  if (rel === "changed_from_prior") {
+    var label = f.field_label || "this field";
+    return '<strong>This changed since the earlier draft.</strong> The ' + escapeHtml(label) + ' was ' + escapeHtml(b) +
+      '; this version states ' + escapeHtml(a) + (f.delta ? (", a change of " + escapeHtml(String(f.delta))) : "") +
+      '. This is not a problem, only a change worth knowing about. ' + findingPriorParen(f);
+  }
+  if (rel === "unchanged_from_prior") {
+    var label2 = f.field_label || "this field";
+    return '<strong>This is unchanged since the earlier draft.</strong> The ' + escapeHtml(label2) + ' was ' + escapeHtml(b) + ' and still is. ' +
+      findingPriorParen(f);
+  }
+  if (rel === "moved_toward") {
+    var label3 = f.field_label || "this field";
+    return '<strong>This moved closer to what the reference table allows.</strong> The ' + escapeHtml(label3) + ' was ' + escapeHtml(b) +
+      ', now ' + escapeHtml(a) + (f.band_distance_change ? (": " + escapeHtml(String(f.band_distance_change)) + " closer to the band the rule states") : ", closer to the band the rule states") +
+      '. ' + findingPriorParen(f);
+  }
+  if (rel === "moved_away") {
+    var label4 = f.field_label || "this field";
+    return '<strong>This moved further from what the reference table allows.</strong> The ' + escapeHtml(label4) + ' was ' + escapeHtml(b) +
+      ', now ' + escapeHtml(a) + (f.band_distance_change ? (": " + escapeHtml(String(f.band_distance_change)) + " further from the band the rule states") : ", further from the band the rule states") +
+      '. This is not flagged as irregular by itself; it is a direction worth watching. ' + findingPriorParen(f);
+  }
+  if (rel === "absent_since_prior") {
+    var label5 = f.field_label || "this field";
+    return '<strong>This is no longer in the document.</strong> The earlier version stated a ' + escapeHtml(label5) + ' of ' + escapeHtml(b) +
+      '. The current version does not state one at all. ' + findingPriorParen(f);
+  }
+  /* Unrecognised relation: an honest restatement of the developer row,
+     never a blank space, since the human view must never drop a fact the
+     developer view shows. */
+  return '<strong>' + escapeHtml(rel || "Finding") + (irregular ? " (irregular)" : "") + '.</strong> ' +
+    escapeHtml(f.explanation || "") + " " + escapeHtml(a) + " / " + escapeHtml(b) + " " + findingRuleParen(f);
+}
+
+/* =======================================================================
+   FINDINGS TABLE
+======================================================================= */
+function loadFindings(runId) {
+  var holder = document.createElement("div");
+  holder.id = "findings-holder";
+  holder.innerHTML = '<h2>Findings</h2><p class="muted">Loading…</p>';
+  app.appendChild(holder);
+  apiJson("/runs/" + encodeURIComponent(runId) + "/findings").then(function (res) {
+    if (!res.ok) { holder.innerHTML = '<h2>Findings</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
+    var findings = res.body.findings || [];
+    if (findings.length === 0) { holder.innerHTML = '<h2>Findings</h2><p class="muted">No findings.</p>'; return; }
+    if (isHumanView()) {
+      holder.innerHTML = '<h2>Findings (' + findings.length + ')</h2>' +
+        '<ul class="findings-human">' + findings.map(function (f) {
+          var cls = f.record_verdict === "irregular" ? "irregular" : (f.record_verdict === "ok" ? "ok" : "");
+          return '<li class="finding-human ' + cls + '">' + findingSentenceHtml(f) + '</li>';
+        }).join("") + '</ul>';
+      return;
+    }
+    var rows = findings.map(function (f, i) {
+      var cls = f.record_verdict === "irregular" ? "irregular" : (f.record_verdict === "ok" ? "ok" : "");
+      var explId = "expl-" + i;
+      var explanation = f.explanation || "";
+      var long = explanation.length > 140;
+      return '<tr class="' + cls + '">' +
+        '<td class="mono fig">' + escapeHtml(f.source_rule_id || f.rule_id || "") + '</td>' +
+        '<td class="mono fig">' + escapeHtml(f.unit_id || "") + '</td>' +
+        '<td>' + escapeHtml(f.relation || "") + '</td>' +
+        '<td>' + escapeHtml(f.record_verdict || "") + '</td>' +
+        '<td class="fig">' + escapeHtml(f.value_a) + " " + escapeHtml(f.unit_a || "") + " / " + escapeHtml(f.value_b) + " " + escapeHtml(f.unit_b || "") + '</td>' +
+        '<td class="explanation">' +
+          '<span class="' + (long ? "truncated" : "") + '" id="' + explId + '">' + escapeHtml(explanation) + '</span>' +
+          (long ? '<br><button class="expand-toggle" data-target="' + explId + '">Show more</button>' : '') +
+        '</td>' +
+      '</tr>';
+    }).join("");
+    holder.innerHTML = '<h2>Findings (' + findings.length + ')</h2>' +
+      '<table class="findings"><thead><tr>' +
+      '<th>Rule</th><th>Unit</th><th>Relation</th><th>Verdict</th><th>Figures</th><th>Explanation</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+    holder.querySelectorAll(".expand-toggle").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var cell = document.getElementById(btn.getAttribute("data-target"));
+        cell.classList.remove("truncated");
+        btn.remove();
+      });
+    });
+  });
+}
+
+/* =======================================================================
+   PAIRING MAP
+======================================================================= */
+function loadPairs(runId) {
+  var holder = document.createElement("div");
+  holder.id = "pairs-holder";
+  holder.innerHTML = '<h2>Pairing map</h2><p class="muted">Loading…</p>';
+  app.appendChild(holder);
+  apiJson("/runs/" + encodeURIComponent(runId) + "/pairs").then(function (res) {
+    if (!res.ok) { holder.innerHTML = '<h2>Pairing map</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
+    var docs = res.body.documents || [];
+    if (docs.length === 0) { holder.innerHTML = '<h2>Pairing map</h2><p class="muted">No pairing map for this run.</p>'; return; }
+    holder.innerHTML = '<h2>Pairing map</h2>' + docs.map(function (d) {
+      var units = (d.units || []).map(function (u) {
+        return '<div class="pairs-unit">' +
+          '<span class="uid">' + escapeHtml(u.unit_id) + '</span> (' + escapeHtml(u.kind || "") + ')<br>' +
+          (u.paired || []).map(function (p) { return '<span class="rule-chip" title="' + escapeHtml(p.reason || "") + '">' + escapeHtml(p.rule_id) + '</span>'; }).join("") +
+          (u.rejected || []).map(function (p) { return '<span class="rule-chip muted" title="rejected: ' + escapeHtml(p.reason || "") + '">' + escapeHtml(p.rule_id) + '</span>'; }).join("") +
+        '</div>';
+      }).join("");
+      return '<details class="pairs-doc"><summary>' + escapeHtml(d.document_id) + ': ' + d.pair_count + ' paired, ' + d.rejected_count + ' rejected, ' + d.undecided_count + ' undecided</summary>' +
+        '<div class="pairs-body">' + units + '</div></details>';
+    }).join("");
+  });
+}
+
+/* =======================================================================
+   LOG VIEWER
+======================================================================= */
+function renderLogPanel(runId, holder) {
+  holder.innerHTML = '<h2 id="log-panel">Log</h2><button class="button secondary" id="log-load">Load log</button><div id="log-body"></div>';
+  document.getElementById("log-load").addEventListener("click", function () {
+    var body = document.getElementById("log-body");
+    body.innerHTML = '<p class="muted">Loading…</p>';
+    api("/runs/" + encodeURIComponent(runId) + "/log").then(function (r) {
+      if (!r.ok) { body.innerHTML = '<div class="notice error">Could not load the log (' + r.status + ').</div>'; return; }
+      return r.text().then(function (text) {
+        var lines = text.split("\n");
+        var shown = lines.length > 400 ? lines.slice(-400).join("\n") : text;
+        body.innerHTML = (lines.length > 400 ? '<p class="muted" style="font-size:0.8rem">Showing the last 400 of ' + lines.length + ' lines.</p>' : "") +
+          '<div class="log-box">' + escapeHtml(shown) + '</div>';
+      });
+    });
+  });
+}
+
 })();
 </script>
 </body>
