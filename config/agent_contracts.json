@@ -50,7 +50,7 @@
     "says": {
       "rule_id": "the CONV-* id of the rule this finding applies, exactly as it appears in the convention registry you were given",
       "source_rule_id": "the operator's own id for that same rule when the registry entry carries one, so the finding can be attributed to the rule as it was written",
-      "unit_id": "the id of the unit of the document this finding is about",
+      "unit_id": "copy this EXACTLY from your work payload's document_units list (the unit_id field of whichever entry this finding is about, matched by its title). Never invent your own identifier for the unit (not its own name, its own label, or any value written inside it): a downstream lookup joins on this string against the pipeline's own unit ids, and any other string silently fails that join. If document_units is absent from your payload, leave unit_id empty rather than writing your own id for it.",
       "value_a": "the figure the document states, as a number with no separators",
       "unit_a": "the unit of value_a, as a short string",
       "value_b": "the figure it is compared against, as a number: a stated total, a band bound, or the same field's figure in the earlier version of the document",

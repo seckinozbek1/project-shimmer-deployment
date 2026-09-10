@@ -1294,24 +1294,31 @@ def _amendment_view(a):
     exactly what the old code wrote: str(item.get("unit_id") or
     document_level)), and the NEW fix's own fallback ("unit id %s (text not
     available)" % unit_id), which amendment_from_finding writes when
-    unit_texts has no entry for this finding's unit_id. That miss is real
-    and was found on a real run, not a hypothetical: a WIDE-mode agent
-    (PRACTICE_AUDITOR) states its own finding's unit_id as the document's
-    own identifier for the record it is describing (e.g. "CAT-BIRCH", the
-    Identifier: field value), not the pipeline's internal split_units id
-    (e.g. "u02-record-cat-birch") that unit_texts is keyed by, so the two
-    never match and the fallback fires for every wide-mode finding. Fixing
-    that gap belongs in the agent contract (config/agent_contracts.json's
-    finding_record.says.unit_id is silent on which id space to use) or in
-    paired mode's own arithmetic path (plan_calls / compute_checks, whose
-    findings DO carry the matching structural id already); it is not a
-    display fix, so this is not the place it is fixed. What IS this
-    function's job: never claim either non-passage shape is a real passage.
+    unit_texts has no entry for this finding's unit_id, even after that
+    function's own boundary repair (_repair_unit_id) has had a chance to
+    resolve it. That miss is real and was found on a real run, not a
+    hypothetical: a WIDE-mode agent (PRACTICE_AUDITOR) stated its own
+    finding's unit_id as the document's own identifier for the record it was
+    describing (e.g. "CAT-BIRCH", the Identifier: field value), not the
+    pipeline's internal split_units id (e.g. "u02-record-cat-birch") that
+    unit_texts is keyed by. Closed at three layers, in order of how much of
+    the gap each one removes: the work payload now hands both convention-
+    review agents the real id/title list (pipeline.py's document_units), the
+    contract now tells them to copy from it (config/agent_contracts.json,
+    finding_record.says.unit_id), and amendment_from_finding still tries one
+    narrow, structural second chance for whatever a model gets wrong anyway,
+    since a contract is asked for, never enforced. unit_id_repaired_to
+    (below) says when that third layer is the reason a passage shows: absent
+    on a direct hit or a genuine miss, present only when the repair fired.
     Detected by testing whether original_text equals the finding's own
     unit_id, OR matches the documented fallback template with that same
     unit_id substituted in: neither is pattern-guessing, both are exact
     reproductions of strings amendment_from_finding is known to write, so a
     real document passage cannot collide with either by chance.
+    unit_id_repaired_to: the structural unit_id the boundary repair actually
+    matched to, when it fired; null otherwise (direct hit or genuine miss).
+    Passed straight through, not re-derived: the repair already happened in
+    amendment_from_finding, this is only reporting it.
     proposed_text: null unless a model or --amendment-polish supplied one;
     passed through as null, never invented, the console's own job to say
     "no proposed wording" for that case.
@@ -1341,6 +1348,7 @@ def _amendment_view(a):
         "severity": a.get("severity"),
         "finding_unit_id": a.get("finding_unit_id"),
         "finding_rule_id": a.get("finding_rule_id"),
+        "unit_id_repaired_to": a.get("unit_id_repaired_to"),
         "ref_ids": list(a.get("ref_ids") or []),
         "derived_from": a.get("derived_from") or "",
     }

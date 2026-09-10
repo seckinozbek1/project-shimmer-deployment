@@ -1461,6 +1461,25 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                         "document_id": doc["id"], "document_name": doc["name"],
                         "document_text": _truncate_doc(doc["text"], 6500),
                         "evaluate_against": [c.get("id") for c in convention_registry.get("conventions", [])]}
+        # Boundary fix: a wide-mode finding's own unit_id used to be whatever the
+        # agent called the thing it was looking at (a document identifier field,
+        # e.g. "CAT-BIRCH"), never the pipeline's own split_units id (e.g.
+        # "u02-record-cat-birch") that a downstream lookup (amendment_from_finding's
+        # unit_texts) is keyed by. The two agents were never SHOWN the pipeline's own
+        # ids, so no wording fix in the contract could have closed this: an agent
+        # cannot copy an id it was never given. document_units carries exactly the
+        # id and title pairing_map.split_units already produced (never the full
+        # unit text, so this costs nothing beyond one short line per unit); the
+        # contract (config/agent_contracts.json, finding_record.says.unit_id) now
+        # tells both convention-review agents to copy one of these ids verbatim.
+        # None when the pairing map itself failed to build (caught above): the
+        # agents still see the document, they just have no id list to draw from,
+        # same as before this fix.
+        if pairing and pairing.get("units"):
+            base_payload["document_units"] = [
+                {"unit_id": u["unit_id"], "title": u.get("title", "")}
+                for u in pairing["units"]
+            ]
         if review_mode == "paired":
             return prior_results + await _paired_convention_review(
                 orch, keys, doc, pairing, convention_registry, refs_excerpt,

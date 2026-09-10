@@ -1307,6 +1307,44 @@ def pairs_from_map(pairing, *, cap_per_unit=None):
 # a computed finding must reach the deliverable even if every model call fails
 
 
+def _repair_unit_id(unit_id, unit_texts):
+    """One narrow, structural second chance when unit_id is not a unit_texts key.
+
+    The contract now tells a convention-review agent to copy its unit_id from
+    document_units (pipeline.py's own payload addition), and both wide-mode
+    agents were changed to receive that list, so this should fire rarely. It
+    exists for whatever a model still gets wrong: nothing about a contract is
+    enforced, only asked for.
+
+    The check is a boundary check, not a guess: a document-content identifier
+    an agent invents instead (its reading of "the unit's own id") is, by
+    construction, written INSIDE the unit's own text (that is what made it an
+    identifier the agent could name at all), so unit_id appearing verbatim,
+    case-insensitively, inside exactly one unit's text is real corroborating
+    evidence, the same shape of evidence the rest of this module already
+    trusts (label containment, most-specific-wins). Two or more units
+    containing the same string, or none, is refused rather than guessed: a
+    wrong repair would silently attach the wrong passage to a finding, worse
+    than the honest fallback it would replace. No domain vocabulary here (S5):
+    the test is string containment over the operator's own document, nothing
+    is read from a list this file owns.
+
+    Returns (resolved_unit_id, unit_record) on a single unambiguous match,
+    or (None, None) when unit_id is falsy, already a direct key, or the match
+    is zero-or-many.
+    """
+    if not unit_id or not isinstance(unit_texts, dict) or unit_id in unit_texts:
+        return None, None
+    needle = str(unit_id).strip().lower()
+    if not needle:
+        return None, None
+    hits = [(uid, rec) for uid, rec in unit_texts.items()
+           if isinstance(rec, dict) and needle in str(rec.get("text") or "").lower()]
+    if len(hits) != 1:
+        return None, None
+    return hits[0]
+
+
 def amendment_from_finding(item, *, document_level="document-level", unit_texts=None):
     """Build an amendment from a typed Finding record, with no model involved.
 
@@ -1331,6 +1369,22 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     only if unit_texts is not given or does not have this id (a defensive
     path for a caller that has not been updated, not the expected case for a
     real run through pipeline.py).
+
+    Boundary repair (found on a real run against the catalogue_records
+    corpus): a direct lookup misses for any finding whose own unit_id was
+    written by a wide-mode agent stating the document's own identifier for
+    what it was describing (e.g. "CAT-BIRCH") rather than the pipeline's
+    split_units id (e.g. "u02-record-cat-birch"). The agent contract and its
+    work payload were both changed to close most of this at the source
+    (pipeline.py now hands PRACTICE_AUDITOR and STYLE_GUARDIAN the real
+    id/title list, and the contract tells them to copy from it), but a
+    contract cannot be enforced, only asked for, so this function still
+    tries one narrow, structural second chance (_repair_unit_id) before
+    falling back: the miss-shaped id, found written inside exactly one
+    unit's own text. A single unambiguous match is used, and the amendment
+    records unit_id_repaired_to so a reader can tell a repaired lookup from
+    a direct one; zero or multiple matches are refused, same fallback as
+    before, never guessed.
 
     H7's first scored run is why this exists. Python computed four arithmetic
     disagreements with certainty, AMENDMENT_DRAFTER then failed its contract
@@ -1389,6 +1443,9 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     parts.append("Grounded in %s." % citation)
     comment = " ".join(parts)
     unit_record = (unit_texts or {}).get(unit_id) if unit_id else None
+    repaired_unit_id = None
+    if unit_record is None and unit_id:
+        repaired_unit_id, unit_record = _repair_unit_id(unit_id, unit_texts)
     unit_text = str(unit_record.get("text") or "").strip() if isinstance(unit_record, dict) else ""
     original_text = unit_text if unit_text else ("unit id %s (text not available)" % (unit_id or document_level))
     amendment = {
@@ -1408,6 +1465,14 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         "finding_unit_id": item.get("unit_id"),
         "finding_rule_id": rule_id,
     }
+    # The boundary repair, recorded rather than silently folded into a normal
+    # direct hit: a reader (or the gate) can tell "the passage came from the
+    # id the finding stated" from "the passage came from a unit_id the agent
+    # wrote that did not match anything, resolved by finding that same string
+    # written inside exactly one unit's own text instead." Absent entirely on
+    # a direct hit or a genuine miss, never a blank/null placeholder field.
+    if repaired_unit_id:
+        amendment["unit_id_repaired_to"] = repaired_unit_id
     if item.get("source_rule_id"):
         amendment["source_convention_ref"] = item["source_rule_id"]
     # refine R2: the one thing the arithmetic genuinely cannot produce. Python can

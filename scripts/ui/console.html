@@ -530,6 +530,7 @@ a.rule-link:hover { text-decoration-style: solid; }
 .amendment-block p { margin: 0.25rem 0; }
 .amendment-label { font-weight: 600; margin-bottom: 0.35rem; display: flex; gap: 0.4rem; align-items: baseline; }
 .amendment-field-label { color: var(--quiet-text); }
+.amendment-repair-note { color: var(--quiet-text); font-size: 0.8rem; font-style: italic; }
 
 /* ---------------------------------------------------------------------
    LOG VIEWER
@@ -2026,6 +2027,21 @@ function amendmentOriginalHtml(a, human) {
   return '<span class="muted">' + escapeHtml(note) + '</span>';
 }
 
+function amendmentRepairNoteHtml(a, human) {
+  /* unit_id_repaired_to is present only when amendment_from_finding's
+     boundary repair fired and found exactly one unambiguous match: the
+     passage shown above came from that lookup, not a direct one. Shown as a
+     quiet fact, not a warning, since a fired-and-resolved repair is the
+     mechanism working, not a problem; absent entirely when the repair never
+     fired (the common case, and the intended common case once the contract
+     and payload fix land). */
+  if (!a.unit_id_repaired_to) return "";
+  var note = human
+    ? "Matched to unit " + a.unit_id_repaired_to + " by content, the finding's own unit id did not match directly."
+    : "unit_id_repaired_to: " + a.unit_id_repaired_to + " (finding_unit_id did not match a unit directly; resolved by content match)";
+  return '<p class="amendment-repair-note">' + escapeHtml(note) + '</p>';
+}
+
 function amendmentHumanHtml(a) {
   var proposed = a.proposed_text
     ? escapeHtml(a.proposed_text)
@@ -2037,6 +2053,7 @@ function amendmentHumanHtml(a) {
   return '<div class="amendment-block">' +
     '<p class="amendment-label">Proposed correction ' + (ruleShown ? ruleLinkHtml(a.convention_ref, ruleShown) : "") + '</p>' +
     '<p><span class="amendment-field-label">As it stands:</span> ' + amendmentOriginalHtml(a, true) + '</p>' +
+    amendmentRepairNoteHtml(a, true) +
     '<p><span class="amendment-field-label">Proposed:</span> ' + proposed + '</p>' +
     '<p><span class="amendment-field-label">Why:</span> ' + reasoning + '</p>' +
     '</div>';
@@ -2053,6 +2070,7 @@ function amendmentDeveloperHtml(a) {
   return '<div class="amendment-block">' +
     '<p class="amendment-label mono">amendment ' + (ruleShown ? ruleLinkHtml(a.convention_ref, ruleShown) : "") + '</p>' +
     '<p><span class="amendment-field-label">original_text:</span> ' + amendmentOriginalHtml(a, false) + '</p>' +
+    amendmentRepairNoteHtml(a, false) +
     '<p><span class="amendment-field-label">proposed_text:</span> ' + proposed + '</p>' +
     '<p><span class="amendment-field-label">comment:</span> ' + reasoning + '</p>' +
     '</div>';
