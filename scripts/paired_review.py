@@ -1488,7 +1488,13 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     """
     if not isinstance(item, dict):
         return None
-    rule_id = item.get("rule_id")
+    # finding_record.resolved_rule_id reads whichever of the four names a real
+    # agent contract actually uses (rule_id, procedure_id, conv_id,
+    # convention_ref), not only the canonical rule_id. Found live: PRACTICE_
+    # AUDITOR wrote 5 genuinely irregular findings under procedure_id, this
+    # function required rule_id specifically, found none, returned None, and
+    # every one of the 5 was silently dropped with no record it had existed.
+    rule_id = finding_record.resolved_rule_id(item)
     if not rule_id:
         return None
     # R1: a finding whose rule attaches a condition to this side is NOT something
@@ -1629,7 +1635,7 @@ def _computed_sentence(item):
 
 
 def ensure_amendments_for_findings(amendments, findings, *, document_level="document-level",
-                                   unit_texts=None):
+                                   unit_texts=None, refusal_sink=None):
     """Add an amendment for every irregular Finding not already represented.
 
     unit_texts: passed straight through to amendment_from_finding (see its own
@@ -1638,6 +1644,20 @@ def ensure_amendments_for_findings(amendments, findings, *, document_level="docu
     amendment's original_text is the document's actual passage, not its unit
     id. Optional, defaults to None (amendment_from_finding's own fallback),
     for any caller not yet passing it.
+
+    refusal_sink: optional, a list the caller supplies to be appended to (not
+    the return value: changing this function's return SHAPE would break every
+    existing 2-value-unpack caller, of which there are a dozen, most in the
+    gate). Purely additive: None (the default, every caller before today) means
+    no tracking, byte-identical behavior. When given, one dict is appended for
+    every irregular Finding this function could NOT turn into an amendment,
+    with the reason and the item itself, so a caller with bus access (pipeline.
+    py) can post a visible refusal rather than the finding simply vanishing.
+    Found live: PRACTICE_AUDITOR wrote 5 genuinely irregular findings tonight
+    that amendment_from_finding could not build from (before the rule_id-alias
+    fix above, none of them named their rule under the one field name this
+    function required); every one was dropped with nothing on the bus, in the
+    console, or anywhere else saying it had ever existed.
 
     Returns (amendments, added). An amendment the model wrote is never replaced;
     this only fills gaps, so a working drafter is unaffected and a failed one no
@@ -1655,11 +1675,18 @@ def ensure_amendments_for_findings(amendments, findings, *, document_level="docu
             continue
         if str(item.get("record_verdict") or "").lower() != "irregular":
             continue
-        key = (str(item.get("unit_id") or ""), str(item.get("rule_id") or ""))
+        resolved_rule = finding_record.resolved_rule_id(item)
+        key = (str(item.get("unit_id") or ""), str(resolved_rule or ""))
         if key in covered:
             continue
         built = amendment_from_finding(item, document_level=document_level, unit_texts=unit_texts)
         if built is None:
+            if refusal_sink is not None:
+                reason = ("no rule id under any known field name "
+                         "(rule_id/procedure_id/conv_id/convention_ref)") if not resolved_rule \
+                    else "amendment_from_finding declined this finding"
+                refusal_sink.append({"item": item, "reason": reason,
+                                     "unit_id": item.get("unit_id"), "rule_id": resolved_rule})
             continue
         out.append(built)
         covered.add(key)

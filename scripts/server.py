@@ -953,6 +953,59 @@ def _bus_findings(run_dir):
     return out
 
 
+def _amendment_refusals_for_run(run_dir):
+    """Every AMENDMENT_REFUSED event on this run's bus, flattened to one
+    entry per refused finding.
+
+    Found live: a real irregular finding (relation + record_verdict=irregular,
+    genuinely computed, genuinely explaining a real problem) that
+    amendment_from_finding could not turn into an amendment used to vanish
+    with no trace anywhere. paired_review.ensure_amendments_for_findings now
+    takes an optional refusal_sink and pipeline.py's phase_6_synthesis posts
+    whatever lands in it as a distinct bus event, AMENDMENT_REFUSED, same
+    envelope shape as every other posted item ({agent, doc_id, items}), never
+    Finding-shaped (no relation/record_verdict pair _fr.is_finding would
+    recognise), so _bus_findings correctly never surfaces these as findings:
+    a refusal is not a finding, it is a record that one could not be acted
+    on. Read-only, same file-read pattern as _bus_findings."""
+    bus = run_dir / "logs" / "agent_bus.jsonl"
+    if not bus.is_file():
+        return []
+    out = []
+    try:
+        lines = bus.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            msg = json.loads(line)
+        except ValueError:
+            continue
+        body = msg.get("body")
+        if not isinstance(body, dict) or body.get("event") != "AMENDMENT_REFUSED":
+            continue
+        payload = body.get("payload")
+        items = payload.get("items") if isinstance(payload, dict) else None
+        if not isinstance(items, list):
+            continue
+        doc_id = payload.get("doc_id") or ""
+        for it in items:
+            if not isinstance(it, dict):
+                continue
+            out.append({
+                "doc_id": doc_id,
+                "unit_id": it.get("unit_id"),
+                "rule_id": it.get("rule_id"),
+                "reason": it.get("reason") or "",
+                "relation": (it.get("item") or {}).get("relation"),
+                "explanation": (it.get("item") or {}).get("explanation") or "",
+            })
+    return out
+
+
 def _pairing_map(run_dir):
     """This run's pairing map as written, keyed by document id, or {}."""
     path = run_dir / "audit" / "pairing_map.json"
@@ -2036,6 +2089,31 @@ async def amendments(run_id: str):
     run_dir = _validated_run_dir(run_id)
     items = _amendments_for_run(run_id, run_dir)
     return {"run_id": run_id, "count": len(items), "amendments": items}
+
+
+@app.get("/runs/{run_id}/amendment-refusals", dependencies=[Depends(verify_token)])
+async def amendment_refusals(run_id: str):
+    """A real, irregular finding the pipeline could not turn into an
+    amendment, named plainly rather than left to vanish.
+
+    Found live: PRACTICE_AUDITOR wrote genuinely irregular findings whose
+    rule id landed under a field name amendment_from_finding did not yet
+    recognise (config/agent_contracts.json declares four different names
+    for the same concept across four agents); before this route and its
+    underlying fix, every one of those findings was silently dropped, with
+    nothing on the bus, nothing in a deliverable, nothing here, saying it
+    had ever existed. The rule-id-alias fix (finding_record.resolved_rule_id)
+    closes the specific cause found tonight; this route exists for whatever
+    reason a future finding still cannot be built from, so a reader can tell
+    "nothing was wrong" from "something was wrong and the pipeline could not
+    act on it" instead of both looking identical (an empty amendments list).
+
+    Read-only, non-mutating, reads the bus the same way /findings and /pairs
+    do. 404 for a malformed/unknown run_id. 200 with an empty list, not an
+    error, when nothing was refused: the common, expected case."""
+    run_dir = _validated_run_dir(run_id)
+    items = _amendment_refusals_for_run(run_dir)
+    return {"run_id": run_id, "count": len(items), "refusals": items}
 
 
 @app.get("/rules/{rule_id}", dependencies=[Depends(verify_token)])

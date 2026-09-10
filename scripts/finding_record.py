@@ -192,13 +192,44 @@ def strip_reasoning(items):
     return out
 
 
+# The canonical Finding-record field is rule_id (this module's own schema,
+# finding_record). Four different agent contracts each name the same concept
+# differently: PRACTICE_AUDITOR writes procedure_id (its own primary,
+# required field), STYLE_GUARDIAN writes conv_id, REDACTOR writes rule_id
+# already, AMENDMENT_DRAFTER writes convention_ref. Found live: PRACTICE_
+# AUDITOR wrote 5 genuinely irregular findings tonight, real relation, real
+# record_verdict=irregular, real explanation, every one naming its rule under
+# procedure_id; amendment_from_finding required rule_id specifically, found
+# none, and returned None silently, so all 5 were dropped with no record
+# anywhere that they existed. Order matters here: rule_id first (the
+# canonical name, preferred whenever an item happens to carry it directly),
+# then each contract's own name, so a caller does not have to know which
+# agent produced an item to read its rule id.
+RULE_ID_FIELD_ALIASES = ("rule_id", "procedure_id", "conv_id", "convention_ref")
+
+
+def resolved_rule_id(item):
+    """The rule id an item carries, under whichever of RULE_ID_FIELD_ALIASES
+    it actually used, or None if it carries none of them. Read-only: never
+    writes rule_id back onto item, callers that need the canonical field
+    present do that themselves (amendment_from_finding does, since the
+    Finding record it builds from here on is expected to carry rule_id)."""
+    if not isinstance(item, dict):
+        return None
+    for name in RULE_ID_FIELD_ALIASES:
+        v = item.get(name)
+        if v:
+            return v
+    return None
+
+
 def typed_line(item) -> str:
     """One compact line for a Finding record, for rendering earlier findings into
     a prompt as typed lines rather than as narrative."""
     if not isinstance(item, dict):
         return str(item)
     parts = []
-    rule = item.get("rule_id") or item.get("conv_id")
+    rule = resolved_rule_id(item)
     if rule:
         src = item.get("source_rule_id")
         parts.append(f"{rule}({src})" if src and src != rule else str(rule))

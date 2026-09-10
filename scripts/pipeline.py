@@ -2103,8 +2103,38 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # structure H7: a finding Python computed must not depend on a model
             # writing valid JSON. The first scored run had AMENDMENT_DRAFTER fail
             # its contract and four certain arithmetic findings were discarded.
+            _amendment_refusals = []
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
-                raw_amendments, all_upstream, unit_texts=_unit_texts)
+                raw_amendments, all_upstream, unit_texts=_unit_texts,
+                refusal_sink=_amendment_refusals)
+            # Never silently drop a finding this function could not turn into
+            # an amendment: a real, irregular finding a model wrote under a
+            # field name this pipeline did not yet recognise is not an error
+            # to swallow, it is a real irregularity that deserves a record,
+            # even the record that the pipeline could not act on it. Posted
+            # the same way paired mode's own computed findings already are
+            # (backend/model naming the mechanism, never a model's own voice),
+            # so GET /findings and the console can surface it, not just this
+            # log line. A bus that refuses a post must not take the run down.
+            if _amendment_refusals:
+                log_event(_LOG, f"amendment_refused count={len(_amendment_refusals)}",
+                          run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
+                try:
+                    _build_wrapper("AMENDMENT_DRAFTER", orch, keys).post_to_bus(
+                        recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                        body={"event": "AMENDMENT_REFUSED", "backend": "computed",
+                              "model": "python", "item_count": len(_amendment_refusals),
+                              "parse_trace": {},
+                              "payload": {"agent": "AMENDMENT_DRAFTER", "doc_id": doc["id"],
+                                         "items": _amendment_refusals}},
+                        constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                            "resolution": "a real irregular finding could "
+                                                          "not be built into an amendment; "
+                                                          "refused visibly rather than "
+                                                          "dropped"})
+                except Exception as e:
+                    log_event(_LOG, f"amendment_refusal_post_error error_type={type(e).__name__}",
+                              run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
             # structure H7: arithmetic outranks the model where arithmetic can
             # decide. The control run had the drafter invent a sum violation on a
             # clean document that Python had already computed as correct.

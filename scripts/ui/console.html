@@ -531,6 +531,8 @@ a.rule-link:hover { text-decoration-style: solid; }
 .amendment-label { font-weight: 600; margin-bottom: 0.35rem; display: flex; gap: 0.4rem; align-items: baseline; }
 .amendment-field-label { color: var(--quiet-text); }
 .amendment-repair-note { color: var(--quiet-text); font-size: 0.8rem; font-style: italic; }
+.amendment-refusals { border-left: 3px solid var(--peach); padding-left: 0.75rem; margin: 0.5rem 0; }
+.amendment-refusals li { margin: 0.35rem 0; }
 
 /* ---------------------------------------------------------------------
    LOG VIEWER
@@ -2097,10 +2099,39 @@ function amendmentDeveloperHtml(a) {
    built from a finding) is silently unshown rather than orphaned on screen. */
 function amendmentKey(unitId, ruleId) { return (unitId || "") + " " + (ruleId || ""); }
 
+function amendmentRefusalsHtml(refusals, human) {
+  /* Disappears when there is nothing to say, same discipline as the
+     amendments section: a refusal is real content, not a placeholder, so it
+     is rendered only when the bus actually carries at least one. A real,
+     irregular finding the pipeline could not act on, named plainly rather
+     than left to look identical to "nothing was wrong here." */
+  if (!refusals || refusals.length === 0) return "";
+  var rows = refusals.map(function (r) {
+    var where = [r.unit_id, r.rule_id].filter(Boolean).join(" / ") || r.doc_id || "";
+    return human
+      ? '<li>' + escapeHtml(where ? where + ": " : "") + escapeHtml(r.reason) +
+        (r.explanation ? '<div class="muted">' + escapeHtml(r.explanation) + '</div>' : '') + '</li>'
+      : '<li class="mono">' + escapeHtml(where) + ': ' + escapeHtml(r.reason) + '</li>';
+  }).join("");
+  var heading = human
+    ? "Findings the pipeline could not act on (" + refusals.length + ")"
+    : "amendment_refusals (" + refusals.length + ")";
+  var note = human
+    ? "Each of these was a real, irregular finding, but the pipeline could not build a correction from it. Named here rather than left to look the same as a clean document."
+    : "Real irregular findings that ensure_amendments_for_findings could not turn into an amendment; see GET /runs/{run_id}/amendment-refusals.";
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
+}
+
 function loadFindings(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "findings-holder";
+  var refusalHolder = document.createElement("div");
+  refusalHolder.id = "amendment-refusals-holder";
   app.appendChild(holder);
+  app.appendChild(refusalHolder);
+  apiJson("/runs/" + encodeURIComponent(runId) + "/amendment-refusals").then(function (refRes) {
+    refusalHolder.innerHTML = refRes.ok ? amendmentRefusalsHtml(refRes.body.refusals, isHumanView()) : "";
+  });
   Promise.all([
     apiJson("/runs/" + encodeURIComponent(runId) + "/findings"),
     apiJson("/runs/" + encodeURIComponent(runId) + "/amendments"),

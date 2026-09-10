@@ -122,16 +122,15 @@
     "PRACTICE_AUDITOR": {
       "item_kind": "finding (use kind='absence' for absence-detection items)",
       "fields": {
-        "procedure_id": "string",
+        "procedure_id": "string. THE ONE name for the rule this item is about: the CONV-* id, exactly as it appears in the convention registry you were given. Do not also set conv_id or finding_record's own rule_id field for this: they do not exist as separate fields, procedure_id is read as both by every consumer.",
         "procedure_text": "string",
         "verdict": "ALIGNED | ANTI_PATTERN | OUTDATED | NO_REFERENCE_AVAILABLE | COMPLIANT | VIOLATION | AMBIGUOUS",
         "reference_source": "string | null (a URL or named source here mints a WEB-REF-*, INFRA-042)",
         "reference_url": "string | null (a URL here mints a WEB-REF-*, INFRA-042)",
         "recommendation": "string",
-        "conv_id": "CONV-* string (required in convention review)",
         "severity": "required | recommended | advisory",
         "ref_ids": "array of REF-* strings (required in convention review)",
-        "finding_record": "OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, rule_id, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object."
+        "finding_record": "OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object. The rule this compares against is procedure_id, above, already required: do not set a second rule_id field."
       },
       "required": [
         "procedure_id",

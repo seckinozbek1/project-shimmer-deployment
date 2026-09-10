@@ -14238,6 +14238,113 @@ def check_193_the_real_local_loader_never_reaches_the_network_when_cached():
                f"brings the successful load back")
 
 
+def check_194_agent_contract_field_names_match_what_a_consumer_reads():
+    """The shape found three times tonight, in one document: a producer (an
+    agent's contract) names a field one way, a consumer reads it another way,
+    and the consumer silently gets nothing even though the value was
+    genuinely written. unit_id (a wide-mode agent's own document identifier
+    vs. the pipeline's structural split_units id), the order/index field
+    (absent entirely, so "the unit before/after this one" had nothing to
+    read), and the CONV-* rule id (PRACTICE_AUDITOR's procedure_id, STYLE_
+    GUARDIAN's conv_id, REDACTOR's rule_id, AMENDMENT_DRAFTER's
+    convention_ref, four names for one concept) were all this same shape.
+    The third one dropped 5 real, genuinely irregular findings tonight with
+    no trace anywhere, fixed by finding_record.resolved_rule_id, a single
+    shared resolver every consumer that needs a rule id should now go
+    through.
+
+    This check is the general form of that specific fix, not a repeat of
+    it: for every agent contract that offers finding_record as an option
+    (the shape a Finding-record-producing agent uses), whatever field THAT
+    agent's own contract actually names as its rule-id field must appear in
+    finding_record.RULE_ID_FIELD_ALIASES, the resolver's own alias list.
+    The mapping below (agent -> its own rule-id field name) is read from the
+    real contract text tonight, by hand, once, the same way any other
+    explicit, no-hidden-vocabulary mapping in this codebase is built (S5);
+    this check does not re-derive the mapping from prose (fragile: a field
+    whose description happens to mention "CONV-*" is not reliably the same
+    as a field that IS a rule id, confirmed while writing this check
+    against AMENDMENT_DRAFTER's own `comment` field, which mentions CONV-*
+    in a REQUIREMENT sentence, not a field-purpose declaration). It asserts
+    that mapping against the LIVE contract file, so a future rename of the
+    field name in config/agent_contracts.json without a matching resolver
+    update is caught, and it asserts the resolver actually reads the
+    aliased field on a real, minimal finding, not only that the name
+    appears somewhere in a list."""
+    import json
+    import finding_record as _fr
+
+    registry_path = Path(__file__).resolve().parent.parent / "config" / "agent_contracts.json"
+    contracts = json.loads(registry_path.read_text(encoding="utf-8"))["contracts"]
+
+    # agent -> the field THAT agent's own contract names as its rule-id
+    # field, verified by hand against the real contract text (see this
+    # function's own docstring). Only agents whose contract offers
+    # finding_record are listed: an agent with no finding_record option
+    # never emits a typed comparison record, so it has no rule-id-shaped
+    # field this check needs to know about.
+    KNOWN_RULE_ID_FIELD_BY_AGENT = {
+        "PRACTICE_AUDITOR": "procedure_id",
+        "STYLE_GUARDIAN": "conv_id",
+        "REDACTOR": "rule_id",
+        "AMENDMENT_DRAFTER": "convention_ref",
+    }
+    for agent, field_name in KNOWN_RULE_ID_FIELD_BY_AGENT.items():
+        contract = contracts.get(agent)
+        if contract is None:
+            return _fail(f"{agent} is no longer in config/agent_contracts.json; this "
+                         f"check's own KNOWN_RULE_ID_FIELD_BY_AGENT mapping needs updating")
+        if field_name not in (contract.get("fields") or {}):
+            return _fail(f"{agent}'s contract no longer declares {field_name!r}; this "
+                         f"check's own mapping is stale, or the field was renamed without "
+                         f"updating finding_record.RULE_ID_FIELD_ALIASES to match")
+        if field_name not in _fr.RULE_ID_FIELD_ALIASES:
+            return _fail(f"{agent} names its rule-id field {field_name!r} in "
+                         f"config/agent_contracts.json, but finding_record."
+                         f"RULE_ID_FIELD_ALIASES does not include it: a genuinely irregular "
+                         f"finding from {agent} naming its rule under {field_name!r} would "
+                         f"be silently dropped by amendment_from_finding exactly as "
+                         f"PRACTICE_AUDITOR's findings were tonight")
+
+    # Live resolution, not only presence in a list: a minimal, real finding
+    # under EACH agent's own field name must actually resolve.
+    for agent, field_name in KNOWN_RULE_ID_FIELD_BY_AGENT.items():
+        item = {"relation": "missing_field", "record_verdict": "irregular", field_name: "CONV-TEST"}
+        resolved = _fr.resolved_rule_id(item)
+        if resolved != "CONV-TEST":
+            return _fail(f"a finding naming its rule under {field_name!r} ({agent}'s own "
+                         f"field) did not resolve via finding_record.resolved_rule_id: "
+                         f"got {resolved!r}")
+
+    # NEUTRALISE AND RESTORE, on the real module attribute, the same
+    # pattern every other check in this file uses: with procedure_id
+    # stripped from the real RULE_ID_FIELD_ALIASES, a PRACTICE_AUDITOR-
+    # shaped finding must fail to resolve (this is the exact silent-drop
+    # this whole fix exists to prevent, reproduced deliberately); restored,
+    # it must resolve again.
+    _orig_aliases = _fr.RULE_ID_FIELD_ALIASES
+    _fr.RULE_ID_FIELD_ALIASES = tuple(a for a in _orig_aliases if a != "procedure_id")
+    try:
+        neutralised_resolved = _fr.resolved_rule_id({"procedure_id": "CONV-TEST"})
+    finally:
+        _fr.RULE_ID_FIELD_ALIASES = _orig_aliases
+    if neutralised_resolved is not None:
+        return _fail("with procedure_id removed from RULE_ID_FIELD_ALIASES, a "
+                     "PRACTICE_AUDITOR-shaped finding still resolved a rule id "
+                     f"({neutralised_resolved!r}); the neutralisation did not work")
+    if _fr.resolved_rule_id({"procedure_id": "CONV-TEST"}) != "CONV-TEST":
+        return _fail("resolved_rule_id does not resolve procedure_id after restore, even "
+                     "though the real, unmodified alias list is back")
+
+    return _ok(f"every agent contract that offers finding_record ({', '.join(sorted(KNOWN_RULE_ID_FIELD_BY_AGENT))}) "
+               f"names its own rule-id field consistently with finding_record."
+               f"RULE_ID_FIELD_ALIASES, checked against the live contract file, not a "
+               f"stale copy; a minimal real finding under each agent's own field name "
+               f"resolves correctly; removing procedure_id from the alias list is shown "
+               f"to break resolution for PRACTICE_AUDITOR's own field, and restoring it "
+               f"brings resolution back")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -14436,6 +14543,8 @@ CHECKS = [
      check_192_a_paired_call_separates_unit_neighbor_and_map),
     ("193 the real local loader never reaches the network when cached",
      check_193_the_real_local_loader_never_reaches_the_network_when_cached),
+    ("194 agent contract field names match what a consumer reads",
+     check_194_agent_contract_field_names_match_what_a_consumer_reads),
 ]
 
 
