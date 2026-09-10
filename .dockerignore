@@ -1,0 +1,22 @@
+# Build-context excludes, matching the Dockerfile's own explicit COPY list.
+# COPY only ever names scripts/, config/, tools/, corpus_ingest/, and the three
+# root markdown files, so most of these are belt-and-suspenders rather than
+# load-bearing; .git and any venv are the ones that would otherwise bloat the
+# build context significantly.
+.git/
+.claude/
+benchmark/keys/
+.venv/
+venv/
+__pycache__/
+*.pyc
+Dockerfile
+.dockerignore
+
+# Never shipped in the image at this stage: runtime-only directories this
+# working copy happens to have locally (durable/, input/, output/), and the
+# public snapshot's own audit trail.
+durable/
+input/
+output/
+docs/publish/
