@@ -54,6 +54,14 @@ _GPT_SEMAPHORE = threading.Semaphore(2)
 _QWEN_MODELS: dict = {}                 # model_id -> (tokenizer, model)
 _QWEN_LOAD_LOCK = threading.Lock()      # guards first-load so a concurrent first call cannot double-load
 
+# Job B: an outer backstop on a local call's output budget, never the budget
+# itself. Every local call site in pipeline.py now sets its own max_tokens,
+# sized to what that call type is shown to need; this exists only so a caller
+# that forgets to size one, or asks for something unreasonable, cannot run the
+# wall clock away unboundedly. Both local models' own context windows (Qwen
+# 32768, Phi 131072 positions) are far larger, so this is not a model limit.
+LOCAL_MAX_OUTPUT_TOKENS = 4096
+
 
 def _evict_generation_models(keep_model_id=None):
     """Remove every generation model from _QWEN_MODELS except keep_model_id.
@@ -776,9 +784,18 @@ class AgentWrapper:
         with torch.no_grad():
             out = mdl.generate(**inputs, max_new_tokens=max_new_tokens)
         text = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+        out_tokens = out.shape[-1] - int(inputs["input_ids"].shape[1])
+        # Job B: the structural signal that generation was CUT by the budget
+        # rather than finishing on its own. transformers stops generate() for
+        # one of two reasons: the model emitted its own end-of-sequence token,
+        # which always yields fewer tokens than the cap, or max_new_tokens was
+        # reached, which yields EXACTLY the cap. No heuristic on the text is
+        # needed: the token count against the cap it was given is the whole
+        # test, and it is available here with no extra call.
         r = CallResult("qwen_local", model_id, text, usage={
             "input_tokens": int(inputs["input_ids"].shape[1]),
-            "output_tokens": out.shape[-1] - int(inputs["input_ids"].shape[1]),
+            "output_tokens": out_tokens,
+            "truncated": out_tokens >= max_new_tokens,
         })
         _record_cost(r); return r
 
@@ -827,9 +844,13 @@ class AgentWrapper:
                 torch.cuda.empty_cache()
         except Exception:
             pass  # freeing memory must never take the run down
+        # Job B: the same structural truncation signal as call_qwen (see its
+        # comment): out_tokens reaching the cap it was given means generation
+        # was cut, not that it finished.
         r = CallResult(self.backend, model_id, text, usage={
             "input_tokens": in_tokens,
             "output_tokens": out_tokens,
+            "truncated": out_tokens >= max_new_tokens,
         })
         _record_cost(r); return r
 
@@ -1453,7 +1474,19 @@ class AgentWrapper:
         self._cost_call_id = call_id
         try:
             if self.backend in ("qwen_local", "local_producer", "local_auditor"):
-                result = self.dispatch(stable_prefix, dynamic_suffix, max_new_tokens=min(max_tokens, 1024))
+                # Job B: the blanket 1024 ceiling this used to apply to every
+                # local call regardless of type is gone. It was never a
+                # measured content requirement (see call_qwen's own comment:
+                # it exists to bound wall time, decoding speed being roughly
+                # constant), and on real evidence it was cutting several call
+                # types before they finished (9 of 16 calls on one run hit it
+                # exactly, several producing zero usable items). The caller
+                # now sets a budget sized to what that call type is shown to
+                # need (pipeline.py's call sites); LOCAL_MAX_OUTPUT_TOKENS is
+                # an outer backstop only, well above any budget in force, so a
+                # caller error cannot runaway the wall clock unboundedly.
+                result = self.dispatch(stable_prefix, dynamic_suffix,
+                                       max_new_tokens=min(max_tokens, LOCAL_MAX_OUTPUT_TOKENS))
             else:
                 result = self.dispatch(stable_prefix, dynamic_suffix, max_tokens=max_tokens)
         finally:
@@ -1470,6 +1503,13 @@ class AgentWrapper:
             return {"ok": False, "agent": self.name, "backend": result.backend, "model": result.model,
                     "parsed": None, "raw_text": "", "contract_missing": [], "error": result.error,
                     "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}
+        # Job B: whether generation was CUT by the output budget rather than
+        # finishing on its own (agent_wrapper.call_local/call_qwen, the token
+        # count reaching the cap it was given). False for a cloud call, which
+        # has no such signal today (Claude/GPT report a stop_reason the SDK
+        # does not currently surface here; a cloud truncation is a gap this
+        # job did not close, recorded rather than guessed at).
+        truncated = bool(result.usage.get("truncated"))
         parsed, missing = self.parse_contract_output(result.raw_text)
         if parsed is None or missing:
             # Persist the full raw_text to disk so post-mortem analysis can
@@ -1488,6 +1528,7 @@ class AgentWrapper:
                     "raw_excerpt": result.raw_text[:400],
                     "raw_text_path": str(raw_text_path) if raw_text_path else None,
                     "raw_text_bytes": len(result.raw_text.encode("utf-8")) if result.raw_text else 0,
+                    "truncated": truncated,
                     "call_id": call_id,
                 },
                 constitution_check=self.build_constitution_check(
@@ -1498,7 +1539,7 @@ class AgentWrapper:
             return {"ok": False, "agent": self.name, "backend": result.backend, "model": result.model,
                     "parsed": parsed, "raw_text": result.raw_text, "contract_missing": missing,
                     "raw_text_path": str(raw_text_path) if raw_text_path else None,
-                    "error": "contract_violation",
+                    "error": "contract_violation", "truncated": truncated,
                     "parse_trace": dict(self.last_parse_trace),
                     "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}
         # First task (post-D4): a contract-valid empty envelope (items: []) is a
@@ -1517,9 +1558,19 @@ class AgentWrapper:
         # structure H2a: the recovery trace travels with the output. Counts only,
         # never text (W8), so it is safe in the append-only bus.
         parse_trace = dict(self.last_parse_trace)
+        # Job B: a response that PARSED cleanly can still be an incomplete
+        # answer, when the cut landed exactly at the end of a complete item
+        # and the model had more items still to write. The envelope carries
+        # no field for "and there was more"; truncated=True on an ok result
+        # says the item_count above may undercount what the agent actually
+        # had to report, without inventing a number for what was lost. A
+        # caller that treats a truncated hold as a complete "nothing to
+        # report" would be parsing a cut answer as though it were whole,
+        # which is exactly what this flag exists to prevent.
         self.post_to_bus(recipient=recipient, channel=channel, msg_type="INFORM",
                          body={"event": "AGENT_OUTPUT", "backend": result.backend, "model": result.model,
                                "item_count": item_count, "parse_trace": parse_trace,
+                               "truncated": truncated,
                                "payload": parsed, "call_id": call_id},
                          constitution_check=self.build_constitution_check(
                              laws_consulted=["LAW-V"],
@@ -1528,5 +1579,5 @@ class AgentWrapper:
                                          else "no governing rule yet; novel action recorded")))
         return {"ok": True, "agent": self.name, "backend": result.backend, "model": result.model,
                 "parsed": parsed, "raw_text": result.raw_text, "contract_missing": [], "error": None,
-                "item_count": item_count, "parse_trace": parse_trace,
+                "item_count": item_count, "parse_trace": parse_trace, "truncated": truncated,
                 "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}

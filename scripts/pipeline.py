@@ -335,6 +335,48 @@ PRODUCTION_AGENTS_CORPUS_LEVEL = ["ARCHIVIST", "INST_FINDER", "CITATION_RESOLVER
 AUDIT_AGENTS_PER_DOC = ["VERIFIER", "FACT_CHECKER"]
 CONVENTION_REVIEW_AGENTS = ["PRACTICE_AUDITOR", "STYLE_GUARDIAN"]
 
+# Job B: an output budget per CALL TYPE, not one blanket number for every call.
+# Before this, every local call (agent_wrapper.py's own hardcoded ceiling) was
+# capped at 1024 output tokens regardless of what the call was asking for.
+# Measured on a real run against the device corpus (output/runs/20260911T123328Z
+# __d5728e4b/logs/cost_tracker.jsonl): 9 of 16 calls hit exactly 1024, several
+# producing zero usable items (parse_trace showed dozens of "recovery
+# candidates" mostly empty_valid_skipped, the shape a response cut mid-item
+# leaves behind), and the one preserved raw truncated response lost its sixth
+# finding entirely, cut mid-string with no closing quote. The five calls that
+# did NOT hit the cap (PRACTICE_AUDITOR's paired judging, the one call type
+# answering about exactly one unit and one rule) ranged 202 to 645 tokens, so
+# its true ceiling is known with real headroom; every other call type that hit
+# the cap has an UNKNOWN true ceiling, which is why those are raised rather
+# than left as they were. See docs/fix/WORKLOAD_AND_COST.md's Part One and
+# check 216 for the measurement and the fixture proof of the recording.
+PAIRED_JUDGING_MAX_TOKENS = 768       # PRACTICE_AUDITOR etc: one unit, one rule,
+                                       # a handful of findings at most; the
+                                       # largest of 5 real, uncapped calls was
+                                       # 645 tokens (see above)
+AUDIT_MAX_TOKENS = 2048               # VERIFIER, FACT_CHECKER: an open-ended
+                                       # audit of one document's whole draft,
+                                       # capped at 1024 with direct evidence of
+                                       # a lost finding (VERIFIER's contract
+                                       # violation, 13:11:26Z on the run above)
+PRODUCTION_MAX_TOKENS = 2048          # ARCHIVIST, INST_FINDER, CITATION_RESOLVER,
+                                       # PROCESSOR, SPEECH_ACT_TAGGER, LEGAL_ANALYST
+                                       # pass one: 4 of 6 on the run above hit
+                                       # 1024 and produced zero items; true
+                                       # ceiling unmeasured, so raised rather
+                                       # than guessed lower
+DEEPEN_MAX_TOKENS = 2048              # D6 pass two, LEGAL_ANALYST: one finding
+                                       # deepened into three labelled parts
+                                       # (provision, comparison, amendment);
+                                       # same unmeasured-true-ceiling reasoning
+                                       # as PRODUCTION_MAX_TOKENS, since this
+                                       # call also hit 1024 on the run above
+WIDE_REVIEW_MAX_TOKENS = 2048         # wide-mode convention review: unchanged
+                                       # from its prior value, since wide mode
+                                       # was not exercised on the run this
+                                       # measurement comes from and lowering it
+                                       # without evidence would be a guess
+
 
 def _convention_review_firing_agents(convention_assignment):
     """night chain W3, the firing gate (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md).
@@ -1130,7 +1172,7 @@ async def _deepen_legal_analyst_findings_local(wrapper, findings, doc, embed_sto
             "AMENDMENT: one concrete proposed change. Keep the same ref, kind and "
             "claim_id as the finding given to you."
         )
-        r = await _run_one(wrapper, payload, objectives, max_tokens=2048,
+        r = await _run_one(wrapper, payload, objectives, max_tokens=DEEPEN_MAX_TOKENS,
                            reference_index_excerpt=refs_excerpt)
         parsed = r.get("parsed")
         if is_envelope(parsed) and parsed.get("items"):
@@ -1166,7 +1208,7 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
                    "documents": [d["name"] for d in all_docs],
                    "corpus_text": digest}
         result = await _run_one(wrapper, payload, run_objectives, channel="main",
-                                max_tokens=2048,
+                                max_tokens=PRODUCTION_MAX_TOKENS,
                                 convention_registry=convention_registry,
                                 reference_index_excerpt=ctx_refs_excerpt,
                                 _progress=(3, None, None, agent_name))
@@ -1206,7 +1248,7 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
                 refs_excerpt = _doc_refs_excerpt(reference_index, doc['id'])
             tasks.append(_run_one(wrapper, payload,
                                   f"{run_objectives}\nDocument: {doc['name']}",
-                                  max_tokens=2048,
+                                  max_tokens=PRODUCTION_MAX_TOKENS,
                                   convention_registry=convention_registry,
                                   reference_index_excerpt=refs_excerpt,
                                   _progress=(3, doc_pos[doc["id"]], n_docs, agent_name)))
@@ -1266,7 +1308,7 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
             wrapper = _build_wrapper(name, orch, keys)
             tasks.append(_run_one(wrapper, payload,
                                   f"{run_objectives}\nDocument: {doc['name']}",
-                                  max_tokens=2048,
+                                  max_tokens=AUDIT_MAX_TOKENS,
                                   convention_registry=convention_registry,
                                   reference_index_excerpt=_doc_refs_excerpt(reference_index, doc['id']),
                                   _progress=(5, doc_pos[doc["id"]], n_docs, name)))
@@ -1605,7 +1647,7 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                                   f"{run_objectives}\nDocument: {doc['name']}\n"
                                   f"Evaluate against the convention registry. Every finding "
                                   f"MUST cite both CONV-* and REF-*.",
-                                  max_tokens=2048,
+                                  max_tokens=WIDE_REVIEW_MAX_TOKENS,
                                   convention_registry=registry_for_agent,
                                   reference_index_excerpt=refs_excerpt,
                                   _progress=(5.5, doc_pos[doc["id"]], n_docs, name)))
@@ -1986,7 +2028,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         r = await _run_one(
             wrapper, payload,
             f"{run_objectives}\nOne unit, one rule. Do not perform arithmetic.",
-            max_tokens=1024, convention_registry={"conventions": [rule]},
+            max_tokens=PAIRED_JUDGING_MAX_TOKENS, convention_registry={"conventions": [rule]},
             reference_index_excerpt=refs_excerpt,
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
         if plan.get("kind") == "absence_judged":

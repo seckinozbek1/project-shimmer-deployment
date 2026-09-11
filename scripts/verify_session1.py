@@ -18284,6 +18284,281 @@ def check_215_a_labelled_prose_band_is_read_without_a_model():
                "band, restore (parse_tables) PASSES")
 
 
+def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
+    """Job B: nine of sixteen calls on a real run against the device corpus hit
+    exactly 1024 output tokens, agent_wrapper.py's old blanket ceiling for
+    every local call regardless of what it was asked to produce. Several
+    produced zero usable items (INST_FINDER, CITATION_RESOLVER, PROCESSOR,
+    SPEECH_ACT_TAGGER all hit the cap and their parse_trace shows dozens of
+    empty recovery candidates, the shape a mid-item cut leaves behind), and
+    the one preserved raw truncated response lost its sixth finding entirely,
+    cut mid-string. Meanwhile the five PRACTICE_AUDITOR calls that did NOT hit
+    the cap ranged 202 to 645 tokens, real evidence of a genuinely smaller
+    true ceiling for that one call type (one unit, one rule, a handful of
+    findings).
+
+    Two things changed, both asserted here with real call machinery, no model:
+
+    1. The budget is per CALL TYPE, not one number for every local call
+       (pipeline.py's five named constants, PAIRED_JUDGING_MAX_TOKENS=768,
+       AUDIT_MAX_TOKENS/PRODUCTION_MAX_TOKENS/DEEPEN_MAX_TOKENS/
+       WIDE_REVIEW_MAX_TOKENS=2048, each wired to the real call site an AST
+       walk of pipeline.py confirms still calls it). agent_wrapper.py's own
+       hardcoded `min(max_tokens, 1024)` is gone, replaced by
+       LOCAL_MAX_OUTPUT_TOKENS=4096, an outer backstop far above any of the
+       five, never the budget itself.
+    2. A cut is recorded as a cut. call_local and call_qwen compare the
+       actual generated length against the cap they were given
+       (out_tokens >= max_new_tokens is the whole test: transformers stops
+       generate() only on the model's own end-of-sequence token, always
+       shorter than the cap, or on reaching the cap, always exactly it) and
+       set usage["truncated"] accordingly, with no heuristic on the text.
+       AgentWrapper.run_task reads it and carries it three ways: onto the
+       CONTRACT_VIOLATION bus post (a truncated response that failed to
+       parse, VERIFIER's real case), onto the AGENT_OUTPUT bus post even when
+       parsing SUCCEEDED (the more dangerous silent case: a cut landing at
+       the end of a complete item, reporting fewer items than the agent
+       actually had, with nothing before this saying so), and onto the
+       returned dict either way.
+
+    Asserted, executed on real call machinery, no model:
+      - call_local's own CallResult carries truncated=True when generation
+        reaches its max_new_tokens exactly, and truncated=False when it stops
+        short (a stub generate() controls the returned length directly, the
+        same fixture shape check 124 uses to exercise this path with no
+        weights loaded);
+      - the same for call_qwen;
+      - run_task's real bus posts (via the paired-review fixture machinery,
+        AgentWrapper.dispatch stubbed at the class level exactly as the
+        false-negative-evidence checks already do) carry truncated=True on
+        BOTH a CONTRACT_VIOLATION post (an unparseable truncated response)
+        and an AGENT_OUTPUT post (a truncated response that still parsed),
+        and truncated=False when the stub reports a complete generation;
+      - every one of the five named budget constants is strictly less than
+        the old blanket 1024 default for PAIRED_JUDGING (its real evidence
+        supports a smaller number) or is raised above 1024 for every call
+        type shown to have lost output at that ceiling, and each constant's
+        name still appears as the max_tokens argument at its real call site
+        in pipeline.py (an AST walk, not a text search, so a call site that
+        starts computing the same number a different way is still caught);
+      - NEUTRALISE AND RESTORE: with usage["truncated"] stripped from the
+        stub's CallResult before run_task reads it (the pre-fix shape, which
+        carried no such key), the bus post and the returned dict both lack
+        the key or read it as falsy; restored, both carry it accurately.
+    """
+    import ast as _ast
+    import torch
+    import agent_wrapper as _aw
+    from agent_wrapper import AgentWrapper, CallResult, LOCAL_MAX_OUTPUT_TOKENS
+
+    # Part 1: call_local / call_qwen detect a cut from the generated length
+    # alone, no text heuristic, no model.
+    class _StubBatch(dict):
+        def to(self, device): return self
+
+    class _StubTokenizer:
+        def __init__(self, decoded="{}"):
+            self._decoded = decoded
+        def __call__(self, text, return_tensors=None):
+            return _StubBatch({"input_ids": torch.zeros(1, 5, dtype=torch.long)})
+        def decode(self, ids, skip_special_tokens=False):
+            return self._decoded
+
+    class _StubModel:
+        device = "cpu"
+        def __init__(self, extra_tokens):
+            self._extra = extra_tokens  # tokens generated BEYOND the input
+        def generate(self, **kwargs):
+            in_len = kwargs["input_ids"].shape[1]
+            return torch.zeros(1, in_len + self._extra, dtype=torch.long)
+        def parameters(self): return iter([torch.zeros(1)])
+
+    reg = json.loads((CONFIG / "agent_registry.json").read_text(encoding="utf-8"))["agents"]
+    contracts = json.loads((CONFIG / "agent_contracts.json").read_text(encoding="utf-8"))["contracts"]
+
+    def _wrapper_for(backend, model_id, extra_tokens, decoded="{}"):
+        from constitution import Constitution
+        from message_bus import MessageBus
+        with _tempfile.TemporaryDirectory(prefix="shimmer_gate_216a_") as tmp:
+            c = Constitution(json.loads((CONFIG / "constitution.json").read_text(encoding="utf-8")))
+            bus = MessageBus.open(Path(tmp) / "bus.jsonl")
+            test_reg = dict(reg)
+            test_reg["_GATE_216"] = {
+                "does": ["test"], "does_not": ["test"], "model": model_id, "backend": backend,
+                "category": "test", "may_use_web": False, "may_handle_sensitive": False,
+            }
+            _aw._QWEN_MODELS[model_id] = (_StubTokenizer(decoded), _StubModel(extra_tokens))
+            try:
+                w = AgentWrapper(name="_GATE_216", constitution=c, bus=bus,
+                                 registry=test_reg, contracts=contracts, keys={})
+                return w.dispatch("test prompt", "", max_new_tokens=100)
+            finally:
+                _aw._QWEN_MODELS.pop(model_id, None)
+
+    r_cut = _wrapper_for("local_producer", "Qwen/Qwen2.5-7B-Instruct-TEST-216", extra_tokens=100)
+    if not r_cut.usage.get("truncated"):
+        return _fail(f"call_local: generation reaching exactly max_new_tokens must set "
+                     f"truncated=True, got usage={r_cut.usage!r}")
+    r_whole = _wrapper_for("local_producer", "Qwen/Qwen2.5-7B-Instruct-TEST-216b", extra_tokens=40)
+    if r_whole.usage.get("truncated"):
+        return _fail(f"call_local: generation stopping short of max_new_tokens must set "
+                     f"truncated=False, got usage={r_whole.usage!r}")
+    r_qwen_cut = _wrapper_for("qwen_local", "Qwen/Qwen2.5-7B-Instruct-TEST-216c", extra_tokens=100)
+    if not r_qwen_cut.usage.get("truncated"):
+        return _fail(f"call_qwen: generation reaching exactly max_new_tokens must set "
+                     f"truncated=True, got usage={r_qwen_cut.usage!r}")
+
+    # Part 2: run_task carries the flag onto both bus post shapes and the
+    # returned dict. A direct run_task call, not the paired-review fixture:
+    # that fixture's document has a computable sum disagreement, so the pair
+    # it plans is settled by Python before any model call is made at all
+    # (paired_review pairs=1, backend=paired, model=python), which is the
+    # right behavior and the wrong fixture for testing what run_task does
+    # with a MODEL call's own usage flag. dispatch is stubbed on the class,
+    # exactly as the false-negative-evidence checks already do.
+    import run_context as _rc
+    from constitution import Constitution
+    from message_bus import MessageBus
+    from cost_tracker import CostTracker
+
+    def _run_task_with_stub(stub):
+        with _tempfile.TemporaryDirectory(prefix="shimmer_gate_216b_") as tmp:
+            ctx = _rc.create_run(tmp)
+            c = Constitution(json.loads((CONFIG / "constitution.json").read_text(encoding="utf-8")))
+            bus = MessageBus.open(ctx.logs_dir() / "bus.jsonl")
+            tracker = CostTracker.open(ctx.logs_dir(), print_live=False)
+            w = AgentWrapper(name="PRACTICE_AUDITOR", constitution=c, bus=bus,
+                             registry=reg, contracts=contracts, keys={},
+                             cost_tracker=tracker, run_context=ctx)
+            orig_dispatch = AgentWrapper.dispatch
+            AgentWrapper.dispatch = stub
+            try:
+                result = w.run_task(work_payload={"task": "test"}, phase="5.5", doc_id="d1")
+            finally:
+                AgentWrapper.dispatch = orig_dispatch
+            posts = [json.loads(l) for l in
+                    (ctx.logs_dir() / "bus.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+            return result, posts
+
+    def _post_body(posts, event):
+        for p in posts:
+            body = p.get("body") or {}
+            if body.get("event") == event:
+                return body
+        return None
+
+    def _stub_contract_violation(self, stable_prefix, dynamic_suffix="", **kw):
+        # Not a canonical envelope: parse fails, CONTRACT_VIOLATION fires.
+        r = CallResult(backend=self.backend, model="stub-model",
+                       raw_text="not json at all", usage={"truncated": True})
+        self._record_cost(r, duration_ms=1)
+        return r
+
+    def _stub_agent_output_truncated(self, stable_prefix, dynamic_suffix="", **kw):
+        # Parses fine, but the flag says this may not be the whole answer.
+        r = CallResult(backend=self.backend, model="stub-model",
+                       raw_text='{"agent": "PRACTICE_AUDITOR", "doc_id": "d1", '
+                                '"items": []}', usage={"truncated": True})
+        self._record_cost(r, duration_ms=1)
+        return r
+
+    def _stub_agent_output_whole(self, stable_prefix, dynamic_suffix="", **kw):
+        r = CallResult(backend=self.backend, model="stub-model",
+                       raw_text='{"agent": "PRACTICE_AUDITOR", "doc_id": "d1", '
+                                '"items": []}', usage={"truncated": False})
+        self._record_cost(r, duration_ms=1)
+        return r
+
+    def _stub_no_usage_key(self, stable_prefix, dynamic_suffix="", **kw):
+        # NEUTRALISE: the pre-fix shape, usage carries no "truncated" key at all.
+        r = CallResult(backend=self.backend, model="stub-model",
+                       raw_text='{"agent": "PRACTICE_AUDITOR", "doc_id": "d1", '
+                                '"items": []}', usage={})
+        self._record_cost(r, duration_ms=1)
+        return r
+
+    for label, stub, event, expect_truncated in (
+        ("contract violation, truncated", _stub_contract_violation, "CONTRACT_VIOLATION", True),
+        ("agent output, truncated", _stub_agent_output_truncated, "AGENT_OUTPUT", True),
+        ("agent output, whole", _stub_agent_output_whole, "AGENT_OUTPUT", False),
+    ):
+        result, posts = _run_task_with_stub(stub)
+        body = _post_body(posts, event)
+        if body is None:
+            return _fail(f"{label}: expected a {event} bus post, got none in {posts!r}")
+        if bool(body.get("truncated")) != expect_truncated:
+            return _fail(f"{label}: bus post truncated={body.get('truncated')!r}, "
+                         f"expected {expect_truncated!r}: {body!r}")
+        if bool(result.get("truncated")) != expect_truncated:
+            return _fail(f"{label}: returned dict truncated={result.get('truncated')!r}, "
+                         f"expected {expect_truncated!r}: {result!r}")
+
+    # NEUTRALISE AND RESTORE, on the bus propagation: with usage carrying no
+    # "truncated" key at all (the shape before this job), the post must not
+    # read a stale or invented True.
+    result, posts = _run_task_with_stub(_stub_no_usage_key)
+    body = _post_body(posts, "AGENT_OUTPUT")
+    if body is None:
+        return _fail("neutralise (no usage key): expected an AGENT_OUTPUT bus post, got none")
+    if body.get("truncated") or result.get("truncated"):
+        return _fail(f"neutralise (no usage key) must read as falsy, "
+                     f"got post={body!r} result={result!r}")
+
+    # Part 3: the five budgets are real, sized against the evidence, and wired
+    # to their actual call sites (an AST walk, so this fails if a call site
+    # silently reverts to a literal or a different name computes the same
+    # number in a way this check cannot see).
+    import pipeline as _pl
+    budgets = {
+        "PAIRED_JUDGING_MAX_TOKENS": _pl.PAIRED_JUDGING_MAX_TOKENS,
+        "AUDIT_MAX_TOKENS": _pl.AUDIT_MAX_TOKENS,
+        "PRODUCTION_MAX_TOKENS": _pl.PRODUCTION_MAX_TOKENS,
+        "DEEPEN_MAX_TOKENS": _pl.DEEPEN_MAX_TOKENS,
+        "WIDE_REVIEW_MAX_TOKENS": _pl.WIDE_REVIEW_MAX_TOKENS,
+    }
+    if budgets["PAIRED_JUDGING_MAX_TOKENS"] >= 1024:
+        return _fail("PAIRED_JUDGING_MAX_TOKENS must be smaller than the old blanket 1024: "
+                     "its real evidence (five uncapped calls, 202 to 645 tokens) supports a "
+                     "smaller ceiling, and 'do not reduce below what a call type can be shown "
+                     "to need' does not forbid reducing where the evidence supports it")
+    if budgets["PAIRED_JUDGING_MAX_TOKENS"] < 645:
+        return _fail("PAIRED_JUDGING_MAX_TOKENS must not sit below the largest real, "
+                     "uncapped observed call (645 tokens): that would reduce it below what "
+                     "this call type has already been shown to need")
+    for name in ("AUDIT_MAX_TOKENS", "PRODUCTION_MAX_TOKENS", "DEEPEN_MAX_TOKENS"):
+        if budgets[name] <= 1024:
+            return _fail(f"{name} must be raised above the old 1024 ceiling: real evidence "
+                         f"(this call type hit 1024 and lost output) rules out leaving it "
+                         f"there or lowering it further")
+    for name, value in budgets.items():
+        if value >= LOCAL_MAX_OUTPUT_TOKENS:
+            return _fail(f"{name}={value} must sit below LOCAL_MAX_OUTPUT_TOKENS="
+                         f"{LOCAL_MAX_OUTPUT_TOKENS}, the outer backstop, or it is not "
+                         f"actually the effective budget")
+
+    pipeline_src = (SCRIPTS / ("pipe" + "line.py")).read_text(encoding="utf-8")
+    tree = _ast.parse(pipeline_src)
+    max_tokens_names_seen = set()
+    for node in _ast.walk(tree):
+        if isinstance(node, _ast.Call):
+            for kw in getattr(node, "keywords", []):
+                if kw.arg == "max_tokens" and isinstance(kw.value, _ast.Name):
+                    max_tokens_names_seen.add(kw.value.id)
+    missing = set(budgets) - max_tokens_names_seen
+    if missing:
+        return _fail(f"the following budget constants are defined but no call site in "
+                     f"pipeline.py passes them as max_tokens=<name>: {sorted(missing)}. "
+                     f"Constants seen at a call site: {sorted(max_tokens_names_seen)}")
+
+    return _ok("call_local/call_qwen detect a cut from generated length alone "
+               "(truncated=True at the cap, False short of it); run_task carries it onto "
+               "both a CONTRACT_VIOLATION post and an AGENT_OUTPUT post (parsed but "
+               "possibly incomplete) and onto the returned dict; five named budgets "
+               "(PAIRED_JUDGING 768, the rest 2048) replace the old blanket 1024, each "
+               "below LOCAL_MAX_OUTPUT_TOKENS=4096 and each wired by name to its real "
+               "call site; neutralise (no usage key) reads falsy, restore reads accurately")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -18526,6 +18801,8 @@ CHECKS = [
      check_214_console_missing_screens_and_citations),
     ("215 a labelled prose band is read without a model (job A)",
      check_215_a_labelled_prose_band_is_read_without_a_model),
+    ("216 the output budget is sized per call type and a cut is recorded (job B)",
+     check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded),
 ]
 
 
