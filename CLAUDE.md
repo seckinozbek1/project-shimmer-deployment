@@ -51,6 +51,15 @@ processing swarm governed by an append-only constitution.
   it back for attribution. The parser's English keyword table (`_CATEGORY_KEYWORDS`) applies
   only to a heading with no id. It used to run first and silently reclassified an operator slug
   containing the word "value", losing attribution for every finding under that rule.
+- A heading's brackets carry the severity, the subject tags, and two DECLARATIONS read by their
+  leading word only: `[scope: class=A, device]` (the field labels, optionally pinned to a value,
+  that identify the units the rule governs) and `[requires: calibration authority signature]`
+  (the labels whose absence from a unit in scope is a finding). A scoped rule pairs on its scope
+  alone; a declared required field that is absent is decided by Python with no call
+  (`absence_path: computed`); a scoped rule with no declared requirement is one narrow model
+  question per unit in scope (`absence_path: judged`), its answer stamped with the unit and rule.
+  Scope is never derived from text or counts; the operator declares it. Labels are the
+  operator's own words and appear in no code.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.
