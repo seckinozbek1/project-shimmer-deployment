@@ -14378,17 +14378,35 @@ def check_195_every_agent_has_a_nine_part_harness_and_unresolved_is_visible():
     config/agent_registry.json and config/agent_contracts.json, so it
     cannot silently drift from the source it describes.
 
-    Three of the nine parts (rule_cluster, testing_against_cluster,
-    ontology) are genuinely undecided in this codebase today: W2
-    (docs/fix/STEP_W2_REPORT.md) stopped before any per-agent convention
-    assignment existed, and the ontology work is W7, not yet run when this
-    harness was built. This check does not require those three to be
-    resolved; it requires them to be PRESENT and explicitly marked
-    unresolved (decided: false, with a reason), the thing the night chain's
-    own W4 instruction asked for: "no dormant-but-claimed-built scaffold";
-    an unresolved part must be visible as unresolved, never simply absent
-    from the file, which would look identical to a part nobody thought of."""
+    When the harness was first built (W4) three parts were undecided:
+    rule_cluster and testing_against_cluster waited on a per-agent
+    convention assignment (W2 had stopped at its own premise check) and
+    ontology waits on W7. The convention assignment
+    (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md; checks 197 to 199) decided
+    the first two: an agent's cluster is the subject list it declares in
+    config/agent_registry.json (empty, by the operator's decision, for the
+    six agents no convention-review path reaches) and the rules matched to
+    it per run are by_agent[<name>] in <run>/audit/convention_assignment.json.
+    So this check requires rule_cluster and testing_against_cluster to be
+    decided:true for every agent; requires rule_cluster.declared_subjects to
+    EQUAL the registry's subjects for that agent (the harness is generated
+    from the registry, so a difference means a hand edit or a stale
+    builder); and requires an empty cluster to say so on purpose
+    (empty_by_decision with the registry's non-empty subjects_note), never
+    by omission. Only ontology is still required to be PRESENT and
+    explicitly marked unresolved (decided: false, with a reason), the W4
+    instruction's own demand: "no dormant-but-claimed-built scaffold"; an
+    unresolved part must be visible as unresolved, never simply absent from
+    the file, which would look identical to a part nobody thought of.
+
+    Neutralise-and-restore runs on a tempdir COPY of the harness (the live
+    config/ file is never written by this check): stripping one agent's
+    rule_cluster.decided must fail the body, and emptying a subject-carrying
+    agent's declared_subjects while the registry still declares them must
+    fail it on the drift; the live file must pass."""
     import json
+    import shutil
+    import tempfile
 
     harness_path = Path(__file__).resolve().parent.parent / "config" / "agent_harness.json"
     registry_path = Path(__file__).resolve().parent.parent / "config" / "agent_registry.json"
@@ -14417,11 +14435,16 @@ def check_195_every_agent_has_a_nine_part_harness_and_unresolved_is_visible():
         "constitution_by_default", "receive_format", "hand_format",
         "refire_condition_and_limit",
     }
-    KNOWN_UNRESOLVED_PARTS = {"rule_cluster", "testing_against_cluster", "ontology"}
+    # Shrunk from {rule_cluster, testing_against_cluster, ontology} by the
+    # convention assignment (commit "convention assignment 4"); ontology
+    # leaves this set when W7 runs.
+    KNOWN_UNRESOLVED_PARTS = {"ontology"}
     shared = harness.get("shared_parts", {})
 
     for agent in sorted(registry_agents):
         entry = harness["agents"][agent]
+        registry_subjects = list(registry["agents"][agent].get("subjects") or [])
+        registry_note = registry["agents"][agent].get("subjects_note") or ""
         missing_parts = [p for p in NINE_PARTS if p not in entry]
         if missing_parts:
             return _fail(f"{agent}'s harness entry is missing part(s) {missing_parts}; "
@@ -14449,7 +14472,7 @@ def check_195_every_agent_has_a_nine_part_harness_and_unresolved_is_visible():
             if part in KNOWN_UNRESOLVED_PARTS:
                 if value["decided"] is not False:
                     return _fail(f"{agent}.{part} is marked decided (should be "
-                                 f"unresolved, per W2/W7): {value!r}")
+                                 f"unresolved, per W7): {value!r}")
                 if not value.get("unresolved_because"):
                     return _fail(f"{agent}.{part} is marked unresolved but gives no "
                                  f"reason; an unresolved part must say WHY, not just "
@@ -14459,47 +14482,110 @@ def check_195_every_agent_has_a_nine_part_harness_and_unresolved_is_visible():
                     return _fail(f"{agent}.{part} is marked unresolved, but this part "
                                  f"({part}) is supposed to be decided for every agent: "
                                  f"{value!r}")
+            if part == "rule_cluster":
+                declared = value.get("declared_subjects")
+                if declared != registry_subjects:
+                    return _fail(f"{agent}.rule_cluster.declared_subjects={declared!r} does "
+                                 f"not equal agent_registry.json subjects="
+                                 f"{registry_subjects!r}; the harness is generated from the "
+                                 f"registry and must not drift from it (hand edit, or a "
+                                 f"stale build)")
+                if not registry_subjects:
+                    if (value.get("empty_by_decision") is not True or not registry_note
+                            or value.get("subjects_note") != registry_note):
+                        return _fail(f"{agent}.rule_cluster is empty but does not say so on "
+                                     f"purpose (needs empty_by_decision: true and a "
+                                     f"subjects_note equal to the registry's own non-empty "
+                                     f"note, got {value.get('subjects_note')!r} against "
+                                     f"{registry_note!r}); an empty cluster by omission is "
+                                     f"indistinguishable from one nobody assigned")
+                elif value.get("empty_by_decision"):
+                    return _fail(f"{agent}.rule_cluster carries empty_by_decision while "
+                                 f"declaring subjects {registry_subjects!r}; a contradiction")
+            if part == "testing_against_cluster":
+                if value.get("cluster_is_empty_by_decision") != (not registry_subjects):
+                    return _fail(f"{agent}.testing_against_cluster.cluster_is_empty_by_decision"
+                                 f"={value.get('cluster_is_empty_by_decision')!r} disagrees "
+                                 f"with the registry's subjects {registry_subjects!r}")
+                if not value.get("how"):
+                    return _fail(f"{agent}.testing_against_cluster names no 'how' (which "
+                                 f"gate checks and which harness runner test the cluster)")
 
-    # NEUTRALISE AND RESTORE: prove the check actually looks at the file,
-    # not just that the file happens to be well-formed today. Strip one
-    # agent's rule_cluster.decided flag entirely (the exact "missing part
-    # reads as silently absent" failure mode this check exists to catch)
-    # and confirm this check fails; restore, confirm it passes again.
-    _orig_text = harness_path.read_text(encoding="utf-8")
-    mutated = json.loads(_orig_text)
-    del mutated["agents"]["PROCESSOR"]["rule_cluster"]["decided"]
-    harness_path.write_text(json.dumps(mutated), encoding="utf-8")
+    # NEUTRALISE AND RESTORE, on a tempdir copy so the live config/ file is
+    # never written: prove the body actually looks at the file's structure,
+    # not just that the live file happens to be well-formed today.
+    # (1) Strip one agent's rule_cluster.decided flag entirely (the exact
+    # "missing part reads as silently absent" failure mode this check
+    # exists to catch). (2) Empty a subject-carrying agent's
+    # declared_subjects while the registry still declares them (the drift
+    # a hand edit or a stale builder would produce). Both must FAIL; the
+    # live file must PASS.
+    _orig_bytes = harness_path.read_bytes()
+    _orig_text = _orig_bytes.decode("utf-8")
+    drift_agent = next((a for a in sorted(registry_agents)
+                        if registry["agents"][a].get("subjects")), None)
+    if drift_agent is None:
+        return _fail("no agent in agent_registry.json declares any subject; the "
+                     "convention assignment would have no consumer at all")
+    tmp = Path(tempfile.mkdtemp(prefix="shimmer_check195_"))
     try:
-        neutralised = _run_195_body()
+        stripped = json.loads(_orig_text)
+        del stripped["agents"]["PROCESSOR"]["rule_cluster"]["decided"]
+        stripped_path = tmp / "stripped.json"
+        stripped_path.write_text(json.dumps(stripped), encoding="utf-8")
+        neutralised = _run_195_body(stripped_path)
+        if neutralised[0] != "FAIL":
+            return _fail("stripping PROCESSOR.rule_cluster.decided did not make this check "
+                         f"fail (got {neutralised}); the check is not actually reading the "
+                         f"file's structure")
+        drifted = json.loads(_orig_text)
+        drifted["agents"][drift_agent]["rule_cluster"]["declared_subjects"] = []
+        drifted_path = tmp / "drifted.json"
+        drifted_path.write_text(json.dumps(drifted), encoding="utf-8")
+        drift_result = _run_195_body(drifted_path)
+        if drift_result[0] != "FAIL":
+            return _fail(f"emptying {drift_agent}.rule_cluster.declared_subjects while the "
+                         f"registry still declares "
+                         f"{registry['agents'][drift_agent].get('subjects')!r} did not make "
+                         f"this check fail (got {drift_result}); the drift check is not live")
     finally:
-        harness_path.write_text(_orig_text, encoding="utf-8")
-    if neutralised[0] != "FAIL":
-        return _fail("stripping PROCESSOR.rule_cluster.decided did not make this check "
-                     f"fail (got {neutralised}); the check is not actually reading the "
-                     f"live file's structure")
-    restored = _run_195_body()
+        shutil.rmtree(tmp, ignore_errors=True)
+    restored = _run_195_body(harness_path)
     if restored[0] != "PASS":
-        return _fail(f"after restoring agent_harness.json verbatim, this check no "
-                     f"longer passes ({restored}); the restore did not work")
+        return _fail(f"the live agent_harness.json does not pass the body check "
+                     f"({restored}) even though the detailed pass above succeeded; the "
+                     f"two copies of the check disagree")
+    if harness_path.read_bytes() != _orig_bytes:
+        return _fail("config/agent_harness.json changed during this check (byte comparison); "
+                     "the check must be non-mutating")
 
+    empty_by_decision = sorted(a for a in registry_agents
+                               if not registry["agents"][a].get("subjects"))
     return _ok(f"all {len(registry_agents)} registry agents have a harness entry with "
-               f"all nine parts present; rule_cluster/testing_against_cluster/ontology "
-               f"are explicitly decided:false with a stated reason for every agent; "
-               f"constitution_by_default/receive_format/hand_format/"
+               f"all nine parts present; rule_cluster and testing_against_cluster are "
+               f"decided:true for every agent, declared_subjects equal the registry's "
+               f"subjects, and {len(empty_by_decision)} empty clusters "
+               f"({', '.join(empty_by_decision)}) carry empty_by_decision with a note; "
+               f"ontology is explicitly decided:false with a stated reason for every "
+               f"agent (W7); constitution_by_default/receive_format/hand_format/"
                f"refire_condition_and_limit resolve through shared_parts, itself "
-               f"decided:true; neutralise-and-restore on a stripped 'decided' field "
-               f"proves this check reads the live file, not a cached assumption")
+               f"decided:true; neutralise-and-restore on a tempdir copy (a stripped "
+               f"'decided' field, then {drift_agent}'s declared_subjects emptied against "
+               f"the registry) proves the check reads the file's structure and the "
+               f"drift check is live; the live config/ file was not written")
 
 
-def _run_195_body():
+def _run_195_body(harness_path=None):
     """The body of check_195 re-invoked for the neutralise/restore proof,
-    factored out so the neutralising write above can call it a second time
-    without re-doing the write/restore dance recursively."""
+    factored out so the check can run it against a mutated tempdir copy
+    (harness_path) and against the live file without recursing into the
+    proof itself. The registry is always the live one."""
     import json
 
-    harness_path = Path(__file__).resolve().parent.parent / "config" / "agent_harness.json"
+    if harness_path is None:
+        harness_path = Path(__file__).resolve().parent.parent / "config" / "agent_harness.json"
     registry_path = Path(__file__).resolve().parent.parent / "config" / "agent_registry.json"
-    harness = json.loads(harness_path.read_text(encoding="utf-8"))
+    harness = json.loads(Path(harness_path).read_text(encoding="utf-8"))
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     registry_agents = set(registry.get("agents", {}).keys())
     harness_agents = set(harness.get("agents", {}).keys())
@@ -14515,11 +14601,15 @@ def _run_195_body():
         "constitution_by_default", "receive_format", "hand_format",
         "refire_condition_and_limit",
     }
-    KNOWN_UNRESOLVED_PARTS = {"rule_cluster", "testing_against_cluster", "ontology"}
+    # Same set as in check_195 above: shrunk to ontology by the convention
+    # assignment (commit "convention assignment 4"); emptied when W7 runs.
+    KNOWN_UNRESOLVED_PARTS = {"ontology"}
     shared = harness.get("shared_parts", {})
 
     for agent in sorted(registry_agents):
         entry = harness["agents"][agent]
+        registry_subjects = list(registry["agents"][agent].get("subjects") or [])
+        registry_note = registry["agents"][agent].get("subjects_note") or ""
         for part in NINE_PARTS:
             if part not in entry:
                 return _fail(f"{agent}.{part} missing")
@@ -14540,6 +14630,20 @@ def _run_195_body():
             else:
                 if value["decided"] is not True:
                     return _fail(f"{agent}.{part} should be decided")
+            if part == "rule_cluster":
+                if value.get("declared_subjects") != registry_subjects:
+                    return _fail(f"{agent}.rule_cluster drifts from the registry")
+                if not registry_subjects:
+                    if (value.get("empty_by_decision") is not True or not registry_note
+                            or value.get("subjects_note") != registry_note):
+                        return _fail(f"{agent}.rule_cluster empty without a decision")
+                elif value.get("empty_by_decision"):
+                    return _fail(f"{agent}.rule_cluster empty_by_decision contradiction")
+            if part == "testing_against_cluster":
+                if value.get("cluster_is_empty_by_decision") != (not registry_subjects):
+                    return _fail(f"{agent}.testing_against_cluster empty flag disagrees")
+                if not value.get("how"):
+                    return _fail(f"{agent}.testing_against_cluster no how")
     return _ok("body check passed")
 
 

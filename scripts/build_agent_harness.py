@@ -87,15 +87,48 @@ ONTOLOGY_PART = {
 }
 
 # Part 8 (fires at all): traced per-agent group against scripts/pipeline.py directly,
-# not assumed. Four distinct firing shapes exist in this codebase today.
+# not assumed. Six distinct firing shapes exist in this codebase today: production
+# and audit agents (unconditional), the two convention-review agents (the W3 firing
+# gate and the subject-chosen paired judging agent), LEGAL_ANALYST (production plus
+# the D6 pass-two calls under the local profile), REDACTOR (layer-gated),
+# AMENDMENT_DRAFTER (bus-dedup-gated) and the editorial board (parsimony escalation).
 FIRES_UNCONDITIONALLY = {
     "condition": "Always, once per its fixed phase, unconditionally.",
     "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, "
-             "PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, "
-             "CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that "
-             "name this agent. No per-agent rule-cluster gate exists (W2 "
-             "stopped before one could), so every agent in these lists runs "
-             "on every document today.",
+             "PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the "
+             "fixed per-phase lists that name this agent. A production or "
+             "audit agent has no per-agent gate: it produces the material the "
+             "convention review consumes, so gating it on rules would starve "
+             "the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3).",
+}
+FIRES_CONVENTION_REVIEW = {
+    "condition": "Wide mode: fires if at least one rule is assigned to it by "
+                 "the convention assignment OR at least one loaded rule is "
+                 "untagged (an untagged rule keeps today's default routing to "
+                 "every convention-review agent); only with zero assigned "
+                 "rules and zero untagged rules does it not run. Paired mode: "
+                 "each pair's judging agent is chosen by its rule's subject, "
+                 "the first convention-review agent among the rule's "
+                 "consumer_agents, falling back to PRACTICE_AUDITOR for an "
+                 "untagged rule or one whose consumers sit outside phase 5.5.",
+    "where": "scripts/pipeline.py: _convention_review_firing_agents (the "
+             "wide-mode loop of phase_5_5_convention_review) and "
+             "_paired_judging_agent (_paired_convention_review); the "
+             "assignment is <run>/audit/convention_assignment.json, computed "
+             "once at BOOT by scripts/convention_assignment.assign_conventions. "
+             "Gate check 199 proves both, executed, neutralised and restored.",
+}
+FIRES_LEGAL_ANALYST = {
+    "condition": "Once in phase 3 per operational document, unconditionally, "
+                 "as a production agent; under the local backend profile ALSO "
+                 "once per finding its first call produced (D6, the two-pass "
+                 "split: a second, narrower question per finding, always "
+                 "serial, bounded by the pass-one count). Not a retry: the "
+                 "re-fire limit on a contract violation stays 0.",
+    "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC and "
+             "_deepen_legal_analyst_findings_local (D6). Observed live on "
+             "run 3d3142c8 (2026-09-11): 1 phase-3 call producing 5 findings, "
+             "then 5 pass-two calls, 6 in all.",
 }
 FIRES_REDACTOR = {
     "condition": "Phase 9 (redaction) always RUNS, but REDACTOR itself only "
@@ -137,14 +170,14 @@ FIRES_EDITORIAL_BOARD = {
 AGENT_FIRING = {
     "PROCESSOR": FIRES_UNCONDITIONALLY,
     "SPEECH_ACT_TAGGER": FIRES_UNCONDITIONALLY,
-    "LEGAL_ANALYST": FIRES_UNCONDITIONALLY,
+    "LEGAL_ANALYST": FIRES_LEGAL_ANALYST,
     "ARCHIVIST": FIRES_UNCONDITIONALLY,
     "INST_FINDER": FIRES_UNCONDITIONALLY,
     "CITATION_RESOLVER": FIRES_UNCONDITIONALLY,
     "VERIFIER": FIRES_UNCONDITIONALLY,
     "FACT_CHECKER": FIRES_UNCONDITIONALLY,
-    "PRACTICE_AUDITOR": FIRES_UNCONDITIONALLY,
-    "STYLE_GUARDIAN": FIRES_UNCONDITIONALLY,
+    "PRACTICE_AUDITOR": FIRES_CONVENTION_REVIEW,
+    "STYLE_GUARDIAN": FIRES_CONVENTION_REVIEW,
     "REDACTOR": FIRES_REDACTOR,
     "AMENDMENT_DRAFTER": FIRES_AMENDMENT_DRAFTER,
     "EDITOR_CLERK": FIRES_EDITORIAL_BOARD,
@@ -155,25 +188,54 @@ AGENT_FIRING = {
     "EDITOR_DG": FIRES_EDITORIAL_BOARD,
 }
 
-# Part 3 (rule cluster) and part 4 (testing against that cluster) are
-# declared unresolved for every agent, per W2's own stop: no per-agent
-# convention assignment exists, so there is no cluster to name or test
-# against. Every agent still receives every convention, unclustered.
-RULE_CLUSTER_PART = {
-    "decided": False,
-    "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its "
-                          "own premise check: no agent contract declares a "
-                          "subject/scope an assignment could be derived "
-                          "from, and no convention's own category matches "
-                          "an agent's category vocabulary. Every agent "
-                          "receives the full, unclustered convention "
-                          "registry today.",
-}
-TESTING_AGAINST_CLUSTER_PART = {
-    "decided": False,
-    "unresolved_because": "Depends directly on rule_cluster, above, which "
-                          "is unresolved for the same reason.",
-}
+# Parts 3 (the rule cluster assigned to it) and 4 (testing against that
+# cluster) were unresolved while W2 stood stopped at its premise check. The
+# convention assignment (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, the
+# operator's ten answers, commits "convention assignment 1" to "3") decides
+# both: an agent's cluster is the set of subjects it declares in
+# config/agent_registry.json (empty, by the operator's decision, for the six
+# agents no convention-review path reaches), and per run the rules matched to
+# it are by_agent[<name>] in <run>/audit/convention_assignment.json. Both
+# parts are read from the registry here so the harness cannot drift from it.
+def _rule_cluster_part(name, reg):
+    subjects = list(reg.get("subjects") or [])
+    part = {
+        "decided": True,
+        "declared_subjects": subjects,
+        "where": "config/agent_registry.json agents.%s.subjects (the one-way "
+                 "label the agent declares); per run, the rules assigned to it "
+                 "are by_agent[%s] in <run>/audit/convention_assignment.json, "
+                 "computed once at BOOT by scripts/convention_assignment."
+                 "assign_conventions (any overlap between a rule's bracket tags "
+                 "and this list, exact token equality, no subject name in code)."
+                 % (name, name),
+    }
+    if not subjects:
+        part["empty_by_decision"] = True
+        part["subjects_note"] = reg.get("subjects_note") or ""
+    return part
+
+
+def _testing_against_cluster_part(name, reg):
+    subjects = list(reg.get("subjects") or [])
+    how = ("Gate check 198 proves the comparison, its route and its console state "
+           "on fixture registries; gate check 199 proves the firing gate and the "
+           "subject-chosen paired judging agent executed against the real "
+           "_paired_convention_review, neutralised and restored. Both test the "
+           "mechanism, not this agent in particular. The harness runner "
+           "scripts/harness/run_agent.py runs this agent on one unit against one "
+           "rule the operator names (--rule-file, --rule-id); it does not select "
+           "the rule by subject, so it exercises the agent, not the cluster. No "
+           "other per-agent cluster test exists; per run, the rules this agent "
+           "was actually given are read from <run>/audit/convention_assignment.json.")
+    if not subjects:
+        how += (" This agent declares no subjects, so there is no cluster to test "
+                "against.")
+    return {
+        "decided": True,
+        "how": how,
+        "cluster_is_empty_by_decision": not subjects,
+    }
 
 
 def build():
@@ -209,10 +271,12 @@ def build():
             },
             # Part 2: constitution by default. Shared, see shared_parts.
             "constitution_by_default": {"see": "shared_parts.constitution_by_default"},
-            # Part 3: the rule cluster assigned to it. Unresolved (W2).
-            "rule_cluster": dict(RULE_CLUSTER_PART),
-            # Part 4: testing against that cluster. Unresolved (depends on part 3).
-            "testing_against_cluster": dict(TESTING_AGAINST_CLUSTER_PART),
+            # Part 3: the rule cluster assigned to it. Decided: the subjects the
+            # agent declares in the registry (convention assignment).
+            "rule_cluster": _rule_cluster_part(name, reg),
+            # Part 4: testing against that cluster. Decided: gate checks 198/199
+            # and the single-agent harness against the agent's own subjects.
+            "testing_against_cluster": _testing_against_cluster_part(name, reg),
             # Part 5: ontological knowledge drawn in as required. Unresolved (W7).
             "ontology": dict(ONTOLOGY_PART),
             # Part 6: receive format. Shared, see shared_parts.

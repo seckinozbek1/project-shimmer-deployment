@@ -44,12 +44,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [],
+        "where": "config/agent_registry.json agents.PROCESSOR.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[PROCESSOR] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code).",
+        "empty_by_decision": true,
+        "subjects_note": "No convention-review path reaches PROCESSOR today (it runs in production, before any convention is in scope); an empty list rather than a subject nobody can act on, per the convention assignment design."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json. This agent declares no subjects, so there is no cluster to test against.",
+        "cluster_is_empty_by_decision": true
       },
       "ontology": {
         "decided": false,
@@ -64,7 +68,7 @@
       "fires_at_all": {
         "decided": true,
         "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -100,12 +104,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "fidelity"
+        ],
+        "where": "config/agent_registry.json agents.VERIFIER.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[VERIFIER] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -120,7 +128,7 @@
       "fires_at_all": {
         "decided": true,
         "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -158,12 +166,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "facts"
+        ],
+        "where": "config/agent_registry.json agents.FACT_CHECKER.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[FACT_CHECKER] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -178,7 +190,7 @@
       "fires_at_all": {
         "decided": true,
         "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -215,12 +227,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "conformance"
+        ],
+        "where": "config/agent_registry.json agents.PRACTICE_AUDITOR.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[PRACTICE_AUDITOR] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -234,8 +250,8 @@
       },
       "fires_at_all": {
         "decided": true,
-        "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "condition": "Wide mode: fires if at least one rule is assigned to it by the convention assignment OR at least one loaded rule is untagged (an untagged rule keeps today's default routing to every convention-review agent); only with zero assigned rules and zero untagged rules does it not run. Paired mode: each pair's judging agent is chosen by its rule's subject, the first convention-review agent among the rule's consumer_agents, falling back to PRACTICE_AUDITOR for an untagged rule or one whose consumers sit outside phase 5.5.",
+        "where": "scripts/pipeline.py: _convention_review_firing_agents (the wide-mode loop of phase_5_5_convention_review) and _paired_judging_agent (_paired_convention_review); the assignment is <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions. Gate check 199 proves both, executed, neutralised and restored."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -274,12 +290,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "basis"
+        ],
+        "where": "config/agent_registry.json agents.LEGAL_ANALYST.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[LEGAL_ANALYST] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -293,8 +313,8 @@
       },
       "fires_at_all": {
         "decided": true,
-        "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "condition": "Once in phase 3 per operational document, unconditionally, as a production agent; under the local backend profile ALSO once per finding its first call produced (D6, the two-pass split: a second, narrower question per finding, always serial, bounded by the pass-one count). Not a retry: the re-fire limit on a contract violation stays 0.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC and _deepen_legal_analyst_findings_local (D6). Observed live on run 3d3142c8 (2026-09-11): 1 phase-3 call producing 5 findings, then 5 pass-two calls, 6 in all."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -330,12 +350,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "wording"
+        ],
+        "where": "config/agent_registry.json agents.STYLE_GUARDIAN.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[STYLE_GUARDIAN] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -349,8 +373,8 @@
       },
       "fires_at_all": {
         "decided": true,
-        "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "condition": "Wide mode: fires if at least one rule is assigned to it by the convention assignment OR at least one loaded rule is untagged (an untagged rule keeps today's default routing to every convention-review agent); only with zero assigned rules and zero untagged rules does it not run. Paired mode: each pair's judging agent is chosen by its rule's subject, the first convention-review agent among the rule's consumer_agents, falling back to PRACTICE_AUDITOR for an untagged rule or one whose consumers sit outside phase 5.5.",
+        "where": "scripts/pipeline.py: _convention_review_firing_agents (the wide-mode loop of phase_5_5_convention_review) and _paired_judging_agent (_paired_convention_review); the assignment is <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions. Gate check 199 proves both, executed, neutralised and restored."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -388,12 +412,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [],
+        "where": "config/agent_registry.json agents.ARCHIVIST.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[ARCHIVIST] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code).",
+        "empty_by_decision": true,
+        "subjects_note": "No convention-review path reaches ARCHIVIST today; its own does_not rules out the evaluative judgment a routed rule would ask for. An empty list rather than a subject nobody can act on."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json. This agent declares no subjects, so there is no cluster to test against.",
+        "cluster_is_empty_by_decision": true
       },
       "ontology": {
         "decided": false,
@@ -408,7 +436,7 @@
       "fires_at_all": {
         "decided": true,
         "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -438,12 +466,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [],
+        "where": "config/agent_registry.json agents.INST_FINDER.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[INST_FINDER] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code).",
+        "empty_by_decision": true,
+        "subjects_note": "AUDIT-ONLY by contract: its output is posted for audit and read by no deliverable today. An empty list rather than a subject nobody can act on."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json. This agent declares no subjects, so there is no cluster to test against.",
+        "cluster_is_empty_by_decision": true
       },
       "ontology": {
         "decided": false,
@@ -458,7 +490,7 @@
       "fires_at_all": {
         "decided": true,
         "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -491,12 +523,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [],
+        "where": "config/agent_registry.json agents.CITATION_RESOLVER.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[CITATION_RESOLVER] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code).",
+        "empty_by_decision": true,
+        "subjects_note": "AUDIT-ONLY by contract: its output is posted for audit and read by no deliverable today. An empty list rather than a subject nobody can act on."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json. This agent declares no subjects, so there is no cluster to test against.",
+        "cluster_is_empty_by_decision": true
       },
       "ontology": {
         "decided": false,
@@ -511,7 +547,7 @@
       "fires_at_all": {
         "decided": true,
         "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -543,12 +579,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [],
+        "where": "config/agent_registry.json agents.SPEECH_ACT_TAGGER.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[SPEECH_ACT_TAGGER] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code).",
+        "empty_by_decision": true,
+        "subjects_note": "No convention-review path reaches SPEECH_ACT_TAGGER today; no consumer of its tags exists. An empty list rather than a subject nobody can act on."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json. This agent declares no subjects, so there is no cluster to test against.",
+        "cluster_is_empty_by_decision": true
       },
       "ontology": {
         "decided": false,
@@ -563,7 +603,7 @@
       "fires_at_all": {
         "decided": true,
         "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -595,12 +635,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "redaction"
+        ],
+        "where": "config/agent_registry.json agents.REDACTOR.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[REDACTOR] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -651,12 +695,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [],
+        "where": "config/agent_registry.json agents.AMENDMENT_DRAFTER.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[AMENDMENT_DRAFTER] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code).",
+        "empty_by_decision": true,
+        "subjects_note": "Reads findings other agents reported, not rules directly, and its model call is off by default; declaring a subject would let an operator tag a rule for AMENDMENT_DRAFTER and get silence. An empty list rather than a subject nobody can act on."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json. This agent declares no subjects, so there is no cluster to test against.",
+        "cluster_is_empty_by_decision": true
       },
       "ontology": {
         "decided": false,
@@ -710,12 +758,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "editorial"
+        ],
+        "where": "config/agent_registry.json agents.EDITOR_CLERK.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[EDITOR_CLERK] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -766,12 +818,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "editorial"
+        ],
+        "where": "config/agent_registry.json agents.EDITOR_HEAD_OF_UNIT.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[EDITOR_HEAD_OF_UNIT] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -822,12 +878,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "editorial"
+        ],
+        "where": "config/agent_registry.json agents.EDITOR_HEAD_OF_SECTION.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[EDITOR_HEAD_OF_SECTION] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -878,12 +938,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "editorial"
+        ],
+        "where": "config/agent_registry.json agents.EDITOR_HEAD_OF_DEPARTMENT.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[EDITOR_HEAD_OF_DEPARTMENT] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -934,12 +998,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "editorial"
+        ],
+        "where": "config/agent_registry.json agents.EDITOR_DEPUTY_DG.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[EDITOR_DEPUTY_DG] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,
@@ -990,12 +1058,16 @@
         "see": "shared_parts.constitution_by_default"
       },
       "rule_cluster": {
-        "decided": false,
-        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+        "decided": true,
+        "declared_subjects": [
+          "editorial"
+        ],
+        "where": "config/agent_registry.json agents.EDITOR_DG.subjects (the one-way label the agent declares); per run, the rules assigned to it are by_agent[EDITOR_DG] in <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions (any overlap between a rule's bracket tags and this list, exact token equality, no subject name in code)."
       },
       "testing_against_cluster": {
-        "decided": false,
-        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+        "decided": true,
+        "how": "Gate check 198 proves the comparison, its route and its console state on fixture registries; gate check 199 proves the firing gate and the subject-chosen paired judging agent executed against the real _paired_convention_review, neutralised and restored. Both test the mechanism, not this agent in particular. The harness runner scripts/harness/run_agent.py runs this agent on one unit against one rule the operator names (--rule-file, --rule-id); it does not select the rule by subject, so it exercises the agent, not the cluster. No other per-agent cluster test exists; per run, the rules this agent was actually given are read from <run>/audit/convention_assignment.json.",
+        "cluster_is_empty_by_decision": false
       },
       "ontology": {
         "decided": false,

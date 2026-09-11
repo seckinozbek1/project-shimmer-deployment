@@ -871,17 +871,25 @@ hand-edited. Four parts (constitution-by-default, receive-format, hand-format,
 re-fire-condition-and-limit) are decided once, identically, for every agent and live in the
 file's `shared_parts` block; the re-fire limit is 0, since no retry mechanism exists anywhere
 between `pipeline.py` and `agent_wrapper.py`, a contract violation drops the item rather than
-retrying it. Firing (part 8) is traced per agent group: the fixed per-phase lists fire
-unconditionally; REDACTOR fires only while the sensitivity layer is active; AMENDMENT_DRAFTER
-skips when a fresh payload already sits on the bus; the editorial board fires by parsimony,
-each rank above EDITOR_CLERK summoned only on a confidence-below-threshold or
-`out_of_mandate` escalation. Two parts (rule cluster, testing against that cluster) are
-genuinely undecided today: no per-agent convention assignment mechanism exists, so every agent
-still receives the full, unclustered convention registry. A third (ontology) is undecided
-because the ontology work has not run. All three are written into the file as
-`"decided": false` with a stated reason, never omitted: an omitted part is indistinguishable
-from one nobody thought of, and gate check 195 fails if any of the 18 agents is missing a part
-or has an unresolved part silently marked decided.
+retrying it. Firing (part 8) is traced per agent group, six shapes: the production and audit
+lists fire unconditionally; the two convention-review agents pass the W3 firing gate (an agent
+fires if the convention assignment gave it a rule or any loaded rule is untagged, and in
+paired mode each pair's judging agent is chosen by the rule's subject, falling back to
+PRACTICE_AUDITOR); LEGAL_ANALYST fires once in phase 3 and, under the local profile, once more
+per finding its first call produced (the D6 two-pass split); REDACTOR fires only while the
+sensitivity layer is active; AMENDMENT_DRAFTER skips when a fresh payload already sits on the
+bus; the editorial board fires by parsimony, each rank above EDITOR_CLERK summoned only on a
+confidence-below-threshold or `out_of_mandate` escalation. Parts 3 and 4 (the rule cluster
+assigned to an agent, and testing against it) are decided by the convention assignment
+(`docs/api/CONVENTION_ASSIGNMENT_DESIGN.md`): an agent's cluster is the `subjects` it
+declares in `config/agent_registry.json`, empty by the operator's decision for the six agents
+no convention-review path reaches (each carries a `subjects_note` saying why), and per run the
+rules matched to it are read from `audit/convention_assignment.json`; the cluster is proved by
+gate checks 198 and 199. One part (ontology) stays undecided until the ontology work runs,
+written into the file as `"decided": false` with a stated reason, never omitted: an omitted
+part is indistinguishable from one nobody thought of, and gate check 195 fails if any of the
+18 agents is missing a part, if a cluster in the file drifts from the registry it was built
+from, or if the one unresolved part is silently marked decided.
 
 ### Benchmarking (`benchmark/keys/`, never committed)
 
