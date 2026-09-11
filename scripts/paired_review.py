@@ -330,11 +330,14 @@ def date_pair_for_rule(unit_text, rule_text):
     candidates = _label_lines_with_dates(unit_text)
     if not candidates:
         return None
-    # Unicode-aware, the same split pairing_map.needed_fields uses against a
-    # rule's own text (not _norm_label, which also drops stopwords and short
-    # words: a rule word must survive here exactly as needed_fields tests it).
-    rule_words = set(
-        w for w in re.split(r"[\W_]+", (rule_text or "").lower(), flags=re.UNICODE) if w)
+    # The rule's own words, read by pairing_map._norm_label: the SAME
+    # function needed_fields and _label_lines_with_dates' own connecting
+    # words already go through. This used to be a second, independent raw
+    # split, disagreeing with _norm_label on the exact axis that mattered:
+    # the device corpus's own D05 rule says "logged calibration visits" and
+    # the document's value line says "calibration visit", and only a split
+    # that folds the plural on BOTH sides can ever equate the two.
+    rule_words = set(_pm._norm_label(rule_text or ""))
 
     def _named(label):
         return bool(label) and set(label) <= rule_words

@@ -461,6 +461,39 @@ as `paired_review_no_firing_agent`. `GET /runs/{run_id}/pairs` serves `not_judge
 the `prior_*` counts only and nothing of `absence` or `band_conditions` (an open gap,
 recorded in section I).
 
+### Normalisation: one tokeniser, shared
+
+Every comparison between a rule's wording and a document's own labels runs through one
+function, `pairing_map._norm_label`. It lowercases, splits on non-word characters, drops
+closed-class stopwords and tokens of two characters or fewer, and folds a trailing plural.
+Three properties matter, and each exists because its absence cost a measurable failure:
+
+- **A hyphen JOINS two word characters rather than splitting them.** "Class-A" is the name of
+  a device class, one token, not the word "class" followed by a letter. Splitting it and then
+  dropping the single letter by the length floor collapsed "Class-A sensor", "Class-B sensor"
+  and "Class-C sensor" into the identical `('class', 'sensor')`, so no band or field match
+  could tell three different tolerance bands apart. The join is done with an ASCII sentinel
+  substituted before the split, because a Unicode look-alike hyphen is *not* a word character
+  under `re`'s own UNICODE classification and fails silently the same way the raw split did.
+- **A trailing plural is folded** (`_stem`): strip a trailing `s`, or fold `-ies` to `-y`.
+  Two suffix rules, no irregular plurals, nothing else. It refuses where a trailing `s` is
+  almost never a plural marker: after `ss` ("class"), `us` ("corpus"), `is` ("diagnosis"),
+  or on a word of three characters or fewer. Without it, a glossary saying "fault timestamp"
+  and a rule saying "state the two timestamps" could never match, however the split was tuned.
+- **Both sides go through it.** Two independent raw word-bag builders used to serve the rule
+  side (`needed_fields`, `date_pair_for_rule`), and they had already drifted from each other
+  and from this function before either defect was found. They were deleted rather than
+  synchronised: a fold applied to one side of a subset test does nothing at all.
+
+Checked against every corpus on disk before landing, not just the two device twins
+(`docs/fix/HYPHEN_SURVEY.log`, `docs/fix/HYPHEN_PAIRS_CHECK.log`): 60-odd hyphenated tokens across
+six corpora, and the label renames the stem causes (`rights` to `right`, `requires` to
+`require` in `catalogue_records`) move both sides together, so the **pair sets are byte-identical
+before and after on all twelve corpus documents**. The only behavioural change is the intended
+one. Recorded limits, not claimed away: `len(w) > 2` is an alphabetic assumption that still
+drops a CJK label, and the stem is English morphology specifically, which a language whose
+plural is not a trailing `s` neither gains from nor loses to.
+
 ### Bands from the reference corpus
 
 A rule often states no numbers of its own; it points at a table in the reference corpus.
@@ -571,22 +604,24 @@ latent the moment either wording gap below closes; closed by dropping a scoped r
 `absence_computed` plans and its fallback to `absence_judged` when nothing is computed are both
 left untouched.
 
-**Real-corpus honesty: neither device rule settles end to end on this corpus's exact wording,**
-and the reason is the same brittleness check 215 already named for a different pair of labels.
-D04's date pair is found (its two label lines share no vocabulary problem with the rule) but its
-bound is not: the bound sentence says "fault timestamp" (singular) and the rule says "state the
-two timestamps" (plural), and word containment does not stem. D05's bound is found, once the
-search also covers the document under review's own text: this corpus's task description says
-plainly that "the document's own glossary section states the standard fault window, service
-interval..." so the glossary lives INSIDE `device_log_flawed.md` itself, not in the separate
-`device_class_reference.md` the way D01's class tolerance bands do, and excluding the document
-under review (Job A's own table-reading pattern, copied here uncritically at first) made D05
-permanently unsolvable until the document's own text was searched too. But D05's date pair is
-not found: the value says "calibration visit" (singular, twice) and the rule says "logged
-calibration visits" (plural). Both mechanisms are proved correct on fixtures whose vocabulary
-aligns (check 217); the gap on this specific corpus is a fact about how the operator's rules and
-document happen to be worded relative to each other, not a defect in either reader, and neither
-the corpus nor the rules were changed to make it disappear.
+**Real-corpus outcome: D04 settles; D05 does not, and no longer for a word-form reason.**
+Both rules were blocked on singular/plural mismatches until the shared tokenizer gained a stem
+(`pairing_map._norm_label`, "Normalisation" below): the bound sentence said "fault timestamp"
+against a rule saying "state the two timestamps", and the value line said "calibration visit"
+against a rule saying "logged calibration visits". The stem folds both, on both sides, so
+**D04 now finds its date pair AND its 24-hour bound and settles**. D05's bound is also found,
+once the search covers the document under review's own text: this corpus's task description
+says plainly that "the document's own glossary section states the standard fault window,
+service interval..." so the glossary lives INSIDE `device_log_flawed.md` itself, not in the
+separate `device_class_reference.md` the way D01's class tolerance bands do, and excluding the
+document under review (Job A's own table-reading pattern, copied here uncritically at first)
+made D05 permanently unsolvable until the document's own text was searched too. **D05's date
+pair is still not found, for a different reason a stem cannot reach:** its value line's
+connecting words carry "last", "next" and "record", none of which the rule states, because
+`_label_lines_with_dates` collects the whole post-date remainder as if it were vocabulary the
+rule could name. That is noise collection rather than matching, and it is named here rather
+than papered over; check 217 pins it and says plainly that the assertion must be inverted, not
+deleted, when the extraction is narrowed.
 
 ### Typed Finding records
 
@@ -1562,13 +1597,16 @@ of 101 pairs were made by the similarity fallback because the rules named no fie
 entries carry, and the reference states its bands in prose, which `reference_tables.py` did
 not read at the time (addressed, check 215: a labelled prose band, a class or label, a colon,
 a range and a unit in one sentence, is read the same way a table cell is, with the same
-refusal on two unrelated figures in one sentence). On `device_log_review` itself the fix does
-not yet mint a band end to end: the corpus's own three class labels, "Class-A sensor" /
-"Class-B sensor" / "Class-C sensor", reduce to the identical word set under the existing
-label tokenizer once the single-letter suffix is dropped by its `len(w) > 2` filter, so
-`match_row` correctly refuses the row as a tie rather than guessing which class a reading
-belongs to, a pre-existing limit of the shared tokenizer reproduced identically by a real
-markdown table carrying the same three labels, not something check 215 introduces or fixes.
+refusal on two unrelated figures in one sentence). On `device_log_review` itself the band did
+not mint end to end at first: the corpus's own three class labels, "Class-A sensor" /
+"Class-B sensor" / "Class-C sensor", reduced to the identical word set under the label
+tokenizer, which split the hyphen and then dropped the single letter by its `len(w) > 2`
+filter, so `match_row` correctly refused the row as a tie rather than guessing which class a
+reading belongs to. That was a limit of the SHARED tokenizer, reproduced identically by a real
+markdown table carrying the same three labels, not something check 215 introduced. It is now
+fixed at that shared layer ("Normalisation" below): the hyphen joins, the three classes are
+distinguishable, and check 215 pins the band minting from the corpus's own prose, with a
+Class-B unit taking the 20-to-60 row and a Class-C unit the 70-to-110 row.
 Two defects are recorded and not fixed: in paired mode the model never writes a unit id
 although Python knows it by construction (the declared-scope path now stamps it for absence
 findings; the general case is open), and a valid envelope wrapped in prose is refused as a
