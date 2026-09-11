@@ -80,9 +80,9 @@ shimmer-deployment/
 │                                          (scripts/verify_session1.py), the convention
 │                                          assignment, the call-evidence recorder and the
 │                                          false-negative classifier, the harness builder,
-│                                          the ontology store and its reader, harness/,
-│                                          sensitivity_layer/, ui/ (the console, one HTML
-│                                          file plus its vendored typeface)
+│                                          the ontology store, its reader and the relation
+│                                          extractor, harness/, sensitivity_layer/, ui/ (the
+│                                          console, one HTML file plus its vendored typeface)
 ├── corpus_ingest/                        the external corpus ingestion contract, validator,
 │                                          and its own test fixtures
 ├── config/                               governance and compiled config (constitution,
@@ -90,7 +90,7 @@ shimmer-deployment/
 │                                          nine-part agent harness, domain vocabulary,
 │                                          institution names, review scope, pricing, local
 │                                          model ids, editorial board tunables, redaction
-│                                          cues, rename tolerance)
+│                                          cues, rename tolerance, relation patterns)
 ├── benchmark/corpora/                    the shipped test corpora (five scenarios in six
 │                                          directories, one with a clean twin) and their
 │                                          answer keys (see "Test corpora from other
@@ -895,6 +895,26 @@ hold. The reader carries identifiers and provenance only and never a provision's
 bytes), since the only writer is run-end capture and no run has been made since the store was
 scoped, so gate check 210 proves the read path on fixtures alone. The first real content
 arrives on the first run after the move to a GPU box.
+
+**Relations between provisions** (ontology chain, job 2) are the second thing the store can
+now hold. The graph records where a finding came from and never that one provision relates to
+another, which is exactly what the long-range case needs: a term defined at the start of a
+document and used at the end, the distance the adjacent-neighbour mechanism explicitly does
+not reach. `scripts/relation_extract.py` produces that relation two deterministic ways. A
+cross-reference extractor, whose every pattern lives in `config/relation_patterns.json` and
+none in code, resolves a captured reference to a real unit by exact match then unique
+containment and **refuses an ambiguity** rather than picking one, because a wrong relation is
+worse than none. And embedding similarity over units of the same document, with the ranker
+**injected** rather than imported, so the module never depends on an embedding store and
+never loads a model; only pairs at least two units apart are considered, since a unit is
+trivially similar to its neighbour and that case is already covered. Relations are written
+into the same scoped store provisions use, with a stable composite id so re-extraction
+supersedes rather than duplicates, and read back by `relation_summary`, which keeps the two
+mechanisms distinguishable by method. A relation says one unit names, or reads like, another;
+it does **not** say they agree or conflict, and it is not evidence for any finding.
+**Built, not measured, and nothing in a review reads a relation today**: gate check 211
+proves both mechanisms on fixtures, and the operator scores them on the long-range corpus
+after the move before anything relies on either.
 
 Its storage layer is `scripts/ontology_store.py` (night chain W7, the ontology foundations),
 and four things are decided there. Scope: every record carries the scope it was written
@@ -2041,7 +2061,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**211** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**212** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2069,7 +2089,7 @@ something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 211 checks on an empty checkout would be proving nothing about those
+A gate that passed all 212 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Two
 more checks depend on the machine rather than the tree: check 193 loads one of the
 local-profile models with the network blocked at the socket and fails until the weights are
@@ -2126,9 +2146,10 @@ with the per-plan judging agent; (200 to 202) the ontology store's scope, proven
 track; (203) the console current with the chain; (204 and 205) call evidence reconstructed
 from disk and the four-class false-negative classifier; (206 and 207) the convention
 distribution on the paired path and the three recording gaps; (208 and 209) longest-match
-labels and the declared-scope absence path; (210) the ontology store's first reader, proved
-on fixture records because every store in this repository is empty. Everything from 186 on
-was built on 10 and 11 September 2026 and is proved here on fixtures only.
+labels and the declared-scope absence path; (210) the ontology store's first reader and
+(211) the deterministic relation baseline, both proved on fixture records because every
+store in this repository is empty. Everything from 186 on was built on 10 and 11 September
+2026 and is proved here on fixtures only.
 
 ---
 

@@ -105,7 +105,13 @@ def provenance_summary(store, *, limit=None):
     An EMPTY store returns zeros and an empty list, which is the honest answer and
     the state of every store in this repository today. It is not an error.
     """
-    records = store.current()
+    # Provisions only. The same scoped store also holds Relation records (job 2) and
+    # Resolution records (job 3), and counting either as a provision would silently
+    # inflate every figure this summary reports. The test is an ALLOWLIST, not a list
+    # of things to exclude, so a node type added later cannot leak in by being
+    # forgotten here. A record carrying no node at all is a provision, which is what
+    # every record written before job 2 is.
+    records = [r for r in store.current() if (r.get("node") or "Provision") == "Provision"]
     rows = [summarize_record(r) for r in records]
     rows.sort(key=lambda r: (r["time"] is None, r["time"] or "", r["id"] or ""), reverse=False)
     rows.reverse()
@@ -124,6 +130,51 @@ def provenance_summary(store, *, limit=None):
         "log_events": len(store.log_entries()),
         "provisions": rows[:limit] if limit else rows,
         "truncated": bool(limit and len(rows) > limit),
+    }
+
+
+def relation_summary(store):
+    """The relations held in this scope (ontology chain, job 2), read back through the
+    same scoped storage layer that wrote them.
+
+    Separate from provenance_summary because they answer different questions and
+    because job 2's two mechanisms must stay distinguishable: the operator scores the
+    deterministic baseline against the candidate finder later, and one undifferentiated
+    total would make that comparison impossible. Counts by relation type, by method and
+    by pattern; the rows carry unit ids and never a unit's text.
+
+    An empty result is the honest answer for every store today.
+    """
+    rows = [r for r in store.current() if r.get("node") == "Relation"]
+    by_type, by_method, by_pattern = Counter(), Counter(), Counter()
+    out = []
+    for r in rows:
+        by_type[r.get("relation_type")] += 1
+        by_method[r.get("method")] += 1
+        if r.get("pattern"):
+            by_pattern[r["pattern"]] += 1
+        prov = _provenance_of(r)
+        out.append({
+            "id": r.get("id"),
+            "document_id": r.get("document_id"),
+            "relation_type": r.get("relation_type"),
+            "method": r.get("method"),
+            "source_unit": r.get("source_unit"),
+            "target_unit": r.get("target_unit"),
+            "pattern": r.get("pattern"),
+            "score": r.get("score"),
+            "run": prov.get("run"),
+            "revision": r.get("revision"),
+        })
+    out.sort(key=lambda r: (r["document_id"] or "", r["source_unit"] or "",
+                            r["target_unit"] or ""))
+    return {
+        "scope": store.scope,
+        "relation_count": len(out),
+        "by_type": [{"relation_type": k, "relations": n} for k, n in by_type.most_common()],
+        "by_method": [{"method": k, "relations": n} for k, n in by_method.most_common()],
+        "by_pattern": [{"pattern": k, "relations": n} for k, n in by_pattern.most_common()],
+        "relations": out,
     }
 
 

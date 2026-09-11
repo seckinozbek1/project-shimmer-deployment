@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Operator-declared patterns for finding CROSS-REFERENCES between units of a document (ontology chain, job 2, the deterministic baseline). Every pattern here is the OPERATOR'S, never the engine's: scripts/ relation_extract.py holds no pattern of its own and cannot, because a reference is written differently in every domain, language and house style. This file is the whole vocabulary. An empty patterns list means no cross-reference is extracted, which is an honest nothing rather than a guessed something. S5: no domain-specific content in scripts/.",
+  "how_this_is_read": "relation_extract.load_patterns() reads `patterns`. Each entry: `name` (an operator label, reported on the relation so a reader knows which pattern fired), `regex` (Python re syntax, matched case-insensitively unless `case_sensitive` is true), and `target_group` (the capture group holding the referenced unit's own label, 1 by default). A pattern whose regex does not compile is SKIPPED with a warning and never silently treated as matching nothing: a broken pattern and an absent pattern are different facts.",
+  "what_a_match_means": "A match says one unit's text NAMES another unit's label. It does not say the two are about the same subject, and it is not evidence for any finding. It is a structural candidate: the deterministic half of job 2, recorded in the ontology store as a relation and read back, and scored later on the long-range corpus before anything relies on it.",
+  "patterns": [
+    {
+      "name": "numbered-unit-reference",
+      "regex": "(?:see|under|per|in accordance with|pursuant to|as defined in|as set out in)\\s+((?:section|clause|article|paragraph|item|rule|part|annex|schedule|appendix)\\s+[0-9]+(?:\\.[0-9]+)*)",
+      "target_group": 1,
+      "why": "The commonest shape of an explicit internal reference in a structured document: a referring phrase followed by a unit kind and a number. The unit kinds and the referring phrases are both the operator's, listed here rather than in code, and an operator whose documents use other words replaces this entry outright."
+    },
+    {
+      "name": "defined-term-reference",
+      "regex": "\\b(?:as\\s+)?defined\\s+in\\s+the\\s+([a-z][a-z \\-]{2,40})\\b",
+      "target_group": 1,
+      "why": "The long-range case this job exists for: a unit that points back at where a term was defined (a glossary, a definitions section) rather than at a numbered unit. The target is the named place, matched against unit titles."
+    }
+  ],
+  "similarity": {
+    "description": "The second deterministic mechanism: embedding similarity over units of the same document, which needs no pattern at all and so carries no vocabulary. Operator-tunable because how close two units must be before the relation is worth recording is a judgement about the operator's documents, not a constant.",
+    "min_score": 0.75,
+    "max_per_unit": 3,
+    "min_units_apart": 2,
+    "why_min_units_apart": "A unit is trivially similar to the one beside it, and the adjacent-neighbour mechanism already carries that case into the payload. Only pairs at least this far apart are recorded, so this mechanism addresses the distance the neighbour work explicitly does not reach."
+  }
+}
