@@ -1,0 +1,200 @@
+==============================================================================
+PART 1: every hyphenated token in every corpus (rules, documents, references)
+==============================================================================
+
+catalogue_records:
+   cat-alder                          in catalogue_records.md
+   cat-birch                          in catalogue_records.md
+   cat-cedar                          in catalogue_records.md
+   cat-damson                         in catalogue_records.md
+   cat-elder                          in catalogue_records.md
+   cat-firth                          in catalogue_records.md
+   conv-attribution                   in cataloguing_conventions.md
+   conv-grounding                     in cataloguing_conventions.md
+   conv-m                             in cataloguing_conventions.md
+   conv-no                            in cataloguing_conventions.md
+   conv-record                        in cataloguing_conventions.md
+   conv-restricted                    in cataloguing_conventions.md
+   conv-rights                        in cataloguing_conventions.md
+   conv-type                          in cataloguing_conventions.md
+   dublin-core                        in metadata_element_reference.md
+   item-level                         in metadata_element_reference.md
+   operator-authored                  in cataloguing_conventions.md
+
+clinical_reference:
+   batch-rowan                        in result_sheet.md
+   conv-count                         in lab_conventions.md
+   conv-grounding                     in lab_conventions.md
+   conv-l                             in lab_conventions.md
+   conv-no                            in lab_conventions.md
+   conv-result                        in lab_conventions.md
+   conv-value                         in lab_conventions.md
+   in-range                           in lab_conventions.md
+   operator-authored                  in lab_conventions.md
+   res-alder                          in result_sheet.md
+   res-birch                          in result_sheet.md
+   res-cedar                          in result_sheet.md
+   res-damson                         in result_sheet.md
+   res-elder                          in result_sheet.md
+   res-firth                          in result_sheet.md
+   self-executing                     in lab_conventions.md
+   spec-alder                         in result_sheet.md
+   spec-birch                         in result_sheet.md
+   spec-cedar                         in result_sheet.md
+   spec-damson                        in result_sheet.md
+   spec-elder                         in result_sheet.md
+
+device_log_review:
+   calibration-authority              in device_log_flawed.md
+   calibration-complete               in device_class_reference.md, device_conventions.md, device_log_flawed.md
+   class-a                            in device_class_reference.md, device_conventions.md, device_log_flawed.md
+   class-b                            in device_class_reference.md, device_conventions.md, device_log_flawed.md
+   class-c                            in device_class_reference.md, device_conventions.md, device_log_flawed.md
+   conv-calibration                   in device_conventions.md
+   conv-d                             in device_conventions.md
+   conv-fault                         in device_conventions.md
+   conv-grounding                     in device_conventions.md
+   conv-neighbouring                  in device_conventions.md
+   conv-no                            in device_conventions.md
+   conv-service                       in device_conventions.md
+   conv-value                         in device_conventions.md
+   in-range                           in device_conventions.md
+   operator-authored                  in device_conventions.md
+   rack-wide                          in device_log_flawed.md
+   re-read                            in device_log_flawed.md
+   re-taken                           in device_log_flawed.md
+   self-calibrating                   in device_class_reference.md, device_conventions.md, device_log_flawed.md
+   unit-alder                         in device_log_flawed.md
+   unit-birch                         in device_log_flawed.md
+   unit-cedar                         in device_log_flawed.md
+   unit-damson                        in device_log_flawed.md
+   unit-elder                         in device_log_flawed.md
+   unit-firth                         in device_log_flawed.md
+   unit-gorse                         in device_log_flawed.md
+   unit-holly                         in device_log_flawed.md
+   unit-ivy                           in device_log_flawed.md
+   unit-juniper                       in device_log_flawed.md
+   unit-larch                         in device_log_flawed.md
+   unit-maple                         in device_log_flawed.md
+   unit-oak                           in device_log_flawed.md
+   unit-pine                          in device_log_flawed.md
+   unit-rowan                         in device_log_flawed.md
+   unit-spruce                        in device_log_flawed.md
+   unit-teasel                        in device_log_flawed.md
+   unit-vetch                         in device_log_flawed.md
+
+device_log_review_clean:
+   calibration-authority              in device_log_clean.md
+   calibration-complete               in device_class_reference.md, device_conventions.md, device_log_clean.md
+   class-a                            in device_class_reference.md, device_conventions.md, device_log_clean.md
+   class-b                            in device_class_reference.md, device_conventions.md, device_log_clean.md
+   class-c                            in device_class_reference.md, device_conventions.md, device_log_clean.md
+   conv-calibration                   in device_conventions.md
+   conv-d                             in device_conventions.md
+   conv-fault                         in device_conventions.md
+   conv-grounding                     in device_conventions.md
+   conv-neighbouring                  in device_conventions.md
+   conv-no                            in device_conventions.md
+   conv-service                       in device_conventions.md
+   conv-value                         in device_conventions.md
+   in-range                           in device_conventions.md
+   operator-authored                  in device_conventions.md
+   rack-wide                          in device_log_clean.md
+   self-calibrating                   in device_class_reference.md, device_conventions.md, device_log_clean.md
+   unit-alder                         in device_log_clean.md
+   unit-birch                         in device_log_clean.md
+   unit-cedar                         in device_log_clean.md
+   unit-damson                        in device_log_clean.md
+   unit-elder                         in device_log_clean.md
+   unit-firth                         in device_log_clean.md
+   unit-gorse                         in device_log_clean.md
+   unit-holly                         in device_log_clean.md
+   unit-ivy                           in device_log_clean.md
+   unit-juniper                       in device_log_clean.md
+   unit-larch                         in device_log_clean.md
+   unit-maple                         in device_log_clean.md
+   unit-oak                           in device_log_clean.md
+   unit-pine                          in device_log_clean.md
+   unit-rowan                         in device_log_clean.md
+   unit-spruce                        in device_log_clean.md
+   unit-teasel                        in device_log_clean.md
+   unit-vetch                         in device_log_clean.md
+
+negotiation_r2_to_r3:
+   conv-n                             in mandate_conventions.md
+   one-time                           in company_a_union_b_offer_2024_10_19.md, mandate_conventions.md
+   per-year                           in company_a_union_b_offer_2024_09_23.md
+
+negotiation_r3_to_r4:
+   conv-n                             in mandate_conventions.md
+   one-time                           in company_a_union_b_offer_2024_10_19.md, company_a_union_b_offer_2024_10_31.md, mandate_conventions.md
+
+==============================================================================
+PART 2: does binding change any rule-to-field match? per corpus
+==============================================================================
+
+catalogue_records: 7 rules
+  catalogue_records.md: 4 rule(s) whose named-field set CHANGES
+     CONV-001
+        old: ['creator', 'rights', 'subject', 'title', 'type']
+        new: ['creator', 'right', 'subject', 'title', 'type']
+     CONV-003
+        old: ['rights']
+        new: ['right']
+     CONV-004
+        old: ['rights', 'source']
+        new: ['right', 'source']
+     CONV-005
+        old: ['creator', 'rights']
+        new: ['creator', 'right']
+  metadata_element_reference.md: 4 rule(s) whose named-field set CHANGES
+     CONV-001
+        old: ['rights term', 'type term']
+        new: ['right term', 'type term']
+     CONV-003
+        old: ['requires', 'rights term']
+        new: ['require', 'right term']
+     CONV-004
+        old: ['rights term']
+        new: ['right term']
+     CONV-005
+        old: ['requires', 'rights term']
+        new: ['require', 'right term']
+
+clinical_reference: 5 rules
+  analyte_reference_ranges.md: no rule's named-field set changes
+  result_sheet.md: no rule's named-field set changes
+
+device_log_review: 8 rules
+  device_class_reference.md: 1 rule(s) whose named-field set CHANGES
+     CONV-002
+        old: ['class sensor']
+        new: ['class-a sensor', 'class-b sensor', 'class-c sensor']
+  device_log_flawed.md: 1 rule(s) whose named-field set CHANGES
+     CONV-002
+        old: ['calibration authority signature', 'class']
+        new: ['calibration authority signature']
+
+device_log_review_clean: 8 rules
+  device_class_reference.md: 1 rule(s) whose named-field set CHANGES
+     CONV-002
+        old: ['class sensor']
+        new: ['class-a sensor', 'class-b sensor', 'class-c sensor']
+  device_log_clean.md: 1 rule(s) whose named-field set CHANGES
+     CONV-002
+        old: ['calibration authority signature', 'class']
+        new: ['calibration authority signature']
+
+negotiation_r2_to_r3: 8 rules
+  company_a_union_b_offer_2024_09_23.md: no rule's named-field set changes
+  company_a_union_b_offer_2024_10_19.md: 1 rule(s) whose named-field set CHANGES
+     CONV-005
+        old: ['one time 401 contribution']
+        new: ['one-time 401 contribution']
+
+negotiation_r3_to_r4: 8 rules
+  company_a_union_b_offer_2024_10_19.md: 1 rule(s) whose named-field set CHANGES
+     CONV-005
+        old: ['one time 401 contribution']
+        new: ['one-time 401 contribution']
+  company_a_union_b_offer_2024_10_31.md: no rule's named-field set changes

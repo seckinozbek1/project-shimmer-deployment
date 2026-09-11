@@ -73,6 +73,43 @@ def header_label(raw_header):
     return _norm_label(re.sub(r"\s*\([^)]*\)\s*$", "", str(raw_header or "")))
 
 
+# A placeholder for a hyphen JOINING two word characters, substituted before
+# the [\W_]+ split so "Class-A" survives as one token rather than splitting
+# into "class" and a fragment the length floor then drops. Must itself be a
+# \w sequence (so the split does not cut through it) and must not collide
+# with real input; an ASCII sentinel is the plain, correct answer here, not a
+# Unicode look-alike hyphen, which is NOT a \w character under re's own
+# UNICODE-flag classification and silently fails the same way a raw split
+# character would (found by testing the placeholder's own re.match result
+# before trusting it, not by assuming a Unicode character "looks like a
+# letter"). Accepted, narrow edge case: literal input containing this exact
+# ASCII sequence around a hyphen would be misread; no real label or rule text
+# does, and a document that did would fail visibly (a stray extra token), not
+# silently.
+_HYPHEN_JOIN_PLACEHOLDER = "xhyphenx"
+
+
+def _stem(word):
+    """Fold a plural to its singular: strip a trailing 's', or fold a
+    trailing '-ies' to '-y'. Minimal and structural, not a general stemmer:
+    two suffix rules, no irregular plurals, no other suffix.
+
+    Refuses where a trailing 's' is almost never a genuine plural marker,
+    checked against the real corpus that motivated this fix, not assumed:
+    after another 's' ("class" -to- "clas" would tie every "Class-A" against
+    every "Class-B"), after 'us' ("corpus", "focus"), after 'is' ("basis",
+    "diagnosis"). A word of 3 characters or fewer is left alone (folding
+    "gas" or "was" serves nothing and risks colliding with an unrelated
+    3-letter word)."""
+    if word.endswith("ies") and len(word) > 4:
+        return word[:-3] + "y"
+    if not word.endswith("s") or len(word) <= 3:
+        return word
+    if word.endswith(("ss", "us", "is")):
+        return word
+    return word[:-1]
+
+
 def _norm_label(label):
     """A field label reduced to its discriminating words, in order.
 
@@ -84,14 +121,46 @@ def _norm_label(label):
     silently, with no error and no log line. `[\\W_]+` on the lowercased string is
     byte-identical for ASCII input, so nothing about an English corpus changes.
 
+    A hyphen JOINS two word characters rather than splitting them, checked
+    before the length floor: "Class-A" was splitting into "class" and a
+    dropped single-letter fragment, so "Class-A sensor" and "Class-B sensor"
+    reduced to the identical `('class', 'sensor')`, and no band or field
+    match could ever tell the two apart. Proved on the device corpus: three
+    real labels this way, in one table AND in one prose sentence, tied
+    identically either way, since both paths already shared this function
+    (Job A's own docstring, "two tokenisers that must agree are one
+    tokeniser", extended here to a single splitting rule they both must use).
+
+    A trailing plural is folded to its singular (_stem), on BOTH the label
+    side and, via this same function, wherever a rule's own words are read:
+    two independent raw word-bag builders used to exist for the rule side
+    (pairing_map.needed_fields, paired_review.date_pair_for_rule), already
+    disagreeing with each other and with this function before either defect
+    was found (this function alone dropped short words and stopwords; the
+    two rule-side splits did neither, by design, since a rule's incidental
+    words never needed filtering for a subset test to work). Both now call
+    this one function instead of building their own bag: one tokeniser, not
+    three drifting toward disagreement. Proved on the device corpus's own
+    wording gap: the reference states "fault timestamp" and the rule says
+    "state the two timestamps"; without folding, no subset test the words
+    ever pass through can equate the two, however the split or the length
+    floor is tuned.
+
     RESIDUAL LIMIT, recorded rather than claimed away: `len(w) > 2` is itself an
     alphabetic assumption. Two characters is a fragment in a Latin script and a
     whole word in a logographic one, so a CJK label is still dropped. Fixing that
     means making the threshold script-aware, which changes how every existing
-    label is cut and is not a change to make in passing.
+    label is cut and is not a change to make in passing. The stem is two suffix
+    rules over English morphology specifically; a label in a language whose
+    plural is not built with a trailing 's' gains nothing from it and loses
+    nothing either, since neither rule can match a word that does not end in
+    the sequences it tests for.
     """
-    words = [w for w in re.split(r"[\W_]+", str(label).lower(), flags=re.UNICODE) if w]
-    return tuple(w for w in words if w not in STOPWORDS and len(w) > 2)
+    text = str(label).lower()
+    text = re.sub(r"(?<=[^\W_])-(?=[^\W_])", _HYPHEN_JOIN_PLACEHOLDER, text)
+    words = [w.replace(_HYPHEN_JOIN_PLACEHOLDER, "-")
+            for w in re.split(r"[\W_]+", text, flags=re.UNICODE) if w]
+    return tuple(_stem(w) for w in words if w not in STOPWORDS and len(w) > 2)
 
 
 # ---------------------------------------------------------------------------
@@ -261,12 +330,21 @@ def needed_fields(rule_text, vocabulary):
     no list of domain terms exists in this file, and none can, because the terms
     come from the operator's document and rules at runtime.
     """
-    # Unicode-aware, the SAME split _norm_label uses. It was `[^a-z0-9]+`, which cut
-    # the rule text at every accented letter while the labels it is compared against
-    # were already cut correctly, so a label with one non-ASCII letter could never be
-    # named by any rule. Found by the R3-standard review of the negotiation design,
-    # not by a run: every corpus so far has been written in unaccented English.
-    words = set(w for w in re.split(r"[\W_]+", (rule_text or "").lower(), flags=re.UNICODE) if w)
+    # The rule's own words, read by _norm_label, the SAME function the label
+    # side already goes through. A second, independent raw split used to
+    # live here (no stopword filter, no length floor, by design, since a
+    # subset test only needs the LABEL's already-filtered words to be found,
+    # and the rule's incidental words never needed filtering for that). It
+    # existed at all because the split itself, not the filtering, is what
+    # both sides must agree on: the label side's own hyphen-splitting and
+    # unstemmed plural were already the actual failure (device corpus: three
+    # class labels tying identically, and a bound naming "timestamp" against
+    # a rule saying "timestamps"), and a second split here could drift from
+    # the first without either side raising an error, which it already had.
+    # Filtering the rule's words too is harmless for the subset test (a
+    # stopword or two-letter word could never have been in a label's own
+    # words either), so one function serves both sides with nothing lost.
+    words = set(_norm_label(rule_text or ""))
     named = {label for label in vocabulary if label and set(label) <= words}
     # Longest match only (D, option 1, 2026-09-11, built without measurement). A
     # label whose words are a proper subset of another named label's words is the

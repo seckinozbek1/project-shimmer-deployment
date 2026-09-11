@@ -16568,9 +16568,20 @@ def _d1_longest_match_body():
              ("class",), ("device",), ("reading",), ("extent",), ("total", "declared", "extent")}
     needs = _pm.needed_fields(
         "Every Class-A sensor entry must state a calibration authority signature.", vocab)
-    if needs != {("calibration", "authority", "signature"), ("class",)}:
-        return _fail(f"a rule naming 'calibration authority signature' must need that label and "
-                     f"'class' only, not also the shorter 'calibration authority': {sorted(needs)}")
+    if needs != {("calibration", "authority", "signature")}:
+        return _fail(f"a rule naming 'calibration authority signature' must need that label "
+                     f"alone, not also the shorter 'calibration authority': {sorted(needs)}")
+    # "Class-A" is the NAME OF A DEVICE CLASS, one token, not the word "class"
+    # followed by a letter: _norm_label joins the hyphen, so this rule does NOT
+    # name the bare ('class',) label. The fixture asserted the opposite until
+    # the tokenizer was fixed, which is the assumption that collapsed the three
+    # device classes into one. A rule that genuinely says "class" still names
+    # it, asserted next, so the join cannot silently swallow the real case.
+    needs_bare = _pm.needed_fields(
+        "Every sensor entry of that class must state a calibration authority signature.", vocab)
+    if needs_bare != {("calibration", "authority", "signature"), ("class",)}:
+        return _fail(f"a rule that genuinely states the word 'class' must still name the "
+                     f"('class',) label: {sorted(needs_bare)}")
     needs2 = _pm.needed_fields("The declared total extent must be stated.", vocab)
     if needs2 != {("total", "declared", "extent")}:
         return _fail(f"'total declared extent' must not also require the bare 'extent': {sorted(needs2)}")
@@ -16602,7 +16613,9 @@ def _d1_longest_match_body():
         return _fail("the glossary unit, carrying only the short label, must not pair")
     return _ok("needed_fields keeps the longest matching label only: 'calibration authority "
                "signature' no longer drags in 'calibration authority', 'total declared extent' "
-               "not 'extent'; a rule naming only the short label still needs it; through the real "
+               "not 'extent'; a rule naming only the short label still needs it; 'Class-A' is "
+               "one token and does NOT name the bare 'class' label, while a rule that genuinely "
+               "says 'class' still does; through the real "
                "map the entry carrying the signature pairs and the one without is rejected for "
                "the signature alone")
 
@@ -18139,20 +18152,18 @@ def check_215_a_labelled_prose_band_is_read_without_a_model():
         pre-fix reader), the same reference passage yields no band at all;
         restored, it yields the band again.
 
-    Real-corpus honesty, recorded rather than hidden: on device_class_reference
-    .md itself, the fixture above is proved on labels the existing word-length
-    filter (pairing_map._norm_label, len(w) > 2) can tell apart. The corpus's
-    OWN three labels, "Class-A sensor" / "Class-B sensor" / "Class-C sensor",
-    reduce to the identical word set {class, sensor} once the single-letter
-    suffix is dropped, so match_row correctly refuses THAT table as a tie
-    between rows, whether the table is this prose reader's synthetic one or a
-    real markdown table with the same three labels (proved below, both ways).
-    This is a pre-existing limit of the shared tokenizer, not something this
-    check's own mechanism introduces, and fixing it is out of this job's scope
-    (it would change how every label in every corpus is read). The corpus's
-    real bounds for D01 are therefore not yet computed end to end; the report
-    says this plainly instead of claiming a number this fixture does not
-    support.
+    Real-corpus outcome, UPDATED once the shared tokenizer was fixed. This
+    check was first written as a marker that the blocker still existed: it
+    asserted that the corpus's OWN three labels, "Class-A sensor" /
+    "Class-B sensor" / "Class-C sensor", reduce to the identical word set
+    {class, sensor} once the single-letter suffix is dropped, and that
+    match_row therefore refuses that table as a tie. That was true and worth
+    pinning while it lasted. pairing_map._norm_label now JOINS a hyphen
+    between two word characters, so the three reduce to ('class-a',
+    'sensor') / ('class-b', 'sensor') / ('class-c', 'sensor'), match_row
+    tells them apart, and the corpus's own D01 band is minted from its own
+    prose. The assertions below now pin THAT, the better outcome: a check
+    that kept asserting the tie would be pinning a defect in place.
     """
     import reference_tables as _rt
 
@@ -18215,9 +18226,9 @@ def check_215_a_labelled_prose_band_is_read_without_a_model():
 
     # The real corpus: parse_prose_bands finds nothing false-positive in the
     # Glossary's non-range sentences (Fault window / Service interval), and
-    # correctly finds the Class-A/B/C sentences but refuses to bind any of them
-    # to a unit, because the label word-set tie is real, not a defect in this
-    # reader. Both facts are asserted so neither drifts unnoticed.
+    # binds the Class-A/B/C sentences to the RIGHT row now that _norm_label
+    # joins the hyphen and the three labels are distinguishable. Both facts
+    # are asserted so neither drifts unnoticed.
     _repo_root = Path(__file__).resolve().parent.parent
     real_ref_path = (_repo_root / "benchmark" / "corpora" / "device_log_review" /
                      "context" / "device_class_reference.md")
@@ -18240,22 +18251,37 @@ def check_215_a_labelled_prose_band_is_read_without_a_model():
     rule_d01 = ("The reading stated for a device must fall inside its class's standard "
                "tolerance band, 20 to 60 units.")
     real_bands = _rt.bands_for_unit(ref_prose_tables, unit_alder, rule_d01)
-    if real_bands:
-        return _fail("the real corpus's Class-A/B/C labels are a genuine word-set tie "
-                     "under the existing tokenizer (both reduce to {class, sensor}); a "
-                     "band must NOT be minted from a tie, got %r" % (real_bands,))
-    # The same tie exists in a REAL markdown table with the same three labels,
-    # proving it is the shared tokenizer's limit and not something this prose
-    # reader introduces.
+    if len(real_bands) != 1:
+        return _fail("the real corpus's Class-A/B/C labels are distinguishable now that "
+                     "_norm_label joins the hyphen, so UNIT-ALDER (a Class-B sensor) must "
+                     "match exactly one row of the reference's own prose band table, "
+                     "got %r" % (real_bands,))
+    if real_bands[0]["row_label"] != "Class-B sensor":
+        return _fail("UNIT-ALDER is a Class-B sensor and must bind to the Class-B row, "
+                     "not another class's: got row_label=%r"
+                     % (real_bands[0]["row_label"],))
+    if (real_bands[0]["low"], real_bands[0]["high"], real_bands[0]["unit"]) != (20.0, 60.0, "units"):
+        return _fail("the Class-B row states 20 to 60 units; the band read off it must be "
+                     "exactly that, got %r" % (real_bands[0],))
+    # The same binding holds in a REAL markdown table with the same three
+    # labels, proving the fix is in the shared tokenizer and not in this prose
+    # reader alone: the two paths agree, as they did when both were tied.
     md_table_text = ("| Class | Tolerance band (units) |\n|---|---|\n"
                      "| Class-A sensor | 20 to 60 |\n| Class-B sensor | 20 to 60 |\n"
                      "| Class-C sensor | 70 to 110 |\n")
     md_tables = _rt.parse_tables(md_table_text, ref_id="REF-MD", document_id="md_test")
     md_bands = _rt.bands_for_unit(md_tables, unit_alder, rule_d01)
-    if md_bands:
-        return _fail("a real markdown table with the same three class labels was expected "
-                     "to hit the identical tie (proving it is not this prose reader's own "
-                     "defect), but it minted a band: %r" % (md_bands,))
+    if len(md_bands) != 1 or md_bands[0]["row_label"] != "Class-B sensor":
+        return _fail("a real markdown table with the same three class labels must bind "
+                     "UNIT-ALDER to its own Class-B row, the same way the prose table "
+                     "does: got %r" % (md_bands,))
+    # A Class-C unit must take the Class-C row's DIFFERENT band, which is the
+    # whole point of telling the three apart: a tie would have given neither.
+    unit_gorse = "Device: UNIT-GORSE\nClass: Class-C sensor\nReading: 112 units\n"
+    gorse_bands = _rt.bands_for_unit(ref_prose_tables, unit_gorse, rule_d01)
+    if len(gorse_bands) != 1 or (gorse_bands[0]["low"], gorse_bands[0]["high"]) != (70.0, 110.0):
+        return _fail("a Class-C unit must take the Class-C row's own 70 to 110 band, not "
+                     "the Class-A/B one: got %r" % (gorse_bands,))
 
     # NEUTRALISE AND RESTORE: withhold parse_prose_bands's own contribution by
     # calling the pre-fix reader alone (parse_table over the markdown blocks,
@@ -18278,10 +18304,12 @@ def check_215_a_labelled_prose_band_is_read_without_a_model():
 
     return _ok("labelled prose band accepted and matched to the right unit; two unrelated "
                "figures, a single bound, a descending pair, an over-long label and an "
-               "uncorroborated unit are each refused; the real corpus's Class-A/B/C tie is "
-               "genuine (reproduced in a real markdown table too) and left unminted rather "
-               "than guessed; neutralise (markdown path alone) FAILS to find the fixture "
-               "band, restore (parse_tables) PASSES")
+               "uncorroborated unit are each refused; on the REAL corpus the three "
+               "Class-A/B/C labels are now distinguishable (the hyphen joins in "
+               "_norm_label), so UNIT-ALDER binds to its own Class-B row at 20 to 60 and "
+               "UNIT-GORSE to the Class-C row at 70 to 110, in the prose table and in a "
+               "real markdown table alike; neutralise (markdown path alone) FAILS to find "
+               "the fixture band, restore (parse_tables) PASSES")
 
 
 def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
@@ -18605,22 +18633,26 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
     plans (a genuinely missing declared field) untouched, and leaving the
     absence_judged fallback intact when nothing is computed.
 
-    Real-corpus honesty, recorded rather than hidden: on device_log_flawed.md
-    itself, D04's date pair is found (its two label lines share no
-    vocabulary problem) but its bound is not: the bound sentence says "fault
-    timestamp" (singular) and the rule says "state the two timestamps"
-    (plural), and word-containment does not stem. D05's bound is found (once
-    the document's own glossary is searched: this corpus keeps its glossary
-    INSIDE the document under review, not in a separate reference file, so
-    excluding the document under review, Job A's own table-reading pattern
-    copied here uncritically at first, made D05 permanently unsolvable) but
-    its date pair is not: the value says "calibration visit" (singular,
-    twice) and the rule says "logged calibration visits" (plural). Neither
-    rule settles end to end on this corpus's exact wording; both mechanisms
-    are proved correct on fixtures whose vocabulary aligns, and the
-    fixture-vs-corpus gap here is the same brittleness check 215 already
-    named for a different pair of labels (Class-A/Class-B), not a defect
-    unique to duration checking.
+    Real-corpus outcome, UPDATED once the shared tokenizer gained its stem.
+    This check was first written as a marker that a blocker still existed:
+    it asserted that D04's BOUND was unfound because the bound sentence says
+    "fault timestamp" (singular) against a rule saying "state the two
+    timestamps" (plural), and that D05's DATE PAIR was unfound because the
+    value says "calibration visit" (singular, twice) against a rule saying
+    "logged calibration visits" (plural). _norm_label now folds a trailing
+    plural on BOTH sides, so:
+
+      D04: date pair FOUND and bound FOUND. It settles.
+      D05: bound FOUND, date pair still NOT FOUND, and NOT for a word-form
+           reason. Its value line's connecting words carry "last", "next"
+           and "record", none of which appear in the rule at all; that is
+           _label_lines_with_dates collecting the whole post-date remainder
+           as if it were the rule's own vocabulary, a separate defect from
+           the tokenizer and not one a stem can reach.
+
+    Both facts are pinned below. D05's own assertion is deliberately written
+    to fail loudly if it starts passing, so the next change to the
+    connecting-word extraction cannot land silently.
 
     Asserted, executed on pure functions and one real plan_calls run, no
     model, no run:
@@ -18834,24 +18866,30 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
         return _fail("D04's date pair was expected to be FOUND on the real corpus "
                      "(UNIT-TEASEL's two label lines share no vocabulary problem with "
                      "the rule); if this now fails, the corpus or the rule text changed")
-    if d04_bound is not None:
-        return _fail(f"D04's bound was expected to be UNFOUND on the real corpus (the "
-                     f"bound sentence says 'fault timestamp', singular, and the rule "
-                     f"says 'timestamps', plural); got {d04_bound!r} instead. If this "
-                     f"corpus or rule text was corrected to align, that is progress, "
-                     f"but this check must be updated to assert the new, better outcome "
-                     f"rather than silently accept a stale expectation")
+    if d04_bound is None:
+        return _fail("D04's bound must be FOUND on the real corpus now that _norm_label "
+                     "folds the plural: the glossary says 'fault timestamp' and the rule "
+                     "says 'timestamps', which only fold together if the stem reaches "
+                     "both sides. If this fails, the stem or the shared tokenizer "
+                     "regressed")
+    if (d04_bound[0], d04_bound[1]) != (24.0, "hours"):
+        return _fail(f"D04's bound is the glossary's own 24 hours; got {d04_bound!r}")
 
     d05_pair = _pr.date_pair_for_rule(vetch["text"], rule_d05)
     d05_bound = _real_duration_bound(rule_d05)
-    if d05_pair is not None:
-        return _fail(f"D05's date pair was expected to be UNFOUND on the real corpus "
-                     f"(the value says 'calibration visit', singular, and the rule says "
-                     f"'visits', plural); got {d05_pair!r} instead")
     if d05_bound is None:
         return _fail("D05's bound was expected to be FOUND on the real corpus (found by "
                      "searching the document under review's own glossary, not only "
                      "context_refs); if this now fails, the wiring regressed")
+    if d05_pair is not None:
+        return _fail(f"D05's date pair was expected to be UNFOUND on the real corpus, and "
+                     f"NOT for a word-form reason: its value line's connecting words carry "
+                     f"'last', 'next' and 'record', none of which the rule states, so "
+                     f"_label_lines_with_dates is collecting the whole post-date remainder "
+                     f"rather than the words the rule could name. Got {d05_pair!r}. If the "
+                     f"connecting-word extraction was narrowed and this now passes, that is "
+                     f"the intended fix and this assertion must be inverted to pin it, not "
+                     f"deleted")
 
     return _ok("date_pair_for_rule reads both real shapes (two label lines, one label "
                "line with two dates) and refuses ambiguity; scalar_bound_from_entries "
@@ -18862,9 +18900,11 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "a third instance one layer in (a scoped rule settled by duration no longer "
                "also gets its declared absence_judged plan, and still falls back to it "
                "when duration finds nothing), both proved with fixtures reproducing the "
-               "pre-existing shapes directly; on the real corpus D04 finds its pair but "
-               "not its bound and D05 finds its bound but not its pair, neither settling, "
-               "both halves proved separately correct on aligned fixtures")
+               "pre-existing shapes directly; on the real corpus D04 now finds BOTH its "
+               "pair and its 24-hour bound (the stem folds timestamp/timestamps on both "
+               "sides) and settles, while D05 finds its bound but still not its pair, for "
+               "a reason no stem can reach: its connecting words carry last, next and "
+               "record, which the rule never states")
 
 
 CHECKS = [

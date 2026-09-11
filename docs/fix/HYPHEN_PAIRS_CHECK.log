@@ -1,0 +1,24 @@
+
+=== catalogue_records ===
+  catalogue_records.md: pairs old=23 new=23  SAME
+  metadata_element_reference.md: pairs old=4 new=4  SAME
+
+=== clinical_reference ===
+  analyte_reference_ranges.md: pairs old=3 new=3  SAME
+  result_sheet.md: pairs old=11 new=11  SAME
+
+=== device_log_review ===
+  device_class_reference.md: pairs old=0 new=0  SAME
+  device_log_flawed.md: pairs old=40 new=40  SAME
+
+=== device_log_review_clean ===
+  device_class_reference.md: pairs old=0 new=0  SAME
+  device_log_clean.md: pairs old=49 new=49  SAME
+
+=== negotiation_r2_to_r3 ===
+  company_a_union_b_offer_2024_09_23.md: pairs old=4 new=4  SAME
+  company_a_union_b_offer_2024_10_19.md: pairs old=8 new=8  SAME
+
+=== negotiation_r3_to_r4 ===
+  company_a_union_b_offer_2024_10_19.md: pairs old=8 new=8  SAME
+  company_a_union_b_offer_2024_10_31.md: pairs old=7 new=7  SAME
