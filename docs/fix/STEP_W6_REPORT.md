@@ -248,7 +248,78 @@ correction (finding 1 above).
 - `output/w6_flawed_run.log`: interleaved, not a record of either run (see the incident).
 - `tools/score_corpus.py`: per-kind recall; partial-run scoring with a printed NOTE.
 
+## The rerun, stopped a second time (2026-09-11, 12:33Z to 13:19Z)
+
+Run against the committed tree at `dccec5f` (the eight device rules carrying the operator's
+own subject tags: D01 to D05 `[conformance]`, D06 to D08 `[editorial]`; D03 belongs under
+basis semantically, but basis has no rule-consuming path today, so conformance is its honest
+home, recorded here as the operator asked). Flawed corpus staged with `tools/stage_corpus.py`,
+the tier-1 manifest naming `device_log_flawed.md` as the target and the class reference as
+grounding, paired mode, local models, no pair cap. Run `20260911T123328Z__d5728e4b`, BOOT
+12:33:28Z, stopped by the operator at 13:19:40Z (46 min 12 s), during the paired phase,
+before any deliverable. The clean twin was not run. Inputs restored afterwards. What the
+partial run established, from its own artifacts:
+
+- **The assignment, real for the first time.** BOOT: `convention_assignment rules=8
+  untagged=0 unassigned=0`; `audit/convention_assignment.json` matches the offline
+  computation exactly: D01 to D05 on PRACTICE_AUDITOR, D06 to D08 on the six EDITOR ranks,
+  every rule `assigned`. STYLE_GUARDIAN is the first real entry the firing gate keeps from
+  running (`not_firing`); REDACTOR appears among the agents no tagged rule reached, not in
+  the not-firing list, since the gate is scoped to the convention-review agents (answer 6)
+  and REDACTOR is kept from running by the inactive LAW-IV layer in any case.
+- **64 pairs planned from 8 rules** (`paired_review pairs=64 dropped_by_cap=0 calls=64
+  saved=0`; 19 units, 88 rejections, 0 undecided, no unmatched unit, no
+  `missing_field_findings`, no `band_conditions`). Down from 101 on the first attempt, and
+  the drop is the preamble fix (8 rules parsed where 10 were minted), not the tags: the
+  pairing map never reads the assignment. Python computed nothing again (the class bands
+  are prose), so every pair was a model call.
+- **D02 to D05 paired with nothing.** Pairs by rule: D01 13, D06 13, D07 19, D08 19, and
+  zero for D02, D03, D04 and D05, the four rules that check the planted flaw kinds. The
+  reason, from the map's own rejection lines: the pairing map pairs a rule with a unit only
+  when the unit carries every field the rule names, and those rules name `calibration
+  authority`, `calibration authority signature`, `fault logged`, `fault acknowledged`,
+  `fault window` and `service interval`, labels the entries mostly do not carry (each
+  appears once, in the glossary unit; four entries carry `calibration authority signature`;
+  every entry carries `class`, `device`, `reading` and most carry `note`). An absence flaw
+  hides the very field the pairing needs, so a rule about a missing signature can never
+  pair with the entry that is missing it. 38 of the 64 pairs were made by the similarity
+  fallback ("no field the rule names is used by this document"), and 51 of the 64 belong to
+  the three board-only rules.
+- **The board-only gap, as the operator recorded it.** The convention distribution reaches
+  wide mode (the firing gate) and not the paired path: D06 to D08, assigned to the editorial
+  board and to no convention-review agent, are still paired and judged by PRACTICE_AUDITOR as
+  the fallback (`pipeline._paired_judging_agent`, its own docstring). Measured as is, on the
+  operator's decision, because changing what is measured immediately before measuring it is
+  how three days passed with no number. It is the next piece of work after this: a plan
+  whose rule has no convention-review consumer makes no call and is recorded in the pairing
+  map as assigned to the board only, never silently dropped, with wide mode's registry
+  excerpt filtered the same way.
+- **Calls at the stop: 16**, all local, all `ok`: six phase-3 producers (ARCHIVIST,
+  INST_FINDER, CITATION_RESOLVER, PROCESSOR, SPEECH_ACT_TAGGER, LEGAL_ANALYST), three
+  LEGAL_ANALYST pass-two calls (D6, one per pass-one finding), VERIFIER and FACT_CHECKER in
+  phase 5, and 5 of the 64 paired calls (56, 113, 52, 53 and 38 s each). 95,988 input tokens,
+  12,266 output tokens. One contract violation (VERIFIER, 13:11:26Z). Phase 3-4 took 34 min
+  15 s; the producer calls ran 190 to 263 s each, the paging pace (1.5 GB available at
+  launch; the machine peak the progress line reported was 15.45 GB; the run's own process
+  peaked at 2.7 GB RAM and 6.6 GB VRAM).
+- **Scorer: not run.** No deliverable and no paired findings post existed at the stop, so
+  there is nothing the scorer could score beyond the void zero the first attempt produced.
+- **Did the neighbour mechanism catch the neighbour-dependent flaws?** Still not
+  determined, and this run adds a reason it could not have been through the rules built to
+  find them: D02 to D05 never reached a model. The question stays open until the pairing
+  map can pair an absence rule with the unit that lacks the field, or the wide path is the
+  one measured.
+
+**The standing rule from this stop.** No pipeline run of any kind is started from this
+laptop, and none is asked for, until development moves to a rented GPU box; every proof is
+built on fixtures, mocks, deterministic paths and the artifacts already saved on disk
+(written into `CLAUDE.md`). The stopped run's artifacts stay on disk for exactly that use:
+`output/runs/20260911T123328Z__d5728e4b/` (`audit/convention_assignment.json`,
+`audit/pairing_map.json`, `audit/reference_index.json`, `audit/contract_violations/`,
+`logs/agent_bus.jsonl`, `logs/cost_tracker.jsonl`), `output/w6r_flawed.log`,
+`output/w6r_flawed_mem.json`.
+
 ---
 
-STEP W6 STOPPED (by the operator at 08:27:17Z; measurement owed; rerun scheduled after the
-convention distribution is built)
+STEP W6 STOPPED (twice: by the operator at 08:27:17Z on the untagged corpus, and at
+13:19:40Z on the tagged one; measurement owed; no further run from this machine)

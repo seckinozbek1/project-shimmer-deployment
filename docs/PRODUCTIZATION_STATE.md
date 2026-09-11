@@ -134,9 +134,19 @@ verbatim from its own artifacts:
 - Whether the neighbour mechanism catches the neighbour-dependent flaws: not determined.
 
 The operator's call was that measuring the old shape at 101 pairs was not worth another
-hour when the convention distribution would change the call count. The rerun is owed on the
-new call count (both runs, scored by the scorer) and waits on one operator action (section
-4). Two measurements from the smoke runs around the assignment commits are recorded in
+hour when the convention distribution would change the call count. The rerun on the tagged
+corpus (`dccec5f`) was started on 2026-09-11 at 12:33Z and stopped by the operator at
+13:19Z, again in the paired phase, again before any deliverable (`STEP_W6_REPORT.md`, the
+second-stop section). What it established: the assignment is real (D01 to D05 on
+PRACTICE_AUDITOR, D06 to D08 on the board, STYLE_GUARDIAN the first real not-firing entry);
+64 pairs planned from 8 rules, the drop from 101 being the preamble fix and not the tags,
+because the pairing map never reads the assignment; and D02 to D05, the four rules that
+check the planted flaw kinds, paired with nothing, because the pairing map pairs a rule
+only with a unit carrying every field the rule names, so an absence flaw hides the very
+field the pairing needs. The neighbour question is still not determined. From that stop a
+standing rule holds (`CLAUDE.md`): no pipeline run of any kind from this laptop, and none
+asked for, until development moves to a rented GPU box; every proof on fixtures, mocks,
+deterministic paths and saved artifacts. Two measurements from the smoke runs around the assignment commits are recorded in
 `STEP_CONVASSIGN_3_REPORT.md`: the same corpus at `--pairs-per-unit 1` plans 19 pairs, and a
 local run commits about 12 GB of private memory, so on this 15.7 GB machine with under
 about 3 GB free every model call ran roughly 2.8 times slower (230 s against 82 s for the

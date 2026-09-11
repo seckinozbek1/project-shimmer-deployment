@@ -67,6 +67,12 @@ processing swarm governed by an append-only constitution.
 
 ## Working method and git discipline
 
+- NO PIPELINE RUNS FROM THIS MACHINE (standing rule, in force from 2026-09-11 until development
+  moves to a rented GPU box). Start no pipeline run of any kind, and do not ask to. Every
+  proof is built on fixtures, mocks, deterministic paths and the artifacts already saved on
+  disk under `output/runs/`. This laptop has an 8 GB card and pages at 15 GB of RAM: a single
+  run costs one to three hours and blocks everything else, including the gate, which loads a
+  model onto the same card.
 - PUSH-TARGET GUARD: the sole origin must be `project-shimmer-deployment`. Confirm it
   before any git remote operation. Never push unless the operator explicitly says to push.
 - Before any git operation, scan the staged diff for key patterns (Anthropic `sk-ant-`,
