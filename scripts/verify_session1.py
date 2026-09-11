@@ -18592,6 +18592,19 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
     every rule a band OR a duration check reached a verdict for, agreeing or
     not, and excluding those from the fallback.
 
+    A THIRD instance of the same shape surfaced one layer further in: a rule
+    that is BOTH scoped (D, option 2) AND settled by a duration check used to
+    get its declared absence_judged plan (unconditional, from absence_plans,
+    before the band/duration loop even runs) PLUS the correct duration plan,
+    asking the model a now-redundant generic question when Python had
+    already answered the sharper one. Not observed on the device corpus
+    today (D04's and D05's own duration checks do not currently succeed
+    there), but latent the moment either rule's wording gap closes; closed
+    by dropping a scoped rule's declared absence_judged plan when the
+    band/duration loop settles that same rule, leaving its absence_computed
+    plans (a genuinely missing declared field) untouched, and leaving the
+    absence_judged fallback intact when nothing is computed.
+
     Real-corpus honesty, recorded rather than hidden: on device_log_flawed.md
     itself, D04's date pair is found (its two label lines share no
     vocabulary problem) but its bound is not: the bound sentence says "fault
@@ -18748,6 +18761,40 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                      f"pre-existing R1 double-booking, closed by the same fix), "
                      f"got {band_plans!r}")
 
+    # A rule that is BOTH scoped (D, option 2: absence_plans declares its own
+    # absence_judged plan, unconditionally, before the band/duration loop
+    # runs) AND settled by a duration check: the same double-booking shape,
+    # found while proving this job, one layer further in. The Python-computed
+    # duration must win, not sit beside the now-redundant model question.
+    unit_scoped = {"unit_id": "u03-scoped", "title": "Scoped",
+                  "text": ("Device: UNIT-SCOPED\nFault logged: 2026-06-01 09:00\n"
+                          "Fault acknowledged: 2026-06-03 09:00\n")}
+    rule_scoped = {"id": "CONV-SCOPED-DUR", "scope": [(("fault", "logged"), None)],
+                  "rule": "A logged fault must be acknowledged within the standard fault "
+                          "window. State the two timestamps and the gap between them."}
+    scoped_plans = _pr.plan_calls({unit_scoped["unit_id"]: unit_scoped},
+                                  [(unit_scoped["unit_id"], "CONV-SCOPED-DUR")],
+                                  {"CONV-SCOPED-DUR": rule_scoped}, set(),
+                                  needed_fields_for=lambda t: set(),
+                                  duration_bound_for=lambda r: (24.0, "hours", "REF-A"))
+    if len(scoped_plans) != 1 or scoped_plans[0]["kind"] != "duration":
+        return _fail(f"a scoped rule whose duration check succeeds must buy exactly one "
+                     f"'duration' plan, not the declared 'absence_judged' plan alongside "
+                     f"it (a second double-booking shape, closed by the same reasoning), "
+                     f"got {scoped_plans!r}")
+
+    # The same scoped rule, with NO duration bound found (D04's and D05's own
+    # real state on this corpus today): must still fall back to the declared
+    # absence_judged question, unaffected by the fix above.
+    scoped_fallback = _pr.plan_calls({unit_scoped["unit_id"]: unit_scoped},
+                                     [(unit_scoped["unit_id"], "CONV-SCOPED-DUR")],
+                                     {"CONV-SCOPED-DUR": rule_scoped}, set(),
+                                     needed_fields_for=lambda t: set(),
+                                     duration_bound_for=lambda r: None)
+    if len(scoped_fallback) != 1 or scoped_fallback[0]["kind"] != "absence_judged":
+        return _fail(f"a scoped rule whose duration check finds no bound must still "
+                     f"fall back to its declared absence_judged plan, got {scoped_fallback!r}")
+
     # Real-corpus honesty: D04 and D05 each find exactly one of the two
     # halves they need, proved directly against the corpus's own files.
     corpus_ref = (SCRIPTS.parent / "benchmark" / "corpora" / "device_log_review" /
@@ -18811,10 +18858,13 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "reads a real bound and refuses a tie and a range sentence; date_window "
                "fires only with both a pair and a bound; plan_calls buys one call for a "
                "disagreeing duration and none for an agreeing one, and the identical fix "
-               "closes a pre-existing R1 double-booking on an out-of-range table band "
-               "(proved with no Job C code involved); on the real corpus D04 finds its "
-               "pair but not its bound and D05 finds its bound but not its pair, neither "
-               "settling, both halves proved separately correct on aligned fixtures")
+               "closes a pre-existing R1 double-booking on an out-of-range table band and "
+               "a third instance one layer in (a scoped rule settled by duration no longer "
+               "also gets its declared absence_judged plan, and still falls back to it "
+               "when duration finds nothing), both proved with fixtures reproducing the "
+               "pre-existing shapes directly; on the real corpus D04 finds its pair but "
+               "not its bound and D05 finds its bound but not its pair, neither settling, "
+               "both halves proved separately correct on aligned fixtures")
 
 
 CHECKS = [

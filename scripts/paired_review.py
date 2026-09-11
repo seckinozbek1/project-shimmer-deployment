@@ -1265,6 +1265,26 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
                 plans.append({"unit": unit, "rule": rule, "checks": [check],
                               "kind": "duration"})
 
+        # A rule that is BOTH scoped (absence_plans already declared its
+        # absence_judged plan, unconditionally, before this loop ran) AND
+        # settled here by a band or duration verdict: the Python-computed
+        # answer is strictly better (it costs no call and cites real
+        # figures, where absence_judged asks the model a now-redundant
+        # generic question), so the declared absence_judged plan for this
+        # (unit, rule) is dropped in favor of it. Found alongside the
+        # pre-existing R1 double-booking this fix already closes for the
+        # unscoped case: not yet observed on the device corpus (D04's and
+        # D05's duration checks do not currently succeed there), but latent
+        # the moment either rule's wording gap closes, so it is closed here
+        # rather than shipped half-fixed. A scoped rule's absence_computed
+        # plans (a declared required field genuinely missing) are never
+        # touched: that is Python having already decided a different,
+        # narrower question this loop does not re-ask.
+        for rule_id in set(scoped_rule_ids) & settled_rule_ids:
+            plans = [p for p in plans
+                    if not (p["unit"] is unit and p["rule"].get("id") == rule_id
+                            and p["kind"] == "absence_judged")]
+
         # A pair where nothing at all could be computed still needs the model, on
         # the text, for one unit against one rule.
         if not shared:
