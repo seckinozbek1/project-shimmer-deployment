@@ -240,7 +240,7 @@ def _parse_text_lines(text, source_name, seq):
             current_section = line.lstrip("# ").strip().lower()
             current_severity, current_subjects = _heading_bracket_tags(line)
             current_scope, current_requires = _heading_bracket_declarations(line)
-            if before_first_operator_heading and _HEADING_RULE_ID.search(current_category):
+            if before_first_operator_heading and heading_carries_rule_id(line):
                 before_first_operator_heading = False
             continue
         if _is_list_item(line):
@@ -304,6 +304,28 @@ _CATEGORY_KEYWORDS = {
 
 
 _HEADING_RULE_ID = re.compile(r"\bconv-[a-z0-9]+(?:-[a-z0-9]+)*\b", re.IGNORECASE)
+
+
+def heading_carries_rule_id(line):
+    """True when this line is a markdown heading carrying the operator's own
+    rule id. This is the parser's load-bearing test (it is what flips
+    before_first_operator_heading below), exposed so intake classifies a file
+    by the same signal the parser will read it with. Intake used to match two
+    exact filenames while this module read every file in the directory
+    regardless of name, so a convention file the operator named anything else
+    was filed as a document under review and its rules were never compiled.
+    Two detectors that must agree are one detector."""
+    if not _is_markdown_heading(line):
+        return False
+    return bool(_HEADING_RULE_ID.search(_normalize_category(line)))
+
+
+def text_carries_rule_headings(text):
+    """True when any line of this text is an operator rule heading."""
+    for line in str(text).splitlines():
+        if heading_carries_rule_id(line.rstrip()):
+            return True
+    return False
 
 # The bracket slot an operator already writes on a heading and this parser used
 # to discard entirely ("## CONV-D01 , conv-value-in-range [required]"). Every

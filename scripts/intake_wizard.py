@@ -35,6 +35,7 @@ import role_resolution
 
 # scripts/ is sys.path[0] when launched as `python scripts/intake_wizard.py`, so
 # the sibling framework modules import by bare name (same convention as pipeline).
+import convention_parser
 import redaction_gate
 import sensitivity_layer
 
@@ -45,6 +46,11 @@ SCOPE_PATH = ROOT / "config" / "review_scope.json"
 # cased below; anything unrecognized is skipped).
 SUPPORTED_DOC_EXT = {".md", ".txt", ".pdf", ".docx"}
 CONVENTION_NAMES = {"review_conventions.md", "review_mandate.md"}
+# A convention file is recognised by CONTENT as well as by those two legacy
+# names: the text formats worth opening to look for rule headings, and the size
+# past which a file is taken as a document rather than a rule sheet.
+CONVENTION_TEXT_EXT = {".md", ".txt"}
+CONVENTION_SNIFF_BYTES = 4 * 1024 * 1024
 SCOPE_NAME = "review_scope.json"
 SIDECAR_SUFFIX = "_corpus_ingest.json"
 
@@ -60,12 +66,33 @@ def _ask(prompt: str) -> str:
 
 # --- classification ------------------------------------------------------------
 
+def _carries_rule_headings(path: Path) -> bool:
+    """True when a text file carries the operator's own rule headings, asked of
+    the convention parser itself rather than answered here. Only text formats
+    are opened; a parse or decode failure is not a classification."""
+    if path.suffix.lower() not in CONVENTION_TEXT_EXT:
+        return False
+    try:
+        if path.stat().st_size > CONVENTION_SNIFF_BYTES:
+            return False
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return False
+    return convention_parser.text_carries_rule_headings(text)
+
+
 def classify(path: Path) -> "tuple[str, str, Optional[Path]]":
     """Return (kind, why, target_dir_relative_to_ROOT). target is None when the
     file is unsupported and should be skipped."""
     name = path.name
     if name in CONVENTION_NAMES:
         return ("CONVENTIONS", "review rules", Path("input") / "conventions")
+    # The operator names their own files. A file carrying rule headings IS the
+    # review framework whatever it is called, so intake classifies it by the
+    # same signal the parser will read it with instead of by a fixed name.
+    if _carries_rule_headings(path):
+        return ("CONVENTIONS", "review rules (carries rule headings)",
+                Path("input") / "conventions")
     if name == SCOPE_NAME:
         return ("CONFIG", "date cutoff settings", Path("config"))
     if name.endswith(SIDECAR_SUFFIX):
@@ -200,6 +227,102 @@ def _ask_positive_int(prompt: str, flag: str, default_label: str) -> "tuple[str,
     return (str(n), [flag, str(n)])
 
 
+# --- which ingestion contract this import is under -----------------------------
+
+def _ingest_mode_flags(classified) -> "list[str]":
+    """Declare the run's ingestion mode from what is actually being imported.
+
+    Two contracts exist and were silently conflated. corpus_ingest's validator
+    requires a _corpus_ingest.json sidecar and hard-fails without one, but that
+    contract governs an EXTERNALLY FED corpus, where the sidecar's
+    role=context_grounding is what keeps retrieved precedent from being promoted
+    to the documents under review. The wizard stages the operator's own files,
+    where no such metadata exists: writing a sidecar here would mean inventing
+    the role, date and source-verification fields the operator never supplied,
+    and the pipeline would then warn that a sidecar appeared in a standalone run.
+
+    So the reconciliation is a DECLARATION, not a fabricated file. A sidecar the
+    operator brought means integrated; no sidecar means standalone, which is the
+    pipeline's own default. The wizard emitted neither, so an integrated import
+    ran as standalone and the promotion exclusion never fired."""
+    has_sidecar = any(kind == "SIDECAR" for _p, kind, _t in classified)
+    if not has_sidecar:
+        # A sidecar placed by an earlier import still governs this run.
+        has_sidecar = any((ROOT / "input" / "context").glob("*" + SIDECAR_SUFFIX))
+    if has_sidecar:
+        print()
+        print("  An ingestion sidecar is present, so this run is declared integrated:")
+        print("  files marked context_grounding stay grounding and are never reviewed.")
+        return ["--mode", "integrated"]
+    return []
+
+
+# --- what the conventions actually declare -------------------------------------
+
+def summarize_conventions(paths) -> dict:
+    """Read the rule sheets with the real parser and report what it extracted:
+    how many rules, which subject tags, how many rules carry a scope or a
+    requires declaration. Intake had no surface for any of this, so a subject
+    tag that failed to parse (or a heading the operator thought was a rule and
+    the parser did not) was invisible until the run produced nothing. Reading
+    only: this places nothing and decides nothing."""
+    summary = {"files": [], "rules": 0, "subjects": set(),
+               "scoped": 0, "requires": 0, "unreadable": []}
+    for path in paths:
+        try:
+            text = Path(path).read_text(encoding="utf-8")
+            rules = convention_parser._parse_text_lines(text, Path(path).name, [1])
+        except (OSError, UnicodeDecodeError, ValueError):
+            summary["unreadable"].append(Path(path).name)
+            continue
+        subjects = set()
+        scoped = requires = 0
+        for rule in rules:
+            subjects |= set(getattr(rule, "subjects", None) or [])
+            if getattr(rule, "scope", None):
+                scoped += 1
+            if getattr(rule, "requires", None):
+                requires += 1
+        summary["files"].append({"name": Path(path).name, "rules": len(rules),
+                                 "subjects": sorted(subjects), "scoped": scoped,
+                                 "requires": requires})
+        summary["rules"] += len(rules)
+        summary["subjects"] |= subjects
+        summary["scoped"] += scoped
+        summary["requires"] += requires
+    summary["subjects"] = sorted(summary["subjects"])
+    return summary
+
+
+def _print_convention_summary(summary: dict) -> None:
+    """Print the declaration report. Silence about an absent declaration would
+    be a claim that none was wanted, so each line says what was read."""
+    if not summary["files"] and not summary["unreadable"]:
+        return
+    print()
+    print("Conventions read:")
+    for entry in summary["files"]:
+        print(f"  {entry['name']}: {entry['rules']} rules")
+    for name in summary["unreadable"]:
+        print(f"  {name}: could not be parsed, it will be placed but may yield no rules")
+    if not summary["files"]:
+        # Nothing was read, so nothing can be said about what was declared.
+        return
+    if summary["rules"] == 0:
+        print("  No rules were extracted. Check that rule headings carry your own")
+        print("  rule ids, for example '## CONV-D01 , conv-value-in-range [required]'.")
+        return
+    subjects = summary["subjects"]
+    print("  Subject tags:  "
+          + (", ".join(subjects) if subjects
+             else "none declared (every rule goes to every agent that can act on it)"))
+    print("  Scope:         "
+          + (f"{summary['scoped']} rule(s) declare [scope: ...]" if summary["scoped"]
+             else "none declared (every rule applies to every unit)"))
+    if summary["requires"]:
+        print(f"  Requires:      {summary['requires']} rule(s) declare [requires: ...]")
+
+
 # --- conventions presence ------------------------------------------------------
 
 def _conventions_will_exist(classified) -> bool:
@@ -209,7 +332,11 @@ def _conventions_will_exist(classified) -> bool:
     conv_dir = ROOT / "input" / "conventions"
     if conv_dir.is_dir():
         for p in conv_dir.iterdir():
-            if p.is_file() and p.name in CONVENTION_NAMES:
+            # Same reconciliation as classify(): the parser reads every file in
+            # this directory, so a rule sheet already sitting here counts under
+            # whatever name the operator gave it.
+            if p.is_file() and (p.name in CONVENTION_NAMES
+                                or _carries_rule_headings(p)):
                 return True
     return False
 
@@ -320,6 +447,7 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
             "How many documents to review at most? [Enter for all]: ",
             "--max-docs", "all")
         run_flags += mflag
+        run_flags += _ingest_mode_flags(classified)
 
     if not _conventions_will_exist(classified):
         print()
@@ -341,6 +469,8 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
         print(f"  Mode:          {mode_label}")
         print(f"  Parallel docs: {parallel_label}")
         print(f"  Max docs:      {maxdocs_label}")
+    _print_convention_summary(summarize_conventions(
+        [p for p, kind, _t in classified if kind == "CONVENTIONS"]))
     confirm = _ask("Proceed? [Y/n]: ").lower()
     if confirm.startswith("n"):
         print("Cancelled. No files placed.")
