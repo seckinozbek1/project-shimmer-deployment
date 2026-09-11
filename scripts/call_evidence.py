@@ -20,17 +20,29 @@ identifiers of what was exposed, and nothing else:
                       id when the document map lists it)
   document_unit_ids   every unit id the payload's document map listed (orientation)
   reference_ids       every REF-* / WEB-REF-* id in the reference excerpt supplied
-  reference_ids_in_prompt
-                      the subset of those ids present in the bytes actually sent: the
-                      renderer drops passages over its character budget, so a
-                      supplied id is not always a rendered one (bus_reader
-                      _render_reference_index); this is read off the prompt, not
-                      assumed
+  reference_ids_rendered
+                      the ids whose passage the budgeted renderer actually kept whole
+                      in the bytes sent (bus_reader.rendered_line_ids over the finished
+                      REFERENCE_INDEX section): the renderer leaves out passages over
+                      its budget, so a supplied id is not always a rendered one
   payload_document_id the payload's own document_id field (a unit id on a paired
                       call, the document id on a whole-document call); doc_id above
                       is the value run_task was given, the per-document position in
                       the phases that pass one
   rule_ids            every convention id the call was asked to evaluate against
+  rule_ids_rendered   the ids whose rule line survived whole in the CONVENTION_REGISTRY
+                      section (the renderer keeps the first 40 rules and clips the
+                      section to a token budget); a rule requested but not rendered
+                      never reached the call as text
+  payload_rule_id     the payload's own rule_id (a paired or polish call carries the
+                      rule's text in the payload itself, which is never clipped)
+  convention_text_truncated, reference_text_truncated
+                      whether the token clip cut those sections
+  bus_messages_rendered, bus_messages_dropped
+                      how many recent bus messages reached the prompt whole and how many
+                      were dropped for budget (counts; the classifier never relies on
+                      bus context as evidence, so this is a recorded blind spot, not
+                      a classification input)
   payload_keys        the payload's field NAMES (so "preceding_unit_text" being
                       present is on the record without its content)
   document_text_chars, document_text_truncated
@@ -60,7 +72,9 @@ EVIDENCE_FILENAME = "call_evidence.jsonl"
 RECORD_FIELDS = (
     "call_id", "run_id", "ts", "phase", "doc_id", "agent", "backend", "model", "task",
     "payload_document_id", "unit_id", "neighbour_unit_ids", "heading_unit_id",
-    "document_unit_ids", "reference_ids", "reference_ids_in_prompt", "rule_ids",
+    "document_unit_ids", "reference_ids", "reference_ids_rendered", "rule_ids",
+    "rule_ids_rendered", "payload_rule_id", "convention_text_truncated",
+    "reference_text_truncated", "bus_messages_rendered", "bus_messages_dropped",
     "payload_keys", "document_text_chars", "document_text_truncated", "prompt_chars",
 )
 
@@ -80,11 +94,12 @@ def _ids_from(entries, key):
 
 def extract(work_payload, *, call_id, run_id, phase, doc_id, agent, backend, model,
             convention_registry=None, reference_index_excerpt=None, prompt_chars=0,
-            ts=None, prompt_text=None):
+            ts=None, rendered=None):
     """Build one evidence record from what run_task is about to send. Reads only
     identifiers and counts off the payload; every text field is left where it is.
-    `prompt_text`, when given, is searched for the supplied reference ids and then
-    dropped: only the ids found are kept."""
+    `rendered` is the ContextPackage's own report of what its budgeted sections
+    kept (bus_reader.assemble_context); None for a call built outside the package
+    path (the draft memo, the arithmetic probe), where nothing was rendered by it."""
     p = work_payload if isinstance(work_payload, dict) else {}
     unit_id = p.get("unit_id") if isinstance(p.get("unit_id"), str) else None
     doc_map = p.get("document_map") or p.get("document_units") or []
@@ -111,9 +126,9 @@ def extract(work_payload, *, call_id, run_id, phase, doc_id, agent, backend, mod
         if isinstance(cid, str) and cid and cid not in rule_ids:
             rule_ids.append(cid)
     doc_text = p.get("document_text") if isinstance(p.get("document_text"), str) else ""
-    in_prompt = ([rid for rid in reference_ids if rid in prompt_text]
-                 if isinstance(prompt_text, str) else [])
+    r = rendered if isinstance(rendered, dict) else {}
     pdoc = p.get("document_id")
+    prule = p.get("rule_id")
     return {
         "call_id": call_id,
         "run_id": run_id or "",
@@ -130,8 +145,14 @@ def extract(work_payload, *, call_id, run_id, phase, doc_id, agent, backend, mod
         "heading_unit_id": heading_unit_id,
         "document_unit_ids": document_unit_ids,
         "reference_ids": reference_ids,
-        "reference_ids_in_prompt": in_prompt,
+        "reference_ids_rendered": list(r.get("reference_ids") or []),
         "rule_ids": rule_ids,
+        "rule_ids_rendered": list(r.get("convention_ids") or []),
+        "payload_rule_id": prule if isinstance(prule, str) else None,
+        "convention_text_truncated": bool(r.get("convention_text_truncated", False)),
+        "reference_text_truncated": bool(r.get("reference_text_truncated", False)),
+        "bus_messages_rendered": int(r.get("bus_messages_rendered") or 0),
+        "bus_messages_dropped": int(r.get("bus_messages_dropped") or 0),
         "payload_keys": sorted(str(k) for k in p.keys()),
         "document_text_chars": len(doc_text),
         "document_text_truncated": TRUNCATION_MARKER in doc_text,
@@ -183,14 +204,22 @@ def reconstruct(run_dir, call_id):
     return None
 
 
+def rule_reached(rec, rule_id):
+    """Whether the rule's TEXT reached the call: carried in the payload itself (a
+    paired or polish call, never clipped) or rendered whole in the registry section.
+    A rule merely requested (in rule_ids) whose line the budget clipped did not."""
+    return rec.get("payload_rule_id") == rule_id or rule_id in (rec.get("rule_ids_rendered") or [])
+
+
 def calls_exposing(records, *, rule_id, unit_id):
-    """The recorded calls in which `unit_id` was exposed under `rule_id`: as the
-    reviewed unit, as a supplied neighbour, or inside an unclipped whole-document
-    payload whose map lists it. A clipped whole-document call never counts: the
-    record cannot say which units survived the clip."""
+    """The recorded calls in which `unit_id` was exposed under `rule_id`: the rule's
+    text reached the call (rule_reached) AND the unit was the reviewed unit, a
+    supplied neighbour, or inside an unclipped whole-document payload whose map
+    lists it. A clipped whole-document call never counts: the record cannot say
+    which units survived the clip. A rule requested but not rendered never counts."""
     out = []
     for r in records or []:
-        if rule_id not in (r.get("rule_ids") or []):
+        if not rule_reached(r, rule_id):
             continue
         if r.get("unit_id") == unit_id or unit_id in (r.get("neighbour_unit_ids") or []):
             out.append(r)

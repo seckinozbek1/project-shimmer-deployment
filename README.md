@@ -871,11 +871,18 @@ refusal), and `logs/` holds the append-only
 per model call, written by the agent wrapper just before dispatch, carrying the STRUCTURAL
 identifiers of what that call was shown and nothing else (the reviewed unit id, the
 neighbouring unit ids supplied as context, the heading unit, the document map's unit ids,
-the reference ids supplied and the subset present in the bytes sent, the rule ids, the
-agent, backend, model, run, phase, a fresh call id and the prompt length; never a passage
-of text, so the file is not a second copy of the document). The same call id sits on the
-call's cost row and on the bus post it produced, so the three join; gate check 204
-reconstructs one executed call from the file alone. Runs never overwrite
+the reference ids supplied and the subset the renderer actually kept whole, the rule ids
+requested and the subset whose line the registry section kept whole, the rule the payload
+itself carried, whether the registry and reference sections were clipped, how many recent
+bus messages were rendered and how many dropped for budget, the agent, backend, model, run,
+phase, a fresh call id and the prompt length; never a passage of text, so the file is not a
+second copy of the document). The rendered subsets are read off the finished section texts
+by `bus_reader.rendered_line_ids`, never assumed from the input lists, and a rule that was
+requested but not rendered never counts as having reached the call. The same call id sits
+on the call's cost row and on the bus post it produced, so the three join; gate check 204
+reconstructs one executed call from the file alone and check 207 proves the rendered
+report. The draft memo's own model call (which bypasses the wrapper's task path) and the
+arithmetic probe record their calls too. Runs never overwrite
 each other. Follow a run live with `py -3.9 scripts/bus_viewer.py --follow`.
 
 ### 4. The single-agent harness (`scripts/harness/`)
@@ -979,8 +986,9 @@ The scorer also classifies every planted entry the run failed to produce, per en
 exactly one of four classes, from the run's saved artifacts alone (`scripts/fn_evidence.py`;
 the scorer is the only reader of a key and hands each missed entry to the classifier as a
 dict): `EVIDENCE_PRESENT_IN_MODEL_PAYLOAD` (a recorded call in `logs/call_evidence.jsonl`
-carried the rule and showed the unit, as the reviewed unit, a supplied neighbour, or inside
-an unclipped whole-document payload; possibly a reasoning failure),
+carried the rule's TEXT, in the payload itself or rendered whole in the registry section,
+never merely requested, and showed the unit, as the reviewed unit, a supplied neighbour, or
+inside an unclipped whole-document payload; possibly a reasoning failure),
 `EVIDENCE_PRESENT_UPSTREAM_BUT_NOT_IN_PAYLOAD` (the unit is in the parsed document and the
 rule was loaded, but no call carried both: the pairing map never paired them, or the run's
 evidence file records no such call; a rule that was never paired is always this class,
@@ -1677,7 +1685,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**207** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**208** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -1698,7 +1706,7 @@ first run, not something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 207 checks on an empty checkout would be proving nothing about those
+A gate that passed all 208 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Every
 other check passes on a fresh clone with no setup beyond `py -3.9 -m pip install -r
 requirements.txt`. Once you have run the launcher (or built `input/` and staged a corpus

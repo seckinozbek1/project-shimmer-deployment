@@ -25,6 +25,7 @@ import re
 import statistics
 import sys
 import time
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -128,20 +129,32 @@ def probe(agent, *, profile=LOCAL, kinds=KINDS, n=DEFAULT_CASES, seed=20260907,
                                        api_backend=api_backend, api_model=api_model)
         wrapper = pipeline._build_wrapper(agent, orch, keys)
 
-        def dispatch(prompt):
-            if wrapper.backend in ("qwen_local", "local_producer", "local_auditor"):
-                r = wrapper.dispatch(prompt, "", max_new_tokens=max_new_tokens)
-            else:
-                r = wrapper.dispatch(prompt, "", max_tokens=max_new_tokens)
+        def dispatch(prompt, call_id=""):
+            # The probe builds its own prompt and bypasses run_task, so run_task's
+            # call evidence never sees it; the probe's own record (below) carries the
+            # call id, and the cost row carries the same id through _cost_call_id.
+            wrapper._cost_call_id = call_id
+            try:
+                if wrapper.backend in ("qwen_local", "local_producer", "local_auditor"):
+                    r = wrapper.dispatch(prompt, "", max_new_tokens=max_new_tokens)
+                else:
+                    r = wrapper.dispatch(prompt, "", max_tokens=max_new_tokens)
+            finally:
+                wrapper._cost_call_id = ""
             return r.raw_text if r.ok else ""
     else:
         backend, model = "stub", "stub"
+        _injected = dispatch
+
+        def dispatch(prompt, call_id=""):
+            return _injected(prompt)
 
     records = []
     for kind in kinds:
         for case in make_cases(kind, n=n, seed=seed):
+            call_id = uuid.uuid4().hex
             t0 = time.monotonic()
-            raw = dispatch(case["prompt"])
+            raw = dispatch(case["prompt"], call_id)
             elapsed = time.monotonic() - t0
             got = _answer_of(raw)
             records.append({
@@ -151,6 +164,10 @@ def probe(agent, *, profile=LOCAL, kinds=KINDS, n=DEFAULT_CASES, seed=20260907,
                 "correct": _correct(kind, case["expected"], got),
                 "latency_s": round(elapsed, 3),
                 "raw_len": len(raw or ""),
+                # call evidence, structural: the probe's prompt is its own (no unit,
+                # rule or reference), so the record is the id, the task and the length.
+                "call_id": call_id, "task": "arithmetic_probe",
+                "prompt_chars": len(case["prompt"]),
             })
     return records, summarize(records)
 
