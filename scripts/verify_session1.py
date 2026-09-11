@@ -17039,6 +17039,197 @@ def check_210_the_ontology_store_has_a_reader():
     return _ok(shipped[1] + "; neutralise (scope filter ignored) FAILS, restore PASSES")
 
 
+def _relation_baseline_body():
+    """The executed body of check 211: both deterministic relation mechanisms over a
+    domain-free fixture document, the records written through the real scoped store
+    and read back through the real reader. No model, no run, no embedding store (the
+    ranker is injected as a plain function, which is the module's own contract).
+
+    Factored out so the check can run it as shipped and with the ambiguity refusal
+    neutralised."""
+    import tempfile
+    import ontology_store as _os_mod
+    import ontology_reader as _reader
+    import relation_extract as _rx
+
+    patterns, sim, warnings = _rx.load_patterns()
+    if warnings:
+        return _fail("the shipped relation pattern config does not load cleanly: %r"
+                     % (warnings,))
+    if not patterns:
+        return _fail("the shipped relation pattern config declares no usable pattern")
+    if int(sim.get("min_units_apart") or 0) < 2:
+        return _fail("similarity must skip adjacent units (min_units_apart >= 2): %r"
+                     % (sim.get("min_units_apart"),))
+
+    # A domain-free document: unit 1 defines a term, unit 9 refers back to it across
+    # eight units, which is the long-range distance the neighbour mechanism cannot reach.
+    units = [
+        {"unit_id": "u01-glossary", "title": "Glossary", "index": 0,
+         "text": "## Glossary\n\nZeta window: the period, in units, allowed for a zeta."},
+        {"unit_id": "u02-section-1", "title": "Section 1", "index": 1,
+         "text": "## Section 1\n\nThe stated quantity must fall inside the band."},
+        {"unit_id": "u09-entry-qux", "title": "Entry qux", "index": 8,
+         "text": ("## Entry qux\n\nThe allowance is as defined in the glossary. "
+                  "See section 1 for the band.")},
+    ]
+    found = _rx.extract_relations(units)
+    rels = found["relations"]
+    if found["counts"]["pattern"] != 2:
+        return _fail("the two shipped patterns should find two references on the fixture: %r"
+                     % (found["counts"],))
+    long_range = [r for r in rels
+                  if r["source"] == "u09-entry-qux" and r["target"] == "u01-glossary"]
+    if not long_range:
+        return _fail("the long-range reference (unit 9 back to the glossary at unit 1) was "
+                     "not found; that distance is the whole point of this mechanism")
+    if any(r["source"] == r["target"] for r in rels):
+        return _fail("a unit must never relate to itself")
+
+    # Ambiguity is REFUSED, never broken by picking one: a captured phrase contained in
+    # two units' labels and matching neither exactly yields no relation.
+    ambiguous = [
+        {"unit_id": "u01-alpha-thing-one", "title": "Alpha thing one", "index": 0, "text": "x"},
+        {"unit_id": "u02-alpha-thing-two", "title": "Alpha thing two", "index": 1, "text": "y"},
+        {"unit_id": "u05-ref", "title": "Ref", "index": 4,
+         "text": "The allowance is as defined in the alpha thing."},
+    ]
+    if _rx.extract_relations(ambiguous)["relations"]:
+        return _fail("an ambiguous reference must be refused, not resolved to one of the "
+                     "candidates")
+
+    # Similarity: unavailable with no ranker, and symmetric (one row per pair) with one.
+    if _rx.extract_relations(units)["counts"]["embedding_similarity"] != 0:
+        return _fail("with no ranker injected, similarity must produce nothing")
+
+    def _fake_rank(text, candidates):
+        return [(cid, 0.9) for cid, _t in candidates]
+
+    with_rank = _rx.extract_relations(units, rank=_fake_rank)
+    sims = [r for r in with_rank["relations"] if r["method"] == _rx.METHOD_SIMILARITY]
+    if not sims:
+        return _fail("with a ranker injected, similarity must produce relations")
+    pairs = [tuple(sorted((r["source"], r["target"]))) for r in sims]
+    if len(pairs) != len(set(pairs)):
+        return _fail("similarity is symmetric; a pair must be recorded once, not twice")
+    for r in sims:
+        a = next(u for u in units if u["unit_id"] == r["source"])
+        b = next(u for u in units if u["unit_id"] == r["target"])
+        if abs(a["index"] - b["index"]) < int(sim.get("min_units_apart") or 2):
+            return _fail("similarity must skip adjacent units: %r" % (r,))
+
+    # Written to the real scoped store and read back through the real reader.
+    d = Path(tempfile.mkdtemp(prefix="shimmer_relations_"))
+    live = d / "provisions.jsonl"
+    store = _os_mod.ProvisionStore(live_path=live, scope=_os_mod.DEFAULT_SCOPE)
+    t0 = _os_mod.now_iso()
+    store.append([
+        {"node": "Provision", "id": "zqdoc::REF-0001", "document_id": "zqdoc",
+         "ref_id": "REF-0001", "convention_ref": "CONV-001", "stub": False,
+         "provenance": _os_mod.provenance(time=t0, agent="AGENT_ALPHA", run="runA")},
+    ])
+    prov_struct = _os_mod.provenance(time=t0, agent=None, run="runA")
+    store.append(_rx.relation_records(rels, document_id="zqdoc", run_id="runA",
+                                      provenance=prov_struct))
+
+    rel_summary = _reader.relation_summary(store)
+    if rel_summary["relation_count"] != len(rels):
+        return _fail("the store read back %r relations, expected %r"
+                     % (rel_summary["relation_count"], len(rels)))
+    methods = set(m["method"] for m in rel_summary["by_method"])
+    if _rx.METHOD_PATTERN not in methods:
+        return _fail("the summary must keep the two mechanisms distinguishable by method: %r"
+                     % (rel_summary["by_method"],))
+    if any(r.get("text") for r in rel_summary["relations"]):
+        return _fail("a relation row must carry unit ids, never a unit's text")
+
+    # Relations must NOT be counted as provisions: the provenance summary is job 1's
+    # figure and writing relations into the same store must not inflate it.
+    prov_summary = _reader.provenance_summary(store)
+    if prov_summary["provision_count"] != 1:
+        return _fail("relations leaked into the provision count: %r provisions, expected 1"
+                     % (prov_summary["provision_count"],))
+
+    # Re-extracting the same relations in a later run SUPERSEDES, never duplicates.
+    store.append(_rx.relation_records(
+        rels, document_id="zqdoc", run_id="runB",
+        provenance=_os_mod.provenance(time=_os_mod.now_iso(), agent=None, run="runB")))
+    again = _reader.relation_summary(store)
+    if again["relation_count"] != len(rels):
+        return _fail("re-extracting the same relations duplicated them: %r"
+                     % (again["relation_count"],))
+    if not all(r["revision"] == 2 for r in again["relations"]):
+        return _fail("a re-extracted relation must be revision 2 of the same id: %r"
+                     % ([r["revision"] for r in again["relations"]],))
+
+    # No pattern lives in code (S5): the module's own source must carry none of the
+    # config's referring words.
+    module_src = (SCRIPTS / "relation_extract.py").read_text(encoding="utf-8")
+    for word in ("glossary", "section", "clause", "article", "annex"):
+        if word in module_src.lower().split("\"\"\"")[-1]:
+            return _fail("the word %r appears in relation_extract.py outside its docstring; "
+                         "every pattern belongs in config/relation_patterns.json (S5)" % (word,))
+    return _ok("relations between provisions, the deterministic baseline: the operator's "
+               "patterns (config/relation_patterns.json, none in code) find the long-range "
+               "reference from unit 9 back to the glossary at unit 1, an ambiguous reference "
+               "is refused rather than resolved, similarity is unavailable with no ranker and "
+               "symmetric and non-adjacent with one, relations are written to the scoped store "
+               "and read back by method and type, they never inflate the provision count, and "
+               "re-extraction supersedes rather than duplicates")
+
+
+def check_211_relations_between_provisions():
+    """ontology chain job 2, the deterministic baseline (2026-09-11). BUILT, NOT
+    MEASURED: neither mechanism has been scored on any corpus, the store is empty, and
+    nothing in the review reads a relation. Proved on fixtures only. The operator
+    scores the baseline on the long-range corpus after the move to a GPU box and
+    decides then whether a candidate finder is worth building beside it.
+
+    What is proved: the graph records where a finding came from and never that one
+    provision relates to another, which is what the long-range case needs (a term
+    defined at the start of a document and used at the end, the distance the
+    adjacent-neighbour mechanism explicitly does not reach). Two deterministic
+    mechanisms now produce that relation, every pattern in operator config and none in
+    code (S5), an ambiguity refused rather than guessed, written into the same scoped
+    store provisions use and read back without disturbing job 1's figures.
+
+    Neutralise-and-restore: with the ambiguity refusal replaced by one that picks the
+    first candidate, the ambiguous fixture yields a relation and the body must FAIL;
+    restored, PASS."""
+    import relation_extract as _rx
+
+    shipped = _relation_baseline_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _rx._resolve_target
+
+    def _first_wins(captured, labels):
+        key = _rx._norm(captured)
+        if not key:
+            return None
+        if key in labels:
+            return labels[key]
+        for label, uid in labels.items():           # the defect: ambiguity broken, not refused
+            if key in label or label in key:
+                return uid
+        return None
+
+    _rx._resolve_target = _first_wins
+    try:
+        neutralised = _relation_baseline_body()
+    finally:
+        _rx._resolve_target = original
+    if neutralised[0] != "FAIL":
+        return _fail("with the ambiguity refusal neutralised the body still passed (%r)"
+                     % (neutralised,))
+    restored = _relation_baseline_body()
+    if restored[0] != "PASS":
+        return _fail("after restoring the ambiguity refusal the body no longer passes: %r"
+                     % (restored,))
+    return _ok(shipped[1] + "; neutralise (ambiguity broken by picking the first candidate) "
+                            "FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -17271,6 +17462,8 @@ CHECKS = [
      check_209_declared_scope_and_python_first_absence),
     ("210 the ontology store has a reader (ontology chain, job 1)",
      check_210_the_ontology_store_has_a_reader),
+    ("211 relations between provisions, deterministic (ontology chain, job 2)",
+     check_211_relations_between_provisions),
 ]
 
 
