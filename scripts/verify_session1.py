@@ -14653,6 +14653,133 @@ def check_196_every_remaining_rule_id_consumer_reads_the_real_field_name():
                "resolver rather than a private copy of the alias list")
 
 
+def check_197_convention_heading_brackets_read_subject_and_severity():
+    """Convention assignment, commit 1 (parser). A rule heading's bracket slot
+    (`## CONV-D01 , conv-value-in-range [required] [conformance]`) used to be
+    read for nothing: the operator's own id was kept as category, and every
+    bracket token, including [required], was silently discarded, so severity
+    came from the rule text alone. Two real consequences this check pins:
+    CONV-006 in the shipped device_log_review corpus carries [required] on
+    its heading and was recorded advisory, since its own paragraph text has
+    no severity word; and two prose paragraphs under a conventions file's
+    OWN TITLE heading were minted as real, numbered rules (CONV-001,
+    CONV-002 in that same corpus), because nothing distinguished a title from
+    a real id-less rule section such as the one check_32's own seed text
+    opens with.
+
+    Now: every [...] on a heading is read structurally. A token equal to one
+    of this module's own three severity labels sets that rule's severity
+    directly; every other token is a subject, carried on ConventionRule.
+    subjects for the (unbuilt) assignment comparison to read. A PARAGRAPH
+    (never a list item) before the first heading that carries an operator id
+    is preamble, not a rule. No subject name is declared anywhere in this
+    check or in convention_parser.py: only the bracket SHAPE and the three
+    severity words the parser already knew."""
+    import convention_parser as _cp
+
+    # Site 1: bracket subjects and severity override, multiple tags.
+    text = (
+        "# Review conventions: a title with a prose scope statement\n\n"
+        "This sentence is prose under the title and must never become a rule.\n\n"
+        "## CONV-D01 , conv-value-in-range [required] [conformance]\n\n"
+        "The reading must fall inside the class band.\n\n"
+        "## CONV-D02 , conv-grounding [required] [conformance] [basis]\n\n"
+        "Every finding must cite a passage.\n\n"
+        "## CONV-D03 , conv-no-severity-word\n\n"
+        "This paragraph has no severity word at all so it falls back to advisory.\n"
+    )
+    seq = [0]
+    rules = _cp._parse_text_lines(text, "zqprobe.md", seq)
+    if len(rules) != 3:
+        return _fail(f"expected 3 rules (title prose suppressed), got {len(rules)}: "
+                     f"{[(r.id, r.category, r.rule[:30]) for r in rules]}")
+    r1, r2, r3 = rules
+    if r1.severity != "required" or r1.subjects != ["conformance"]:
+        return _fail(f"CONV-D01: expected severity=required subjects=['conformance'], "
+                     f"got severity={r1.severity!r} subjects={r1.subjects!r}")
+    if r2.severity != "required" or r2.subjects != ["conformance", "basis"]:
+        return _fail(f"CONV-D02: expected severity=required subjects=['conformance', "
+                     f"'basis'], got severity={r2.severity!r} subjects={r2.subjects!r}")
+    if r3.severity != "advisory" or r3.subjects != []:
+        return _fail(f"CONV-D03 (no bracket): expected severity=advisory subjects=[], "
+                     f"got severity={r3.severity!r} subjects={r3.subjects!r}")
+
+    # Site 2: a conventions file that opens DIRECTLY on a real, id-less rule
+    # section (no title, no prose preamble at all) must parse exactly as
+    # before: this is check_32's own seed shape, and the fix must not touch
+    # it. A list item is never suppressed by the title-prose rule.
+    seed_shape = (
+        "# Terminology\n\n"
+        "- Documents must use the approved term.\n"
+        "- Reviewers should prefer the approved phrase.\n\n"
+        "# Red flags\n\n"
+        "- Reject an unsupported autonomy claim.\n"
+    )
+    seq2 = [0]
+    seed_rules = _cp._parse_text_lines(seed_shape, "seed.md", seq2)
+    if len(seed_rules) != 3:
+        return _fail(f"an id-less first heading with list items under it must still "
+                     f"parse every item as a rule (check_32's own shape): expected 3, "
+                     f"got {len(seed_rules)}")
+
+    # Site 3: the real shipped corpus, proving the fix against the actual file,
+    # not only a synthetic string. device_log_review's CONV-006 (heading
+    # CONV-D03 [required]) must now read required, not advisory; and the
+    # corpus's real title-and-scope prose must not appear as CONV-001/CONV-002.
+    real_path = (Path(__file__).resolve().parent.parent / "benchmark" / "corpora"
+                 / "device_log_review" / "conventions" / "device_conventions.md")
+    if not real_path.is_file():
+        return _fail(f"{real_path} not found")
+    seq3 = [0]
+    real_rules = _cp._parse_text_lines(real_path.read_text(encoding="utf-8"),
+                                       real_path.name, seq3)
+    if len(real_rules) != 8:
+        return _fail(f"device_log_review has 8 authored rules; got {len(real_rules)} "
+                     f"(a title-prose leak would add 2 more)")
+    severities = {r.category: r.severity for r in real_rules}
+    if severities.get("conv-d03") != "required":
+        return _fail(f"CONV-D03's heading carries [required] in the real corpus file; "
+                     f"got severity={severities.get('conv-d03')!r}, the exact discarded-"
+                     f"bracket defect this check exists to catch")
+    if any(r.category == "review" for r in real_rules):
+        return _fail("a rule with category 'review' survived: the title-prose leak "
+                     "(the corpus's own preamble minted as CONV-001/CONV-002) is back")
+
+    # NEUTRALISE AND RESTORE: strip the bracket regex's ability to see a
+    # closing bracket, re-run the real corpus, and confirm the severity fix
+    # and the subject read both disappear; restore and confirm both return.
+    _orig_bracket = _cp._HEADING_BRACKET
+    _cp._HEADING_BRACKET = re.compile(r"(?!)")  # matches nothing, ever
+    try:
+        seq_n = [0]
+        neutralised = _cp._parse_text_lines(real_path.read_text(encoding="utf-8"),
+                                            real_path.name, seq_n)
+        neut_by_cat = {r.category: r.severity for r in neutralised}
+        if neut_by_cat.get("conv-d03") == "required":
+            return _fail("neutralising _HEADING_BRACKET did not stop CONV-D03 from "
+                         "reading required: the check is not exercising the bracket "
+                         "read, or the fallback text classification coincidentally "
+                         "also says required")
+    finally:
+        _cp._HEADING_BRACKET = _orig_bracket
+    seq_r = [0]
+    restored = _cp._parse_text_lines(real_path.read_text(encoding="utf-8"),
+                                     real_path.name, seq_r)
+    restored_by_cat = {r.category: r.severity for r in restored}
+    if restored_by_cat.get("conv-d03") != "required":
+        return _fail("restoring _HEADING_BRACKET did not bring back CONV-D03's "
+                     "required severity")
+
+    return _ok("bracket subjects and severity read correctly (multiple tags, no "
+               "bracket, severity-override-vs-fallback all covered); check_32's own "
+               "id-less-heading-with-list-items shape is unaffected; the real "
+               "device_log_review corpus now reads CONV-D03 as required (was advisory, "
+               "the discarded-[required] defect) and carries no title-prose leak (was "
+               "CONV-001/CONV-002 under category 'review'); neutralising the bracket "
+               "regex to match nothing removes the severity fix and restoring it "
+               "brings the fix back, proving this check reads the live bracket scan")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -14857,6 +14984,8 @@ CHECKS = [
      check_195_every_agent_has_a_nine_part_harness_and_unresolved_is_visible),
     ("196 every remaining rule-id consumer reads the real field name (night W5)",
      check_196_every_remaining_rule_id_consumer_reads_the_real_field_name),
+    ("197 a convention heading's brackets read subject and severity (convention assignment 1)",
+     check_197_convention_heading_brackets_read_subject_and_severity),
 ]
 
 

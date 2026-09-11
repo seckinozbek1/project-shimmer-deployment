@@ -56,11 +56,13 @@ class ConventionRule:
     source_location: str
     severity: str
     action: str
+    subjects: list = field(default_factory=list)
 
     def as_dict(self):
         return {"id": self.id, "category": self.category, "rule": self.rule,
                 "source_file": self.source_file, "source_location": self.source_location,
-                "severity": self.severity, "action": self.action}
+                "severity": self.severity, "action": self.action,
+                "subjects": self.subjects}
 
 
 @dataclass
@@ -147,6 +149,7 @@ def _parse_json(path, seq):
         rule = str(item.get("rule") or item.get("text") or "").strip()
         if not rule:
             continue
+        subjects = item.get("subjects")
         out.append(ConventionRule(
             id=item.get("id") or _next_id(seq),
             category=str(item.get("category") or _DEFAULT_CATEGORY).strip().lower(),
@@ -154,6 +157,7 @@ def _parse_json(path, seq):
             source_location=str(item.get("source_location") or f"item {i+1}"),
             severity=str(item.get("severity") or _classify_severity(rule)).lower(),
             action=str(item.get("action") or _classify_action(rule)).lower(),
+            subjects=[str(s).strip().lower() for s in subjects] if isinstance(subjects, list) else [],
         ))
     return out
 
@@ -167,33 +171,50 @@ def _parse_text_lines(text, source_name, seq):
     out = []
     current_category = _DEFAULT_CATEGORY
     current_section = "preamble"
+    current_severity = None
+    current_subjects: list = []
+    # True until the first heading that carries the OPERATOR'S OWN rule id
+    # (never merely the first heading in the file: a conventions file opened
+    # directly with a real, id-less rule section, as check_32's own seed text
+    # does, must parse exactly as it always has). While true, a PARAGRAPH is
+    # preamble prose, not a rule: this is what fixes the file's title
+    # sentence and scope statement being minted as real CONV-* entries. A
+    # LIST ITEM is never suppressed by this: an operator who writes a list
+    # item under any heading, titled or not, plainly means it as a rule.
+    before_first_operator_heading = True
     line_num = 0
     para_buffer = []
 
-    def flush(buffer, category, section, location):
-        if not buffer:
+    def flush(buffer, suppress_paragraph, severity, subjects, location):
+        if not buffer or suppress_paragraph:
             return []
         joined = " ".join(b.strip() for b in buffer).strip()
         if not joined:
             return []
         return [ConventionRule(
-            id=_next_id(seq), category=category, rule=joined,
+            id=_next_id(seq), category=current_category, rule=joined,
             source_file=source_name, source_location=location,
-            severity=_classify_severity(joined), action=_classify_action(joined),
+            severity=severity or _classify_severity(joined),
+            action=_classify_action(joined), subjects=list(subjects),
         )]
 
     for raw_line in text.splitlines():
         line_num += 1
         line = raw_line.rstrip()
         if _is_markdown_heading(line):
-            out.extend(flush(para_buffer, current_category, current_section,
+            out.extend(flush(para_buffer, before_first_operator_heading,
+                             current_severity, current_subjects,
                              f"line {line_num - len(para_buffer)}"))
             para_buffer = []
             current_category = _normalize_category(line)
             current_section = line.lstrip("# ").strip().lower()
+            current_severity, current_subjects = _heading_bracket_tags(line)
+            if before_first_operator_heading and _HEADING_RULE_ID.search(current_category):
+                before_first_operator_heading = False
             continue
         if _is_list_item(line):
-            out.extend(flush(para_buffer, current_category, current_section,
+            out.extend(flush(para_buffer, before_first_operator_heading,
+                             current_severity, current_subjects,
                              f"line {line_num - len(para_buffer)}"))
             para_buffer = []
             stripped = _strip_list_marker(line)
@@ -201,17 +222,19 @@ def _parse_text_lines(text, source_name, seq):
                 out.append(ConventionRule(
                     id=_next_id(seq), category=current_category, rule=stripped,
                     source_file=source_name, source_location=f"line {line_num}",
-                    severity=_classify_severity(stripped), action=_classify_action(stripped),
+                    severity=current_severity or _classify_severity(stripped),
+                    action=_classify_action(stripped), subjects=list(current_subjects),
                 ))
             continue
         if not line.strip():
-            out.extend(flush(para_buffer, current_category, current_section,
+            out.extend(flush(para_buffer, before_first_operator_heading,
+                             current_severity, current_subjects,
                              f"line {line_num - len(para_buffer)}"))
             para_buffer = []
             continue
         para_buffer.append(line)
-    out.extend(flush(para_buffer, current_category, current_section,
-                     f"line {line_num - len(para_buffer) + 1}"))
+    out.extend(flush(para_buffer, before_first_operator_heading, current_severity,
+                     current_subjects, f"line {line_num - len(para_buffer) + 1}"))
     return [r for r in out if r.rule and len(r.rule) >= 16]
 
 
@@ -249,6 +272,39 @@ _CATEGORY_KEYWORDS = {
 
 
 _HEADING_RULE_ID = re.compile(r"\bconv-[a-z0-9]+(?:-[a-z0-9]+)*\b", re.IGNORECASE)
+
+# The bracket slot an operator already writes on a heading and this parser used
+# to discard entirely ("## CONV-D01 , conv-value-in-range [required]"). Every
+# [...] on the heading is now read structurally: a token this module already
+# knows as a severity label (_SEVERITY_PATTERNS' own three names) sets the
+# rule's severity directly, overriding the text-classified default; every
+# other token is the operator's own subject tag, carried verbatim (lowercased)
+# for the convention-assignment comparison, which contains no subject name of
+# its own. No subject vocabulary is declared here: this module only knows the
+# bracket SHAPE and the three severity words it already knew.
+_HEADING_BRACKET = re.compile(r"\[([^\[\]]+)\]")
+_SEVERITY_LABELS = frozenset(label for label, _rx in _SEVERITY_PATTERNS)
+
+
+def _heading_bracket_tags(heading):
+    """(severity_or_none, subjects) read from every [...] on a heading line.
+
+    Each bracket token is lowercased and stripped once; a token equal to one
+    of this module's own severity labels (required/recommended/advisory) is
+    the severity (the LAST such token wins, matching how a human would read
+    a heading left to right), and is excluded from subjects. Every other
+    token is a subject, order preserved, duplicates dropped."""
+    severity = None
+    subjects = []
+    for m in _HEADING_BRACKET.finditer(heading):
+        token = m.group(1).strip().lower()
+        if not token:
+            continue
+        if token in _SEVERITY_LABELS:
+            severity = token
+        elif token not in subjects:
+            subjects.append(token)
+    return severity, subjects
 
 
 def _normalize_category(heading):

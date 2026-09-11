@@ -552,7 +552,15 @@ set is normally two markdown files, by convention rather than requirement:
   CONV-CONFIDENTIALITY). The parser mints the registry id itself (`CONV-001`, `CONV-002`,
   ...) and keeps the operator's heading id as the rule's `category`, which every finding
   reports as `source_rule_id`. Each finding cites at least one registry CONV-* id and carries
-  the operator's own id alongside it.
+  the operator's own id alongside it. A heading may also carry bracket tags,
+  `## CONV-D01 , conv-value-in-range [required] [conformance]`: a token matching one of the
+  three severity words the parser already classifies from rule text (`required`,
+  `recommended`, `advisory`) sets that rule's severity directly instead of the text
+  classification; every other token is a subject, carried on the registry entry's
+  `subjects` list, read verbatim and lowercased, for the convention-assignment comparison
+  (below). A heading with no brackets at all parses exactly as before. The parser's own
+  title heading, the first heading in a file, is never itself a rule section: prose
+  written under it (an introduction, a scope statement) is not minted as a rule.
 - `review_mandate.md`: the reviewing entity, the engagement scope, and the review
   standard (advisory, grounded, with concrete proposed amendments).
 
