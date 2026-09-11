@@ -440,3 +440,19 @@ Numbered so each can be answered in a line.
 Nothing. No code, no config, no gate check, no README change. This file is the whole of the
 deliverable, left uncommitted for the operator to read; a commit of this file alone changes no
 behaviour and can be made on the operator's word.
+
+## Addendum, 2026-09-11: paired mode after the first tagged run (step A)
+
+Decision 7 above chose a per-plan judging agent and said "do not filter pairs to a fixed
+agent". Commit 3 built it with a fallback: a rule whose consumers hold no convention-review
+agent was still judged by PRACTICE_AUDITOR. The first run on a tagged corpus showed what
+that means: the pairing map never reads the assignment, so the tags changed nothing in
+paired mode and the three board-only rules still reached the judging agent (51 of 64 pairs).
+The operator's decision after that run: a plan whose rule has no convention-review consumer
+makes no call and is recorded in the pairing map as assigned to the board only, never
+silently dropped; wide mode's registry excerpt is filtered the same way. Built as step A
+(`pipeline._paired_judging_agent` returns None for such a rule; `not_judged` and
+`reattributed` in `audit/pairing_map.json`; `_wide_registry_for_agent`; gate check 206),
+without measurement: no run has scored it. An untagged rule keeps PRACTICE_AUDITOR, as
+answer 1 requires. Paired mode needs no separate firing gate (step B): the judging agent is
+chosen per plan, so an agent with no assigned rule and no untagged rule receives no plan.

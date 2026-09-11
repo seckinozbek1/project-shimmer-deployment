@@ -1540,10 +1540,32 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
         # before this gate existed.
         firing_agents = _convention_review_firing_agents(convention_assignment)
 
+        # Convention distribution, step A: wide mode's registry excerpt is
+        # filtered per agent (its assigned rules plus every untagged rule), so a
+        # rule assigned to the board only reaches neither convention-review agent
+        # here, and the pairing map records those rules as not judged in this
+        # phase. Built without measurement; no run has scored it.
+        if pairing is not None and convention_assignment is not None:
+            pairing["not_judged"] = _wide_not_judged(convention_registry, convention_assignment)
+            pairing["not_judged_count"] = len(pairing["not_judged"])
+            if pairing["not_judged"]:
+                log_event(_LOG, f"convention_review_not_judged mode=wide "
+                                f"count={pairing['not_judged_count']}",
+                          run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+                try:
+                    pairing_map_mod.write_pairing_map(orch.run_context, doc["id"], pairing)
+                except Exception as e:
+                    log_event(_LOG, f"pairing_map_rewrite_error error_type={type(e).__name__}",
+                              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+
         tasks = []
         for name in firing_agents:
             wrapper = _build_wrapper(name, orch, keys)
             payload = dict(base_payload)
+            registry_for_agent = _wide_registry_for_agent(convention_registry,
+                                                          convention_assignment, name)
+            payload["evaluate_against"] = [c.get("id") for c in
+                                           registry_for_agent.get("conventions", [])]
             if name == "PRACTICE_AUDITOR" and structural_inventory:
                 payload["structural_inventory"] = structural_inventory
             tasks.append(_run_one(wrapper, payload,
@@ -1551,7 +1573,7 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                                   f"Evaluate against the convention registry. Every finding "
                                   f"MUST cite both CONV-* and REF-*.",
                                   max_tokens=2048,
-                                  convention_registry=convention_registry,
+                                  convention_registry=registry_for_agent,
                                   reference_index_excerpt=refs_excerpt,
                                   _progress=(5.5, doc_pos[doc["id"]], n_docs, name)))
         rev_results = await _gather_or_serial(tasks)
@@ -1662,17 +1684,100 @@ def _paired_judging_agent(rule, convention_assignment):
     board's, read in phase 6.5 by escalation) is still judged here by
     PRACTICE_AUDITOR exactly as every rule is today, never dispatched to a
     rank that is summoned by escalation, and never dropped from the review.
-    An untagged rule, or one whose consumer_agents holds no convention-review
-    agent for any other reason (no convention_assignment computed; a rule id
-    not in by_rule; no consumer matched at all), falls back the same way:
-    PRACTICE_AUDITOR, today's paired-mode default, unchanged until a rule is
-    tagged for STYLE_GUARDIAN."""
-    if convention_assignment is not None:
-        row = (convention_assignment.get("by_rule") or {}).get(rule.get("id"))
-        for name in (row or {}).get("consumer_agents") or []:
-            if name in CONVENTION_REVIEW_AGENTS:
-                return name
-    return CONVENTION_REVIEW_AGENTS[0]
+    Convention distribution, step A (2026-09-11, built without measurement):
+    the fallback that sent every other rule to PRACTICE_AUDITOR is gone. With
+    an assignment computed, a rule whose consumers hold no convention-review
+    agent (assigned to the editorial board only, or matched by no agent at
+    all) gets NO judging agent: this returns None, the caller makes no call
+    and records the plan in the pairing map as not judged, never silently
+    dropped. An UNTAGGED rule keeps today's routing (PRACTICE_AUDITOR), per
+    the operator's answer 1. With no assignment computed (None: a caller that
+    predates W3, the gate's older fixtures) every rule is judged by
+    PRACTICE_AUDITOR exactly as before. A rule id the assignment does not
+    know at all (the registry and the assignment disagree, which BOOT never
+    produces) also keeps the default, so a bookkeeping gap can never drop a
+    rule from the review."""
+    if convention_assignment is None:
+        return CONVENTION_REVIEW_AGENTS[0]
+    row = (convention_assignment.get("by_rule") or {}).get(rule.get("id"))
+    if row is None or row.get("status") == "untagged":
+        return CONVENTION_REVIEW_AGENTS[0]
+    for name in row.get("consumer_agents") or []:
+        if name in CONVENTION_REVIEW_AGENTS:
+            return name
+    return None
+
+
+def _not_judged_reason(rule, convention_assignment):
+    """Why a plan gets no judging agent, read off the assignment row, for the
+    pairing map's own record (structural words only, no rule text)."""
+    row = ((convention_assignment or {}).get("by_rule") or {}).get(rule.get("id")) or {}
+    consumers = list(row.get("consumer_agents") or [])
+    status = row.get("status") or "unknown"
+    if consumers:
+        return ("no convention-review consumer: assigned to %s only (status %s)"
+                % (", ".join(consumers), status)), consumers, status
+    return ("no convention-review consumer: matched no agent that can act on it "
+            "(status %s)" % status), consumers, status
+
+
+def _reattribute_computed_plan(plan, pairing, rules_by_id, convention_assignment):
+    """A rule-INDEPENDENT computed plan (a sum, a product, a missing field: the
+    comparison is the same whichever rule prompted it, paired_review.plan_calls)
+    attributed by _rule_for_check to a rule with no judging agent is re-attributed
+    to another rule paired on the same unit that HAS one, so the arithmetic is not
+    lost to a bookkeeping choice. Prefers a rule naming the check's field, as
+    _rule_for_check does. Returns the new rule, or None when no paired rule on the
+    unit has a judging agent (then the plan is not judged, and recorded)."""
+    unit_id = plan["unit"]["unit_id"]
+    entry = next((u for u in (pairing or {}).get("units", []) if u.get("unit_id") == unit_id), None)
+    candidates = [rules_by_id.get(p.get("rule_id")) for p in (entry or {}).get("paired", [])]
+    candidates = [r for r in candidates if r and r.get("id") != plan["rule"].get("id")
+                  and _paired_judging_agent(r, convention_assignment) is not None]
+    if not candidates:
+        return None
+    field = str((plan.get("checks") or [{}])[0].get("stated_field") or "").lower()
+    words = {w for w in field.split() if w}
+    for r in candidates:
+        if words and words <= set(str(r.get("rule", "")).lower().split()):
+            return r
+    return candidates[0]
+
+
+def _wide_registry_for_agent(convention_registry, convention_assignment, agent_name):
+    """The registry excerpt a wide-mode convention-review agent is shown: the
+    rules the assignment gave it, plus every untagged rule (today's routing),
+    plus any rule the assignment does not know (never dropped by a bookkeeping
+    gap). With no assignment computed, the whole registry, as before. A rule
+    assigned to the editorial board only, or to no agent, reaches neither
+    convention-review agent here; it is the board's, read in phase 6.5."""
+    if convention_assignment is None:
+        return convention_registry
+    by_rule = convention_assignment.get("by_rule") or {}
+    mine = set((convention_assignment.get("by_agent") or {}).get(agent_name) or [])
+    keep = []
+    for c in convention_registry.get("conventions", []):
+        cid = c.get("id")
+        row = by_rule.get(cid)
+        if cid in mine or row is None or row.get("status") == "untagged":
+            keep.append(c)
+    out = dict(convention_registry)
+    out["conventions"] = keep
+    return out
+
+
+def _wide_not_judged(convention_registry, convention_assignment):
+    """The rules no convention-review agent is shown in wide mode, for the
+    pairing map's record: one entry per rule, no unit (wide mode has no plans)."""
+    if convention_assignment is None:
+        return []
+    out = []
+    for c in convention_registry.get("conventions", []):
+        if _paired_judging_agent(c, convention_assignment) is None:
+            reason, consumers, status = _not_judged_reason(c, convention_assignment)
+            out.append({"unit_id": None, "rule_id": c.get("id"), "kind": "wide",
+                        "reason": reason, "consumer_agents": consumers, "status": status})
+    return out
 
 
 async def _paired_convention_review(orch, keys, doc, pairing, convention_registry,
@@ -1774,9 +1879,32 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # instead of one envelope always posted under a single fixed name.
     computed_items_by_agent: dict = {}
     results = []
+    # Convention distribution, step A: a plan whose rule has no judging agent
+    # (assigned to the board only, or to no agent) makes no call and is recorded
+    # here, never silently dropped. A rule-independent computed plan is first
+    # re-attributed to a paired rule on the same unit that has a judging agent,
+    # since the arithmetic is the same whichever rule prompted it.
+    not_judged = []
+    reattributed = []
     for plan in plans:
         unit, rule, checks = plan["unit"], plan["rule"], plan["checks"]
         agent = _paired_judging_agent(rule, convention_assignment)
+        if agent is None and plan.get("kind") == "computed":
+            alt = _reattribute_computed_plan(plan, pairing, rules_by_id, convention_assignment)
+            if alt is not None:
+                log_event(_LOG, f"paired_review_reattributed unit={unit['unit_id']} "
+                                f"from={rule['id']} to={alt['id']}",
+                          run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+                reattributed.append({"unit_id": unit["unit_id"], "from_rule_id": rule["id"],
+                                     "to_rule_id": alt["id"], "kind": plan.get("kind")})
+                rule = plan["rule"] = alt
+                agent = _paired_judging_agent(rule, convention_assignment)
+        if agent is None:
+            reason, consumers, status = _not_judged_reason(rule, convention_assignment)
+            not_judged.append({"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                               "kind": plan.get("kind"), "reason": reason,
+                               "consumer_agents": consumers, "status": status})
+            continue
         source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
         wrapper = _build_wrapper(agent, orch, keys)
@@ -1814,7 +1942,28 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     for finding in pairing.get("missing_field_findings", []):
         rule = rules_by_id.get(finding.get("rule_id")) or {"id": finding.get("rule_id")}
         agent = _paired_judging_agent(rule, convention_assignment)
+        if agent is None:
+            reason, consumers, status = _not_judged_reason(rule, convention_assignment)
+            not_judged.append({"unit_id": finding.get("unit_id"), "rule_id": rule.get("id"),
+                               "kind": "missing_field", "reason": reason,
+                               "consumer_agents": consumers, "status": status})
+            continue
         computed_items_by_agent.setdefault(agent, []).append(finding)
+
+    # The record of what this phase did NOT judge, in the map that is already
+    # persisted, beside the plans it did: a reader (and the classifier) can tell a
+    # rule the review never asked from one it asked and got nothing back on.
+    pairing["not_judged"] = not_judged
+    pairing["not_judged_count"] = len(not_judged)
+    pairing["reattributed"] = reattributed
+    log_event(_LOG, f"paired_review_not_judged count={len(not_judged)} "
+                    f"reattributed={len(reattributed)}",
+              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+    try:
+        pairing_map_mod.write_pairing_map(orch.run_context, doc["id"], pairing)
+    except Exception as e:  # a map that fails to rewrite must not take the review down
+        log_event(_LOG, f"pairing_map_rewrite_error error_type={type(e).__name__}",
+                  run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
 
     out_results = []
     for agent, raw_items in computed_items_by_agent.items():
@@ -1854,8 +2003,16 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # and _items_for's per-agent lookups behave exactly as before this
     # per-agent split (an empty envelope under the paired-mode default agent,
     # the same shape a zero-plan document always returned).
+    # Step B (paired-mode firing): the empty result is owed under an agent the
+    # firing gate lets fire, never under one it kept from running; with no such
+    # agent, the phase made no call and returns no result at all, and says so.
     if not out_results:
-        default_agent = CONVENTION_REVIEW_AGENTS[0]
+        firing = _convention_review_firing_agents(convention_assignment)
+        if not firing:
+            log_event(_LOG, "paired_review_no_firing_agent",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+            return out_results
+        default_agent = firing[0]
         envelope = agent_wrapper.make_envelope(default_agent, str(doc["id"]), [])
         out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": default_agent,
                             "ok": True, "parsed": envelope, "raw_text": "",

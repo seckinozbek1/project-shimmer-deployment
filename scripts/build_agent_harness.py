@@ -107,16 +107,19 @@ FIRES_CONVENTION_REVIEW = {
                  "untagged (an untagged rule keeps today's default routing to "
                  "every convention-review agent); only with zero assigned "
                  "rules and zero untagged rules does it not run. Paired mode: "
-                 "each pair's judging agent is chosen by its rule's subject, "
+                 "each plan's judging agent is chosen by its rule's subject, "
                  "the first convention-review agent among the rule's "
-                 "consumer_agents, falling back to PRACTICE_AUDITOR for an "
-                 "untagged rule or one whose consumers sit outside phase 5.5.",
+                 "consumer_agents; an untagged rule keeps PRACTICE_AUDITOR; a "
+                 "rule with no convention-review consumer gets no judging agent "
+                 "at all, its plan recorded in the pairing map as not judged "
+                 "(convention distribution step A, built without measurement).",
     "where": "scripts/pipeline.py: _convention_review_firing_agents (the "
-             "wide-mode loop of phase_5_5_convention_review) and "
+             "wide-mode loop of phase_5_5_convention_review, its registry "
+             "excerpt filtered per agent by _wide_registry_for_agent) and "
              "_paired_judging_agent (_paired_convention_review); the "
              "assignment is <run>/audit/convention_assignment.json, computed "
              "once at BOOT by scripts/convention_assignment.assign_conventions. "
-             "Gate check 199 proves both, executed, neutralised and restored.",
+             "Gate checks 199 and 206 prove both, executed, neutralised and restored.",
 }
 FIRES_LEGAL_ANALYST = {
     "condition": "Once in phase 3 per operational document, unconditionally, "
