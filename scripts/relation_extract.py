@@ -246,24 +246,124 @@ def extract_similarities(units, similarity_settings, *, rank=None):
     return out
 
 
-def extract_relations(units, *, patterns_path=None, rank=None):
-    """Both deterministic mechanisms over one document's units.
+def _canonical_pair(a, b):
+    """The canonical form of an unordered pair: the two unit ids sorted.
 
-    Returns {relations, counts, warnings}. The counts separate the two methods,
-    because they are different mechanisms with different failure modes and the
-    operator scores them against each other later; one undifferentiated total would
-    make that comparison impossible.
+    Direction is what splits the same relationship into two records today, because a
+    pattern match is directional (this unit names that one) while similarity is
+    symmetric and is emitted under whichever unit the ranker reached first. Sorting is
+    the one canonicalisation that needs no judgement about which direction is "right",
+    and the direction a mechanism actually reported is never discarded: it is recorded
+    on the merged relation (see `found_by`).
+    """
+    return tuple(sorted((str(a), str(b))))
+
+
+def merge_relations(relations):
+    """One relation per unordered pair, carrying which mechanisms found it.
+
+    THE DEFECT THIS CLOSES. Before this, a pair both mechanisms found produced TWO
+    records that both persisted, because the store id encodes direction and type and
+    the two mechanisms disagree on both: a cross-reference from u09 to u01 and a
+    similarity between u01 and u09 are the same relationship written twice. Neither
+    superseded the other, so every count over the store double-counted exactly the
+    pair a reader would most want to trust, the one two independent mechanisms agree
+    on. Agreement was invisible as agreement and visible only as duplication.
+
+    WHAT IS COLLAPSED AND WHAT IS KEPT. The merged relation is keyed on the canonical
+    (sorted) pair. Nothing a mechanism reported is thrown away:
+
+      found_by       the methods that found this pair, sorted, so agreement is a fact
+                     the store holds rather than something a reader has to notice by
+                     seeing two rows.
+      agreed         True when more than one mechanism found it. Derived, not asserted:
+                     it is len(found_by) > 1 and nothing else.
+      observations   one entry per mechanism, each keeping the direction THAT mechanism
+                     reported (its own source and target), its type, and its pattern or
+                     score. A reader can see that the cross-reference said one direction
+                     and similarity said the other.
+      relation_type  the type of the first observation in method order, and NOT a
+                     judgement that one type outranks the other. The types are kept per
+                     observation; this field exists only because a record needs one id.
+
+    ORDERING, the one rule the operator has declared and the only one: a pair found by
+    both mechanisms ranks above a pair found by one. Nothing else is ordered, because
+    ordering the rest would need a weight, and a weight between a boolean (a pattern
+    matched) and a similarity score that occupies a narrow band would let the boolean
+    decide every ordering while the weight only appeared to work. That decision waits
+    on the long-range corpus being scored.
+    """
+    merged = {}
+    for r in relations or []:
+        key = _canonical_pair(r["source"], r["target"])
+        entry = merged.get(key)
+        if entry is None:
+            entry = {
+                "source": key[0],
+                "target": key[1],
+                "found_by": [],
+                "observations": [],
+            }
+            merged[key] = entry
+        if r["method"] not in entry["found_by"]:
+            entry["found_by"].append(r["method"])
+        observation = {
+            "method": r["method"],
+            "type": r["type"],
+            # the direction THIS mechanism reported, kept rather than normalised away
+            "reported_source": r["source"],
+            "reported_target": r["target"],
+        }
+        if r.get("pattern") is not None:
+            observation["pattern"] = r["pattern"]
+        if r.get("score") is not None:
+            observation["score"] = r["score"]
+        entry["observations"].append(observation)
+
+    out = []
+    for entry in merged.values():
+        entry["found_by"] = sorted(entry["found_by"])
+        entry["agreed"] = len(entry["found_by"]) > 1
+        entry["observations"].sort(key=lambda o: (o["method"], o["reported_source"]))
+        entry["relation_type"] = entry["observations"][0]["type"]
+        # The best similarity score any mechanism reported for this pair, kept so a
+        # later weighting has the number available. It orders nothing today.
+        scores = [o["score"] for o in entry["observations"] if o.get("score") is not None]
+        entry["score"] = max(scores) if scores else None
+        out.append(entry)
+
+    # The declared ordering, and only it: agreed pairs first. Within each group the
+    # order is the pair's own ids, which is stable and carries no claim about rank.
+    out.sort(key=lambda e: (not e["agreed"], e["source"], e["target"]))
+    return out
+
+
+def extract_relations(units, *, patterns_path=None, rank=None):
+    """Both deterministic mechanisms over one document's units, MERGED.
+
+    Returns {relations, counts, warnings}. `relations` holds one entry per unordered
+    pair (see merge_relations); the counts still separate the two methods, because they
+    are different mechanisms with different failure modes and the operator scores them
+    against each other later, and one undifferentiated total would make that comparison
+    impossible.
+
+    `agreed` counts the pairs BOTH mechanisms found, which the concatenated form could
+    not report at all: agreement showed up there only as duplication. Note that
+    `pattern` + `embedding_similarity` no longer sums to `total` once any pair is
+    agreed, and that is the point rather than an inconsistency: the method counts count
+    observations, `total` counts pairs.
     """
     patterns, sim, warnings = load_patterns(patterns_path)
     refs = extract_cross_references(units, patterns)
     sims = extract_similarities(units, sim, rank=rank)
-    relations = refs + sims
+    relations = merge_relations(refs + sims)
     return {
         "relations": relations,
         "counts": {
             "total": len(relations),
             METHOD_PATTERN: len(refs),
             METHOD_SIMILARITY: len(sims),
+            "agreed": sum(1 for r in relations if r["agreed"]),
             "patterns_loaded": len(patterns),
             "similarity_available": rank is not None,
         },
@@ -272,25 +372,31 @@ def extract_relations(units, *, patterns_path=None, rank=None):
 
 
 def relation_records(relations, *, document_id, run_id, provenance):
-    """Shape relations as ontology store records so they can be written and read back
-    through the SAME scoped storage layer provisions use, rather than a second store
-    with its own rules.
+    """Shape MERGED relations as ontology store records, so they are written and read
+    back through the SAME scoped storage layer provisions use.
 
-    The id is composite and stable, so re-extracting the same relation in a later run
-    supersedes its earlier revision instead of duplicating it, which is the storage
-    layer's existing behaviour and not a new one invented here.
+    The id is the canonical pair (`<document>::<a>::relates::<b>`, the ids sorted) and
+    carries NEITHER direction NOR mechanism, which is what makes the duplicate
+    impossible rather than merely unlikely: the two records a pair used to produce now
+    collide on one id by construction. Re-extracting the same pair in a later run
+    supersedes its earlier revision, the storage layer's existing behaviour.
+
+    `found_by`, `agreed` and `observations` travel with the record, so agreement is a
+    fact the store holds and the direction each mechanism reported survives the merge.
     """
     out = []
     for r in relations:
+        pair = _canonical_pair(r["source"], r["target"])
         out.append({
             "node": "Relation",
-            "id": "%s::%s::%s::%s" % (document_id, r["source"], r["type"], r["target"]),
+            "id": "%s::%s::relates::%s" % (document_id, pair[0], pair[1]),
             "document_id": document_id,
-            "relation_type": r["type"],
-            "method": r["method"],
-            "source_unit": r["source"],
-            "target_unit": r["target"],
-            "pattern": r.get("pattern"),
+            "source_unit": pair[0],
+            "target_unit": pair[1],
+            "relation_type": r.get("relation_type"),
+            "found_by": list(r.get("found_by") or []),
+            "agreed": bool(r.get("agreed")),
+            "observations": list(r.get("observations") or []),
             "score": r.get("score"),
             "run_id": run_id,
             "provenance": provenance,

@@ -17078,11 +17078,24 @@ def _relation_baseline_body():
     if found["counts"]["pattern"] != 2:
         return _fail("the two shipped patterns should find two references on the fixture: %r"
                      % (found["counts"],))
+    if found["counts"].get("agreed") != 0:
+        return _fail("with no ranker injected nothing can be agreed by two mechanisms: %r"
+                     % (found["counts"],))
     long_range = [r for r in rels
-                  if r["source"] == "u09-entry-qux" and r["target"] == "u01-glossary"]
+                  if {r["source"], r["target"]} == {"u09-entry-qux", "u01-glossary"}]
     if not long_range:
         return _fail("the long-range reference (unit 9 back to the glossary at unit 1) was "
                      "not found; that distance is the whole point of this mechanism")
+    # The merge is canonical: the pair is stored with its ids sorted, and the direction
+    # the pattern actually reported survives in the observation rather than being lost.
+    if long_range[0]["source"] != "u01-glossary" or long_range[0]["target"] != "u09-entry-qux":
+        return _fail("a merged pair must be stored canonically, ids sorted: %r"
+                     % (long_range[0],))
+    reported = [(o["reported_source"], o["reported_target"]) for o in
+                long_range[0]["observations"] if o["method"] == _rx.METHOD_PATTERN]
+    if reported != [("u09-entry-qux", "u01-glossary")]:
+        return _fail("the direction the pattern reported must survive the merge: %r"
+                     % (long_range[0]["observations"],))
     if any(r["source"] == r["target"] for r in rels):
         return _fail("a unit must never relate to itself")
 
@@ -17106,7 +17119,8 @@ def _relation_baseline_body():
         return [(cid, 0.9) for cid, _t in candidates]
 
     with_rank = _rx.extract_relations(units, rank=_fake_rank)
-    sims = [r for r in with_rank["relations"] if r["method"] == _rx.METHOD_SIMILARITY]
+    sims = [r for r in with_rank["relations"]
+            if _rx.METHOD_SIMILARITY in (r.get("found_by") or [])]
     if not sims:
         return _fail("with a ranker injected, similarity must produce relations")
     pairs = [tuple(sorted((r["source"], r["target"]))) for r in sims]
@@ -17117,6 +17131,69 @@ def _relation_baseline_body():
         b = next(u for u in units if u["unit_id"] == r["target"])
         if abs(a["index"] - b["index"]) < int(sim.get("min_units_apart") or 2):
             return _fail("similarity must skip adjacent units: %r" % (r,))
+
+    # THE DEDUPE (the defect the merge closes). A pair BOTH mechanisms find must be ONE
+    # relation carrying both methods, not two records that each persist: before the
+    # merge the store id encoded direction and type, the two mechanisms disagreed on
+    # both, and every count double-counted exactly the pair a reader would most trust.
+    two_units = [
+        {"unit_id": "u01-glossary", "title": "Glossary", "index": 0,
+         "text": "## Glossary\n\nZeta window: the period, in units, allowed for a zeta."},
+        {"unit_id": "u09-entry-qux", "title": "Entry qux", "index": 8,
+         "text": "## Entry qux\n\nThe allowance is as defined in the glossary."},
+    ]
+
+    def _agreeing_rank(text, candidates):
+        return [(cid, 0.95) for cid, _t in candidates]
+
+    both = _rx.extract_relations(two_units, rank=_agreeing_rank)
+    if len(both["relations"]) != 1:
+        return _fail("a pair found by both mechanisms must merge into ONE relation, got %r"
+                     % (len(both["relations"]),))
+    pair = both["relations"][0]
+    if sorted(pair["found_by"]) != [_rx.METHOD_SIMILARITY, _rx.METHOD_PATTERN]:
+        return _fail("the merged pair must name both mechanisms in found_by: %r" % (pair,))
+    if pair["agreed"] is not True:
+        return _fail("agreement must be a fact the record holds, not something a reader "
+                     "infers from seeing two rows: %r" % (pair,))
+    if both["counts"]["agreed"] != 1:
+        return _fail("the counts must report the agreed pair: %r" % (both["counts"],))
+    if len(pair["observations"]) != 2:
+        return _fail("both observations must survive the merge: %r" % (pair,))
+    directions = set((o["reported_source"], o["reported_target"]) for o in pair["observations"])
+    if len(directions) != 2:
+        return _fail("the merge must keep BOTH reported directions, so a reader can see "
+                     "that the cross-reference said one and similarity the other: %r"
+                     % (pair["observations"],))
+    # and the store records collide on one id by construction, which is what makes the
+    # duplicate impossible rather than merely unlikely
+    ids = set(r["id"] for r in _rx.relation_records(
+        both["relations"], document_id="zqdoc", run_id="runA",
+        provenance=_os_mod.provenance(time=_os_mod.now_iso(), agent=None, run="runA")))
+    if len(ids) != 1:
+        return _fail("one pair must produce one store record: %r" % (ids,))
+    if "relates" not in next(iter(ids)):
+        return _fail("the merged id must carry neither direction nor mechanism: %r" % (ids,))
+
+    # THE ONE DECLARED ORDERING RULE: a pair found by both ranks above a pair found by
+    # one. That needs no number, which is why it is the only ordering declared; a weight
+    # between a boolean and a narrow-band score would let the boolean decide everything
+    # while appearing to be the weight's work.
+    mixed = _rx.merge_relations([
+        {"type": _rx.RELATION_CROSS_REFERENCE, "method": _rx.METHOD_PATTERN,
+         "source": "uB", "target": "uC", "pattern": "p1"},
+        {"type": _rx.RELATION_SIMILAR, "method": _rx.METHOD_SIMILARITY,
+         "source": "uX", "target": "uY", "score": 0.99},
+        {"type": _rx.RELATION_CROSS_REFERENCE, "method": _rx.METHOD_PATTERN,
+         "source": "uX", "target": "uY", "pattern": "p1"},
+        {"type": _rx.RELATION_SIMILAR, "method": _rx.METHOD_SIMILARITY,
+         "source": "uA", "target": "uZ", "score": 0.80},
+    ])
+    if not mixed[0]["agreed"]:
+        return _fail("a pair found by both must rank above a pair found by one: %r"
+                     % ([(m["source"], m["target"], m["agreed"]) for m in mixed],))
+    if any(m["agreed"] for m in mixed[1:]):
+        return _fail("only the agreed pair should be agreed in this fixture: %r" % (mixed,))
 
     # Written to the real scoped store and read back through the real reader.
     d = Path(tempfile.mkdtemp(prefix="shimmer_relations_"))
@@ -17140,6 +17217,9 @@ def _relation_baseline_body():
     if _rx.METHOD_PATTERN not in methods:
         return _fail("the summary must keep the two mechanisms distinguishable by method: %r"
                      % (rel_summary["by_method"],))
+    if "agreed_count" not in rel_summary:
+        return _fail("the summary must report how many pairs both mechanisms found; the "
+                     "concatenated form could not report it at all")
     if any(r.get("text") for r in rel_summary["relations"]):
         return _fail("a relation row must carry unit ids, never a unit's text")
 
@@ -17173,9 +17253,13 @@ def _relation_baseline_body():
                "patterns (config/relation_patterns.json, none in code) find the long-range "
                "reference from unit 9 back to the glossary at unit 1, an ambiguous reference "
                "is refused rather than resolved, similarity is unavailable with no ranker and "
-               "symmetric and non-adjacent with one, relations are written to the scoped store "
-               "and read back by method and type, they never inflate the provision count, and "
-               "re-extraction supersedes rather than duplicates")
+               "symmetric and non-adjacent with one; a pair BOTH mechanisms find is ONE "
+               "relation carrying both methods, agreed as a stored fact, both reported "
+               "directions kept, one store id by construction, and a pair found by both ranks "
+               "above a pair found by one (the only declared ordering); relations are written "
+               "to the scoped store and read back by method and type with an agreed count, "
+               "they never inflate the provision count, and re-extraction supersedes rather "
+               "than duplicates")
 
 
 def check_211_relations_between_provisions():
@@ -17226,7 +17310,42 @@ def check_211_relations_between_provisions():
     if restored[0] != "PASS":
         return _fail("after restoring the ambiguity refusal the body no longer passes: %r"
                      % (restored,))
+
+    # A SECOND neutralise, for the merge itself: with merge_relations replaced by the
+    # concatenation it replaced (one record per observation, direction and type intact),
+    # a pair both mechanisms found becomes two records again and the body must FAIL.
+    # That is the defect the merge closes, so it needs its own proof.
+    original_merge = _rx.merge_relations
+
+    def _no_merge(relations):
+        out = []
+        for r in relations or []:
+            entry = dict(r)
+            entry["found_by"] = [r["method"]]
+            entry["agreed"] = False
+            entry["observations"] = [{"method": r["method"], "type": r["type"],
+                                      "reported_source": r["source"],
+                                      "reported_target": r["target"]}]
+            entry["relation_type"] = r["type"]
+            out.append(entry)
+        return out
+
+    _rx.merge_relations = _no_merge
+    try:
+        unmerged = _relation_baseline_body()
+    finally:
+        _rx.merge_relations = original_merge
+    if unmerged[0] != "FAIL":
+        return _fail("with the merge neutralised (back to concatenation) the body still "
+                     "passed (%r); the duplicate a merged pair used to produce must be "
+                     "caught" % (unmerged,))
+    restored_again = _relation_baseline_body()
+    if restored_again[0] != "PASS":
+        return _fail("after restoring the merge the body no longer passes: %r"
+                     % (restored_again,))
     return _ok(shipped[1] + "; neutralise (ambiguity broken by picking the first candidate) "
+                            "FAILS, restore PASSES; neutralise (merge replaced by the "
+                            "concatenation, so an agreed pair becomes two records again) "
                             "FAILS, restore PASSES")
 
 

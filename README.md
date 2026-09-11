@@ -57,7 +57,7 @@ chain stands, commit by commit, and what is owed).
 
 ### What's in this repository
 
-190 tracked files at the time of writing (source, configuration, documentation, and test
+191 tracked files at the time of writing (source, configuration, documentation, and test
 corpora; counted from `git ls-files`, and the same count from a tree walk with the
 not-shipped directories excluded). The exact number has gone stale within a day of being
 written twice, so read it as "about 190". No compiled bytecode, no run output, and no cache
@@ -911,8 +911,40 @@ never loads a model; only pairs at least two units apart are considered, since a
 trivially similar to its neighbour and that case is already covered. Relations are shaped as records
 for the same scoped store provisions use, with a stable composite id so re-extraction
 supersedes rather than duplicates, and read back by `relation_summary`, which keeps the two
-mechanisms distinguishable by method. A relation says one unit names, or reads like, another;
+mechanisms distinguishable: `by_method` counts observations while `relation_count` counts
+pairs, so the two no longer sum to the same number once any pair is agreed, and that is the
+point rather than an inconsistency. A relation says one unit names, or reads like, another;
 it does **not** say they agree or conflict, and it is not evidence for any finding.
+
+**One relation per pair, and agreement is a fact the store holds.** The two mechanisms used
+to emit the same relationship twice, because the store id encoded direction and type and they
+disagree on both: a cross-reference from unit 9 to unit 1 and a similarity between unit 1 and
+unit 9 are one relationship written as two records that both persisted. Every count therefore
+double-counted exactly the pair a reader would most want to trust, the one two independent
+mechanisms agree on, and agreement was visible only as duplication. Now a pair is merged into
+one record keyed on its sorted ids, carrying `found_by` (the mechanisms that found it),
+`agreed` (derived, `len(found_by) > 1`, never asserted) and `observations`, one per mechanism,
+each keeping **the direction that mechanism reported**, so a reader can see that the
+cross-reference said one direction and similarity the other. Nothing is discarded by the
+merge; the store id carries neither direction nor mechanism, which makes the duplicate
+impossible by construction rather than merely unlikely.
+
+**There is deliberately no weighting between the two mechanisms**, and none will be declared
+until the long-range corpus is scored. The reason is recorded in
+`config/relation_patterns.json` so nobody adds one casually: a cross-reference is a boolean (a
+pattern matched and resolved unambiguously) while a similarity is a score that on the fixtures
+occupied a band about 0.07 wide, so any weight mixing them would let the boolean decide every
+ordering while the weight only appeared to be doing work. **One ordering rule is declared**,
+because it needs no number: a pair found by both mechanisms ranks above a pair found by one.
+Nothing beyond that is ordered.
+
+**None of the three similarity settings is a measured value**, and the config says so beside
+each one. `min_score` 0.75 and `max_per_unit` 3 are conventional defaults with no evidence
+under them, written when the mechanism was built. `min_units_apart` 2 is the one with an
+argument behind it, and the argument is structural rather than empirical: a unit is trivially
+similar to the one beside it and the adjacent-neighbour mechanism already covers that case, so
+the value follows from what this mechanism is for. Change any of them freely; none is a
+finding.
 **Built, not measured, not wired into a run, and nothing in a review reads a relation
 today**: no phase of the pipeline imports the extractor, so no run produces or stores a
 relation; gate check 211 proves both mechanisms on fixtures, and the operator scores them on the long-range corpus
