@@ -1121,13 +1121,16 @@ two skips are the network checks (15, 38) that `--offline` skips. Check 193 load
 model with the network genuinely blocked.
 
 Measured inside the **baked image rebuilt on the current tree**, network blocked and
-**nothing mounted**: `PASS=208 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=214` in about 346 s, the
+**nothing mounted**: `PASS=209 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=215` in about 370 s, the
 three checkpoints resolving from the image's own layers
-(`docs/fix/STEP_BAKED_REBUILD_REPORT.md`). The failure and skip sets are identical to the
-earlier run; the four extra passes are checks 210 to 213, the ontology chain, which did not
-exist when the earlier image was built. A source-only rebuild reused two of the three weight
-layers and re-downloaded the third, which is less than the layer reorder was expected to
-save and is recorded as observed rather than explained. **What is not proven:** no review has been run inside
+(`docs/fix/STEP_BAKED_REBUILD_2_REPORT.md`). The failure and skip sets are identical to every
+earlier run; the extra passes are the checks added since, the ontology chain and the console
+audit. A source-only rebuild reuses **two of the three** weight layers and re-downloads the
+third (about 165 s), which is less than the layer reorder was expected to save. That has now
+happened on two consecutive rebuilds with near-identical timing, so it is systematic; three
+explanations were ruled out (the three RUN blocks are structurally identical, a cache entry
+for the third layer does exist with the same properties as the other two, and no prune
+happened between builds) and the cause is recorded as unestablished rather than guessed. **What is not proven:** no review has been run inside
 either container, so "the review runs offline in the container" is not claimed, only "the
 gate does, and the weights are there".
 
