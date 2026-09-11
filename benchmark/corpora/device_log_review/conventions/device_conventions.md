@@ -15,26 +15,26 @@ units, UNLESS a locally adjusted range for that device's batch or rack has been 
 entry immediately before it or in the same entry. A reading outside the range that actually
 applies is an irregularity. State the reading, its class, and the range it falls outside.
 
-## CONV-D02 , conv-calibration-signature [required] [conformance]
+## CONV-D02 , conv-calibration-signature [required] [conformance] [scope: class=Class-A sensor] [requires: calibration authority signature]
 
 Every Class-A sensor entry must state a calibration authority signature. Class-B and Class-C
 sensors are self-calibrating and carry no signature field. A missing signature on a Class-A
 entry is an irregularity. State which entry is missing the field.
 
-## CONV-D03 , conv-calibration-authority [required] [conformance]
+## CONV-D03 , conv-calibration-authority [required] [conformance] [scope: calibration authority signature]
 
 A calibration authority signature is only valid when the signing role holds a current
 calibration certificate, as defined in the glossary's calibration authority entry. A signature
 by any other role is not calibration-complete. State the entry, the signing role, and why it
 does not qualify.
 
-## CONV-D04 , conv-fault-window [required] [conformance]
+## CONV-D04 , conv-fault-window [required] [conformance] [scope: fault logged]
 
 A device's own logged fault must be acknowledged within the standard fault window stated in
 the glossary. An entry recording a longer gap between a logged fault and its acknowledgement is
 an irregularity. State the two timestamps and the gap between them.
 
-## CONV-D05 , conv-service-interval [required] [conformance]
+## CONV-D05 , conv-service-interval [required] [conformance] [scope: service record]
 
 The gap between a device's two most recently logged calibration visits must not exceed the
 standard service interval stated in the glossary. An entry recording a longer gap is an
