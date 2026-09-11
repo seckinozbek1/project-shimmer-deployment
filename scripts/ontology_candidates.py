@@ -54,8 +54,9 @@ from ontology_gnn import (DEFAULT_GRAPH_PATH, DEFAULT_HIDDEN, DEFAULT_SEED,
 
 # The one honest description of what the ranking rests on, carried in the output so
 # no consumer can render a candidate set without it.
-RANKED_ON_STRUCTURE = ("graph structure only (node type, degree, edges); the Tier-2 "
-                       "signal is empty, so nothing here is learned relevance")
+# One definition of the qualifier, in the torch-free state module, imported here
+# so the finder and the state reader can never drift apart on what they claim.
+from ontology_gnn_state import RANKED_ON_STRUCTURE  # noqa: E402
 
 # Only these node types are proposed as candidates. A candidate pair is a pair of
 # PROVISIONS: proposing that a Document relates to a Convention is not the question
@@ -236,43 +237,11 @@ def find_candidates(graph, *, state_path=None, top_k=5, min_score=0.0,
     }
 
 
-def state_summary(state_path=None):
-    """What the GNN's persisted state holds, for the read path (job 4's third part).
-
-    Structural metadata only: the state file holds weights and counts and no raw
-    content by construction, and this surfaces the counts, never the weights. Reports
-    the absence of a Tier-2 signal as a first-class field rather than a caveat in
-    prose, because that absence is the single most important thing about this state.
-    """
-    prior = _load_state(state_path if state_path else DEFAULT_STATE_PATH)
-    if not prior:
-        return {
-            "exists": False,
-            "tier2_signal": "empty",
-            "learned_relevance": False,
-            "ranked_on": RANKED_ON_STRUCTURE,
-            "note": ("no GNN state has been written; the state is created at the end of "
-                     "a run, and no run has been made since the store was scoped"),
-        }
-    return {
-        "exists": True,
-        "schema": prior.get("schema"),
-        "tier": prior.get("tier"),
-        "scope": prior.get("scope"),
-        "feature_dim": prior.get("feature_dim"),
-        "hidden": prior.get("hidden"),
-        "trained_count": prior.get("trained_count"),
-        "n_updates": prior.get("n_updates"),
-        "last_delta_size": prior.get("last_delta_size"),
-        "last_loss": prior.get("last_loss"),
-        "last_device": prior.get("last_device"),
-        "weights_persisted": bool(prior.get("encoder_weight")),
-        # The three fields that keep the state honest wherever it is shown.
-        "tier2_signal": "empty",
-        "learned_relevance": False,
-        "ranked_on": RANKED_ON_STRUCTURE,
-        "claim": prior.get("claim"),
-    }
+# state_summary lives in ontology_gnn_state, which imports no tensor library: a
+# reader of the persisted state must not have to import torch to count what is in
+# a JSON file. Re-exported here so every existing caller keeps working, and so
+# there is ONE definition rather than two that must agree.
+from ontology_gnn_state import load_state as _load_state_shared, state_summary  # noqa: E402,F401
 
 
 def main(argv=None):

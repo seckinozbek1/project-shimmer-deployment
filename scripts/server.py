@@ -2350,6 +2350,68 @@ async def agent_harness():
             "unresolved_part_count": sum(len(v) for v in unresolved.values())}
 
 
+@app.get("/runs/{run_id}/references", dependencies=[Depends(verify_token)])
+async def run_references(run_id: str, ref_id: str = None):
+    """The passages a run's findings cite (console audit, finding 4).
+
+    Every Finding and every amendment carries `source_refs`, a list of `REF-*`
+    (and `WEB-REF-*`) ids, and until now nothing served the passages behind
+    them: a reader could see that a finding cited something and could not see
+    WHAT, which leaves nothing to do but trust the sentence. A citation that
+    cannot be followed is not a citation.
+
+    Reads this run's own `audit/reference_index.json`, written by the reference
+    builder during the run. Per entry: `ref_id`, `document_id`, `document_name`,
+    `location` (the structural pointer, whatever shape the builder recorded) and
+    `text_excerpt`, the passage itself as it was stored, clipped by the builder
+    (`reference_builder.excerpt`) and never re-clipped here.
+
+    `ref_id` (optional) returns just that one, which is what a reader following
+    a single citation from a finding asks for; `404` when this run's index holds
+    no such id, because "this run never cited that" and "that passage is empty"
+    are different facts. Without it, the whole index for the run.
+
+    A run whose index does not exist (a run that ended before the index was
+    written, or one that predates it) is a `200` with an empty list and
+    `index_present: false`, not a `404`: the run is real and the absence is the
+    answer.
+
+    The passage text IS content, deliberately: this route exists to show a
+    reader the words a finding rests on, which is the one place on this surface
+    where content is the point rather than a leak.
+    """
+    run_dir = _validated_run_dir(run_id)
+    path = run_dir / "audit" / "reference_index.json"
+    if not path.is_file():
+        return {"run_id": run_id, "index_present": False, "count": 0, "references": []}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise HTTPException(status_code=500, detail="reference index unreadable")
+    entries = data.get("entries") if isinstance(data, dict) else data
+    entries = entries if isinstance(entries, list) else []
+    out = []
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        out.append({
+            "ref_id": e.get("ref_id"),
+            "document_id": e.get("document_id"),
+            "document_name": e.get("document_name"),
+            "location": e.get("location"),
+            "text_excerpt": e.get("text_excerpt"),
+            "input_type": e.get("input_type"),
+        })
+    if ref_id:
+        one = [e for e in out if e["ref_id"] == ref_id]
+        if not one:
+            raise HTTPException(
+                status_code=404,
+                detail="this run's reference index holds no %r" % ref_id)
+        return {"run_id": run_id, "index_present": True, "count": 1, "references": one}
+    return {"run_id": run_id, "index_present": True, "count": len(out), "references": out}
+
+
 @app.get("/ontology", dependencies=[Depends(verify_token)])
 async def ontology_provenance():
     """ontology chain job 1: the first read path the ontology store has ever had.
@@ -2428,10 +2490,14 @@ async def ontology_gnn_state():
 
     Not run-scoped. A state that has never been written is a `200` with
     `exists: false`, not a `404`, which is every installation today."""
-    import ontology_candidates as _cand
+    # ontology_gnn_state, not ontology_candidates: reading a JSON file of counts
+    # must not import torch. It used to, and this route 500'd wherever torch
+    # could not load, which the console rendered as an empty section, on the one
+    # section whose whole purpose is to stay visible when the state is absent.
+    import ontology_gnn_state as _state
 
     try:
-        return _cand.state_summary()
+        return _state.state_summary()
     except OSError:
         raise HTTPException(status_code=500, detail="GNN state unreadable")
 
@@ -2468,6 +2534,151 @@ async def ontology_candidates_route(top_k: int = 5, min_score: float = 0.0):
     except (OSError, ValueError):
         raise HTTPException(status_code=500, detail="ontology graph unreadable")
     return _cand.find_candidates(graph, top_k=top_k, min_score=min_score, device="cpu")
+
+
+@app.post("/runs/{run_id}/evidence", dependencies=[Depends(verify_token)])
+async def run_evidence(run_id: str, body: dict):
+    """Classify missed expected defects against a run's saved artifacts.
+
+    When an expected defect is missed, the class and its basis are recorded but
+    ONLY the scorer prints them, and the scorer is the one component that may
+    open an answer key. A reader therefore could not get the distinction that
+    matters most: whether the evidence was in the model's payload (a reasoning
+    failure) or never reached it (a pipeline failure).
+
+    This route closes that without ever touching a key. THE CALLER supplies the
+    expected entries (`{"expected": [{"unit": ..., "rule": ...}, ...]}`), which
+    is the only thing the key contributes; the classification itself reads
+    nothing but this run's own `audit/pairing_map.json`,
+    `audit/convention_assignment.json`, `logs/call_evidence.jsonl` and the bus
+    (`fn_evidence.load_run_artifacts`). No key path is opened, named or
+    accepted, and there is no parameter through which one could be.
+
+    Per entry: one of the four classes, the unit ids it resolved to, the
+    registry rule id, and `basis`, which names the artifact behind every step,
+    so a classification can be checked rather than believed. Plus `counts` over
+    the four.
+
+    A POST because the expected entries are the request body, not because it
+    changes anything: this route writes nothing at all.
+    """
+    import fn_evidence as _fe
+
+    run_dir = _validated_run_dir(run_id)
+    expected = body.get("expected")
+    if not isinstance(expected, list) or not expected:
+        raise HTTPException(
+            status_code=400,
+            detail="'expected' must be a non-empty list of {unit, rule} entries; this "
+                   "route never reads an answer key, so the caller supplies them")
+    cleaned = [e for e in expected if isinstance(e, dict)]
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="no usable entry in 'expected'")
+    try:
+        rows = _fe.classify_missed(cleaned, run_dir)
+    except OSError:
+        raise HTTPException(status_code=500, detail="run artifacts unreadable")
+    return {"run_id": run_id, "count": len(rows), "classes": list(_fe.CLASSES),
+            "counts": _fe.summary(rows), "classified": rows}
+
+
+@app.post("/ontology/conflicts/{conflict_id}/answer", dependencies=[Depends(verify_token)])
+async def answer_ontology_conflict(conflict_id: str, body: dict):
+    """Record the operator's answer to one ontology-versus-rule conflict.
+
+    Job 3 built the memory and the refusal; there was no way for the operator to
+    ANSWER. This is that half, in the same file-backed pattern
+    `POST /runs/{run_id}/approval` already uses, and with the same two
+    governance constraints.
+
+    FIRST: this route WRITES the answer and nothing else. It never re-runs a
+    review, never re-decides a refused pair, never evaluates whether the answer
+    was wise. What the answer means is applied by the next run that meets the
+    same conflict, through `ontology_conflicts.apply_resolutions`, exactly as
+    if the answer had been written by any other means.
+
+    SECOND: the response says the answer was RECORDED, never that anything was
+    resolved. A caller that wants the effect reads `GET /ontology/conflicts`
+    afterwards.
+
+    Body: `{"answer": "rule" | "store" | "refuse", "provision_id": ..., "store_rule":
+    ..., "rule_id": ...}`. The three sides are optional and are recorded with the
+    answer when given, so a reader of the memory later sees what the conflict
+    WAS and not only that one was answered. THREE answers, not two: "refuse" (keep
+    refusing this pair, produce nothing) is a real decision and is deliberately
+    distinguishable from never having answered.
+
+    An unrecognised answer is a `400` and is never written, because a stored
+    value this module does not recognise would make every later run either
+    re-ask or act on an instruction nobody wrote. Re-answering the same conflict
+    is ALLOWED and supersedes, by the storage layer's own rule: an operator may
+    change their mind, and the latest answer is what a later run reads.
+    """
+    import ontology_conflicts as _oc
+
+    answer = str(body.get("answer", "")).strip()
+    if answer not in _oc.ANSWERS:
+        raise HTTPException(
+            status_code=400,
+            detail="'answer' must be one of %s; an unrecognised answer is refused "
+                   "rather than stored" % (", ".join(_oc.ANSWERS),))
+    conflict = {"conflict_id": conflict_id,
+                "provision_id": body.get("provision_id"),
+                "store_rule": body.get("store_rule"),
+                "rule_id": body.get("rule_id")}
+    store = _oc.open_store()
+    try:
+        summary, rejected = _oc.write_resolutions(
+            store, {conflict_id: answer}, run_id=str(body.get("run_id") or "operator"),
+            conflicts_by_id={conflict_id: conflict})
+    except OSError:
+        raise HTTPException(status_code=500, detail="ontology store unwritable")
+    if rejected or not summary.get("written"):
+        raise HTTPException(status_code=400,
+                            detail="the answer was refused: %r" % (rejected,))
+    return JSONResponse(status_code=202, content={
+        "conflict_id": conflict_id,
+        "recorded": True,
+        "answer": answer,
+        "superseded": summary.get("superseded", 0),
+        "note": ("recorded, not applied: the next run that meets this conflict applies "
+                 "it. This route never re-decides a refused pair."),
+    })
+
+
+@app.get("/ontology/relations", dependencies=[Depends(verify_token)])
+async def ontology_relations():
+    """The relations between provisions the store holds (console audit, finding 6).
+
+    `ontology_reader.relation_summary` was a finished read path whose only
+    callers were gate assertions: the records job 2 writes had no route and so
+    no surface. This serves them.
+
+    One row per unordered pair since the merge, each carrying `found_by` (the
+    mechanisms that found it), `agreed` (both found it, the pair a reader would
+    trust most) and `observations`, one per mechanism, each keeping the
+    direction THAT mechanism reported, so a reader can see that the
+    cross-reference said one direction and similarity the other.
+
+    `by_method` counts OBSERVATIONS while `relation_count` counts PAIRS, so the
+    two do not sum once any pair is agreed; that is the merge working, not an
+    inconsistency. `agreed_count` is the figure the old concatenated form could
+    not report at all, because agreement showed up there only as duplication.
+
+    Ordering is the operator's one declared rule and nothing more: a pair found
+    by both ranks above a pair found by one. No weighting between the two
+    mechanisms exists, and none will until the long-range corpus is scored.
+
+    Not run-scoped; the store is cross-run. An empty store is a `200` with an
+    empty list, which is every installation today."""
+    import ontology_reader as _reader
+    import ontology_store as _store_mod
+
+    store = _reader.read_store(scope=_store_mod.DEFAULT_SCOPE)
+    try:
+        return _reader.relation_summary(store)
+    except OSError:
+        raise HTTPException(status_code=500, detail="ontology store unreadable")
 
 
 @app.get("/ontology/conflicts", dependencies=[Depends(verify_token)])

@@ -495,7 +495,7 @@ details.pairs-doc[open] summary::before { content: "▾ "; }
    wireRuleLinks). Same underline-on-hover vocabulary as any other link, not
    a new visual language; the panel it opens reuses .notice's hairline-box
    pattern, appended inline rather than a new page. */
-a.rule-link {
+a.rule-link, .cite-link {
   color: inherit;
   text-decoration: underline;
   text-decoration-style: dotted;
@@ -1052,11 +1052,20 @@ function pairBarHtml(run) {
     '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
     '<div class="progress-caption">' +
       '<span>at least ' + settled + ' of ' + planned + ' pairs settled</span>' +
-      '<span>' + (calls || 0) + ' model call' + ((calls === 1) ? "" : "s") + ' so far</span>' +
+      '<span>' + (calls || 0) + ' model call' + ((calls === 1) ? "" : "s") + ' so far, all phases</span>' +
     '</div>' +
+    /* console audit finding 11. These two numbers count different things and
+       cannot be reconciled by a reader: the settled figure is derived from
+       review-phase calls, while model_calls is an ALL-PHASE total (README's
+       env and route tables say so, and server._model_call_counts computes both
+       but serves the total). Side by side with no qualifier, the larger call
+       count reads either as the floor being wrong or as each pair costing
+       several calls. Neither is true, so the page now says what each counts. */
     '<p class="muted" style="font-size:0.8rem;margin-top:0.35rem">' +
       settled + ' pairs closed by arithmetic alone, with no model call. This is a floor, not a live counter: ' +
-      'pairs a model is actively judging are not separately counted.' +
+      'pairs a model is actively judging are not separately counted. ' +
+      'The call count beside it is every model call the run has made in any phase, not only the ones judging pairs, ' +
+      'so the two numbers are not meant to reconcile.' +
     '</p>'
   );
 }
@@ -1288,16 +1297,148 @@ function ontologyGnnHtml(body, human) {
       : (body.note || "no gnn_state.json")) + '</p>';
     return out;
   }
+  /* console audit finding 12. last_loss is 0.0 when NO backward pass ran (the
+     honest "nothing new" case, ontology_gnn.py: denom == 0), not when the
+     reconstruction was perfect. Rendered as a bare "Reconstruction error: 0"
+     that is the strongest-looking evidence of learning this page could show,
+     inside the one section whose purpose is to deny that learning happened.
+     The page now says WHICH of the two it is rather than relabelling the
+     number, and a value the state never recorded reads as not recorded rather
+     than as the literal word null. */
+  var noStep = !body.last_delta_size;
+  var lossValue = (body.last_loss === null || body.last_loss === undefined)
+    ? (human ? "not recorded" : "not recorded (absent from the state file)")
+    : (noStep
+        ? (human
+            ? "not measured this run, because no new nodes arrived to fit"
+            : String(body.last_loss) + " (no backward pass; last_delta_size=0)")
+        : String(body.last_loss));
+  var valueOrNot = function (v) {
+    return (v === null || v === undefined) ? "not recorded" : String(v);
+  };
   var rows = [
-    [human ? "Nodes seen" : "trained_count", body.trained_count],
-    [human ? "Updates" : "n_updates", body.n_updates],
-    [human ? "Newest batch" : "last_delta_size", body.last_delta_size],
-    [human ? "Reconstruction error" : "last_loss", body.last_loss]
+    [human ? "Nodes seen" : "trained_count", valueOrNot(body.trained_count)],
+    [human ? "Updates" : "n_updates", valueOrNot(body.n_updates)],
+    [human ? "New nodes this run" : "last_delta_size", valueOrNot(body.last_delta_size)],
+    [human ? "Reconstruction error" : "last_loss", lossValue]
   ];
   out += '<ul class="amendment-refusals">' + rows.map(function (r) {
     return '<li class="mono">' + escapeHtml(String(r[0])) + ': ' + escapeHtml(String(r[1])) + '</li>';
   }).join("") + '</ul>';
+  if (noStep) {
+    out += '<p class="muted">' + escapeHtml(human
+      ? "No new nodes arrived this run, so no training step ran at all. The figures above are carried over from the last run that had something to fit."
+      : "last_delta_size=0: no backward pass ran, weights unchanged, last_loss is the initialised 0.0 and not a measurement") + '</p>';
+  }
   return out;
+}
+
+function ontologyRelationsHtml(body, human) {
+  /* Relations between provisions (console audit, finding 6). The long-range
+     case is what this exists for, so a pair that reaches across a document is
+     labelled as such rather than left for a reader to work out from two ids.
+
+     Disappears when empty, like every section here except the GNN state. */
+  if (!body || !body.relation_count) return "";
+  var heading = human
+    ? "What relates to what (" + body.relation_count + ")"
+    : "ontology.relations (" + body.relation_count + ", scope " + escapeHtml(body.scope || "") + ")";
+  var agreed = body.agreed_count || 0;
+  var note = human
+    ? ("Pairs of passages one mechanism or both noticed. " +
+       (agreed ? agreed + " of them were found by both, which is the stronger case: two independent mechanisms saw the same pair. " : "") +
+       "A relation says one passage names, or reads like, another. It does not say they agree or conflict, and it is not evidence for any finding.")
+    : ("agreed_count=" + agreed + ". by_method counts OBSERVATIONS, relation_count counts PAIRS; " +
+       "they do not sum once a pair is agreed. Ordering: agreed pairs first, the one declared rule, no weighting.");
+  var items = (body.relations || []).map(function (r) {
+    var both = r.agreed;
+    var methods = (r.found_by || []).join(", ");
+    /* a relation whose two units sit far apart in the document is the
+       long-range case, and it is named rather than merely listed */
+    var obs = (r.observations || []).map(function (o) {
+      return human
+        ? (o.method === "pattern"
+            ? "one passage names the other (" + escapeHtml(o.reported_source) + " to " + escapeHtml(o.reported_target) + ")"
+            : "they read alike" + (o.score !== undefined && o.score !== null ? " (closeness " + escapeHtml(String(o.score)) + ")" : ""))
+        : escapeHtml(o.method) + ": " + escapeHtml(o.reported_source) + " -> " + escapeHtml(o.reported_target) +
+          (o.pattern ? " [" + escapeHtml(o.pattern) + "]" : "") +
+          (o.score !== undefined && o.score !== null ? " score=" + escapeHtml(String(o.score)) : "");
+    }).join("; ");
+    if (human) {
+      return '<li>' + (both ? '<strong>Found by both mechanisms.</strong> ' : '') +
+        escapeHtml(r.source_unit) + ' and ' + escapeHtml(r.target_unit) +
+        '<div class="muted">' + obs + '</div></li>';
+    }
+    return '<li class="mono">' + (both ? '[agreed] ' : '') +
+      escapeHtml(r.source_unit) + ' :: ' + escapeHtml(r.target_unit) +
+      ' found_by=[' + escapeHtml(methods) + ']<div class="muted">' + obs + '</div></li>';
+  }).join("");
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p>' +
+    '<ul class="amendment-refusals">' + items + '</ul>';
+}
+
+function ontologyConflictsHtml(body, human) {
+  /* Conflict decisions (console audit, finding 2 of the reachability lens).
+     Job 3 refuses a conflicted pair in-run, lists it and remembers the answer;
+     this is where a reader sees the answers and the override rate.
+
+     The rate is NEVER a bare number: its caveat is printed from the response
+     body rather than retyped here, and a nested null reads as "no answers yet"
+     rather than as a rate of zero. Disappears when nothing is answered. */
+  if (!body || !body.answered_count) return "";
+  var rate = body.override_rate || {};
+  var heading = human
+    ? "Conflicts you have answered (" + body.answered_count + ")"
+    : "ontology.conflict_resolutions (" + body.answered_count + ")";
+  var items = (body.answered || []).map(function (a) {
+    var answerWord = human
+      ? (a.answer === "rule" ? "the current rule wins"
+         : a.answer === "store" ? "what the store remembered wins"
+         : "keep refusing this pair")
+      : a.answer;
+    var sides = (a.store_rule || a.rule_id)
+      ? (human
+          ? " (the store remembered " + escapeHtml(a.store_rule || "nothing") + ", the run would have applied " + escapeHtml(a.rule_id || "nothing") + ")"
+          : " store_rule=" + escapeHtml(a.store_rule || "") + " rule_id=" + escapeHtml(a.rule_id || ""))
+      : "";
+    return (human ? '<li>' : '<li class="mono">') +
+      escapeHtml(a.provision_id || a.conflict_id) + ': ' + escapeHtml(answerWord) + sides + '</li>';
+  }).join("");
+  var rateLine = (rate.override_rate === null || rate.override_rate === undefined)
+    ? (human ? "No answers yet, so there is no rate to show."
+             : "override_rate=null (no answers yet, deliberately not 0.0)")
+    : (human
+        ? "You have overridden what the store remembered in " + rate.overrode_store + " of " + rate.answered + " answers."
+        : "override_rate=" + rate.override_rate + " (overrode_store=" + rate.overrode_store + ", answered=" + rate.answered + ")");
+  var caveat = rate.caveat ? '<p class="muted">' + escapeHtml(rate.caveat) + '</p>' : "";
+  return '<h2>' + heading + '</h2>' +
+    '<ul class="amendment-refusals">' + items + '</ul>' +
+    '<p class="muted">' + escapeHtml(rateLine) + '</p>' + caveat;
+}
+
+function ontologyCandidatesHtml(body, human) {
+  /* The GNN's candidate pairs (console audit, finding 1). The qualifier comes
+     BEFORE any score, in both views, because a reader who sees numbers first
+     reads them as evidence of learning. ranked_on is printed from the response
+     body, never retyped here, so the page cannot drift from what the module
+     says about itself. Disappears when nothing is proposed. */
+  if (!body || !body.candidate_count) return "";
+  var heading = human
+    ? "Pairs the model suggests looking at (" + body.candidate_count + ")"
+    : "ontology.candidates (" + body.candidate_count + ")";
+  var lead = human
+    ? "These are suggestions of where to look, not findings, and they are ranked by the shape of the graph alone: how things are connected, not what they mean. The model has learned nothing to rank with. Weights came from " + escapeHtml(body.weights_from || "unknown") + "."
+    : "ranked_on: " + escapeHtml(body.ranked_on || "") + " | learned_relevance=" +
+      String(body.learned_relevance) + " tier2_signal=" + escapeHtml(body.tier2_signal || "") +
+      " weights_from=" + escapeHtml(body.weights_from || "");
+  var items = (body.candidates || []).map(function (c) {
+    var where = c.same_document ? (human ? "same document" : "same_document") : (human ? "across documents" : "cross_document");
+    return (human ? '<li>' : '<li class="mono">') +
+      escapeHtml(c.source) + ' and ' + escapeHtml(c.target) +
+      ' <span class="muted">' + escapeHtml(String(c.score)) + ', ' + escapeHtml(where) + '</span></li>';
+  }).join("");
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(lead) + '</p>' +
+    '<ul class="amendment-refusals">' + items + '</ul>';
 }
 
 function renderAgents() {
@@ -1323,9 +1464,30 @@ function renderAgents() {
       if (currentRoute().view !== "agents") return;
       ontologyHolder.innerHTML = ontRes.ok ? ontologyStoreHtml(ontRes.body, isHumanView()) : "";
     });
+    var relationsHolder = document.createElement("div");
+    relationsHolder.id = "ontology-relations-holder";
+    app.appendChild(relationsHolder);
+    var candidatesHolder = document.createElement("div");
+    candidatesHolder.id = "ontology-candidates-holder";
+    app.appendChild(candidatesHolder);
+    var conflictsHolder = document.createElement("div");
+    conflictsHolder.id = "ontology-conflicts-holder";
+    app.appendChild(conflictsHolder);
     apiJson("/ontology/gnn").then(function (gnnRes) {
       if (currentRoute().view !== "agents") return;
       gnnHolder.innerHTML = gnnRes.ok ? ontologyGnnHtml(gnnRes.body, isHumanView()) : "";
+    });
+    apiJson("/ontology/relations").then(function (relRes) {
+      if (currentRoute().view !== "agents") return;
+      relationsHolder.innerHTML = relRes.ok ? ontologyRelationsHtml(relRes.body, isHumanView()) : "";
+    });
+    apiJson("/ontology/candidates").then(function (candRes) {
+      if (currentRoute().view !== "agents") return;
+      candidatesHolder.innerHTML = candRes.ok ? ontologyCandidatesHtml(candRes.body, isHumanView()) : "";
+    });
+    apiJson("/ontology/conflicts").then(function (conRes) {
+      if (currentRoute().view !== "agents") return;
+      conflictsHolder.innerHTML = conRes.ok ? ontologyConflictsHtml(conRes.body, isHumanView()) : "";
     });
   }).catch(function () {
     app.innerHTML = '<div class="notice error">The request did not reach the server.</div>';
@@ -2033,6 +2195,83 @@ function ruleLinkHtml(rawId, shownId) {
     escapeHtml(shownId || rawId) + '</a><span class="rule-panel" id="' + linkId + '-panel" hidden></span>';
 }
 
+function citationsHtml(refs, runId, human) {
+  /* THE CITATION SURFACE (console audit, finding 4, the most serious on that
+     list). Every Finding and every amendment carries source_refs, and until now
+     they were rendered NOWHERE in either view: a reader could see that a
+     finding cited something and never what, which leaves nothing to do but
+     trust the sentence. A citation that cannot be followed is not a citation.
+
+     Built as a PATH rather than a field appended to a row: each REF is a link,
+     and opening it fetches that run's own reference index and shows the passage
+     the finding rests on, in the same expand-in-place vocabulary rule links
+     already use. Nothing is shown until a reader asks, so a findings list of
+     fifty does not become fifty passages.
+
+     A WEB-REF is shown as an id without a link: the index holds corpus
+     passages, and pretending a web citation resolves the same way would be a
+     link that goes nowhere. */
+  if (!refs || !refs.length) return "";
+  var links = refs.map(function (ref, i) {
+    var id = "cite-" + encodeURIComponent(runId) + "-" + encodeURIComponent(ref) + "-" + i;
+    if (String(ref).indexOf("WEB-REF") === 0) {
+      return '<span class="mono muted">' + escapeHtml(ref) + '</span>';
+    }
+    return '<a href="#" class="cite-link mono" id="' + id + '" data-ref-id="' +
+      escapeHtml(ref) + '" data-run-id="' + escapeHtml(runId) + '">' + escapeHtml(ref) + '</a>' +
+      '<span class="rule-panel" id="' + id + '-panel" hidden></span>';
+  }).join(" ");
+  var lead = human ? "Rests on: " : "source_refs: ";
+  return '<div class="muted" style="margin-top:0.25rem">' + escapeHtml(lead) + links + '</div>';
+}
+
+function wireCitationLinks(scope) {
+  /* The other half of the path. Mirrors wireRuleLinks exactly: expand in place,
+     fetch once, and say plainly when a run's index cannot answer rather than
+     leaving an empty panel. */
+  (scope || document).querySelectorAll(".cite-link").forEach(function (a) {
+    if (a._wired) return;
+    a._wired = true;
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      var panel = document.getElementById(a.id + "-panel");
+      if (!panel) return;
+      if (!panel.hidden) { panel.hidden = true; return; }
+      panel.hidden = false;
+      if (panel._loaded) return;
+      panel._loaded = true;
+      panel.innerHTML = '<span class="muted">Loading…</span>';
+      var runId = a.getAttribute("data-run-id");
+      var refId = a.getAttribute("data-ref-id");
+      apiJson("/runs/" + encodeURIComponent(runId) + "/references?ref_id=" +
+              encodeURIComponent(refId)).then(function (res) {
+        if (!res.ok) {
+          panel.innerHTML = '<div class="notice warn">' + escapeHtml(
+            isHumanView()
+              ? "The passage behind this citation is not on record for this run: " + detailText(res.body) + "."
+              : detailText(res.body)) + '</div>';
+          return;
+        }
+        var body = res.body || {};
+        var one = (body.references || [])[0];
+        if (!one) {
+          panel.innerHTML = '<div class="notice warn">' + escapeHtml(
+            isHumanView()
+              ? "This run's reference index holds no passage under that id."
+              : "no entry for " + refId) + '</div>';
+          return;
+        }
+        var where = one.document_name || one.document_id || "";
+        panel.innerHTML = '<div class="rule-panel-body">' +
+          '<div class="rule-panel-head"><span class="mono">' + escapeHtml(one.ref_id || refId) + '</span>' +
+          (where ? ' <span class="muted">' + escapeHtml(where) + '</span>' : '') + '</div>' +
+          '<p>' + escapeHtml(one.text_excerpt || "") + '</p>' +
+          '</div>';
+      });
+    });
+  });
+}
+
 function wireRuleLinks(scope) {
   (scope || document).querySelectorAll(".rule-link").forEach(function (a) {
     if (a._wired) return;
@@ -2549,9 +2788,11 @@ function loadFindings(runId, isPartial) {
           var cls = f.record_verdict === "irregular" ? "irregular" : (f.record_verdict === "ok" ? "ok" : "");
           var amend = byKey[amendmentKey(f.unit_id, f.rule_id)];
           return '<li class="finding-human ' + cls + '">' + findingSentenceHtml(f) +
+            citationsHtml(f.source_refs, runId, true) +
             (amend ? amendmentHumanHtml(amend) : "") + '</li>';
         }).join("") + '</ul>';
       wireRuleLinks(holder);
+      wireCitationLinks(holder);
       return;
     }
     var rows = findings.map(function (f, i) {
@@ -2570,6 +2811,7 @@ function loadFindings(runId, isPartial) {
         '<td class="explanation">' +
           '<span class="' + (long ? "truncated" : "") + '" id="' + explId + '">' + escapeHtml(explanation) + '</span>' +
           (long ? '<br><button class="expand-toggle" data-target="' + explId + '">Show more</button>' : '') +
+          citationsHtml(f.source_refs, runId, false) +
           (amend ? amendmentDeveloperHtml(amend) : "") +
         '</td>' +
       '</tr>';
@@ -2578,6 +2820,7 @@ function loadFindings(runId, isPartial) {
       '<table class="findings"><thead><tr>' +
       '<th>Rule</th><th>Unit</th><th>Relation</th><th>Verdict</th><th>Figures</th><th>Explanation</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
+    wireCitationLinks(holder);
     holder.querySelectorAll(".expand-toggle").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var cell = document.getElementById(btn.getAttribute("data-target"));
