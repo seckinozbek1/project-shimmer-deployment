@@ -495,7 +495,7 @@ details.pairs-doc[open] summary::before { content: "▾ "; }
    wireRuleLinks). Same underline-on-hover vocabulary as any other link, not
    a new visual language; the panel it opens reuses .notice's hairline-box
    pattern, appended inline rather than a new page. */
-a.rule-link, .cite-link {
+a.rule-link, .cite-link, .prov-link {
   color: inherit;
   text-decoration: underline;
   text-decoration-style: dotted;
@@ -1169,25 +1169,38 @@ var HARNESS_PART_LABELS_HUMAN = {
   refire_condition_and_limit: "Whether it runs again"
 };
 
-function harnessPartSummary(part, shared) {
-  /* One line for a decided part: resolve a shared-parts indirection first,
-     then take the first prose-bearing field the file carries. Never
-     invents text: a part with none of these fields reads as "decided". */
+function harnessPartSummary(part, shared, human) {
+  /* One line for a decided part.
+
+     console audit finding 7. This served BOTH views identically, so for five of
+     the nine parts, on every one of the eighteen agents, a reviewer was shown
+     raw source prose: file paths, function names and JSON field paths. The
+     human/developer split reached the LABEL and never the value.
+
+     Two changes. `where` is the CODE LOCATION of a part, which is exactly what a
+     developer wants and exactly what a reviewer cannot use, so it is read only
+     in the developer view. And the declared_subjects branch moves ABOVE the
+     generic field loop: every rule_cluster part carries BOTH `where` and
+     `declared_subjects`, so the plain-language sentence the harness file
+     supplies for this purpose was unreachable in both views. It is now the
+     answer a reviewer gets, and the developer view is unchanged. */
   if (!part || typeof part !== "object") return "";
   if (part.see && typeof part.see === "string" && part.see.indexOf("shared_parts.") === 0) {
     var key = part.see.slice("shared_parts.".length);
     part = (shared || {})[key] || part;
   }
-  if (Array.isArray(part.does) && part.does.length) return part.does.join("; ");
-  var fields = ["condition", "how", "where", "summary", "text", "note", "reason", "limit"];
-  for (var i = 0; i < fields.length; i++) {
-    if (typeof part[fields[i]] === "string" && part[fields[i]]) return part[fields[i]];
-  }
   if (Array.isArray(part.declared_subjects)) {
     if (part.declared_subjects.length) return "declares: " + part.declared_subjects.join(", ");
     return "declares no subject, by decision" + (part.subjects_note ? ": " + part.subjects_note : "");
   }
-  return "decided";
+  if (Array.isArray(part.does) && part.does.length) return part.does.join("; ");
+  var fields = human
+    ? ["condition", "how", "summary", "text", "note", "reason", "limit"]
+    : ["condition", "how", "where", "summary", "text", "note", "reason", "limit"];
+  for (var i = 0; i < fields.length; i++) {
+    if (typeof part[fields[i]] === "string" && part[fields[i]]) return part[fields[i]];
+  }
+  return human ? "decided, with no plain-language summary recorded" : "decided";
 }
 
 function harnessHtml(body, human) {
@@ -1226,7 +1239,8 @@ function harnessHtml(body, human) {
         return;
       }
       html += '<li class="harness-part"><span class="harness-label">' + escapeHtml(label) + '</span>: ' +
-        (human ? escapeHtml(harnessPartSummary(part, shared)) : '<span class="mono">' + escapeHtml(harnessPartSummary(part, shared)) + '</span>') + '</li>';
+        (human ? escapeHtml(harnessPartSummary(part, shared, true))
+               : '<span class="mono">' + escapeHtml(harnessPartSummary(part, shared, false)) + '</span>') + '</li>';
     });
     html += '</ul></section>';
   });
@@ -1256,8 +1270,28 @@ function ontologyStoreHtml(body, human) {
   var heading = human
     ? "What the ontology store holds (" + body.provision_count + ")"
     : "ontology.provisions (" + body.provision_count + ", scope " + escapeHtml(body.scope || "") + ")";
+  /* console audit finding 8: the developer note carried stub_count,
+     superseded_in_live, log_events and without_provenance and the reviewer note
+     carried none of them, which is a filtering rather than a rewording. Two of
+     the four qualify the reviewer sentence itself: a stub is a placeholder
+     rather than captured content, and a record without provenance does NOT name
+     the agent whose finding it rests on. Each is stated only when non-zero, so
+     the sentence stays quiet in the common case. */
+  var extras = "";
+  if (body.stub_count) {
+    extras += " " + body.stub_count + " of these are placeholders rather than captured content.";
+  }
+  if (body.without_provenance) {
+    extras += " " + body.without_provenance + " do not record which agent or run produced them.";
+  }
+  if (body.superseded_in_live) {
+    extras += " " + body.superseded_in_live + " have been replaced by a later version.";
+  }
+  if (body.log_events) {
+    extras += " The store has recorded " + body.log_events + " events.";
+  }
   var note = human
-    ? "Provisions captured at the end of past runs, each with the agent whose finding it rests on and the rule that governed it. A record of what was decided before, for looking up afterwards; a review in progress does not read it."
+    ? "Provisions captured at the end of past runs, each with the agent whose finding it rests on and the rule that governed it. A record of what was decided before, for looking up afterwards; a review in progress does not read it." + extras
     : "GET /ontology: provenance only, no provision text. stubs=" + (body.stub_count || 0) +
       ", superseded_in_live=" + (body.superseded_in_live || 0) +
       ", log_events=" + (body.log_events || 0) +
@@ -1269,7 +1303,75 @@ function ontologyStoreHtml(body, human) {
   if (rules) {
     out += '<h3>' + (human ? "By rule" : "by_convention_ref") + '</h3><ul class="amendment-refusals">' + rules + '</ul>';
   }
+  /* console audit finding 3: the section rendered only the two aggregate lists
+     and discarded body.provisions entirely, the per-provision array the route
+     actually carries. A reader saw how many provisions each agent produced and
+     had no way to reach a single one, let alone its revision history, so
+     supersession (recorded by the storage layer since W7) stayed invisible on
+     the one surface built to show what the store holds. Each provision id is now
+     a link that opens its own history in place, the same vocabulary a rule id
+     and a citation already use. */
+  var provisions = body.provisions || [];
+  if (provisions.length) {
+    out += '<h3>' + (human ? "Each provision" : "provisions") + '</h3>' +
+      '<ul class="amendment-refusals">' + provisions.map(function (pr, i) {
+        var pid = "prov-" + i;
+        var who = human
+          ? ((pr.agent ? pr.agent : "no agent recorded") + ", " +
+             (pr.convention_ref ? "under " + pr.convention_ref : "under no rule") +
+             (pr.stub ? ", a placeholder rather than captured content" : "") +
+             (pr.revision > 1 ? ", revision " + pr.revision : ""))
+          : ("agent=" + (pr.agent || "none") + " rule=" + (pr.convention_ref || "none") +
+             " revision=" + pr.revision + (pr.stub ? " stub" : ""));
+        return '<li' + (human ? '' : ' class="mono"') + '>' +
+          '<a href="#" class="prov-link mono" id="' + pid + '" data-provision-id="' +
+          escapeHtml(pr.id || "") + '">' + escapeHtml(pr.id || "") + '</a>' +
+          '<span class="rule-panel" id="' + pid + '-panel" hidden></span>' +
+          ' <span class="muted">' + escapeHtml(who) + '</span></li>';
+      }).join("") + '</ul>';
+  }
   return out;
+}
+
+function wireProvisionLinks(scope) {
+  /* The other half of finding 3: open one provision's every revision, oldest
+     first, from GET /ontology/provisions/{id}. Mirrors wireRuleLinks and
+     wireCitationLinks exactly. */
+  (scope || document).querySelectorAll(".prov-link").forEach(function (a) {
+    if (a._wired) return;
+    a._wired = true;
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      var panel = document.getElementById(a.id + "-panel");
+      if (!panel) return;
+      if (!panel.hidden) { panel.hidden = true; return; }
+      panel.hidden = false;
+      if (panel._loaded) return;
+      panel._loaded = true;
+      panel.innerHTML = '<span class="muted">Loading…</span>';
+      apiJson("/ontology/provisions/" + encodeURIComponent(a.getAttribute("data-provision-id"))).then(function (res) {
+        if (!res.ok) {
+          panel.innerHTML = '<div class="notice warn">' + escapeHtml(
+            isHumanView()
+              ? "This provision's history is not available: " + detailText(res.body) + "."
+              : detailText(res.body)) + '</div>';
+          return;
+        }
+        var revs = res.body.revisions || [];
+        var human = isHumanView();
+        panel.innerHTML = '<div class="rule-panel-body">' +
+          '<div class="rule-panel-head"><span class="mono">' + escapeHtml(res.body.id || "") + '</span>' +
+          ' <span class="muted">' + escapeHtml(human
+            ? (revs.length === 1 ? "one version" : revs.length + " versions, oldest first")
+            : revs.length + " revision(s)") + '</span></div>' +
+          '<ul class="amendment-refusals">' + revs.map(function (r) {
+            return '<li class="mono">' + escapeHtml(
+              (human ? "version " : "revision ") + r.revision + ": " +
+              (r.agent || "no agent") + ", run " + (r.run || "unknown")) + '</li>';
+          }).join("") + '</ul></div>';
+      });
+    });
+  });
 }
 
 function ontologyGnnHtml(body, human) {
@@ -1463,6 +1565,7 @@ function renderAgents() {
     apiJson("/ontology").then(function (ontRes) {
       if (currentRoute().view !== "agents") return;
       ontologyHolder.innerHTML = ontRes.ok ? ontologyStoreHtml(ontRes.body, isHumanView()) : "";
+      wireProvisionLinks(ontologyHolder);
     });
     var relationsHolder = document.createElement("div");
     relationsHolder.id = "ontology-relations-holder";
@@ -1968,7 +2071,7 @@ function renderDetailBody(run, allRuns) {
      recomputed a second time. */
   if (run.state !== "queued") {
     loadFindings(run.run_id, isPartialReview);
-    loadPairs(run.run_id, isPartialReview);
+    loadPairs(run.run_id, isPartialReview, isHumanView());
   }
   /* Log renders in every state, per the operator's own instruction: whether
      a log exists is information the reader wants regardless of state, not
@@ -2546,6 +2649,28 @@ function amendmentDeveloperHtml(a) {
    built from a finding) is silently unshown rather than orphaned on screen. */
 function amendmentKey(unitId, ruleId) { return (unitId || "") + " " + (ruleId || ""); }
 
+function relationWord(relation, human) {
+  /* The relation a refusal or a finding names, in the register the view asks
+     for. The developer view wants the field value; a reviewer wants what kind of
+     check it was. Unknown relations fall through to the raw value rather than
+     being hidden, because an unrecognised relation is a real fact. */
+  if (!human) return relation || "";
+  var words = {
+    "above_band": "a figure above the allowed range",
+    "below_band": "a figure below the allowed range",
+    "ratio_out_of_range": "a ratio outside the allowed range",
+    "sum_mismatch": "a total that does not match its parts",
+    "product_mismatch": "a product that does not match its factors",
+    "missing_field": "a required field that is absent",
+    "changed_from_prior": "a figure that changed since the earlier version",
+    "unchanged_from_prior": "a figure unchanged since the earlier version",
+    "moved_toward": "a figure that moved toward the range",
+    "moved_away": "a figure that moved away from the range",
+    "absent_since_prior": "a term the earlier version stated and this one does not"
+  };
+  return words[relation] || relation || "";
+}
+
 function amendmentRefusalsHtml(refusals, human) {
   /* Disappears when there is nothing to say, same discipline as the
      amendments section: a refusal is real content, not a placeholder, so it
@@ -2556,9 +2681,17 @@ function amendmentRefusalsHtml(refusals, human) {
   var rows = refusals.map(function (r) {
     var where = [r.unit_id, r.rule_id].filter(Boolean).join(" / ") || r.doc_id || "";
     return human
+      /* console audit finding 10: the developer branch used to drop the
+         explanation the reviewer branch rendered, and NEITHER rendered the
+         relation the route supplies. A developer comparing the two views saw
+         strictly less than a reviewer, which inverts the split this surface is
+         built on. Both now carry both. */
       ? '<li>' + escapeHtml(where ? where + ": " : "") + escapeHtml(r.reason) +
+        (r.relation ? ' <span class="muted">' + escapeHtml("(" + relationWord(r.relation, true) + ")") + '</span>' : '') +
         (r.explanation ? '<div class="muted">' + escapeHtml(r.explanation) + '</div>' : '') + '</li>'
-      : '<li class="mono">' + escapeHtml(where) + ': ' + escapeHtml(r.reason) + '</li>';
+      : '<li class="mono">' + escapeHtml(where) +
+        (r.relation ? ' [' + escapeHtml(r.relation) + ']' : '') + ': ' + escapeHtml(r.reason) +
+        (r.explanation ? '<div class="muted">' + escapeHtml(r.explanation) + '</div>' : '') + '</li>';
   }).join("");
   var heading = human
     ? "Findings the pipeline could not act on (" + refusals.length + ")"
@@ -2839,37 +2972,119 @@ function loadFindings(runId, isPartial) {
    render itself (the single notice for the whole screen is stated once in
    renderDetailBody's status block, not repeated here). Follows what the run
    produced: no heading, nothing, while loading or when there is no map. */
-function loadPairs(runId, isPartial) {
+function loadPairs(runId, isPartial, human) {
+  /* console audit findings 9 and 5.
+
+     9: this was the one whole section on the run screen with NO reviewer
+     wording. It took no `human` parameter and never called isHumanView(), yet
+     rendered in both views, so a reviewer was shown the heading "Pairing map",
+     then raw unit_id and kind values, with rejected rules distinguished from
+     paired ones only by a muted colour and a title attribute. Every neighbouring
+     section splits on the view; this one did not.
+
+     5: it also discarded four bodies of content the route serves. not_judged
+     (with its reason, the agents it was assigned to and its status) and
+     reattributed are the convention-distribution record; unmatched_units names
+     units no rule reached at all; and the per-unit undecided list is what the
+     undecided COUNT counts, so a reader saw a number with no way to reach what
+     it counted. All four are rendered now, each disappearing when empty. */
   var holder = document.createElement("div");
   holder.id = "pairs-holder";
   app.appendChild(holder);
   apiJson("/runs/" + encodeURIComponent(runId) + "/pairs").then(function (res) {
-    if (!res.ok) { holder.innerHTML = '<h2>Pairing map</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
+    var heading = human ? "Which rules were checked against which passages" : "Pairing map";
+    if (!res.ok) {
+      holder.innerHTML = '<h2>' + escapeHtml(heading) + '</h2><div class="notice error">' +
+        escapeHtml(detailText(res.body)) + '</div>';
+      return;
+    }
     var docs = res.body.documents || [];
     if (docs.length === 0) { holder.innerHTML = ""; return; }
-    /* A pairing-map rule chip now shows the operator's own id
-       (source_rule_id, wired server-side in _pairs_view), the same
-       identifier findings already show for the identical rule, rather than
-       the bare registry number: before this fix a finding cited CONV-A02
-       and the pairing map cited CONV-001 for the SAME rule on the SAME
-       screen. Clickable, same as a finding's citation (ruleLinkHtml). */
+    /* A pairing-map rule chip shows the operator's own id (source_rule_id,
+       wired server-side in _pairs_view), the same identifier findings already
+       show for the identical rule, rather than the bare registry number.
+       Clickable, same as a finding's citation (ruleLinkHtml). */
     function chipHtml(p, extraClass, titlePrefix) {
       var shown = p.source_rule_id || p.rule_id || "";
       var title = (titlePrefix ? titlePrefix + ": " : "") + (p.reason || "");
       return '<span class="rule-chip' + (extraClass ? " " + extraClass : "") + '" title="' + escapeHtml(title) + '">' +
         ruleLinkHtml(p.rule_id, shown) + '</span>';
     }
-    holder.innerHTML = '<h2>Pairing map</h2>' + docs.map(function (d) {
+    function unitLabel(u) {
+      return human
+        ? "Passage " + (u.unit_id || "") + (u.kind ? " (" + u.kind + ")" : "")
+        : (u.unit_id || "") + " (" + (u.kind || "") + ")";
+    }
+    var body = docs.map(function (d) {
       var units = (d.units || []).map(function (u) {
+        var undecided = (u.undecided || []);
         return '<div class="pairs-unit">' +
-          '<span class="uid">' + escapeHtml(u.unit_id) + '</span> (' + escapeHtml(u.kind || "") + ')<br>' +
-          (u.paired || []).map(function (p) { return chipHtml(p, "", ""); }).join("") +
-          (u.rejected || []).map(function (p) { return chipHtml(p, "muted", "rejected"); }).join("") +
+          '<span class="uid">' + escapeHtml(unitLabel(u)) + '</span><br>' +
+          (u.paired || []).map(function (p) { return chipHtml(p, "", human ? "checked here" : ""); }).join("") +
+          (u.rejected || []).map(function (p) { return chipHtml(p, "muted", human ? "set aside" : "rejected"); }).join("") +
+          /* finding 5: the undecided list itself, which only its count reached */
+          (undecided.length
+            ? '<div class="muted">' + escapeHtml(
+                (human ? "left undecided: " : "undecided: ") + undecided.join(", ")) + '</div>'
+            : '') +
         '</div>';
       }).join("");
-      return '<details class="pairs-doc"><summary>' + escapeHtml(d.document_id) + ': ' + d.pair_count + ' paired, ' + d.rejected_count + ' rejected, ' + d.undecided_count + ' undecided</summary>' +
+      var summary = human
+        ? escapeHtml(d.document_id) + ': ' + d.pair_count + ' rule' + (d.pair_count === 1 ? '' : 's') +
+          ' checked here, ' + d.rejected_count + ' set aside, ' + d.undecided_count + ' left undecided'
+        : escapeHtml(d.document_id) + ': ' + d.pair_count + ' paired, ' + d.rejected_count +
+          ' rejected, ' + d.undecided_count + ' undecided';
+      return '<details class="pairs-doc"><summary>' + summary + '</summary>' +
         '<div class="pairs-body">' + units + '</div></details>';
     }).join("");
+
+    /* finding 5: the convention-distribution record the route serves and no
+       view rendered. Each block disappears when empty, the rule this surface
+       follows everywhere else. */
+    var extra = "";
+    var notJudged = res.body.not_judged || [];
+    if (notJudged.length) {
+      extra += '<h3>' + escapeHtml(human
+        ? "Rules no checker judged (" + notJudged.length + ")"
+        : "not_judged (" + notJudged.length + ")") + '</h3>' +
+        '<p class="muted">' + escapeHtml(human
+          ? "These rules were paired with a passage, but no convention checker was assigned to act on them, so no call was made. They are recorded rather than dropped."
+          : "plans phase 5.5 made no call for: the rule has no convention-review consumer") + '</p>' +
+        '<ul class="amendment-refusals">' + notJudged.map(function (n) {
+          var where = [n.unit_id, n.source_rule_id || n.rule_id].filter(Boolean).join(" / ");
+          return (human ? '<li>' : '<li class="mono">') + escapeHtml(where) +
+            (n.reason ? ': ' + escapeHtml(n.reason) : '') +
+            (n.status ? ' <span class="muted">' + escapeHtml(n.status) + '</span>' : '') + '</li>';
+        }).join("") + '</ul>';
+    }
+    var reattributed = res.body.reattributed || [];
+    if (reattributed.length) {
+      extra += '<h3>' + escapeHtml(human
+        ? "Checks moved to another rule (" + reattributed.length + ")"
+        : "reattributed (" + reattributed.length + ")") + '</h3>' +
+        '<p class="muted">' + escapeHtml(human
+          ? "The same arithmetic applies whichever rule prompted it, so these checks were attributed to a rule that does have a checker."
+          : "rule-independent computed plans moved to a paired rule with a judging agent") + '</p>' +
+        '<ul class="amendment-refusals">' + reattributed.map(function (r) {
+          return (human ? '<li>' : '<li class="mono">') +
+            escapeHtml((r.unit_id || "") + ": " + (r.from_rule_id || "") + " to " + (r.to_rule_id || "")) + '</li>';
+        }).join("") + '</ul>';
+    }
+    var unmatched = [];
+    docs.forEach(function (d) { (d.unmatched_units || []).forEach(function (u) { unmatched.push(d.document_id + ": " + u); }); });
+    if (unmatched.length) {
+      extra += '<h3>' + escapeHtml(human
+        ? "Passages no rule reached (" + unmatched.length + ")"
+        : "unmatched_units (" + unmatched.length + ")") + '</h3>' +
+        '<ul class="amendment-refusals">' + unmatched.map(function (u) {
+          return (human ? '<li>' : '<li class="mono">') + escapeHtml(u) + '</li>';
+        }).join("") + '</ul>';
+    }
+
+    var note = human
+      ? '<p class="muted">' + escapeHtml("Which rules the review checked against which passages, and which it set aside, with the reason recorded before any verdict was reached.") + '</p>'
+      : "";
+    holder.innerHTML = '<h2>' + escapeHtml(heading) + '</h2>' + note + body + extra;
     wireRuleLinks(holder);
   });
 }

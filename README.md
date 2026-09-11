@@ -57,7 +57,7 @@ chain stands, commit by commit, and what is owed).
 
 ### What's in this repository
 
-193 tracked files at the time of writing (source, configuration, documentation, and test
+202 tracked files at the time of writing (source, configuration, documentation, and test
 corpora; counted from `git ls-files`, and the same count from a tree walk with the
 not-shipped directories excluded). The exact number has gone stale within a day of being
 written twice, so read it as "about 190". No compiled bytecode, no run output, and no cache
