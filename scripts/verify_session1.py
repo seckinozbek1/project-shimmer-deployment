@@ -17805,6 +17805,13 @@ def check_213_gnn_candidate_finder():
     return _ok(shipped[1] + "; neutralise (a learned-relevance claim) FAILS, restore PASSES")
 
 
+def _json_load_or_none(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
 def _console_screens_body():
     """The executed body of check 214: the four routes the console audit found
     missing, and the console sections that consume them, on fixtures in tempdirs.
@@ -17991,6 +17998,50 @@ def _console_screens_body():
     if "not meant to reconcile" not in ui or "all phases" not in ui:
         return _fail("the pair caption must say the call count is all-phase and that the "
                      "two numbers are not meant to reconcile")
+
+    # THE SECOND COMMIT's six findings, each pinned where it can regress.
+    # 7: the reviewer view must not be handed a part's code location.
+    if "function harnessPartSummary(part, shared, human)" not in ui:
+        return _fail("harnessPartSummary must split on the view: it served both identically "
+                     "and showed a reviewer file paths and JSON field paths")
+    if "harnessPartSummary(part, shared, true)" not in ui:
+        return _fail("the reviewer branch must ask for the human summary")
+    head = ui[ui.index("function harnessPartSummary("):ui.index("function harnessHtml(")]
+    if head.index("declared_subjects") > head.index('"where"'):
+        return _fail("declared_subjects must be read BEFORE the generic field list, or the "
+                     "plain-language sentence the harness file supplies is unreachable")
+    # ...and excluding `where` from the reviewer view only helps if something else
+    # is there to say. Every shared part must carry a reviewer sentence, or four of
+    # the nine parts fall through to a bare "no summary recorded" on all 18 agents,
+    # which trades one defect for a quieter one.
+    _harness_cfg = _json_load_or_none(CONFIG / "agent_harness.json") or {}
+    for _name, _part in (_harness_cfg.get("shared_parts") or {}).items():
+        if not (isinstance(_part, dict) and _part.get("summary")):
+            return _fail("shared part %r carries no reviewer summary, so the reviewer view "
+                         "falls through to a placeholder on every agent" % (_name,))
+    # 8: the reviewer note must not drop the counts the developer note carries.
+    if "do not record which agent or run produced them" not in ui:
+        return _fail("the reviewer view of the store must state without_provenance, which "
+                     "qualifies its own claim that each provision names its agent")
+    # 10: both views carry the explanation AND the relation.
+    refusal = ui[ui.index("function amendmentRefusalsHtml("):ui.index("function contractViolationsHtml(")]
+    if refusal.count("r.explanation") < 2 or refusal.count("r.relation") < 2:
+        return _fail("the refusal section must carry the explanation and the relation in "
+                     "BOTH views; the developer view used to see less than the reviewer")
+    # 9: the pairing map has a reviewer view at all.
+    if "function loadPairs(runId, isPartial, human)" not in ui:
+        return _fail("loadPairs must take the view: it rendered in both and spoke only one")
+    if "loadPairs(run.run_id, isPartialReview, isHumanView())" not in ui:
+        return _fail("the pairing map's call site must pass the view")
+    # 5: the content the route serves and no view rendered.
+    for needle in ("Rules no checker judged", "Checks moved to another rule",
+                   "Passages no rule reached", "left undecided: "):
+        if needle not in ui:
+            return _fail("the pairing map must render %r, which the route serves and no "
+                         "view showed" % (needle,))
+    # 3: a provision id opens its own revision history.
+    if "function wireProvisionLinks(" not in ui or "/ontology/provisions/" not in ui:
+        return _fail("a provision id must open its history; supersession was invisible")
     return _ok("the console's missing screens: a finding's citation resolves to the "
                "passage it rests on (401 without a token, 404 for an id the run never "
                "cited), relations serve the merged pair with agreement and both reported "

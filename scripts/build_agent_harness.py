@@ -32,6 +32,13 @@ ROOT = Path(__file__).resolve().parent.parent
 SHARED_PARTS = {
     "constitution_by_default": {
         "decided": True,
+        # `summary` is the REVIEWER's sentence and `where` the developer's code
+        # location. The console audit found the reviewer view being handed the
+        # code location for every shared part, because these carried only
+        # `where`; a reviewer cannot use a file path and a function name.
+        "summary": "Every agent checks the constitution before it does anything "
+                   "else, on every call, with no exceptions and nothing to "
+                   "configure.",
         "where": "scripts/agent_wrapper.py, AgentWrapper.run_task: "
                  "check = self.check_constitution(situation), the first thing "
                  "run_task does, unconditionally, every call, every agent. "
@@ -41,6 +48,9 @@ SHARED_PARTS = {
     },
     "receive_format": {
         "decided": True,
+        "summary": "Every agent is handed the same shape of package: the "
+                   "governing rules, what the run is for, the material under "
+                   "review, the conventions in force and the recent history.",
         "where": "scripts/bus_reader.py, assemble_context(): builds the "
                  "package an agent receives (governance/constitution text, "
                  "run objectives, precedents, work_payload, convention "
@@ -49,6 +59,9 @@ SHARED_PARTS = {
     },
     "hand_format": {
         "decided": True,
+        "summary": "Every agent hands work back in one common shape, one flat "
+                   "item per finding, so anything downstream can read any "
+                   "agent's output the same way.",
         "where": "The canonical envelope (INFRA-037, CLAUDE.md): "
                  "{agent, doc_id, items[]}, one flat item per finding/output, "
                  "every value a scalar or array of scalars. Every agent posts "
@@ -57,6 +70,9 @@ SHARED_PARTS = {
     },
     "refire_condition_and_limit": {
         "decided": True,
+        "summary": "No agent is ever asked again after a failure. A reply that "
+                   "does not meet its contract is recorded and dropped, never "
+                   "retried, so nothing is silently attempted twice.",
         "where": "None. Confirmed by direct trace: pipeline.py's _run_one "
                  "calls wrapper.run_task exactly once (no while/for-retry "
                  "loop around the call); agent_wrapper.py's run_task itself "

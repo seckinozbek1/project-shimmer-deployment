@@ -4,18 +4,22 @@
   "shared_parts": {
     "constitution_by_default": {
       "decided": true,
+      "summary": "Every agent checks the constitution before it does anything else, on every call, with no exceptions and nothing to configure.",
       "where": "scripts/agent_wrapper.py, AgentWrapper.run_task: check = self.check_constitution(situation), the first thing run_task does, unconditionally, every call, every agent. Never matched or selected: the same constitution.check() call runs regardless of which agent or which convention is in scope."
     },
     "receive_format": {
       "decided": true,
+      "summary": "Every agent is handed the same shape of package: the governing rules, what the run is for, the material under review, the conventions in force and the recent history.",
       "where": "scripts/bus_reader.py, assemble_context(): builds the package an agent receives (governance/constitution text, run objectives, precedents, work_payload, convention registry, reference excerpts, recent bus context), called from AgentWrapper.run_task for every agent identically."
     },
     "hand_format": {
       "decided": true,
+      "summary": "Every agent hands work back in one common shape, one flat item per finding, so anything downstream can read any agent's output the same way.",
       "where": "The canonical envelope (INFRA-037, CLAUDE.md): {agent, doc_id, items[]}, one flat item per finding/output, every value a scalar or array of scalars. Every agent posts this same shape; consumers read by reference off the append-only bus."
     },
     "refire_condition_and_limit": {
       "decided": true,
+      "summary": "No agent is ever asked again after a failure. A reply that does not meet its contract is recorded and dropped, never retried, so nothing is silently attempted twice.",
       "where": "None. Confirmed by direct trace: pipeline.py's _run_one calls wrapper.run_task exactly once (no while/for-retry loop around the call); agent_wrapper.py's run_task itself has no retry loop either (confirmed: no genuine while statement in its body, only a rate-limit backoff inside call_claude/call_gpt for a 429/529 transport error, a different thing from a contract violation). A CONTRACT_VIOLATION is posted to the bus and the item is dropped (agent_wrapper.py's _items_for skips any result with ok=False); it is never re-attempted. Re-fire limit: 0. This is a real, decided answer, not an unresolved part: the code decides it by having no retry mechanism at all."
     }
   },
