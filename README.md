@@ -80,9 +80,10 @@ shimmer-deployment/
 │                                          (scripts/verify_session1.py), the convention
 │                                          assignment, the call-evidence recorder and the
 │                                          false-negative classifier, the harness builder,
-│                                          the ontology store, its reader and the relation
-│                                          extractor, harness/, sensitivity_layer/, ui/ (the
-│                                          console, one HTML file plus its vendored typeface)
+│                                          the ontology store, its reader, the relation
+│                                          extractor and the conflict memory, harness/,
+│                                          sensitivity_layer/, ui/ (the console, one HTML
+│                                          file plus its vendored typeface)
 ├── corpus_ingest/                        the external corpus ingestion contract, validator,
 │                                          and its own test fixtures
 ├── config/                               governance and compiled config (constitution,
@@ -916,6 +917,25 @@ it does **not** say they agree or conflict, and it is not evidence for any findi
 proves both mechanisms on fixtures, and the operator scores them on the long-range corpus
 after the move before anything relies on either.
 
+**When the ontology and a rule disagree, the pair is refused** (ontology chain, job 3).
+`scripts/ontology_conflicts.py` implements the operator's decision, and the wording matters
+because every part of it is a rule about what NOT to do. A conflict is the narrow structural
+case where the store remembers one governing rule for a provision and the current run would
+apply another; nothing semantic is inferred, and the module compares identifiers, never
+meanings. In the run that meets it the pair produces **nothing**: not a guess, not the
+store's answer, not the rule's, recorded as refused with both sides named. The refusals are
+put to the operator together at the end of the run. The next run applies their answers, and
+the answer is written into the ontology under a stable conflict id, so **the same conflict is
+never put to the operator twice**; a conflict whose sides have changed gets a different id
+and is correctly asked again, because it is a different question. Three answers are
+recognised, not two: the rule wins, the store wins, or keep refusing, since "keep refusing"
+is a real decision and is not the same as never having answered. An unrecognised answer is
+refused rather than stored. The override rate (answers where the rule won over the store's
+memory) is tracked and served by `GET /ontology/conflicts`, carrying its own caveat in the
+response body: **at single-operator volume it is not statistically meaningful** and must
+never be read as a quality measure. **Built, not measured**: no run has ever produced a
+conflict, because the store is empty, so gate check 212 proves the whole cycle on fixtures.
+
 Its storage layer is `scripts/ontology_store.py` (night chain W7, the ontology foundations),
 and four things are decided there. Scope: every record carries the scope it was written
 under and a store opened under one scope returns nothing written under another, enforced on
@@ -1630,6 +1650,7 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `GET` | `/harness` | token | The nine-part agent harness (night W4), one entry per agent, as `scripts/build_agent_harness.py` generated it into `config/agent_harness.json` (or `SHIMMER_AGENT_HARNESS`): `agents`, `shared_parts`, `part_names`, and `unresolved` (per agent, the parts still `decided: false`, each carrying its own `unresolved_because` in `agents`), so the console's Agents page shows an undecided part as undecided rather than omitting it. Also `agent_count` and `unresolved_part_count` (18 and 18 for the shipped harness: every agent's ontology part is undecided until an agent reads the store). Not run-scoped. `404` with a distinct detail when the harness has not been built on this server; `500` with detail "agent harness unreadable" when the file exists but does not parse. |
 | `GET` | `/ontology` | token | ontology chain job 1: the first read path the ontology store has ever had. The store under `ontology/stores/` has been written at the end of every run since build B1 and read back by nothing; this route answers the one question it can answer, which agent produced which provision under which rule, in which run, at which revision. Returns `scope`, `provision_count`, `stub_count`, `without_provenance`, `superseded_in_live`, `log_events`, counts by `agents` / `rules` / `runs` over the whole scope, and `provisions`, a per-provision list carrying identifiers and provenance ONLY, never a provision's own text (that boundary is `ontology_reader.SUMMARY_FIELDS`, not a convention this route applies by hand). Not run-scoped: the store is cross-run by construction, the same reasoning `/harness` and `/rules/{rule_id}` already use. An EMPTY store is `200` with zero counts and an empty list, not a `404` and not an error, which is the state of every store in this repository today. What this reading is good for, and what it is not, is in section G. |
 | `GET` | `/ontology/provisions/{provision_id:path}` | token | One provision's every revision in the default scope, oldest first, as provenance summaries: what makes the storage layer's supersession (built at night W7, shown nowhere) legible to a human. The id is the capture hook's composite `<document_id>::<ref_id>`, so it carries a colon pair and is matched as a path parameter. `404`, not an empty list, when the scope holds no such id: "this store has never held that provision" and "that provision has one revision" are different facts and a caller must be able to tell them apart. |
+| `GET` | `/ontology/conflicts` | token | ontology chain job 3: which ontology-versus-rule conflicts the operator has answered, how, and in which run, plus `override_rate`. A conflict is the narrow structural case where the store remembers one governing rule for a provision and the current run would apply another; in the run that meets it the pair is REFUSED and never guessed, the refusals are put to the operator together at the end, and the answer is written into the ontology so the same conflict is never put to them twice. `override_rate` counts answers where the current rule won over the store's memory and carries its own caveat in the response body, not only in documentation: at single-operator volume the rate is not statistically meaningful and must never be read as a quality measure. It is `null`, never `0.0`, when nothing has been answered, because "no answers yet" and "never overrode" are different facts. Not run-scoped; a store with no answers is a `200` with an empty list, which is every store today. |
 | `GET` | `/rules/{rule_id}` | token | console fresh-eyes addition: one rule's own text as the operator wrote it, from the current `config/convention_registry.json`. Not run-scoped, a rule's text does not vary per run. Matches by either id: the registry's own (`CONV-007`) or the operator's own (`CONV-A02`). Returns `id`, `source_rule_id`, `rule` (the operator's own text), `severity`, `action`, `source_file`, `source_location`. `404` with a distinct `detail` ("no rule with this id in the current registry") when the current registry, which regenerates at BOOT and can differ from whatever was in force when a citing run executed, has no such rule; that mismatch is itself informative, not hidden behind a generic not-found. |
 | `POST` | `/runs/{run_id}/cancel` | token | api STEP B2: stops a run. A queued job is removed before it ever starts; a running job's subprocess is terminated (then killed). Both land on `state="cancelled"`. `409` if the run is already in a terminal state (including already cancelled), refused with a reason naming its actual state, not a silent no-op. `404` for a malformed or unknown `run_id`. Deletes nothing on disk. |
 | `POST` | `/runs/{run_id}/approval` | token | api STEP B3: records a human's decision on the run's pending governed question. Body `decision` + `rationale`; writes `<run>/audit/approval_decision.json` atomically and **nothing else**, never evaluates whether the decision is an approval (that stays entirely with `model_registry`/`constitution_guard`, read back by the pipeline subprocess's own poll loop). `202`, never `200`: the response carries `recorded: true` and the run's `run_state` as it stood the instant *before* the write, and never claims the decision was approved, only that it was recorded. `404` for a malformed `run_id` or one with no pending approval; `409` if this approval was already answered (a decision file already exists); `400` if `decision` is missing or empty. This is the sole route that answers a pending approval (api STEP B5 unified it with the retired `POST /approvals/{run_id}`, which wrote the same file but returned `200` with a thinner body and no repeat-answer guard). |
@@ -2061,7 +2082,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**212** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**213** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2089,7 +2110,7 @@ something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 212 checks on an empty checkout would be proving nothing about those
+A gate that passed all 213 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Two
 more checks depend on the machine rather than the tree: check 193 loads one of the
 local-profile models with the network blocked at the socket and fails until the weights are
@@ -2146,10 +2167,11 @@ with the per-plan judging agent; (200 to 202) the ontology store's scope, proven
 track; (203) the console current with the chain; (204 and 205) call evidence reconstructed
 from disk and the four-class false-negative classifier; (206 and 207) the convention
 distribution on the paired path and the three recording gaps; (208 and 209) longest-match
-labels and the declared-scope absence path; (210) the ontology store's first reader and
-(211) the deterministic relation baseline, both proved on fixture records because every
-store in this repository is empty. Everything from 186 on was built on 10 and 11 September
-2026 and is proved here on fixtures only.
+labels and the declared-scope absence path; (210) the ontology store's first reader,
+(211) the deterministic relation baseline and (212) ontology-versus-rule conflicts with the
+operator's remembered answers, all three proved on fixture records because every store in
+this repository is empty. Everything from 186 on was built on 10 and 11 September 2026 and
+is proved here on fixtures only.
 
 ---
 

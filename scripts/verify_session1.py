@@ -17230,6 +17230,182 @@ def check_211_relations_between_provisions():
                             "FAILS, restore PASSES")
 
 
+def _ontology_conflict_body():
+    """The executed body of check 212: the whole conflict cycle on a fixture store.
+    Detect, refuse, put to the operator, answer, apply next run, never ask twice, and
+    the override rate with its caveat. No model, no run.
+
+    Factored out so the check can run it as shipped and with the never-ask-twice
+    memory neutralised."""
+    import tempfile
+    import ontology_store as _os_mod
+    import ontology_conflicts as _oc
+    import ontology_reader as _reader
+
+    d = Path(tempfile.mkdtemp(prefix="shimmer_ontology_conflict_"))
+    live = d / "provisions.jsonl"
+    store = _os_mod.ProvisionStore(live_path=live, scope=_os_mod.DEFAULT_SCOPE)
+    t0 = _os_mod.now_iso()
+    store.append([
+        {"node": "Provision", "id": "zqdoc::REF-0001", "document_id": "zqdoc",
+         "ref_id": "REF-0001", "convention_ref": "CONV-005",
+         "provenance": _os_mod.provenance(time=t0, agent="AGENT_ALPHA", run="runA")},
+        {"node": "Provision", "id": "zqdoc::REF-0002", "document_id": "zqdoc",
+         "ref_id": "REF-0002", "convention_ref": "CONV-007",
+         "provenance": _os_mod.provenance(time=t0, agent="AGENT_ALPHA", run="runA")},
+    ])
+
+    # What this run would apply: one disagreement, one agreement, one provision the
+    # store has never seen. Only the first is a conflict.
+    current = {"zqdoc::REF-0001": "CONV-009",
+               "zqdoc::REF-0002": "CONV-007",
+               "zqdoc::REF-0404": "CONV-001"}
+    conflicts = _oc.detect_conflicts(store.current(), current)
+    if len(conflicts) != 1:
+        return _fail("exactly one of the three should conflict: %r" % (conflicts,))
+    c = conflicts[0]
+    if c["provision_id"] != "zqdoc::REF-0001" or c["store_rule"] != "CONV-005" \
+            or c["rule_id"] != "CONV-009":
+        return _fail("the conflict must name both sides: %r" % (c,))
+    if _oc.detect_conflicts(store.current(), {"zqdoc::REF-0002": "CONV-007"}):
+        return _fail("an agreeing pair must not be a conflict")
+    if _oc.detect_conflicts(store.current(), {"zqdoc::REF-0404": "CONV-001"}):
+        return _fail("a provision the store has never seen is not a conflict; an absent "
+                     "memory is not a disagreement")
+
+    # Run 1: nothing is answered, so the pair is REFUSED and listed for the operator.
+    applied, to_ask = _oc.apply_resolutions(conflicts, _oc.resolutions_in(store))
+    if applied or len(to_ask) != 1:
+        return _fail("with nothing answered the pair must be refused and asked: %r, %r"
+                     % (applied, to_ask))
+    refusals = _oc.refusal_records(to_ask, run_id="runB")
+    if len(refusals) != 1 or "CONV-005" not in refusals[0]["reason"] \
+            or "CONV-009" not in refusals[0]["reason"]:
+        return _fail("a refusal must name both sides and guess neither: %r" % (refusals,))
+
+    # The operator answers once.
+    by_id = {x["conflict_id"]: x for x in conflicts}
+    summary, rejected = _oc.write_resolutions(store, {c["conflict_id"]: _oc.ANSWER_RULE},
+                                              run_id="runB", conflicts_by_id=by_id)
+    if summary["written"] != 1 or rejected:
+        return _fail("the operator's answer should have been written once: %r, %r"
+                     % (summary, rejected))
+
+    # Run 2: the SAME conflict is applied from memory and never asked again.
+    applied2, to_ask2 = _oc.apply_resolutions(
+        _oc.detect_conflicts(store.current(), current), _oc.resolutions_in(store))
+    if to_ask2:
+        return _fail("an answered conflict must never be put to the operator twice: %r"
+                     % (to_ask2,))
+    if len(applied2) != 1 or applied2[0]["answer"] != _oc.ANSWER_RULE:
+        return _fail("the answered conflict must be applied from the store: %r" % (applied2,))
+    if applied2[0]["effective_rule"] != "CONV-009" or not applied2[0]["produces_finding"]:
+        return _fail("answer 'rule' means the current rule wins and a finding is produced: %r"
+                     % (applied2[0],))
+
+    # 'refuse' is a real answer, distinct from never having answered: it is applied,
+    # not asked, and it produces nothing.
+    store2 = _os_mod.ProvisionStore(live_path=d / "second.jsonl", scope=_os_mod.DEFAULT_SCOPE)
+    store2.append([
+        {"node": "Provision", "id": "zqdoc::REF-0001", "document_id": "zqdoc",
+         "ref_id": "REF-0001", "convention_ref": "CONV-005",
+         "provenance": _os_mod.provenance(time=t0, agent="AGENT_ALPHA", run="runA")}])
+    conflicts2 = _oc.detect_conflicts(store2.current(), {"zqdoc::REF-0001": "CONV-009"})
+    _oc.write_resolutions(store2, {conflicts2[0]["conflict_id"]: _oc.ANSWER_REFUSE},
+                          run_id="runB",
+                          conflicts_by_id={x["conflict_id"]: x for x in conflicts2})
+    applied3, to_ask3 = _oc.apply_resolutions(conflicts2, _oc.resolutions_in(store2))
+    if to_ask3 or len(applied3) != 1:
+        return _fail("'refuse' is an answer: it must be applied, not re-asked: %r, %r"
+                     % (applied3, to_ask3))
+    if applied3[0]["produces_finding"] or applied3[0]["effective_rule"] is not None:
+        return _fail("'refuse' must produce nothing at all: %r" % (applied3[0],))
+
+    # A conflict whose SIDES changed is a different question, correctly re-asked.
+    changed = _oc.detect_conflicts(store.current(), {"zqdoc::REF-0001": "CONV-123"})
+    _a, to_ask4 = _oc.apply_resolutions(changed, _oc.resolutions_in(store))
+    if len(to_ask4) != 1:
+        return _fail("a conflict with different sides is a different question and must be "
+                     "asked: %r" % (to_ask4,))
+
+    # An unrecognised answer is refused, never written: obeying it, or storing it, would
+    # make a later run treat an unrecognised instruction as an answer.
+    bad, bad_rejected = _oc.write_resolutions(store, {"conflict-nonesuch": "maybe"},
+                                              run_id="runC", conflicts_by_id={})
+    if bad["written"] != 0 or len(bad_rejected) != 1:
+        return _fail("an unrecognised answer must be refused, not written: %r, %r"
+                     % (bad, bad_rejected))
+
+    # The override rate, and its caveat, which no caller can drop because it travels
+    # inside the return value.
+    rate = _oc.override_rate(store)
+    if rate["answered"] != 1 or rate["overrode_store"] != 1 or rate["override_rate"] != 1.0:
+        return _fail("the override rate must count answers against the store: %r" % (rate,))
+    if "not statistically meaningful" not in (rate.get("caveat") or ""):
+        return _fail("the override rate must carry its own caveat in the return value")
+    empty_store = _os_mod.ProvisionStore(live_path=d / "empty.jsonl",
+                                         scope=_os_mod.DEFAULT_SCOPE)
+    if _oc.override_rate(empty_store)["override_rate"] is not None:
+        return _fail("with nothing answered the rate must be None, never 0.0: 'no answers "
+                     "yet' and 'never overrode' are different facts")
+
+    # Resolutions must not contaminate the other two readers.
+    if _reader.provenance_summary(store)["provision_count"] != 2:
+        return _fail("resolutions leaked into the provision count: %r"
+                     % (_reader.provenance_summary(store)["provision_count"],))
+    if _reader.relation_summary(store)["relation_count"] != 0:
+        return _fail("resolutions leaked into the relation count")
+    return _ok("ontology-versus-rule conflicts: a disagreement about the same provision is "
+               "detected and REFUSED in that run with both sides named and neither guessed, "
+               "an agreeing pair and an unseen provision are not conflicts, the operator's "
+               "answer is written into the ontology and applied by the next run so the same "
+               "conflict is never asked twice, 'refuse' is a real answer that produces "
+               "nothing, a conflict whose sides changed is re-asked as the different "
+               "question it is, an unrecognised answer is refused rather than stored, and "
+               "the override rate carries its own not-meaningful-at-this-volume caveat "
+               "(None, never 0.0, when nothing is answered)")
+
+
+def check_212_ontology_conflicts_and_operator_answers():
+    """ontology chain job 3 (2026-09-11). BUILT, NOT MEASURED: no run has ever
+    produced a conflict, because the store is empty. Proved on fixtures only.
+
+    The operator's decision this implements: when the ontology conflicts with a rule
+    the pair is refused in that run, never guessed; the refusals are listed and put to
+    the operator together; the next run applies their answers; the answer is written to
+    the ontology so the same conflict is never put to them twice; and the override rate
+    is tracked with the caveat that at single-operator volume it is not statistically
+    meaningful.
+
+    The reading path is real and exercised here, not a function nobody calls: detection
+    reads the scoped store, resolutions are written through it and read back by a later
+    run, and the three node types (Provision, Relation, Resolution) share one scope
+    without contaminating each other's counts.
+
+    Neutralise-and-restore: with resolutions_in replaced by one that always reports no
+    memory, an answered conflict is put to the operator a second time and the body must
+    FAIL; restored, PASS."""
+    import ontology_conflicts as _oc
+
+    shipped = _ontology_conflict_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _oc.resolutions_in
+    _oc.resolutions_in = lambda store: {}          # the defect: no memory of any answer
+    try:
+        neutralised = _ontology_conflict_body()
+    finally:
+        _oc.resolutions_in = original
+    if neutralised[0] != "FAIL":
+        return _fail("with the resolution memory neutralised the body still passed (%r)"
+                     % (neutralised,))
+    restored = _ontology_conflict_body()
+    if restored[0] != "PASS":
+        return _fail("after restoring the resolution memory the body no longer passes: %r"
+                     % (restored,))
+    return _ok(shipped[1] + "; neutralise (no memory of an answer) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -17464,6 +17640,8 @@ CHECKS = [
      check_210_the_ontology_store_has_a_reader),
     ("211 relations between provisions, deterministic (ontology chain, job 2)",
      check_211_relations_between_provisions),
+    ("212 ontology conflicts and the operator's answers (ontology chain, job 3)",
+     check_212_ontology_conflicts_and_operator_answers),
 ]
 
 

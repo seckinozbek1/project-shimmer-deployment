@@ -2410,6 +2410,48 @@ async def ontology_provision_history(provision_id: str):
     return {"id": provision_id, "scope": store.scope, "revisions": rows}
 
 
+@app.get("/ontology/conflicts", dependencies=[Depends(verify_token)])
+async def ontology_conflicts_route():
+    """ontology chain job 3: the conflicts the operator has answered, and the override
+    rate, read from the ontology store.
+
+    The operator's decision this serves: when the ontology conflicts with a rule the
+    pair is refused in that run and never guessed, the refusals are put to the operator
+    together at the end, the next run applies their answers, and the answer is written
+    to the ontology so the same conflict is never put to them twice. This route is the
+    read side of that memory: which conflicts have been answered, how, and in which run.
+
+    `override_rate` counts answers where the current rule won over the store's memory.
+    It carries its own caveat in the response body rather than in documentation alone,
+    because at single-operator volume the rate is not statistically meaningful and must
+    never be read as a quality measure. It is `null`, never `0.0`, when nothing has been
+    answered: "no answers yet" and "never overrode" are different facts.
+
+    Not run-scoped: the memory is cross-run by construction, the same as the rest of the
+    store. A store with no answers is a `200` with an empty list, which is every store
+    today."""
+    import ontology_conflicts as _oc
+
+    store = _oc.open_store()
+    try:
+        resolutions = _oc.resolutions_in(store)
+        rate = _oc.override_rate(store)
+    except OSError:
+        raise HTTPException(status_code=500, detail="ontology store unreadable")
+    answered = [{
+        "conflict_id": r.get("conflict_id"),
+        "answer": r.get("answer"),
+        "provision_id": r.get("provision_id"),
+        "store_rule": r.get("store_rule"),
+        "rule_id": r.get("rule_id"),
+        "answered_in_run": r.get("answered_in_run"),
+        "answered_at": r.get("answered_at"),
+        "revision": r.get("revision"),
+    } for r in sorted(resolutions.values(), key=lambda x: str(x.get("answered_at") or ""))]
+    return {"scope": store.scope, "answered_count": len(answered),
+            "answered": answered, "override_rate": rate}
+
+
 @app.get("/rules/{rule_id}", dependencies=[Depends(verify_token)])
 async def rule_text(rule_id: str):
     """console fresh-eyes addition: a rule identifier shown anywhere on the
