@@ -16842,6 +16842,203 @@ def check_209_declared_scope_and_python_first_absence():
     return _ok(shipped[1] + "; neutralise (no absence plans) FAILS, restore PASSES")
 
 
+_ONTOLOGY_EMPTY_GUARD = 'if (!body || !body.provision_count) return "";'
+
+
+def _ontology_reader_body():
+    """The executed body of check 210: the ontology store's read path, end to end,
+    on a fixture store in a tempdir. The real storage layer writes it, the real
+    reader summarises it, and the real FastAPI app serves it. Never the
+    repository's own ontology/stores/.
+
+    Factored out so the check can run it as shipped and with the scope filter
+    neutralised."""
+    import os as _os
+    import tempfile
+    import ontology_store as _os_mod
+    import ontology_reader as _reader
+    from fastapi.testclient import TestClient
+
+    d = Path(tempfile.mkdtemp(prefix="shimmer_ontology_reader_"))
+    live = d / "provisions.jsonl"
+    secret_text = "a passage that must never reach a provenance summary"
+
+    # An EMPTY store must read as empty, not as an error: that is every store today.
+    empty_store = _os_mod.ProvisionStore(live_path=live, scope=_os_mod.DEFAULT_SCOPE)
+    empty = _reader.provenance_summary(empty_store)
+    if empty["provision_count"] != 0 or empty["provisions"] != []:
+        return _fail("an empty store must summarise as zero provisions: %r" % (empty,))
+    if "EMPTY" not in _reader.render_text(empty):
+        return _fail("the text rendering of an empty store must say so plainly")
+
+    # Two provisions in the default scope, one a stub, one record in ANOTHER scope
+    # that must never be visible, and a supersession of the first.
+    t0 = _os_mod.now_iso()
+    store = _os_mod.ProvisionStore(live_path=live, scope=_os_mod.DEFAULT_SCOPE)
+    store.append([
+        {"node": "Provision", "id": "zqdoc::REF-0001", "document_id": "zqdoc",
+         "ref_id": "REF-0001", "convention_ref": "CONV-001", "stub": False,
+         "original_text": secret_text,
+         "provenance": _os_mod.provenance(time=t0, agent="AGENT_ALPHA", run="runA")},
+        {"node": "Provision", "id": "zqdoc::REF-0002", "document_id": "zqdoc",
+         "ref_id": "REF-0002", "convention_ref": "CONV-002", "stub": True,
+         "provenance": _os_mod.provenance(time=t0, agent="AGENT_BETA", run="runA")},
+    ])
+    store.append([
+        {"node": "Provision", "id": "zqdoc::REF-0001", "document_id": "zqdoc",
+         "ref_id": "REF-0001", "convention_ref": "CONV-001", "stub": False,
+         "provenance": _os_mod.provenance(time=_os_mod.now_iso(), agent="AGENT_GAMMA",
+                                          run="runB")},
+    ])
+    other = _os_mod.ProvisionStore(live_path=live, scope="zq_other_scope")
+    other.append([
+        {"node": "Provision", "id": "zqdoc::REF-0009", "document_id": "zqdoc",
+         "ref_id": "REF-0009", "convention_ref": "CONV-009", "stub": False,
+         "provenance": _os_mod.provenance(time=t0, agent="AGENT_OTHER", run="runZ")},
+    ])
+
+    summary = _reader.provenance_summary(store)
+    if summary["provision_count"] != 2:
+        return _fail("the default scope holds two current provisions, the reader saw %r"
+                     % (summary["provision_count"],))
+    if summary["stub_count"] != 1:
+        return _fail("one fixture is a stub; the reader counted %r" % (summary["stub_count"],))
+    if summary["superseded_in_live"] != 1:
+        return _fail("one revision was superseded; the reader counted %r"
+                     % (summary["superseded_in_live"],))
+    agents = set(a["agent"] for a in summary["agents"])
+    if agents != {"AGENT_GAMMA", "AGENT_BETA"}:
+        return _fail("the summary must count the CURRENT revision's agent only: %r" % (agents,))
+    if "AGENT_OTHER" in agents:
+        return _fail("a record written under another scope reached this scope's summary")
+    rules = set(r["convention_ref"] for r in summary["rules"])
+    if rules != {"CONV-001", "CONV-002"}:
+        return _fail("the summary must count by rule: %r" % (rules,))
+    if set(r["run"] for r in summary["runs"]) != {"runA", "runB"}:
+        return _fail("the summary must count by run")
+    if secret_text in json.dumps(summary):
+        return _fail("a provision's own text reached the provenance summary; the reader "
+                     "carries identifiers and provenance only")
+    if secret_text in _reader.render_text(summary):
+        return _fail("a provision's own text reached the text rendering")
+
+    history = _reader.provision_history(store, "zqdoc::REF-0001")
+    if [h["revision"] for h in history] != [1, 2]:
+        return _fail("history must return both revisions oldest first: %r" % (history,))
+    if [h["agent"] for h in history] != ["AGENT_ALPHA", "AGENT_GAMMA"]:
+        return _fail("history must carry each revision's own agent: %r" % (history,))
+
+    # the routes, through the real app, reading the fixture store
+    saved = {k: _os.environ.get(k) for k in ("SHIMMER_TOKEN_HASH",)}
+    token = "ontology-reader-token"
+    _os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(token.encode()).hexdigest()
+    original_dir = _reader.OGE_STORES_DIR
+    try:
+        _reader.OGE_STORES_DIR = d
+        sys.modules.pop("server", None)
+        import server
+        try:
+            client = TestClient(server.app)
+            headers = {"Authorization": "Bearer " + token}
+            r = client.get("/ontology")
+            if r.status_code != 401:
+                return _fail("GET /ontology without a token returned %r, not 401"
+                             % (r.status_code,))
+            r = client.get("/ontology", headers=headers)
+            if r.status_code != 200:
+                return _fail("GET /ontology returned %r: %s" % (r.status_code, r.text[:200]))
+            body = r.json()
+            if body.get("provision_count") != 2:
+                return _fail("GET /ontology served %r provisions, expected the fixture's 2"
+                             % (body.get("provision_count"),))
+            if secret_text in r.text:
+                return _fail("GET /ontology served a provision's own text")
+            r = client.get("/ontology/provisions/zqdoc::REF-0001", headers=headers)
+            if r.status_code != 200:
+                return _fail("the history route returned %r: %s" % (r.status_code, r.text[:200]))
+            revs = r.json().get("revisions") or []
+            if [x["revision"] for x in revs] != [1, 2]:
+                return _fail("the history route did not serve both revisions: %r" % (revs,))
+            r = client.get("/ontology/provisions/zqdoc::REF-4040", headers=headers)
+            if r.status_code != 404:
+                return _fail("an unknown provision id must be 404, got %r" % (r.status_code,))
+        finally:
+            sys.modules.pop("server", None)
+    finally:
+        _reader.OGE_STORES_DIR = original_dir
+        for k, v in saved.items():
+            if v is None:
+                _os.environ.pop(k, None)
+            else:
+                _os.environ[k] = v
+
+    ui = (SCRIPTS / "ui" / "console.html").read_text(encoding="utf-8")
+    for needle in ("function ontologyStoreHtml(", "ontology-store-holder",
+                   'apiJson("/ontology")'):
+        if needle not in ui:
+            return _fail("console.html no longer carries %r: the ontology section would be "
+                         "gone from the console while the route still serves it" % (needle,))
+    if _ONTOLOGY_EMPTY_GUARD not in ui:
+        return _fail("the ontology console section must disappear when the store is empty")
+    return _ok("the ontology store has a reader: an empty store reads as empty, a filled one "
+               "summarises by agent, rule and run over the CURRENT revision only, another "
+               "scope's records are never visible, a provision's own text never leaves the "
+               "reader, history returns every revision oldest first, GET /ontology and "
+               "GET /ontology/provisions/{id} serve them (401 without a token, 404 for an "
+               "unknown id), and console.html carries the disappears-when-empty section")
+
+
+def check_210_the_ontology_store_has_a_reader():
+    """ontology chain job 1 (2026-09-11). BUILT, NOT MEASURED: the store is empty
+    in this repository (provisions.jsonl is zero bytes) because the only writer is
+    run-end capture and no run has been made since the store was scoped. Every
+    assertion here runs on fixture records in a tempdir, never the real store. The
+    first real content arrives on the first run after the move to a GPU box;
+    nothing here is known to be useful on real content, only correct on fixtures.
+
+    What is proved: the store, written since build B1 and read by nothing, now has
+    a read path a human reaches three ways (the reader module's CLI, GET /ontology
+    and GET /ontology/provisions/{id}, and the console's Agents page); it answers
+    provenance and only provenance (a provision's own text never leaves the
+    reader); the scope filter holds on the read path; supersession is legible as a
+    revision history; and an empty store is an honest empty answer, not an error.
+
+    Neutralise-and-restore: with ProvisionStore.current replaced by one that
+    ignores the scope, another scope's record reaches this scope's summary and the
+    body must FAIL; restored, PASS."""
+    import ontology_store as _os_mod
+
+    shipped = _ontology_reader_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _os_mod.ProvisionStore.current
+
+    def _scopeless_current(self):
+        best = {}
+        for r in _os_mod._read_jsonl(self.live_path):      # every scope, the defect
+            pid = r.get("id")
+            if not pid:
+                continue
+            prev = best.get(pid)
+            if prev is None or int(r.get("revision") or 0) > int(prev.get("revision") or 0):
+                best[pid] = r
+        return [best[k] for k in sorted(best)]
+
+    _os_mod.ProvisionStore.current = _scopeless_current
+    try:
+        neutralised = _ontology_reader_body()
+    finally:
+        _os_mod.ProvisionStore.current = original
+    if neutralised[0] != "FAIL":
+        return _fail("with the scope filter neutralised the body still passed (%r)"
+                     % (neutralised,))
+    restored = _ontology_reader_body()
+    if restored[0] != "PASS":
+        return _fail("after restoring the scope filter the body no longer passes: %r"
+                     % (restored,))
+    return _ok(shipped[1] + "; neutralise (scope filter ignored) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -17072,6 +17269,8 @@ CHECKS = [
      check_208_longest_match_labels_in_needed_fields),
     ("209 declared scope and Python-first absence (D, option 2)",
      check_209_declared_scope_and_python_first_absence),
+    ("210 the ontology store has a reader (ontology chain, job 1)",
+     check_210_the_ontology_store_has_a_reader),
 ]
 
 
