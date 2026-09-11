@@ -57,10 +57,10 @@ chain stands, commit by commit, and what is owed).
 
 ### What's in this repository
 
-178 tracked files at the time of writing (source, configuration, documentation, and test
+190 tracked files at the time of writing (source, configuration, documentation, and test
 corpora; counted from `git ls-files`, and the same count from a tree walk with the
 not-shipped directories excluded). The exact number has gone stale within a day of being
-written twice, so read it as "about 180". No compiled bytecode, no run output, and no cache
+written twice, so read it as "about 190". No compiled bytecode, no run output, and no cache
 directory is tracked; those are excluded by `.gitignore` and, if present locally, are never
 committed.
 
@@ -890,8 +890,8 @@ so a rule that never produced a provision is visible), and the plain fact that t
 no longer write-only, since a store nobody can inspect is indistinguishable from one that is
 silently broken. What it is **not**: it is not retrieval, not relevance, and not a signal any
 review draws on; it reads the provenance of decisions already made. The long-range case is
-untouched by it, because that needs relations between provisions, which the store does not
-hold. The reader carries identifiers and provenance only and never a provision's own text.
+untouched by it, because that needs relations between provisions, which job 2 adds below and
+which this reader does not itself produce. The reader carries identifiers and provenance only and never a provision's own text.
 **Built, not measured**: every store in this repository is empty (`provisions.jsonl` is zero
 bytes), since the only writer is run-end capture and no run has been made since the store was
 scoped, so gate check 210 proves the read path on fixtures alone. The first real content
@@ -908,13 +908,14 @@ containment and **refuses an ambiguity** rather than picking one, because a wron
 worse than none. And embedding similarity over units of the same document, with the ranker
 **injected** rather than imported, so the module never depends on an embedding store and
 never loads a model; only pairs at least two units apart are considered, since a unit is
-trivially similar to its neighbour and that case is already covered. Relations are written
-into the same scoped store provisions use, with a stable composite id so re-extraction
+trivially similar to its neighbour and that case is already covered. Relations are shaped as records
+for the same scoped store provisions use, with a stable composite id so re-extraction
 supersedes rather than duplicates, and read back by `relation_summary`, which keeps the two
 mechanisms distinguishable by method. A relation says one unit names, or reads like, another;
 it does **not** say they agree or conflict, and it is not evidence for any finding.
-**Built, not measured, and nothing in a review reads a relation today**: gate check 211
-proves both mechanisms on fixtures, and the operator scores them on the long-range corpus
+**Built, not measured, not wired into a run, and nothing in a review reads a relation
+today**: no phase of the pipeline imports the extractor, so no run produces or stores a
+relation; gate check 211 proves both mechanisms on fixtures, and the operator scores them on the long-range corpus
 after the move before anything relies on either.
 
 **When the ontology and a rule disagree, the pair is refused** (ontology chain, job 3).
@@ -933,8 +934,10 @@ is a real decision and is not the same as never having answered. An unrecognised
 refused rather than stored. The override rate (answers where the rule won over the store's
 memory) is tracked and served by `GET /ontology/conflicts`, carrying its own caveat in the
 response body: **at single-operator volume it is not statistically meaningful** and must
-never be read as a quality measure. **Built, not measured**: no run has ever produced a
-conflict, because the store is empty, so gate check 212 proves the whole cycle on fixtures.
+never be read as a quality measure. **Built, not measured, and not yet wired into a run**: no phase of the pipeline calls this
+module, so no run detects, refuses or applies a conflict today, and the store is empty
+besides; the call site is one place in phase 8 beside the existing capture. Gate check 212
+proves the whole cycle on fixtures.
 
 **The GNN as a candidate finder** (ontology chain, job 4) is the second half of the relation
 work, built beside the deterministic baseline and not instead of it.
@@ -1079,14 +1082,20 @@ trailing CR before setting the executable bit); no local model could load becaus
 corpus file the image does not ship (its corpus assertions now run where the file exists and
 are named absent otherwise, and its proof runs on a synthetic heading every tree has).
 
-Measured inside the rebuilt unbaked image, network blocked, host cache mounted:
-`PASS=204 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=210` in 873 s. The four failures are the
-source-only ones section L lists (01, 28, 31, 145); the two skips are the network checks
-(15, 38) that `--offline` skips. Check 193 loaded a cached model with the network genuinely
-blocked. Measured inside the baked image built on 11 September, network blocked and
-**nothing mounted**: the same line, `PASS=204 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=210`, in
-about 510 s, the three checkpoints resolving from the image's own layers
-(`docs/fix/STEP_BAKED_REPORT.md`). **What is not proven:** no review has been run inside
+Measured inside the rebuilt unbaked image, network blocked, host cache mounted, against the
+210-check gate as it stood that afternoon: `PASS=204 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=210`
+in 873 s. The four failures are the source-only ones section L lists (01, 28, 31, 145); the
+two skips are the network checks (15, 38) that `--offline` skips. Check 193 loaded a cached
+model with the network genuinely blocked.
+
+Measured inside the **baked image rebuilt on the current tree**, network blocked and
+**nothing mounted**: `PASS=208 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=214` in about 346 s, the
+three checkpoints resolving from the image's own layers
+(`docs/fix/STEP_BAKED_REBUILD_REPORT.md`). The failure and skip sets are identical to the
+earlier run; the four extra passes are checks 210 to 213, the ontology chain, which did not
+exist when the earlier image was built. A source-only rebuild reused two of the three weight
+layers and re-downloaded the third, which is less than the layer reorder was expected to
+save and is recorded as observed rather than explained. **What is not proven:** no review has been run inside
 either container, so "the review runs offline in the container" is not claimed, only "the
 gate does, and the weights are there".
 
@@ -1686,7 +1695,7 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `GET` | `/ontology/provisions/{provision_id:path}` | token | One provision's every revision in the default scope, oldest first, as provenance summaries: what makes the storage layer's supersession (built at night W7, shown nowhere) legible to a human. The id is the capture hook's composite `<document_id>::<ref_id>`, so it carries a colon pair and is matched as a path parameter. `404`, not an empty list, when the scope holds no such id: "this store has never held that provision" and "that provision has one revision" are different facts and a caller must be able to tell them apart. |
 | `GET` | `/ontology/gnn` | token | ontology chain job 4: the GNN's persisted state, structural metadata only (the state file holds weights and counts and no raw content by construction; this surfaces the counts, never the weights). Three fields are always present because they are the most important thing about this state and must not be a caveat a reader can skip: `tier2_signal` is `empty`, `learned_relevance` is `false`, and `ranked_on` says the ranking rests on graph structure alone. The engine persists and restores its weights across runs, so it does not forget; it has learned nothing because there is no signal yet to learn from, which is a different thing. Not run-scoped. A state never written is a `200` with `exists: false`, not a `404`, which is every installation today. |
 | `GET` | `/ontology/candidates` | token | ontology chain job 4: candidate provision pairs the graph proposes, `top_k` per provision (1 to 50, an out-of-range value being a `400` rather than a silent default) and `min_score` to drop weak pairs. Decision 9's shape: the graph NARROWS here, a model DECIDES, and the reasoning stays in text. These are pairs that MAY relate; nothing here asserts that they do, no relation record is written from them, and the deterministic baseline stays beside this rather than being replaced. **Ranked on graph structure alone** (node type, degree, edges), with `ranked_on`, `learned_relevance` and `tier2_signal` travelling in the body beside every candidate. A graph with fewer than two provisions is a `200` with an empty list. |
-| `GET` | `/ontology/conflicts` | token | ontology chain job 3: which ontology-versus-rule conflicts the operator has answered, how, and in which run, plus `override_rate`. A conflict is the narrow structural case where the store remembers one governing rule for a provision and the current run would apply another; in the run that meets it the pair is REFUSED and never guessed, the refusals are put to the operator together at the end, and the answer is written into the ontology so the same conflict is never put to them twice. `override_rate` counts answers where the current rule won over the store's memory and carries its own caveat in the response body, not only in documentation: at single-operator volume the rate is not statistically meaningful and must never be read as a quality measure. It is `null`, never `0.0`, when nothing has been answered, because "no answers yet" and "never overrode" are different facts. Not run-scoped; a store with no answers is a `200` with an empty list, which is every store today. |
+| `GET` | `/ontology/conflicts` | token | ontology chain job 3: which ontology-versus-rule conflicts the operator has answered, how, and in which run, plus `override_rate`. A conflict is the narrow structural case where the store remembers one governing rule for a provision and the current run would apply another; in the run that meets it the pair is REFUSED and never guessed, the refusals are put to the operator together at the end, and the answer is written into the ontology so the same conflict is never put to them twice. `override_rate` is an object, not a bare number: `answered`, `overrode_store` (answers where the current rule won over the store's memory), `kept_store`, `kept_refusing`, a nested `override_rate`, and `caveat`, which carries its own qualifier in the response body rather than in documentation alone: at single-operator volume the rate is not statistically meaningful and must never be read as a quality measure. The NESTED `override_rate` is `null`, never `0.0`, when nothing has been answered, because "no answers yet" and "never overrode" are different facts; the object itself is always present, so a caller testing the top-level field for null never sees one. Not run-scoped; a store with no answers is a `200` with an empty list, which is every store today. |
 | `GET` | `/rules/{rule_id}` | token | console fresh-eyes addition: one rule's own text as the operator wrote it, from the current `config/convention_registry.json`. Not run-scoped, a rule's text does not vary per run. Matches by either id: the registry's own (`CONV-007`) or the operator's own (`CONV-A02`). Returns `id`, `source_rule_id`, `rule` (the operator's own text), `severity`, `action`, `source_file`, `source_location`. `404` with a distinct `detail` ("no rule with this id in the current registry") when the current registry, which regenerates at BOOT and can differ from whatever was in force when a citing run executed, has no such rule; that mismatch is itself informative, not hidden behind a generic not-found. |
 | `POST` | `/runs/{run_id}/cancel` | token | api STEP B2: stops a run. A queued job is removed before it ever starts; a running job's subprocess is terminated (then killed). Both land on `state="cancelled"`. `409` if the run is already in a terminal state (including already cancelled), refused with a reason naming its actual state, not a silent no-op. `404` for a malformed or unknown `run_id`. Deletes nothing on disk. |
 | `POST` | `/runs/{run_id}/approval` | token | api STEP B3: records a human's decision on the run's pending governed question. Body `decision` + `rationale`; writes `<run>/audit/approval_decision.json` atomically and **nothing else**, never evaluates whether the decision is an approval (that stays entirely with `model_registry`/`constitution_guard`, read back by the pipeline subprocess's own poll loop). `202`, never `200`: the response carries `recorded: true` and the run's `run_state` as it stood the instant *before* the write, and never claims the decision was approved, only that it was recorded. `404` for a malformed `run_id` or one with no pending approval; `409` if this approval was already answered (a decision file already exists); `400` if `decision` is missing or empty. This is the sole route that answers a pending approval (api STEP B5 unified it with the retired `POST /approvals/{run_id}`, which wrote the same file but returned `200` with a thinner body and no repeat-answer guard). |
@@ -2131,8 +2140,9 @@ With `--offline` the two checks that touch the network (15, a live search, and 3
 embedding-store build that downloads a model) are reported SKIP rather than run; the
 container image runs the gate this way by default (`docker run --rm --gpus all shimmer:local
 verify`, section G). The first offline gate inside the rebuilt image, with the network
-blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of 210, the
-four failures being the source-only ones in the table below.
+blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
+checks the gate held at that commit, the four failures being the source-only ones in the
+table below; checks 210 to 213 have since raised the total to 214.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each
