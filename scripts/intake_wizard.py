@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -159,6 +160,33 @@ def _explain_and_maybe_update_cutoff() -> "Optional[str]":
 # --- run mode (maps to the pipeline override flags) ----------------------------
 
 _NORMAL_FLAGS = ["--sensitivity-layer-inactive-override", "--no-redaction-override"]
+
+
+def _choose_backend_profile() -> "tuple[str, list[str]]":
+    """Ask which backend the run uses, and emit --backend-profile for it.
+
+    The wizard collected every other run flag and never this one, so a review
+    started from the launcher or from chat always took the pipeline's own
+    default. That decides real behaviour, not just cost: resolve_review_mode
+    selects paired under local and wide under cloud, so the flag the wizard
+    omitted was choosing the review mode by accident.
+
+    When a caller has already chosen (the launcher asks before its preflight,
+    since the profile decides what readiness means) SHIMMER_BACKEND_PROFILE
+    carries that answer and the operator is not asked the same question twice.
+    """
+    preset = (os.environ.get("SHIMMER_BACKEND_PROFILE") or "").strip().lower()
+    if preset in ("cloud", "local"):
+        return (preset + " (chosen at startup)", ["--backend-profile", preset])
+    print()
+    print("Which backend will this run use?")
+    print()
+    print("  [1] Cloud (Claude / GPT through your API keys; costs money per run)")
+    print("  [2] Local (models on this machine; no provider is called, no API cost)")
+    print()
+    choice = _ask("Choose [1/2, Enter for Cloud]: ")
+    profile = "local" if choice == "2" else "cloud"
+    return (profile, ["--backend-profile", profile])
 
 
 def _choose_mode() -> "tuple[str, Optional[list[str]]]":
@@ -430,8 +458,10 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
     chosen_cutoff = _explain_and_maybe_update_cutoff()
 
     run_flags: "list[str]" = []
-    mode_label = parallel_label = maxdocs_label = ""
+    mode_label = parallel_label = maxdocs_label = profile_label = ""
     if not import_only:
+        profile_label, profile_flags = _choose_backend_profile()
+        run_flags += profile_flags
         mode_label, mode_flags = _choose_mode()
         if mode_flags is None:
             print("Cancelled. No files placed.")
@@ -466,6 +496,7 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
     print(f"  Sidecars:    {counts['SIDECAR']} -> input/context/")
     print(f"  Date cutoff: {_current_cutoff_str()}")
     if not import_only:
+        print(f"  Backend:       {profile_label}")
         print(f"  Mode:          {mode_label}")
         print(f"  Parallel docs: {parallel_label}")
         print(f"  Max docs:      {maxdocs_label}")

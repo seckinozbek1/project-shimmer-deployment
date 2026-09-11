@@ -72,20 +72,45 @@ if [ "$torch_rc" -eq 1 ]; then
     fi
 fi
 
-# --- 4. Readiness preflight (reuses scripts/preflight.py) ------------------
+# --- 4. Backend profile ----------------------------------------------------
+# Asked BEFORE the preflight because it decides what readiness even means. A
+# local run uses the machine's own models and calls no provider, so cloud API
+# keys are irrelevant to it. The launcher used to run the cloud preflight
+# unconditionally and exit on its keyless code 2, so a local-only operator
+# could not reach the menu at all and never learned whether their local stack
+# was ready. The profile is passed to the preflight and to every run started
+# from this menu.
+echo
+echo "Which backend will you run on?"
+echo "  [C] Cloud  (Claude / GPT via your API keys; costs money per run)"
+echo "  [L] Local  (models on this machine; no provider is called, no API cost)"
+printf "Choose [C/L, Enter for Cloud]: "
+read -r profile_choice
+case "$profile_choice" in
+    l|L) BACKEND_PROFILE="local" ;;
+    *)   BACKEND_PROFILE="cloud" ;;
+esac
+# Exported so the intake wizard emits --backend-profile for it instead of asking
+# the same question a second time. The wizard owns the flag (chat drives the same
+# wizard, so both entry paths get it from one place).
+export SHIMMER_BACKEND_PROFILE="$BACKEND_PROFILE"
+echo "Backend profile: $BACKEND_PROFILE"
+
+# --- 5. Readiness preflight (reuses scripts/preflight.py) ------------------
 # preflight checks API keys (loaded from the external config, never the repo),
 # Qwen redaction reachability, the GPU, and live model ids. Exit codes:
-#   2 = no config / keys found (cannot continue)
+#   2 = no config / keys found (cloud profile only; cannot continue)
 #   1 = some check FAILED (review the bill of health, then decide)
 #   0 = ready
 echo
 echo "Running the readiness preflight ..."
-python -X utf8 scripts/preflight.py
+python -X utf8 scripts/preflight.py --backend-profile "$BACKEND_PROFILE"
 PREFLIGHT_RC=$?
 if [ "$PREFLIGHT_RC" -eq 2 ]; then
     echo
     echo "Cannot continue: API keys / config were not found. Follow the"
     echo "instructions printed above, then run this script again."
+    echo "(A local run needs no API keys: restart and choose [L].)"
     exit 1
 elif [ "$PREFLIGHT_RC" -ne 0 ]; then
     echo
@@ -97,7 +122,7 @@ elif [ "$PREFLIGHT_RC" -ne 0 ]; then
     esac
 fi
 
-# --- 5. Menu ---------------------------------------------------------------
+# --- 6. Menu ---------------------------------------------------------------
 while true; do
     echo
     echo "========================================="
@@ -131,6 +156,7 @@ while true; do
                         echo "Drafting a memo, then reviewing it ..."
                         echo "(Add --help for all options.)"
                         python scripts/pipeline.py --task draft --question "$draftq" \
+                            --backend-profile "$BACKEND_PROFILE" \
                             --sensitivity-layer-inactive-override --no-redaction-override "$@"
                     fi
                     ;;
@@ -149,6 +175,9 @@ while true; do
                         echo "(Add --help for all options.)"
                         # WIZ_FLAGS is intentionally unquoted: it word-splits into separate
                         # simple flag tokens (no spaces within any token).
+                        # The wizard already emitted --backend-profile into
+                        # WIZ_FLAGS (from SHIMMER_BACKEND_PROFILE), so it is not
+                        # repeated here.
                         # shellcheck disable=SC2086
                         python scripts/pipeline.py $WIZ_FLAGS "$@"
                     else
