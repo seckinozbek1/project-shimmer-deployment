@@ -21,6 +21,20 @@ never reads. Matching is MECHANICAL and prose-free, on typed fields only:
                 kind: a corpus may plant several kinds of flaw on purpose, to
                 separate what a mechanism catches from what it does not. A key
                 with no `kind` field prints the overall figure alone, as before.
+  not asked     a planted entry whose rule NO agent could act on is reported
+                apart from one that was asked and answered nothing. Read from
+                audit/convention_assignment.json: a rule whose status is
+                `unassigned` (it carries subject tags, none matched an agent)
+                or `assigned_no_consumer` (an agent declared its tag, but that
+                agent consumes no rule in this mode) was never put to anything.
+                Scoring those as ordinary misses says the mechanism failed
+                when nothing ran, which is the opposite of what happened.
+
+Relations are read from finding_record, never listed here: a relation appended
+to the record (date_window, the duration comparison, was the most recent) is
+scored the moment it exists, and the per-relation breakdown below names every
+relation the run actually produced rather than a set fixed when this was
+written.
 
 A key carrying `prior_records` (a round-N comparison, R6) is scored by score_rounds:
 exact recall on label + relation + figures, relation-only matches reported apart,
@@ -86,6 +100,93 @@ def _load_bus_findings(run_dir):
 
 def _lower(*parts):
     return " ".join(str(p or "") for p in parts).lower()
+
+
+# A rule with one of these statuses reached no agent that could act on it, so
+# nothing was ever asked about it. Read from the assignment the run itself
+# wrote; the two names are convention_assignment's own vocabulary, not a set
+# invented here (untagged is deliberately NOT in this set: an untagged rule
+# keeps the pre-assignment routing and IS put to every review agent).
+NOT_ASKED_STATUSES = ("unassigned", "assigned_no_consumer")
+
+
+def _load_assignment(run_dir):
+    """audit/convention_assignment.json's by_rule map, or {} when the run
+    predates the assignment (every run before 2026-09-11) or never wrote one.
+    An absent file is not an error: it means the question this reader answers
+    cannot be answered for that run, and the caller says so rather than
+    reporting a confident zero."""
+    path = Path(run_dir) / "audit" / "convention_assignment.json"
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
+    by_rule = data.get("by_rule")
+    return by_rule if isinstance(by_rule, dict) else None
+
+
+def _print_relation_breakdown(findings):
+    """Every relation the run's typed findings actually carry, counted.
+
+    Named from the data, not from a list in this file: when a relation is
+    appended to the Finding record (date_window, the duration comparison, was
+    the most recent) it appears here the first run that produces one, with no
+    edit. A scorer that enumerated relations would have gone silent on exactly
+    the newest mechanism, which is what happened before this: date_window was
+    computed, posted and scored toward recall, while every per-relation view
+    in this file could only see the two band relations.
+    """
+    counts = {}
+    for f in findings:
+        rel = str(f.get("relation") or "(none)")
+        counts[rel] = counts.get(rel, 0) + 1
+    if not counts:
+        return
+    print("relations found : %s" % ", ".join(
+        "%s=%d" % (rel, n) for rel, n in sorted(counts.items())))
+
+
+def _completeness_note(run_dir, amendments):
+    """What can honestly be said about whether this run finished.
+
+    A run directory carries NO completion marker: the bus has a BOOT event and
+    no closing one, and nothing else on disk records an exit. So a run that
+    was stopped mid-phase and a run that finished with nothing to say look
+    identical from the artifacts alone, and this says which of the two facts
+    are actually knowable rather than guessing between them. The server knows
+    (it holds state and outcome per job, and derives is_partial), but the
+    scorer reads a directory, not the server.
+    """
+    has_deliverable = bool(glob.glob(str(Path(run_dir) / "deliverables" / "*" / "review_data.json")))
+    if has_deliverable:
+        return ("a deliverable exists, so synthesis was reached (%d amendment(s)); "
+                "whether every phase after it completed is not recorded on disk"
+                % len(amendments))
+    return ("NO deliverable: synthesis was never reached. From the run's own "
+            "artifacts a stopped run and a completed run that produced nothing "
+            "are indistinguishable (no completion marker is written), so every "
+            "amendment-derived figure below is 0 by absence, not by measurement")
+
+
+def _not_asked_rules(assignment):
+    """{operator-or-registry rule id (upper): status} for every rule no agent
+    could act on. Keyed by BOTH the registry id and the operator's own id when
+    the assignment carries one, since a key names the operator's id and the
+    assignment is keyed by the registry's."""
+    out = {}
+    for rid, row in (assignment or {}).items():
+        if not isinstance(row, dict):
+            continue
+        status = str(row.get("status") or "")
+        if status not in NOT_ASKED_STATUSES:
+            continue
+        out[str(rid).upper()] = status
+        own = row.get("source_rule_id")
+        if own:
+            out[str(own).upper()] = status
+    return out
 
 
 def _load_review_data(run_dir):
@@ -198,6 +299,11 @@ def score_rounds(corpus, key, run_dir):
     print("stray refusals    : %d   (refusals or orphans for labels the key does not list)" % len(stray_refusals))
     print("band irregular    : %d/%d found, %d/%d attributed to the operator rule; %d false positives; "
           "%d amendments" % (band_found, len(band_rows), band_attr, len(band_rows), len(band_fp), len(amendments)))
+    # Every relation the run produced, including any this path has no dedicated
+    # section for (a duration comparison is neither a prior record nor a band):
+    # without this, a finding of a newer kind is computed, posted, and invisible
+    # in the only view of the run a reader sees.
+    _print_relation_breakdown(findings)
     print()
     print("  %-42s %-22s %-28s %-10s refs" % ("field", "expected", "result", "cited"))
     for field, rel, status, cited, nrefs in table:
@@ -226,7 +332,10 @@ def score(corpus, run_dir):
     planted = key.get("planted") or []
     clean = [str(u).lower() for u in key.get("clean") or []]
 
-    found, attributed, how = [], [], []
+    assignment = _load_assignment(run_dir)
+    not_asked = _not_asked_rules(assignment)
+
+    found, attributed, how, asked = [], [], [], []
     for p in planted:
         unit, rule = str(p["unit"]).lower(), str(p["rule"]).upper()
         relation = str(p.get("relation") or "")
@@ -240,6 +349,11 @@ def score(corpus, run_dir):
         found.append(is_found)
         attributed.append(is_found and via_rule)
         how.append("bus:%s" % relation if via_bus else ("rule" if via_rule else ""))
+        # Was this entry's rule put to anything at all? None when the run wrote
+        # no assignment (the question is unanswerable for that run, never a
+        # confident "yes"), True when the rule reached an agent that consumes
+        # rules, False when the assignment says no agent could act on it.
+        asked.append(None if assignment is None else rule not in not_asked)
 
     planted_units = {str(p["unit"]).lower() for p in planted}
     false_pos = [a for a in amendments
@@ -261,11 +375,30 @@ def score(corpus, run_dir):
         if k not in kinds:
             kinds.append(k)
 
+    # A missed entry whose rule nothing could act on is NOT evidence the
+    # mechanism failed: nothing ran. Reported apart from the misses that were
+    # genuinely asked and answered nothing, and excluded from the denominator
+    # of the "asked" recall figure below, which is the figure that says
+    # anything about the mechanism.
+    missed_not_asked = [i for i, f in enumerate(found) if not f and asked[i] is False]
+    asked_idx = [i for i in range(len(planted)) if asked[i] is not False]
+    asked_found = sum(found[i] for i in asked_idx)
+
     print("corpus          : %s" % corpus)
     print("run             : %s" % run_dir)
     print("task            : %s" % key.get("task_given_to_the_pipeline", ""))
+    print("run completeness: %s" % _completeness_note(run_dir, amendments))
     print("amendments      : %d   (typed findings on the bus: %d)" % (len(amendments), len(findings)))
-    print("recall          : %d/%d" % (sum(found), len(planted)))
+    print("recall          : %d/%d   (every planted entry)" % (sum(found), len(planted)))
+    if assignment is None:
+        print("  not asked     : unknown   (this run wrote no "
+              "audit/convention_assignment.json, so whether a rule reached an "
+              "agent cannot be read from its artifacts)")
+    else:
+        print("  not asked     : %d   (planted entries whose rule no agent could act on: "
+              "unassigned or assigned_no_consumer)" % len(missed_not_asked))
+        print("  recall, asked : %d/%d   (excluding the not-asked entries; THIS is the "
+              "figure about the mechanism)" % (asked_found, len(asked_idx)))
     if kinds != ["unspecified"]:
         for k in kinds:
             idx = [i for i, p in enumerate(planted) if str(p.get("kind") or "unspecified") == k]
@@ -273,13 +406,16 @@ def score(corpus, run_dir):
     print("false positives : %d" % len(false_pos))
     print("distractor hits : %d" % len(distractor))
     print("attribution     : %d of %d" % (sum(attributed), sum(found)))
+    _print_relation_breakdown(findings)
     print()
-    print("  planted      rule      kind                  found  attributed  matched via")
-    for p, f, a, h in zip(planted, found, attributed, how):
-        print("  %-12s %-9s %-21s %-6s %-11s %s" % (p["unit"], p["rule"],
-                                                    str(p.get("kind") or "unspecified"),
-                                                    "yes" if f else "no",
-                                                    "yes" if a else "no", h))
+    print("  planted      rule      kind                  found  attributed  asked  matched via")
+    for i, (p, f, a, h) in enumerate(zip(planted, found, attributed, how)):
+        asked_cell = "?" if asked[i] is None else ("yes" if asked[i] else "NO")
+        print("  %-12s %-9s %-21s %-6s %-11s %-6s %s" % (p["unit"], p["rule"],
+                                                         str(p.get("kind") or "unspecified"),
+                                                         "yes" if f else "no",
+                                                         "yes" if a else "no",
+                                                         asked_cell, h))
     if false_pos:
         print()
         print("  false positives:")
