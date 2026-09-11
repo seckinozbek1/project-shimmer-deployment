@@ -432,7 +432,7 @@ recorded in section I).
 
 A rule often states no numbers of its own; it points at a table in the reference corpus.
 `scripts/reference_tables.py` reads those tables so the comparison can be made in Python
-instead of by a model reading prose. Four mechanisms, all structural, none carrying any
+instead of by a model reading prose. Five mechanisms, all structural, none carrying any
 domain or language vocabulary:
 
 - **A range is two numbers in one cell.** A cell holding exactly two quantities of the same
@@ -453,6 +453,18 @@ domain or language vocabulary:
 - **A row matches a unit by word containment** over the unit's own labelled field values. The
   most specific match wins and a tie is refused, because a wrong row is a wrong band and a wrong
   band is a false finding.
+- **A labelled prose sentence is a table with the punctuation removed, one shape only** (check
+  215): a LABEL, a colon, and a RANGE in the same sentence ("Class-A sensor: standard tolerance
+  band 20 to 60 units."). `parse_prose_band_sentence` reads the label before the colon and the
+  range after it with `cell_range`, the same reader a table cell uses, so the same refusal
+  discipline applies without a second implementation: exactly two quantities of one unit close
+  enough together to be a range, a descending pair refused, and a sentence carrying a third,
+  unrelated figure refused rather than guessed at. `parse_prose_bands` groups every matching
+  sentence in a passage into a synthetic table (one column of labels, one of ranges, headed by
+  the words between the colon and the first figure, e.g. "standard tolerance band"), wired into
+  `parse_tables` itself, so every existing caller of `bands_for_unit` reads a labelled prose band
+  with no new call site. The reference material is never rewritten to make it parse: an operator's
+  table stays a table and an operator's prose stays prose, read as written.
 
 The resulting `(low, high, unit)` is compared against the unit's figures by
 `paired_review._band_comparisons`, the same above/below/in-range test the rule-stated band makes
@@ -468,12 +480,14 @@ carried as `conditional_on` and is never promoted to a settled amendment by the 
 `<run>/audit/pairing_map.json` records the evidence per unit under `band_conditions` before any
 verdict fires.
 
-**Two recorded limits.** A key cell that encodes a numeric comparison in prose ("protein 12.5
-percent and above") cannot be matched by word containment; the rows tie, the tie is refused, and
-no band is produced rather than one being guessed. Resolving it would need a list of direction
-words, which is exactly the domain leak the vocabulary probe exists to catch. And a band stated
-in prose rather than in a table is not read here; the rule-text path still covers a rule that
-states its own numbers.
+**One recorded limit, and one narrowed.** A key cell that encodes a numeric comparison in prose
+("protein 12.5 percent and above") cannot be matched by word containment; the rows tie, the tie
+is refused, and no band is produced rather than one being guessed. Resolving it would need a
+list of direction words, which is exactly the domain leak the vocabulary probe exists to catch.
+A band stated in prose rather than in a table used to go unread here entirely; check 215 reads
+the one shape a labelled prose sentence takes (a label, a colon, a range, in one sentence, see
+"Bands from the reference corpus" above), and a prose statement outside that shape, or the
+rule-text path for a rule that states its own numbers, are both still covered as before.
 
 ### Typed Finding records
 
@@ -1446,7 +1460,16 @@ editorial board alone were still judged by PRACTICE_AUDITOR as a fallback, and e
 shown to both convention-review agents in wide mode (fixed, check 206); and a rule the
 registry section had clipped was recorded as shown (fixed, check 207). In the same runs, 57
 of 101 pairs were made by the similarity fallback because the rules named no field the
-entries carry, and the reference states its bands in prose so Python could compute nothing.
+entries carry, and the reference states its bands in prose, which `reference_tables.py` did
+not read at the time (addressed, check 215: a labelled prose band, a class or label, a colon,
+a range and a unit in one sentence, is read the same way a table cell is, with the same
+refusal on two unrelated figures in one sentence). On `device_log_review` itself the fix does
+not yet mint a band end to end: the corpus's own three class labels, "Class-A sensor" /
+"Class-B sensor" / "Class-C sensor", reduce to the identical word set under the existing
+label tokenizer once the single-letter suffix is dropped by its `len(w) > 2` filter, so
+`match_row` correctly refuses the row as a tie rather than guessing which class a reading
+belongs to, a pre-existing limit of the shared tokenizer reproduced identically by a real
+markdown table carrying the same three labels, not something check 215 introduces or fixes.
 Two defects are recorded and not fixed: in paired mode the model never writes a unit id
 although Python knows it by construction (the declared-scope path now stamps it for absence
 findings; the general case is open), and a valid envelope wrapped in prose is refused as a
@@ -2166,7 +2189,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**215** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**216** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2181,7 +2204,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 213 have since raised the total to 214.
+table below; checks 210 to 215 have since raised the total to 216.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each
