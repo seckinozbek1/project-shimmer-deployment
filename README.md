@@ -1345,6 +1345,31 @@ choose normal or sensitive mode, asks the parallelism and document-count limits,
 the files and finally asks which documents are under review and which file, if any, is an
 earlier version of one of them.
 
+A convention file is recognised by what is IN it, not by what it is called. The wizard asks
+`convention_parser` itself whether a file carries headings with your own rule ids (the same
+test the parser uses to tell a real rule heading from preamble prose), so
+`cataloguing_conventions.md`, `lab_conventions.md` or any other name you choose is filed as
+review rules. The two legacy names (`review_conventions.md`, `review_mandate.md`) still work
+on the name alone. This used to be a two-name match while the parser read every file in
+`input/conventions/` regardless of name, so intake was strict exactly where the parser was
+permissive: none of the shipped corpora used either name, and every one of their rule sheets
+was filed as a document to be reviewed as prose, its rules never compiled.
+
+The review plan then reports what the parser extracted from those files: the rule count per
+file, the subject tags, and how many rules carry a `[scope: ...]` or `[requires: ...]`
+declaration. Intake had no surface for any of it, so a mistyped tag or a heading the parser
+did not read as a rule was invisible until the run produced nothing. A file that yields no
+rules at all says so, and names the heading shape it was looking for.
+
+The wizard also declares the ingestion mode it is importing under. A `_corpus_ingest.json`
+sidecar means an externally fed corpus, so the wizard passes `--mode integrated` and the
+files the sidecar marks `context_grounding` stay grounding instead of being promoted to the
+documents under review; with no sidecar the run is standalone, the pipeline's own default.
+The wizard emitted neither before, so an ingested corpus ran as standalone and the promotion
+exclusion never fired. The wizard never WRITES a sidecar: for your own files there is no
+role, date or source verification to record, and inventing them would be fabricating
+provenance.
+
 ### 2. The chat interface
 
 `python scripts/chat.py` opens a small tkinter window. When the local Qwen model is
@@ -2386,7 +2411,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**219** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**220** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2401,7 +2426,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 218 have since raised the total to 219.
+table below; checks 210 to 219 have since raised the total to 220.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

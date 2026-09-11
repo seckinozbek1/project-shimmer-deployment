@@ -18968,6 +18968,116 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_219_intake_classifies_conventions_by_content():
+    """Intake matched two exact filenames; the parser reads every file in
+    input/conventions/ whatever it is called. Intake was strict exactly where
+    the parser is permissive, so a rule sheet under the operator's own name was
+    classified DOCUMENT and reviewed as prose, and its rules were never
+    compiled. None of the six corpora on disk uses either legacy name, so all
+    six were misfiled. The fix is not a second detector: classify() asks
+    convention_parser's own heading test, the one that flips
+    before_first_operator_heading, so the two cannot disagree by construction.
+
+    Proved on fixtures written here, exercising the live classify():
+      - a rule sheet under an arbitrary name is CONVENTIONS
+      - the two legacy names still are (nothing existing breaks)
+      - a document carrying no rule heading stays DOCUMENT, so the signal
+        cannot swallow the corpus it is meant to separate from
+      - summarize_conventions reports the subject tags and scope declarations
+        the parser extracted, which intake had no surface for at all
+
+    NEUTRALISE AND RESTORE: with the content test forced off, the arbitrarily
+    named rule sheet must fall back to DOCUMENT (the old defect, reproduced on
+    demand); restored, it is CONVENTIONS again.
+    """
+    import tempfile as _tf
+
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import intake_wizard as _iw
+        import convention_parser as _cp
+    except Exception as exc:
+        return _fail("cannot import intake_wizard/convention_parser: %s" % exc)
+
+    for name in ("_carries_rule_headings", "summarize_conventions"):
+        if not hasattr(_iw, name):
+            return _fail("intake_wizard.%s is missing" % name)
+    if not hasattr(_cp, "text_carries_rule_headings"):
+        return _fail("convention_parser.text_carries_rule_headings is missing")
+
+    # A rule sheet shaped exactly like the ones on disk, under a name intake
+    # never knew, with a subject tag and a scope declaration.
+    RULES = (
+        "# Operator review framework\n\n"
+        "Some preamble prose that is not a rule.\n\n"
+        "## CONV-Z01 , conv-value-in-range [required] [conformance] "
+        "[scope: reading] [requires: class label]\n\n"
+        "Each reading stays inside the band its class declares.\n\n"
+        "## CONV-Z02 , conv-record-completeness [required]\n\n"
+        "Each record states both timestamps.\n"
+    )
+    DOC = ("# Device class reference\n\n"
+           "## Class-A sensor\n\nBand 20 to 60 units.\n\n"
+           "## Class-B sensor\n\nBand 70 to 110 units.\n")
+
+    with _tf.TemporaryDirectory() as tmp:
+        tmpdir = Path(tmp)
+        odd = tmpdir / "device_conventions.md"
+        odd.write_text(RULES, encoding="utf-8")
+        legacy = tmpdir / "review_conventions.md"
+        legacy.write_text(RULES, encoding="utf-8")
+        # A legacy-named file is accepted on its NAME, so to prove the content
+        # route alone the document fixture must not be named like one.
+        doc = tmpdir / "device_class_reference.md"
+        doc.write_text(DOC, encoding="utf-8")
+
+        kind_odd = _iw.classify(odd)[0]
+        if kind_odd != "CONVENTIONS":
+            return _fail("a rule sheet named %s classified as %s, not CONVENTIONS"
+                         % (odd.name, kind_odd))
+        kind_legacy = _iw.classify(legacy)[0]
+        if kind_legacy != "CONVENTIONS":
+            return _fail("legacy name %s regressed to %s" % (legacy.name, kind_legacy))
+        kind_doc = _iw.classify(doc)[0]
+        if kind_doc != "DOCUMENT":
+            return _fail("a document with no rule heading classified as %s; the "
+                         "content signal swallowed the corpus" % kind_doc)
+
+        # The declarations intake could not surface before.
+        summary = _iw.summarize_conventions([odd])
+        if summary["rules"] < 2:
+            return _fail("summarize_conventions extracted %d rules, expected at least 2"
+                         % summary["rules"])
+        if "conformance" not in summary["subjects"]:
+            return _fail("subject tag 'conformance' was not surfaced; got %r"
+                         % (summary["subjects"],))
+        if summary["scoped"] < 1:
+            return _fail("no [scope: ...] declaration was surfaced")
+
+        # NEUTRALISE: force the content test off, exactly as it behaved before.
+        original = _cp.text_carries_rule_headings
+        _cp.text_carries_rule_headings = lambda _text: False
+        try:
+            neutralised = _iw.classify(odd)[0]
+        finally:
+            _cp.text_carries_rule_headings = original
+        if neutralised != "DOCUMENT":
+            return _fail("neutralised content test still classified %s as %s; the "
+                         "check is not proving the content route"
+                         % (odd.name, neutralised))
+
+        # RESTORE.
+        if _iw.classify(odd)[0] != "CONVENTIONS":
+            return _fail("restore failed: %s no longer classifies as CONVENTIONS"
+                         % odd.name)
+
+    return _ok("a rule sheet under any name is CONVENTIONS (parser's own heading "
+               "test), legacy names intact, documents unaffected, subjects and "
+               "scope surfaced, neutralise/restore proved")
+
+
 def check_218_the_scorer_distinguishes_not_asked_and_sees_every_relation():
     """The scorer measured the model path after three days of work moved
     findings to the Python path. Three gaps, all closed here and all proved
@@ -19381,6 +19491,8 @@ CHECKS = [
      check_217_a_gap_between_two_timestamps_is_computed_in_python),
     ("218 the scorer distinguishes not-asked from asked-and-nothing-found, and sees every relation",
      check_218_the_scorer_distinguishes_not_asked_and_sees_every_relation),
+    ("219 intake classifies a convention file by content, as the parser reads it",
+     check_219_intake_classifies_conventions_by_content),
 ]
 
 
