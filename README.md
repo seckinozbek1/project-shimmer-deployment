@@ -990,11 +990,15 @@ and, for redaction, the local Qwen model with a GPU strongly recommended.
 3. **API keys, which you must supply; none are shipped.** Place them in an external
    `config.py` OUTSIDE the repository. Shimmer locates it via `$SHIMMER_CONFIG_PATH`, then a
    sibling `../api_keys/config.py`, then the repo-root `.env_path` pointer. ANTHROPIC and
-   OPENAI keys are required for the cloud profile and for the launcher's preflight, which
-   stops before the menu when no key file is found; BRAVE is optional. A keyless local-only
-   smoke test bypasses the launcher: `py -3.9 -X utf8 tools/run_local_demo.py
-   --non-interactive` with the two override flags from section F. Model selection is owned
-   by `config/agent_registry.json`, never by the key file.
+   OPENAI keys are required for the **cloud** profile; BRAVE is optional. The launcher asks
+   which backend you will run on before the preflight, because the answer decides what
+   readiness means. Under the local profile the preflight reports absent keys and carries on
+   to the checks a local run actually depends on (Qwen reachability, the GPU), so a
+   local-only operator reaches the menu with no key file at all. Under the cloud profile it
+   still stops before the menu when no key file is found. It used to run the cloud checks
+   unconditionally and exit on that same code, so a local-only operator could not reach the
+   menu and never learned whether their local stack was ready. Model selection is owned by
+   `config/agent_registry.json`, never by the key file.
 4. **Documents to review, which you must supply; `input/` is not shipped.** Create
    `input/context/`, `input/conventions/`, and `input/operational/` (the launcher's intake
    wizard does this for you when you choose option [5]; or run `py -3.9 -X utf8
@@ -1324,7 +1328,17 @@ gate does, and the weights are there".
 
 `shimmer.bat` (Windows) or `shimmer.sh` (macOS/Linux) takes you from a fresh clone to a
 running review: it finds Python, builds and activates a local `.venv`, installs
-dependencies, runs the readiness preflight, then shows a menu:
+dependencies, asks which backend you will run on, runs the readiness preflight for that
+backend, then shows a menu.
+
+The backend question comes first because it decides what readiness means: a local run calls
+no provider, so cloud keys are irrelevant to it. The answer is exported as
+`SHIMMER_BACKEND_PROFILE`, which the intake wizard reads so it does not ask the same
+question again, and the wizard emits `--backend-profile` into the run flags. That flag was
+missing entirely before, so every launcher and chat review took the pipeline's default,
+which also silently chose the review mode (`resolve_review_mode` selects paired under local
+and wide under cloud). Because the wizard owns the flag, the launcher and the chat interface
+both get it from one place.
 
 ```
 [1] Run a review (CLI)      -> asks Review or Draft. Review runs the intake wizard, then the
@@ -2411,7 +2425,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**220** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**221** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2426,7 +2440,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 219 have since raised the total to 220.
+table below; checks 210 to 220 have since raised the total to 221.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

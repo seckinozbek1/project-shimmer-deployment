@@ -27,6 +27,7 @@ health that separates what is ready now from what stays UNPROVEN until a paid ru
 
 from __future__ import annotations
 
+import argparse
 import importlib
 import importlib.util
 import json
@@ -365,11 +366,23 @@ def bill_of_health() -> None:
 
 
 def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Project Shimmer operator preflight (no paid run, no key value printed)")
+    parser.add_argument("--backend-profile", choices=["cloud", "local"], default="cloud",
+                        help="which backend the operator intends to run under. cloud "
+                             "(default) requires the API keys and checks live model ids. "
+                             "local runs on the machine's own models and never calls a "
+                             "provider, so missing cloud keys are reported and are not a "
+                             "stop: the local readiness checks below are what matter.")
+    args = parser.parse_args(argv)
+    local = args.backend_profile == "local"
+
     print("Project Shimmer -- operator preflight")
     print("(no paid pipeline is run; no API-key value is ever printed)")
+    print(f"backend profile: {args.backend_profile}")
 
     keys = step_config()
-    if not keys:
+    if not keys and not local:
         # Config missing or required keys absent: stop before live model calls.
         bill_of_health()
         return 2
@@ -377,7 +390,16 @@ def main(argv=None) -> int:
     step_dependencies()
     qstat = step_qwen()
     step_gpu(qstat)
-    step_models(keys)
+    if local:
+        # A local run reaches no provider, so there are no live model ids to read
+        # and no key to read them with. Saying so is the point: preflight used to
+        # exit 2 here and the operator never learned whether the LOCAL stack was
+        # ready, which is the only stack a local run uses.
+        _info("local profile: provider model ids are not checked (no provider is called).")
+        if not keys:
+            _info("no API keys were found. A local run does not need them; a cloud run does.")
+    else:
+        step_models(keys)
     bill_of_health()
 
     return 1 if any(s == "FAIL" for s, _ in _RESULTS) else 0

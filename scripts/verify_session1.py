@@ -18968,6 +18968,135 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_220_local_profile_reaches_the_menu_and_is_passed_on():
+    """Two launcher defects, both proved by executing the real code.
+
+    1. preflight had no concept of a backend profile. step_config() failing
+       returned 2 BEFORE dependencies, Qwen or the GPU were ever checked, and
+       both launchers exit on 2. A local run calls no provider and needs no
+       cloud key, so a local-only operator could not reach the menu at all and
+       never learned whether the stack their run actually uses was ready.
+       Under --backend-profile local, absent keys are reported and are not a
+       stop; under cloud (the default) the stop is unchanged.
+
+    2. The intake wizard collected every run flag except --backend-profile, so
+       a review started from the launcher or from chat always took the
+       pipeline's default. That silently chose the REVIEW MODE too, since
+       resolve_review_mode selects paired under local and wide under cloud.
+       The wizard now emits it, and honours SHIMMER_BACKEND_PROFILE so a
+       launcher that already asked does not ask twice.
+
+    NEUTRALISE AND RESTORE: with the profile forced back to cloud inside
+    preflight, the keyless local path must return 2 again (the original
+    defect); restored, it returns 0.
+    """
+    import os as _os
+
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import preflight as _pf
+        import intake_wizard as _iw
+    except Exception as exc:
+        return _fail("cannot import preflight/intake_wizard: %s" % exc)
+
+    if not hasattr(_iw, "_choose_backend_profile"):
+        return _fail("intake_wizard._choose_backend_profile is missing")
+
+    # --- 2. the wizard emits the flag, and honours a preset ------------------
+    saved_env = _os.environ.get("SHIMMER_BACKEND_PROFILE")
+    try:
+        for preset in ("local", "cloud"):
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = preset
+            label, flags = _iw._choose_backend_profile()
+            if flags != ["--backend-profile", preset]:
+                return _fail("preset %s emitted %r" % (preset, flags))
+            if preset not in label:
+                return _fail("preset %s produced label %r" % (preset, label))
+        # With no preset the wizard ASKS; _ask reads stdin, which is closed in
+        # the gate, so it returns "" and must fall back to cloud rather than
+        # emitting nothing at all.
+        _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+        _label, flags = _iw._choose_backend_profile()
+        if flags != ["--backend-profile", "cloud"]:
+            return _fail("with no preset and no answer, expected the cloud "
+                         "default, got %r" % (flags,))
+    finally:
+        if saved_env is None:
+            _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
+        else:
+            _os.environ["SHIMMER_BACKEND_PROFILE"] = saved_env
+
+    # --- 1. preflight: keyless local proceeds, keyless cloud still stops -----
+    saved_step_config = _pf.step_config
+    saved_results = list(_pf._RESULTS)
+
+    def _no_keys():
+        return {}
+
+    try:
+        _pf.step_config = _no_keys
+
+        _pf._RESULTS.clear()
+        rc_local = _pf.main(["--backend-profile", "local"])
+        if rc_local == 2:
+            return _fail("keyless local run still returns 2; the operator cannot "
+                         "reach the menu for a run that needs no keys")
+
+        _pf._RESULTS.clear()
+        rc_cloud = _pf.main([])
+        if rc_cloud != 2:
+            return _fail("keyless CLOUD run returned %r, expected 2; the cloud "
+                         "stop must not be weakened" % (rc_cloud,))
+
+        # NEUTRALISE: force the local profile back to cloud, reproducing the
+        # original defect on the very path the fix is for.
+        saved_parse = _pf.argparse.ArgumentParser.parse_args
+
+        def _always_cloud(self, args=None, namespace=None):
+            parsed = saved_parse(self, args, namespace)
+            if hasattr(parsed, "backend_profile"):
+                parsed.backend_profile = "cloud"
+            return parsed
+
+        _pf.argparse.ArgumentParser.parse_args = _always_cloud
+        try:
+            _pf._RESULTS.clear()
+            rc_neutralised = _pf.main(["--backend-profile", "local"])
+        finally:
+            _pf.argparse.ArgumentParser.parse_args = saved_parse
+        if rc_neutralised != 2:
+            return _fail("neutralised profile returned %r, expected the original "
+                         "2; the check is not proving the profile branch"
+                         % (rc_neutralised,))
+
+        # RESTORE.
+        _pf._RESULTS.clear()
+        if _pf.main(["--backend-profile", "local"]) == 2:
+            return _fail("restore failed: keyless local returns 2 again")
+    finally:
+        _pf.step_config = saved_step_config
+        _pf._RESULTS[:] = saved_results
+
+    # --- both launchers ask, and pass it on ---------------------------------
+    for name in ("shimmer.sh", "shimmer.bat"):
+        path = ROOT / name
+        if not path.is_file():
+            return _fail("%s is missing" % name)
+        body = path.read_text(encoding="utf-8", errors="replace")
+        if "SHIMMER_BACKEND_PROFILE" not in body:
+            return _fail("%s never exports SHIMMER_BACKEND_PROFILE, so the "
+                         "wizard would ask the profile a second time" % name)
+        if "preflight.py --backend-profile" not in body:
+            return _fail("%s does not pass the profile to the preflight" % name)
+
+    return _ok("keyless local returns %r and reaches the menu while keyless cloud "
+               "still stops at 2; the wizard emits --backend-profile and honours a "
+               "preset; both launchers ask once and pass it to the preflight; "
+               "neutralise/restore proved" % (rc_local,))
+
+
 def check_219_intake_classifies_conventions_by_content():
     """Intake matched two exact filenames; the parser reads every file in
     input/conventions/ whatever it is called. Intake was strict exactly where
@@ -19493,6 +19622,8 @@ CHECKS = [
      check_218_the_scorer_distinguishes_not_asked_and_sees_every_relation),
     ("219 intake classifies a convention file by content, as the parser reads it",
      check_219_intake_classifies_conventions_by_content),
+    ("220 a local run reaches the menu without cloud keys, and the profile is passed on",
+     check_220_local_profile_reaches_the_menu_and_is_passed_on),
 ]
 
 

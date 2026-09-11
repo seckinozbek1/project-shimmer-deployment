@@ -68,20 +68,42 @@ if "!TORCHRC!"=="1" (
     )
 )
 
-REM --- 4. Readiness preflight (reuses scripts\preflight.py) ------------------
+REM --- 4. Backend profile ----------------------------------------------------
+REM Asked BEFORE the preflight because it decides what readiness even means. A
+REM local run uses the machine's own models and calls no provider, so cloud API
+REM keys are irrelevant to it. The launcher used to run the cloud preflight
+REM unconditionally and exit on its keyless code 2, so a local-only operator
+REM could not reach the menu at all and never learned whether their local stack
+REM was ready. The profile is passed to the preflight and to every run started
+REM from this menu.
+echo.
+echo Which backend will you run on?
+echo   [C] Cloud  (Claude / GPT via your API keys; costs money per run)
+echo   [L] Local  (models on this machine; no provider is called, no API cost)
+set "profile_choice="
+set /p profile_choice="Choose [C/L, Enter for Cloud]: "
+if /i "!profile_choice!"=="l" (set "BACKEND_PROFILE=local") else (set "BACKEND_PROFILE=cloud")
+REM Exported so the intake wizard emits --backend-profile for it instead of
+REM asking the same question twice. The wizard owns the flag (chat drives the
+REM same wizard, so both entry paths get it from one place).
+set "SHIMMER_BACKEND_PROFILE=!BACKEND_PROFILE!"
+echo Backend profile: !BACKEND_PROFILE!
+
+REM --- 5. Readiness preflight (reuses scripts\preflight.py) ------------------
 REM preflight checks API keys (loaded from the external config, never the repo),
 REM Qwen redaction reachability, the GPU, and live model ids. Exit codes:
-REM   2 = no config / keys found (cannot continue)
+REM   2 = no config / keys found (cloud profile only; cannot continue)
 REM   1 = some check FAILED (review the bill of health, then decide)
 REM   0 = ready
 echo.
 echo Running the readiness preflight ...
-python -X utf8 scripts\preflight.py
+python -X utf8 scripts\preflight.py --backend-profile !BACKEND_PROFILE!
 set "PREFLIGHT_RC=!errorlevel!"
 if "!PREFLIGHT_RC!"=="2" (
     echo.
     echo Cannot continue: API keys / config were not found. Follow the
     echo instructions printed above, then run this script again.
+    echo ^(A local run needs no API keys: restart and choose [L].^)
     goto :end_fail
 )
 if not "!PREFLIGHT_RC!"=="0" (
@@ -91,7 +113,7 @@ if not "!PREFLIGHT_RC!"=="0" (
     if /i not "!cont!"=="y" goto :end_ok
 )
 
-REM --- 5. Menu ---------------------------------------------------------------
+REM --- 6. Menu ---------------------------------------------------------------
 :menu
 echo.
 echo =========================================
@@ -139,6 +161,8 @@ if exist "%WIZ_FLAGS_FILE%" del "%WIZ_FLAGS_FILE%"
 echo.
 echo Running the review ...
 echo (Add --help for all options.)
+REM The wizard already emitted --backend-profile into WIZ_FLAGS (from
+REM SHIMMER_BACKEND_PROFILE), so it is not repeated here.
 python scripts\pipeline.py !WIZ_FLAGS! %*
 goto :menu
 
@@ -156,7 +180,7 @@ if "!DRAFTQ!"=="" (
 echo.
 echo Drafting a memo, then reviewing it ...
 echo (Add --help for all options.)
-python scripts\pipeline.py --task draft --question "!DRAFTQ!" --sensitivity-layer-inactive-override --no-redaction-override %*
+python scripts\pipeline.py --task draft --question "!DRAFTQ!" --backend-profile !BACKEND_PROFILE! --sensitivity-layer-inactive-override --no-redaction-override %*
 goto :menu
 
 :opt_import
