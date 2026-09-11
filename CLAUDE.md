@@ -332,7 +332,13 @@ processing swarm governed by an append-only constitution.
   a draft run also keeps the memo as `<doc_id>/memo.md`. The canonical basenames live in
   `run_context.DELIVERABLE_FILENAMES` (one source for the writer and the pipeline). `audit/`
   (with `pairing_map.json`, carrying per unit `band_conditions` and `prior_comparisons` and
-  per document `prior_orphans`) and `logs/` sit alongside. Runs never overwrite each other.
+  per document `prior_orphans`) and `logs/` sit alongside. `logs/call_evidence.jsonl` records,
+  per model call, the structural identifiers of what the call was shown (unit, neighbour unit
+  ids, heading, reference ids supplied and rendered, rule ids, agent, backend, model, run,
+  call id), never text; the call id joins the cost row and the bus post
+  (`scripts/call_evidence.py`). `scripts/fn_evidence.py` classifies every missed expected
+  defect into one of four evidence classes from saved artifacts only, through the scorer,
+  which is the only reader of a key. Runs never overwrite each other.
 - `durable/`: learned and governance state that survives reset: `learnings/`, `cache/`,
   `global/`, `governance/`, `reference/`.
 - `ontology/stores/`: the cross-run learning graph (capture, graph, GNN state). Its storage

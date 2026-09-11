@@ -15825,6 +15825,297 @@ def check_203_console_current_with_the_chain():
     return _ok(shipped[1] + "; neutralise (every agent fires) FAILS, restore PASSES")
 
 
+def _fne_paired_fixture_run(out_root, *, stub_dispatch):
+    """Run the REAL paired path (build_pairing_map, _paired_convention_review,
+    _run_one, AgentWrapper.run_task, build_prompt) on a domain-free two-unit
+    document with one computable rule, the backend replaced by `stub_dispatch`
+    (no model). Returns (run_context, registry, doc, prompts seen by the stub)."""
+    import asyncio as _asyncio
+    import pipeline as _pl
+    import pairing_map as _pm
+    import agent_wrapper as _aw
+    import run_context as _rc
+    from cost_tracker import CostTracker
+    from orchestrator import TopOrchestrator
+
+    registry = {"conventions": [
+        {"id": "CONV-001", "category": "conv-a01", "severity": "required",
+         "subjects": ["conformance"],
+         "rule": "The sum of the declared parts must equal the declared total extent."}]}
+    doc = {"id": "zqprobe_doc", "name": "zqprobe_doc.md", "text": "\n".join([
+        "## Unit 7", "", "Total declared extent: 40.0 zed", "",
+        "| Part | Extent (zed) |", "|---|---|", "| P-A | 18.0 |", "| P-B | 14.0 |", "",
+        "## Unit 8", "", "A quiet passage that states no figure of any kind.", ""])}
+    seen = {}
+
+    def _stub(self, stable_prefix, dynamic_suffix="", **kw):
+        seen[self.name] = stable_prefix + dynamic_suffix
+        r = _aw.CallResult(backend=self.backend, model="stub-model", raw_text="",
+                           ok=False, error="stubbed, no model call")
+        self._record_cost(r, duration_ms=1)  # as every real call_* method does
+        return r
+
+    ctx = _rc.create_run(out_root)
+    orch = TopOrchestrator.boot(ROOT, interactive=False, run_adaptive_spawn=False,
+                                run_context=ctx,
+                                cost_tracker=CostTracker.open(ctx.logs_dir(), print_live=False))
+    pairing = _pm.build_pairing_map(doc["text"], registry["conventions"],
+                                    document_id=doc["id"], convention_registry=registry)
+    refs = [{"ref_id": "REF-0009", "document": "ref.md", "text": "a reference passage of prose"}]
+    orig = _aw.AgentWrapper.dispatch
+    _aw.AgentWrapper.dispatch = stub_dispatch or _stub
+    try:
+        _asyncio.run(_pl._paired_convention_review(
+            orch, {}, doc, pairing, registry, refs, "objectives", {doc["id"]: 1}, 1, None,
+            context_refs=[], convention_assignment=None))
+    finally:
+        _aw.AgentWrapper.dispatch = orig
+    return ctx, registry, doc, seen
+
+
+def _fne_recording_body():
+    import tempfile
+    import call_evidence as _ce
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_fne_rec_") as tmp:
+        ctx, registry, doc, seen = _fne_paired_fixture_run(tmp, stub_dispatch=None)
+        if not seen:
+            return _fail("the stubbed backend was never reached: no paired call was made")
+        prompt = next(iter(seen.values()))
+        # (1) one already-executed call, reconstructed from the saved record alone
+        path = _ce.evidence_path(ctx.run_dir)
+        if not path.is_file():
+            return _fail(f"no {path.name} was written under the run's logs/ for a real paired call")
+        records = _ce.load(ctx.run_dir)
+        if len(records) != 1:
+            return _fail(f"expected exactly one evidence record for one paired call, got {len(records)}")
+        call_id = records[0].get("call_id")
+        rec = _ce.reconstruct(ctx.run_dir, call_id)
+        if rec is None or set(rec) != set(_ce.RECORD_FIELDS):
+            return _fail(f"the record cannot be reconstructed from the file alone, or carries fields "
+                         f"other than RECORD_FIELDS: {sorted(rec or {})}")
+        want = {"task": "paired_review", "unit_id": "u01-unit-7", "heading_unit_id": "u01-unit-7",
+                "neighbour_unit_ids": ["u02-unit-8"], "document_unit_ids": ["u01-unit-7", "u02-unit-8"],
+                "reference_ids": ["REF-0009"], "reference_ids_in_prompt": ["REF-0009"],
+                "payload_document_id": "u01-unit-7", "rule_ids": ["CONV-001"],
+                "agent": "PRACTICE_AUDITOR", "phase": "5.5", "run_id": ctx.run_id}
+        for k, v in want.items():
+            if rec.get(k) != v:
+                return _fail(f"reconstructed {k}={rec.get(k)!r}, the call actually saw {v!r}")
+        if not rec.get("backend") or not rec.get("model") or not rec.get("ts") or rec.get("prompt_chars", 0) <= 0:
+            return _fail(f"backend/model/ts/prompt_chars not recorded: {rec}")
+        # (2) the record agrees with the bytes the backend was shown
+        # The payload is serialised as JSON into the prompt, so a FIELD is present
+        # as '"name":' with the colon; the bare word also occurs inside the
+        # neighbor_note prose, which names both fields whether or not they exist.
+        if '"unit_id": "u01-unit-7"' not in prompt or '"following_unit_text":' not in prompt \
+                or '"preceding_unit_text":' in prompt or "REF-0009" not in prompt:
+            return _fail("the stubbed backend's prompt disagrees with the record (unit, neighbour side, refs)")
+        if rec["prompt_chars"] != len(prompt):
+            return _fail(f"prompt_chars {rec['prompt_chars']} != the prompt actually sent ({len(prompt)})")
+        # (3) identifiers, never text: no passage of the document or the rule in the record
+        passages = ["Total declared extent: 40.0 zed", "A quiet passage that states no figure",
+                    registry["conventions"][0]["rule"], "a reference passage of prose", "Unit 7"]
+        leaked = _ce.leaked_text(rec, passages, min_len=6)
+        if leaked:
+            return _fail(f"the evidence record carries document text: {leaked!r}")
+        # (4) the same call id joins the cost row and the bus post
+        cost_rows = [json.loads(l) for l in ctx.cost_jsonl_path().read_text(encoding="utf-8").splitlines() if l.strip()]
+        if [r.get("call_id") for r in cost_rows] != [call_id]:
+            return _fail(f"the cost row does not carry the call id: {[r.get('call_id') for r in cost_rows]}")
+        bus_ids = [m.get("body", {}).get("call_id")
+                   for m in (json.loads(l) for l in ctx.bus_path().read_text(encoding="utf-8").splitlines() if l.strip())
+                   if isinstance(m.get("body"), dict) and m["body"].get("call_id")]
+        if bus_ids != [call_id]:
+            return _fail(f"the bus post does not carry the call id: {bus_ids}")
+        # (5) a wrapper with no run context records nothing and says so
+        no_ctx = _ce.record(None, rec)
+        if no_ctx is not None:
+            return _fail("record() wrote somewhere with no run context to write under")
+    return _ok("one real paired call (dispatch stubbed) wrote one evidence record under the "
+               "run's logs/ and it reconstructs from the file alone: unit u01-unit-7, "
+               "neighbour u02-unit-8 (following only, as the prompt shows), heading, document "
+               "map, REF-0009, CONV-001, agent, backend, model, phase, run and call id, "
+               "prompt length equal to the bytes sent; no passage of the document, rule or "
+               "reference in it; the call id joins the cost row and the bus post; no run "
+               "context, no write")
+
+
+def check_204_call_evidence_records_what_a_call_saw_as_identifiers():
+    """False-negative evidence, part one: the recording. The payload a model
+    receives was built and then discarded; nothing saved reconstructed which
+    units, headings or references a call actually saw, so a rule never asked and
+    a rule failed both landed in one recall number. AgentWrapper.run_task now
+    records, per call, the STRUCTURAL identifiers of what it is about to send
+    (scripts/call_evidence.py: unit, neighbour unit ids, heading, document map,
+    reference ids, rule ids, agent, backend, model, run, phase, a fresh call id,
+    prompt length) to <run>/logs/call_evidence.jsonl, and carries the call id
+    onto the cost row and the bus post, so the three artifacts join. Never text:
+    the file must not become a second copy of the document.
+
+    Executed, no model: the real paired path on a two-unit fixture with the
+    backend stubbed; the one call's record is reconstructed from the saved file
+    alone and compared with the bytes the stub was shown. Neutralise-and-restore:
+    with record() replaced by a no-op, no file exists and the body must FAIL;
+    restored, PASS."""
+    import call_evidence as _ce
+
+    shipped = _fne_recording_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _ce.record
+    _ce.record = lambda run_context, rec: None
+    try:
+        neutralised = _fne_recording_body()
+    finally:
+        _ce.record = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with the recorder neutralised the body still passed ({neutralised})")
+    restored = _fne_recording_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring the recorder the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; neutralise (recorder off) FAILS, restore PASSES")
+
+
+def _fne_classifier_fixture(d, *, with_evidence):
+    """A run folder with a pairing map (three units, two rules), an assignment
+    carrying the operator's rule ids, and, when asked, an evidence file with one
+    recorded paired call for (u01, CONV-001) that supplied no neighbour."""
+    import call_evidence as _ce
+    d = Path(d)
+    (d / "audit").mkdir(parents=True, exist_ok=True)
+    (d / "logs").mkdir(parents=True, exist_ok=True)
+    units = [
+        {"unit_id": "u01-alpha", "title": "Alpha", "kind": "section", "index": 0, "fields_present": ["x"],
+         "paired": [{"rule_id": "CONV-001", "reason": "unit carries every field the rule names: x"}],
+         "rejected": [{"rule_id": "CONV-002", "reason": "unit lacks y"}], "undecided": []},
+        {"unit_id": "u02-beta", "title": "Beta", "kind": "section", "index": 1, "fields_present": ["x"],
+         "paired": [{"rule_id": "CONV-001", "reason": "unit carries every field the rule names: x"}],
+         "rejected": [{"rule_id": "CONV-002", "reason": "unit lacks y"}], "undecided": []},
+        {"unit_id": "u03-gamma", "title": "Gamma", "kind": "section", "index": 2, "fields_present": [],
+         "paired": [], "rejected": [{"rule_id": "CONV-001", "reason": "unit lacks x"},
+                                   {"rule_id": "CONV-002", "reason": "unit lacks y"}], "undecided": []},
+    ]
+    (d / "audit" / "pairing_map.json").write_text(
+        json.dumps({"docA": {"document_id": "docA", "units": units}}), encoding="utf-8")
+    (d / "audit" / "convention_assignment.json").write_text(json.dumps({
+        "by_rule": {"CONV-001": {"status": "assigned", "source_rule_id": "CONV-A01"},
+                    "CONV-002": {"status": "assigned", "source_rule_id": "CONV-A02"}},
+        "by_agent": {"PRACTICE_AUDITOR": ["CONV-001", "CONV-002"]}}), encoding="utf-8")
+    if with_evidence:
+        rec = _ce.extract({"task": "paired_review", "unit_id": "u01-alpha", "rule_id": "CONV-001",
+                           "document_map": [{"unit_id": u["unit_id"]} for u in units]},
+                          call_id="call-u01", run_id="r", phase="5.5", doc_id="1",
+                          agent="PRACTICE_AUDITOR", backend="b", model="m",
+                          convention_registry={"conventions": [{"id": "CONV-001"}]})
+        (d / "logs" / "call_evidence.jsonl").write_text(json.dumps(rec) + "\n", encoding="utf-8")
+    return d
+
+
+def _fne_classifier_body():
+    import fn_evidence as _fe
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_fne_cls_") as tmp:
+        run_a = _fne_classifier_fixture(Path(tmp) / "with_evidence", with_evidence=True)
+        run_b = _fne_classifier_fixture(Path(tmp) / "no_evidence", with_evidence=False)
+        # a synthetic key, built here, never a file: only the scorer reads a key
+        expectations = [
+            (run_a, {"unit": "u01", "rule": "CONV-A01"}, _fe.PRESENT_IN_PAYLOAD,
+             "exposed to a recorded call carrying the rule"),
+            (run_a, {"unit": "u02", "rule": "CONV-A01"}, _fe.PRESENT_UPSTREAM,
+             "planned in the map, but the evidence file records no call for it"),
+            (run_a, {"unit": "u03", "rule": "CONV-A02"}, _fe.PRESENT_UPSTREAM,
+             "never paired: a rule never asked classifies as the second class, never the first"),
+            (run_a, {"unit": "u09", "rule": "CONV-A01"}, _fe.ABSENT_FROM_CORPUS,
+             "no unit of the parsed document contains the key's unit"),
+            (run_a, {"unit": "u01", "rule": "CONV-A09"}, _fe.UNKNOWN,
+             "a rule id no saved artifact maps"),
+            (run_b, {"unit": "u01", "rule": "CONV-A01"}, _fe.UNKNOWN,
+             "planned, but the run predates the recording: nothing saved says what the call saw"),
+            (run_b, {"unit": "u03", "rule": "CONV-A02"}, _fe.PRESENT_UPSTREAM,
+             "never paired, provable from the map alone even without a recording"),
+        ]
+        for run_dir, expected, want, why in expectations:
+            got = _fe.classify(expected, _fe.load_run_artifacts(run_dir))
+            if got["class"] != want:
+                return _fail(f"{expected} on {run_dir.name}: got {got['class']}, expected {want} "
+                             f"({why}); basis={got['basis']}")
+            if got["class"] not in _fe.CLASSES or not got["basis"]:
+                return _fail(f"{expected}: a classification with no basis or outside the four classes")
+        rows = _fe.classify_missed([e for _r, e, _w, _y in expectations if _r is run_a], run_a)
+        counts = _fe.summary(rows)
+        if counts != {_fe.PRESENT_IN_PAYLOAD: 1, _fe.PRESENT_UPSTREAM: 2, _fe.ABSENT_FROM_CORPUS: 1, _fe.UNKNOWN: 1}:
+            return _fail(f"summary counts wrong: {counts}")
+        # no pairing map at all: nothing can be proven, every miss is UNKNOWN
+        (run_a / "audit" / "pairing_map.json").unlink()
+        got = _fe.classify({"unit": "u01", "rule": "CONV-A01"}, _fe.load_run_artifacts(run_a))
+        if got["class"] != _fe.UNKNOWN:
+            return _fail(f"with no pairing map the classifier still claimed {got['class']}")
+    return _ok("the four classes are each reached only from saved artifacts: exposed in a recorded "
+               "call; planned but never called (evidence file present); never paired (second "
+               "class, never the first); unit absent from the parsed document; unmappable rule id, "
+               "or a planned pair on a run that predates the recording, or no pairing map, all "
+               "UNKNOWN; every classification carries its basis")
+
+
+def check_205_false_negative_evidence_classification():
+    """False-negative evidence, part two: the classifier (scripts/fn_evidence.py).
+    Every expected defect the system failed to produce is put into exactly one of
+    four classes, EVIDENCE_PRESENT_IN_MODEL_PAYLOAD, EVIDENCE_PRESENT_UPSTREAM_BUT_
+    NOT_IN_PAYLOAD, EVIDENCE_ABSENT_FROM_CORPUS, UNKNOWN, from the run's saved
+    artifacts alone (the pairing map, the assignment with the operator's rule ids,
+    the call evidence, the bus) and never by inference: a missed defect for a rule
+    that was never paired is the second class, not the first, and whatever cannot
+    be proven is UNKNOWN. The scorer (tools/score_corpus.py, the only reader of an
+    answer key) hands each missed planted entry to the classifier and prints the
+    class and its basis per entry, so a rule the model was never asked and a rule
+    it failed to answer stop landing in one number.
+
+    Executed on tempdir fixtures with a synthetic key built in memory (no key file
+    is ever opened). Also asserts the classifier's source never names an answer
+    key or the benchmark keys, the scorer calls it, and pipeline BOOT writes the
+    operator's rule id beside every registry id in the saved assignment (the
+    mapping the classifier depends on). Neutralise-and-restore: with the pairing
+    map hidden from the classifier, the never-paired case can no longer be proven
+    and the body must FAIL; restored, PASS."""
+    import inspect
+    import fn_evidence as _fe
+    import pipeline as _pl
+
+    src = inspect.getsource(_fe)
+    for needle in ("answer_key", "benchmark/keys", "benchmark\\keys"):
+        if needle in src:
+            return _fail(f"fn_evidence.py names {needle!r}: the classifier must never open a key")
+    scorer = (ROOT / "tools" / "score_corpus.py").read_text(encoding="utf-8")
+    if "fn_evidence.classify_missed(" not in scorer or "false-negative evidence" not in scorer:
+        return _fail("tools/score_corpus.py does not hand its missed entries to fn_evidence")
+    boot = inspect.getsource(_pl.main)
+    if "_row[\"source_rule_id\"] = finding_record.source_rule_id_for(_rid, conv_registry_dict)" not in boot:
+        return _fail("pipeline BOOT no longer writes source_rule_id beside every registry id in the "
+                     "saved assignment; the classifier could not map a key's rule from saved data")
+    shipped = _fne_classifier_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _fe.load_run_artifacts
+
+    def _blind(run_dir):
+        arts = original(run_dir)
+        arts["pairing"] = None
+        return arts
+    _fe.load_run_artifacts = _blind
+    try:
+        neutralised = _fne_classifier_body()
+    finally:
+        _fe.load_run_artifacts = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with the pairing map hidden the body still passed ({neutralised})")
+    restored = _fne_classifier_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring the artifacts the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; the classifier never names a key, the scorer wires it, BOOT saves "
+               "the rule-id mapping; neutralise (map hidden) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -16043,6 +16334,10 @@ CHECKS = [
      check_202_ontology_dual_track_supersede_built_delete_not),
     ("203 the console is current with the chain: distribution, not-firing, harness (night W8)",
      check_203_console_current_with_the_chain),
+    ("204 call evidence records what a call saw, as identifiers, reconstructable from disk",
+     check_204_call_evidence_records_what_a_call_saw_as_identifiers),
+    ("205 false-negative evidence classification, four classes from saved artifacts only",
+     check_205_false_negative_evidence_classification),
 ]
 
 

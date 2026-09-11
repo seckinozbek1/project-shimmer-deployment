@@ -3366,6 +3366,13 @@ def main(argv=None):
         (ROOT / "config" / "agent_registry.json").read_text(encoding="utf-8"))["agents"]
     convention_assignment_result = convention_assignment.assign_conventions(
         conv_registry_dict.get("conventions", []), assignment_agents)
+    # False-negative evidence (scripts/fn_evidence.py): the operator's own rule id
+    # is written beside every registry id in the saved assignment, so a run's
+    # artifacts alone can map a key's rule to the registry id the pairing map and
+    # the call evidence speak in. Without it the mapping would have to be inferred
+    # from a registry regenerated at some later BOOT, which is not evidence.
+    for _rid, _row in convention_assignment_result.get("by_rule", {}).items():
+        _row["source_rule_id"] = finding_record.source_rule_id_for(_rid, conv_registry_dict)
     convention_assignment.write_assignment(run_ctx, convention_assignment_result)
     _untagged = convention_assignment.untagged_count(convention_assignment_result)
     _unassigned = convention_assignment.unassigned_summary(convention_assignment_result)

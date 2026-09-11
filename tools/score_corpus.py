@@ -286,6 +286,29 @@ def score(corpus, run_dir):
         for a in false_pos:
             print("  %-28s %-9s %s" % (_lower(a.get("finding_unit_id"))[:28],
                                        a.get("convention_ref"), (a.get("comment") or "")[:70]))
+
+    # False-negative evidence: every planted entry the run did not produce is put
+    # into one of four classes from the run's saved artifacts alone (the pairing
+    # map, the assignment, the call evidence, the bus), so a rule the model was
+    # never asked and a rule it failed to answer stop landing in one number. The
+    # scorer is the only reader of the key; the classifier receives the planted
+    # entry as a dict and never opens the key itself.
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import fn_evidence  # noqa: E402
+
+    missed = [p for p, f in zip(planted, found) if not f]
+    if missed:
+        rows = fn_evidence.classify_missed(missed, run_dir)
+        counts = fn_evidence.summary(rows)
+        print()
+        print("  false-negative evidence (per missed entry, from saved artifacts only):")
+        for c in fn_evidence.CLASSES:
+            print("    %-46s %d" % (c, counts.get(c, 0)))
+        for r in rows:
+            e = r["expected"]
+            print("  %-12s %-9s %-46s" % (e["unit"], e["rule"], r["class"]))
+            for b in r["basis"]:
+                print("      - %s" % b)
     return 0
 
 
