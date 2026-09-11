@@ -99,6 +99,11 @@ durable/governance/exposure_ledger.jsonl
 # tools/archive_ontology_stores.py for the archive-and-empty path). graph.json and
 # gnn_state.json are DERIVED (the graph is rebuilt from provisions and the GNN state is
 # recomputed every run), so they are ignored to avoid per-run churn of regenerable artifacts.
+# The JSONL stores themselves, which the comment above always claimed were
+# untracked but no rule actually ignored: a console preview run seeds fixture
+# provisions into the real store, and without these lines those fixtures are
+# stageable and could be committed as if they were a real run's content.
+ontology/stores/*.jsonl
 ontology/stores/graph.json
 ontology/stores/gnn_state.json
 

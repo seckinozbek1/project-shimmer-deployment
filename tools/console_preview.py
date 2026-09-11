@@ -437,6 +437,19 @@ def _build_completed_with_findings():
 
     audit = run_dir / "audit"
     audit.mkdir(parents=True, exist_ok=True)
+    # The reference index the citation surface reads: without it a REF on a
+    # finding is a link with nothing behind it, which is the state the console
+    # audit found and this fixture exists to exercise.
+    (audit / "reference_index.json").write_text(json.dumps({"entries": [
+        {"ref_id": "REF-0012", "input_type": "context",
+         "document_id": "case_a", "document_name": "case_a.md",
+         "location": {"paragraph": 4},
+         "text_excerpt": "The upper bound for this category is 100 tonnes per declared period."},
+        {"ref_id": "REF-0031", "input_type": "context",
+         "document_id": "case_a", "document_name": "case_a.md",
+         "location": {"paragraph": 9},
+         "text_excerpt": "Amounts stated in a second currency are normalised before comparison."},
+    ]}), encoding="utf-8")
     (audit / "pairing_map.json").write_text(json.dumps({
         "case_a": {
             "document_id": "case_a",
@@ -664,7 +677,51 @@ def _build_completed_amendment_edge_cases():
     FIXTURES.append(("completed, amendment edge cases (no reasoning, pre-fix)", run_id))
 
 
+def _seed_ontology():
+    """Seed the cross-run ontology so the Agents page's four ontology sections
+    have something true to show: provisions, a merged relation found by BOTH
+    mechanisms (the case a reader would trust most), an answered conflict, and a
+    GNN state. This harness is a throwaway local preview and is never run by the
+    gate or by a real run."""
+    import ontology_store as _os_mod
+    import relation_extract as _rx
+    import ontology_conflicts as _oc
+
+    live = ROOT / "ontology" / "stores" / "provisions.jsonl"
+    live.parent.mkdir(parents=True, exist_ok=True)
+    store = _os_mod.ProvisionStore(live_path=live, scope=_os_mod.DEFAULT_SCOPE)
+    if store.current():
+        return                      # already seeded; never duplicate
+    t = _os_mod.now_iso()
+    run = "20260910_140000__f19d01"
+    store.append([
+        {"node": "Provision", "id": "case_a::REF-0012", "document_id": "case_a",
+         "ref_id": "REF-0012", "convention_ref": "CONV-001", "stub": False,
+         "provenance": _os_mod.provenance(time=t, agent="PRACTICE_AUDITOR", run=run)},
+        {"node": "Provision", "id": "case_a::REF-0031", "document_id": "case_a",
+         "ref_id": "REF-0031", "convention_ref": "CONV-003", "stub": False,
+         "provenance": _os_mod.provenance(time=t, agent="STYLE_GUARDIAN", run=run)},
+    ])
+    merged = _rx.merge_relations([
+        {"type": _rx.RELATION_CROSS_REFERENCE, "method": _rx.METHOD_PATTERN,
+         "source": "u09-entry", "target": "u01-glossary", "pattern": "defined-term-reference"},
+        {"type": _rx.RELATION_SIMILAR, "method": _rx.METHOD_SIMILARITY,
+         "source": "u01-glossary", "target": "u09-entry", "score": 0.94},
+        {"type": _rx.RELATION_SIMILAR, "method": _rx.METHOD_SIMILARITY,
+         "source": "u03-clause", "target": "u11-clause", "score": 0.81},
+    ])
+    store.append(_rx.relation_records(
+        merged, document_id="case_a", run_id=run,
+        provenance=_os_mod.provenance(time=t, agent=None, run=run)))
+    conflicts = _oc.detect_conflicts(store.current(), {"case_a::REF-0012": "CONV-009"})
+    if conflicts:
+        _oc.write_resolutions(store, {conflicts[0]["conflict_id"]: _oc.ANSWER_RULE},
+                              run_id="operator",
+                              conflicts_by_id={c["conflict_id"]: c for c in conflicts})
+
+
 def _seed_fixtures():
+    _seed_ontology()
     _build_queued()
     _build_running()
     _build_awaiting_approval()
@@ -754,6 +811,12 @@ SCREENSHOT_PAGES = [
     ("run_findings", "developer", "#/runs/20260910_140000__f19d01", None),
     ("agents", "human", "#/agents", 2600),
     ("agents", "developer", "#/agents", 2600),
+    # The four ontology sections (store, GNN state, relations, candidates,
+    # conflicts) render BELOW eighteen agents of nine parts each, far past the
+    # 2600 px the shots above keep. These capture that region instead, which is
+    # where the console audit's new work actually shows.
+    ("ontology_sections", "human", "#/agents", 2600, "ontology-store-holder"),
+    ("ontology_sections", "developer", "#/agents", 2600, "ontology-store-holder"),
 ]
 
 
@@ -788,7 +851,9 @@ async def _shoot_pages(ws_url, out_dir, settle_s=3.0):
         await cmd("Runtime.evaluate",
                   expression=f"sessionStorage.setItem('shimmer_console_token', {json.dumps(TOKEN)});")
         written = []
-        for stem, view, frag, max_height in SCREENSHOT_PAGES:
+        for page in SCREENSHOT_PAGES:
+            stem, view, frag, max_height = page[0], page[1], page[2], page[3]
+            anchor_id = page[4] if len(page) > 4 else None
             await cmd("Runtime.evaluate",
                       expression=(f"sessionStorage.setItem('shimmer_console_view', {json.dumps(view)});"
                                   f"location.hash = {json.dumps(frag)}; location.reload();"))
@@ -798,11 +863,20 @@ async def _shoot_pages(ws_url, out_dir, settle_s=3.0):
             height = max(900, int(size.get("height") or 900))
             if max_height:
                 height = min(height, max_height)
+            top = 0
+            if anchor_id:
+                # clip from the named section's own top, so a page far taller
+                # than the clip still proves the sections that matter
+                res = await cmd("Runtime.evaluate", expression=(
+                    "(function(){var e=document.getElementById(" + json.dumps(anchor_id) + ");"
+                    "return e ? Math.max(0, Math.round(e.getBoundingClientRect().top + window.scrollY) - 40) : 0;})()"),
+                    returnByValue=True)
+                top = int((res.get("result") or {}).get("value") or 0)
             await cmd("Emulation.setDeviceMetricsOverride", width=1280, height=height,
                       deviceScaleFactor=1, mobile=False)
             await asyncio.sleep(0.4)
             shot = await cmd("Page.captureScreenshot", format="png", captureBeyondViewport=True,
-                             clip={"x": 0, "y": 0, "width": 1280, "height": height, "scale": 1})
+                             clip={"x": 0, "y": top, "width": 1280, "height": height, "scale": 1})
             target = Path(out_dir) / f"{stem}_{view}.png"
             target.write_bytes(base64.b64decode(shot["data"]))
             written.append(target)

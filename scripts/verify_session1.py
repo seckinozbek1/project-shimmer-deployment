@@ -17805,6 +17805,258 @@ def check_213_gnn_candidate_finder():
     return _ok(shipped[1] + "; neutralise (a learned-relevance claim) FAILS, restore PASSES")
 
 
+def _console_screens_body():
+    """The executed body of check 214: the four routes the console audit found
+    missing, and the console sections that consume them, on fixtures in tempdirs.
+
+    Never the repository's own ontology store or output directory. No model is
+    loaded: the GNN STATE path is read through ontology_gnn_state, which imports no
+    tensor library precisely so a reader of a JSON file of counts does not have to.
+
+    Factored out so the check can run it as shipped and neutralised."""
+    import json as _json
+    import os as _os
+    import tempfile
+    import ontology_store as _os_mod
+    import ontology_reader as _reader
+    import relation_extract as _rx
+    import ontology_conflicts as _oc
+    import ontology_gnn_state as _state
+    from fastapi.testclient import TestClient
+
+    d = Path(tempfile.mkdtemp(prefix="shimmer_console_screens_"))
+    runs = d / "runs"
+    run_id = "20260911_000000__c0ffee"
+    run_dir = runs / run_id
+    (run_dir / "audit").mkdir(parents=True)
+    (run_dir / "status.json").write_text(_json.dumps({
+        "run_id": run_id, "status": "completed",
+        "submitted_at": "2026-09-11T00:00:00+00:00", "exit_code": 0}), encoding="utf-8")
+    # THE CITATION SURFACE's own source: the reference index a run writes.
+    passage = "The upper bound for this category is 100 units per declared period."
+    (run_dir / "audit" / "reference_index.json").write_text(_json.dumps({"entries": [
+        {"ref_id": "REF-0012", "input_type": "context", "document_id": "zqdoc",
+         "document_name": "zqdoc.md", "location": {"paragraph": 4},
+         "text_excerpt": passage}]}), encoding="utf-8")
+    (run_dir / "audit" / "pairing_map.json").write_text(_json.dumps({"zqdoc": {
+        "units": [{"unit_id": "u01-alpha", "title": "Alpha", "fields_present": [],
+                   "paired": [], "rejected": []}]}}), encoding="utf-8")
+    (run_dir / "audit" / "convention_assignment.json").write_text(
+        _json.dumps({"by_rule": {}, "by_agent": {}}), encoding="utf-8")
+
+    # An ontology store with a relation BOTH mechanisms found, and one answered
+    # conflict, so the two new ontology sections have something true to serve.
+    live = d / "provisions.jsonl"
+    store = _os_mod.ProvisionStore(live_path=live, scope=_os_mod.DEFAULT_SCOPE)
+    t0 = _os_mod.now_iso()
+    store.append([
+        {"node": "Provision", "id": "zqdoc::REF-0012", "document_id": "zqdoc",
+         "ref_id": "REF-0012", "convention_ref": "CONV-001", "stub": False,
+         "provenance": _os_mod.provenance(time=t0, agent="AGENT_ALPHA", run="runA")}])
+    merged = _rx.merge_relations([
+        {"type": _rx.RELATION_CROSS_REFERENCE, "method": _rx.METHOD_PATTERN,
+         "source": "u09-entry", "target": "u01-glossary", "pattern": "p1"},
+        {"type": _rx.RELATION_SIMILAR, "method": _rx.METHOD_SIMILARITY,
+         "source": "u01-glossary", "target": "u09-entry", "score": 0.94}])
+    store.append(_rx.relation_records(
+        merged, document_id="zqdoc", run_id="runA",
+        provenance=_os_mod.provenance(time=t0, agent=None, run="runA")))
+    conflicts = _oc.detect_conflicts(store.current(), {"zqdoc::REF-0012": "CONV-009"})
+    if not conflicts:
+        return _fail("the fixture should produce one conflict to answer")
+
+    # The GNN state must be readable WITHOUT torch: that is the defect that made
+    # the one always-visible section disappear.
+    summary = _state.state_summary(d / "no_state.json")
+    if summary.get("exists") is not False or summary.get("tier2_signal") != "empty":
+        return _fail("an absent GNN state must read as absent with its qualifier: %r"
+                     % (summary,))
+    # the CODE, not the prose: the module's docstring names torch to explain why it
+    # does not import it, and an assertion over raw text would fire on that sentence.
+    import ast as _ast
+    state_src = (SCRIPTS / "ontology_gnn_state.py").read_text(encoding="utf-8")
+    imported = set()
+    for node in _ast.walk(_ast.parse(state_src)):
+        if isinstance(node, _ast.Import):
+            imported.update(a.name.split(".")[0] for a in node.names)
+        elif isinstance(node, _ast.ImportFrom) and node.module:
+            imported.add(node.module.split(".")[0])
+    heavy = imported & {"torch", "numpy", "ontology_gnn", "ontology_candidates"}
+    if heavy:
+        return _fail("reading a JSON file of counts must not import a tensor library or a "
+                     "module that does; it imports %r, and GET /ontology/gnn 500'd "
+                     "wherever torch could not load" % (sorted(heavy),))
+
+    saved = {k: _os.environ.get(k) for k in ("SHIMMER_TOKEN_HASH", "SHIMMER_OUTPUT_DIR")}
+    token = "console-screens-token"
+    _os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(token.encode()).hexdigest()
+    _os.environ["SHIMMER_OUTPUT_DIR"] = str(runs)
+    original_dir = _reader.OGE_STORES_DIR
+    try:
+        _reader.OGE_STORES_DIR = d
+        sys.modules.pop("server", None)
+        import server
+        try:
+            client = TestClient(server.app)
+            headers = {"Authorization": "Bearer " + token}
+
+            # 1. THE CITATION SURFACE: a finding's REF resolves to its passage.
+            if client.get("/runs/%s/references" % run_id).status_code != 401:
+                return _fail("the references route must require a token")
+            r = client.get("/runs/%s/references?ref_id=REF-0012" % run_id, headers=headers)
+            if r.status_code != 200:
+                return _fail("references route returned %r" % (r.status_code,))
+            got = (r.json().get("references") or [{}])[0]
+            if got.get("text_excerpt") != passage:
+                return _fail("the citation must resolve to the passage itself: %r" % (got,))
+            if client.get("/runs/%s/references?ref_id=REF-4040" % run_id,
+                          headers=headers).status_code != 404:
+                return _fail("an id this run never cited must be 404, not an empty list")
+
+            # 2. RELATIONS, with agreement as a fact and both directions kept.
+            r = client.get("/ontology/relations", headers=headers)
+            if r.status_code != 200 or r.json().get("relation_count") != 1:
+                return _fail("the relations route must serve the merged pair: %r" % (r.json(),))
+            row = r.json()["relations"][0]
+            if not row.get("agreed") or len(row.get("observations") or []) != 2:
+                return _fail("the served relation must carry agreement and both "
+                             "observations: %r" % (row,))
+
+            # 3. CONFLICT ANSWERS: three answers, an unrecognised one refused.
+            cid = conflicts[0]["conflict_id"]
+            if client.post("/ontology/conflicts/%s/answer" % cid, headers=headers,
+                           json={"answer": "maybe"}).status_code != 400:
+                return _fail("an unrecognised answer must be refused with 400")
+            r = client.post("/ontology/conflicts/%s/answer" % cid, headers=headers,
+                            json={"answer": "rule", "provision_id": "zqdoc::REF-0012",
+                                  "store_rule": "CONV-001", "rule_id": "CONV-009"})
+            if r.status_code != 202 or not r.json().get("recorded"):
+                return _fail("answering a conflict must record it: %r" % (r.status_code,))
+            r = client.get("/ontology/conflicts", headers=headers)
+            if r.json().get("answered_count") != 1:
+                return _fail("the answered conflict must be readable back")
+            rate = r.json().get("override_rate") or {}
+            if "caveat" not in rate:
+                return _fail("the override rate must carry its caveat in the body")
+            # the next run applies it and never asks again
+            applied, to_ask = _oc.apply_resolutions(
+                conflicts, _oc.resolutions_in(_os_mod.ProvisionStore(
+                    live_path=live, scope=_os_mod.DEFAULT_SCOPE)))
+            if to_ask or not applied:
+                return _fail("an answered conflict must be applied, not re-asked")
+
+            # 4. EVIDENCE CLASSIFICATION, without ever opening a key.
+            r = client.post("/runs/%s/evidence" % run_id, headers=headers,
+                            json={"expected": [{"unit": "alpha", "rule": "CONV-D01"}]})
+            if r.status_code != 200:
+                return _fail("the evidence route returned %r" % (r.status_code,))
+            body = r.json()
+            if body.get("count") != 1 or not body.get("classified"):
+                return _fail("the evidence route must classify the entry: %r" % (body,))
+            if set(body.get("classes") or []) != set(_fe_classes()):
+                return _fail("the evidence route must name all four classes")
+            if not (body["classified"][0].get("basis")):
+                return _fail("a classification must name the artifact behind it")
+            if client.post("/runs/%s/evidence" % run_id, headers=headers,
+                           json={"expected": []}).status_code != 400:
+                return _fail("an empty expected list must be a 400, not a silent empty answer")
+        finally:
+            sys.modules.pop("server", None)
+    finally:
+        _reader.OGE_STORES_DIR = original_dir
+        for k, v in saved.items():
+            if v is None:
+                _os.environ.pop(k, None)
+            else:
+                _os.environ[k] = v
+
+    # THE CONSOLE must consume all four, in both views.
+    ui = (SCRIPTS / "ui" / "console.html").read_text(encoding="utf-8")
+    for needle in ("function citationsHtml(", "function wireCitationLinks(",
+                   "function ontologyRelationsHtml(", "function ontologyConflictsHtml(",
+                   "function ontologyCandidatesHtml(",
+                   'apiJson("/ontology/relations")', 'apiJson("/ontology/candidates")',
+                   'apiJson("/ontology/conflicts")', "/references?ref_id="):
+        if needle not in ui:
+            return _fail("console.html no longer carries %r" % (needle,))
+    # the citation path is attached to BOTH views, not one
+    if ui.count("citationsHtml(f.source_refs") != 2:
+        return _fail("citations must be rendered in both the reviewer and developer "
+                     "views, found %d site(s)" % (ui.count("citationsHtml(f.source_refs"),))
+    # finding 12: a loss of 0.0 with no delta must not read as a measured error
+    if "no new nodes arrived to fit" not in ui:
+        return _fail("the GNN section must say a zero loss means no step ran, not a "
+                     "perfect reconstruction")
+    # finding 11: two numbers that cannot reconcile must say what each counts
+    if "not meant to reconcile" not in ui or "all phases" not in ui:
+        return _fail("the pair caption must say the call count is all-phase and that the "
+                     "two numbers are not meant to reconcile")
+    return _ok("the console's missing screens: a finding's citation resolves to the "
+               "passage it rests on (401 without a token, 404 for an id the run never "
+               "cited), relations serve the merged pair with agreement and both reported "
+               "directions, a conflict is answered through the same file-backed pattern "
+               "the approval channel uses (three answers, an unrecognised one refused, "
+               "applied by the next run and never re-asked, the override rate carrying its "
+               "caveat), and missed expected defects are classified from run artifacts "
+               "alone with no key ever opened; the console consumes all four in both views, "
+               "a zero GNN loss says no step ran, and the two non-reconciling numbers say "
+               "what each counts")
+
+
+def _fe_classes():
+    import fn_evidence as _fe
+    return _fe.CLASSES
+
+
+def check_214_console_missing_screens_and_citations():
+    """The console audit's three missing screens and its most serious finding
+    (2026-09-11). BUILT, NOT MEASURED: every assertion runs on fixtures in
+    tempdirs, the ontology store in this repository is empty, and no pipeline run
+    or model is involved.
+
+    The audit found that everything the system produces must be reachable and that
+    it was not: a finding's citations, which are what make it checkable, were
+    rendered nowhere in either view, so a reader had nothing to do but trust the
+    sentence. Relations had no route at all. Conflicts could be listed and
+    remembered but never answered. Missed expected defects were classified only
+    inside the scorer.
+
+    Neutralise-and-restore: with the reference index made unreadable, a citation
+    cannot resolve to its passage and the body must FAIL; restored, PASS."""
+    import server as _unused_probe  # noqa: F401  (import surface, not used here)
+
+    shipped = _console_screens_body()
+    if shipped[0] != "PASS":
+        return shipped
+
+    # Neutralise the citation path at its source: the route returns entries only
+    # when the index parses, so an index the route cannot read must break the
+    # resolve-to-passage assertion rather than silently serve nothing.
+    import json as _json
+    original_loads = _json.loads
+
+    def _no_index(text, *a, **k):
+        data = original_loads(text, *a, **k)
+        if isinstance(data, dict) and "entries" in data:
+            return {"entries": []}          # the defect: a citation resolves to nothing
+        return data
+
+    _json.loads = _no_index
+    try:
+        neutralised = _console_screens_body()
+    finally:
+        _json.loads = original_loads
+    if neutralised[0] != "FAIL":
+        return _fail("with the reference index emptied the body still passed (%r); a "
+                     "citation that cannot be followed must be caught" % (neutralised,))
+    restored = _console_screens_body()
+    if restored[0] != "PASS":
+        return _fail("after restoring the reference index the body no longer passes: %r"
+                     % (restored,))
+    return _ok(shipped[1] + "; neutralise (a citation that resolves to nothing) FAILS, "
+                            "restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -18043,6 +18295,8 @@ CHECKS = [
      check_212_ontology_conflicts_and_operator_answers),
     ("213 the GNN candidate finder, ranked on structure (ontology chain, job 4)",
      check_213_gnn_candidate_finder),
+    ("214 the console's missing screens and the citation surface",
+     check_214_console_missing_screens_and_citations),
 ]
 
 
