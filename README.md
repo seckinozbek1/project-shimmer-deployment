@@ -81,9 +81,9 @@ shimmer-deployment/
 │                                          assignment, the call-evidence recorder and the
 │                                          false-negative classifier, the harness builder,
 │                                          the ontology store, its reader, the relation
-│                                          extractor and the conflict memory, harness/,
-│                                          sensitivity_layer/, ui/ (the console, one HTML
-│                                          file plus its vendored typeface)
+│                                          extractor, the conflict memory and the candidate
+│                                          finder, harness/, sensitivity_layer/, ui/ (the
+│                                          console, one HTML file plus its vendored typeface)
 ├── corpus_ingest/                        the external corpus ingestion contract, validator,
 │                                          and its own test fixtures
 ├── config/                               governance and compiled config (constitution,
@@ -936,6 +936,28 @@ response body: **at single-operator volume it is not statistically meaningful** 
 never be read as a quality measure. **Built, not measured**: no run has ever produced a
 conflict, because the store is empty, so gate check 212 proves the whole cycle on fixtures.
 
+**The GNN as a candidate finder** (ontology chain, job 4) is the second half of the relation
+work, built beside the deterministic baseline and not instead of it.
+`scripts/ontology_candidates.py` runs the persisted encoder over the graph and proposes which
+provisions **may** relate, ranked by proximity in that encoder's space. It never asserts a
+relation, writes no relation record, and returns one row per unordered pair, highest first,
+with the pairs the baseline already found excluded on request so the two mechanisms are
+compared by what each finds that the other does not. Decision 9's shape is unchanged: the
+graph narrows, a model decides, the reasoning stays in text, and the score is shown rather
+than hidden.
+
+**What the ranking rests on, said here as plainly as in the code and the console: graph
+structure alone.** Node type, degree, edges. With no Tier-2 signal the engine has learned
+nothing, so `ranked_on`, `learned_relevance: false` and `tier2_signal: empty` travel in the
+response beside every candidate and in the state summary, and no consumer can render a
+candidate set without them. A candidate set ranked on structure is a real thing and a modest
+one; it is never learned relevance. Gate check 213 proves the finder, both routes and the
+console section on fixtures, and fails if the qualifier is ever replaced by a
+learned-relevance claim, including a subtler one that mentions the phrase without denying it.
+**Built, not measured**: no candidate set has been scored against anything, and the operator
+scores the baseline and the finder on the long-range corpus after the move, choosing between
+them then.
+
 Its storage layer is `scripts/ontology_store.py` (night chain W7, the ontology foundations),
 and four things are decided there. Scope: every record carries the scope it was written
 under and a store opened under one scope returns nothing written under another, enforced on
@@ -968,6 +990,18 @@ with the words, not the numbers: a self-supervised reconstruction fit with no Ti
 yet, explicitly not a trained relevance model. The computation this logs is unchanged, same
 values, same `summary` dict returned to its caller; only what the words say about what those
 values mean was fixed.
+
+**A correction, recorded because it was stated the other way for weeks.** The GNN does
+**not** reset its weights every run. `gnn_update` loads any prior state, restores the
+persisted encoder and decoder weights when the feature dimensions match, keeps a high-water
+mark of the node ids it has already trained on, backpropagates only over nodes new since
+that mark, and persists the updated mark; the feature width is constant across runs by
+construction (deterministic feature hashing into fixed buckets), which is exactly what makes
+a persisted weight matrix stay valid. Weights accumulate. What is absent is the **Tier-2
+signal** (recurrence of proposals and findings across runs, verification verdicts,
+precedent), which stays empty until runs populate it. So the engine learns nothing because
+there is nothing yet to learn from, not because it forgets. The distinction matters for what
+can be built on it: persistence is not the missing piece, a signal is.
 
 To install dependencies without the launcher (for example, in a CI environment that manages
 its own venv):
@@ -1650,6 +1684,8 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `GET` | `/harness` | token | The nine-part agent harness (night W4), one entry per agent, as `scripts/build_agent_harness.py` generated it into `config/agent_harness.json` (or `SHIMMER_AGENT_HARNESS`): `agents`, `shared_parts`, `part_names`, and `unresolved` (per agent, the parts still `decided: false`, each carrying its own `unresolved_because` in `agents`), so the console's Agents page shows an undecided part as undecided rather than omitting it. Also `agent_count` and `unresolved_part_count` (18 and 18 for the shipped harness: every agent's ontology part is undecided until an agent reads the store). Not run-scoped. `404` with a distinct detail when the harness has not been built on this server; `500` with detail "agent harness unreadable" when the file exists but does not parse. |
 | `GET` | `/ontology` | token | ontology chain job 1: the first read path the ontology store has ever had. The store under `ontology/stores/` has been written at the end of every run since build B1 and read back by nothing; this route answers the one question it can answer, which agent produced which provision under which rule, in which run, at which revision. Returns `scope`, `provision_count`, `stub_count`, `without_provenance`, `superseded_in_live`, `log_events`, counts by `agents` / `rules` / `runs` over the whole scope, and `provisions`, a per-provision list carrying identifiers and provenance ONLY, never a provision's own text (that boundary is `ontology_reader.SUMMARY_FIELDS`, not a convention this route applies by hand). Not run-scoped: the store is cross-run by construction, the same reasoning `/harness` and `/rules/{rule_id}` already use. An EMPTY store is `200` with zero counts and an empty list, not a `404` and not an error, which is the state of every store in this repository today. What this reading is good for, and what it is not, is in section G. |
 | `GET` | `/ontology/provisions/{provision_id:path}` | token | One provision's every revision in the default scope, oldest first, as provenance summaries: what makes the storage layer's supersession (built at night W7, shown nowhere) legible to a human. The id is the capture hook's composite `<document_id>::<ref_id>`, so it carries a colon pair and is matched as a path parameter. `404`, not an empty list, when the scope holds no such id: "this store has never held that provision" and "that provision has one revision" are different facts and a caller must be able to tell them apart. |
+| `GET` | `/ontology/gnn` | token | ontology chain job 4: the GNN's persisted state, structural metadata only (the state file holds weights and counts and no raw content by construction; this surfaces the counts, never the weights). Three fields are always present because they are the most important thing about this state and must not be a caveat a reader can skip: `tier2_signal` is `empty`, `learned_relevance` is `false`, and `ranked_on` says the ranking rests on graph structure alone. The engine persists and restores its weights across runs, so it does not forget; it has learned nothing because there is no signal yet to learn from, which is a different thing. Not run-scoped. A state never written is a `200` with `exists: false`, not a `404`, which is every installation today. |
+| `GET` | `/ontology/candidates` | token | ontology chain job 4: candidate provision pairs the graph proposes, `top_k` per provision (1 to 50, an out-of-range value being a `400` rather than a silent default) and `min_score` to drop weak pairs. Decision 9's shape: the graph NARROWS here, a model DECIDES, and the reasoning stays in text. These are pairs that MAY relate; nothing here asserts that they do, no relation record is written from them, and the deterministic baseline stays beside this rather than being replaced. **Ranked on graph structure alone** (node type, degree, edges), with `ranked_on`, `learned_relevance` and `tier2_signal` travelling in the body beside every candidate. A graph with fewer than two provisions is a `200` with an empty list. |
 | `GET` | `/ontology/conflicts` | token | ontology chain job 3: which ontology-versus-rule conflicts the operator has answered, how, and in which run, plus `override_rate`. A conflict is the narrow structural case where the store remembers one governing rule for a provision and the current run would apply another; in the run that meets it the pair is REFUSED and never guessed, the refusals are put to the operator together at the end, and the answer is written into the ontology so the same conflict is never put to them twice. `override_rate` counts answers where the current rule won over the store's memory and carries its own caveat in the response body, not only in documentation: at single-operator volume the rate is not statistically meaningful and must never be read as a quality measure. It is `null`, never `0.0`, when nothing has been answered, because "no answers yet" and "never overrode" are different facts. Not run-scoped; a store with no answers is a `200` with an empty list, which is every store today. |
 | `GET` | `/rules/{rule_id}` | token | console fresh-eyes addition: one rule's own text as the operator wrote it, from the current `config/convention_registry.json`. Not run-scoped, a rule's text does not vary per run. Matches by either id: the registry's own (`CONV-007`) or the operator's own (`CONV-A02`). Returns `id`, `source_rule_id`, `rule` (the operator's own text), `severity`, `action`, `source_file`, `source_location`. `404` with a distinct `detail` ("no rule with this id in the current registry") when the current registry, which regenerates at BOOT and can differ from whatever was in force when a citing run executed, has no such rule; that mismatch is itself informative, not hidden behind a generic not-found. |
 | `POST` | `/runs/{run_id}/cancel` | token | api STEP B2: stops a run. A queued job is removed before it ever starts; a running job's subprocess is terminated (then killed). Both land on `state="cancelled"`. `409` if the run is already in a terminal state (including already cancelled), refused with a reason naming its actual state, not a silent no-op. `404` for a malformed or unknown `run_id`. Deletes nothing on disk. |
@@ -2082,7 +2118,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**213** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**214** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2110,7 +2146,7 @@ something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 213 checks on an empty checkout would be proving nothing about those
+A gate that passed all 214 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Two
 more checks depend on the machine rather than the tree: check 193 loads one of the
 local-profile models with the network blocked at the socket and fails until the weights are
@@ -2168,9 +2204,9 @@ track; (203) the console current with the chain; (204 and 205) call evidence rec
 from disk and the four-class false-negative classifier; (206 and 207) the convention
 distribution on the paired path and the three recording gaps; (208 and 209) longest-match
 labels and the declared-scope absence path; (210) the ontology store's first reader,
-(211) the deterministic relation baseline and (212) ontology-versus-rule conflicts with the
-operator's remembered answers, all three proved on fixture records because every store in
-this repository is empty. Everything from 186 on was built on 10 and 11 September 2026 and
+(211) the deterministic relation baseline, (212) ontology-versus-rule conflicts with the
+operator's remembered answers and (213) the GNN candidate finder ranked on graph structure,
+all four proved on fixture records because every store in this repository is empty. Everything from 186 on was built on 10 and 11 September 2026 and
 is proved here on fixtures only.
 
 ---

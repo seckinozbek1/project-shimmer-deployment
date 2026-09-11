@@ -2410,6 +2410,66 @@ async def ontology_provision_history(provision_id: str):
     return {"id": provision_id, "scope": store.scope, "revisions": rows}
 
 
+@app.get("/ontology/gnn", dependencies=[Depends(verify_token)])
+async def ontology_gnn_state():
+    """ontology chain job 4: the GNN's persisted state, made visible the way the rest
+    of the ontology now is, INCLUDING the absence of a Tier-2 signal.
+
+    Structural metadata only: the state file holds weights and counts and no raw
+    content by construction, and this surfaces the counts, never the weights.
+
+    Three fields are always present and always the same, because they are the most
+    important thing about this state and must not be a caveat a reader can skip:
+    `tier2_signal` is `empty`, `learned_relevance` is `false`, and `ranked_on` says the
+    ranking rests on graph structure alone (node type, degree, edges). The engine
+    persists and restores its weights across runs, so it does not forget; it has
+    learned nothing because there is no signal yet to learn from, which is a different
+    thing and the reason nothing here may be presented as learned relevance.
+
+    Not run-scoped. A state that has never been written is a `200` with
+    `exists: false`, not a `404`, which is every installation today."""
+    import ontology_candidates as _cand
+
+    try:
+        return _cand.state_summary()
+    except OSError:
+        raise HTTPException(status_code=500, detail="GNN state unreadable")
+
+
+@app.get("/ontology/candidates", dependencies=[Depends(verify_token)])
+async def ontology_candidates_route(top_k: int = 5, min_score: float = 0.0):
+    """ontology chain job 4: candidate provision pairs the graph proposes.
+
+    Decision 9's shape: the graph NARROWS (this route), a model DECIDES, and the
+    reasoning stays in text. These are pairs that MAY relate; nothing here asserts that
+    they do, no Relation record is written from them, and the deterministic baseline
+    (job 2) stays beside this rather than being replaced, because both are scored on
+    the long-range corpus later and the operator chooses after measurement.
+
+    **What the ranking rests on**: graph structure alone, node type, degree and edges.
+    With no Tier-2 signal the GNN has learned nothing, so `ranked_on`,
+    `learned_relevance` and `tier2_signal` travel in the response body beside every
+    candidate. A candidate set ranked on structure is a real thing and a modest one and
+    must never be read as learned relevance.
+
+    `top_k` caps candidates per provision and `min_score` drops weak pairs. An empty
+    graph, or one with fewer than two provisions, is a `200` with an empty list, which
+    is every installation today."""
+    import json as _json
+    import ontology_candidates as _cand
+    import ontology_gnn as _gnn
+
+    if top_k < 1 or top_k > 50:
+        raise HTTPException(status_code=400, detail="top_k must be between 1 and 50")
+    gpath = _gnn.DEFAULT_GRAPH_PATH
+    try:
+        graph = (_json.loads(Path(gpath).read_text(encoding="utf-8"))
+                 if Path(gpath).exists() else {"nodes": [], "edges": []})
+    except (OSError, ValueError):
+        raise HTTPException(status_code=500, detail="ontology graph unreadable")
+    return _cand.find_candidates(graph, top_k=top_k, min_score=min_score, device="cpu")
+
+
 @app.get("/ontology/conflicts", dependencies=[Depends(verify_token)])
 async def ontology_conflicts_route():
     """ontology chain job 3: the conflicts the operator has answered, and the override
