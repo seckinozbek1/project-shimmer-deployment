@@ -915,8 +915,44 @@ def dedupe(items):
 BAND_RELATIONS = ("above_band", "below_band", "ratio_out_of_range")
 
 
+def _absence_check(label):
+    """The computed check for a declared required field a unit in scope lacks
+    (D, option 2). Same shape as compute_checks' own missing_field check, so
+    finding_from_check mints it the same way: Python's 0 of 1 required."""
+    return {"relation": "missing_field", "computed": 0, "computed_unit": "values",
+            "stated": 1, "stated_unit": "required", "agrees": False,
+            "basis": "the rule declares %s required and this unit does not carry it" % " ".join(label),
+            "stated_field": " ".join(label)}
+
+
+def absence_plans(unit, rule_ids, rules_by_id, present, *, required_fields_for=None):
+    """D, option 2, Python first: for every rule paired on this unit that declares
+    a scope, a plan per declared required field the unit does not carry
+    (kind absence_computed, no call: Python decides), and for a scoped rule that
+    declares NO required field, one narrow question for the model on this unit
+    alone (kind absence_judged), since the requirement's condition then has to be
+    read from the rule's text. A scoped rule's text-named fields are never
+    requirements. Returns (plans, scoped rule ids)."""
+    required_fields_for = required_fields_for or pairing_map.required_declaration
+    plans, scoped = [], []
+    for rule_id in rule_ids:
+        rule = rules_by_id.get(rule_id)
+        if not rule or not pairing_map.scope_declaration(rule):
+            continue
+        scoped.append(rule_id)
+        required = required_fields_for(rule)
+        if required:
+            for label in sorted(required):
+                if label not in present:
+                    plans.append({"unit": unit, "rule": rule, "checks": [_absence_check(label)],
+                                  "kind": "absence_computed"})
+        else:
+            plans.append({"unit": unit, "rule": rule, "checks": [], "kind": "absence_judged"})
+    return plans, scoped
+
+
 def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for=None,
-               reference_bands_for=None, known_units=None):
+               reference_bands_for=None, known_units=None, required_fields_for=None):
     """One judging call per DISTINCT computed disagreement, not per pair.
 
     Found by measuring the plan at H7 rather than by reading the code. A sum or a
@@ -946,10 +982,17 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
             continue
         scalars, columns, row_counts = extract_fields(unit.get("text", ""), known_units)
         present = pairing_map.unit_fields(unit.get("text", ""))
+        # D, option 2: declared absences first (Python decides, or the model is
+        # asked on this unit alone); a scoped rule contributes nothing to the
+        # text-derived needed set, so a glossary label its text mentions is never
+        # a requirement of an entry.
+        declared, scoped_rule_ids = absence_plans(unit, rule_ids, rules_by_id, present,
+                                                  required_fields_for=required_fields_for)
+        plans.extend(declared)
         needed_union = set()
         for rule_id in rule_ids:
             rule = rules_by_id.get(rule_id)
-            if rule:
+            if rule and rule_id not in scoped_rule_ids:
                 needed_union |= needed_fields_for(rule.get("rule", ""))
 
         # Rule-independent: computed once for the unit.
@@ -1001,8 +1044,8 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
         if not shared:
             for rule_id in rule_ids:
                 rule = rules_by_id.get(rule_id)
-                if rule is None:
-                    continue
+                if rule is None or rule_id in scoped_rule_ids:
+                    continue  # a scoped rule's question was planned above
                 if not compute_checks(scalars, columns, rule_text=rule.get("rule", ""),
                                       row_counts=row_counts, needed=set(),
                                       present_labels=present):

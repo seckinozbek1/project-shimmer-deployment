@@ -276,7 +276,11 @@ Phase 5.5 runs one of two ways. `--review-mode` selects it; with no flag the def
   the unit carries every field label the rule's text names, and a label counts as named by
   the longest match only: a rule saying "calibration authority signature" names that label
   and not also a shorter "calibration authority" the document defines elsewhere (D, option
-  1, 2026-09-11, built without measurement; gate check 208).
+  1, 2026-09-11, built without measurement; gate check 208). A rule whose heading declares a
+  scope pairs on that scope instead (section E), and its declared required fields become
+  Python-decided absence findings (`absence_path: computed`, no call) or, without a declared
+  requirement, one model question per unit in scope (`absence_path: judged`); the map's
+  `absence` list and counts record which path decided each (D, option 2; gate check 209).
 
 The mode changes cost, not correctness: where arithmetic can decide, the finding carries
 Python's numbers whatever the model says about them.
@@ -583,7 +587,21 @@ set is normally two markdown files, by convention rather than requirement:
   `recommended`, `advisory`) sets that rule's severity directly instead of the text
   classification; every other token is a subject, carried on the registry entry's
   `subjects` list, read verbatim and lowercased, for the convention-assignment comparison
-  (below). A heading with no brackets at all parses exactly as before. The parser's own
+  (below). Two further bracket forms are declarations, read by their leading word and never
+  as subjects (D, option 2, 2026-09-11, built without measurement; gate check 209):
+  `[scope: class=A, device]` names the field labels, each optionally pinned to a value, that
+  identify the units the rule governs, and `[requires: calibration authority signature]`
+  names the field labels whose absence from a unit in scope is a finding. A rule with a
+  declared scope pairs with exactly the units carrying its scope fields (and values), and
+  the fields its text happens to name are no longer requirements, so a rule that mentions a
+  glossary term is not rejected for every entry that lacks the glossary's label. Where a
+  required field is declared and absent, Python decides and no model is called; where a
+  scope is declared but no requirement is (the requirement is conditional in the rule's own
+  words, "Class-A requires it, Class-B does not"), the model is asked one narrow question
+  per unit in scope and its answer is stamped with the unit and rule by the pipeline. The
+  pairing map records which path decided each absence. The labels and values are the
+  operator's own; nothing derives a scope from text or counts. A heading with no brackets at
+  all parses exactly as before. The parser's own
   title heading, the first heading in a file, is never itself a rule section: prose
   written under it (an introduction, a scope statement) is not minted as a rule.
 - `review_mandate.md`: the reviewing entity, the engagement scope, and the review
@@ -1689,7 +1707,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**209** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**210** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -1710,7 +1728,7 @@ first run, not something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 209 checks on an empty checkout would be proving nothing about those
+A gate that passed all 210 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Every
 other check passes on a fresh clone with no setup beyond `py -3.9 -m pip install -r
 requirements.txt`. Once you have run the launcher (or built `input/` and staged a corpus

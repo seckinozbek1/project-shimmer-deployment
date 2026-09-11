@@ -206,6 +206,45 @@ def unit_fields(unit_text):
     return fields
 
 
+def unit_field_values(unit_text):
+    """{normalised label: normalised value} for every `label: value` line of a unit.
+    A table cell is a row's value, not the unit's, and is not read here. Values are
+    lowercased and whitespace-collapsed for comparison with a declared scope value;
+    they are never written into a map reason line (they are document content)."""
+    out = {}
+    for line in (unit_text or "").splitlines():
+        m = _LABEL_LINE.match(line)
+        if m:
+            norm = _norm_label(m.group(1))
+            if norm and norm not in out:
+                out[norm] = " ".join(m.group(2).strip().lower().split())
+    return out
+
+
+def scope_declaration(rule):
+    """The rule's declared scope (D, option 2) as [(label tuple, value or None)],
+    the label normalised exactly as the document's own labels are; [] when the
+    rule declares none. The declaration is the operator's, from the heading
+    bracket; nothing here derives a scope from counts or text."""
+    out = []
+    for entry in rule.get("scope") or []:
+        if isinstance(entry, dict):
+            label, value = entry.get("label"), entry.get("value")
+        else:
+            label, _, value = str(entry).partition("=")
+        norm = _norm_label(str(label or ""))
+        if not norm:
+            continue
+        value = " ".join(str(value).lower().split()) if value not in (None, "") else None
+        out.append((norm, value))
+    return out
+
+
+def required_declaration(rule):
+    """The rule's declared required labels (D, option 2), normalised; set()."""
+    return {n for n in (_norm_label(str(x)) for x in (rule.get("requires") or [])) if n}
+
+
 def field_vocabulary(units):
     """Every field label the document uses anywhere."""
     vocab = set()
@@ -268,9 +307,42 @@ def pair_units(units, rules, *, vocabulary=None, rank=None, rank_cap=3):
     entries = []
     for unit in units:
         have = unit_fields(unit.get("text", ""))
+        have_values = None
         paired, rejected, ambiguous = [], [], []
         for rule in rules:
             rid = rule["id"]
+            # D, option 2: a rule with a DECLARED scope pairs on its scope fields (and
+            # values) alone; the fields its text happens to name are not requirements.
+            # Its absence checks come from its declared requires (paired_review.plan_calls).
+            scope = scope_declaration(rule)
+            if scope:
+                if have_values is None:
+                    have_values = unit_field_values(unit.get("text", ""))
+                missing = [lab for lab, _v in scope if lab not in have]
+                wrong = [lab for lab, v in scope
+                         if v is not None and lab in have and have_values.get(lab) != v]
+                if not missing and not wrong:
+                    paired.append({
+                        "rule_id": rid, "scope_declared": True,
+                        "reason": "unit carries every scope field the rule declares: "
+                                  + ", ".join(" ".join(lab) + ("=" + v if v is not None else "")
+                                              for lab, v in scope),
+                    })
+                elif missing:
+                    rejected.append({
+                        "rule_id": rid, "scope_declared": True,
+                        "reason": "unit lacks the declared scope field "
+                                  + ", ".join(" ".join(lab) for lab in missing),
+                        "missing_count": len(missing),
+                    })
+                else:
+                    rejected.append({
+                        "rule_id": rid, "scope_declared": True,
+                        "reason": "unit's " + ", ".join(" ".join(lab) for lab in wrong)
+                                  + " does not carry the value the rule's scope declares",
+                        "missing_count": len(wrong),
+                    })
+                continue
             needs = rule_needs[rid]
             if not needs:
                 ambiguous.append(rid)

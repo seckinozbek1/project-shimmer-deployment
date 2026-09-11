@@ -16637,6 +16637,205 @@ def check_208_longest_match_labels_in_needed_fields():
     return _ok(shipped[1] + "; neutralise (word-subset test) FAILS, restore PASSES")
 
 
+def _d2_scope_body():
+    """D, option 2, executed on fixtures: the parser's two declarations, the
+    scope-based pairing with a value, the Python-first absence plan, the judged
+    question, the live paired path with no call for a computed absence and a
+    stamped, posted answer for a judged one, and the map's record of each path."""
+    import asyncio as _asyncio
+    import shutil as _shutil
+    import convention_parser as _cp
+    import finding_record as _fr
+    import pairing_map as _pm
+    import paired_review as _pr
+    import pipeline as _pl
+    from harness.run_agent import build_orchestrator as _boot
+
+    # (1) the parser: declarations are read by their prefix, never as subjects
+    root = Path(_tempfile.mkdtemp(prefix="shimmer_d2_parse_"))
+    try:
+        (root / "input" / "conventions").mkdir(parents=True)
+        (root / "input" / "conventions" / "r.md").write_text("\n".join([
+            "# Rules", "", "intro prose", "",
+            "## CONV-X01 , conv-sig [required] [conformance] [scope: class=A, device] "
+            "[requires: calibration authority signature]", "",
+            "Every Class-A sensor entry must state a calibration authority signature.", "",
+            "## CONV-X02 , conv-cond [required] [conformance] [scope: device]", "",
+            "A device entry states a fault only when the fault window in the glossary allows it.", "",
+            "## CONV-X03 , conv-plain [advisory] [conformance]", "",
+            "The reading must be within the class band.", "",
+        ]), encoding="utf-8")
+        rules = [r.as_dict() for r in _cp.parse_conventions(root).conventions]
+    finally:
+        _shutil.rmtree(root, ignore_errors=True)
+    if [r["id"] for r in rules] != ["CONV-001", "CONV-002", "CONV-003"]:
+        return _fail(f"the fixture parsed to {[r['id'] for r in rules]}")
+    r1, r2, r3 = rules
+    if r1["scope"] != [{"label": "class", "value": "a"}, {"label": "device", "value": None}] \
+            or r1["requires"] != ["calibration authority signature"]:
+        return _fail(f"CONV-001's declarations misread: scope={r1['scope']} requires={r1['requires']}")
+    if r1["subjects"] != ["conformance"] or r1["severity"] != "required":
+        return _fail(f"a declaration bracket leaked into subjects or severity: {r1['subjects']} {r1['severity']}")
+    if r2["scope"] != [{"label": "device", "value": None}] or r2["requires"]:
+        return _fail(f"CONV-002's scope-only declaration misread: {r2['scope']} {r2['requires']}")
+    if r3["scope"] or r3["requires"] or r3["severity"] != "advisory":
+        return _fail(f"an undeclared rule gained a declaration: {r3}")
+    for c in rules:
+        if "scope" not in c or "requires" not in c:
+            return _fail("as_dict does not carry the declarations")
+
+    # (2) the map: scope fields and values decide; text-named glossary labels do not
+    text = "\n".join([
+        "## Glossary", "", "Calibration authority: the signing role.", "Fault window: 4 hours.", "",
+        "## Entry alpha", "", "Class: A", "Device: D-1", "Reading: 30",
+        "Calibration authority signature: R. Smith", "",
+        "## Entry beta", "", "Class: A", "Device: D-2", "Reading: 31", "Note: no signature", "",
+        "## Entry gamma", "", "Class: B", "Device: D-3", "Reading: 32", "",
+    ])
+    m = _pm.build_pairing_map(text, rules, document_id="d", convention_registry={"conventions": rules})
+    by = {u["unit_id"]: u for u in m["units"]}
+    alpha, beta, gamma, gloss = (next(u for k, u in by.items() if s in k) for s in ("alpha", "beta", "gamma", "glossary"))
+    for u in (alpha, beta):
+        if "CONV-001" not in [p["rule_id"] for p in u["paired"]] or "CONV-002" not in [p["rule_id"] for p in u["paired"]]:
+            return _fail(f"{u['unit_id']} in scope of both declared rules must pair with both: {u['paired']}")
+        if not all(p.get("scope_declared") for p in u["paired"] if p["rule_id"] in ("CONV-001", "CONV-002")):
+            return _fail("a scope-based pairing must say scope_declared")
+    if "CONV-001" in [p["rule_id"] for p in gamma["paired"]] or not any(
+            p["rule_id"] == "CONV-001" and "value" in p["reason"] for p in gamma["rejected"]):
+        return _fail(f"gamma (class b) must be rejected by the class=a scope on its value: {gamma}")
+    if any(p["rule_id"] == "CONV-002" and "fault window" in p["reason"] for p in gamma["rejected"] + gamma["paired"]):
+        return _fail("a scoped rule's text-named glossary label must not be a requirement")
+    if gloss["paired"]:
+        return _fail("the glossary unit carries no scope field and must not pair with a scoped rule")
+    for u in (alpha, beta, gamma):
+        for p in u["paired"] + u["rejected"]:
+            if p["rule_id"] in ("CONV-001", "CONV-002") and ("r. smith" in p["reason"].lower() or "d-1" in p["reason"].lower()):
+                return _fail("a map reason line carries a document value")
+
+    # (3) the plans: Python first, the model only where the requirement is conditional
+    units = {u["unit_id"]: u for u in _pm.split_units(text, document_id="d")}
+    vocab = set()
+    for u in units.values():
+        vocab |= _pm.unit_fields(u["text"])
+    pairs, _dropped = _pr.pairs_from_map(m, cap_per_unit=None)
+    plans = _pr.plan_calls(units, pairs, {c["id"]: c for c in rules}, vocab,
+                           needed_fields_for=lambda t: _pm.needed_fields(t, vocab))
+    kinds = {(p["unit"]["unit_id"], p["rule"]["id"], p["kind"]) for p in plans}
+    if (beta["unit_id"], "CONV-001", "absence_computed") not in kinds:
+        return _fail(f"beta lacks the declared signature and must get a computed absence plan: {sorted(kinds)}")
+    if any(k[1] == "CONV-001" and k[0] == alpha["unit_id"] for k in kinds):
+        return _fail("alpha carries the signature and must get no CONV-001 plan")
+    for u in (alpha, beta, gamma):
+        if (u["unit_id"], "CONV-002", "absence_judged") not in kinds:
+            return _fail(f"{u['unit_id']} is in CONV-002's scope and must get one judged question: {sorted(kinds)}")
+    computed_plan = next(p for p in plans if p["kind"] == "absence_computed")
+    if computed_plan["checks"][0]["relation"] != "missing_field" \
+            or computed_plan["checks"][0]["stated_field"] != "calibration authority signature":
+        return _fail(f"the computed absence check is malformed: {computed_plan['checks']}")
+
+    # (4) the live paired path: no call for the computed absence, a stamped answer for the judged one
+    calls = []
+
+    async def _stub_run_one(wrapper, payload, objectives, **kw):
+        calls.append((payload.get("unit_id"), payload.get("rule_id"), "absence_question" in payload))
+        return {"ok": True, "backend": "stub_backend", "model": "stub-model", "call_id": "c-" + str(len(calls)),
+                "parsed": {"agent": wrapper.name, "doc_id": "d", "items": [
+                    {"ref": "REF-0001", "kind": "finding", "confidence": "CONFIDENT",
+                     "relation": "missing_field", "record_verdict": "irregular",
+                     "value_a": 0, "unit_a": "values", "value_b": 1, "unit_b": "required",
+                     "source_refs": ["REF-0001"], "explanation": "stubbed judged answer"}]}}
+    doc = {"id": "d", "name": "d.md", "text": text}
+    with _tempfile.TemporaryDirectory(prefix="shimmer_d2_live_") as tmp:
+        orch = _boot(root=ROOT, out_root=tmp)
+        saved = _pl._run_one
+        _pl._run_one = _stub_run_one
+        try:
+            results = _asyncio.run(_pl._paired_convention_review(
+                orch, {}, doc, m, {"conventions": rules}, [], "objectives", {doc["id"]: 1}, 1, None,
+                context_refs=[], convention_assignment=None))
+        finally:
+            _pl._run_one = saved
+        if any(rid == "CONV-001" for _u, rid, _q in calls):
+            return _fail(f"a computed absence made a model call: {calls}")
+        judged_calls = [c for c in calls if c[1] == "CONV-002"]
+        if len(judged_calls) != 3 or not all(q for _u, _r, q in judged_calls):
+            return _fail(f"expected three judged questions carrying absence_question: {calls}")
+        posted = []
+        for msg in orch.bus.read_all():
+            body = msg.get("body") or {}
+            if body.get("event") != "AGENT_OUTPUT":
+                continue
+            for it in ((body.get("payload") or {}).get("items") or []):
+                if _fr.is_finding(it):
+                    posted.append((body.get("backend"), body.get("model"), it.get("unit_id"),
+                                   it.get("rule_id"), it.get("absence_path"), it.get("item_id")))
+        computed = [p for p in posted if p[4] == "computed"]
+        judged = [p for p in posted if p[4] == "judged"]
+        if [(p[0], p[1], p[2], p[3]) for p in computed] != [("paired", "python", beta["unit_id"], "CONV-001")]:
+            return _fail(f"the computed absence must be posted once, under paired/python, on beta: {computed}")
+        if sorted((p[2], p[3]) for p in judged) != sorted((u["unit_id"], "CONV-002") for u in (alpha, beta, gamma)):
+            return _fail(f"the judged answers must be stamped with their unit and rule: {judged}")
+        if any(p[0] != "stub_backend" or p[1] != "stub-model" for p in judged):
+            return _fail(f"a judged finding must carry the model's own provenance, never python: {judged}")
+        if len({p[5] for p in judged}) != 3:
+            return _fail(f"judged item ids must be unique per unit and rule: {judged}")
+        saved_map = json.loads((orch.run_context.audit_dir() / "pairing_map.json").read_text(encoding="utf-8"))
+        entry = saved_map.get("d") or {}
+        absence = entry.get("absence")
+        if not isinstance(absence, list) or entry.get("absence_computed_count") != 1 \
+                or entry.get("absence_judged_count") != 3:
+            return _fail(f"the map does not record which path decided each absence: {entry.get('absence')}")
+        if not any(a["path"] == "computed" and a["unit_id"] == beta["unit_id"] and a["rule_id"] == "CONV-001" for a in absence):
+            return _fail(f"the computed absence is not on the map's record: {absence}")
+        if not all(a.get("call_id") for a in absence if a["path"] == "judged"):
+            return _fail("a judged absence record must carry the call id that decided it")
+        agents = {r["agent"] for r in results}
+        if agents != {"PRACTICE_AUDITOR"} or sum(r["item_count"] for r in results) < 4:
+            return _fail(f"phase 6 must receive the computed and the judged items: {[(r['agent'], r['item_count']) for r in results]}")
+    return _ok("[scope: class=a, device] and [requires: ...] parse as declarations, never as "
+               "subjects; a scoped rule pairs on its scope fields and values (class b rejected by "
+               "class=a) and its text-named glossary label is no requirement; the entry lacking the "
+               "declared field gets a computed absence (no call, posted under paired/python, "
+               "absence_path=computed), the unit carrying it gets none, and the conditional rule "
+               "gets one judged question per unit in scope, its answer stamped with unit, rule and "
+               "absence_path=judged under the model's own provenance; the map records every path")
+
+
+def check_209_declared_scope_and_python_first_absence():
+    """D, option 2 (2026-09-11). Built without measurement: the gap was traced in
+    the stopped run's map (four of eight rules paired with nothing because an
+    absence rule names the very field whose absence it checks), the fix is proved
+    on fixtures here, and no run has scored it. The operator declares each rule's
+    scope on its heading ([scope: class=a, device]) and, where the requirement is
+    unconditional, the required field ([requires: calibration authority
+    signature]); the map pairs a scoped rule on its scope alone; a declared field
+    absent from a unit in scope is a finding Python decides with no call; a scoped
+    rule without a declared requirement is a narrow question for the model on each
+    unit in scope, its answer stamped by the pipeline; the map records which path
+    decided each. Never derived: no scope is inferred from counts or text.
+
+    Neutralise-and-restore: with paired_review.absence_plans replaced by one that
+    plans nothing, the declared absence is never asked and the body must FAIL;
+    restored, PASS."""
+    import paired_review as _pr
+
+    shipped = _d2_scope_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _pr.absence_plans
+    _pr.absence_plans = lambda unit, rule_ids, rules_by_id, present, required_fields_for=None: ([], [])
+    try:
+        neutralised = _d2_scope_body()
+    finally:
+        _pr.absence_plans = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with the absence plans neutralised the body still passed ({neutralised})")
+    restored = _d2_scope_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring the absence plans the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; neutralise (no absence plans) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -16865,6 +17064,8 @@ CHECKS = [
      check_207_recording_gaps_closed_rendered_draft_probe),
     ("208 longest-match labels in needed_fields (D, option 1)",
      check_208_longest_match_labels_in_needed_fields),
+    ("209 declared scope and Python-first absence (D, option 2)",
+     check_209_declared_scope_and_python_first_absence),
 ]
 
 

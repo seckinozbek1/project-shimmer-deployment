@@ -1919,6 +1919,9 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # since the arithmetic is the same whichever rule prompted it.
     not_judged = []
     reattributed = []
+    absence = []
+    judged_items_by_agent: dict = {}
+    judged_provenance: dict = {}
     for plan in plans:
         unit, rule, checks = plan["unit"], plan["rule"], plan["checks"]
         agent = _paired_judging_agent(rule, convention_assignment)
@@ -1940,6 +1943,21 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             continue
         source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
+        # D, option 2, Python first: a declared required field absent from a unit
+        # in scope is a finding Python decides, no call made; the record says so.
+        if plan.get("kind") == "absence_computed":
+            check = checks[0]
+            item = paired_review_mod.finding_from_check(
+                unit_id=unit["unit_id"], rule=rule, check=check,
+                source_rule_id=source_rule_id, refs=refs)
+            item["absence_path"] = "computed"
+            computed_items_by_agent.setdefault(agent, []).append(item)
+            absence.append({"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                            "field": check.get("stated_field"), "path": "computed"})
+            log_event(_LOG, f"paired_review_absence unit={unit['unit_id']} rule={rule['id']} "
+                            f"path=computed",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+            continue
         wrapper = _build_wrapper(agent, orch, keys)
         # docs/api/UNIT_CONTEXT_DESIGN.md, option B reached through D's scaffold:
         # unit_text (this document's own units, every one carrying index since
@@ -1954,12 +1972,36 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             unit=unit, rule=rule, checks=checks, refs=refs,
             source_rule_id=source_rule_id, unit_texts=unit_text,
             document_units=pairing.get("units"))
+        if plan.get("kind") == "absence_judged":
+            # D, option 2, the model only where Python cannot settle it: the rule
+            # declares its scope and this unit is in it, but the requirement is
+            # conditional in the rule's own words, so the question goes to the model
+            # on this unit alone. The answer's unit and rule are stamped by Python,
+            # which knows them by construction, and the path is recorded.
+            payload["absence_question"] = (
+                "This unit is inside the rule's declared scope. From this unit's own "
+                "text alone, decide whether the rule's requirement applies to it and, "
+                "if it applies, whether it is met. Answer as a finding on this unit "
+                "under this rule; state which condition in the rule decided it.")
         r = await _run_one(
             wrapper, payload,
             f"{run_objectives}\nOne unit, one rule. Do not perform arithmetic.",
             max_tokens=1024, convention_registry={"conventions": [rule]},
             reference_index_excerpt=refs_excerpt,
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
+        if plan.get("kind") == "absence_judged":
+            judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
+            judged_items_by_agent.setdefault(agent, []).extend(judged)
+            judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
+                                        r.get("model") if isinstance(r, dict) else None)
+            absence.append({"unit_id": unit["unit_id"], "rule_id": rule["id"], "field": None,
+                            "path": "judged", "items": len(judged),
+                            "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
+            log_event(_LOG, f"paired_review_absence unit={unit['unit_id']} rule={rule['id']} "
+                            f"path=judged items={len(judged)}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+            results.append(r)
+            continue
         explanation = _first_explanation(r)
         for check in paired_review_mod.disagreements(checks):
             computed_items_by_agent.setdefault(agent, []).append(
@@ -1989,8 +2031,15 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     pairing["not_judged"] = not_judged
     pairing["not_judged_count"] = len(not_judged)
     pairing["reattributed"] = reattributed
+    # D, option 2: which path decided each declared absence, computed or judged,
+    # in the map beside the plans, so a reader can tell the two apart later.
+    pairing["absence"] = absence
+    pairing["absence_computed_count"] = sum(1 for a in absence if a["path"] == "computed")
+    pairing["absence_judged_count"] = sum(1 for a in absence if a["path"] == "judged")
     log_event(_LOG, f"paired_review_not_judged count={len(not_judged)} "
-                    f"reattributed={len(reattributed)}",
+                    f"reattributed={len(reattributed)} absence_computed="
+                    f"{pairing['absence_computed_count']} absence_judged="
+                    f"{pairing['absence_judged_count']}",
               run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
     try:
         pairing_map_mod.write_pairing_map(orch.run_context, doc["id"], pairing)
@@ -2031,6 +2080,36 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                             "error": None, "item_count": len(items),
                             "backend": "paired", "model": "python+model"})
 
+    # D, option 2: the model's judged absence findings, stamped with the unit and
+    # rule Python knows by construction and with absence_path=judged, posted under
+    # the judging agent with the MODEL's own backend and model (never "python"),
+    # so provenance is not misstated, and returned for phase 6 like any other item.
+    for agent, raw_items in judged_items_by_agent.items():
+        items = paired_review_mod.dedupe(raw_items)
+        backend, model = judged_provenance.get(agent, (None, None))
+        log_event(_LOG, f"paired_review_judged_findings agent={agent} count={len(items)}",
+                  run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+        envelope = agent_wrapper.make_envelope(agent, str(doc["id"]), items)
+        if items:
+            try:
+                _build_wrapper(agent, orch, keys).post_to_bus(
+                    recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                    body={"event": "AGENT_OUTPUT", "backend": backend or "", "model": model or "",
+                          "item_count": len(items), "parse_trace": {}, "payload": envelope,
+                          "stamped_by": "python", "absence_path": "judged"},
+                    constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                        "resolution": "a judged absence: the model's own "
+                                                      "finding, its unit and rule stamped "
+                                                      "by the pipeline that asked"})
+            except Exception as e:
+                log_event(_LOG, f"paired_review_bus_post_error agent={agent} "
+                                f"error_type={type(e).__name__}",
+                          run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+        out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
+                            "parsed": envelope, "raw_text": "", "contract_missing": [],
+                            "error": None, "item_count": len(items),
+                            "backend": backend or "", "model": model or ""})
+
     # No plan and no missing-field finding at all: the document had nothing to
     # pair, but the phase still owes a result so downstream progress counting
     # and _items_for's per-agent lookups behave exactly as before this
@@ -2052,6 +2131,39 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                             "contract_missing": [], "error": None, "item_count": 0,
                             "backend": "paired", "model": "python+model"})
     return out_results
+
+
+def _stamped_judged_items(result, agent, unit_id, rule_id, source_rule_id):
+    """The typed Finding items a judged-absence call returned (D, option 2), each
+    stamped with the unit and rule Python asked about (never invented: the plan
+    was one unit against one rule), the operator's own rule id, and
+    absence_path=judged. The item id names the unit and rule so two judged plans
+    can never collide on the derived id the wrapper would otherwise mint. A
+    malformed or empty reply yields no items, never a dead run."""
+    if not isinstance(result, dict):
+        return []
+    parsed = result.get("parsed")
+    if isinstance(parsed, dict):
+        raw = parsed.get("items") or []
+    elif isinstance(parsed, list):
+        raw = parsed
+    else:
+        raw = []
+    out = []
+    for idx, it in enumerate(raw):
+        if not isinstance(it, dict) or not finding_record.is_finding(it):
+            continue
+        item = dict(it)
+        item["unit_id"] = unit_id
+        if not finding_record.resolved_rule_id(item):
+            item["rule_id"] = rule_id
+        if source_rule_id and not item.get("source_rule_id"):
+            item["source_rule_id"] = source_rule_id
+        item["absence_path"] = "judged"
+        item["item_id"] = f"{agent}:finding:{unit_id}:{rule_id}:{idx}"
+        item["revision"] = 1
+        out.append(item)
+    return out
 
 
 def _first_explanation(result):

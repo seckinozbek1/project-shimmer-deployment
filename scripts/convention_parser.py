@@ -57,12 +57,19 @@ class ConventionRule:
     severity: str
     action: str
     subjects: list = field(default_factory=list)
+    # D, option 2 (2026-09-11): the operator's own declarations on the heading.
+    # scope: the field labels (each optionally with a value) that identify the
+    # units the rule governs, [{"label": "class", "value": "a"}, {"label":
+    # "device", "value": None}]; requires: the field labels whose absence from a
+    # unit in scope is a finding Python decides. Both empty when not declared.
+    scope: list = field(default_factory=list)
+    requires: list = field(default_factory=list)
 
     def as_dict(self):
         return {"id": self.id, "category": self.category, "rule": self.rule,
                 "source_file": self.source_file, "source_location": self.source_location,
                 "severity": self.severity, "action": self.action,
-                "subjects": self.subjects}
+                "subjects": self.subjects, "scope": self.scope, "requires": self.requires}
 
 
 @dataclass
@@ -158,7 +165,26 @@ def _parse_json(path, seq):
             severity=str(item.get("severity") or _classify_severity(rule)).lower(),
             action=str(item.get("action") or _classify_action(rule)).lower(),
             subjects=[str(s).strip().lower() for s in subjects] if isinstance(subjects, list) else [],
+            scope=_scope_entries(item.get("scope")),
+            requires=[str(s).strip().lower() for s in (item.get("requires") or [])
+                      if str(s).strip()] if isinstance(item.get("requires"), list) else [],
         ))
+    return out
+
+
+def _scope_entries(raw):
+    """Normalise a scope declaration into [{"label", "value"}]: a list of strings
+    ("class", "class=a") or of dicts, as a JSON file or the heading bracket gives it."""
+    out = []
+    for entry in (raw or []) if isinstance(raw, list) else []:
+        if isinstance(entry, dict):
+            label, value = entry.get("label"), entry.get("value")
+        else:
+            label, _, value = str(entry).partition("=")
+        label = str(label or "").strip().lower()
+        value = str(value).strip().lower() if value not in (None, "") else None
+        if label:
+            out.append({"label": label, "value": value})
     return out
 
 
@@ -185,6 +211,9 @@ def _parse_text_lines(text, source_name, seq):
     line_num = 0
     para_buffer = []
 
+    current_scope: list = []
+    current_requires: list = []
+
     def flush(buffer, suppress_paragraph, severity, subjects, location):
         if not buffer or suppress_paragraph:
             return []
@@ -196,6 +225,7 @@ def _parse_text_lines(text, source_name, seq):
             source_file=source_name, source_location=location,
             severity=severity or _classify_severity(joined),
             action=_classify_action(joined), subjects=list(subjects),
+            scope=[dict(s) for s in current_scope], requires=list(current_requires),
         )]
 
     for raw_line in text.splitlines():
@@ -209,6 +239,7 @@ def _parse_text_lines(text, source_name, seq):
             current_category = _normalize_category(line)
             current_section = line.lstrip("# ").strip().lower()
             current_severity, current_subjects = _heading_bracket_tags(line)
+            current_scope, current_requires = _heading_bracket_declarations(line)
             if before_first_operator_heading and _HEADING_RULE_ID.search(current_category):
                 before_first_operator_heading = False
             continue
@@ -224,6 +255,7 @@ def _parse_text_lines(text, source_name, seq):
                     source_file=source_name, source_location=f"line {line_num}",
                     severity=current_severity or _classify_severity(stripped),
                     action=_classify_action(stripped), subjects=list(current_subjects),
+                    scope=[dict(s) for s in current_scope], requires=list(current_requires),
                 ))
             continue
         if not line.strip():
@@ -298,13 +330,47 @@ def _heading_bracket_tags(heading):
     subjects = []
     for m in _HEADING_BRACKET.finditer(heading):
         token = m.group(1).strip().lower()
-        if not token:
-            continue
+        if not token or _DECLARATION_PREFIX.match(token):
+            continue  # a scope/requires declaration is not a subject (below)
         if token in _SEVERITY_LABELS:
             severity = token
         elif token not in subjects:
             subjects.append(token)
     return severity, subjects
+
+
+# D, option 2 (2026-09-11): two more bracket forms, read by their leading word and
+# nothing else. "[scope: class, device]" or "[scope: class=a, device]" declares the
+# field labels (each optionally pinned to a value) that identify the units the rule
+# governs; "[requires: calibration authority signature]" declares the field labels
+# whose absence from a unit in scope is a finding Python decides without a model.
+# The labels and values are the operator's own words, carried verbatim
+# (lowercased) and normalised by the pairing map the way it normalises the
+# document's own labels; this module knows the two prefixes and no label at all.
+_DECLARATION_PREFIX = re.compile(r"^(scope|requires)\s*:\s*(.*)$")
+
+
+def _heading_bracket_declarations(heading):
+    """(scope entries, required labels) read from the declaration brackets on a
+    heading line: scope as [{"label", "value"}] (value None when the entry is a
+    bare label), requires as a list of labels. Comma-separated, order kept,
+    duplicates dropped. A heading without them yields ([], [])."""
+    scope, requires = [], []
+    for m in _HEADING_BRACKET.finditer(heading):
+        d = _DECLARATION_PREFIX.match(m.group(1).strip().lower())
+        if not d:
+            continue
+        kind, body = d.group(1), d.group(2)
+        parts = [p.strip() for p in body.split(",") if p.strip()]
+        if kind == "scope":
+            for entry in _scope_entries(parts):
+                if entry not in scope:
+                    scope.append(entry)
+        else:
+            for p in parts:
+                if p not in requires:
+                    requires.append(p)
+    return scope, requires
 
 
 def _normalize_category(heading):
