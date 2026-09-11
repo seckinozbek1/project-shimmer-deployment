@@ -664,6 +664,39 @@ DRAFT_SYSTEM_PROMPT = (
 )
 
 
+def _draft_generate_with_evidence(drafter, stable, dynamic, *, passages, run_ctx):
+    """The draft memo's one model call, with its call evidence recorded. This call
+    bypasses AgentWrapper.run_task (the memo is free text, not an envelope), so
+    run_task's own recording never sees it; the same record is written here:
+    agent, backend, model, run, a fresh call id (also on the cost row through
+    _cost_call_id), the REF-* ids of the passages the prompt carried, the prompt
+    length. No unit, rule or document map exists for this call. Recording failure
+    is logged and never takes the call down. Returns the memo text, or "" on a
+    failed call (as before)."""
+    import uuid as _uuid
+    import call_evidence as _ce
+    call_id = _uuid.uuid4().hex
+    try:
+        _ce.record(run_ctx, _ce.extract(
+            {"task": "draft_memo"}, call_id=call_id,
+            run_id=getattr(run_ctx, "run_id", "") or "", phase="0", doc_id="",
+            agent=drafter.name, backend=drafter.backend, model=drafter.model or "",
+            reference_index_excerpt=[{"ref_id": p.get("ref_id") or p.get("ref")}
+                                     for p in (passages or []) if isinstance(p, dict)],
+            prompt_chars=len(stable) + len(dynamic)))
+    except Exception as e:
+        log_event(_LOG, f"call_evidence_write_error error_type={type(e).__name__}",
+                  level="warning", agent=drafter.name,
+                  run_id=getattr(run_ctx, "run_id", "") or "")
+    drafter._cost_call_id = call_id
+    try:
+        # CallResult carries the response text in .raw_text (there is no .text).
+        r = drafter.call_claude(stable, dynamic, max_tokens=4096)
+    finally:
+        drafter._cost_call_id = ""
+    return r.raw_text if getattr(r, "ok", False) else ""
+
+
 def build_draft_prompt(question: str, passages: list) -> tuple:
     """Build the (stable_prefix, dynamic_suffix) generation prompt from the retrieved
     grounding passages and the operator's question. Pure and testable: no model call,
@@ -3437,13 +3470,19 @@ def main(argv=None):
             store = embedding_store.get_or_build(ROOT)
             return embedding_store.query_store(store, q, n=8) if store else []
 
+        _draft_passages = []
+
+        def _draft_retrieve_recorded(q):
+            # Kept for the evidence record: which REF-* ids the memo call was shown.
+            _draft_passages[:] = _draft_retrieve(q) or []
+            return list(_draft_passages)
+
         def _draft_generate(stable, dynamic):
-            # CallResult carries the response text in .raw_text (there is no .text).
-            r = drafter.call_claude(stable, dynamic, max_tokens=4096)
-            return r.raw_text if getattr(r, "ok", False) else ""
+            return _draft_generate_with_evidence(drafter, stable, dynamic,
+                                                 passages=_draft_passages, run_ctx=run_ctx)
 
         memo_path = run_draft_phase0(
-            ROOT, args.question, retrieve=_draft_retrieve, generate=_draft_generate,
+            ROOT, args.question, retrieve=_draft_retrieve_recorded, generate=_draft_generate,
             now_iso=datetime.now(timezone.utc).isoformat())
         if memo_path is None:
             print("[pipeline] draft phase 0 failed (no memo generated); aborting.",

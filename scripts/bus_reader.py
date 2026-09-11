@@ -8,6 +8,7 @@ Token budgets per backend; Qwen restricted to LAW-II + LAW-IV with no bus histor
 from __future__ import annotations
 
 import json
+import re
 import threading
 from dataclasses import dataclass
 from typing import Any
@@ -92,6 +93,13 @@ class ContextPackage:
     work_payload: Any
     convention_text: str = ""
     reference_index_text: str = ""
+    # Call evidence (scripts/call_evidence.py): what the budgeted renderers above
+    # actually KEPT, read off the finished section texts, never assumed: the
+    # convention ids whose line survived whole, the reference ids whose block
+    # survived whole, whether either section was clipped, and how many recent
+    # bus messages were rendered or dropped for budget. The classifier treats a
+    # rule that was requested but not rendered as never having reached the call.
+    rendered: Any = None
 
     def token_estimate(self):
         return {
@@ -164,18 +172,51 @@ def assemble_context(
     # structure H6: raised from 1500 so a band table can arrive whole. The block
     # is still hard-bounded by _truncate_by_tokens at this number.
     reference_index_text = _render_reference_index(reference_index_excerpt, budget=2500 if backend != "qwen_local" else 0)
+    bus_counts = {"rendered": 0, "dropped": 0}
     if budgets["bus"] > 0:
         recent_bus_msgs = bus.recent(limit=recent_bus_limit, channel=channel)
-        recent_bus_text, summary_text = _render_bus(recent_bus_msgs, budgets["bus"])
+        recent_bus_text, summary_text, bus_counts = _render_bus(recent_bus_msgs, budgets["bus"])
     else:
         recent_bus_text, summary_text = "", ""
+    rendered = {
+        "convention_ids": rendered_line_ids(convention_text),
+        "convention_text_truncated": convention_text.endswith(TRUNCATION_MARKER),
+        "reference_ids": rendered_line_ids(reference_index_text),
+        "reference_text_truncated": reference_index_text.endswith(TRUNCATION_MARKER),
+        "bus_messages_rendered": int(bus_counts.get("rendered", 0)),
+        "bus_messages_dropped": int(bus_counts.get("dropped", 0)),
+    }
     return ContextPackage(
         backend=backend, governance_text=governance_text, objectives_text=objectives_text,
         precedents_text=precedents_text, charter_text=charter_text,
         recent_bus_text=recent_bus_text, rolling_summary_text=summary_text,
         work_payload=work_payload, convention_text=convention_text,
-        reference_index_text=reference_index_text,
+        reference_index_text=reference_index_text, rendered=rendered,
     )
+
+
+# The tail _truncate_by_tokens leaves on a clipped section.
+TRUNCATION_MARKER = "\n... [truncated]"
+_RENDERED_LINE_ID = re.compile(r"^- (\S+) \[")
+
+
+def rendered_line_ids(section_text):
+    """The identifiers of the entries a budgeted section actually carries WHOLE:
+    every '- <id> [...' line of the finished text, minus the last such line when
+    the section ends in the truncation marker (the clip falls mid-line, so the
+    last entry may be a fragment and is not counted as rendered). Read off the
+    text the model receives; nothing is assumed from the input list."""
+    text = section_text or ""
+    truncated = text.endswith(TRUNCATION_MARKER)
+    body = text[:-len(TRUNCATION_MARKER)] if truncated else text
+    ids = []
+    for line in body.splitlines():
+        m = _RENDERED_LINE_ID.match(line)
+        if m:
+            ids.append(m.group(1))
+    if truncated and ids:
+        ids = ids[:-1]
+    return ids
 
 
 def _render_governance(c, backend, budget_tokens):
@@ -281,7 +322,10 @@ def _render_reference_index(excerpt, budget):
 
 
 def _render_bus(msgs, budget_tokens):
-    if not msgs: return "", ""
+    """Returns (rendered text, summary of the dropped older traffic, counts): the
+    counts say how many messages were rendered whole and how many were dropped for
+    budget, for the call evidence record."""
+    if not msgs: return "", "", {"rendered": 0, "dropped": 0}
     body_budget = int(budget_tokens * 0.85); summary_budget = budget_tokens - body_budget
     rendered = []; used = 0; older = []
     all_chars = 0
@@ -317,7 +361,7 @@ def _render_bus(msgs, budget_tokens):
         if rel:
             text += f" Findings not shown, by relation: {rel}."
         summary = _truncate_by_tokens(text, summary_budget, label="OLDER_BUS_SUMMARY")
-    return "\n".join(rendered), summary
+    return "\n".join(rendered), summary, {"rendered": len(rendered), "dropped": len(older)}
 
 
 def _typed_body(body):

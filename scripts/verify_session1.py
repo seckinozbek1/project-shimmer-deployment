@@ -15908,8 +15908,10 @@ def _fne_recording_body():
                          f"other than RECORD_FIELDS: {sorted(rec or {})}")
         want = {"task": "paired_review", "unit_id": "u01-unit-7", "heading_unit_id": "u01-unit-7",
                 "neighbour_unit_ids": ["u02-unit-8"], "document_unit_ids": ["u01-unit-7", "u02-unit-8"],
-                "reference_ids": ["REF-0009"], "reference_ids_in_prompt": ["REF-0009"],
+                "reference_ids": ["REF-0009"], "reference_ids_rendered": ["REF-0009"],
                 "payload_document_id": "u01-unit-7", "rule_ids": ["CONV-001"],
+                "rule_ids_rendered": ["CONV-001"], "payload_rule_id": "CONV-001",
+                "convention_text_truncated": False, "reference_text_truncated": False,
                 "agent": "PRACTICE_AUDITOR", "phase": "5.5", "run_id": ctx.run_id}
         for k, v in want.items():
             if rec.get(k) != v:
@@ -16340,6 +16342,219 @@ def check_206_convention_distribution_reaches_the_paired_path():
                "name (step B); neutralise (commit 3's fallback) FAILS, restore PASSES")
 
 
+def _fne_rendered_body():
+    """The three recording gaps, closed and proved on fixtures: the budgeted
+    renderers report what they kept; a rule requested but not rendered is not
+    evidence; the draft memo call and the arithmetic probe record their calls."""
+    import copy as _copy
+    import bus_reader as _br
+    import call_evidence as _ce
+    import fn_evidence as _fe
+    import agent_wrapper as _aw
+    import pipeline as _pl
+    from harness import probe_arithmetic as _pa
+    from constitution import Constitution
+    from message_bus import MessageBus
+
+    # (1) rendered_line_ids reads the finished section, whole lines only
+    text = "# Convention registry\n- CONV-001 [a/b/c]: one\n- CONV-002 [a/b/c]: two\n- CONV-003 [a/b/c]: thr"
+    if _br.rendered_line_ids(text) != ["CONV-001", "CONV-002", "CONV-003"]:
+        return _fail(f"rendered_line_ids misreads an unclipped section: {_br.rendered_line_ids(text)}")
+    if _br.rendered_line_ids(text + _br.TRUNCATION_MARKER) != ["CONV-001", "CONV-002"]:
+        return _fail("a clipped section must not count its last, possibly partial, line")
+    if _br.rendered_line_ids("") != []:
+        return _fail("an empty section renders nothing")
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_fne_rendered_") as td:
+        c = Constitution.load(Path("config/constitution.json"))
+        bus = MessageBus.open(Path(td) / "bus.jsonl")
+        # a registry too long for the section: 60 rules, each ~200 chars, against a
+        # 1500-token (6000-char) budget; the renderer keeps convs[:40] then clips
+        registry = {"conventions": [
+            {"id": "CONV-%03d" % i, "category": "conv-x%d" % i, "severity": "required",
+             "action": "flag", "rule": ("rule %d " % i) + "words " * 36} for i in range(1, 61)]}
+        refs = [{"ref_id": "REF-%04d" % i, "input_type": "context", "document_name": "r.md",
+                 "location": {"page": 1, "paragraph": i},
+                 "text_excerpt": ("passage %d " % i) + "text " * 60} for i in range(1, 41)]
+        pkg = _br.assemble_context(backend="openai_api", constitution=c, bus=bus,
+                                   work_payload={"task": "convention_review",
+                                                 "document_id": "docA", "document_text": "x",
+                                                 "evaluate_against": [r["id"] for r in registry["conventions"]]},
+                                   convention_registry=registry, reference_index_excerpt=refs)
+        rendered = pkg.rendered
+        if not isinstance(rendered, dict):
+            return _fail("assemble_context did not report what it rendered")
+        conv_ids = rendered.get("convention_ids") or []
+        if not conv_ids or len(conv_ids) >= 60 or conv_ids != ["CONV-%03d" % i for i in range(1, len(conv_ids) + 1)]:
+            return _fail(f"the rendered convention ids should be a proper prefix of the 60 requested: "
+                         f"{len(conv_ids)} ids, truncated={rendered.get('convention_text_truncated')}")
+        if not rendered.get("convention_text_truncated"):
+            return _fail("60 long rules against a 6000-char budget must report the clip")
+        for cid in conv_ids:
+            if ("- %s [" % cid) not in pkg.convention_text:
+                return _fail(f"{cid} reported rendered but its line is not in the section text")
+        ref_ids = rendered.get("reference_ids") or []
+        if not ref_ids or len(ref_ids) >= 40:
+            return _fail(f"40 long passages against the reference budget should render a strict "
+                         f"subset: {len(ref_ids)}")
+        for rid in ref_ids:
+            if ("- %s [" % rid) not in pkg.reference_index_text:
+                return _fail(f"{rid} reported rendered but absent from the section text")
+        # bus counts: 40 messages against a 1500-token bus budget
+        for i in range(40):
+            bus.post({"sender": "PROCESSOR", "sender_role": "agent", "recipient": "ORCHESTRATOR",
+                      "channel": "main", "type": "INFORM",
+                      "body": {"event": "AGENT_OUTPUT", "note": "filler " * 60,
+                               "payload": {"agent": "PROCESSOR", "doc_id": "docA", "items": []}},
+                      "constitution_check": {"laws_consulted": ["LAW-V"], "result": "RESOLVED"}})
+        pkg2 = _br.assemble_context(backend="openai_api", constitution=c, bus=bus,
+                                    work_payload={"task": "t"}, recent_bus_limit=40)
+        r2 = pkg2.rendered
+        if r2.get("bus_messages_rendered", 0) + r2.get("bus_messages_dropped", 0) != 40 \
+                or r2.get("bus_messages_dropped", 0) == 0:
+            return _fail(f"bus counts must add up to the 40 messages offered and show a drop: {r2}")
+
+        # (2) through run_task: a wide-shaped call records rendered ids apart from requested ids
+        import run_context as _rc
+        from cost_tracker import CostTracker
+        from orchestrator import TopOrchestrator
+        ctx = _rc.create_run(td)
+        orch = TopOrchestrator.boot(ROOT, interactive=False, run_adaptive_spawn=False, run_context=ctx,
+                                    cost_tracker=CostTracker.open(ctx.logs_dir(), print_live=False))
+        reg = _copy.deepcopy(orch.registry)
+        reg["PRACTICE_AUDITOR"]["backend"] = "openai_api"
+        orch.registry = reg
+
+        def _stub(self, stable_prefix, dynamic_suffix="", **kw):
+            r = _aw.CallResult(backend=self.backend, model="stub", raw_text="", ok=False, error="stubbed")
+            self._record_cost(r, duration_ms=1)
+            return r
+        orig = _aw.AgentWrapper.dispatch
+        _aw.AgentWrapper.dispatch = _stub
+        try:
+            w = _pl._build_wrapper("PRACTICE_AUDITOR", orch, {})
+            w.run_task(work_payload={"task": "convention_review", "document_id": "docA",
+                                     "document_text": "some document text",
+                                     "evaluate_against": [r["id"] for r in registry["conventions"]],
+                                     "document_units": [{"unit_id": "u01-a", "title": "A"}]},
+                       convention_registry=registry, reference_index_excerpt=refs,
+                       phase="5.5", doc_id="1")
+        finally:
+            _aw.AgentWrapper.dispatch = orig
+        recs = _ce.load(ctx.run_dir)
+        if len(recs) != 1:
+            return _fail(f"expected one evidence record for the wide call, got {len(recs)}")
+        rec = recs[0]
+        if len(rec["rule_ids"]) != 60 or len(rec["rule_ids_rendered"]) >= 60 or not rec["rule_ids_rendered"]:
+            return _fail(f"the record must keep requested (60) and rendered rule ids apart: "
+                         f"{len(rec['rule_ids'])} / {len(rec['rule_ids_rendered'])}")
+        if rec.get("payload_rule_id") is not None:
+            return _fail("a wide call carries no payload rule")
+        unrendered = [r for r in rec["rule_ids"] if r not in rec["rule_ids_rendered"]][0]
+        if _ce.rule_reached(rec, unrendered):
+            return _fail(f"{unrendered} was requested but not rendered and must not count as reached")
+        if not _ce.rule_reached(rec, rec["rule_ids_rendered"][0]):
+            return _fail("a rendered rule must count as reached")
+        if _ce.rule_reached(rec, "CONV-999"):
+            return _fail("a rule nobody requested counts as reached")
+        # (3) the classifier: a miss for an unrendered rule is NOT evidence present
+        d = Path(td) / "classify"
+        (d / "audit").mkdir(parents=True); (d / "logs").mkdir()
+        (d / "audit" / "pairing_map.json").write_text(json.dumps({"docA": {"document_id": "docA", "units": [
+            {"unit_id": "u01-a", "title": "A", "kind": "section", "index": 0, "fields_present": [],
+             "paired": [], "rejected": [], "undecided": []}]}}), encoding="utf-8")
+        (d / "audit" / "convention_assignment.json").write_text(json.dumps({"by_rule": {
+            rid: {"status": "assigned", "source_rule_id": rid.replace("CONV-", "CONV-A")}
+            for rid in rec["rule_ids"]}, "by_agent": {}}), encoding="utf-8")
+        rec_full = dict(rec, document_text_truncated=False, document_text_chars=18)
+        (d / "logs" / "call_evidence.jsonl").write_text(json.dumps(rec_full) + "\n", encoding="utf-8")
+        arts = _fe.load_run_artifacts(d)
+        got_r = _fe.classify({"unit": "u01", "rule": rec["rule_ids_rendered"][0].replace("CONV-", "CONV-A")}, arts)
+        got_u = _fe.classify({"unit": "u01", "rule": unrendered.replace("CONV-", "CONV-A")}, arts)
+        if got_r["class"] != _fe.PRESENT_IN_PAYLOAD:
+            return _fail(f"a rendered rule on an unclipped whole-document call should be evidence present: {got_r}")
+        if got_u["class"] == _fe.PRESENT_IN_PAYLOAD:
+            return _fail(f"a requested-but-clipped rule was classified as evidence present: {got_u}")
+        if got_u["class"] != _fe.PRESENT_UPSTREAM:
+            return _fail(f"a requested-but-clipped rule should be present upstream, not in the payload: {got_u}")
+
+        # (4) the draft memo call records its evidence and joins the cost row
+        ctx2 = _rc.create_run(Path(td) / "draft")
+        seen = {}
+
+        def _fake_call_claude(stable, dynamic, *, max_tokens=4096):
+            seen["call_id"] = getattr(w, "_cost_call_id", "")
+            seen["chars"] = len(stable) + len(dynamic)
+            return _aw.CallResult(backend="claude_api", model="stub", raw_text="memo", ok=True)
+        w.call_claude = _fake_call_claude
+        memo = _pl._draft_generate_with_evidence(w, "stable part", "dynamic part",
+                                                 passages=[{"ref_id": "REF-0007", "text": "p"}],
+                                                 run_ctx=ctx2)
+        drecs = _ce.load(ctx2.run_dir)
+        if memo != "memo" or len(drecs) != 1:
+            return _fail(f"the draft call did not record exactly one evidence line: {drecs}")
+        dr = drecs[0]
+        if dr["task"] != "draft_memo" or dr["reference_ids"] != ["REF-0007"] or dr["prompt_chars"] != seen["chars"] \
+                or dr["call_id"] != seen["call_id"] or dr["agent"] != "PRACTICE_AUDITOR":
+            return _fail(f"the draft record disagrees with the call: {dr} vs {seen}")
+        if getattr(w, "_cost_call_id", "") != "":
+            return _fail("the drafter's call id was not cleared after the call")
+        # (5) the arithmetic probe records a call id and the prompt length per case
+        recs_p, _summary = _pa.probe("PRACTICE_AUDITOR", n=2, dispatch=lambda prompt: "42")
+        if not recs_p or any(not r.get("call_id") or r.get("task") != "arithmetic_probe"
+                             or r.get("prompt_chars", 0) <= 0 for r in recs_p):
+            return _fail(f"the probe's records carry no call evidence: {recs_p[:1]}")
+        if len({r["call_id"] for r in recs_p}) != len(recs_p):
+            return _fail("probe call ids are not unique per case")
+    return _ok("the budgeted renderers report what they kept, read off the finished sections (60 "
+               "rules requested, a proper prefix rendered and the clip flagged; 40 passages, a strict "
+               "subset; 40 bus messages, rendered plus dropped equal to the offer); a wide call's "
+               "record keeps requested and rendered rule ids apart and a requested-but-clipped rule "
+               "is not reached; the classifier puts a miss for such a rule upstream, never in the "
+               "payload; the draft memo call and the arithmetic probe record their calls")
+
+
+def check_207_recording_gaps_closed_rendered_draft_probe():
+    """False-negative evidence, the three recording gaps (2026-09-11). Built
+    without measurement. The classifier's first class could be asserted when a
+    budget truncation had dropped what was needed: bus_reader clips the
+    CONVENTION_REGISTRY section to a token budget after keeping 40 rules, leaves
+    reference passages out that do not fit, and drops the oldest bus messages.
+    Now assemble_context reports what each budgeted section actually kept, read
+    off the finished text (rendered_line_ids: whole lines only, the last line of
+    a clipped section never counted), the record carries requested and rendered
+    ids apart, and call_evidence.rule_reached counts a rule only when its text
+    reached the call: in the payload itself (a paired call) or rendered whole.
+    The draft memo call (which bypasses run_task) records its own evidence
+    through pipeline._draft_generate_with_evidence, and the arithmetic probe
+    records a call id and the prompt length per case.
+
+    Neutralise-and-restore: with rendered_line_ids replaced by one that reports
+    every '- <id>' line including the clipped last one, the requested-but-clipped
+    boundary is misreported and the body must FAIL; restored, PASS."""
+    import bus_reader as _br
+
+    shipped = _fne_rendered_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _br.rendered_line_ids
+
+    def _credulous(section_text):
+        import re as _re
+        return [m.group(1) for m in _re.finditer(r"^- (\S+) \[", section_text or "", _re.M)]
+    _br.rendered_line_ids = _credulous
+    try:
+        neutralised = _fne_rendered_body()
+    finally:
+        _br.rendered_line_ids = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with the renderer's report made credulous the body still passed ({neutralised})")
+    restored = _fne_rendered_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring the renderer's report the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; neutralise (credulous report) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -16564,6 +16779,8 @@ CHECKS = [
      check_205_false_negative_evidence_classification),
     ("206 convention distribution reaches the paired path and wide mode's excerpt (step A, B)",
      check_206_convention_distribution_reaches_the_paired_path),
+    ("207 recording gaps closed: rendered ids, the draft call, the probe (step C)",
+     check_207_recording_gaps_closed_rendered_draft_probe),
 ]
 
 

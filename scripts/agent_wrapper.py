@@ -1436,7 +1436,7 @@ class AgentWrapper:
                 convention_registry=convention_registry,
                 reference_index_excerpt=reference_index_excerpt,
                 prompt_chars=len(stable_prefix) + len(dynamic_suffix),
-                prompt_text=stable_prefix + dynamic_suffix))
+                rendered=getattr(pkg, "rendered", None)))
         except Exception as e:  # never fail a call for its own bookkeeping
             evidence_written = None
             log_event(_LOG, f"call_evidence_write_error error_type={type(e).__name__}",
