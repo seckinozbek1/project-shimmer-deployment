@@ -312,9 +312,12 @@ processing swarm governed by an append-only constitution.
 - `scripts/server.py`: the token-gated FastAPI dock. Config is env-driven (`SHIMMER_*`,
   read once at startup, printed to stderr); `SHIMMER_TOKEN_HASH` is required. The README's
   route table is the complete route list and gate check 167 fails if it and the app disagree
-  in either direction; check 116 does the same for the `SHIMMER_*` env table. `/findings/{run_id}`
-  and `/pairs/{run_id}` serve the STRUCTURED review (typed Finding records off the bus, and the
-  pairing map with no document text); `/results` stays the human artifact.
+  in either direction; check 116 does the same for the `SHIMMER_*` env table.
+  `/runs/{run_id}/findings` and `/runs/{run_id}/pairs` serve the STRUCTURED review (typed
+  Finding records off the bus, and the pairing map with no document text);
+  `/runs/{run_id}/deliverables` stays the human artifact. The pairing map's `absence` record
+  and a finding's `absence_path` are on disk and on the bus but not yet in the two routes'
+  projections (recorded in README section I).
 - `scripts/harness/`: one agent, one unit, one rule, one backend (`run_agent.py`), plus
   `probe_arithmetic.py` (can the model do the arithmetic with no review framing at all) and
   `score_envelope.py`. The harness never builds its own prompt: it builds the wrapper the
@@ -324,6 +327,15 @@ processing swarm governed by an append-only constitution.
   (its filename is denied in shell commands), adds `--backend-profile local` if none was
   named, passes everything else through, and samples RAM/VRAM to a JSON file rewritten after
   every sample so the peaks survive a kill.
+- `Dockerfile` / `compose.yaml` / `tools/entrypoint.sh`: the container. The image copies
+  source only (`scripts/`, `config/`, `tools/`, `corpus_ingest/`, the three root markdown
+  files, `requirements.txt`); the entry point takes `serve`, `run` (through
+  `tools/run_local_demo.py`, never naming the pipeline file) or `verify` (the gate with
+  `--offline`), `verify` by default. The weight layers (`--build-arg BAKE_WEIGHTS=true`) sit
+  BEFORE the source layers so a source-only rebuild never re-downloads them; keep that
+  order. `.gitattributes` pins shell scripts to LF; the Dockerfile strips a trailing CR
+  regardless. A container gate loads models on the GPU: never overlap it with the host gate
+  or a run.
 - `scripts/pipeline.py`: the pipeline driver (the flags above).
 
 ## Key paths
@@ -368,12 +380,18 @@ processing swarm governed by an append-only constitution.
 
 ## Commands
 
+Every hand-typed run needs both override flags (shown on the first two lines below and
+implied on the rest): without `--sensitivity-layer-inactive-override` the run exits 6 while
+the LAW-IV layer ships inactive, and without `--no-redaction-override` it hard-stops at the
+redaction gate whenever no operator redaction rule compiles, which is the case for every
+shipped corpus. The launcher, the wizard and the server add both for a normal run.
+
 ```
 py -3.9 -X utf8 scripts/verify_session1.py        # verification gate (run every session)
-py -3.9 scripts/pipeline.py --non-interactive     # full pipeline (review mode)
+py -3.9 scripts/pipeline.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override
 py -3.9 scripts/pipeline.py --task draft --question "..."   # draft mode
 py -3.9 scripts/pipeline.py --review-mode paired --pairs-per-unit 3   # paired review
-py -3.9 -X utf8 tools/run_local_demo.py --non-interactive    # local run, memory sampled
+py -3.9 -X utf8 tools/run_local_demo.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override
 py -3.9 -X utf8 scripts/harness/run_agent.py --agent NAME --profile local|api \
     --unit-file U --unit-id u01 --rule-file R --rule-id CONV-001 --out results.json
 py -3.9 scripts/pipeline.py --list-snapshots      # list saved snapshots

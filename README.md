@@ -21,31 +21,48 @@ machine learning. See section M for positioning.
 regulator's draft regulations and an operator-written review mandate), written specifically
 as test material, not real regulatory documents; see section J for the historical
 measurements taken against it. `benchmark/corpora/` carries the corpora this repository's
-own gate exercises today, including a document-comparison scenario built from real,
-publicly reported figures with every real party name replaced by an obvious placeholder
-(Company A, Union B) before publication.
+own gate exercises today: a document-comparison scenario built from real, publicly reported
+figures with every real party name replaced by an obvious placeholder (Company A, Union B)
+before publication, and a self-authored device-log corpus built on 11 September 2026 to
+measure neighbour context and convention distribution, not yet scored.
+
+**What has and has not been measured, stated here rather than in a footnote.** Every scored
+figure in this README (sections J and K) comes from runs made before 10 September
+2026 on the code of the initial snapshot. On 10 and 11 September the review path changed in
+more than a dozen commits (neighbour context, unit order, the rule-id resolver, the
+convention assignment and per-plan judging agent, the convention distribution, call
+evidence, longest-match labels, declared scope with Python-first absence, the container).
+Each of those changes was traced in code and is proved on gate fixtures; **none has been
+scored by a run.** The one corpus built to measure them, `device_log_review`, was run twice
+on 11 September and stopped by the operator both times before any deliverable existed; its
+clean twin was never run. The last scored run predates all of that work, and the measurement
+is owed. Until it is made, every mechanism dated 10 or 11 September below should be read as
+built, not as working, and the worst-case reading is the honest one.
 
 **This repository is a public source snapshot, MIT licensed** (see `LICENSE` and
-`CITATION.cff`). It carries the source code, the configuration, and the test corpora that
-prove the mechanism works; it does not carry any run history, any private material, or any
-directory a run creates. `input/`, `output/`, `durable/`, and `tests/` (the full list is
+`CITATION.cff`). It carries the source code, the configuration, and the test corpora the
+repository's own gate exercises; it does not carry any run history, any private material, or
+any directory a run creates. `input/`, `output/`, `durable/`, and `tests/` (the full list is
 below) are not part of this snapshot; section G explains what each one is for and what you
 supply or generate to get one. This README is the first read for anyone cloning it fresh. It
 is honest about what
 works and what does not (sections J and K), and honest about the gap between what a working
 deployment looks like and what a source-only snapshot ships (section G, section L).
-Two operational documents sit alongside it: `docs/RUNBOOK.md` (install, launch, submit,
+Three operational documents sit alongside it: `docs/RUNBOOK.md` (install, launch, submit,
 watch, approve, what each status means, what to do when a run hangs or BLOCKs, how to back
-up and restore, how to read `cost_tracker.json`) and `docs/THREAT_MODEL.md` (assets, trust
+up and restore, how to read `cost_tracker.json`), `docs/THREAT_MODEL.md` (assets, trust
 boundaries, threats with their current mitigation and residual risk, and what is
-deliberately out of scope).
+deliberately out of scope), and `docs/PRODUCTIZATION_STATE.md` (where the productization
+chain stands, commit by commit, and what is owed).
 
 ### What's in this repository
 
-127 tracked files (source, configuration, and test corpora; counted directly from the
-repository tree, not from git, since directory creation and `.gitignore` behavior can differ
-by tool). No compiled bytecode, no run output, and no cache directory is tracked; those are
-excluded by `.gitignore` and, if present locally, are never committed.
+178 tracked files at the time of writing (source, configuration, documentation, and test
+corpora; counted from `git ls-files`, and the same count from a tree walk with the
+not-shipped directories excluded). The exact number has gone stale within a day of being
+written twice, so read it as "about 180". No compiled bytecode, no run output, and no cache
+directory is tracked; those are excluded by `.gitignore` and, if present locally, are never
+committed.
 
 ```
 shimmer-deployment/
@@ -53,25 +70,48 @@ shimmer-deployment/
 ├── LICENSE, CITATION.cff                 MIT license, citation metadata
 ├── requirements.txt                      pinned Python dependencies
 ├── shimmer.bat, shimmer.sh               the launcher: builds .venv, installs deps, menu
-├── scripts/                              the pipeline, the 18 agent modules, the server,
-│                                          the gate (scripts/verify_session1.py), harness/,
-│                                          sensitivity_layer/, ui/ (the console, one HTML
-│                                          file plus its vendored typeface)
+├── Dockerfile, compose.yaml,             the container image (CUDA base, Python 3.9, the
+│   .dockerignore, .gitattributes         pinned requirements, optionally the model weights),
+│                                          the run flags recorded as two compose profiles,
+│                                          what the build context excludes, and the LF pin on
+│                                          shell scripts so the container can exec them
+├── scripts/                              the pipeline, the one agent wrapper that runs all
+│                                          18 registry agents, the server, the gate
+│                                          (scripts/verify_session1.py), the convention
+│                                          assignment, the call-evidence recorder and the
+│                                          false-negative classifier, the harness builder,
+│                                          harness/, sensitivity_layer/, ui/ (the console,
+│                                          one HTML file plus its vendored typeface)
 ├── corpus_ingest/                        the external corpus ingestion contract, validator,
 │                                          and its own test fixtures
 ├── config/                               governance and compiled config (constitution,
-│                                          agent registry, contracts, domain vocabulary,
-│                                          institution names, review scope, pricing)
-├── benchmark/corpora/                    the four shipped test corpora and their answer
-│                                          keys (see "Test corpora from other domains", H)
+│                                          agent registry and contracts, the generated
+│                                          nine-part agent harness, domain vocabulary,
+│                                          institution names, review scope, pricing, local
+│                                          model ids, editorial board tunables, redaction
+│                                          cues, rename tolerance)
+├── benchmark/corpora/                    the shipped test corpora (five scenarios in six
+│                                          directories, one with a clean twin) and their
+│                                          answer keys (see "Test corpora from other
+│                                          domains", H)
 ├── tools/                                run wrappers: run_local_demo, stage_corpus,
-│                                          score_corpus, console_preview (a throwaway local
-│                                          harness for looking at the console, not the product)
+│                                          score_corpus, entrypoint.sh (the container entry
+│                                          point), archive_ontology_stores (the ontology
+│                                          stores as one dated zip outside the repository),
+│                                          console_preview (a throwaway local harness for
+│                                          looking at the console, not the product)
 └── docs/
-    ├── RUNBOOK.md, THREAT_MODEL.md       operational reference (see above)
-    └── api/CONSOLE_PLAN.md,              the console's design, its two-view language
-        CONSOLE_LANGUAGE.md,              (reviewer/developer, field by field), and the
-        CONSOLE_STATE_AUDIT.md            audit of every state against what may exist
+    ├── RUNBOOK.md, THREAT_MODEL.md,      operational reference (see above) and the state
+    │   PRODUCTIZATION_STATE.md           of the productization chain
+    ├── api/                              the console's design (CONSOLE_PLAN, CONSOLE_LANGUAGE,
+    │                                      CONSOLE_LAYOUT_PLAN, CONSOLE_STATE_AUDIT), the API
+    │                                      surface (SURFACE_DESIGN, SURFACE_INVENTORY), the
+    │                                      unit-context design (UNIT_CONTEXT_DESIGN) and the
+    │                                      convention assignment design
+    │                                      (CONVENTION_ASSIGNMENT_DESIGN)
+    └── fix/                              one report per productization step
+                                           (STEP_*_REPORT.md), the D options paper, and the
+                                           console screenshots
 ```
 
 **Not shown above because they are not shipped, and a fresh clone does not have them:**
@@ -156,27 +196,35 @@ and what a run makes when it can reach the providers. It is not what a local run
 "The local profile" immediately after it. Every measured run in section J except the first was
 a local run, so read the two tables together before drawing a conclusion about cost or quality.
 
-| Stage | Agent | Backend / model |
-|---|---|---|
-| Read + extract (per doc) | PROCESSOR | Claude Sonnet 4.6 |
-| | SPEECH_ACT_TAGGER | Claude Haiku 4.5 |
-| | LEGAL_ANALYST | Claude Opus 4.8 |
-| Read + extract (corpus) | ARCHIVIST | Claude Sonnet 4.6 |
-| | INST_FINDER | Claude Haiku 4.5 |
-| | CITATION_RESOLVER | Claude Haiku 4.5 |
-| Verify + audit | VERIFIER | GPT-4o |
-| | FACT_CHECKER (web) | GPT-4o |
-| Convention review | PRACTICE_AUDITOR (web) | GPT-4o |
-| | STYLE_GUARDIAN | Claude Haiku 4.5 |
-| Amend | AMENDMENT_DRAFTER | Claude Opus 4.8 |
-| Editorial board (lower) | EDITOR_CLERK, EDITOR_HEAD_OF_UNIT, EDITOR_HEAD_OF_SECTION | Claude Opus 4.8 |
-| Editorial board (upper) | EDITOR_HEAD_OF_DEPARTMENT, EDITOR_DEPUTY_DG, EDITOR_DG | GPT-4o |
-| Redact | REDACTOR | Qwen 2.5 7B Instruct (local) |
+| Stage | Agent | Backend / model | Subjects |
+|---|---|---|---|
+| Read + extract (per doc) | PROCESSOR | Claude Sonnet 4.6 | none, by decision |
+| | SPEECH_ACT_TAGGER | Claude Haiku 4.5 | none, by decision |
+| | LEGAL_ANALYST | Claude Opus 4.8 | `basis` |
+| Read + extract (corpus) | ARCHIVIST | Claude Sonnet 4.6 | none, by decision |
+| | INST_FINDER | Claude Haiku 4.5 | none, by decision |
+| | CITATION_RESOLVER | Claude Haiku 4.5 | none, by decision |
+| Verify + audit | VERIFIER | GPT-4o | `fidelity` |
+| | FACT_CHECKER (web) | GPT-4o | `facts` |
+| Convention review | PRACTICE_AUDITOR (web) | GPT-4o | `conformance` |
+| | STYLE_GUARDIAN | Claude Haiku 4.5 | `wording` |
+| Amend | AMENDMENT_DRAFTER | Claude Opus 4.8 | none, by decision |
+| Editorial board (lower) | EDITOR_CLERK, EDITOR_HEAD_OF_UNIT, EDITOR_HEAD_OF_SECTION | Claude Opus 4.8 | `editorial` |
+| Editorial board (upper) | EDITOR_HEAD_OF_DEPARTMENT, EDITOR_DEPUTY_DG, EDITOR_DG | GPT-4o | `editorial` |
+| Redact | REDACTOR | Qwen 2.5 7B Instruct (local) | `redaction` |
 
 The GPT auditors review Claude-produced content, satisfying LAW-III. The editorial board
 is a six-rank family split (3 Claude lower ranks, 3 GPT upper ranks). REDACTOR is the only
 agent permitted to handle sensitive content, and it runs offline. Only FACT_CHECKER and
 PRACTICE_AUDITOR may reach the web (`may_use_web`).
+
+An agent's `subjects` (declared in `config/agent_registry.json`, added 11 September 2026)
+decide which convention rules reach it: a rule's heading bracket tags (section E) are
+compared with each agent's subjects by exact token equality, once at BOOT, by code that
+names no subject. Six agents declare none on purpose, each with a `subjects_note` saying
+why: PROCESSOR, ARCHIVIST, SPEECH_ACT_TAGGER and AMENDMENT_DRAFTER are reached by no
+convention-review path, and INST_FINDER and CITATION_RESOLVER post output that no
+deliverable reads today.
 
 #### The local profile (`--backend-profile local`)
 
@@ -188,11 +236,14 @@ hardcoded there and never read from config); the two model ids are overwritten a
 `SHIMMER_BACKEND_PROFILE`, because five behaviours (agent serialisation, the document clip, the
 progress display, the role anchor, CPU embedding) key off the environment variable rather than
 the flag; a run started with the flag alone once loaded local models and then ran them
-concurrently, which cost a 47 minute run. **Draft mode is not covered by the profile:** phase 0
-calls the Anthropic path directly (`_draft_generate` into `AgentWrapper.call_claude`, which never
-consults the backend) while the profile has already rewritten AMENDMENT_DRAFTER's model id to a
-local one, so `--task draft --backend-profile local` fails at memo generation and exits 5.
-Drafting needs the cloud profile until phase 0 goes through `dispatch`.
+concurrently, which cost a 47 minute run (killed in phase 3, before `apply_backend_profile`
+made the flag set the variable; the failure cannot recur from the flag alone). **Draft mode is
+not covered by the profile:** phase 0 calls the Anthropic path directly (`_draft_generate`
+through `_draft_generate_with_evidence`, which records the call's evidence and then calls
+`AgentWrapper.call_claude`, never `dispatch`, so the backend profile is never consulted) while
+the profile has already rewritten AMENDMENT_DRAFTER's model id to a local one, so `--task draft
+--backend-profile local` fails at memo generation and exits 5. Drafting needs the cloud profile
+until phase 0 goes through `dispatch`.
 
 | Cloud role | Agents | Local model |
 |---|---|---|
@@ -200,17 +251,25 @@ Drafting needs the cloud profile until phase 0 goes through `dispatch`.
 | auditor (6) | VERIFIER, FACT_CHECKER, PRACTICE_AUDITOR, EDITOR_HEAD_OF_DEPARTMENT, EDITOR_DEPUTY_DG, EDITOR_DG | `unsloth/Phi-3.5-mini-instruct-bnb-4bit` |
 | redactor (1) | REDACTOR | `Qwen/Qwen2.5-7B-Instruct` (from the registry, not remapped) |
 
-What this costs, measured rather than assumed: **$0.00 and no network** (measured across every
-local-profile run in the operator's own working record, not published in this snapshot; the
-cloud comparison figure quoted in section J is historical and is not reproducible here). But
-the local auditor is the model that fills the typed Finding
-record, and on a document where arithmetic can settle nothing it produced **one valid typed
-Finding out of 37 replies**, and even that one carried no usable rule id, so nothing reached the
-deliverable (section J, the catalogue corpus). The local profile also switches the review to `paired` mode
-by default, and the LAW-III separation the cloud profile provides (GPT auditors reviewing
-Claude-produced content) does not hold locally, since one family produces and another audits but
-both are small local models. Two consequences worth stating plainly: the quality figures in
-section J are local-profile figures, and no cloud run of the newer corpora has been made.
+What this costs, measured rather than assumed: **$0.00 in provider cost and no provider API
+call** (measured across every local-profile run in the operator's own working record, not
+published in this snapshot; the cloud comparison figure quoted in section J is historical and
+is not reproducible here). "No network" is narrower: before 10 September 2026 the local loader
+still contacted the model hub on every load (fixed that day; gate check 193 now proves a cached
+load with the network blocked at the socket), and the embedding model is fetched on first use
+if it is not cached. The local auditor is the model that fills the typed Finding record, and on
+a document where arithmetic can settle nothing it produced **one valid typed Finding out of 37
+replies**, and even that one carried no usable rule id, so nothing reached the deliverable
+(section J, the catalogue corpus). That figure predates 10 and 11 September: the rule id it
+lacked was being written under the agent's own contract name, `procedure_id`, and is now read
+(`finding_record.resolved_rule_id`); `relation`, `record_verdict` and `explanation` are now
+required fields for PRACTICE_AUDITOR; and the wide-mode unit-id mismatch is closed (the
+paired-mode gap, section H, is still open). The figure has not been re-measured since. The local profile also switches the review to `paired` mode by
+default. The LAW-III family split still holds locally (a Qwen producer, a Phi auditor; the
+backend column is never read from config), but the auditor is a 3.8B model rather than
+GPT-4o, so the separation buys far less scrutiny than the cloud pairing. Two consequences
+worth stating plainly: the quality figures in section J are local-profile figures, and no
+cloud run of the newer corpora has been made.
 
 ### Pipeline phases
 
@@ -225,14 +284,19 @@ contiguous sequence (there is no phase 2; phases 5.5 and 6.5 are intermediate st
   first-page keyword check that flags possible misclassification and never drops a document);
   then load the constitution and bus, and on a first run only spawn learning assets from
   `input/context/` (the spawn is keyed on the durable sentinels and is a no-op afterwards);
-  then parse conventions into a registry and build the reference index, which is built last
-  because it needs the populated corpus.
+  then parse conventions into a registry, assign each rule to the agents whose declared
+  subjects match its bracket tags (written to `audit/convention_assignment.json` with the
+  operator's own rule id beside every registry id; a rule no agent can act on is posted to
+  the bus as `CONVENTION_UNASSIGNED`, never dropped), and build the reference index, which
+  is built last because it needs the populated corpus.
 - **Phase 1:** situation assessment (ORCHESTRATOR).
 - **Phase 3-4:** content production. Per document: PROCESSOR, SPEECH_ACT_TAGGER,
   LEGAL_ANALYST. Corpus-level (once): ARCHIVIST, INST_FINDER, CITATION_RESOLVER.
 - **Phase 5:** verification + fact-check (VERIFIER, FACT_CHECKER).
 - **Phase 5.5:** convention review (PRACTICE_AUDITOR, STYLE_GUARDIAN). Skipped when no
-  conventions are loaded. Runs in one of **two review modes** (see below).
+  conventions are loaded. An agent fires only if the BOOT assignment gave it a rule or some
+  loaded rule is untagged (the firing gate); in paired mode the judging agent is chosen per
+  plan by the rule's subject. Runs in one of **two review modes** (see below).
 - **Phase 6:** synthesis: the context summary, the operative summary, and the canonical
   amendment master (JSON + md + docx). Every amendment is rendered deterministically from the
   typed Finding records; the AMENDMENT_DRAFTER model call is off by default and
@@ -248,8 +312,10 @@ contiguous sequence (there is no phase 2; phases 5.5 and 6.5 are intermediate st
   run sensitive is not on its own enough. Otherwise the scrub phase is skipped (PII is still
   flagged upstream in phases 5/5.5/6, just not scrubbed). LAW-IV is strict when it runs.
 - **Phase 8:** persist artifacts and write the run summary.
-- **Run end:** the learning engine captures provisions, rebuilds its graph, and updates the
-  GNN. For a draft run, the generated memo and its manifest are cleared.
+- **Run end:** the learning engine captures provisions into the ontology stores under a
+  storage scope (one scope today; a later provision supersedes an earlier one rather than
+  deleting it), rebuilds its graph, and updates the GNN. For a draft run, the generated memo
+  and its manifest are cleared.
 
 Multilingual support is built in: every language is embedded into one shared cross-language
 space (`BAAI/bge-m3`), so an English query retrieves against non-English passages. Per-document
@@ -262,16 +328,27 @@ Phase 5.5 runs one of two ways. `--review-mode` selects it; with no flag the def
 **`paired` under the local backend profile and `wide` under cloud**
 (`pipeline.resolve_review_mode`), and an explicit flag always wins.
 
-- **`wide`:** each convention-review agent sees the whole document and the whole registry
-  and is asked to evaluate one against the other. One call per agent per document.
+- **`wide`:** each firing convention-review agent sees the document (clipped to 6500
+  characters on the cloud profile, 12000 on local) and the rules assigned to it plus every
+  untagged rule, and is asked to evaluate one against the other. At most one call per agent
+  per document; a rule no convention-review agent is shown is recorded in the pairing map
+  under `not_judged`.
 - **`paired`:** the run first builds a **pairing map** (`<run>/audit/pairing_map.json`),
   deciding which rules could apply to which units of the document and recording the reason
-  for every pairing and every non-pairing. Python then computes the arithmetic. Three
-  outcomes per pair, and only one costs a call: the figures disagree (the model is shown the
-  computed values and asked only whether the difference is material, never to recompute
-  them); nothing is computable (the model judges one unit against one rule on the text); the
-  figures agree (no finding, **no call**). One call is made per distinct computed
-  disagreement, not per pair. `--pairs-per-unit N` caps the pairs considered per unit; a pair
+  for every pairing and every non-pairing. Python then computes the arithmetic. Per pair the
+  planner records a kind, and only some kinds cost a call: the figures disagree (`computed`
+  or `band`, one call per distinct disagreement, the model shown the computed values and
+  asked only whether the difference is material, never to recompute them); nothing is
+  computable (`uncomputable`, one call on the text, one unit against one rule); a declared
+  required field is absent (`absence_computed`, no call, Python decides); a scoped rule
+  leaves the requirement to its own wording (`absence_judged`, one call per unit in scope);
+  the figures agree (no finding, **no call**). A plan of any of those kinds whose rule has
+  no judging agent is set aside under the map's per-document `not_judged` list, keeping its
+  own kind, and makes no call. Every model call, in either mode, writes one structural record to
+  `logs/call_evidence.jsonl` (which unit, neighbours, references and rules actually reached
+  the prompt; never text), so a missed defect can later be classified as present in the
+  payload, present upstream but never shown, or absent from the corpus (section H).
+  `--pairs-per-unit N` caps the pairs considered per unit; a pair
   the cap drops is counted and logged, never silently skipped. A rule pairs with a unit when
   the unit carries every field label the rule's text names, and a label counts as named by
   the longest match only: a rule saying "calibration authority signature" names that label
@@ -344,7 +421,10 @@ judging agent is chosen per plan, so an agent with no assigned rule and no untag
 receives no plan; the one change is that the empty result a document with nothing to judge
 owes goes under an agent the firing gate lets fire, or, when no agent fires, nowhere, logged
 as `paired_review_no_firing_agent`. `GET /runs/{run_id}/pairs` serves `not_judged` and
-`reattributed` beside the pairs.
+`reattributed` beside the pairs; the `absence` record, `band_conditions` and the full
+`prior_comparisons` detail are read from `audit/pairing_map.json` itself, the route carrying
+the `prior_*` counts only and nothing of `absence` or `band_conditions` (an open gap,
+recorded in section I).
 
 ### Bands from the reference corpus
 
@@ -405,6 +485,13 @@ deliberately not `verdict`, which every agent already uses for its own values),
 reader and is stripped from any payload travelling to another agent. The schema lives in
 `config/agent_contracts.json` under `finding_record`; the module reads it rather than
 carrying a second copy. These records are what `GET /runs/{run_id}/findings` serves (section I).
+An agent may name the rule under its own contract's field (PRACTICE_AUDITOR writes
+`procedure_id`); every consumer reads it through `finding_record.resolved_rule_id`, which
+accepts `rule_id`, `procedure_id`, `conv_id` or `convention_ref`, because five real irregular
+findings had been dropped silently by a builder that read `rule_id` alone. For
+PRACTICE_AUDITOR the `relation`, `record_verdict` and `explanation` are required, not
+optional: measured before the change, 33 of 39 local calls asserted a violation with none of
+them.
 
 Four **optional** fields were appended by INFRA-044 (none required): `field_label` (the
 document's own label for the field), `delta` (`value_a` minus `value_b`, same unit only),
@@ -456,7 +543,7 @@ with no model call:
 
 The comparison runs in both review modes, before the mode branch, and costs no model call. An
 optional review `--question` (section C) is folded into the run objectives the review phases
-receive (4, 5, 5.5 and 6; the editorial board builds its own) and is echoed at the top of
+receive (3-4, 5, 5.5 and 6; the editorial board builds its own) and is echoed at the top of
 `document_summary.md` and `_run_summary.md`; it is never parsed.
 
 The figure reader was extended for this material, structurally: a currency **symbol** before
@@ -473,9 +560,11 @@ Every amendment is rendered **deterministically from the typed Finding records**
 `AMENDMENT_DRAFTER` model call is off by default.
 
 That decision rests on measurement, not preference. Holding one run's arithmetic identical and
-changing only the amendment prose, recall moved from **2/9 to 5/9** (the 2/9 is one live draw
-of the model's wording, labelled as one draw rather than an average; the deterministic
-ablation arms around it are what establish the conditional), and a true band finding
+changing only the amendment prose, recall moved from **2/9 to 5/9** on the original wheat
+corpus (the 2/9 is one live draw of the model's wording, labelled as one draw rather than an
+average; the deterministic ablation arms around it are what establish the conditional; the
+figures predate the 10 and 11 September changes to the amendment builder and the scorer and
+have not been re-measured), and a true band finding
 scored as a **false positive** purely because its sentence said "exceeds the typical yield
 range" instead of "8.8 t/ha, above the reference bound of 3.4 t/ha". The conventions ask for
 the specific figures; the model kept leaving them out. The figures used to be a fallback used
@@ -501,6 +590,15 @@ narrow by construction rather than by instruction:
   field it cannot get wrong;
 - a call that fails, times out or answers with nothing leaves the record untouched and the
   template writes the amendment exactly as it would have.
+
+A finding is never dropped on the way to an amendment. An irregular record the template
+cannot build into one (no resolvable rule id, no locatable passage) is recorded with its
+reason and posted to the bus as `AMENDMENT_REFUSED` (`GET /runs/{run_id}/amendment-refusals`);
+a call whose output fails its contract is posted as `CONTRACT_VIOLATION`
+(`GET /runs/{run_id}/contract-violations`). Every irregular finding a convention-review call
+produces therefore ends as exactly one of an amendment or a refused finding, and a reply
+that fails its contract ends as a contract violation; a valid reply with nothing irregular
+is the fourth outcome, which is not silence either but a compliant empty answer.
 
 ### Grounding behaviors
 
@@ -532,8 +630,8 @@ All three entry points (launcher, chat, server) offer both modes with the same `
 
 A **review** run accepts an optional `--question "..."` too: a framing question ("which
 terms moved toward the mandate since the earlier offer, which held, and what was dropped?")
-appended to the run objectives the review phases receive (4, 5, 5.5 and 6, not the editorial
-board) and echoed in `document_summary.md`
+appended to the run objectives the review phases receive (3-4, 5, 5.5 and 6, not the
+editorial board) and echoed in `document_summary.md`
 and `_run_summary.md`. It is operator input, so the meta-law signature scan reads it with the
 objectives; it is never parsed by the code. The `RUN_OBJECTIVES` prompt section is capped at
 200 tokens, and an over-long question is warned about on stderr rather than silently cut.
@@ -586,8 +684,14 @@ set is normally two markdown files, by convention rather than requirement:
   three severity words the parser already classifies from rule text (`required`,
   `recommended`, `advisory`) sets that rule's severity directly instead of the text
   classification; every other token is a subject, carried on the registry entry's
-  `subjects` list, read verbatim and lowercased, for the convention-assignment comparison
-  (below). Two further bracket forms are declarations, read by their leading word and never
+  `subjects` list, read verbatim and lowercased, for the convention-assignment comparison:
+  at BOOT each rule's tags are compared with the subjects each agent declares in
+  `config/agent_registry.json` by exact token equality (code that names no subject), the
+  result is written to `audit/convention_assignment.json` and served by
+  `GET /runs/{run_id}/convention-assignment`, an untagged rule keeps today's routing to every
+  convention-review agent, and a rule no agent can act on is posted to the bus as
+  `CONVENTION_UNASSIGNED` rather than dropped (section H 4a for what an agent's cluster is,
+  section I for the route). Two further bracket forms are declarations, read by their leading word and never
   as subjects (D, option 2, 2026-09-11, built without measurement; gate check 209):
   `[scope: class=A, device]` names the field labels, each optionally pinned to a value, that
   identify the units the rule governs, and `[requires: calibration authority signature]`
@@ -601,9 +705,21 @@ set is normally two markdown files, by convention rather than requirement:
   per unit in scope and its answer is stamped with the unit and rule by the pipeline. The
   pairing map records which path decided each absence. The labels and values are the
   operator's own; nothing derives a scope from text or counts. A heading with no brackets at
-  all parses exactly as before. The parser's own
-  title heading, the first heading in a file, is never itself a rule section: prose
-  written under it (an introduction, a scope statement) is not minted as a rule.
+  all parses exactly as before. Prose written before the first heading that carries an
+  operator rule id (a file title, an introduction, a scope statement) is preamble and is not
+  minted as a rule. The rule is keyed on the operator id, not on position: a first heading
+  that carries an id is a rule section, and a list item is never suppressed wherever it
+  sits, so a conventions file that opens on an id-less heading with list items (the gate's
+  own seed shape) parses exactly as before. One shipped corpus declares scopes: the device
+  corpus's four absence rules (`benchmark/corpora/device_log_review/conventions/`), applied
+  on the operator's corrected wording after a deterministic probe of the first draft
+  (`docs/fix/STEP_DECL_REPORT.md`: a scope value must be written as the document writes it,
+  `class=Class-A sensor` and not `class=A`, and a rule about a duration carries a scope and
+  no requires, so the one entry it is about reaches the model, rather than a requires that
+  turns it into a presence rule firing on every other entry). On that corpus the declared
+  form plans 37 calls on the flawed log and 43 on the clean twin against 34 and 46 with no
+  declaration, five and two of them Python-decided absences with no call. Unmeasured: no
+  run has scored it.
 - `review_mandate.md`: the reviewing entity, the engagement scope, and the review
   standard (advisory, grounded, with concrete proposed amendments).
 
@@ -612,9 +728,11 @@ part of this snapshot (section G, "What's in this repository"). The corpus used 
 and describe this mechanism was agricultural (one wheat producer-declaration sheet reviewed
 against a reference corpus, in English), and that shape is what the paragraphs above
 describe, but you supply your own conventions and corpus under `input/` to run a review; the
-launcher's intake wizard (section H) walks you through placing them. Four corpora from other
-domains DO ship, under `benchmark/corpora/` (section H), with committed answer keys, and are
-what this repository's own gate exercises. To review your own domain, place your conventions
+launcher's intake wizard (section H) walks you through placing them. Five corpora from other
+domains DO ship, under `benchmark/corpora/` (section H), one of them with a clean twin, each
+with a committed answer key; four are built from real public data and the fifth
+(`device_log_review`) is synthetic, authored for this repository and held to the lower
+standard its own key states. They are what this repository's own gate exercises. To review your own domain, place your conventions
 and corpus under `input/` (or stage one of the shipped corpora with `tools/stage_corpus.py`);
 nothing in `scripts/` is domain-specific.
 
@@ -688,9 +806,11 @@ and, for redaction, the local Qwen model with a GPU strongly recommended.
 3. **API keys, which you must supply; none are shipped.** Place them in an external
    `config.py` OUTSIDE the repository. Shimmer locates it via `$SHIMMER_CONFIG_PATH`, then a
    sibling `../api_keys/config.py`, then the repo-root `.env_path` pointer. ANTHROPIC and
-   OPENAI keys are required for the cloud profile (see below for a keyless local-only path);
-   BRAVE is optional. Model selection is owned by `config/agent_registry.json`, never by the
-   key file.
+   OPENAI keys are required for the cloud profile and for the launcher's preflight, which
+   stops before the menu when no key file is found; BRAVE is optional. A keyless local-only
+   smoke test bypasses the launcher: `py -3.9 -X utf8 tools/run_local_demo.py
+   --non-interactive` with the two override flags from section F. Model selection is owned
+   by `config/agent_registry.json`, never by the key file.
 4. **Documents to review, which you must supply; `input/` is not shipped.** Create
    `input/context/`, `input/conventions/`, and `input/operational/` (the launcher's intake
    wizard does this for you when you choose option [5]; or run `py -3.9 -X utf8
@@ -707,10 +827,11 @@ and, for redaction, the local Qwen model with a GPU strongly recommended.
    precision, sensitive runs only). A `--backend-profile local` run instead uses the two ids in
    `config/local_models.json`, today `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` (producers) and
    `unsloth/Phi-3.5-mini-instruct-bnb-4bit` (auditors); the pre-quantised pair keeps peak host
-   RAM at the 4-bit size. All three need torch and transformers and run offline. This is the
-   only step 3-5 you can skip entirely for a first, keyless, local-only smoke test, since local
-   checkpoints are fetched automatically at first use (next paragraph) rather than needing to
-   be fetched by hand.
+   RAM at the 4-bit size. All three need torch and transformers; the two 4-bit checkpoints
+   additionally need bitsandbytes (the quantised weights) and accelerate (the `device_map`
+   load path), both pinned in `requirements.txt` since 10 and 11 September 2026. All run
+   offline once cached. This step needs no action by hand, since local checkpoints are
+   fetched automatically at first use (next paragraph).
 
 Setup itself downloads no model weights unless you set `SHIMMER_QWEN_PULL=1`, though it may
 fetch the large CUDA torch wheel. The multi-gigabyte local checkpoints and the multilingual
@@ -734,7 +855,8 @@ use" above is real, intended behavior for a genuine first run, not something to 
 `input/operational/` gets populated from `input/context/` (the pipeline, every run),
 `output/runs/<id>/` (the pipeline, one per run), `durable/` (BOOT, on first run, learned
 reference assets and governance state), and `ontology/stores/` (the pipeline, phase 8, end
-of every run: `provisions.jsonl` and its immutable log `provisions_log.jsonl`, then the
+of every run: `provisions.jsonl` and its immutable log `provisions_log.jsonl`, the proposal
+accumulator `delta_proposals.jsonl`, all three kept per scope by the storage layer, then the
 derived `graph.json` and `gnn_state.json`). None of these are source; none of them need to
 exist before you start; the tools that need them create them.
 
@@ -769,7 +891,9 @@ delete is declared and refuses, because the user-facing deletion case is an oper
 not yet finalised. `tools/archive_ontology_stores.py` archives the stores as one dated zip
 outside the repository (verified by digest before anything is emptied) and empties them.
 Gate checks 200 to 202 prove the three mechanisms; the earlier ontology checks (57 to 64, 72
-to 74, 143) still hold and now write their fixtures through the store.
+to 74, 143) still hold on the new layer, and the two whose fixtures seed provision records
+(59 and 60) now write them through the store, since a bare line with no scope is invisible by
+design.
 
 The `[ontology_gnn]` line each run prints to stdout (`scripts/ontology_gnn.py`) now says
 this plainly too, not only in this README: it used to lead with `loss=`, `weight_delta=`
@@ -788,11 +912,84 @@ py -3.9 -m pip install -r requirements.txt
 ```
 
 Declared dependencies: anthropic, openai, transformers, pypdf, python-docx, lxml,
-beautifulsoup4, fpdf2, sentence-transformers, numpy, langdetect, ddgs, torch, fastapi,
-uvicorn[standard], python-multipart. `preflight.py` installs the two small optional libraries
-(beautifulsoup4, langdetect) if missing, and pip-installs any other missing Qwen-backend
-library except torch (`_attempt_lib_pull`), whose correct wheel is platform and CUDA
-specific.
+beautifulsoup4, fpdf2, sentence-transformers, numpy, langdetect, ddgs, torch, bitsandbytes,
+accelerate, fastapi, uvicorn[standard], python-multipart. bitsandbytes and accelerate are
+needed only by the local profile's 4-bit checkpoints; accelerate was present on the
+development machine only transitively and was pinned after a fresh install (the container)
+could not load a single local model without it. `preflight.py` installs the two small
+optional libraries (beautifulsoup4, langdetect) if missing, and pip-installs any other missing
+Qwen-backend library except torch (`_attempt_lib_pull`), whose correct wheel is platform and
+CUDA specific.
+
+### Running in a container
+
+A container path was built on 10 and 11 September 2026 and, like everything else from those
+two days, has had its gate run but no review scored. The image (`Dockerfile`) is
+`nvidia/cuda:12.1.1-base-ubuntu22.04` with Python 3.9 from deadsnakes, torch 2.5.1 from the
+cu121 index, then `requirements.txt`. It copies **source only**: `scripts/`, `config/`,
+`tools/`, `corpus_ingest/`, the three root markdown files and `requirements.txt`; no
+`input/`, `benchmark/`, `durable/`, `output/` or `.git`. `.dockerignore` excludes `.git`,
+`input/`, `durable/`, `output/` and `benchmark/keys/`; the corpora under `benchmark/` stay
+out of the image only because the `COPY` list never names them. It sets
+`PYTHONPATH=/app/scripts:/app` and
+`HF_HOME=/root/.cache/huggingface`, so a mounted host cache and baked weights land at the
+same path.
+
+Two build modes behind one build argument:
+
+```
+docker build -t shimmer:local .                              # unbaked: small, expects a mounted model cache
+docker build --build-arg BAKE_WEIGHTS=true -t shimmer:baked . # baked: the three checkpoints downloaded into the image
+```
+
+`compose.yaml` names `image: shimmer:local` and declares no `build:` key, so it runs the
+image the first line builds and builds nothing itself.
+
+The weight layers sit **before** the source layers in the Dockerfile (reordered 11
+September): a layer's cache key is its parent chain, so with the weights last every edit
+under `scripts/` threw the three downloaded checkpoints away and pulled them again. With the
+weights first, a source-only rebuild of the baked image reuses them. Each download is retried
+up to five times with a growing pause, because the Docker Desktop proxy on the development
+machine has dropped TLS mid-download.
+
+The entry point (`tools/entrypoint.sh`) takes one command and passes everything after it
+through unchanged: `serve` (the HTTP server), `run` (a review, through
+`tools/run_local_demo.py`, so the pipeline module's filename is never named), and `verify`
+(the gate, `verify_session1.py --offline`), `verify` by default; anything else is rejected
+with a message naming the three. The offline gate, with the network blocked at the socket
+and the host cache mounted:
+
+```
+docker run --rm --network none --gpus all -e SHIMMER_TOKEN_HASH=<sha256> \
+    -v <host-hf-cache>:/root/.cache/huggingface shimmer:local verify
+```
+
+`compose.yaml` records the run flags once, as two profiled services so `docker compose up`
+with no profile starts nothing by accident: `--profile serve` (port 8000) and
+`--profile run run review` (one review, `run --non-interactive`). Both require
+`SHIMMER_TOKEN_HASH` and `HOST_HF_CACHE` set in the shell, never in the file, and mount
+`./config` (writable: an operator-approved model swap rewrites the registry), `./durable`,
+`./ontology/stores`, `./output/runs`, `./input` and the host model cache.
+
+What the first container start found, 11 September, all held closed since: the entry point
+had checked out with CRLF line endings on Windows, so the kernel looked for an interpreter
+named `/bin/sh\r` and the container failed with "no such file or directory"
+(`.gitattributes` now pins `*.sh` and the entry point to LF and the Dockerfile strips a
+trailing CR before setting the executable bit); no local model could load because
+`accelerate` was never in `requirements.txt` (pinned); and gate check 197 read a benchmark
+corpus file the image does not ship (its corpus assertions now run where the file exists and
+are named absent otherwise, and its proof runs on a synthetic heading every tree has).
+
+Measured inside the rebuilt unbaked image, network blocked, host cache mounted:
+`PASS=204 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=210` in 873 s. The four failures are the
+source-only ones section L lists (01, 28, 31, 145); the two skips are the network checks
+(15, 38) that `--offline` skips. Check 193 loaded a cached model with the network genuinely
+blocked. Measured inside the baked image built on 11 September, network blocked and
+**nothing mounted**: the same line, `PASS=204 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=210`, in
+about 510 s, the three checkpoints resolving from the image's own layers
+(`docs/fix/STEP_BAKED_REPORT.md`). **What is not proven:** no review has been run inside
+either container, so "the review runs offline in the container" is not claimed, only "the
+gate does, and the weights are there".
 
 ---
 
@@ -837,8 +1034,14 @@ sessions.
 ### 3. The pipeline directly
 
 ```
-py -3.9 scripts/pipeline.py --non-interactive
+py -3.9 scripts/pipeline.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override
 ```
+
+The two overrides are not optional on a hand-typed command. The first is required on every
+run until the operator activates the LAW-IV layer (section F; exit 6 otherwise); the second
+is required whenever no operator redaction rule compiles, which is the case for every shipped
+corpus. The launcher, the intake wizard and the server add both for a normal run. The same
+applies to `tools/run_local_demo.py` below, which passes its arguments through unchanged.
 
 Key flags: `--task review|draft`, `--question "..."` (the brief for draft, or an optional
 framing question for review), `--mode standalone|integrated`,
@@ -857,7 +1060,7 @@ written"),
 For a local run, prefer the wrapper in `tools/`:
 
 ```
-py -3.9 -X utf8 tools/run_local_demo.py --non-interactive [pipeline args...]
+py -3.9 -X utf8 tools/run_local_demo.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override [pipeline args...]
 ```
 
 It starts the pipeline in-process (the pipeline module's filename is denied in shell
@@ -884,28 +1087,36 @@ both carry a "Compared with the earlier version" section (moved toward, moved aw
 unchanged, absent, outside a stated band now, not comparable) and `review_data.json` carries
 the same records under `prior_comparisons` with `prior_refusals` and `prior_orphans`; the
 amendments list is untouched by them. A draft run also keeps the generated memo in its
-subfolder as `memo.md`. `audit/`
-holds the editorial and contract-violation artifacts, plus `pairing_map.json` (which rules
-could apply to which units and why, the `band_conditions` record described in section B, and
-per unit the `prior_comparisons` block: earlier figures found, every check made, every
-refusal), and `logs/` holds the append-only
-`agent_bus.jsonl`, the cost tracker, the run summary, and `call_evidence.jsonl`: one record
-per model call, written by the agent wrapper just before dispatch, carrying the STRUCTURAL
-identifiers of what that call was shown and nothing else (the reviewed unit id, the
-neighbouring unit ids supplied as context, the heading unit, the document map's unit ids,
-the reference ids supplied and the subset the renderer actually kept whole, the rule ids
-requested and the subset whose line the registry section kept whole, the rule the payload
-itself carried, whether the registry and reference sections were clipped, how many recent
-bus messages were rendered and how many dropped for budget, the agent, backend, model, run,
-phase, a fresh call id and the prompt length; never a passage of text, so the file is not a
-second copy of the document). The rendered subsets are read off the finished section texts
+subfolder as `memo.md`. `audit/` holds the editorial and contract-violation artifacts,
+`convention_assignment.json` (the subject comparison computed once at BOOT: per rule its
+tags, the agents matched, the consumers with a live rule path, the status, and the
+operator's own rule id beside the registry id; per agent the rules it matched), and
+`pairing_map.json` (which rules could apply to which units and why; the `band_conditions`
+record described in section B; per unit the `prior_comparisons` block: earlier figures
+found, every check made, every refusal; and per document `not_judged` and `reattributed`,
+the plans no convention-review agent judged and the computed plans moved to a rule that has
+one, plus `absence`, which path, Python or the model, decided each declared absence).
+`logs/` holds the append-only `agent_bus.jsonl`, the cost tracker, the run summary, and
+`call_evidence.jsonl`: one record per model call, written by the agent wrapper just before
+dispatch, carrying only structural identifiers and counts, never text: the call id, run,
+timestamp, phase, per-document position, agent, backend, model and task; the payload's own
+document id and the reviewed unit id; the neighbouring unit ids supplied as context; the
+heading unit; the document map's unit ids; the reference ids supplied and the subset the
+renderer actually kept whole; the rule ids requested and the subset whose line the registry
+section kept whole; the rule the payload itself carried; whether the registry and reference
+sections were clipped; how many recent bus messages were rendered and how many dropped for
+budget; the payload's field names; the length of a whole-document payload and whether the
+token clip cut it; and the prompt length. Never a passage of text, so the file is not a
+second copy of the document. The rendered subsets are read off the finished section texts
 by `bus_reader.rendered_line_ids`, never assumed from the input lists, and a rule that was
 requested but not rendered never counts as having reached the call. The same call id sits
 on the call's cost row and on the bus post it produced, so the three join; gate check 204
 reconstructs one executed call from the file alone and check 207 proves the rendered
-report. The draft memo's own model call (which bypasses the wrapper's task path) and the
-arithmetic probe record their calls too. Runs never overwrite
-each other. Follow a run live with `py -3.9 scripts/bus_viewer.py --follow`.
+report. The draft memo's own model call (which bypasses the wrapper's task path) writes the
+same record to the run's `call_evidence.jsonl`; the arithmetic probe, which runs outside any
+run folder, carries the same identifiers (call id, task, prompt length) in its own `--out`
+records instead, with the call id on its cost row when a cost directory is given. Runs never
+overwrite each other. Follow a run live with `py -3.9 scripts/bus_viewer.py --follow`.
 
 ### 4. The single-agent harness (`scripts/harness/`)
 
@@ -930,7 +1141,11 @@ The harness does **not** build its own prompt: it builds the wrapper the pipelin
 with the pipeline's own `_build_wrapper`, so the bytes reaching the model are the bytes the
 pipeline would send for the same inputs. Gate check 146 holds that property in place, and
 fails if this module ever grows its own prompt assembly. Nothing here writes the prompt or
-the unit text to disk; results carry the model's output, its length and its hash.
+the unit text to disk; results carry the model's output, its length, its hash and a parse
+trace (counts only). A harness call does go through the pipeline's `run_task`, so the run
+folder the harness creates under `output/runs/` receives the same per-call evidence record
+as a pipeline run (identifiers and counts, never text) and a cost row carrying the same call
+id.
 
 Two companions: `probe_arithmetic.py` asks whether the model can do the arithmetic at all
 with no review framing (no agent identity, no constitution, no conventions, no document, no
@@ -983,19 +1198,21 @@ key and corpus under `benchmark/keys/` locally. Only the scorer reads the key. N
 `scripts/`, `config/` or `tests/` may contain a planted benchmark figure: gate check 145
 (the contamination probe) scans those directories plus the harness fixtures for the key's
 figures and fails if one appears, which is what makes a recall number mean anything.
-**This repository does not ship a `tests/` directory**, so check 145 fails here with "no
-test fixtures to scan" (see section L) until an operator adds one; that failure says the
-probe has nothing to check, not that contamination was found.
+**This repository does not ship a `tests/` directory**, so check 145 fails here with
+"tests/fixtures/planted_figure_hashes.json is missing: the contamination probe cannot run,
+so contamination cannot be ruled out" (see section L) until an operator adds that fixture;
+that failure says the probe has nothing to check, not that contamination was found.
 
 ---
 
 ### Test corpora from other domains (`benchmark/corpora/`)
 
 A domain-agnostic system that has only ever been run on one corpus has not been tested for
-domain agnosticism. `benchmark/corpora/` holds corpora built from **real public data in other
-domains**, each with `context/` (the reference material and the document under review),
-`conventions/` (operator rules) and a committed `answer_key.json` written before any run, which
-`tools/score_corpus.py` scores a run against. Unlike `benchmark/keys/`, these keys are in the
+domain agnosticism. `benchmark/corpora/` holds corpora from other domains, **four built from
+real public data** and one (`device_log_review`, with its clean twin) authored synthetically
+for the adjacent-neighbour measurement, each with `context/` (the reference material and the
+document under review), `conventions/` (operator rules) and a committed `answer_key.json`
+written before any run, which `tools/score_corpus.py` scores a run against. Unlike `benchmark/keys/`, these keys are in the
 repository, because the figures they carry are not planted in the operator's own corpus. They sit
 outside the vocabulary probe's scanned roots, so their vocabulary stays operator input. The
 scorer reports recall per flaw `kind` when a key labels its planted entries with one (a corpus
@@ -1036,7 +1253,10 @@ one recall number.
 **`device_log_review`'s limitation, stated plainly, not left implicit**: unlike the four corpora above, this one is not real public data. It was authored, along with its own answer key, by the same process that built the pipeline fixes being measured against it. A score against a self-authored key is weaker evidence than a score against a corpus and key written independently, since the author of a test cannot be fully blind to what the test is designed to catch. It exists because, before it, this benchmark set had no corpus measuring the adjacent-neighbor mechanism or the long-range gap at all, and a self-authored measurement is worth more than no measurement, held to that lower standard explicitly rather than presented as independent verification. Its own answer key restates this same limitation for a reader who reaches the key without reading here first.
 
 The two negotiation corpora carry their manifest (`_review_targets.json` with `prior`) inside
-`context/`, so staging one declares the earlier version as well.
+`context/`, so staging one declares the earlier version as well. The device corpus carries
+none: its document's role then falls to the date cutoff, and since its file name carries no
+year the date is resolved by a lookup a measurement should not depend on; write a tier-1
+manifest naming `device_log_flawed.md` (or the clean twin) as the target before running it.
 
 Stage one with `tools/stage_corpus.py`, which moves the current `input/` contents into a
 timestamped holding directory first and restores them afterwards, and carries no domain
@@ -1048,8 +1268,10 @@ py -3.9 -X utf8 tools/stage_corpus.py --corpus clinical_reference
 py -3.9 -X utf8 tools/stage_corpus.py --restore output/staged_inputs/<holding-dir>
 ```
 
-A corpus whose conventions declare no confidentiality rule hard-stops the run by design
-(section F); pass `--no-redaction-override` to declare the run redact-nothing, logged.
+A staged corpus needs two overrides to start: `--sensitivity-layer-inactive-override` (the
+LAW-IV layer ships inactive and the run refuses to start without it, section F) and, because
+no shipped corpus declares a confidentiality rule, `--no-redaction-override` to declare the
+run redact-nothing; both are logged to the governance ledger.
 
 **What the first unseen corpus found in its first ten minutes**, none of which the original
 corpus could have exposed: the unit was read only from a table header, so a unit column beside
@@ -1066,8 +1288,28 @@ so the sum check silently never ran for `Extent (zed)`; and an identifier column
 was reported as a missing field. The second corpus, with no figures anywhere, killed a run with
 one malformed model reply (`parsed` arrived as a bare list), and the review of the negotiation
 design found two more ASCII-only regexes (`_LABEL_LINE`, `needed_fields`) that the R3 Unicode
-fix had not reached. All eleven are fixed; nine have a gate check, and the two Unicode label defects found in the
-parallel design review do not. That is the argument for a second corpus, and a third.
+fix had not reached. All eleven found by the first four corpora are fixed; nine have a gate
+check, and the two Unicode label defects found in the parallel design review do not. That is
+the argument for a second corpus, and a third.
+
+**What the fifth corpus found** (`device_log_review`, 11 September 2026) in two runs that
+were stopped before any deliverable: the convention parser minted the conventions file's own two
+preamble paragraphs as rules, and they drew 25 of the model's 71 findings (fixed, check
+197); a shorter label inside a longer named label was required of every unit, rejecting the
+two signature rules on 14 of 19 units (fixed, check 208); a rule about a missing field could
+never pair with the unit missing it, so the four rules that check the planted flaw kinds
+paired with no unit at all (addressed by declared scope, check 209); rules assigned to the
+editorial board alone were still judged by PRACTICE_AUDITOR as a fallback, and every rule was
+shown to both convention-review agents in wide mode (fixed, check 206); and a rule the
+registry section had clipped was recorded as shown (fixed, check 207). In the same runs, 57
+of 101 pairs were made by the similarity fallback because the rules named no field the
+entries carry, and the reference states its bands in prose so Python could compute nothing.
+Two defects are recorded and not fixed: in paired mode the model never writes a unit id
+although Python knows it by construction (the declared-scope path now stamps it for absence
+findings; the general case is open), and a valid envelope wrapped in prose is refused as a
+contract violation. The false-negative classifier put all nine misses of the second run in
+`UNKNOWN`, because that run predates the saved rule-id mapping. Every one of these fixes is
+built without measurement, and the measurement is owed.
 
 ## I. The server and the corpus ingestion contract
 
@@ -1162,7 +1404,11 @@ reference passage the finding rests on. Each object also carries `item_id` and `
 (INFRA-037 supersession) and the four INFRA-044 comparison fields `field_label`, `delta`,
 `band_distance_change` and `provenance`, which the example above omits. Superseded revisions are
 already removed. An empty list with 200 means "nothing found", which is different from 404, "no
-such run".
+such run". Three fields a finding can carry on the bus are not in this projection yet:
+`absence_path` (`computed` when Python decided a declared absence with no call, `judged` when
+a model answered the narrow question), `stamped_by: python` on a judged one, and
+`conditional_on` on a qualified low-side band finding; read `logs/agent_bus.jsonl` for those
+until the route carries them.
 
 **Step 4, if you need to justify a finding, ask why those rules were applied.**
 
@@ -1172,8 +1418,11 @@ curl -s "$BASE/runs/<run_id>/pairs" -H "Authorization: Bearer $TOKEN"
 
 Returns the pairing map: per document the counts, and per unit the rules paired and rejected,
 each with the reason recorded before any verdict fired, plus the rule ids left undecided (ids
-only, no reason). Carries no document text. This is the audit trail for "why was this rule checked against this section, and why
-was that one not".
+only, no reason), and per document the plans no convention-review agent judged
+(`not_judged`) and the computed plans moved to a rule that has one (`reattributed`). Carries
+no document text. The declared-absence record (`absence`, which path decided each) is on
+disk in `audit/pairing_map.json` and not yet served here. This is the audit trail for "why
+was this rule checked against this section, and why was that one not".
 
 **Step 5, fetch the human deliverable if a person needs it.**
 
@@ -1328,12 +1577,12 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `GET` | `/runs` | token | Every run as the complete run resource (see `/runs/{run_id}` below), oldest submission first. |
 | `GET` | `/runs/{run_id}` | token | api STEP B1/B2/B3/B4/B5: one run's complete record in a single call: `state` (`queued` / `running` / `awaiting_approval` / `stopped` / `cancelled`), `outcome` (populated once `state` is `stopped` or `cancelled`: `succeeded` / `governance_stop` / `crashed` / `timed_out` / `cancelled`), `stop_reason`, `pending_approval` (populated once `state` is `awaiting_approval`: `topic`, `message`, `payload`, `asked_at`, `default_on_timeout`, `timeout_at`), `documents` (per-document `status` and `deliverables_url`, a REAL fetchable route once that document is done, not a display string), `log_url`, `has_log` (whether `<run>/logs/pipeline_stdout.log` exists yet, checked on disk on every call, so a caller can say plainly whether there is a log to read before ever calling `log_url`, rather than discovering a 404 only after asking), plus `task`/`submitted_at`/`started_at`/`completed_at`/`exit_code`/`error`/`progress`/`files`/`sensitive`/`review_mode`/`question`. Does **not** carry the raw internal `status` string (dropped in api STEP B5: `state`/`outcome`/`stop_reason` is the sole vocabulary here, so a caller never has to reconcile two descriptions of the same run). |
 | `GET` | `/runs/{run_id}/findings` | token | The run's typed **Finding records** as JSON (section B), including the ok-verdict prior-version records with `field_label`, `delta`, `band_distance_change` and `provenance`; filter on `relation` in `moved_toward` / `moved_away` / `changed_from_prior` / `unchanged_from_prior` / `absent_since_prior` to answer the round question by program. |
-| `GET` | `/runs/{run_id}/pairs` | token | The run's **pairing map**: counts, and per unit the rules paired / rejected with the reason for each plus the undecided rule ids (ids only, no reason), and per unit `prior_hit_count`, `prior_check_count` and `prior_refused_count` (integers only). No document text. Each paired/rejected entry now also carries `source_rule_id` (the operator's own id for that rule, `finding_record.source_rule_id_for`, the same lookup a Finding record already uses), so a rule reads the same identifier here as it does in `/findings`, never the registry's bare number alone. Also (convention distribution step A) `not_judged` and `not_judged_count`, the plans phase 5.5 made no call for because their rule has no convention-review consumer (unit, rule and operator id, kind, the consumers it was assigned to, status; in wide mode one entry per such rule with no unit), and `reattributed`, the rule-independent computed plans moved to a paired rule that has a judging agent. |
+| `GET` | `/runs/{run_id}/pairs` | token | The run's **pairing map**: counts, and per unit the rules paired / rejected with the reason for each plus the undecided rule ids (ids only, no reason), and per unit `prior_hit_count`, `prior_check_count` and `prior_refused_count` (integers only). No document text. Each paired/rejected entry now also carries `source_rule_id` (the operator's own id for that rule, `finding_record.source_rule_id_for`, the same lookup a Finding record already uses), so a rule reads the same identifier here as it does in `/findings`, never the registry's bare number alone. Also (convention distribution step A) `not_judged` and `not_judged_count`, the plans phase 5.5 made no call for because their rule has no convention-review consumer (unit, rule and operator id, kind, the consumers it was assigned to, status; in wide mode one entry per such rule with no unit), and `reattributed`, the rule-independent computed plans moved to a paired rule that has a judging agent. The declared-absence record the map carries on disk (`absence`, `absence_computed_count`, `absence_judged_count`: which declared absences Python decided and which went to the model, with the judged call ids) is not yet served by this route, nor is `band_conditions`; read `audit/pairing_map.json` directly for them. |
 | `GET` | `/runs/{run_id}/amendments` | token | console fresh-eyes addition: the run's proposed corrections, read from every DONE document's own `deliverables/<doc_id>/review_data.json` (BP-16), the same master file the archive's `review_findings.md`/`tracked_changes.docx` are pure renders of. Per amendment: `original_text` (the document's actual passage, since the source fix in `paired_review.py`'s `amendment_from_finding`; a run produced before that fix still carries the old shape, the bare unit id, on disk, flagged by `original_text_is_passage: false` rather than presented as the real passage), `proposed_text` (`null` unless a model or `--amendment-polish` supplied one), `source_rule_id` (the operator's own id, falling back to `convention_ref` only when absent, the same rule every rule id on this surface follows), `comment` (the reasoning, required by both the computed and model-drafted contracts), `unit_id_repaired_to` (`null` unless the boundary repair below fired), plus `finding_unit_id`/`finding_rule_id` to join back to the Finding it corrects. `200` with an empty list, not an error, when no document has finished yet or none produced an irregular finding. A real cloud run against a benchmark corpus found a second, real gap in the source fix itself: `unit_texts` is keyed by the pipeline's own `split_units` id (`u02-record-cat-birch`), but a WIDE-mode agent (`PRACTICE_AUDITOR`) was writing a Finding's `unit_id` as the document's own identifier for the record it described (`CAT-BIRCH`), never told which id space to use, so the lookup silently missed for every wide-mode finding. Closed at three layers: `pipeline.py`'s convention-review payload now carries `document_units` (the real id/title list) to both convention-review agents, `config/agent_contracts.json`'s `finding_record.says.unit_id` now tells them to copy from it verbatim, and `amendment_from_finding` still tries one narrow, structural second chance (`_repair_unit_id`) for whatever a model gets wrong anyway: the miss-shaped id found written inside exactly one unit's own text, case-insensitively. A single unambiguous match is used and recorded as `unit_id_repaired_to`; zero or multiple matches refuse, same honest fallback as before, never guessed. |
 | `GET` | `/runs/{run_id}/amendment-refusals` | token | A real, irregular finding the pipeline could not turn into an amendment, named plainly rather than left to vanish. Found live: PRACTICE_AUDITOR wrote genuinely irregular findings (real `relation`, real `record_verdict: irregular`, a real explanation) whose rule id landed under a field name `amendment_from_finding` did not yet recognise, since `config/agent_contracts.json` used to declare a different rule-id field name per agent (`procedure_id`, `conv_id`, `rule_id`, `convention_ref`, four names for one concept); before this route and its underlying fix, every one of those findings was silently dropped, with nothing on the bus, in a deliverable, or here, saying it had ever existed. Fixed at the source (`finding_record.resolved_rule_id`, one shared resolver checking all four names). First wired into `amendment_from_finding` and its dedup key; a later pass (night chain W5) found and closed three more call sites reading a rule id under only one or two of the four names (`pipeline.py`'s `_category_for_conv` caller and `_stamp_source_rule_ids`, `finding_record.index_findings`, `server.py`'s `_project_finding`), plus a `KeyError` in `apply_typed_fields` that `index_findings`' own fix exposed (it matched a finding by any of the four names, then still read the amendment's copied `convention_ref` back off a bare `rule_id` key). All now resolve through the same one function, gate check 196. This route exists for whatever a future finding still cannot be built from: `paired_review.ensure_amendments_for_findings` takes an optional `refusal_sink`, and `pipeline.py` posts whatever lands in it as a distinct bus event (`AMENDMENT_REFUSED`), never Finding-shaped, so it is correctly invisible to `/findings` (a refusal is not a finding) while still reachable here. Per refusal: `doc_id`, `unit_id`, `rule_id` (the resolved value, if any), `reason`, and the source finding's own `relation`/`explanation`. `200` with an empty list, not an error, when nothing was refused, the common case. Rendered in the console as its own section, disappearing when empty, same discipline as every other content-dependent section on this surface. |
-| `GET` | `/runs/{run_id}/contract-violations` | token | A call whose output did not match its agent's own contract at all, so nothing usable was produced, not even a thin finding. Found live: after `finding_record`'s fields were made required for PRACTICE_AUDITOR (`relation`, `record_verdict`, `explanation`, closing a different gap where most of its real output asserted a violation with no supporting content: a reviewer learns nothing from "CONV-005 was violated" alone), the honest next question is what a stricter contract costs, since some calls that used to pass a looser bar now genuinely fail it. This route, together with `/runs/{run_id}/amendment-refusals`, closes the last visibility gap: a call now produces exactly one of three outcomes a reader can see somewhere, a real amendment, a refused finding, or a failed contract, never silently absent from all three. `200` with an empty list, not an error, when nothing failed its contract, the common, expected case. Rendered in the console as its own section, disappearing when empty. |
-| `GET` | `/runs/{run_id}/convention-assignment` | token | The convention assignment computed once at this run's BOOT (`docs/api/CONVENTION_ASSIGNMENT_DESIGN.md`): a one-way subject label on each side, each agent's own declared `subjects` in `config/agent_registry.json`, each rule's own bracket tags read structurally off its heading by `convention_parser`, compared by `convention_assignment.assign_conventions`, code that names no subject itself. Per rule (`by_rule`): its `subjects`, the agent(s) matched, which of those have a live rule-consuming path today (`consumer_agents`), and `status` (`untagged`: no tag at all, today's routing is unchanged; `assigned`: matched an agent that can act on it; `assigned_no_consumer`: matched only an agent with no rule path today, for example a rule tagged for an agent that declares an empty `subjects` list; `unassigned`: no agent declares any of its tags at all). Per agent (`by_agent`): the rule ids it matched. A rule the assignment could not route anywhere is never dropped, the same discipline as `/amendment-refusals` and `/contract-violations`: it is also posted to the bus as `CONVENTION_UNASSIGNED` (computed, python, one item per unmatched or consumer-less rule, `rule_id`/`source_rule_id`/`subjects`/`reason`) when at least one such rule exists. Written once at BOOT to `audit/convention_assignment.json`; this route reads that file directly, not the bus, since the file is never rewritten mid-run. `200` with empty `by_rule`/`by_agent`, not an error, for a run that predates this route. Also (night W8) `untagged`, the count of rules with no tag, and `not_firing`, the convention-review agents the W3 firing gate kept from running on this assignment (`convention_assignment.not_firing_convention_review_agents`, the same function the pipeline's gate delegates to; empty for an assignment with no rules, where the gate decided nothing). |
-| `GET` | `/harness` | token | The nine-part agent harness (night W4), one entry per agent, as `scripts/build_agent_harness.py` generated it into `config/agent_harness.json` (or `SHIMMER_AGENT_HARNESS`): `agents`, `shared_parts`, `part_names`, and `unresolved` (per agent, the parts still `decided: false`, each carrying its own `unresolved_because` in `agents`), so the console's Agents page shows an undecided part as undecided rather than omitting it. Not run-scoped. `404` with a distinct detail when the harness has not been built on this server. |
+| `GET` | `/runs/{run_id}/contract-violations` | token | A call whose output did not match its agent's own contract at all, so nothing usable was produced, not even a thin finding. Found live: after `finding_record`'s fields were made required for PRACTICE_AUDITOR (`relation`, `record_verdict`, `explanation`, closing a different gap where most of its real output asserted a violation with no supporting content: a reviewer learns nothing from "CONV-005 was violated" alone), the honest next question is what a stricter contract costs, since some calls that used to pass a looser bar now genuinely fail it. This route, together with `/runs/{run_id}/amendment-refusals`, closes the last visibility gap: a call now produces exactly one of three outcomes a reader can see somewhere, a real amendment, a refused finding, or a failed contract, never silently absent from all three. Per violation: `agent`, `backend`, `model`, `missing_fields` (what the contract required and the reply lacked) and `timestamp`; no `doc_id`, since a call can fail before its output is attributed to a document. Returned as `violations` with a `count`. `200` with an empty list, not an error, when nothing failed its contract, the common, expected case. Rendered in the console as its own section, disappearing when empty. |
+| `GET` | `/runs/{run_id}/convention-assignment` | token | The convention assignment computed once at this run's BOOT (`docs/api/CONVENTION_ASSIGNMENT_DESIGN.md`): a one-way subject label on each side, each agent's own declared `subjects` in `config/agent_registry.json`, each rule's own bracket tags read structurally off its heading by `convention_parser`, compared by `convention_assignment.assign_conventions`, code that names no subject itself. Per rule (`by_rule`): its `subjects`, the agent(s) matched, which of those have a live rule-consuming path today (`consumer_agents`), and `status` (`untagged`: no tag at all, today's routing is unchanged; `assigned`: matched an agent that can act on it; `assigned_no_consumer`: matched only an agent with no rule path today, for example a rule tagged for an agent that declares an empty `subjects` list; `unassigned`: no agent declares any of its tags at all). Per agent (`by_agent`): the rule ids it matched. Also `rule_count`, and `idle_agents`: every agent that declares a subject in the CURRENT `config/agent_registry.json` (or `SHIMMER_AGENT_REGISTRY`) but matched no rule this load, each entry naming the agent and the subjects it declares (`convention_assignment.idle_agents_summary`, read against the live registry, not the run, since agent declarations are not per-run data); the console renders these as the agents no tagged rule reached. A rule the assignment could not route anywhere is never dropped, the same discipline as `/amendment-refusals` and `/contract-violations`: it is also posted to the bus as `CONVENTION_UNASSIGNED` (computed, python, one item per unmatched or consumer-less rule, `rule_id`/`source_rule_id`/`subjects`/`reason`) when at least one such rule exists. Written once at BOOT to `audit/convention_assignment.json`; this route reads that file directly, not the bus, since the file is never rewritten mid-run. `200` with empty `by_rule`/`by_agent`, not an error, for a run that predates this route. Also (night W8) `untagged`, the count of rules with no tag, and `not_firing`, the convention-review agents the W3 firing gate kept from running on this assignment (`convention_assignment.not_firing_convention_review_agents`, the same function the pipeline's gate delegates to; empty for an assignment with no rules, where the gate decided nothing). |
+| `GET` | `/harness` | token | The nine-part agent harness (night W4), one entry per agent, as `scripts/build_agent_harness.py` generated it into `config/agent_harness.json` (or `SHIMMER_AGENT_HARNESS`): `agents`, `shared_parts`, `part_names`, and `unresolved` (per agent, the parts still `decided: false`, each carrying its own `unresolved_because` in `agents`), so the console's Agents page shows an undecided part as undecided rather than omitting it. Also `agent_count` and `unresolved_part_count` (18 and 18 for the shipped harness: every agent's ontology part is undecided until an agent reads the store). Not run-scoped. `404` with a distinct detail when the harness has not been built on this server; `500` with detail "agent harness unreadable" when the file exists but does not parse. |
 | `GET` | `/rules/{rule_id}` | token | console fresh-eyes addition: one rule's own text as the operator wrote it, from the current `config/convention_registry.json`. Not run-scoped, a rule's text does not vary per run. Matches by either id: the registry's own (`CONV-007`) or the operator's own (`CONV-A02`). Returns `id`, `source_rule_id`, `rule` (the operator's own text), `severity`, `action`, `source_file`, `source_location`. `404` with a distinct `detail` ("no rule with this id in the current registry") when the current registry, which regenerates at BOOT and can differ from whatever was in force when a citing run executed, has no such rule; that mismatch is itself informative, not hidden behind a generic not-found. |
 | `POST` | `/runs/{run_id}/cancel` | token | api STEP B2: stops a run. A queued job is removed before it ever starts; a running job's subprocess is terminated (then killed). Both land on `state="cancelled"`. `409` if the run is already in a terminal state (including already cancelled), refused with a reason naming its actual state, not a silent no-op. `404` for a malformed or unknown `run_id`. Deletes nothing on disk. |
 | `POST` | `/runs/{run_id}/approval` | token | api STEP B3: records a human's decision on the run's pending governed question. Body `decision` + `rationale`; writes `<run>/audit/approval_decision.json` atomically and **nothing else**, never evaluates whether the decision is an approval (that stays entirely with `model_registry`/`constitution_guard`, read back by the pipeline subprocess's own poll loop). `202`, never `200`: the response carries `recorded: true` and the run's `run_state` as it stood the instant *before* the write, and never claims the decision was approved, only that it was recorded. `404` for a malformed `run_id` or one with no pending approval; `409` if this approval was already answered (a decision file already exists); `400` if `decision` is missing or empty. This is the sole route that answers a pending approval (api STEP B5 unified it with the retired `POST /approvals/{run_id}`, which wrote the same file but returned `200` with a thinner body and no repeat-answer guard). |
@@ -1513,11 +1762,32 @@ invalid bundles are rejected with a 400 and the violation report.
 
 ## J. Cost and performance (observed)
 
-From operator testing before productization, on a five-document synthetic competition-law
-corpus (five regulations plus five grounding cases), single Claude API key. **That corpus has
-since been removed from the operator's working repository** (not published; this is a public
-snapshot of source only, section G), so the figures in this block are historical and cannot
-be reproduced here; the local-profile measurements below can be:
+**Every benchmark figure in the tables below and in section K was measured before 10
+September 2026, on the code of the initial snapshot.** The only later numbers are the counts
+from the two stopped device runs in this paragraph, which scored nothing.
+The paired path changed in more than a dozen commits on
+10 and 11 September (the adjacent-neighbour mechanism, unit order, the rule-id resolver, the
+required Finding fields on PRACTICE_AUDITOR, the convention assignment and the per-plan
+judging agent, the convention distribution, call evidence, the longest-match label fix and
+the declared-scope absence path), each proved on fixtures by a gate check and none yet
+scored by a run. No run has been scored since. The one corpus built to measure those
+changes, `device_log_review`, was run twice on 11 September and stopped by the operator both
+times before any deliverable: the first attempt planned 101 pairs, made 86 local calls and
+scored 0 of 9, a void figure because no finding carried a unit id; the second planned 64
+pairs and showed that the four rules checking the planted flaw kinds paired with no unit,
+which is what the declared-scope fix addresses. The clean twin was never run. **That
+measurement is owed**, and until it is made the figures below describe the code as it was,
+not the code at HEAD.
+
+From operator testing before productization (cloud profile, wide review, the redaction phase
+active), on a five-document synthetic competition-law corpus (five regulations plus five
+grounding cases), single Claude API key. **That corpus has since been removed from the
+operator's working repository** (not published; this is a public snapshot of source only,
+section G), so the figures in this block are historical and cannot be reproduced here; the
+local-profile measurements below can be reproduced on any machine with the local models
+cached and a free GPU (the corpora are in `benchmark/corpora/`); since 11 September the
+operator starts no pipeline run on the development laptop, and the owed device-corpus
+measurement is planned on a rented GPU:
 
 - **Cost (historical, not reproducible here):** about **$2.67 per run** (43 model calls, 0
   failures). Claude 28 calls (~410k input / 57k output tokens, ~$2.30); GPT-4o 15 calls
@@ -1558,6 +1828,10 @@ runs, and the run logs behind these numbers are not published in this snapshot):
 
 The 99 pairs that made no model call are where the time went: Python settled them from the
 figures. The baseline this replaces scored 5 of 9 with attribution 0 of 5 and made 4 calls.
+Measured before 10 September 2026 on the snapshot's code, one draw, on the operator's laptop
+(section K); the paired path has changed since (the opening of this section) and this figure
+has not been re-measured. The corpus is not in this repository, so the number is a historical
+baseline, not a reproducible one.
 
 **Two corpora from other domains, real public data, keys held out** (`benchmark/corpora/`,
 staged with `tools/stage_corpus.py`, scored with `tools/score_corpus.py`; one local run each,
@@ -1572,6 +1846,11 @@ so these are single draws, not averages):
 | wall clock | 57.1 min | 39.5 min |
 | model calls in the review phase | 35 for 29 pairs (pre-fix; 14 *planned* on fixed code, not re-run) | 41 for 41 pairs (nothing computable) |
 | cost | $0.00 | $0.00 |
+
+Both runs date from before 10 September 2026 and were not rerun after the fixes they
+exposed, nor after the 11 September pairing changes (longest-match labels, declared scope),
+one of which was traced to exactly the `Extent` header the clinical corpus carries; the
+figures are the last measured state, not the state of the code at HEAD.
 
 **The two negotiation corpora, round N against round N-1, keys held out** (one local run each,
 single draws). The task given to the pipeline, in both: *review the later offer against the
@@ -1593,6 +1872,12 @@ toward the mandate since the earlier offer, which held, and what was dropped?"*
 | wall clock | 61.4 min | 46.9 min |
 | cost | $0.00 | $0.00 |
 
+Both runs date from before 10 September 2026. The comparison counts rest on a path
+(`reference_tables`, the `prior_*` comparison) that has not changed since; the pair counts,
+judging-call counts and band attribution rest on the pairing map and the paired loop, which
+changed on 11 September (longest-match labels, declared scope, the per-plan judging agent,
+plans left unjudged for board-only rules) and have not been re-measured.
+
 **Read these numbers with a correction the operator's own working record carries but this
 snapshot does not publish.** An independent verification confirmed the arithmetic and
 overturned the framing. In short: the
@@ -1605,12 +1890,14 @@ third time, against a mechanism that is string equality over exactly those label
 reworded only the later document's labels turned 13 records into 15, twelve of them false
 absences, with the refusal list still empty. What is proven is that the path computes correctly
 on input shaped for it; whether it can find a term without pre-aligned vocabulary, and whether
-it refuses rather than fabricates when it cannot, is unproven and the one probe available says
-it fabricates.
+it refuses rather than fabricates when it cannot, is unproven and the one probe available, run
+before the rename tolerance existed, said it fabricates. A rename whose value stays within 2%
+is now refused rather than reported as withdrawn (check 185, section K); a rename whose value
+also changes is still reported as withdrawn, so 5 of those 13 cases remain wrong.
 
 Two further defects surfaced in the band pass around it, both since fixed with checks 183 and
-184. The first cut run 1's judging calls from 25 to 17 on identical input (its own saved pairing
-map, replayed) and removed five false band records.
+184, and the rename case with check 185. The first cut run 1's judging calls from 25 to 17 on
+identical input (its own saved pairing map, replayed) and removed five false band records.
 
 The clinical and catalogue runs measure two different things. The clinical run found every planted out-of-range
 value in Python and exposed eight defects in the plumbing around that arithmetic, each fixed and
@@ -1622,8 +1909,12 @@ completeness rule is rejected for exactly the unit that lacks its field (H4's pa
 backwards for that kind of rule), and the local judge's 37 replies on the other pairs
 produced one valid typed Finding and no usable rule id, so nothing reached the deliverable.
 The typed-record gate that held the deliverable at zero false positives (the judge flagged 30
-of 41 pairs, clean records included) held out the true findings with them. Both conclusions are
-recorded as open design decisions in the R5 report, not patched.
+of 41 pairs, clean records included) held out the true findings with them. Both conclusions
+were recorded as open design decisions in the R5 report. The first is now addressed, on 11
+September, by the declared-scope mechanism (section B, gate checks 208 and 209), built
+without measurement: the catalogue corpus has not been rerun against it and its conventions
+declare no scope, so the 0 of 5 above stands as the last measured figure. The typed-record
+gate is unchanged.
 
 ---
 
@@ -1631,6 +1922,9 @@ recorded as open design decisions in the R5 report, not patched.
 
 Stated honestly, from operator testing:
 
+- **Everything built on 10 and 11 September 2026 is unmeasured.** The last scored run
+  predates all of it (section J opening); every mechanism from those two days is proved on
+  gate fixtures only, the device-corpus measurement was stopped twice, and it is owed.
 - **Recall is corpus-dependent and well short of complete.** On the single-document
   declaration corpus with nine planted defects: **6 of 9** with zero false positives. On two
   held-out corpora from other domains: **1 of 5** mechanically on `clinical_reference` (3 of
@@ -1661,7 +1955,8 @@ Stated honestly, from operator testing:
   and three different agents, so it is not a code path. The mitigation is to raise the TDR
   timeout from its 2-second default (`HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers`,
   `TdrDelay`, admin plus reboot), which is a machine-level change and is not made by this
-  repository. Cloud runs are unaffected.
+  repository. Cloud runs are unaffected. Since 11 September 2026 the working rule is that no
+  pipeline run is started from that laptop at all; measurement moves to a rented GPU box.
 - **Band matching is word containment, so a key cell that encodes a numeric comparison in
   prose is not matched.** Such a row yields no band rather than a guessed one. Resolving it
   would need a list of direction words, which is the domain leak the vocabulary probe exists
@@ -1674,14 +1969,24 @@ Stated honestly, from operator testing:
   alphabetic script and a whole word in a logographic one, so a CJK field label is still
   dropped. Accented and non-Latin alphabetic labels work (fixed in R3); logographic ones do
   not yet.
-- **A completeness rule is rejected for exactly the unit that lacks its field.** The pairing
-  rule "a rule pairs only with a unit carrying every field it names" is right for a
-  computational rule and backwards for "every record must state a creator": measured on the
-  catalogue corpus, 3 of 5 planted flaws were never asked about for this reason. The
-  `missing_field` check that would catch them in Python runs only on paired (unit, rule).
-  Deciding which rules are completeness rules without a keyword list (an operator-declared
-  rule kind is the domain-agnostic route) is an open operator decision. The round-N
-  `absent_since_prior` path does not depend on pairing and is unaffected.
+- **A completeness rule whose scope is not declared is still rejected for exactly the unit
+  that lacks its field.** The text-derived pairing rule "a rule pairs only with a unit
+  carrying every field it names" is right for a computational rule and backwards for "every
+  record must state a creator": measured on the catalogue corpus, 3 of 5 planted flaws were
+  never asked about for this reason. Since 11 September 2026 the operator can declare the
+  scope instead (`[scope: ...]` and `[requires: ...]` on the rule heading, sections B and
+  E): a scoped rule pairs on its declared fields, a declared required field the unit lacks
+  is a finding Python decides with no model call, and a scoped rule with no declared
+  requirement is put to the model as one narrow question per unit in scope. The path each
+  absence took is recorded in the pairing map. This is built and gate-proved (check 209) but
+  has not been scored by a run. The device corpus's four absence rules now declare scopes
+  (section E), and the first draft of those declarations (`docs/fix/STEP_DECL_REPORT.md`)
+  showed two limits of the form: a scope value must be written as the document writes it,
+  and a rule with a declared requirement never reaches the model, so a rule about a duration
+  (a fault acknowledged within a window) cannot be expressed as a requirement, only as a
+  scope with the question left to the model. Python computes no duration between two
+  timestamps. The round-N `absent_since_prior` path does not depend on pairing and is
+  unaffected.
 - **A renamed label whose value also changes is still reported as withdrawn.** A field
   label renamed between two versions, while its value stays within a tolerance (2% relative
   by default, `config/rename_tolerance.json`, operator-editable), is now refused rather than
@@ -1689,8 +1994,10 @@ Stated honestly, from operator testing:
   corpus and by neutralise-and-restore. What is still not solved is the harder case: when
   BOTH the label and the value change between versions, nothing corroborates that this is a
   rename rather than a withdrawal, so the field is still reported `absent_since_prior`,
-  wrongly. On the negotiation corpus this leaves **5 wrong cases out of 13**, down from
-  **12 wrong out of 13** before the fix. A term that is new in the later version produces
+  wrongly. On the negotiation corpus, measured once before 10 September 2026 and not
+  re-derived since the 11 September pairing changes, this left **5 wrong cases out of 13**,
+  down from **12 wrong out of 13** before the fix; check 185 proves the refusal itself, not
+  these counts. A term that is new in the later version produces
   neither a record nor a refusal; a one-row summary table
   has no discriminating key column and supplies no figure; direction (`moved_toward` /
   `moved_away`) exists only where a paired rule names the field and states or points at
@@ -1716,25 +2023,38 @@ stores). Run it every session and before every commit:
 py -3.9 -X utf8 scripts/verify_session1.py
 ```
 
+With `--offline` the two checks that touch the network (15, a live search, and 38, an
+embedding-store build that downloads a model) are reported SKIP rather than run; the
+container image runs the gate this way by default (`docker run --rm --gpus all shimmer:local
+verify`, section G). The first offline gate inside the rebuilt image, with the network
+blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of 210, the
+four failures being the source-only ones in the table below.
+
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each
-of these checks proves something about a directory the launcher or the pipeline creates on
-first run, not something this repository carries.
+of these checks proves something about a directory a tool or the pipeline creates later, not
+something this repository carries.
 
 | check | fails because |
 |---|---|
-| 01, directory structure | `input/`, `output/`, `durable/`, `prompts/`, `snapshots/` and their subdirectories are not shipped; the launcher (section G) creates the ones it needs on first run |
-| 28, `input/` exists and accepts documents | `input/` is not shipped; it is where the pipeline reads documents from, and it does not exist until you or the launcher create it |
+| 01, directory structure | `input/`, `output/`, `durable/`, `prompts/`, `snapshots/` and their subdirectories are not shipped; the pipeline creates `output/` and `durable/` on first run, `input/` comes from the intake wizard or `tools/stage_corpus.py`, `snapshots/` is created by `--save-snapshot NAME` and `prompts/` by nothing, so those two are made by hand (or by saving one snapshot) for this check to pass |
+| 28, `input/` exists and accepts documents | `input/` is not shipped; it is where the pipeline reads documents from, and it does not exist until you or the wizard create it |
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
 A gate that passed all 210 checks on an empty checkout would be proving nothing about those
-four; failing loudly is correct here; there is nothing to test, not something broken. Every
-other check passes on a fresh clone with no setup beyond `py -3.9 -m pip install -r
-requirements.txt`. Once you have run the launcher (or built `input/` and staged a corpus
-yourself, section G), checks 01, 28 and 31 pass; check 145 needs a `tests/` directory with
-planted-figure fixtures, which this snapshot does not carry and an operator adds locally if
-they want that specific check.
+four; failing loudly is correct here; there is nothing to test, not something broken. Two
+more checks depend on the machine rather than the tree: check 193 loads one of the
+local-profile models with the network blocked at the socket and fails until the weights are
+in the local Hugging Face cache (it also needs a CUDA device); checks 15 and 38 make network
+calls and are skipped, not failed, only under `--offline`. Checks 28 and 31 pass once
+`input/` and its three subdirectories exist. Check 01 additionally requires `prompts/` and
+`snapshots/`, which no run creates for you (`--save-snapshot NAME` creates `snapshots/`;
+nothing creates `prompts/`): on the operator's own machine it fails on exactly those two
+directories after every run, and that is the expected state of a checkout that has never
+saved a snapshot or held a job spec. Check 145 needs a `tests/` directory
+with planted-figure fixtures, which this snapshot does not carry and an operator adds locally
+if they want that specific check.
 
 **The vocabulary probe (check 174) and `config/domain_vocabulary.json`.** A standing,
 deterministic check that no operator-declared domain term appears in the code surface
@@ -1745,10 +2065,11 @@ and generated at BOOT from `input/conventions/`.
 
 The term list lives in the JSON file and **nowhere in the check**, which is the whole point:
 the previous guard (check 22) hardcoded its regex against the domain of the day and
-therefore could never catch a leak from any other domain. Check 22's own terms live in that
-file too, under `previous_domain`, currently empty in this public snapshot (there is no
-prior operator's domain to guard against here) and populated again the moment an operator
-adds terms to it, so no domain word is ever written into code.
+therefore could never catch a leak from any other domain. Check 22's own terms belong in
+that file too, under a `previous_domain` family. This public snapshot carries no such family
+(there is no prior operator's domain to guard against here), and check 22 treats a missing
+or empty family as nothing to guard, passing and saying so; adding a `previous_domain` family
+with terms turns the guard back on without any edit to code.
 
 Severity is per family. `fail` turns the gate red; `warn` reports a count in the check's
 detail without blocking, which is how an existing backlog is made visible without making the
@@ -1767,7 +2088,19 @@ routes, and (checks 178 to 184) the extended figure reader, the INFRA-044 record
 round-N comparison executed on a real orchestrator with no model call, its rendering in both
 deliverables, the review question's path into the run objectives, the scan and the child argv, that a
 band a rule states is compared only against the fields that rule names, and that a column of
-prose carrying one incidental figure is not treated as a column of measurements.
+prose carrying one incidental figure is not treated as a column of measurements. After those:
+(185) a renamed label with the same value refuses rather than fabricating an absence; (186 to
+190) the run resource, cancellation, approvals, per-document and partial deliverables and the
+retired-route cleanup of the server; (191 to 194) unit order, the paired call's separation of
+unit, neighbour and map, the real local loader with the network blocked, and contract field
+names matching their readers; (195 to 199) the nine-part harness, the rule-id resolver,
+bracket tags, the convention assignment with its route and console state, and the firing gate
+with the per-plan judging agent; (200 to 202) the ontology store's scope, provenance and dual
+track; (203) the console current with the chain; (204 and 205) call evidence reconstructed
+from disk and the four-class false-negative classifier; (206 and 207) the convention
+distribution on the paired path and the three recording gaps; (208 and 209) longest-match
+labels and the declared-scope absence path. Everything from 186 on was built on 10 and 11
+September 2026 and is proved here on fixtures only.
 
 ---
 

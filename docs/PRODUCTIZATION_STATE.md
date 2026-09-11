@@ -211,20 +211,30 @@ scores it. Every report under `docs/fix/` says so.
 | `33803de` | the three recording gaps closed: rendered ids read off the finished sections, the draft call, the probe | 207 |
 | `3733565` | longest-match labels in the pairing map (D, option 1) | 208 |
 | `cc20ffd` | declared scope and Python-first absence (D, option 2): `[scope: ...]`, `[requires: ...]`, computed and judged paths recorded | 209 |
-| the commit carrying this line | the container: entrypoint line endings, `accelerate` pinned, check 197 freed of the corpus file; the first offline gate inside the image | 197 updated |
+| `a3c666f` | the container: entrypoint line endings, `accelerate` pinned, check 197 freed of the corpus file; the first offline gate inside the image | 197 updated |
+| the declarations commit | the four device declarations on the operator's corrected wording, applied to both twins after a deterministic probe of the first draft (`STEP_DECL_REPORT.md`): D02 `[scope: class=Class-A sensor] [requires: calibration authority signature]`, D03 `[scope: calibration authority signature]`, D04 `[scope: fault logged]`, D05 `[scope: service record]` | 197 still passes |
+| the commit carrying this line | the README audited start to finish against HEAD (65 findings, `STEP_README_REPORT.md`); the Dockerfile's weight layers moved before the source layers; the baked image built here with the three checkpoints inside and its offline gate run with no cache mounted (`STEP_BAKED_REPORT.md`) | none added |
 
 The container's offline gate, network blocked, host cache mounted: PASS=204 SKIP=2
-FAIL/ERROR=4 of 210, the four failures the documented source-only ones. The device rules
-carry no `[scope: ...]` or `[requires: ...]` declaration yet: that is the operator's to
-write before the VM run. The W6 measurement is still owed.
+FAIL/ERROR=4 of 210, the four failures the documented source-only ones; inside the baked
+image with nothing mounted, the same line in about 510 s. The first draft of the device
+declarations had one scope value (`class=A`) that never matches what the parser reads off
+the entries (the value test is equality on `class-a sensor`) and two declarations that
+turned a window rule into a presence rule never reaching the model (51 computed absences on
+both corpora, the one entry each rule is about left unasked); the operator corrected all
+three, and the applied form plans 37 calls on the flawed log and 43 on the clean twin (34
+and 46 with no declaration), D04 and D05 each reaching the model once on the entry they are
+about. The W6 measurement is still owed.
 
 ## 5. Before this branch merges into `main`, in order
 
-1. The operator tags the eight device rules and runs the W6 rerun (flawed and clean twin,
-   scored by `tools/score_corpus.py`); the numbers go into `STEP_W6_REPORT.md`'s owed section
-   and replace section 2 above.
+1. The W6 rerun is made on a machine with a free GPU (flawed and clean twin, scored by
+   `tools/score_corpus.py`; the eight subject tags and the four declarations are applied,
+   `dccec5f` and the declarations commit); the numbers go into `STEP_W6_REPORT.md`'s owed
+   section and replace section 2 above.
 2. The gate once more on a clean clone with a fresh `.venv` from the pinned
-   `requirements.txt`; expect exactly the two source-only failures.
+   `requirements.txt`; expect exactly the four source-only failures (01, 28, 31, 145;
+   README section L), since a clean clone has no `input/` at all.
 3. An independent read-only audit at the merge HEAD: this chain wrote its own checks (195
    to 203), and a check that passes for the wrong reason is caught only by a reader who did
    not write it. An adversarial review before commit 4 found four real defects in that
