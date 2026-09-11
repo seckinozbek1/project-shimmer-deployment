@@ -1920,6 +1920,28 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     def _bands_for(text, rule):
         return reference_tables_mod.bands_for_unit(ref_tables, text, rule.get("rule", ""))
 
+    # Job C: the same pattern as _bands_for, for a single-value duration bound
+    # ("the standard fault window is 24 hours") a rule points at rather than
+    # states itself. Computed once per rule, searched across context_refs AND
+    # the document under review's own text: on the device corpus the glossary
+    # stating the fault window and service interval lives INSIDE
+    # device_log_flawed.md itself (the corpus's own task description says so
+    # plainly: "the document's own glossary section states the standard
+    # fault window, service interval..."), not in the separate reference
+    # document the way D01's class tolerance bands do. context_refs is
+    # filtered to input_type=="context" and never carries the operational
+    # document, so excluding doc["id"] here (Job A's table-reading pattern,
+    # copied uncritically at first) made this corpus's own two duration rules
+    # permanently unsolvable: measured directly, D04's bound and D05's bound
+    # were both found once the document's own text was searched too. A
+    # document's own stated definition is grounding, the same reasoning
+    # bounds_from_rule already applies to a bound a RULE states in its own
+    # text with no separate-document requirement at all.
+    def _duration_bound_for(rule):
+        entries = list(context_refs) + [
+            {"ref_id": doc["id"], "document_id": doc["id"], "text_excerpt": doc["text"]}]
+        return reference_tables_mod.scalar_bound_from_entries(entries, rule.get("rule", ""))
+
     # The pairing map records what the band check could and could not decide, per
     # unit, BEFORE any verdict fires. Written into the map that is already
     # persisted, so the reason a low figure was or was not stated as a finding is
@@ -1940,7 +1962,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     plans = paired_review_mod.plan_calls(
         unit_text, pairs, rules_by_id, vocabulary,
         needed_fields_for=lambda text: pairing_map_mod.needed_fields(text, vocabulary),
-        reference_bands_for=_bands_for, known_units=known_units)
+        reference_bands_for=_bands_for, known_units=known_units,
+        duration_bound_for=_duration_bound_for)
 
     log_event(_LOG,
               f"paired_review pairs={len(pairs)} dropped_by_cap={len(dropped)} "

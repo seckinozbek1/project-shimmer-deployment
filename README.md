@@ -522,6 +522,63 @@ the one shape a labelled prose sentence takes (a label, a colon, a range, in one
 "Bands from the reference corpus" above), and a prose statement outside that shape, or the
 rule-text path for a rule that states its own numbers, are both still covered as before.
 
+### Duration arithmetic
+
+Two of the device rules say "acknowledged within the standard fault window" or "must not
+exceed the standard service interval", and both state their own instruction plainly: "state
+the two timestamps and the gap between them." That is an instruction to compute, not to
+judge, and nothing in this pipeline subtracted two dates before check 217.
+
+`paired_review.date_pair_for_rule(unit_text, rule_text)` reads a date pair from a unit by the
+rule's own connecting words, structurally, in one of two shapes: two SEPARATE `label: value`
+lines each holding one ISO date ("Fault logged: 2026-06-01 09:00" / "Fault acknowledged:
+2026-06-03 09:00"), or one label line whose value holds two ("Service record: last calibration
+visit 2026-01-01, next calibration visit logged 2026-06-01"). The connecting words that must be
+named by the rule are the label's own words UNIONED WITH the value's own words (dates removed),
+not the label alone: a same-line pair's outer label may use different words from the ones
+actually describing each date, the same reasoning Job A's `column_phrase` already applies to a
+table header. A unit with no date field the rule names, or with a THIRD candidate the rule
+could equally name, yields no pair: which one is the pair is not decidable by field matching
+alone once ambiguity exists, and this function refuses rather than guesses, the same discipline
+`reference_tables.py` already holds throughout.
+
+`reference_tables.scalar_bound_from_entries(entries, rule_text)` reads the matching SINGLE-VALUE
+bound from the reference corpus's own prose ("The standard fault window is 24 hours..."), the
+sibling of Job A's range reader for a sentence that states one number rather than two: exactly
+one quantity, connecting words (every content word in the sentence besides the number and its
+unit) named by the rule, a tie between two candidate sentences refused rather than picked from.
+`compute_checks` emits a `date_window` Finding relation only when BOTH a pair and a bound are
+found for the same rule; either alone computes nothing, the same honest outcome
+`bounds_from_rule` already gives a rule with no bound of its own.
+
+**A pre-existing defect surfaced while proving this, and the fix closes both.** An externally
+supplied bound (Job C's own `duration_bound`, and R1's own reference-table band before this fix)
+is invisible to `plan_calls`' "nothing computed" fallback, which re-derives from the rule's text
+alone and never receives the caller's external bound. A DISAGREEING external bound therefore
+double-booked: a correct plan from the per-rule loop, plus a spurious second one asking the
+model the same question again. Reproduced with no Job C code involved (an out-of-range table
+band, the R1 mechanism from before this job), so it was not new; closed for both mechanisms by
+tracking every rule a band OR a duration check reached ANY verdict for, agreeing or not, and
+excluding those from the fallback. An agreeing band or duration still costs no call at all, the
+"computed and settled" outcome both were always meant to give.
+
+**Real-corpus honesty: neither device rule settles end to end on this corpus's exact wording,**
+and the reason is the same brittleness check 215 already named for a different pair of labels.
+D04's date pair is found (its two label lines share no vocabulary problem with the rule) but its
+bound is not: the bound sentence says "fault timestamp" (singular) and the rule says "state the
+two timestamps" (plural), and word containment does not stem. D05's bound is found, once the
+search also covers the document under review's own text: this corpus's task description says
+plainly that "the document's own glossary section states the standard fault window, service
+interval..." so the glossary lives INSIDE `device_log_flawed.md` itself, not in the separate
+`device_class_reference.md` the way D01's class tolerance bands do, and excluding the document
+under review (Job A's own table-reading pattern, copied here uncritically at first) made D05
+permanently unsolvable until the document's own text was searched too. But D05's date pair is
+not found: the value says "calibration visit" (singular, twice) and the rule says "logged
+calibration visits" (plural). Both mechanisms are proved correct on fixtures whose vocabulary
+aligns (check 217); the gap on this specific corpus is a fact about how the operator's rules and
+document happen to be worded relative to each other, not a defect in either reader, and neither
+the corpus nor the rules were changed to make it disappear.
+
 ### Typed Finding records
 
 Agents do not talk to each other in prose. A finding that travels between agents is a
@@ -2192,9 +2249,11 @@ Stated honestly, from operator testing:
   showed two limits of the form: a scope value must be written as the document writes it,
   and a rule with a declared requirement never reaches the model, so a rule about a duration
   (a fault acknowledged within a window) cannot be expressed as a requirement, only as a
-  scope with the question left to the model. Python computes no duration between two
-  timestamps. The round-N `absent_since_prior` path does not depend on pairing and is
-  unaffected.
+  scope with the question left to the model. **Python now computes a duration between two
+  timestamps** (check 217, "Duration arithmetic" below), which narrows this limit to the
+  scope-declaration mechanism specifically: it still cannot express "the gap must not
+  exceed X" as a requirement, but the gap itself is no longer necessarily a model question.
+  The round-N `absent_since_prior` path does not depend on pairing and is unaffected.
 - **A renamed label whose value also changes is still reported as withdrawn.** A field
   label renamed between two versions, while its value stays within a tolerance (2% relative
   by default, `config/rename_tolerance.json`, operator-editable), is now refused rather than
@@ -2222,7 +2281,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**217** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**218** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2237,7 +2296,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 216 have since raised the total to 217.
+table below; checks 210 to 217 have since raised the total to 218.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

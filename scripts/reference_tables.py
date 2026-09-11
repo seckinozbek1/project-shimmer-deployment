@@ -484,6 +484,86 @@ def parse_prose_bands(text, *, ref_id="", document_id="", known_units=()):
     return out
 
 
+def prose_scalar_bound(text, rule_text, *, ref_id=""):
+    """(value, unit, ref_id) for a SINGLE bound a sentence states in prose, or
+    None. Job C's own shape, distinct from parse_prose_bands: "The standard
+    fault window is 24 hours from the device's own fault timestamp." states
+    one number, not a range, so cell_range's two-quantity test never fires on
+    it and it is read here instead.
+
+    The one shape read: a sentence carrying EXACTLY one quantity, whose
+    connecting words (every content word in the sentence besides the number
+    and its unit) are named by the rule, word containment, the same test
+    key_column_indexes already uses to decide a rule names a column. A
+    sentence with two or more quantities is refused here (that is either a
+    range, parse_prose_bands' own shape, or genuinely ambiguous prose); a
+    sentence naming nothing the rule asks for is not this bound. A rule
+    naming more than one such sentence across the passage, or two sentences
+    tied on the same word count, is refused rather than picked from: which
+    one is the bound is not decidable by field matching alone once a second
+    candidate exists.
+    """
+    hits = _scalar_bound_candidates(text, rule_text)
+    if not hits:
+        return None
+    hits.sort(key=lambda c: -c[1])
+    if len(hits) > 1 and hits[0][1] == hits[1][1]:
+        return None  # tied specificity: refused, not picked
+    value, _, unit = hits[0]
+    return (value, unit, ref_id)
+
+
+def _scalar_bound_candidates(text, rule_text):
+    """[(value, connecting_word_count, unit), ...] for every sentence in
+    `text` matching prose_scalar_bound's one shape. The shared scan both
+    prose_scalar_bound (one passage) and scalar_bound_from_entries (every
+    reference entry) sort and tie-check over, so a tie across two DIFFERENT
+    passages is caught exactly like a tie within one."""
+    rule_words = _words(rule_text)
+    out = []
+    for sentence in _sentences(text):
+        quantities = _cell_quantities(sentence)
+        if len(quantities) != 1:
+            continue
+        value, unit, start, end = quantities[0]
+        if not unit:
+            continue
+        rest = (sentence[:start] + " " + sentence[end:]).strip()
+        connecting = _words(rest)
+        if not connecting or not connecting <= rule_words:
+            continue
+        out.append((value, len(connecting), unit))
+    return out
+
+
+def scalar_bound_from_entries(entries, rule_text, *, exclude_document_id=""):
+    """(value, unit, ref_id) for the ONE single-value prose bound this rule's
+    own words connect to, across every reference-corpus entry, or None.
+
+    The entries-level sibling of tables_from_entries / prose_scalar_bound:
+    the document UNDER REVIEW is excluded (its own figures are what is being
+    checked, not the reference), and a tie between two candidate sentences,
+    whether in the same passage or two different ones, is refused rather
+    than picked from, exactly as prose_scalar_bound refuses a tie within one.
+    """
+    hits = []
+    for entry in entries or []:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("document_id") and entry["document_id"] == exclude_document_id:
+            continue
+        text = entry.get("text_excerpt") or ""
+        for value, n, unit in _scalar_bound_candidates(text, rule_text):
+            hits.append((value, n, unit, entry.get("ref_id") or ""))
+    if not hits:
+        return None
+    hits.sort(key=lambda c: -c[1])
+    if len(hits) > 1 and hits[0][1] == hits[1][1]:
+        return None
+    value, _, unit, ref_id = hits[0]
+    return (value, unit, ref_id)
+
+
 def parse_tables(text, *, ref_id="", document_id="", known_units=()):
     """Every markdown table in a passage, as structured records."""
     out = []
