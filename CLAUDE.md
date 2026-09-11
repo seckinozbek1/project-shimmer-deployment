@@ -370,6 +370,23 @@ processing swarm governed by an append-only constitution.
   (`provisions_log.jsonl`) with supersession decided at the query layer, and supersede built
   but delete deliberately not. `tools/archive_ontology_stores.py` archives and empties the
   stores outside the repository.
+  THREE NODE TYPES share one scope and each has its own reader: `Provision` (capture),
+  `Relation` (job 2) and `Resolution` (job 3). `ontology_reader.provenance_summary` tests an
+  ALLOWLIST (`node == "Provision"`, a record with no node being one), never a list of types
+  to exclude: both later node types leaked into the provision count when they were added, and
+  an allowlist is what stops a fourth from doing it again.
+  `scripts/ontology_reader.py` is the store's only reader (`GET /ontology`,
+  `/ontology/provisions/{id}`, the console's Agents page, and its own CLI inspector). It
+  carries identifiers and provenance ONLY, never a provision's text.
+  `scripts/relation_extract.py` finds relations between units; EVERY pattern lives in
+  `config/relation_patterns.json` and none in code (S5), the embedding ranker is INJECTED
+  never imported, and an ambiguous reference is REFUSED rather than resolved to one candidate.
+  `scripts/ontology_conflicts.py` holds the operator's decision: a store-versus-rule
+  disagreement is REFUSED in that run with both sides named, the answer is written to the
+  ontology under a stable conflict id so the same conflict is never put to the operator
+  twice, "keep refusing" is a real third answer, an unrecognised answer is refused rather
+  than stored, and the override rate carries its own not-statistically-meaningful caveat
+  inside the return value. NOTHING in a review reads a relation or a conflict today.
 - `corpus_ingest/`: the corpus ingestion contract, validator, and grounding-files helper.
 - `benchmark/keys/`: the answer key, control document, ledger scripts and frozen scorer for
   recall measurement. GITIGNORED, never committed, never opened by an agent. Only the scorer
