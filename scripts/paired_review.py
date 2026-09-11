@@ -255,19 +255,40 @@ def _parse_iso_datetime(token):
 
 def _label_lines_with_dates(unit_text):
     """Every `label: value` line whose value is EXACTLY one or EXACTLY two ISO
-    datetimes, as (connecting_words, [datetime, ...], has_time). A value
-    carrying any other number of dates, or a date alongside other non-date
-    text this function cannot separate cleanly, is not returned: ambiguous
-    material yields no candidate rather than a guessed one.
+    datetimes, as ((label_words, described_words), [datetime, ...], has_time).
+    A value carrying any other number of dates, or a date alongside other
+    non-date text this function cannot separate cleanly, is not returned:
+    ambiguous material yields no candidate rather than a guessed one.
 
-    connecting_words is the label's own words UNIONED with the value's own
-    words (the dates themselves removed), not the label alone: the two-date
-    same-line shape's outer label ("Service record:") may use different
-    words from the ones actually describing each date ("last calibration
-    visit... next calibration visit logged..."), and a rule is far more
-    likely to share vocabulary with the descriptive words beside a figure,
-    the same reasoning Job A's column_phrase reads a table's own header
-    words rather than trusting an outer wrapper name."""
+    The two word-sets are the two INDEPENDENT routes by which a rule can name
+    this pair, kept apart rather than unioned (see the end of this docstring),
+    and the way described_words is drawn is the whole point of this function.
+
+    The words are taken PER DATE, from the window of text running from the
+    previous date (or the start of the value) up to this date, and for a
+    two-date line only the INTERSECTION of the two windows is kept. A word
+    that describes what the pair IS appears beside both dates; a word that
+    distinguishes one date FROM the other appears beside only one. On the
+    device corpus's own service record, "Service record: last calibration
+    visit <date>, next calibration visit logged <date>", the windows are
+    {last, calibration, visit} and {next, calibration, visit, logged}, and
+    the intersection is {calibration, visit}: exactly the concept the rule
+    names, with the ordinal markers "last" and "next" excluded because they
+    are how the document tells its two dates apart, not what the rule is
+    about.
+
+    This replaces taking the whole post-date remainder as one undifferentiated
+    bag, which was noise collection rather than matching: it dragged "last",
+    "next" and "record" in as though the rule had stated them, and no rule
+    ever would, so the pair could never be named however the tokeniser was
+    tuned. The narrowing is structural, by position relative to the figures,
+    and carries no word list: nothing here knows that "last" is an ordinal,
+    only that it sits beside one date and not the other.
+
+    A ONE-date line keeps its whole window, since there is no second window
+    to intersect with and the remainder genuinely describes that one date
+    (the device corpus's "Fault logged: <date>" lines, whose own labels
+    already carry the vocabulary, are unaffected either way)."""
     import pairing_map as _pm
     out = []
     for line in (unit_text or "").splitlines():
@@ -291,9 +312,23 @@ def _label_lines_with_dates(unit_text):
             parsed.append(got)
         if not ok or len(parsed) != len(matches):
             continue
-        value_without_dates = _ISO_DATETIME.sub(" ", value)
-        connecting = set(label) | set(_pm._norm_label(value_without_dates))
-        out.append((connecting, [p[0] for p in parsed], all(p[1] for p in parsed)))
+        # One window per date: from the end of the previous date (or the
+        # start of the value) to the start of this one.
+        windows = []
+        cursor = 0
+        for mm in matches:
+            windows.append(set(_pm._norm_label(value[cursor:mm.start()])))
+            cursor = mm.end()
+        described = set.intersection(*windows) if len(windows) > 1 else windows[0]
+        # Two INDEPENDENT routes to naming this pair, kept apart rather than
+        # unioned: the line's own label, and the words the value uses to
+        # describe its dates. A rule that names either has named the pair.
+        # Unioning them required a rule to state BOTH, which the device
+        # corpus's own D05 never does: its label is "Service record" and the
+        # rule says "service interval", so "record" alone blocked a pair
+        # whose description ("calibration visit") the rule states outright.
+        out.append(((set(label), described),
+                    [p[0] for p in parsed], all(p[1] for p in parsed)))
     return out
 
 
@@ -339,24 +374,37 @@ def date_pair_for_rule(unit_text, rule_text):
     # that folds the plural on BOTH sides can ever equate the two.
     rule_words = set(_pm._norm_label(rule_text or ""))
 
-    def _named(label):
-        return bool(label) and set(label) <= rule_words
+    def _named(routes):
+        """The rule names this pair when it names EITHER route: the line's own
+        label, or the words the value uses to describe its dates. Either on
+        its own is a complete naming; requiring both meant a rule had to
+        restate the document's wrapper label as well as its subject."""
+        label_words, described = routes
+        return ((bool(label_words) and label_words <= rule_words)
+                or (bool(described) and described <= rule_words))
 
-    two_date_lines = [(label, dts, has_time) for label, dts, has_time in candidates
-                      if len(dts) == 2 and _named(label)]
-    one_date_lines = [(label, dts[0], has_time) for label, dts, has_time in candidates
-                      if len(dts) == 1 and _named(label)]
+    def _display(routes):
+        """The human-readable field name for a matched line: its own label
+        where it has one, else the words describing its dates."""
+        label_words, described = routes
+        return " ".join(label_words or described)
+
+    two_date_lines = [(routes, dts, has_time) for routes, dts, has_time in candidates
+                      if len(dts) == 2 and _named(routes)]
+    one_date_lines = [(routes, dts[0], has_time) for routes, dts, has_time in candidates
+                      if len(dts) == 1 and _named(routes)]
 
     if two_date_lines and one_date_lines:
         return None  # both shapes matched: ambiguous, refuse rather than pick
     if len(two_date_lines) > 1:
         return None  # more than one same-line pair the rule names: ambiguous
     if two_date_lines:
-        label, (d1, d2), has_time = two_date_lines[0]
-        return (d1, " ".join(label) + " (first)", d2, " ".join(label) + " (second)", has_time)
+        routes, (d1, d2), has_time = two_date_lines[0]
+        name = _display(routes)
+        return (d1, name + " (first)", d2, name + " (second)", has_time)
     if len(one_date_lines) == 2:
-        (l1, d1, t1), (l2, d2, t2) = one_date_lines
-        return (d1, " ".join(l1), d2, " ".join(l2), t1 and t2)
+        (r1, d1, t1), (r2, d2, t2) = one_date_lines
+        return (d1, _display(r1), d2, _display(r2), t1 and t2)
     return None  # zero, or three-or-more, single-date lines the rule names
 
 
