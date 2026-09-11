@@ -14860,58 +14860,64 @@ def check_197_convention_heading_brackets_read_subject_and_severity():
     # not only a synthetic string. device_log_review's CONV-006 (heading
     # CONV-D03 [required]) must now read required, not advisory; and the
     # corpus's real title-and-scope prose must not appear as CONV-001/CONV-002.
+    # The corpus is not shipped in every tree this gate runs in: the container
+    # image copies scripts/, config/, tools/ and corpus_ingest/ only, and the first
+    # offline gate run inside it (2026-09-11) failed here on a missing file, not
+    # on the parser. So the corpus assertions run wherever the file exists and
+    # are named absent otherwise, and the neutralise-and-restore proof below runs
+    # on the synthetic text, which every tree has.
     real_path = (Path(__file__).resolve().parent.parent / "benchmark" / "corpora"
                  / "device_log_review" / "conventions" / "device_conventions.md")
-    if not real_path.is_file():
-        return _fail(f"{real_path} not found")
-    seq3 = [0]
-    real_rules = _cp._parse_text_lines(real_path.read_text(encoding="utf-8"),
-                                       real_path.name, seq3)
-    if len(real_rules) != 8:
-        return _fail(f"device_log_review has 8 authored rules; got {len(real_rules)} "
-                     f"(a title-prose leak would add 2 more)")
-    severities = {r.category: r.severity for r in real_rules}
-    if severities.get("conv-d03") != "required":
-        return _fail(f"CONV-D03's heading carries [required] in the real corpus file; "
-                     f"got severity={severities.get('conv-d03')!r}, the exact discarded-"
-                     f"bracket defect this check exists to catch")
-    if any(r.category == "review" for r in real_rules):
-        return _fail("a rule with category 'review' survived: the title-prose leak "
-                     "(the corpus's own preamble minted as CONV-001/CONV-002) is back")
+    corpus_note = "site 3 (the shipped corpus file) not present in this tree, not run"
+    if real_path.is_file():
+        seq3 = [0]
+        real_rules = _cp._parse_text_lines(real_path.read_text(encoding="utf-8"),
+                                           real_path.name, seq3)
+        if len(real_rules) != 8:
+            return _fail(f"device_log_review has 8 authored rules; got {len(real_rules)} "
+                         f"(a title-prose leak would add 2 more)")
+        severities = {r.category: r.severity for r in real_rules}
+        if severities.get("conv-d03") != "required":
+            return _fail(f"CONV-D03's heading carries [required] in the real corpus file; "
+                         f"got severity={severities.get('conv-d03')!r}, the exact discarded-"
+                         f"bracket defect this check exists to catch")
+        if any(r.category == "review" for r in real_rules):
+            return _fail("a rule with category 'review' survived: the title-prose leak "
+                         "(the corpus's own preamble minted as CONV-001/CONV-002) is back")
+        corpus_note = "the shipped corpus file's 8 rules, CONV-D03 required, no title-prose leak"
 
     # NEUTRALISE AND RESTORE: strip the bracket regex's ability to see a
-    # closing bracket, re-run the real corpus, and confirm the severity fix
-    # and the subject read both disappear; restore and confirm both return.
+    # closing bracket, re-run a heading whose bracket says [required] over a
+    # paragraph with NO severity word (so the text fallback says advisory), and
+    # confirm the severity read and the subject read both disappear; restore
+    # and confirm both return. Synthetic, so every tree can run the proof.
+    proof_text = ("## CONV-D09 , conv-bracket-proof [required] [conformance]\n\n"
+                  "This paragraph carries no severity word at all.\n")
     _orig_bracket = _cp._HEADING_BRACKET
     _cp._HEADING_BRACKET = re.compile(r"(?!)")  # matches nothing, ever
     try:
         seq_n = [0]
-        neutralised = _cp._parse_text_lines(real_path.read_text(encoding="utf-8"),
-                                            real_path.name, seq_n)
-        neut_by_cat = {r.category: r.severity for r in neutralised}
-        if neut_by_cat.get("conv-d03") == "required":
-            return _fail("neutralising _HEADING_BRACKET did not stop CONV-D03 from "
-                         "reading required: the check is not exercising the bracket "
-                         "read, or the fallback text classification coincidentally "
-                         "also says required")
+        neutralised = _cp._parse_text_lines(proof_text, "zqproof.md", seq_n)
+        n1 = neutralised[0] if neutralised else None
+        if n1 is None or n1.severity == "required" or n1.subjects:
+            return _fail("neutralising _HEADING_BRACKET did not stop the proof heading from "
+                         "reading required with a subject: the check is not exercising "
+                         f"the bracket read (got {getattr(n1, 'severity', None)!r}, "
+                         f"{getattr(n1, 'subjects', None)!r})")
     finally:
         _cp._HEADING_BRACKET = _orig_bracket
     seq_r = [0]
-    restored = _cp._parse_text_lines(real_path.read_text(encoding="utf-8"),
-                                     real_path.name, seq_r)
-    restored_by_cat = {r.category: r.severity for r in restored}
-    if restored_by_cat.get("conv-d03") != "required":
-        return _fail("restoring _HEADING_BRACKET did not bring back CONV-D03's "
-                     "required severity")
+    restored = _cp._parse_text_lines(proof_text, "zqproof.md", seq_r)
+    if not restored or restored[0].severity != "required" or restored[0].subjects != ["conformance"]:
+        return _fail("restoring _HEADING_BRACKET did not bring back the proof heading's "
+                     "required severity and its subject")
 
     return _ok("bracket subjects and severity read correctly (multiple tags, no "
                "bracket, severity-override-vs-fallback all covered); check_32's own "
-               "id-less-heading-with-list-items shape is unaffected; the real "
-               "device_log_review corpus now reads CONV-D03 as required (was advisory, "
-               "the discarded-[required] defect) and carries no title-prose leak (was "
-               "CONV-001/CONV-002 under category 'review'); neutralising the bracket "
-               "regex to match nothing removes the severity fix and restoring it "
-               "brings the fix back, proving this check reads the live bracket scan")
+               f"id-less-heading-with-list-items shape is unaffected; {corpus_note}; "
+               "neutralising the bracket regex to match nothing removes the severity "
+               "and subject read on a synthetic [required] heading and restoring it "
+               "brings both back, proving this check reads the live bracket scan")
 
 
 def check_198_convention_assignment_comparison_route_and_console():

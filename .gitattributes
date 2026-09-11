@@ -1,0 +1,6 @@
+# A shell script executed inside the Linux container must keep LF line endings on
+# every checkout: with Windows autocrlf, tools/entrypoint.sh came out CRLF, the
+# image's exec of "#!/bin/sh\r" failed with "no such file or directory", and the
+# rebuilt container could not start (found at the first offline test, 2026-09-11).
+*.sh text eol=lf
+tools/entrypoint.sh text eol=lf
