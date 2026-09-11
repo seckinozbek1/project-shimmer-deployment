@@ -78,7 +78,10 @@ accumulate is more than a contained change, say what it costs and stop rather th
 half-building it."
 
 **The premise does not hold, and this is worth stating precisely before any option is
-chosen.** `ontology_gnn.gnn_update` already accumulates:
+chosen.** The operator has since owned the error explicitly, and asked for it to be recorded
+where a reader will find it rather than left in a commit message: the belief that the GNN
+resets its weights every run had been stated for weeks and is wrong. It is corrected here,
+in the README's ontology section, and in the job 4 report that builds on the true state. `ontology_gnn.gnn_update` already accumulates:
 
 - It loads any prior state from `gnn_state.json` and **restores the persisted encoder and
   decoder weights** when the feature dimensions match, reinitialising only when there is no

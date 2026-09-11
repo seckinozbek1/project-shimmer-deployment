@@ -17406,6 +17406,286 @@ def check_212_ontology_conflicts_and_operator_answers():
     return _ok(shipped[1] + "; neutralise (no memory of an answer) FAILS, restore PASSES")
 
 
+def _candidate_fixture_graph():
+    """A graph with enough STRUCTURE that a candidate set is a meaningful thing to
+    produce: two documents, three conventions, seven provisions of deliberately varied
+    shape (a hub with three cross-references, leaves, two stubs with no rule), and real
+    edges. Domain-free: every id is a placeholder and no node carries text.
+
+    The store is at zero bytes, so a fixture is the only graph that exists."""
+    nodes = [{"type": "Document", "id": "zqdocA"}, {"type": "Document", "id": "zqdocB"},
+             {"type": "Convention", "id": "CONV-001"},
+             {"type": "Convention", "id": "CONV-002"},
+             {"type": "Convention", "id": "CONV-003"}]
+    edges = []
+    spec = [("zqdocA", "REF-0001", "CONV-001", False),
+            ("zqdocA", "REF-0002", "CONV-001", False),
+            ("zqdocA", "REF-0003", "CONV-002", False),
+            ("zqdocA", "REF-0004", None, True),
+            ("zqdocB", "REF-0001", "CONV-003", False),
+            ("zqdocB", "REF-0002", "CONV-002", False),
+            ("zqdocB", "REF-0003", None, True)]
+    for doc, ref, conv, stub in spec:
+        nid = "%s::%s" % (doc, ref)
+        nodes.append({"type": "Provision", "id": nid, "document_id": doc, "ref_id": ref,
+                      "convention_ref": conv, "stub": stub, "incomplete": stub})
+        edges.append({"type": "HAS_PROVISION", "source": doc, "target": nid})
+        if conv:
+            edges.append({"type": "GOVERNED_BY", "source": nid, "target": conv})
+    for t in ("zqdocA::REF-0002", "zqdocA::REF-0003", "zqdocA::REF-0004"):
+        edges.append({"type": "CROSS_REFERENCES", "source": "zqdocA::REF-0001",
+                      "target": t})
+    for t in ("zqdocB::REF-0002", "zqdocB::REF-0003"):
+        edges.append({"type": "CROSS_REFERENCES", "source": "zqdocB::REF-0001",
+                      "target": t})
+    return {"scope": "default", "nodes": nodes, "edges": edges}
+
+
+def _candidate_finder_body():
+    """The executed body of check 213: the GNN candidate finder on a fixture graph.
+
+    Runs the REAL update path (one forward, one backward, on CPU, seconds) and the REAL
+    finder over the persisted state. No language model is loaded and no pipeline run is
+    started: a graph autoencoder over a dozen nodes is not what the no-model rule is
+    about.
+
+    Factored out so the check can run it as shipped and with the honesty qualifier
+    neutralised."""
+    import json as _json
+    import tempfile
+    import ontology_gnn as _gnn
+    import ontology_candidates as _cand
+
+    d = Path(tempfile.mkdtemp(prefix="shimmer_candidates_"))
+    gpath, spath = d / "graph.json", d / "gnn_state.json"
+    graph = _candidate_fixture_graph()
+    gpath.write_text(_json.dumps(graph), encoding="utf-8")
+
+    # The update path persists weights and a high-water mark. (The operator's own
+    # correction: it does NOT reset each run. This asserts it.)
+    first = _gnn.gnn_update(graph_path=gpath, state_path=spath, log=False,
+                            device="cpu")
+    if first["delta_size"] != len(graph["nodes"]):
+        return _fail("the first update should train on every node: %r" % (first,))
+    state_one = _json.loads(spath.read_text(encoding="utf-8"))
+    if not state_one.get("encoder_weight") or not state_one.get("trained_node_ids"):
+        return _fail("the first update must persist weights and a high-water mark")
+    second = _gnn.gnn_update(graph_path=gpath, state_path=spath, log=False,
+                             device="cpu")
+    if second["delta_size"] != 0:
+        return _fail("a second update over the same graph has nothing new to train on, "
+                     "so the delta must be 0 (weights persist, they do not reset): %r"
+                     % (second,))
+    state_two = _json.loads(spath.read_text(encoding="utf-8"))
+    if state_two["encoder_weight"] != state_one["encoder_weight"]:
+        return _fail("with a zero delta the weights must be unchanged, not reinitialised")
+
+    # The finder reads those persisted weights rather than initialising its own.
+    out = _cand.find_candidates(graph, state_path=spath, top_k=3, device="cpu")
+    if out["weights_from"] != "persisted":
+        return _fail("the finder must rank in the persisted encoder's space: %r"
+                     % (out["weights_from"],))
+    if out["provisions_considered"] != 7:
+        return _fail("the fixture has seven provisions, the finder considered %r"
+                     % (out["provisions_considered"],))
+    if out["candidate_count"] < 5:
+        return _fail("a seven-provision graph should yield a candidate set: %r"
+                     % (out["candidate_count"],))
+
+    # Only PROVISION pairs are proposed: a Document-to-Convention pair is not the
+    # question decision 9 asks and would bury the pairs that matter.
+    provision_ids = set(n["id"] for n in graph["nodes"] if n["type"] == "Provision")
+    for c in out["candidates"]:
+        if c["source"] not in provision_ids or c["target"] not in provision_ids:
+            return _fail("a candidate must be a pair of provisions: %r" % (c,))
+        if c["source"] == c["target"]:
+            return _fail("a node must never be its own candidate: %r" % (c,))
+
+    # One row per unordered pair, never two: the ranking is symmetric and a duplicated
+    # pair would double every count a later score reads.
+    pairs = [(c["source"], c["target"]) for c in out["candidates"]]
+    if len(pairs) != len(set(tuple(sorted(p)) for p in pairs)):
+        return _fail("each unordered pair must appear once: %r" % (pairs,))
+
+    # It must DISCRIMINATE: a ranking where every score is identical proposes nothing.
+    scores = [c["score"] for c in out["candidates"]]
+    if len(set(scores)) < 3:
+        return _fail("the ranking does not discriminate between structurally different "
+                     "provisions: %r" % (sorted(set(scores)),))
+    if scores != sorted(scores, reverse=True):
+        return _fail("candidates must be returned highest score first: %r" % (scores,))
+
+    # Deterministic: the same graph and state yield the same candidate set.
+    again = _cand.find_candidates(graph, state_path=spath, top_k=3, device="cpu")
+    if again["candidates"] != out["candidates"]:
+        return _fail("the finder must be deterministic")
+
+    # The deterministic baseline's own pairs are excluded on request, which is how the
+    # two mechanisms are compared by what each finds that the other does not.
+    known = [(out["candidates"][0]["source"], out["candidates"][0]["target"])]
+    excluded = _cand.find_candidates(graph, state_path=spath, top_k=3, device="cpu",
+                                     exclude_pairs=known)
+    if excluded["candidate_count"] != out["candidate_count"] - 1:
+        return _fail("excluding one known pair must remove exactly it: %r vs %r"
+                     % (excluded["candidate_count"], out["candidate_count"]))
+    kept = set(tuple(sorted((c["source"], c["target"]))) for c in excluded["candidates"])
+    if tuple(sorted(known[0])) in kept:
+        return _fail("the excluded pair is still proposed")
+
+    # THE HONESTY QUALIFIER travels with the data, so no consumer can render a candidate
+    # set without it. This is the single most important property of this module.
+    if out.get("learned_relevance") is not False:
+        return _fail("a candidate set must declare learned_relevance False")
+    if out.get("tier2_signal") != "empty":
+        return _fail("a candidate set must declare the Tier-2 signal empty")
+    ranked_on = (out.get("ranked_on") or "").lower()
+    for phrase in ("graph structure", "learned relevance"):
+        if phrase not in ranked_on:
+            return _fail("ranked_on must say plainly what the ranking rests on: %r"
+                         % (out.get("ranked_on"),))
+    # and it must DENY learned relevance, not merely mention the words: a qualifier
+    # reading "learned relevance from the trained model" contains the phrase and
+    # claims the opposite of the truth.
+    if not any(d in ranked_on for d in ("nothing here is learned relevance",
+                                        "not learned relevance",
+                                        "no learned relevance")):
+        return _fail("ranked_on mentions learned relevance without denying it: %r"
+                     % (out.get("ranked_on"),))
+
+    # A graph with fewer than two provisions proposes nothing, which is the honest
+    # answer and the state of every real graph in this repository today.
+    thin = {"scope": "default", "nodes": [{"type": "Provision", "id": "zqdocA::REF-0001",
+                                           "document_id": "zqdocA"}], "edges": []}
+    thin_out = _cand.find_candidates(thin, state_path=spath, device="cpu")
+    if thin_out["candidate_count"] != 0:
+        return _fail("fewer than two provisions must yield no candidates")
+    if thin_out.get("ranked_on") != _cand.RANKED_ON_STRUCTURE:
+        return _fail("even an empty candidate set carries what it would have ranked on")
+
+    # The state summary, which is the read path's source, reports the absence of the
+    # Tier-2 signal as a field rather than as prose a reader can skip.
+    summary = _cand.state_summary(spath)
+    if not summary.get("exists") or summary.get("trained_count") != len(graph["nodes"]):
+        return _fail("the state summary must report the persisted state: %r" % (summary,))
+    if summary.get("tier2_signal") != "empty" or summary.get("learned_relevance") is not False:
+        return _fail("the state summary must report the absent Tier-2 signal: %r"
+                     % (summary,))
+    absent = _cand.state_summary(d / "no_such_state.json")
+    if absent.get("exists") is not False or absent.get("tier2_signal") != "empty":
+        return _fail("a missing state must read as absent, not as an error: %r" % (absent,))
+
+    # The two routes, through the real app, reading the fixture graph and state.
+    import os as _os
+    from fastapi.testclient import TestClient
+    saved = {k: _os.environ.get(k) for k in ("SHIMMER_TOKEN_HASH",)}
+    token = "candidate-finder-token"
+    _os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(token.encode()).hexdigest()
+    orig_graph, orig_state = _gnn.DEFAULT_GRAPH_PATH, _gnn.DEFAULT_STATE_PATH
+    orig_cand_state = _cand.DEFAULT_STATE_PATH
+    try:
+        _gnn.DEFAULT_GRAPH_PATH = gpath
+        _gnn.DEFAULT_STATE_PATH = spath
+        _cand.DEFAULT_STATE_PATH = spath
+        sys.modules.pop("server", None)
+        import server
+        try:
+            client = TestClient(server.app)
+            headers = {"Authorization": "Bearer " + token}
+            if client.get("/ontology/gnn").status_code != 401:
+                return _fail("GET /ontology/gnn must require a token")
+            r = client.get("/ontology/gnn", headers=headers)
+            if r.status_code != 200:
+                return _fail("GET /ontology/gnn returned %r" % (r.status_code,))
+            body = r.json()
+            if body.get("tier2_signal") != "empty" or body.get("learned_relevance") is not False:
+                return _fail("the state route must carry the absent Tier-2 signal: %r" % (body,))
+            r = client.get("/ontology/candidates", headers=headers)
+            if r.status_code != 200:
+                return _fail("GET /ontology/candidates returned %r: %s"
+                             % (r.status_code, r.text[:160]))
+            cbody = r.json()
+            if cbody.get("learned_relevance") is not False                     or "graph structure" not in (cbody.get("ranked_on") or ""):
+                return _fail("the candidates route must carry the honesty qualifier: %r"
+                             % (cbody,))
+            if cbody.get("candidate_count", 0) < 5:
+                return _fail("the candidates route served %r candidates from the fixture "
+                             "graph" % (cbody.get("candidate_count"),))
+            if client.get("/ontology/candidates?top_k=0", headers=headers).status_code != 400:
+                return _fail("an out-of-range top_k must be a 400, not a silent default")
+        finally:
+            sys.modules.pop("server", None)
+    finally:
+        _gnn.DEFAULT_GRAPH_PATH, _gnn.DEFAULT_STATE_PATH = orig_graph, orig_state
+        _cand.DEFAULT_STATE_PATH = orig_cand_state
+        for k, v in saved.items():
+            if v is None:
+                _os.environ.pop(k, None)
+            else:
+                _os.environ[k] = v
+
+    ui = (SCRIPTS / "ui" / "console.html").read_text(encoding="utf-8")
+    for needle in ("function ontologyGnnHtml(", "ontology-gnn-holder",
+                   'apiJson("/ontology/gnn")'):
+        if needle not in ui:
+            return _fail("console.html no longer carries %r" % (needle,))
+    if "learned_relevance=false" not in ui:
+        return _fail("the console's GNN section must state learned_relevance=false in the "
+                     "developer view; the qualifier is not a footnote")
+    return _ok("the GNN candidate finder: the update path persists weights and a "
+               "high-water mark (a second update over the same graph has a zero delta "
+               "and unchanged weights, so weights accumulate rather than reset), the "
+               "finder ranks provision pairs in that persisted space, discriminates "
+               "between structurally different provisions, returns one row per "
+               "unordered pair highest first, is deterministic, excludes the "
+               "deterministic baseline's known pairs on request, proposes nothing on a "
+               "graph with fewer than two provisions, and carries learned_relevance "
+               "False, tier2_signal empty and a ranked_on saying it is graph structure "
+               "and not learned relevance on every path out, the state summary included")
+
+
+def check_213_gnn_candidate_finder():
+    """ontology chain job 4 (2026-09-11). BUILT, NOT MEASURED: no candidate set has
+    been scored against anything. The ontology store is at zero bytes, so the only
+    graphs this has run on are the fixtures here. Nothing is known to be useful; it is
+    known to be correct on fixtures.
+
+    Decision 9's shape: the graph narrows, the model decides, the reasoning stays in
+    text. This module proposes which provisions MAY relate and never asserts that they
+    do; it writes no Relation record, and the deterministic baseline (job 2) stays
+    beside it rather than being replaced, because both are scored on the long-range
+    corpus later and the operator chooses after measurement.
+
+    What the ranking rests on, stated everywhere it can be read: with no Tier-2 signal
+    the GNN has learned nothing, so the ordering is a function of graph structure alone
+    (node type, degree, edges). That is a real thing and a modest one, and it is never
+    presented as learned relevance.
+
+    No language model is loaded and no pipeline run is started: a graph autoencoder
+    over a dozen nodes on CPU takes seconds.
+
+    Neutralise-and-restore: with RANKED_ON_STRUCTURE replaced by a phrase that claims
+    learned relevance, the body must FAIL; restored, PASS."""
+    import ontology_candidates as _cand
+
+    shipped = _candidate_finder_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _cand.RANKED_ON_STRUCTURE
+    _cand.RANKED_ON_STRUCTURE = "learned relevance from the trained model"   # the defect
+    try:
+        neutralised = _candidate_finder_body()
+    finally:
+        _cand.RANKED_ON_STRUCTURE = original
+    if neutralised[0] != "FAIL":
+        return _fail("with the honesty qualifier replaced by a learned-relevance claim "
+                     "the body still passed (%r)" % (neutralised,))
+    restored = _candidate_finder_body()
+    if restored[0] != "PASS":
+        return _fail("after restoring the honesty qualifier the body no longer passes: %r"
+                     % (restored,))
+    return _ok(shipped[1] + "; neutralise (a learned-relevance claim) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -17642,6 +17922,8 @@ CHECKS = [
      check_211_relations_between_provisions),
     ("212 ontology conflicts and the operator's answers (ontology chain, job 3)",
      check_212_ontology_conflicts_and_operator_answers),
+    ("213 the GNN candidate finder, ranked on structure (ontology chain, job 4)",
+     check_213_gnn_candidate_finder),
 ]
 
 

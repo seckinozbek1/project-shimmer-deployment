@@ -387,6 +387,17 @@ processing swarm governed by an append-only constitution.
   twice, "keep refusing" is a real third answer, an unrecognised answer is refused rather
   than stored, and the override rate carries its own not-statistically-meaningful caveat
   inside the return value. NOTHING in a review reads a relation or a conflict today.
+  `scripts/ontology_candidates.py` (job 4) proposes candidate provision pairs from the
+  persisted encoder: a forward pass only, it never trains and never writes state. THE GNN
+  DOES NOT RESET ITS WEIGHTS EACH RUN (a belief stated for weeks and corrected 2026-09-11):
+  `gnn_update` restores persisted weights and keeps a trained-node high-water mark, so a
+  second update over the same graph has a zero delta and unchanged weights. It has learned
+  nothing because the TIER-2 SIGNAL IS EMPTY, not because it forgets. Every candidate set
+  and the state summary therefore carry `ranked_on` (graph structure: node type, degree,
+  edges), `learned_relevance: false` and `tier2_signal: empty` IN THE RETURN VALUE, and
+  check 213 fails if that qualifier is ever replaced by a learned-relevance claim, including
+  one that mentions the phrase without denying it. Never present a candidate set as learned
+  relevance.
 - `corpus_ingest/`: the corpus ingestion contract, validator, and grounding-files helper.
 - `benchmark/keys/`: the answer key, control document, ledger scripts and frozen scorer for
   recall measurement. GITIGNORED, never committed, never opened by an agent. Only the scorer

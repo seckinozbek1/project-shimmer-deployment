@@ -1263,6 +1263,43 @@ function ontologyStoreHtml(body, human) {
   return out;
 }
 
+function ontologyGnnHtml(body, human) {
+  /* ontology chain job 4: the GNN's state, and above all what it is NOT.
+
+     This section does NOT disappear when the state is absent, unlike every
+     other section here, and the difference is deliberate: "no state yet" is
+     itself the fact a reader needs, and an empty space would read as "there
+     is nothing to say about the GNN" when what is true is "the GNN has
+     nothing to say". It renders nothing only when the route itself failed.
+
+     The qualifier is not a footnote. With no Tier-2 signal the engine has
+     learned nothing, so anything it ranks rests on graph structure alone:
+     node type, degree, edges. That is stated before any number, because a
+     reader who sees counts first reads them as evidence of learning. */
+  if (!body) return "";
+  var heading = human ? "The cross-run model" : "ontology.gnn_state";
+  var lead = human
+    ? "This model has learned nothing, and that is expected rather than broken. It keeps its weights between runs, so it does not forget; what is missing is the signal to learn from, which only builds up as runs accumulate. Anything it suggests today rests on the shape of the graph alone: how things are connected, not what they mean."
+    : "tier2_signal=empty, learned_relevance=false. ranked_on: " + escapeHtml(body.ranked_on || "");
+  var out = '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(lead) + '</p>';
+  if (!body.exists) {
+    out += '<p class="muted">' + escapeHtml(human
+      ? "No model state has been written yet. It is created at the end of a run."
+      : (body.note || "no gnn_state.json")) + '</p>';
+    return out;
+  }
+  var rows = [
+    [human ? "Nodes seen" : "trained_count", body.trained_count],
+    [human ? "Updates" : "n_updates", body.n_updates],
+    [human ? "Newest batch" : "last_delta_size", body.last_delta_size],
+    [human ? "Reconstruction error" : "last_loss", body.last_loss]
+  ];
+  out += '<ul class="amendment-refusals">' + rows.map(function (r) {
+    return '<li class="mono">' + escapeHtml(String(r[0])) + ': ' + escapeHtml(String(r[1])) + '</li>';
+  }).join("") + '</ul>';
+  return out;
+}
+
 function renderAgents() {
   app.innerHTML = '<p class="muted">Loading…</p>';
   apiJson("/harness").then(function (res) {
@@ -1279,9 +1316,16 @@ function renderAgents() {
     var ontologyHolder = document.createElement("div");
     ontologyHolder.id = "ontology-store-holder";
     app.appendChild(ontologyHolder);
+    var gnnHolder = document.createElement("div");
+    gnnHolder.id = "ontology-gnn-holder";
+    app.appendChild(gnnHolder);
     apiJson("/ontology").then(function (ontRes) {
       if (currentRoute().view !== "agents") return;
       ontologyHolder.innerHTML = ontRes.ok ? ontologyStoreHtml(ontRes.body, isHumanView()) : "";
+    });
+    apiJson("/ontology/gnn").then(function (gnnRes) {
+      if (currentRoute().view !== "agents") return;
+      gnnHolder.innerHTML = gnnRes.ok ? ontologyGnnHtml(gnnRes.body, isHumanView()) : "";
     });
   }).catch(function () {
     app.innerHTML = '<div class="notice error">The request did not reach the server.</div>';
