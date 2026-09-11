@@ -17,6 +17,10 @@ never reads. Matching is MECHANICAL and prose-free, on typed fields only:
                 and scored three correct findings as three false positives.
   false positives  amendments that match no planted entry on unit
   distractor hits  amendments against a unit the key lists as clean
+  recall per kind  when a planted entry carries `kind`, recall is also given per
+                kind: a corpus may plant several kinds of flaw on purpose, to
+                separate what a mechanism catches from what it does not. A key
+                with no `kind` field prints the overall figure alone, as before.
 
 A key carrying `prior_records` (a round-N comparison, R6) is scored by score_rounds:
 exact recall on label + relation + figures, relation-only matches reported apart,
@@ -47,7 +51,13 @@ def _load_key(corpus):
 def _load_amendments(run_dir):
     hits = glob.glob(str(Path(run_dir) / "deliverables" / "*" / "review_data.json"))
     if not hits:
-        raise SystemExit("no review_data.json under %s" % run_dir)
+        # A run stopped or crashed before synthesis has no deliverable. Score what
+        # exists (the typed findings on the bus) rather than refusing outright, and
+        # say so: with no amendments, via_rule, attribution, false positives and
+        # distractor hits are all necessarily 0 and say nothing about the run.
+        print("NOTE            : no review_data.json under %s (no deliverable: the run "
+              "ended before synthesis); scoring bus findings only, amendments = 0" % run_dir)
+        return []
     data = json.loads(Path(hits[0]).read_text(encoding="utf-8"))
     return [a for a in data.get("amendments") or [] if isinstance(a, dict)]
 
@@ -239,19 +249,37 @@ def score(corpus, run_dir):
                   if any(c in _lower(a.get("finding_unit_id"), a.get("original_text"))
                          for c in clean)]
 
+    # Recall per KIND of planted flaw, when the key labels its entries with one.
+    # A corpus may plant several kinds on purpose, to separate what a mechanism
+    # catches from what it does not; one overall figure would hide that
+    # separation. The kind is the key's own label, read here and nowhere else;
+    # a key with no `kind` field yields a single "unspecified" bucket and the
+    # overall figure alone, so every other corpus scores exactly as before.
+    kinds = []
+    for p in planted:
+        k = str(p.get("kind") or "unspecified")
+        if k not in kinds:
+            kinds.append(k)
+
     print("corpus          : %s" % corpus)
     print("run             : %s" % run_dir)
     print("task            : %s" % key.get("task_given_to_the_pipeline", ""))
     print("amendments      : %d   (typed findings on the bus: %d)" % (len(amendments), len(findings)))
     print("recall          : %d/%d" % (sum(found), len(planted)))
+    if kinds != ["unspecified"]:
+        for k in kinds:
+            idx = [i for i, p in enumerate(planted) if str(p.get("kind") or "unspecified") == k]
+            print("  recall, %-20s : %d/%d" % (k, sum(found[i] for i in idx), len(idx)))
     print("false positives : %d" % len(false_pos))
     print("distractor hits : %d" % len(distractor))
     print("attribution     : %d of %d" % (sum(attributed), sum(found)))
     print()
-    print("  planted                       found  attributed  matched via")
+    print("  planted      rule      kind                  found  attributed  matched via")
     for p, f, a, h in zip(planted, found, attributed, how):
-        print("  %-12s %-9s %-6s %-11s %s" % (p["unit"], p["rule"], "yes" if f else "no",
-                                              "yes" if a else "no", h))
+        print("  %-12s %-9s %-21s %-6s %-11s %s" % (p["unit"], p["rule"],
+                                                    str(p.get("kind") or "unspecified"),
+                                                    "yes" if f else "no",
+                                                    "yes" if a else "no", h))
     if false_pos:
         print()
         print("  false positives:")

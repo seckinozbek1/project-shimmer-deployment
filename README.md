@@ -899,7 +899,12 @@ domains**, each with `context/` (the reference material and the document under r
 `conventions/` (operator rules) and a committed `answer_key.json` written before any run, which
 `tools/score_corpus.py` scores a run against. Unlike `benchmark/keys/`, these keys are in the
 repository, because the figures they carry are not planted in the operator's own corpus. They sit
-outside the vocabulary probe's scanned roots, so their vocabulary stays operator input.
+outside the vocabulary probe's scanned roots, so their vocabulary stays operator input. The
+scorer reports recall per flaw `kind` when a key labels its planted entries with one (a corpus
+may plant several kinds on purpose, to separate what a mechanism catches from what it does
+not; a key without `kind` prints the overall figure alone), and it scores a run that ended
+before synthesis from the bus findings alone, printing a NOTE that no deliverable exists and
+that the amendment-based figures are therefore 0 and mean nothing, rather than refusing.
 
 | corpus | source | what it tests |
 |---|---|---|
