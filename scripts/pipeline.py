@@ -50,6 +50,7 @@ from message_bus import MessageBus
 import ontology_capture
 import ontology_graph
 import ontology_gnn
+import ontology_store
 from convention_parser import parse_conventions, write_registry
 import convention_assignment
 from sensitivity_layer import redaction_rules
@@ -2216,7 +2217,14 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # the Finding record the amendment rests on, never re-derived from
             # prose. Only amendments whose source finding is unambiguous are
             # touched; the rest pass through exactly as the model wrote them.
-            all_upstream = [f for group in upstream_findings.values() for f in group]
+            # night W7 b: each Finding carries the name of the agent that produced it
+            # (the key of upstream_findings, i.e. the envelope's own agent), so the
+            # amendment built from it, and the ontology record captured from that
+            # amendment, can name the agent in their provenance. Stamped only where
+            # absent; an item that already names its agent is left alone.
+            all_upstream = [
+                (dict(f, agent=name) if isinstance(f, dict) and not f.get("agent") else f)
+                for name, group in upstream_findings.items() for f in group]
             raw_amendments, copied = finding_record.apply_typed_fields(
                 raw_amendments, all_upstream)
             # structure H7: a finding Python computed must not depend on a model
@@ -3705,9 +3713,16 @@ def main(argv=None):
     # unmasked text one directory over. Best-effort: a capture failure never fails a completed run.
     try:
         oge_sensitive = sensitivity_layer.is_active()
+        # night W7 c: the storage scope. One value today (ontology_store.DEFAULT_SCOPE);
+        # this is the single place a real engagement identifier will be bound later.
+        # The store enforces it on every read and write; nothing here filters.
+        oge_scope = ontology_store.DEFAULT_SCOPE
         oge = ontology_capture.capture_run(
-            run_ctx, op_docs, deliverables, sensitive=oge_sensitive)
-        log_event(_LOG, f"oge_capture provisions_appended={oge['provisions_appended']} "
+            run_ctx, op_docs, deliverables, sensitive=oge_sensitive, scope=oge_scope)
+        log_event(_LOG, f"oge_capture scope={oge['scope']} "
+                        f"provisions_appended={oge['provisions_appended']} "
+                        f"provisions_superseded={oge['provisions_superseded']} "
+                        f"stubs_skipped={oge['stubs_skipped']} "
                         f"accumulator_size={oge['accumulator_size']} sensitive={oge['sensitive']}",
                   run_id=run_ctx.run_id, phase="8")
         # OGE Tier-1 graph rebuild (build B2). The capture above just updated the durable stores,
@@ -3719,8 +3734,9 @@ def main(argv=None):
             # INFRA-041 P4: mask Convention.rule + CitationForm.examples under sensitive mode.
             # Same signal as capture_run just above (oge_sensitive = is_active()), not
             # redaction_enabled -- see the fix note above capture_run.
-            g = ontology_graph.build_graph(sensitive=oge_sensitive)
-            log_event(_LOG, f"oge_graph_rebuilt nodes={g['stats']['nodes_total']} "
+            g = ontology_graph.build_graph(sensitive=oge_sensitive, scope=oge_scope)
+            log_event(_LOG, f"oge_graph_rebuilt scope={g['scope']} "
+                            f"nodes={g['stats']['nodes_total']} "
                             f"edges={g['stats']['edges_total']}",
                       run_id=run_ctx.run_id, phase="8")
             # OGE GNN incremental update (build B3). Sequence: capture_run -> build_graph -> gnn.

@@ -30,6 +30,10 @@ from pathlib import Path
 
 # BP-16: deliverables live in deliverables/<doc_id>/ with stripped basenames.
 from run_context import DELIVERABLE_FILENAMES
+# night W7: the storage layer owns scope, the dual track and the provenance struct.
+# This module builds records and hands them to it; it never writes a store file itself.
+import ontology_store
+from ontology_store import DEFAULT_SCOPE, PROVENANCE_TYPE_DOCUMENT
 
 ROOT = Path(__file__).resolve().parent.parent
 OGE_STORES_DIR = ROOT / "ontology" / "stores"
@@ -71,39 +75,15 @@ def _mask_evidence(evidence, *, sensitive):
     return {"masked": _PLACEHOLDER % "FINDING_EVIDENCE"}
 
 
-def _append_jsonl(path, records):
-    if not records:
-        return 0
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as fh:
-        for r in records:
-            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    return len(records)
+def _load_accumulator(path, *, scope=DEFAULT_SCOPE):
+    """Load one scope of the proposal accumulator into {dedup_key: record}. The scope
+    filter lives in the storage layer (ontology_store.read_accumulator), not here."""
+    return ontology_store.read_accumulator(path, scope=scope)
 
 
-def _load_accumulator(path):
-    """Load the proposal accumulator (one JSON object per line) into {dedup_key: record}."""
-    out = {}
-    if not Path(path).exists():
-        return out
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            r = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        k = r.get("dedup_key")
-        if k:
-            out[k] = r
-    return out
-
-
-def _rewrite_accumulator(path, by_key):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    lines = [json.dumps(r, ensure_ascii=False) for r in by_key.values()]
-    Path(path).write_text(("\n".join(lines) + "\n") if lines else "", encoding="utf-8")
+def _rewrite_accumulator(path, by_key, *, scope=DEFAULT_SCOPE):
+    """Rewrite one scope of the accumulator; other scopes are written back untouched."""
+    return ontology_store.write_accumulator(path, scope=scope, by_key=by_key)
 
 
 def _proposal_dedup_key(p):
@@ -119,11 +99,18 @@ def _proposal_dedup_key(p):
 def capture_provisions(master, run_id, *, sensitive):
     """Build provision records from a finalized amendments master. RAW fields (original_text /
     proposed_text / comment, SCHEMA table D) go through the masked-write gate. Composite id
-    (document_id, ref_id) per Q2; referenced-only REFs become stub nodes per Q3."""
+    (document_id, ref_id) per Q2; referenced-only REFs become stub nodes per Q3.
+
+    night W7 b: every record carries the provenance struct {time, agent, run, type}. The
+    agent is the one whose Finding the amendment rests on (stamped on the amendment by the
+    pipeline's template path; None when an amendment carries none, never invented); the
+    type is PROVENANCE_TYPE_DOCUMENT because every record built here comes from a document
+    under review. A stub carries the provenance of the amendment that referenced it."""
     document_id = master.get("document_id", "unknown")
     amendments = master.get("amendments", []) or []
     records = []
     seen = set()
+    captured_at = _now()
     for a in amendments:
         ref_id = a.get("location")
         if not ref_id:
@@ -145,14 +132,17 @@ def capture_provisions(master, run_id, *, sensitive):
             "comment": mask_field(a.get("comment"), "ANALYST_COMMENT", sensitive=sensitive),
             "stub": False,
             "run_id": run_id,
-            "captured_at": _now(),
+            "captured_at": captured_at,
+            "provenance": ontology_store.provenance(
+                time=captured_at, agent=a.get("agent"), run=run_id,
+                type=PROVENANCE_TYPE_DOCUMENT),
         })
     # Q3: referenced-only REFs (appear in context_refs but are never a location) -> stub nodes
-    referenced = set()
+    referenced = {}
     for a in amendments:
         for r in (a.get("context_refs") or []):
-            referenced.add(r)
-    for ref_id in sorted(referenced - seen):
+            referenced.setdefault(r, a.get("agent"))
+    for ref_id in sorted(set(referenced) - seen):
         records.append({
             "node": "Provision",
             "id": f"{document_id}::{ref_id}",
@@ -161,18 +151,22 @@ def capture_provisions(master, run_id, *, sensitive):
             "stub": True,            # Q3: id only, no text, flagged incomplete
             "incomplete": True,
             "run_id": run_id,
-            "captured_at": _now(),
+            "captured_at": captured_at,
+            "provenance": ontology_store.provenance(
+                time=captured_at, agent=referenced[ref_id], run=run_id,
+                type=PROVENANCE_TYPE_DOCUMENT),
         })
     return records
 
 
-def capture_proposals(proposals, run_id, *, sensitive, stores_dir=None):
+def capture_proposals(proposals, run_id, *, sensitive, stores_dir=None, scope=DEFAULT_SCOPE):
     """Merge a run's DELTA proposals into the cross-run accumulator (SCHEMA C1). Same recurring
     proposal (by dedup key) increments occurrence_count and updates last_seen instead of
     duplicating; status defaults to 'proposed'. RAW evidence is masked under sensitive mode.
-    Returns the full accumulator as a list. No rewrite when there is nothing to merge."""
+    Returns the full accumulator (this scope) as a list. No rewrite when there is nothing
+    to merge. night W7 c: the accumulator is read and written per scope."""
     _, proposals_store = _store_paths(stores_dir)
-    existing = _load_accumulator(proposals_store)
+    existing = _load_accumulator(proposals_store, scope=scope)
     if not proposals:
         return list(existing.values())
     now = _now()
@@ -210,18 +204,25 @@ def capture_proposals(proposals, run_id, *, sensitive, stores_dir=None):
             rec["proposed_change"] = masked_change           # refresh (masked under sensitive)
             rec["trigger"] = masked_trigger                  # refresh (masked under sensitive)
             # status is preserved (the operator may have moved it past 'proposed')
-    _rewrite_accumulator(proposals_store, existing)
+    _rewrite_accumulator(proposals_store, existing, scope=scope)
     return list(existing.values())
 
 
-def capture_run(run_ctx, op_docs, deliverables, *, sensitive, stores_dir=None):
+def capture_run(run_ctx, op_docs, deliverables, *, sensitive, stores_dir=None,
+                scope=DEFAULT_SCOPE):
     """Run-end capture hook (Q1). Reads the finalized amendments master per op_doc and the
-    run's delta_proposals.json; appends provisions (append-only) and merges proposals (the
-    accumulator) into the durable OGE stores. Deterministic, local, no model calls. Returns a
-    summary dict. (The pipeline call site wraps this so a capture failure never fails a
-    completed run.)"""
+    run's delta_proposals.json; writes provisions through the scoped store (a re-captured
+    id supersedes its earlier revision; night W7 c and d) and merges proposals (the
+    accumulator, per scope). Deterministic, local, no model calls. Returns a summary
+    dict. (The pipeline call site wraps this so a capture failure never fails a
+    completed run.)
+
+    A stub for an id whose current record is a full one is skipped rather than written:
+    a later run that only references a provision must not supersede what an earlier run
+    captured of it (the preference the graph used to apply at read time)."""
     provisions_store, _ = _store_paths(stores_dir)
     run_id = getattr(run_ctx, "run_id", "unknown")
+    store = ontology_store.ProvisionStore(live_path=provisions_store, scope=scope)
 
     prov_records = []
     for doc in op_docs:
@@ -238,7 +239,10 @@ def capture_run(run_ctx, op_docs, deliverables, *, sensitive, stores_dir=None):
         except Exception:
             continue
         prov_records.extend(capture_provisions(master, run_id, sensitive=sensitive))
-    n_prov = _append_jsonl(provisions_store, prov_records)
+    full_current = {r["id"] for r in store.current() if not r.get("stub")}
+    stubs_skipped = sum(1 for r in prov_records if r.get("stub") and r["id"] in full_current)
+    prov_records = [r for r in prov_records if not (r.get("stub") and r["id"] in full_current)]
+    written = store.append(prov_records)
 
     proposals = []
     try:
@@ -248,11 +252,15 @@ def capture_run(run_ctx, op_docs, deliverables, *, sensitive, stores_dir=None):
             proposals = data.get("proposals", []) or []
     except Exception:
         proposals = []
-    acc = capture_proposals(proposals, run_id, sensitive=sensitive, stores_dir=stores_dir)
+    acc = capture_proposals(proposals, run_id, sensitive=sensitive, stores_dir=stores_dir,
+                            scope=scope)
 
     return {
         "run_id": run_id,
-        "provisions_appended": n_prov,
+        "scope": scope,
+        "provisions_appended": written["written"],
+        "provisions_superseded": written["superseded"],
+        "stubs_skipped": stubs_skipped,
         "proposals_in_run": len(proposals),
         "accumulator_size": len(acc),
         "sensitive": bool(sensitive),

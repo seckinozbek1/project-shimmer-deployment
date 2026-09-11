@@ -691,8 +691,9 @@ use" above is real, intended behavior for a genuine first run, not something to 
 `input/operational/` gets populated from `input/context/` (the pipeline, every run),
 `output/runs/<id>/` (the pipeline, one per run), `durable/` (BOOT, on first run, learned
 reference assets and governance state), and `ontology/stores/` (the pipeline, phase 8, end
-of every run: `graph.json` and `gnn_state.json`). None of these are source; none of them
-need to exist before you start; the tools that need them create them.
+of every run: `provisions.jsonl` and its immutable log `provisions_log.jsonl`, then the
+derived `graph.json` and `gnn_state.json`). None of these are source; none of them need to
+exist before you start; the tools that need them create them.
 
 `ontology/stores/` is unfinished, not dormant, and this is stated plainly rather than left
 for a reader to assume from its place in the architecture: it writes real state every run
@@ -704,6 +705,28 @@ write-path detail, not a review-time read) and the gate's own non-mutating self-
 is real, executed machinery, not a stub, but it is a write with no reader yet, and should be
 read as exactly that rather than as a working cross-run relevance signal the review already
 draws on.
+
+Its storage layer is `scripts/ontology_store.py` (night chain W7, the ontology foundations),
+and four things are decided there. Scope: every record carries the scope it was written
+under and a store opened under one scope returns nothing written under another, enforced on
+every read and write inside the layer rather than by a filter a caller must remember; the
+identifier has one value today (`DEFAULT_SCOPE`), bound in one place in the pipeline's
+phase 8, because the operator's unit of isolation is the engagement and no engagement
+concept exists yet (the mechanism is built, the concept is not). Provenance: each provision
+record carries `{time, agent, run, type}`, the agent being the one whose Finding the
+amendment rests on; `type` is `document` for everything captured today, and the rule-derived
+type is declared unfilled (`PROVENANCE_TYPE_RULE`) and refused by `provenance()` until that
+path has been run and its record shape observed, since no run has ever exercised it; there
+is no confidence field, by decision. Dual track: `provisions.jsonl` is the live store and
+`provisions_log.jsonl` the immutable log (only ever appended to); a re-captured id supersedes
+its earlier revision, `ProvisionStore.current()` returns only the highest revision per id so
+a superseded entry is excluded at the query layer, every supersession is logged, and
+`compact()` moves superseded revisions from the live store into the log. Supersede is built;
+delete is declared and refuses, because the user-facing deletion case is an operator decision
+not yet finalised. `tools/archive_ontology_stores.py` archives the stores as one dated zip
+outside the repository (verified by digest before anything is emptied) and empties them.
+Gate checks 200 to 202 prove the three mechanisms; the earlier ontology checks (57 to 64, 72
+to 74, 143) still hold and now write their fixtures through the store.
 
 The `[ontology_gnn]` line each run prints to stdout (`scripts/ontology_gnn.py`) now says
 this plainly too, not only in this README: it used to lead with `loss=`, `weight_delta=`
@@ -1587,7 +1610,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**186** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**203** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -1608,7 +1631,7 @@ first run, not something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 186 checks on an empty checkout would be proving nothing about those
+A gate that passed all 203 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Every
 other check passes on a fresh clone with no setup beyond `py -3.9 -m pip install -r
 requirements.txt`. Once you have run the launcher (or built `input/` and staged a corpus

@@ -293,7 +293,9 @@ def gnn_update(graph_path=None, state_path=None, *, device=None, seed=DEFAULT_SE
     state = {
         "schema": STATE_SCHEMA,
         "tier": 1,
-        "scope": "machinery-not-learning (Tier-2 signal empty until task flow)",
+        "claim": "machinery-not-learning (Tier-2 signal empty until task flow)",
+        # night W7 c: the storage scope the graph (and so this state) was built from.
+        "scope": graph.get("scope"),
         "feature_dim": FEATURE_DIM,
         "hidden": hidden,
         "seed": seed,

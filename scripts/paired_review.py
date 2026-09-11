@@ -1557,6 +1557,9 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         "derived_from": "computed_finding",
         "finding_unit_id": item.get("unit_id"),
         "finding_rule_id": rule_id,
+        # night W7 b: the agent whose Finding this amendment rests on, so the ontology's
+        # provenance struct can name it. Absent when the item carries none; never invented.
+        "agent": item.get("agent"),
     }
     # The boundary repair, recorded rather than silently folded into a normal
     # direct hit: a reader (or the gate) can tell "the passage came from the

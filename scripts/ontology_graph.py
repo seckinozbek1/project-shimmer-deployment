@@ -36,6 +36,8 @@ from pathlib import Path
 # cross-run leak gap: under sensitive mode Convention.rule (Q5) and CitationForm.examples (Q6) are
 # masked to typed placeholders, real content otherwise. mask_field is None-passthrough + [REDACTED:TYPE].
 from ontology_capture import mask_field
+# night W7: provisions are read through the scoped storage layer, never from the file.
+import ontology_store
 
 ROOT = Path(__file__).resolve().parent.parent
 OGE_STORES_DIR = ROOT / "ontology" / "stores"
@@ -99,11 +101,17 @@ def _count_by(items, key):
     return out
 
 
-def build_graph(sources=None, out_path=None, *, sensitive=False):
+def build_graph(sources=None, out_path=None, *, sensitive=False,
+                scope=ontology_store.DEFAULT_SCOPE):
     """Build the Tier-1 graph from the durable sources and write graph.json. `sources` overrides
     individual source paths (the verify gate passes tempdir fixtures); `out_path` overrides the
     output (the gate writes to a tempdir, never the real ontology/stores/graph.json). Returns the
     graph dict. Safe on empty inputs (produces a valid graph with whatever nodes exist).
+
+    night W7 c: provisions are read through ontology_store.ProvisionStore under `scope`, so
+    the graph holds one scope's CURRENT provisions only (superseded revisions and other
+    scopes' records are excluded by the storage layer, not here). The graph records the
+    scope it was built from.
 
     sensitive (INFRA-041 P4): masks the cross-run leak fields -- Convention.rule (Q5) and
     CitationForm.examples (Q6) -- to typed placeholders, real content otherwise. Reuses the B1
@@ -168,25 +176,16 @@ def build_graph(sources=None, out_path=None, *, sensitive=False):
                  evidence_count=a.get("evidence_count"), examples=a.get("examples", []) or [])
         speechact_patterns.append((nm, _safe_compile(a.get("pattern"))))
 
-    # Provision nodes (provisions.jsonl, AS STORED; dedup by id, prefer non-stub then latest)
-    by_id = {}
-    for rec in _load_jsonl(src["provisions"]):
+    # Provision nodes: the scope's CURRENT records, AS STORED (one per id; the storage layer
+    # already excluded superseded revisions and every other scope). Provenance and revision
+    # are SAFE metadata (no content) and travel onto the node.
+    store = ontology_store.ProvisionStore(live_path=src["provisions"], scope=scope)
+    for rec in store.current():
         pid = rec.get("id")
-        if not pid:
-            continue
-        prev = by_id.get(pid)
-        if prev is None:
-            by_id[pid] = rec
-            continue
-        prev_stub, rec_stub = bool(prev.get("stub")), bool(rec.get("stub"))
-        if prev_stub and not rec_stub:
-            by_id[pid] = rec
-        elif prev_stub == rec_stub and str(rec.get("captured_at", "")) >= str(prev.get("captured_at", "")):
-            by_id[pid] = rec
-    for pid, rec in by_id.items():
         if rec.get("stub"):
             add_node("Provision", pid, document_id=rec.get("document_id"),
-                     ref_id=rec.get("ref_id"), stub=True, incomplete=True)
+                     ref_id=rec.get("ref_id"), stub=True, incomplete=True,
+                     provenance=rec.get("provenance"), revision=rec.get("revision"))
         else:
             add_node("Provision", pid, document_id=rec.get("document_id"), ref_id=rec.get("ref_id"),
                      finding_type=rec.get("finding_type"), action=rec.get("action"),
@@ -194,7 +193,8 @@ def build_graph(sources=None, out_path=None, *, sensitive=False):
                      context_refs=rec.get("context_refs", []) or [],
                      # text AS STORED (masked or real; ingest never unmasks):
                      original_text=rec.get("original_text"), proposed_text=rec.get("proposed_text"),
-                     comment=rec.get("comment"), stub=False)
+                     comment=rec.get("comment"), stub=False,
+                     provenance=rec.get("provenance"), revision=rec.get("revision"))
 
     # Stub Provisions for referenced-only REFs (Q3): any context_ref target not materialized
     for n in [v for (t, _), v in nodes.items() if t == "Provision" and not v.get("stub")]:
@@ -262,6 +262,7 @@ def build_graph(sources=None, out_path=None, *, sensitive=False):
     graph = {
         "schema": "oge_graph/v1",
         "tier": 1,
+        "scope": scope,                # night W7 c: the one scope this graph was built from
         "sensitive": bool(sensitive),  # P4: rule + citation examples masked when true
         "generated_at": _now(),
         "nodes": node_list,

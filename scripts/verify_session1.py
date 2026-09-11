@@ -1827,8 +1827,10 @@ def _oge59_fixture(d):
          "context_refs": ["REF-9"], "original_text": "Article 5 cites A/RES/70/1 and decides the matter.",
          "proposed_text": None, "comment": "c", "stub": False, "run_id": "R1", "captured_at": "t1"},
     ]
-    (d / "provisions.jsonl").write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in prov) + "\n",
-                                        encoding="utf-8")
+    # night W7 c: written through the scoped store, the way the pipeline writes (a bare
+    # line with no scope is invisible to every read, by design).
+    import ontology_store
+    ontology_store.ProvisionStore(live_path=d / "provisions.jsonl").append(prov)
     return {"document_dates": d / "document_dates.json", "conventions": d / "conventions.json",
             "citation_forms": d / "citation.json", "speech_acts": d / "speech.json",
             "provisions": d / "provisions.jsonl"}
@@ -1895,8 +1897,10 @@ def check_60_oge_ingest_payload_free():
              "context_refs": [], "original_text": "[REDACTED:PROVISION_TEXT]",
              "proposed_text": "[REDACTED:PROVISION_TEXT]", "comment": "[REDACTED:ANALYST_COMMENT]",
              "stub": False, "run_id": "R1", "captured_at": "t1"}]
-    (d / "provisions.jsonl").write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in prov) + "\n",
-                                        encoding="utf-8")
+    # night W7 c: the fixture is written the way the pipeline writes, through the scoped
+    # store (a bare line with no scope is invisible to every read, by design).
+    import ontology_store
+    ontology_store.ProvisionStore(live_path=d / "provisions.jsonl").append(prov)
     sources = {"document_dates": d / "document_dates.json", "conventions": d / "conventions.json",
                "citation_forms": d / "citation.json", "speech_acts": d / "speech.json",
                "provisions": d / "provisions.jsonl"}
@@ -7752,7 +7756,11 @@ def check_143_oge_masks_on_whether_masking_actually_ran():
     oge_start = src.find("OGE capture-at-run-end")
     if oge_start == -1:
         return _fail("could not locate the OGE capture section in pipeline.main's source")
-    oge_section = src[oge_start:oge_start + 2500]
+    # The section is bounded by its own closing line (the draft run-end comment that
+    # follows it), not by a character count: night W7 added the scope binding and a
+    # longer log line inside it, and a fixed 2500-char window then cut off build_graph.
+    oge_end = src.find("Draft run-end: PRESERVE then CLEAN", oge_start)
+    oge_section = src[oge_start:oge_end if oge_end != -1 else oge_start + 4000]
 
     if "sensitive=redaction_enabled" in oge_section:
         return _fail("the OGE section still reads sensitive=redaction_enabled: the "
@@ -15279,6 +15287,362 @@ def check_199_the_firing_gate_and_the_subject_chosen_paired_agent():
                "the tagged run, only the attribution differs")
 
 
+def _w7_capture_fixture(d, *, run_id="R1", agent="PRACTICE_AUDITOR", doc_id="docA",
+                        refs=("REF-0001",), context_ref="REF-0002"):
+    """A run context and an amendments master for the REAL ontology_capture.capture_run
+    path, in tempdir `d`: one amendment per ref, each stamped with the agent the pipeline's
+    template path stamps, and one referenced-only REF that capture must turn into a stub.
+    Domain-free (S5)."""
+    from run_context import DELIVERABLE_FILENAMES
+
+    class _Ctx:
+        def __init__(self):
+            self.run_id = run_id
+
+        def deliverables_dir(self):
+            return d / "deliverables"
+
+        def delta_proposals_path(self):
+            return d / "delta_proposals.json"
+
+    master = {"document_id": doc_id, "amendments": [
+        {"location": r, "finding_type": "factual", "action": "flag", "severity": "required",
+         "convention_ref": "CONV-001", "context_refs": [context_ref],
+         "original_text": "figure line %s" % r, "proposed_text": None,
+         "comment": "c %s" % r, "agent": agent} for r in refs]}
+    sub = d / "deliverables" / doc_id
+    sub.mkdir(parents=True, exist_ok=True)
+    (sub / DELIVERABLE_FILENAMES["amendments_json"]).write_text(
+        json.dumps(master), encoding="utf-8")
+    return _Ctx(), [{"id": doc_id}], master
+
+
+def _w7_scope_body():
+    """The executed body of check 200, factored out so the check can run it once as
+    shipped and once with the storage layer's scope filter neutralised."""
+    import tempfile
+    import ontology_store
+    import ontology_capture
+    import ontology_graph
+
+    d = Path(tempfile.mkdtemp(prefix="shimmer_w7_scope_"))
+    a = ontology_store.ProvisionStore(d, scope="scope-a")
+    b = ontology_store.ProvisionStore(d, scope="scope-b")
+    a.append([{"id": "doc::R1", "node": "Provision", "stub": False},
+              {"id": "doc::R2", "node": "Provision", "stub": False}])
+    b.append([{"id": "doc::R3", "node": "Provision", "stub": False}])
+    # a bare line with no scope, written behind the layer's back
+    with (d / ontology_store.LIVE_FILENAME).open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps({"id": "doc::R4", "node": "Provision", "stub": False}) + "\n")
+    ids_a = sorted(r["id"] for r in a.current())
+    ids_b = sorted(r["id"] for r in b.current())
+    ids_c = ontology_store.ProvisionStore(d, scope="scope-c").current()
+    ids_default = ontology_store.ProvisionStore(d).current()
+    if ids_a != ["doc::R1", "doc::R2"]:
+        return _fail(f"scope-a read returned {ids_a}, not only its own two records")
+    if ids_b != ["doc::R3"]:
+        return _fail(f"scope-b read returned {ids_b}, not only its own record")
+    if ids_c or ids_default:
+        return _fail(f"a scope nothing was written under returned records: c={ids_c} "
+                     f"default={ids_default}")
+    if any(r["id"] == "doc::R4" for r in a.current() + b.current()):
+        return _fail("a record written with no scope was returned by a scoped read")
+    try:
+        ontology_store.ProvisionStore(d, scope="")
+        return _fail("a store opened under an empty scope was accepted")
+    except ValueError:
+        pass
+    # the accumulator: one file, two scopes, each invisible to the other and preserved
+    acc = d / "delta_proposals.jsonl"
+    ontology_store.write_accumulator(acc, scope="scope-a", by_key={"k1": {"dedup_key": "k1"}})
+    ontology_store.write_accumulator(acc, scope="scope-b", by_key={"k2": {"dedup_key": "k2"}})
+    ontology_store.write_accumulator(acc, scope="scope-a", by_key={"k1": {"dedup_key": "k1", "n": 2}})
+    ra = ontology_store.read_accumulator(acc, scope="scope-a")
+    rb = ontology_store.read_accumulator(acc, scope="scope-b")
+    if set(ra) != {"k1"} or set(rb) != {"k2"} or ra["k1"].get("n") != 2:
+        return _fail(f"accumulator scopes leak or clobber each other: a={ra} b={rb}")
+    # the real capture path, twice under different scopes, then the graph per scope
+    ctx_a, docs_a, _ = _w7_capture_fixture(d / "run_a", run_id="RA", doc_id="docA")
+    ctx_b, docs_b, _ = _w7_capture_fixture(d / "run_b", run_id="RB", doc_id="docB")
+    ontology_capture.capture_run(ctx_a, docs_a, {}, sensitive=False, stores_dir=d / "st",
+                                 scope="scope-a")
+    ontology_capture.capture_run(ctx_b, docs_b, {}, sensitive=False, stores_dir=d / "st",
+                                 scope="scope-b")
+    cur_a = {r["id"] for r in ontology_store.ProvisionStore(d / "st", scope="scope-a").current()}
+    cur_b = {r["id"] for r in ontology_store.ProvisionStore(d / "st", scope="scope-b").current()}
+    if cur_a != {"docA::REF-0001", "docA::REF-0002"} or cur_b != {"docB::REF-0001", "docB::REF-0002"}:
+        return _fail(f"capture_run under two scopes did not keep them apart: a={cur_a} b={cur_b}")
+    src = {"provisions": d / "st" / ontology_store.LIVE_FILENAME,
+           "document_dates": d / "none.json", "conventions": d / "none.json",
+           "citation_forms": d / "none.json", "speech_acts": d / "none.json"}
+    g_b = ontology_graph.build_graph(sources=src, out_path=d / "g_b.json", scope="scope-b")
+    g_ids = {n["id"] for n in g_b["nodes"] if n["type"] == "Provision"}
+    if g_b.get("scope") != "scope-b" or g_ids != {"docB::REF-0001", "docB::REF-0002"}:
+        return _fail(f"the graph built under scope-b carries {g_ids} (scope={g_b.get('scope')})")
+    return _ok("scope enforced at the storage layer: a store opened under one scope returns "
+               "only records written under it (two scopes, an unwritten scope and the "
+               "default all kept apart, a bare unscoped line invisible), an empty scope is "
+               "refused, the accumulator keeps its scopes apart and preserved on rewrite, "
+               "the real capture_run keeps two scopes apart and build_graph carries one "
+               "scope's provisions only")
+
+
+def check_200_ontology_scope_is_enforced_at_the_storage_layer():
+    """night chain W7 c (isolation). The operator's unit of isolation is the engagement,
+    but no engagement concept exists and none is invented: the storage layer
+    (scripts/ontology_store.py) keys every record by a scope identifier that defaults to
+    one value, and enforces it on every read and write itself, so no caller has a filter
+    to remember. The instruction's own proof: write under one scope, read under another,
+    assert nothing comes back. Executed on tempdirs against the real ProvisionStore, the
+    real accumulator functions, the real capture_run and the real build_graph.
+
+    Neutralise-and-restore: with the layer's in-scope read replaced by an all-scopes read
+    (the exact defect a caller-side filter would allow), the body must FAIL; restored, it
+    must PASS again."""
+    import ontology_store
+
+    shipped = _w7_scope_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = ontology_store.ProvisionStore._live_in_scope
+    ontology_store.ProvisionStore._live_in_scope = lambda self: self._live_all_scopes()
+    try:
+        neutralised = _w7_scope_body()
+    finally:
+        ontology_store.ProvisionStore._live_in_scope = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with the scope filter removed from the storage layer the body still "
+                     f"passed ({neutralised}); the check is not proving the filter")
+    restored = _w7_scope_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring the scope filter the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; neutralise (all-scopes read) FAILS, restore PASSES")
+
+
+def _w7_provenance_body():
+    import tempfile
+    from datetime import datetime
+    import ontology_store
+    import ontology_capture
+    import ontology_graph
+
+    d = Path(tempfile.mkdtemp(prefix="shimmer_w7_prov_"))
+    ctx, docs, _ = _w7_capture_fixture(d, run_id="RUN-7", agent="STYLE_GUARDIAN",
+                                       refs=("REF-0001", "REF-0003"), context_ref="REF-0002")
+    ontology_capture.capture_run(ctx, docs, {}, sensitive=False, stores_dir=d / "st")
+    records = ontology_store.ProvisionStore(d / "st").current()
+    if len(records) != 3:
+        return _fail(f"expected 2 full records and 1 stub, got {len(records)}")
+    for r in records:
+        p = r.get("provenance")
+        if not isinstance(p, dict):
+            return _fail(f"{r['id']} carries no provenance struct: {p!r}")
+        if tuple(sorted(p)) != tuple(sorted(ontology_store.PROVENANCE_FIELDS)):
+            return _fail(f"{r['id']} provenance fields {sorted(p)} are not exactly "
+                         f"{sorted(ontology_store.PROVENANCE_FIELDS)}")
+        try:
+            datetime.fromisoformat(p["time"])
+        except (TypeError, ValueError):
+            return _fail(f"{r['id']} provenance time is not an ISO timestamp: {p['time']!r}")
+        if p["agent"] != "STYLE_GUARDIAN":
+            return _fail(f"{r['id']} provenance agent is {p['agent']!r}, not the agent whose "
+                         f"finding the amendment rests on")
+        if p["run"] != "RUN-7":
+            return _fail(f"{r['id']} provenance run is {p['run']!r}")
+        if p["type"] != ontology_store.PROVENANCE_TYPE_DOCUMENT:
+            return _fail(f"{r['id']} provenance type is {p['type']!r}")
+        if "confidence" in p or "confidence" in r:
+            return _fail(f"{r['id']} carries a confidence field; none is allowed by decision")
+    stub = next(r for r in records if r.get("stub"))
+    if stub["id"] != "docA::REF-0002":
+        return _fail(f"the stub is {stub['id']}, expected the referenced-only REF-0002")
+    if ontology_store.PROVENANCE_TYPE_RULE is not None:
+        return _fail("PROVENANCE_TYPE_RULE is filled in; it must stay declared-unfilled until "
+                     "the rule-derived path has been run and observed")
+    for bad in (ontology_store.PROVENANCE_TYPE_RULE, "rule"):
+        try:
+            ontology_store.provenance(time="2026-01-01T00:00:00+00:00", agent="X", run="r",
+                                      type=bad)
+            return _fail(f"provenance() minted a struct of type {bad!r}, which has never been "
+                         f"observed")
+        except ValueError:
+            pass
+    src = {"provisions": d / "st" / ontology_store.LIVE_FILENAME,
+           "document_dates": d / "none.json", "conventions": d / "none.json",
+           "citation_forms": d / "none.json", "speech_acts": d / "none.json"}
+    g = ontology_graph.build_graph(sources=src, out_path=d / "g.json")
+    node = next(n for n in g["nodes"] if n["id"] == "docA::REF-0001")
+    if (node.get("provenance") or {}).get("agent") != "STYLE_GUARDIAN":
+        return _fail(f"the graph node does not carry the record's provenance: {node.get('provenance')}")
+    return _ok("provenance struct {time, agent, run, type} on every captured record (2 full, "
+               "1 stub): ISO time, the finding's agent, the run id, type=document; no "
+               "confidence field; the rule-derived type is declared unfilled (None) and "
+               "provenance() refuses to mint it; the struct travels onto the graph node")
+
+
+def check_201_ontology_provenance_struct_on_the_capture_path():
+    """night chain W7 b (provenance). Each provision record carries {time, agent, run,
+    type}. time, agent and run are populated on the real capture path (the agent is the
+    one whose Finding the amendment rests on, stamped onto the Finding by pipeline phase
+    6 and onto the amendment by paired_review.amendment_from_finding; never invented).
+    type is 'document' for every record captured today, because every record that has
+    ever existed came from a document under review; the rule-derived path has never been
+    exercised in any run, so its type is declared and left unfilled
+    (ontology_store.PROVENANCE_TYPE_RULE is None) with provenance() refusing to mint it,
+    rather than guessed. No confidence field, by decision.
+
+    Executed: the real capture_run on a fixture master in a tempdir, the real
+    build_graph, the real amendment_from_finding on a Finding carrying an agent, and a
+    source assertion that phase 6 stamps the agent onto every upstream Finding.
+    Neutralise-and-restore: provenance() replaced by one returning an empty struct, the
+    body must FAIL; restored, PASS."""
+    import inspect
+    import ontology_store
+    import paired_review as _pr
+    import pipeline as _pl
+
+    shipped = _w7_provenance_body()
+    if shipped[0] != "PASS":
+        return shipped
+    item = dict(_r2_finding(), agent="PRACTICE_AUDITOR")
+    built = _pr.amendment_from_finding(item)
+    if not built or built.get("agent") != "PRACTICE_AUDITOR":
+        return _fail(f"amendment_from_finding does not carry the finding's agent: "
+                     f"{(built or {}).get('agent')!r}")
+    src = inspect.getsource(_pl)
+    if "dict(f, agent=name)" not in src or "for name, group in upstream_findings.items()" not in src:
+        return _fail("pipeline phase 6 no longer stamps the envelope's agent onto each "
+                     "upstream Finding (all_upstream), so provenance.agent would be None")
+    original = ontology_store.provenance
+    ontology_store.provenance = lambda **kw: {}
+    try:
+        neutralised = _w7_provenance_body()
+    finally:
+        ontology_store.provenance = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with provenance() neutralised the body still passed ({neutralised})")
+    restored = _w7_provenance_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring provenance() the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; amendment_from_finding carries the agent and phase 6 stamps "
+               "it; neutralise (empty struct) FAILS, restore PASSES")
+
+
+def _w7_dual_track_body():
+    import re
+    import inspect
+    import tempfile
+    import ontology_store
+    import ontology_capture
+
+    d = Path(tempfile.mkdtemp(prefix="shimmer_w7_dual_"))
+    a = ontology_store.ProvisionStore(d, scope="scope-a")
+    b = ontology_store.ProvisionStore(d, scope="scope-b")
+    b.append([{"id": "other::R9", "node": "Provision", "stub": False}])
+    r1 = a.append([{"id": "doc::X", "node": "Provision", "stub": False, "v": 1}])
+    r2 = a.append([{"id": "doc::X", "node": "Provision", "stub": False, "v": 2}])
+    if r1["superseded"] != 0 or r2["superseded"] != 1:
+        return _fail(f"append did not report supersession: first={r1} second={r2}")
+    cur = a.current()
+    if len(cur) != 1 or cur[0]["revision"] != 2 or cur[0]["v"] != 2:
+        return _fail(f"current() did not return only the highest revision: {cur}")
+    if cur[0]["supersedes"] != r1["record_ids"][0]:
+        return _fail("the superseding record does not name the record it supersedes")
+    old = a.superseded()
+    if len(old) != 1 or old[0]["revision"] != 1:
+        return _fail(f"superseded() did not return revision 1 only: {old}")
+    events = [e for e in a.log_entries() if e.get("event") == "supersede"]
+    if len(events) != 1 or events[0]["from_record_id"] != r1["record_ids"][0] \
+            or events[0]["to_record_id"] != r2["record_ids"][0]:
+        return _fail(f"the supersession was not logged with both record ids: {events}")
+    r3 = a.supersede("doc::X", {"node": "Provision", "stub": False, "v": 3})
+    if a.current()[0]["revision"] != 3 or r3["superseded"] != 1:
+        return _fail("the explicit supersede did not produce revision 3")
+    try:
+        a.supersede("doc::NOPE", {"node": "Provision"})
+        return _fail("supersede of an id with nothing current was accepted")
+    except KeyError:
+        pass
+    if [r["revision"] for r in a.history("doc::X")] != [1, 2, 3]:
+        return _fail(f"history is not the three revisions in order: {a.history('doc::X')}")
+    log_before = a.log_path.read_bytes()
+    moved = a.compact()
+    if moved["moved"] != 2:
+        return _fail(f"compact moved {moved['moved']} records, expected the 2 superseded")
+    live = [json.loads(l) for l in a.live_path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    if sorted((r["scope"], r["id"], r["revision"]) for r in live) != \
+            [("scope-a", "doc::X", 3), ("scope-b", "other::R9", 1)]:
+        return _fail(f"after compaction the live store should hold only the current record "
+                     f"of scope-a and scope-b's untouched record: {live}")
+    log_after = a.log_path.read_bytes()
+    if not log_after.startswith(log_before) or len(log_after) <= len(log_before):
+        return _fail("compaction rewrote or truncated the log; the log must only ever grow")
+    compacted = [e for e in a.log_entries() if e.get("event") == "compacted"]
+    if sorted(e["revision"] for e in compacted) != [1, 2] or not all(e.get("moved_at") for e in compacted):
+        return _fail(f"the moved revisions did not land in the log with moved_at: {compacted}")
+    if [r["revision"] for r in a.history("doc::X")] != [1, 2, 3]:
+        return _fail("history no longer spans live and log after compaction")
+    if b.current()[0]["id"] != "other::R9" or b.log_entries():
+        return _fail("compaction of scope-a touched scope-b")
+    try:
+        a.delete("doc::X")
+        return _fail("delete is built; the operator has not finalised the deletion case")
+    except NotImplementedError:
+        pass
+    src = inspect.getsource(ontology_store)
+    for line in src.splitlines():
+        if "log_path" in line and re.search(r"write_text|write_bytes|open\(.*[\"']w", line):
+            return _fail(f"the log has a rewriting writer in the storage layer: {line.strip()!r}")
+    # the real capture path: the same master captured twice supersedes rather than duplicates
+    ctx, docs, _ = _w7_capture_fixture(d / "run", run_id="R1", refs=("REF-0001",))
+    s1 = ontology_capture.capture_run(ctx, docs, {}, sensitive=False, stores_dir=d / "st")
+    s2 = ontology_capture.capture_run(ctx, docs, {}, sensitive=False, stores_dir=d / "st")
+    st = ontology_store.ProvisionStore(d / "st")
+    if s1["provisions_superseded"] != 0 or s2["provisions_superseded"] != 2 \
+            or len(st.current()) != 2 or {r["revision"] for r in st.current()} != {2}:
+        return _fail(f"re-capturing the same master did not supersede: {s1} {s2} "
+                     f"{[(r['id'], r['revision']) for r in st.current()]}")
+    return _ok("dual track: a re-written id supersedes (revision, supersedes, a logged event), "
+               "current() excludes the superseded revision at the query layer, explicit "
+               "supersede works and refuses an absent id, compact() moves the 2 superseded "
+               "revisions into the log and leaves the other scope untouched, the log only "
+               "grows and has no rewriting writer, delete refuses (not built), and the real "
+               "capture_run supersedes on re-capture instead of duplicating")
+
+
+def check_202_ontology_dual_track_supersede_built_delete_not():
+    """night chain W7 d and e. A live store and an immutable log. Superseded entries
+    are excluded at the storage query layer (ProvisionStore.current returns the highest
+    revision per id; nothing a caller does can return a superseded one). Every
+    supersession is logged. Compaction moves superseded revisions from the live store to
+    the log, which is only ever appended to. Supersede is built; delete is declared and
+    refuses, because the user-facing deletion case is an operator decision not yet
+    finalised (when built, a deletion is logged the way a supersession is).
+
+    Executed on tempdirs against the real store and the real capture_run.
+    Neutralise-and-restore: current() replaced by an unfiltered in-scope read (every
+    revision returned, the defect the query layer exists to prevent), the body must FAIL;
+    restored, PASS."""
+    import ontology_store
+
+    shipped = _w7_dual_track_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = ontology_store.ProvisionStore.current
+    ontology_store.ProvisionStore.current = lambda self: self._live_in_scope()
+    try:
+        neutralised = _w7_dual_track_body()
+    finally:
+        ontology_store.ProvisionStore.current = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with the query-layer exclusion removed the body still passed "
+                     f"({neutralised})")
+    restored = _w7_dual_track_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring current() the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; neutralise (unfiltered read) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -15489,6 +15853,12 @@ CHECKS = [
      check_198_convention_assignment_comparison_route_and_console),
     ("199 the firing gate and the subject-chosen paired agent (convention assignment 3 / night W3)",
      check_199_the_firing_gate_and_the_subject_chosen_paired_agent),
+    ("200 ontology scope is enforced at the storage layer (night W7 c)",
+     check_200_ontology_scope_is_enforced_at_the_storage_layer),
+    ("201 ontology provenance struct on the capture path (night W7 b)",
+     check_201_ontology_provenance_struct_on_the_capture_path),
+    ("202 ontology dual track: supersede built, delete not (night W7 d, e)",
+     check_202_ontology_dual_track_supersede_built_delete_not),
 ]
 
 

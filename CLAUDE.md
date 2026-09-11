@@ -329,7 +329,14 @@ processing swarm governed by an append-only constitution.
   per document `prior_orphans`) and `logs/` sit alongside. Runs never overwrite each other.
 - `durable/`: learned and governance state that survives reset: `learnings/`, `cache/`,
   `global/`, `governance/`, `reference/`.
-- `ontology/stores/`: the cross-run learning graph (capture, graph, GNN state).
+- `ontology/stores/`: the cross-run learning graph (capture, graph, GNN state). Its storage
+  layer is `scripts/ontology_store.py` (night W7): every record carries a scope enforced on
+  every read and write (one value, `DEFAULT_SCOPE`, until an engagement concept exists), a
+  provenance struct `{time, agent, run, type}` (type `document`; the rule-derived type is
+  declared unfilled until that path has run), a live store plus an immutable log
+  (`provisions_log.jsonl`) with supersession decided at the query layer, and supersede built
+  but delete deliberately not. `tools/archive_ontology_stores.py` archives and empties the
+  stores outside the repository.
 - `corpus_ingest/`: the corpus ingestion contract, validator, and grounding-files helper.
 - `benchmark/keys/`: the answer key, control document, ledger scripts and frozen scorer for
   recall measurement. GITIGNORED, never committed, never opened by an agent. Only the scorer

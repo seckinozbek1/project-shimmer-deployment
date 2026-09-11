@@ -93,10 +93,12 @@ durable/governance/redaction_format_warnings.jsonl
 # once it does. Governance state, never source.
 durable/governance/exposure_ledger.jsonl
 
-# OGE ontology stores: the append-master JSONL stores (provisions.jsonl,
-# delta_proposals.jsonl) are tracked, but graph.json and gnn_state.json are DERIVED
-# (the graph is rebuilt from provisions and the GNN state is recomputed every run),
-# so they are ignored to avoid per-run churn of regenerable artifacts.
+# OGE ontology stores: the JSONL stores (provisions.jsonl, its immutable log
+# provisions_log.jsonl, delta_proposals.jsonl) are runtime state, untracked in this
+# repository (nothing under ontology/ has ever been committed here; see
+# tools/archive_ontology_stores.py for the archive-and-empty path). graph.json and
+# gnn_state.json are DERIVED (the graph is rebuilt from provisions and the GNN state is
+# recomputed every run), so they are ignored to avoid per-run churn of regenerable artifacts.
 ontology/stores/graph.json
 ontology/stores/gnn_state.json
 
