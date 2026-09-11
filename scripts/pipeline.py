@@ -291,7 +291,7 @@ def _stamp_source_rule_ids(items, convention_registry):
         if not isinstance(item, dict):
             out.append(item)
             continue
-        rule = item.get("rule_id") or item.get("conv_id")
+        rule = finding_record.resolved_rule_id(item)
         source = finding_record.source_rule_id_for(rule, convention_registry)
         if source and not item.get("source_rule_id"):
             item = dict(item)
@@ -1983,7 +1983,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         for agent, raw_findings in (("PRACTICE_AUDITOR", pa_findings),
                                      ("STYLE_GUARDIAN", sg_findings)):
             for f in raw_findings:
-                cat = _category_for_conv(f.get("conv_id"), convention_registry) or "unclassified"
+                cat = _category_for_conv(finding_record.resolved_rule_id(f), convention_registry) or "unclassified"
                 normalized = _normalize_finding(f)
                 normalized["category"] = cat
                 normalized["agent"] = agent

@@ -14521,6 +14521,138 @@ def _run_195_body():
     return _ok("body check passed")
 
 
+def check_196_every_remaining_rule_id_consumer_reads_the_real_field_name():
+    """night chain W5 (the remaining name mismatches). Commit 91ba603 fixed one
+    instance of this shape (a producer writes a field under one name, a
+    consumer reads a different one, and a record the consumer cannot use is
+    silently dropped) and enumerated three more, left unfixed at the time:
+    pipeline.py's _category_for_conv caller (no fallback at all, read
+    f.get("conv_id") directly), pipeline.py's _stamp_source_rule_ids (a
+    2-name fallback missing procedure_id and convention_ref) together with
+    finding_record.index_findings (no fallback at all), and server.py's
+    _project_finding (a fallback naming the wrong two of the four real
+    names). All three now read through finding_record.resolved_rule_id,
+    the same shared resolver check 194 already holds in place for the
+    original instance.
+
+    Fixing index_findings exposed a further, sharper bug in the same
+    function it feeds: apply_typed_fields copied a matched finding's rule
+    id onto an amendment with a bare source["rule_id"] bracket access,
+    which would KeyError (not silently drop, crash) the moment
+    index_findings started successfully matching a finding that carries
+    procedure_id instead of rule_id. Fixed alongside the other three, same
+    resolver.
+
+    This check drives each of the four fixed call sites with a
+    PRACTICE_AUDITOR-shaped finding (procedure_id, no rule_id key at all,
+    the exact shape that exposed all four gaps live), proves each now
+    resolves correctly, and neutralises finding_record.RULE_ID_FIELD_ALIASES
+    (strips procedure_id) to prove each site's correctness still depends on
+    the shared resolver rather than each having grown its own duplicate
+    alias list."""
+    import json
+    import pipeline as _pl
+    import finding_record as _fr
+    import server as _srv
+
+    pa_finding = {
+        "procedure_id": "CONV-011", "unit_id": "unit-9", "relation": "missing_field",
+        "record_verdict": "irregular", "explanation": "a procedure_id-only finding",
+        "source_refs": ["REF-0099"],
+    }
+    registry = {"conventions": [
+        {"id": "CONV-011", "category": "conv-remedies", "severity": "required",
+         "action": "flag", "rule": "remedies rule text"},
+    ]}
+
+    # Site 1: _category_for_conv's caller (pipeline.py _process_doc's loop).
+    cat = _pl._category_for_conv(_fr.resolved_rule_id(pa_finding), registry)
+    if cat != "conv-remedies":
+        return _fail(f"_category_for_conv via resolved_rule_id did not classify a "
+                     f"procedure_id-only finding: got {cat!r}")
+
+    # Site 2a: _stamp_source_rule_ids. source_rule_id_for legitimately returns
+    # None when the registry entry carries no operator-declared id of its own,
+    # so the real assertion needs a registry entry that DOES carry one, and
+    # checks that id was actually copied (proving procedure_id was recognised
+    # as the rule, not skipped as ruleless).
+    registry_with_op_id = {"conventions": [
+        {"id": "CONV-011", "category": "CONV-OP-REMEDIES-1", "severity": "required",
+         "action": "flag", "rule": "remedies rule text"},
+    ]}
+    stamped2 = _pl._stamp_source_rule_ids([pa_finding], registry_with_op_id)
+    if not stamped2 or stamped2[0].get("source_rule_id") != "CONV-OP-REMEDIES-1":
+        return _fail(f"_stamp_source_rule_ids did not recognise procedure_id as this "
+                     f"finding's rule id: got {stamped2[0].get('source_rule_id') if stamped2 else stamped2!r}")
+
+    # Site 2b: finding_record.index_findings + apply_typed_fields (the KeyError site).
+    by_pair, by_rule = _fr.index_findings([pa_finding])
+    if "CONV-011" not in by_rule:
+        return _fail("index_findings did not index a procedure_id-only finding "
+                     "under its rule id: apply_typed_fields' convention_ref lookup "
+                     "would silently find nothing for every PRACTICE_AUDITOR finding")
+    amendment = {"convention_ref": "CONV-011", "original_text": "z", "action": "flag",
+                 "comment": "c", "ref_ids": []}
+    out, copied = _fr.apply_typed_fields([amendment], [pa_finding])
+    if copied != 1:
+        return _fail(f"apply_typed_fields did not copy from a procedure_id-only "
+                     f"finding (this used to KeyError on source['rule_id']): copied={copied}")
+    if out[0].get("convention_ref") != "CONV-011":
+        return _fail(f"apply_typed_fields copied the wrong convention_ref: "
+                     f"{out[0].get('convention_ref')!r}")
+
+    # Site 3: server.py _project_finding.
+    projected = _srv._project_finding(pa_finding, agent="PRACTICE_AUDITOR", doc_id="d")
+    if projected.get("rule_id") != "CONV-011":
+        return _fail(f"_project_finding did not surface a procedure_id-only finding's "
+                     f"rule id over the API: got {projected.get('rule_id')!r}")
+
+    # NEUTRALISE AND RESTORE: strip procedure_id from the shared alias list and
+    # confirm all four sites lose the finding (proving they depend on the shared
+    # resolver, not a private duplicate of the alias list each site could drift
+    # from independently); restore and confirm all four recover.
+    _orig_aliases = _fr.RULE_ID_FIELD_ALIASES
+    _fr.RULE_ID_FIELD_ALIASES = tuple(a for a in _orig_aliases if a != "procedure_id")
+    try:
+        cat_n = _pl._category_for_conv(_fr.resolved_rule_id(pa_finding), registry)
+        by_pair_n, by_rule_n = _fr.index_findings([pa_finding])
+        out_n, copied_n = _fr.apply_typed_fields([dict(amendment)], [pa_finding])
+        projected_n = _srv._project_finding(pa_finding, agent="PRACTICE_AUDITOR", doc_id="d")
+        if cat_n is not None:
+            return _fail("neutralising procedure_id from RULE_ID_FIELD_ALIASES did not "
+                         "stop _category_for_conv from classifying the finding")
+        if "CONV-011" in by_rule_n:
+            return _fail("neutralising procedure_id did not stop index_findings from "
+                         "indexing the finding")
+        if copied_n != 0:
+            return _fail("neutralising procedure_id did not stop apply_typed_fields "
+                         "from copying the finding")
+        if projected_n.get("rule_id"):
+            return _fail("neutralising procedure_id did not stop _project_finding from "
+                         "surfacing the finding's rule id")
+    finally:
+        _fr.RULE_ID_FIELD_ALIASES = _orig_aliases
+
+    # Restore check: all four must work again with the real alias list back.
+    cat_r = _pl._category_for_conv(_fr.resolved_rule_id(pa_finding), registry)
+    _, by_rule_r = _fr.index_findings([pa_finding])
+    out_r, copied_r = _fr.apply_typed_fields([dict(amendment)], [pa_finding])
+    projected_r = _srv._project_finding(pa_finding, agent="PRACTICE_AUDITOR", doc_id="d")
+    if cat_r != "conv-remedies" or "CONV-011" not in by_rule_r or copied_r != 1 \
+            or projected_r.get("rule_id") != "CONV-011":
+        return _fail("restoring RULE_ID_FIELD_ALIASES did not bring all four sites "
+                     "back to working")
+
+    return _ok("all three remaining name-mismatch instances from commit 91ba603's own "
+               "enumeration (_category_for_conv's caller, _stamp_source_rule_ids + "
+               "index_findings, _project_finding) plus the KeyError apply_typed_fields "
+               "exposed once index_findings started matching, now resolve a "
+               "procedure_id-only finding correctly; neutralising procedure_id from "
+               "RULE_ID_FIELD_ALIASES breaks all four sites identically and restoring "
+               "it brings all four back, proving each depends on the one shared "
+               "resolver rather than a private copy of the alias list")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -14723,6 +14855,8 @@ CHECKS = [
      check_194_agent_contract_field_names_match_what_a_consumer_reads),
     ("195 every agent has a nine-part harness, unresolved parts are visible (night W4)",
      check_195_every_agent_has_a_nine_part_harness_and_unresolved_is_visible),
+    ("196 every remaining rule-id consumer reads the real field name (night W5)",
+     check_196_every_remaining_rule_id_consumer_reads_the_real_field_name),
 ]
 
 

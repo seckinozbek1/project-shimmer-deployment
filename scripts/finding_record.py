@@ -292,7 +292,7 @@ def index_findings(findings):
     for item in findings or []:
         if not is_finding(item):
             continue
-        rule = str(item.get("rule_id") or "")
+        rule = str(resolved_rule_id(item) or "")
         unit = str(item.get("unit_id") or "")
         if rule:
             by_rule.setdefault(rule, []).append(item)
@@ -339,7 +339,7 @@ def apply_typed_fields(amendments, findings):
             out.append(amendment)
             continue
         amended = dict(amendment)
-        amended["convention_ref"] = source["rule_id"]
+        amended["convention_ref"] = resolved_rule_id(source)
         if source.get("source_rule_id"):
             amended["source_convention_ref"] = source["source_rule_id"]
         refs = [str(r) for r in (source.get("source_refs") or []) if r]

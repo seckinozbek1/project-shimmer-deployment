@@ -865,10 +865,15 @@ def _validated_run_dir(run_id):
 def _project_finding(item, *, agent, doc_id):
     """One Finding record as a flat, stable API object.
 
-    Field names are the Finding record's own (finding_record's module docstring),
-    with two fallbacks for records minted before those names settled: `claim_id`
-    stands in for `rule_id`, and `ref_ids` for `source_refs`. Both appear on real
-    bus traffic, so reading only the canonical name would silently drop findings."""
+    Field names are the Finding record's own (finding_record's module docstring).
+    rule_id is read through finding_record.resolved_rule_id, which checks every
+    real name an agent contract uses (rule_id, procedure_id, conv_id,
+    convention_ref) plus the legacy claim_id; reading only one or two of those
+    would silently drop findings whose producing agent uses a different name.
+    source_refs falls back to ref_ids for records minted before those names
+    settled. Both appear on real bus traffic."""
+    import finding_record as _fr
+
     refs = item.get("source_refs")
     if not isinstance(refs, list):
         refs = item.get("ref_ids") if isinstance(item.get("ref_ids"), list) else []
@@ -877,7 +882,7 @@ def _project_finding(item, *, agent, doc_id):
         "doc_id": doc_id,
         "item_id": item.get("item_id"),
         "revision": item.get("revision"),
-        "rule_id": item.get("rule_id") or item.get("claim_id") or "",
+        "rule_id": _fr.resolved_rule_id(item) or item.get("claim_id") or "",
         "source_rule_id": item.get("source_rule_id") or "",
         "unit_id": item.get("unit_id") or "",
         "relation": item.get("relation"),
