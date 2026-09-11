@@ -122,6 +122,10 @@ import server  # noqa: E402  (import BEFORE the Popen monkeypatch: asyncio's
 # FastAPI's import chain, so replacing it first breaks unrelated stdlib
 # imports. Patch only after everything real has finished importing.)
 
+# The real Popen, kept for the one child this helper genuinely spawns (the
+# headless browser of --screenshots); everything else, i.e. the pipeline, is
+# the fake below.
+_REAL_POPEN = subprocess.Popen
 subprocess.Popen = lambda *a, **k: _FakeProc(*a, **k)
 server.subprocess.Popen = subprocess.Popen
 
@@ -465,6 +469,25 @@ def _build_completed_with_findings():
             ],
         }
     }, indent=2), encoding="utf-8")
+    # night W8: the convention assignment this run's BOOT would have written
+    # (audit/convention_assignment.json), shaped to exercise every state the
+    # console renders: a rule assigned to a checker, a rule matched only by an
+    # agent with no rule-consuming path, a rule no agent declares, and no
+    # untagged rule at all, so the firing gate keeps STYLE_GUARDIAN from
+    # running (the fourth visible state). Subject words are the registry's own
+    # engine-side labels, not domain vocabulary.
+    (audit / "convention_assignment.json").write_text(json.dumps({
+        "by_rule": {
+            "CONV-001": {"subjects": ["conformance"], "agents": ["PRACTICE_AUDITOR"],
+                         "consumer_agents": ["PRACTICE_AUDITOR"], "status": "assigned"},
+            "CONV-003": {"subjects": ["fidelity"], "agents": ["VERIFIER"],
+                         "consumer_agents": [], "status": "assigned_no_consumer"},
+            "CONV-004": {"subjects": ["provenance"], "agents": [],
+                         "consumer_agents": [], "status": "unassigned"},
+        },
+        "by_agent": {"PRACTICE_AUDITOR": ["CONV-001"], "VERIFIER": ["CONV-003"],
+                     "STYLE_GUARDIAN": []},
+    }, indent=2), encoding="utf-8")
 
     logs = run_dir / "logs"
     logs.mkdir(parents=True, exist_ok=True)
@@ -675,8 +698,190 @@ def _seed_fixtures():
                 server._write_status(job)
 
 
+def _find_browser():
+    """A Chromium-based browser for headless screenshots: Edge first (present on
+    every Windows 11 machine), then Chrome. Always launched with its OWN throwaway
+    user-data-dir, so it never attaches to, or touches, a browser the operator has
+    open."""
+    candidates = [
+        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+        Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
+        Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+        Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
+    ]
+    for p in candidates:
+        if p.is_file():
+            return str(p)
+    for name in ("msedge", "google-chrome", "chromium", "chrome"):
+        found = shutil.which(name)
+        if found:
+            return found
+    raise SystemExit("no Chromium-based browser found for screenshots (Edge or Chrome)")
+
+
+def _wait_http(url, timeout_s=90.0):
+    """Poll a local URL until it answers. A cold headless browser on a loaded
+    machine can accept the connection well before it answers, so each attempt
+    waits several seconds and the overall budget is generous; no proxy is ever
+    consulted for these loopback addresses."""
+    import time
+    import urllib.request
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    deadline = time.time() + timeout_s
+    last = None
+    while time.time() < deadline:
+        try:
+            with opener.open(url, timeout=8) as r:
+                return r.read()
+        except Exception as e:  # not up yet
+            last = e
+            time.sleep(0.5)
+    raise SystemExit(f"{url} did not come up within {timeout_s}s: {last}")
+
+
+# The pages the W8 report shows, in both views: (file stem, view, hash). The run
+# is the "completed, with findings" fixture, which also carries the convention
+# assignment (distribution, an unassigned rule, a checker the gate kept from
+# running, agents no tagged rule reached).
+SCREENSHOT_PAGES = [
+    # (file stem, view, hash, max height in CSS px or None for the whole page).
+    # The Agents page is 18 agents by nine parts, some seventeen thousand
+    # pixels tall in full; its top 2600 px carry the heading, the counts and
+    # the first agents with an undecided part, which is what the proof needs.
+    ("runs", "human", "#/runs", None),
+    ("runs", "developer", "#/runs", None),
+    ("run_findings", "human", "#/runs/20260910_140000__f19d01", None),
+    ("run_findings", "developer", "#/runs/20260910_140000__f19d01", None),
+    ("agents", "human", "#/agents", 2600),
+    ("agents", "developer", "#/agents", 2600),
+]
+
+
+async def _shoot_pages(ws_url, out_dir, settle_s=3.0):
+    """Drive one browser tab over the Chrome DevTools Protocol: sign the console
+    in by writing the throwaway token into sessionStorage (exactly what the
+    masthead's token screen does), then for each page set the view, navigate,
+    let the fetches settle, size the viewport to the page and capture it."""
+    import asyncio
+    import base64
+    import websockets
+
+    async with websockets.connect(ws_url, max_size=None) as ws:
+        counter = [0]
+
+        async def cmd(method, **params):
+            counter[0] += 1
+            msg_id = counter[0]
+            await ws.send(json.dumps({"id": msg_id, "method": method, "params": params}))
+            while True:
+                msg = json.loads(await ws.recv())
+                if msg.get("id") == msg_id:
+                    if "error" in msg:
+                        raise RuntimeError(f"{method}: {msg['error']}")
+                    return msg.get("result", {})
+
+        await cmd("Page.enable")
+        await cmd("Emulation.setDeviceMetricsOverride", width=1280, height=900,
+                  deviceScaleFactor=1, mobile=False)
+        await cmd("Page.navigate", url="http://127.0.0.1:8731/console")
+        await asyncio.sleep(1.5)
+        await cmd("Runtime.evaluate",
+                  expression=f"sessionStorage.setItem('shimmer_console_token', {json.dumps(TOKEN)});")
+        written = []
+        for stem, view, frag, max_height in SCREENSHOT_PAGES:
+            await cmd("Runtime.evaluate",
+                      expression=(f"sessionStorage.setItem('shimmer_console_view', {json.dumps(view)});"
+                                  f"location.hash = {json.dumps(frag)}; location.reload();"))
+            await asyncio.sleep(settle_s)
+            metrics = await cmd("Page.getLayoutMetrics")
+            size = metrics.get("cssContentSize") or metrics.get("contentSize") or {}
+            height = max(900, int(size.get("height") or 900))
+            if max_height:
+                height = min(height, max_height)
+            await cmd("Emulation.setDeviceMetricsOverride", width=1280, height=height,
+                      deviceScaleFactor=1, mobile=False)
+            await asyncio.sleep(0.4)
+            shot = await cmd("Page.captureScreenshot", format="png", captureBeyondViewport=True,
+                             clip={"x": 0, "y": 0, "width": 1280, "height": height, "scale": 1})
+            target = Path(out_dir) / f"{stem}_{view}.png"
+            target.write_bytes(base64.b64decode(shot["data"]))
+            written.append(target)
+        return written
+
+
+def _capture_screenshots(out_dir):
+    """night W8: prove the console against the running stubbed server the way it
+    was proved before, but through a headless browser so the proof is a set of
+    files a report can carry. Starts the same server this preview always starts
+    (in a thread), launches a headless Edge/Chrome with a throwaway profile and a
+    remote-debugging port, captures SCREENSHOT_PAGES, then stops both."""
+    import asyncio
+    import urllib.request
+    import uvicorn
+
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # The browser first, its stderr kept in the throwaway profile (it is where
+    # "DevTools listening on ..." and any refusal to start are written), then the
+    # server in a thread; both start-ups overlap.
+    browser = _find_browser()
+    profile = tempfile.mkdtemp(prefix="shimmer_console_shot_profile_")
+    port = 9333
+    browser_log = open(Path(profile) / "browser_stderr.txt", "wb")
+    # _REAL_POPEN, not subprocess.Popen: this module stubs Popen so the pipeline
+    # never runs, and that stub swallowed the browser launch the first time.
+    proc = _REAL_POPEN(
+        [browser, "--headless=new", "--disable-gpu", "--no-first-run",
+         "--no-default-browser-check", f"--remote-debugging-port={port}",
+         f"--user-data-dir={profile}", "--window-size=1280,900", "about:blank"],
+        stdout=browser_log, stderr=browser_log)
+    config = uvicorn.Config(server.app, host="127.0.0.1", port=8731, log_level="warning")
+    srv = uvicorn.Server(config)
+    thread = threading.Thread(target=srv.run, daemon=True)
+    thread.start()
+    try:
+        _wait_http("http://127.0.0.1:8731/health")
+        try:
+            _wait_http(f"http://127.0.0.1:{port}/json/version")
+        except SystemExit:
+            browser_log.flush()
+            print("[screenshot] browser exit code:", proc.poll(), file=sys.stderr)
+            print("[screenshot] browser stderr:",
+                  (Path(profile) / "browser_stderr.txt").read_text(errors="replace")[:2000],
+                  file=sys.stderr)
+            raise
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        req = urllib.request.Request(f"http://127.0.0.1:{port}/json/new?about:blank", method="PUT")
+        with opener.open(req, timeout=10) as r:
+            target = json.loads(r.read())
+        written = asyncio.run(_shoot_pages(target["webSocketDebuggerUrl"], out_dir))
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=10)
+        except Exception:
+            proc.kill()
+        browser_log.close()
+        srv.should_exit = True
+        thread.join(timeout=10)
+        shutil.rmtree(profile, ignore_errors=True)
+    for p in written:
+        print(f"[screenshot] {p} ({p.stat().st_size} bytes)")
+    return written
+
+
 if __name__ == "__main__":
+    import argparse
+    _ap = argparse.ArgumentParser(description="console preview (stubbed server, no model)")
+    _ap.add_argument("--screenshots", metavar="DIR",
+                     help="capture both views of the run list, a run's page and the Agents "
+                          "page into DIR through a headless browser, then exit")
+    _args = _ap.parse_args()
     _seed_fixtures()
+    if _args.screenshots:
+        _capture_screenshots(_args.screenshots)
+        raise SystemExit(0)
     banner = "\n".join([
         "",
         "=" * 72,

@@ -148,6 +148,36 @@ def idle_agents_summary(assignment: dict, agents: dict) -> list:
     return out
 
 
+def firing_convention_review_agents(assignment, review_agents=CONVENTION_REVIEW_AGENT_NAMES) -> list:
+    """The W3 firing gate, in one place. A convention-review agent fires in
+    wide mode if the assignment gave it at least one rule OR at least one
+    loaded rule is untagged (an untagged rule keeps today's routing: every
+    convention-review agent gets it). Only when both are false does the agent
+    have nothing to do. With no assignment computed at all (None, a caller
+    that predates W3) every agent fires, exactly as before the gate existed.
+    pipeline._convention_review_firing_agents delegates here, and the server's
+    GET /runs/{run_id}/convention-assignment reads the same function, so the
+    console's "did not run" list is the gate's own answer, not a second one."""
+    if assignment is None:
+        return list(review_agents)
+    by_agent = assignment.get("by_agent") or {}
+    any_untagged = any((row or {}).get("status") == "untagged"
+                       for row in (assignment.get("by_rule") or {}).values())
+    return [name for name in review_agents if by_agent.get(name) or any_untagged]
+
+
+def not_firing_convention_review_agents(assignment, review_agents=CONVENTION_REVIEW_AGENT_NAMES) -> list:
+    """The convention-review agents the gate keeps from firing on this
+    assignment (night W3's fourth visible state, an agent that did not fire).
+    Empty for an assignment with no rules at all (a run that predates the
+    assignment, or loaded no conventions): there the gate never decided
+    anything, and "did not fire" would be a claim about a decision not made."""
+    if not assignment or not (assignment.get("by_rule") or {}):
+        return []
+    firing = set(firing_convention_review_agents(assignment, review_agents))
+    return [name for name in review_agents if name not in firing]
+
+
 def untagged_count(assignment: dict) -> int:
     """How many rules carry no subject tag at all (answer 1: printed at
     BOOT beside the existing convention_registry rules=N line). Not the

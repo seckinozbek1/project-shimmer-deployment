@@ -533,6 +533,16 @@ a.rule-link:hover { text-decoration-style: solid; }
 .amendment-repair-note { color: var(--quiet-text); font-size: 0.8rem; font-style: italic; }
 .amendment-refusals { border-left: 3px solid var(--peach); padding-left: 0.75rem; margin: 0.5rem 0; }
 .amendment-refusals li { margin: 0.35rem 0; }
+/* night W8, the Agents page: one section per agent, nine parts each; an
+   undecided part keeps the same peach rail the other visible states use. */
+.harness-agent { margin: 1.25rem 0 0.5rem; }
+.harness-agent h3 { margin: 0 0 0.35rem; }
+.harness-open { font-size: 0.85em; font-weight: normal; color: var(--peach); margin-left: 0.5rem; }
+.harness-parts { list-style: none; padding-left: 0; margin: 0; }
+.harness-part { margin: 0.3rem 0; padding-left: 0.75rem; border-left: 3px solid transparent; }
+.harness-part-unresolved { border-left-color: var(--peach); }
+.harness-part-missing { border-left-color: var(--peach); font-style: italic; }
+.harness-label { font-weight: 600; }
 
 /* ---------------------------------------------------------------------
    LOG VIEWER
@@ -589,6 +599,7 @@ a.rule-link:hover { text-decoration-style: solid; }
     <nav class="masthead-nav">
       <a href="#/runs" id="nav-runs">Runs</a>
       <a href="#/submit" id="nav-submit">Submit</a>
+      <a href="#/agents" id="nav-agents">Agents</a>
     </nav>
   </div>
 </header>
@@ -1100,6 +1111,7 @@ function currentRoute() {
   var parts = h.split("/").filter(Boolean);
   if (parts[0] === "runs" && parts[1]) return { view: "detail", runId: decodeURIComponent(parts[1]) };
   if (parts[0] === "submit") return { view: "submit" };
+  if (parts[0] === "agents") return { view: "agents" };
   return { view: "list" };
 }
 
@@ -1109,6 +1121,7 @@ window.addEventListener("DOMContentLoaded", render);
 function setNavActive(view) {
   document.getElementById("nav-runs").classList.toggle("active", view === "list" || view === "detail");
   document.getElementById("nav-submit").classList.toggle("active", view === "submit");
+  document.getElementById("nav-agents").classList.toggle("active", view === "agents");
 }
 
 function render() {
@@ -1121,7 +1134,109 @@ function render() {
   if (forceTokenScreen || !getToken()) { renderNeedsToken(); return; }
   if (route.view === "submit") { renderSubmit(); return; }
   if (route.view === "detail") { renderDetail(route.runId); return; }
+  if (route.view === "agents") { renderAgents(); return; }
   renderList();
+}
+
+/* =======================================================================
+   AGENTS (night chain W8): the nine-part harness from W4, one entry per
+   agent, exactly as GET /harness serves config/agent_harness.json. An
+   undecided part is shown AS undecided, with the reason the file records,
+   never omitted: the harness's own rule (gate check 195) is that an omitted
+   part is indistinguishable from one nobody thought of. Two views, same
+   data: the reviewer view names each part in plain words, the developer
+   view uses the file's own part keys and field names. Nothing is hidden
+   because it is awkward.
+======================================================================= */
+var HARNESS_PART_LABELS_HUMAN = {
+  agent_itself: "What it does",
+  constitution_by_default: "The rules it always carries",
+  rule_cluster: "The subjects it handles",
+  testing_against_cluster: "How that is tested",
+  ontology: "What it draws from the shared knowledge store",
+  receive_format: "What it receives",
+  hand_format: "What it hands back",
+  fires_at_all: "When it runs",
+  refire_condition_and_limit: "Whether it runs again"
+};
+
+function harnessPartSummary(part, shared) {
+  /* One line for a decided part: resolve a shared-parts indirection first,
+     then take the first prose-bearing field the file carries. Never
+     invents text: a part with none of these fields reads as "decided". */
+  if (!part || typeof part !== "object") return "";
+  if (part.see && typeof part.see === "string" && part.see.indexOf("shared_parts.") === 0) {
+    var key = part.see.slice("shared_parts.".length);
+    part = (shared || {})[key] || part;
+  }
+  if (Array.isArray(part.does) && part.does.length) return part.does.join("; ");
+  var fields = ["condition", "how", "where", "summary", "text", "note", "reason", "limit"];
+  for (var i = 0; i < fields.length; i++) {
+    if (typeof part[fields[i]] === "string" && part[fields[i]]) return part[fields[i]];
+  }
+  if (Array.isArray(part.declared_subjects)) {
+    if (part.declared_subjects.length) return "declares: " + part.declared_subjects.join(", ");
+    return "declares no subject, by decision" + (part.subjects_note ? ": " + part.subjects_note : "");
+  }
+  return "decided";
+}
+
+function harnessHtml(body, human) {
+  var agents = body.agents || {};
+  var names = Object.keys(agents).sort();
+  var partNames = body.part_names || [];
+  var shared = body.shared_parts || {};
+  var unresolved = body.unresolved || {};
+  var unresolvedCount = body.unresolved_part_count || 0;
+  var heading = human
+    ? "Agents (" + names.length + ")"
+    : "agent_harness (" + names.length + " agents)";
+  var note = human
+    ? "Every agent, described in nine parts. A part still undecided is shown as undecided with the reason, not left out." +
+      (unresolvedCount ? " Undecided parts: " + unresolvedCount + "." : " Every part is decided.")
+    : "config/agent_harness.json as served by GET /harness; nine parts per agent (night W4). unresolved_part_count=" + unresolvedCount + ".";
+  var html = '<h2>' + escapeHtml(heading) + '</h2><p class="muted">' + escapeHtml(note) + '</p>';
+  names.forEach(function (name) {
+    var entry = agents[name] || {};
+    var open = (unresolved[name] || []).length;
+    html += '<section class="harness-agent"><h3>' + escapeHtml(name) +
+      (open ? ' <span class="harness-open">' + escapeHtml(human ? (open + " undecided") : ("unresolved=" + open)) + '</span>' : '') + '</h3>';
+    html += '<ul class="harness-parts">';
+    partNames.forEach(function (p) {
+      var part = entry[p];
+      var label = human ? (HARNESS_PART_LABELS_HUMAN[p] || p) : p;
+      if (!part || typeof part !== "object") {
+        html += '<li class="harness-part harness-part-missing"><span class="harness-label">' + escapeHtml(label) + '</span>: ' +
+          escapeHtml(human ? "not recorded in the harness file" : "missing from agent_harness.json") + '</li>';
+        return;
+      }
+      if (part.decided === false) {
+        html += '<li class="harness-part harness-part-unresolved"><span class="harness-label">' + escapeHtml(label) + '</span>: ' +
+          '<strong>' + escapeHtml(human ? "undecided" : "decided: false") + '</strong> ' +
+          escapeHtml(part.unresolved_because || (human ? "(no reason recorded)" : "(no unresolved_because)")) + '</li>';
+        return;
+      }
+      html += '<li class="harness-part"><span class="harness-label">' + escapeHtml(label) + '</span>: ' +
+        (human ? escapeHtml(harnessPartSummary(part, shared)) : '<span class="mono">' + escapeHtml(harnessPartSummary(part, shared)) + '</span>') + '</li>';
+    });
+    html += '</ul></section>';
+  });
+  return html;
+}
+
+function renderAgents() {
+  app.innerHTML = '<p class="muted">Loading…</p>';
+  apiJson("/harness").then(function (res) {
+    if (currentRoute().view !== "agents") return;
+    if (!res.ok) {
+      app.innerHTML = '<h2>' + (isHumanView() ? 'Agents' : 'agent_harness') + '</h2><div class="notice error">' +
+        escapeHtml(detailText(res.body)) + '</div>';
+      return;
+    }
+    app.innerHTML = harnessHtml(res.body, isHumanView());
+  }).catch(function () {
+    app.innerHTML = '<div class="notice error">The request did not reach the server.</div>';
+  });
 }
 
 /* The token entry screen. Reachable two ways: automatically, whenever no
@@ -2178,7 +2293,78 @@ function conventionAssignmentHtml(byRule, human) {
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
 }
 
-function idleAgentsHtml(idleAgents, human) {
+function conventionDistributionHtml(body, human) {
+  /* night chain W8: the distribution from W2, which rules went to which
+     agent, and which matched none. Shown for any run whose BOOT computed
+     an assignment (rule_count > 0); a run that predates the assignment, or
+     loaded no conventions, shows nothing rather than an empty table. The
+     untagged rules are counted, not listed per agent: an untagged rule
+     goes to every convention-review agent (today's routing, unchanged),
+     which is a fact about the rule set, not an assignment. */
+  var byRule = body.by_rule || {};
+  var byAgent = body.by_agent || {};
+  var ruleIds = Object.keys(byRule);
+  if (ruleIds.length === 0) return "";
+  var untagged = ruleIds.filter(function (id) { return byRule[id].status === "untagged"; });
+  var unassigned = ruleIds.filter(function (id) {
+    return byRule[id].status === "unassigned" || byRule[id].status === "assigned_no_consumer";
+  });
+  var agentNames = Object.keys(byAgent).filter(function (a) { return (byAgent[a] || []).length > 0; }).sort();
+  var rows = agentNames.map(function (a) {
+    var ids = byAgent[a] || [];
+    var links = ids.map(function (id) {
+      return human ? ruleLinkHtml(id, (byRule[id] || {}).source_rule_id || id) : escapeHtml(id);
+    }).join(", ");
+    return human
+      ? '<li>' + escapeHtml(a) + ' handles ' + ids.length + (ids.length === 1 ? ' rule: ' : ' rules: ') + links + '</li>'
+      : '<li class="mono">' + escapeHtml(a) + ': [' + links + ']</li>';
+  }).join("");
+  if (!rows) {
+    rows = human
+      ? '<li>No tagged rule reached any agent by its subject.</li>'
+      : '<li class="mono">by_agent: every entry empty</li>';
+  }
+  var heading = human
+    ? "Which rules each agent handles (" + ruleIds.length + (ruleIds.length === 1 ? " rule)" : " rules)")
+    : "convention_assignment.by_agent (" + ruleIds.length + " rules)";
+  var untaggedLine = untagged.length
+    ? (human
+      ? untagged.length + (untagged.length === 1 ? " rule carries" : " rules carry") + " no subject tag and " + (untagged.length === 1 ? "goes" : "go") + " to every convention checker, as before tagging existed."
+      : "untagged=" + untagged.length + " (routed to every convention-review agent; today's default).")
+    : (human ? "Every rule carries a subject tag." : "untagged=0.");
+  var unassignedLine = unassigned.length
+    ? (human ? " " + unassigned.length + (unassigned.length === 1 ? " rule matched" : " rules matched") + " no agent that can act on it (listed below)."
+             : " unassigned_or_no_consumer=" + unassigned.length + " (listed below).")
+    : "";
+  var note = human
+    ? "Decided once when the rules were loaded, by comparing each rule's subject tag with the subjects each agent declares. " + untaggedLine + unassignedLine
+    : "Computed once at BOOT by convention_assignment.assign_conventions; see GET /runs/{run_id}/convention-assignment. " + untaggedLine + unassignedLine;
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
+}
+
+function notFiringHtml(notFiring, human) {
+  /* night chain W3's fourth visible state, an agent that did not fire:
+     the convention-review agents the firing gate kept from running on
+     this run's assignment (no rule assigned to them and no untagged rule
+     to fall back on), as GET /runs/{run_id}/convention-assignment
+     computes it through the same function the pipeline's gate uses.
+     Disappears when every convention checker ran. */
+  if (!notFiring || notFiring.length === 0) return "";
+  var items = notFiring.map(function (a) {
+    return human
+      ? '<li>' + escapeHtml(a) + ' did not run: no rule was assigned to it and no untagged rule remained for it to check.</li>'
+      : '<li class="mono">' + escapeHtml(a) + '</li>';
+  }).join("");
+  var heading = human
+    ? "Checkers that did not run (" + notFiring.length + ")"
+    : "convention_review.not_firing (" + notFiring.length + ")";
+  var note = human
+    ? "The review skipped these on purpose, by the firing rule, not by a fault. Tag a rule with a subject they declare and they run next time."
+    : "convention_assignment.not_firing_convention_review_agents(assignment): the W3 wide-mode firing gate's own answer (pipeline._convention_review_firing_agents delegates to it).";
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
+}
+
+function idleAgentsHtml(idleAgents, human, untaggedCount) {
   /* The mirror of conventionAssignmentHtml: an agent that declares a
      subject but matched zero rules this load, exactly as the server's own
      GET /runs/{run_id}/convention-assignment already computed it
@@ -2186,20 +2372,25 @@ function idleAgentsHtml(idleAgents, human) {
      discipline: shown only when it is genuinely true of at least one
      agent. An agent declaring an empty subjects list (with a
      subjects_note) is never idle in this sense, it was never expected to
-     match anything. */
+     match anything. night W8: the wording no longer says "nothing to
+     check" when untagged rules exist, because a convention checker still
+     receives every untagged rule; matching no TAGGED rule is the fact. */
   if (!idleAgents || idleAgents.length === 0) return "";
+  var untagged = untaggedCount || 0;
   var items = idleAgents.map(function (a) {
     var subs = (a.subjects || []).join(", ");
     return human
-      ? '<li>' + escapeHtml(a.agent) + ' has nothing to check (declares: ' + escapeHtml(subs) + ')</li>'
+      ? '<li>' + escapeHtml(a.agent) + ' matched no tagged rule (declares: ' + escapeHtml(subs) + ')</li>'
       : '<li class="mono">' + escapeHtml(a.agent) + ': [' + escapeHtml(subs) + ']</li>';
   }).join("");
   var heading = human
-    ? "Agents with nothing to check (" + idleAgents.length + ")"
+    ? "Agents no tagged rule reached (" + idleAgents.length + ")"
     : "convention_assignment.agents_with_nothing_assigned (" + idleAgents.length + ")";
   var note = human
-    ? "Each of these agents declares a subject, but no rule loaded this run carries a matching tag."
-    : "Agents with a non-empty subjects list whose by_agent entry is empty; see GET /runs/{run_id}/convention-assignment.";
+    ? "Each of these agents declares a subject, but no rule loaded this run carries a matching tag." +
+      (untagged ? " The " + untagged + " untagged " + (untagged === 1 ? "rule" : "rules") + " still reach every convention checker among them." : "")
+    : "Agents with a non-empty subjects list whose by_agent entry is empty; see GET /runs/{run_id}/convention-assignment." +
+      (untagged ? " untagged=" + untagged + " still routes to the convention-review agents." : "");
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
 }
 
@@ -2210,14 +2401,20 @@ function loadFindings(runId, isPartial) {
   refusalHolder.id = "amendment-refusals-holder";
   var violationHolder = document.createElement("div");
   violationHolder.id = "contract-violations-holder";
+  var distributionHolder = document.createElement("div");
+  distributionHolder.id = "convention-distribution-holder";
   var unassignedHolder = document.createElement("div");
   unassignedHolder.id = "convention-unassigned-holder";
+  var notFiringHolder = document.createElement("div");
+  notFiringHolder.id = "convention-not-firing-holder";
   var idleAgentsHolder = document.createElement("div");
   idleAgentsHolder.id = "convention-idle-agents-holder";
   app.appendChild(holder);
   app.appendChild(refusalHolder);
   app.appendChild(violationHolder);
+  app.appendChild(distributionHolder);
   app.appendChild(unassignedHolder);
+  app.appendChild(notFiringHolder);
   app.appendChild(idleAgentsHolder);
   apiJson("/runs/" + encodeURIComponent(runId) + "/amendment-refusals").then(function (refRes) {
     refusalHolder.innerHTML = refRes.ok ? amendmentRefusalsHtml(refRes.body.refusals, isHumanView()) : "";
@@ -2226,10 +2423,17 @@ function loadFindings(runId, isPartial) {
     violationHolder.innerHTML = violRes.ok ? contractViolationsHtml(violRes.body.violations, isHumanView()) : "";
   });
   apiJson("/runs/" + encodeURIComponent(runId) + "/convention-assignment").then(function (caRes) {
-    if (!caRes.ok) { unassignedHolder.innerHTML = ""; idleAgentsHolder.innerHTML = ""; return; }
+    if (!caRes.ok) {
+      distributionHolder.innerHTML = ""; unassignedHolder.innerHTML = "";
+      notFiringHolder.innerHTML = ""; idleAgentsHolder.innerHTML = "";
+      return;
+    }
+    distributionHolder.innerHTML = conventionDistributionHtml(caRes.body, isHumanView());
+    wireRuleLinks(distributionHolder);
     unassignedHolder.innerHTML = conventionAssignmentHtml(caRes.body.by_rule, isHumanView());
     wireRuleLinks(unassignedHolder);
-    idleAgentsHolder.innerHTML = idleAgentsHtml(caRes.body.idle_agents, isHumanView());
+    notFiringHolder.innerHTML = notFiringHtml(caRes.body.not_firing, isHumanView());
+    idleAgentsHolder.innerHTML = idleAgentsHtml(caRes.body.idle_agents, isHumanView(), caRes.body.untagged);
   });
   Promise.all([
     apiJson("/runs/" + encodeURIComponent(runId) + "/findings"),

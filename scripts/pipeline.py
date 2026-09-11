@@ -353,14 +353,16 @@ def _convention_review_firing_agents(convention_assignment):
 
     With convention_assignment None (a caller that predates W3, mainly the
     gate's own older fixtures), every agent in CONVENTION_REVIEW_AGENTS
-    fires, identical to every commit before this one."""
-    if convention_assignment is None:
-        return list(CONVENTION_REVIEW_AGENTS)
-    by_agent = convention_assignment.get("by_agent") or {}
-    by_rule = convention_assignment.get("by_rule") or {}
-    any_untagged = any(row.get("status") == "untagged" for row in by_rule.values())
-    return [name for name in CONVENTION_REVIEW_AGENTS
-            if by_agent.get(name) or any_untagged]
+    fires, identical to every commit before this one.
+
+    night W8: the rule itself lives in convention_assignment
+    .firing_convention_review_agents, so the server's convention-assignment
+    route (and through it the console's "did not run" list) reads the gate's
+    own answer rather than a second computation of it. This function keeps
+    its name and its behavior (checks 157 and 199) and delegates. The local
+    import is deliberate: the parameter shadows the module name here."""
+    import convention_assignment as _ca
+    return _ca.firing_convention_review_agents(convention_assignment, CONVENTION_REVIEW_AGENTS)
 
 # local RUNDAY: the local-profile checkpoint ids are operator-selectable via
 # config/local_models.json (active_producer / active_auditor) so the original

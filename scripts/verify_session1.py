@@ -15643,6 +15643,188 @@ def check_202_ontology_dual_track_supersede_built_delete_not():
     return _ok(shipped[1] + "; neutralise (unfiltered read) FAILS, restore PASSES")
 
 
+def _w8_console_body():
+    """The executed body of check 203: GET /harness and the enriched
+    convention-assignment route through the real FastAPI app on fixture files
+    in tempdirs, plus the console source carrying the sections that render
+    them. Factored out so the check can run it as shipped and with the firing
+    gate neutralised."""
+    import os as _os
+    import tempfile
+    import convention_assignment as _ca
+    from fastapi.testclient import TestClient
+
+    d = Path(tempfile.mkdtemp(prefix="shimmer_w8_console_"))
+    harness = {
+        "schema_version": "1.0.0",
+        "shared_parts": {"constitution_by_default": {"decided": True, "how": "carried"}},
+        "agents": {
+            "AGENT_A": {"agent_itself": {"decided": True, "does": ["x"]},
+                        "constitution_by_default": {"see": "shared_parts.constitution_by_default"},
+                        "rule_cluster": {"decided": True, "declared_subjects": ["alpha"]},
+                        "testing_against_cluster": {"decided": True, "how": "check"},
+                        "ontology": {"decided": False, "unresolved_because": "waits on a later step"},
+                        "receive_format": {"see": "shared_parts.constitution_by_default"},
+                        "hand_format": {"see": "shared_parts.constitution_by_default"},
+                        "fires_at_all": {"decided": True, "condition": "always"},
+                        "refire_condition_and_limit": {"see": "shared_parts.constitution_by_default"}},
+            "AGENT_B": {p: {"decided": True} for p in (
+                "agent_itself", "constitution_by_default", "rule_cluster", "testing_against_cluster",
+                "ontology", "receive_format", "hand_format", "fires_at_all",
+                "refire_condition_and_limit")},
+        },
+    }
+    harness_path = d / "agent_harness.json"
+    harness_path.write_text(json.dumps(harness), encoding="utf-8")
+    registry_path = d / "agent_registry.json"
+    registry_path.write_text(json.dumps({"agents": {
+        "PRACTICE_AUDITOR": {"subjects": ["alpha"]},
+        "STYLE_GUARDIAN": {"subjects": ["beta"]},
+        "VERIFIER": {"subjects": ["gamma"]},
+    }}), encoding="utf-8")
+    runs = d / "runs"
+    run_id = "20260911_000000__c0ffe8"
+    run_dir = runs / run_id
+    (run_dir / "audit").mkdir(parents=True)
+    (run_dir / "status.json").write_text(json.dumps({
+        "run_id": run_id, "status": "completed", "submitted_at": "2026-09-11T00:00:00+00:00",
+        "started_at": "2026-09-11T00:00:01+00:00", "completed_at": "2026-09-11T00:10:00+00:00",
+        "exit_code": 0}), encoding="utf-8")
+    assignment = {
+        "by_rule": {
+            "CONV-001": {"subjects": ["alpha"], "agents": ["PRACTICE_AUDITOR"],
+                         "consumer_agents": ["PRACTICE_AUDITOR"], "status": "assigned"},
+            "CONV-002": {"subjects": ["gamma"], "agents": ["VERIFIER"],
+                         "consumer_agents": [], "status": "assigned_no_consumer"},
+        },
+        "by_agent": {"PRACTICE_AUDITOR": ["CONV-001"], "VERIFIER": ["CONV-002"], "STYLE_GUARDIAN": []},
+    }
+    (run_dir / "audit" / "convention_assignment.json").write_text(json.dumps(assignment), encoding="utf-8")
+
+    # the module function, directly, on the assignment shapes that matter
+    if _ca.firing_convention_review_agents(None) != ["PRACTICE_AUDITOR", "STYLE_GUARDIAN"]:
+        return _fail("firing_convention_review_agents(None) must let every convention-review agent fire")
+    if _ca.not_firing_convention_review_agents(assignment) != ["STYLE_GUARDIAN"]:
+        return _fail(f"the gate should keep STYLE_GUARDIAN from firing on this assignment "
+                     f"(no rule, no untagged rule): {_ca.not_firing_convention_review_agents(assignment)}")
+    untagged = {"by_rule": {"CONV-009": {"subjects": [], "agents": [], "consumer_agents": [],
+                                         "status": "untagged"}}, "by_agent": {}}
+    if _ca.not_firing_convention_review_agents(untagged):
+        return _fail("an untagged rule must keep every convention-review agent firing")
+    if _ca.not_firing_convention_review_agents({"by_rule": {}, "by_agent": {}}):
+        return _fail("an assignment with no rules decided nothing; not_firing must be empty")
+    import pipeline as _pl
+    if _pl._convention_review_firing_agents(assignment) != _ca.firing_convention_review_agents(assignment):
+        return _fail("pipeline._convention_review_firing_agents no longer agrees with the module function")
+
+    saved = {k: _os.environ.get(k) for k in
+             ("SHIMMER_TOKEN_HASH", "SHIMMER_OUTPUT_DIR", "SHIMMER_AGENT_REGISTRY", "SHIMMER_AGENT_HARNESS")}
+    token = "w8-console-token"
+    _os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(token.encode()).hexdigest()
+    _os.environ["SHIMMER_OUTPUT_DIR"] = str(runs)
+    _os.environ["SHIMMER_AGENT_REGISTRY"] = str(registry_path)
+    _os.environ["SHIMMER_AGENT_HARNESS"] = str(harness_path)
+    try:
+        for m in ("server",):
+            sys.modules.pop(m, None)
+        import server
+        try:
+            client = TestClient(server.app)
+            headers = {"Authorization": f"Bearer {token}"}
+            r = client.get("/harness")
+            if r.status_code != 401:
+                return _fail(f"GET /harness without a token returned {r.status_code}, not 401")
+            r = client.get("/harness", headers=headers)
+            if r.status_code != 200:
+                return _fail(f"GET /harness returned {r.status_code}: {r.text[:200]}")
+            body = r.json()
+            if body.get("agent_count") != 2 or set(body.get("agents") or {}) != {"AGENT_A", "AGENT_B"}:
+                return _fail(f"GET /harness did not serve the fixture's two agents: {body.get('agent_count')}")
+            if body.get("unresolved") != {"AGENT_A": ["ontology"]} or body.get("unresolved_part_count") != 1:
+                return _fail(f"GET /harness did not report AGENT_A.ontology as the one unresolved part: "
+                             f"{body.get('unresolved')}")
+            if body["agents"]["AGENT_A"]["ontology"].get("unresolved_because") != "waits on a later step":
+                return _fail("GET /harness dropped the unresolved part's own reason")
+            if body.get("part_names") != list(server.HARNESS_PART_NAMES) or len(body["part_names"]) != 9:
+                return _fail("GET /harness does not name the nine parts")
+            r = client.get(f"/runs/{run_id}/convention-assignment", headers=headers)
+            if r.status_code != 200:
+                return _fail(f"convention-assignment route returned {r.status_code}: {r.text[:200]}")
+            ca = r.json()
+            if ca.get("not_firing") != ["STYLE_GUARDIAN"]:
+                return _fail(f"the route's not_firing is {ca.get('not_firing')!r}, expected "
+                             f"['STYLE_GUARDIAN'] (the gate's own answer)")
+            if ca.get("untagged") != 0:
+                return _fail(f"the route's untagged count is {ca.get('untagged')!r}, expected 0")
+            if [a["agent"] for a in ca.get("idle_agents") or []] != ["STYLE_GUARDIAN"]:
+                return _fail(f"idle_agents should name STYLE_GUARDIAN only: {ca.get('idle_agents')}")
+            # the harness missing on the server: a distinct 404, not a crash or an empty 200
+            harness_path.unlink()
+            r = client.get("/harness", headers=headers)
+            if r.status_code != 404 or "not built" not in r.text:
+                return _fail(f"GET /harness with no harness file returned {r.status_code}: {r.text[:120]}")
+        finally:
+            sys.modules.pop("server", None)
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                _os.environ.pop(k, None)
+            else:
+                _os.environ[k] = v
+    ui = (SCRIPTS / "ui" / "console.html").read_text(encoding="utf-8")
+    for needle in ("function conventionDistributionHtml(", "function notFiringHtml(",
+                   "function harnessHtml(", "function renderAgents(", 'id="nav-agents"',
+                   'parts[0] === "agents"', 'apiJson("/harness")',
+                   "convention-distribution-holder", "convention-not-firing-holder",
+                   "caRes.body.not_firing", "caRes.body.untagged"):
+        if needle not in ui:
+            return _fail(f"console.html no longer carries {needle!r}: the W8 section it renders "
+                         f"would be gone from the console while the route still serves it")
+    return _ok("GET /harness serves the nine-part harness with unresolved parts named per agent "
+               "(and a distinct 404 when not built); /runs/{id}/convention-assignment carries "
+               "the firing gate's own not_firing and the untagged count; the module gate agrees "
+               "with the pipeline's; console.html carries the distribution, not-firing, "
+               "harness and Agents-page sections")
+
+
+def check_203_console_current_with_the_chain():
+    """night chain W8 (the console). Four things surfaced, each only to the
+    extent the step that built it ran in THIS chain: the four visible states
+    from W3 (an amendment, a refused finding and a failed contract already
+    had sections; the agent that did not fire is notFiringHtml, fed by the
+    firing gate's own function, which pipeline._convention_review_firing_agents
+    now delegates to, so the console shows the gate's answer, never a second
+    computation); the distribution from W2, which rules went to which agent
+    and which matched none (conventionDistributionHtml over by_agent, plus
+    the existing unassigned list); the harness from W4, one per agent with
+    its undecided parts shown as undecided (GET /harness, the Agents page);
+    and W5's refusals, which already had their section. Proved against the
+    real FastAPI app on tempdir fixtures (token, output dir, registry and
+    harness all redirected through the SHIMMER_* environment the server
+    reads at import), never the real config/ or output/.
+
+    Neutralise-and-restore: with the firing gate replaced by one that lets
+    every agent fire, not_firing goes empty and the body must FAIL; restored,
+    PASS."""
+    import convention_assignment as _ca
+
+    shipped = _w8_console_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _ca.firing_convention_review_agents
+    _ca.firing_convention_review_agents = lambda assignment, review_agents=_ca.CONVENTION_REVIEW_AGENT_NAMES: list(review_agents)
+    try:
+        neutralised = _w8_console_body()
+    finally:
+        _ca.firing_convention_review_agents = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with the firing gate neutralised the body still passed ({neutralised})")
+    restored = _w8_console_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring the firing gate the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; neutralise (every agent fires) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -15859,6 +16041,8 @@ CHECKS = [
      check_201_ontology_provenance_struct_on_the_capture_path),
     ("202 ontology dual track: supersede built, delete not (night W7 d, e)",
      check_202_ontology_dual_track_supersede_built_delete_not),
+    ("203 the console is current with the chain: distribution, not-firing, harness (night W8)",
+     check_203_console_current_with_the_chain),
 ]
 
 
