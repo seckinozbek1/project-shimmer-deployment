@@ -18968,6 +18968,171 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_218_the_scorer_distinguishes_not_asked_and_sees_every_relation():
+    """The scorer measured the model path after three days of work moved
+    findings to the Python path. Three gaps, all closed here and all proved
+    by RUNNING the real scorer over a synthetic run directory (no pipeline
+    run: the bus, the assignment and the key are written by this check).
+
+    1. A rule NO agent could act on scored identically to a rule that was
+       asked and found nothing. audit/convention_assignment.json records a
+       status per rule; `unassigned` (tags matched no agent) and
+       `assigned_no_consumer` (an agent declared the tag but consumes no
+       rule in this mode) both mean nothing was ever put to anything.
+       Scoring those as ordinary misses reports a mechanism failure where
+       no mechanism ran. The scorer now reports them apart and gives a
+       second recall figure over the asked entries alone.
+    2. No per-relation view could see a relation added after it was written.
+       date_window (the duration comparison) counted toward recall through
+       the generic unit+relation match, but every relation-aware section
+       partitioned on PRIOR_RELATIONS and OUTSIDE_BAND_RELATIONS only, so a
+       duration finding was computed, posted, and invisible in the only
+       view a reader sees. The breakdown is now built from the relations
+       the run actually produced, so the next relation appears with no edit.
+    3. A run directory carries NO completion marker (the bus has BOOT and no
+       closing event), so a stopped run and a finished run that found
+       nothing are indistinguishable from artifacts alone. The scorer now
+       says which of those facts are knowable instead of printing 0 as
+       though it were measured.
+
+    NEUTRALISE AND RESTORE: with audit/convention_assignment.json removed
+    (a run predating the assignment, which is every run on disk today) the
+    scorer must report the not-asked question as UNKNOWN and mark each
+    entry "?", never a confident "asked". Restored, it reports the count
+    and excludes those entries from the asked-recall denominator.
+    """
+    import subprocess as _sp
+    import tempfile as _tf
+    import shutil as _shutil
+
+    scorer = ROOT / "tools" / "score_corpus.py"
+    if not scorer.is_file():
+        return _fail("tools/score_corpus.py is missing")
+
+    key = {
+        "corpus": "gate_fixture",
+        "task_given_to_the_pipeline": "gate fixture",
+        "planted": [
+            {"unit": "u02-alpha", "rule": "CONV-D01", "relation": "above_band",
+             "kind": "self-contained", "what": "a", "depends_on": ""},
+            {"unit": "u18-teasel", "rule": "CONV-D04", "relation": "date_window",
+             "kind": "self-contained", "what": "b", "depends_on": ""},
+            {"unit": "u20-omega", "rule": "CONV-D07", "relation": "missing_field",
+             "kind": "self-contained", "what": "c", "depends_on": ""},
+        ],
+        "clean": [],
+    }
+    items = [
+        {"ref": "REF-1", "kind": "finding", "confidence": "CONFIDENT",
+         "rule_id": "CONV-001", "unit_id": "u02-alpha", "relation": "above_band",
+         "record_verdict": "irregular", "value_a": 99.0, "unit_a": "units",
+         "source_refs": ["REF-1"], "explanation": "a"},
+        {"ref": "REF-2", "kind": "finding", "confidence": "CONFIDENT",
+         "rule_id": "CONV-004", "unit_id": "u18-teasel", "relation": "date_window",
+         "record_verdict": "irregular", "value_a": 48.0, "unit_a": "hours",
+         "value_b": 24.0, "unit_b": "hours",
+         "source_refs": ["REF-2"], "explanation": "b"},
+    ]
+    assignment = {
+        "by_rule": {
+            "CONV-001": {"subjects": ["conformance"], "agents": ["PRACTICE_AUDITOR"],
+                         "consumer_agents": ["PRACTICE_AUDITOR"], "status": "assigned",
+                         "source_rule_id": "CONV-D01"},
+            "CONV-004": {"subjects": ["conformance"], "agents": ["PRACTICE_AUDITOR"],
+                         "consumer_agents": ["PRACTICE_AUDITOR"], "status": "assigned",
+                         "source_rule_id": "CONV-D04"},
+            "CONV-007": {"subjects": ["editorial"], "agents": ["EDITOR_DG"],
+                         "consumer_agents": [], "status": "assigned_no_consumer",
+                         "source_rule_id": "CONV-D07"},
+        },
+        "by_agent": {"PRACTICE_AUDITOR": ["CONV-001", "CONV-004"]},
+    }
+
+    def _build(run_dir, with_assignment):
+        (run_dir / "logs").mkdir(parents=True, exist_ok=True)
+        (run_dir / "audit").mkdir(parents=True, exist_ok=True)
+        msg = {"timestamp": "2026-09-12T00:00:00Z", "sender": "PRACTICE_AUDITOR",
+               "body": {"event": "AGENT_OUTPUT",
+                        "payload": {"agent": "PRACTICE_AUDITOR", "doc_id": "d",
+                                    "items": items}}}
+        (run_dir / "logs" / "agent_bus.jsonl").write_text(
+            json.dumps(msg) + "\n", encoding="utf-8")
+        if with_assignment:
+            (run_dir / "audit" / "convention_assignment.json").write_text(
+                json.dumps(assignment), encoding="utf-8")
+
+    def _run(run_dir, corpus_name):
+        proc = _sp.run([sys.executable, "-X", "utf8", str(scorer),
+                        "--corpus", corpus_name, "--run", str(run_dir)],
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", cwd=str(ROOT))
+        return proc.stdout + proc.stderr
+
+    corpus_name = "_gate218_fixture"
+    corpus_dir = ROOT / "benchmark" / "corpora" / corpus_name
+    try:
+        corpus_dir.mkdir(parents=True, exist_ok=True)
+        (corpus_dir / "answer_key.json").write_text(json.dumps(key), encoding="utf-8")
+        with _tf.TemporaryDirectory(prefix="shimmer_gate218_") as tmp:
+            shipped_dir = Path(tmp) / "shipped"
+            _build(shipped_dir, with_assignment=True)
+            shipped = _run(shipped_dir, corpus_name)
+
+            # 2. every relation the run produced is named, date_window included
+            if "date_window=1" not in shipped:
+                return _fail("the relation breakdown must name date_window, the relation "
+                             "no partition in this file covers; got:\n%s" % shipped)
+            if "above_band=1" not in shipped:
+                return _fail("the relation breakdown must also name above_band; got:\n%s" % shipped)
+
+            # 1. the not-asked rule is counted apart and excluded from asked recall
+            if "not asked     : 1" not in shipped:
+                return _fail("the entry whose rule is assigned_no_consumer must be counted "
+                             "as not asked; got:\n%s" % shipped)
+            if "recall, asked : 2/2" not in shipped:
+                return _fail("asked-recall must exclude the not-asked entry (2 of 2 asked "
+                             "entries were found); got:\n%s" % shipped)
+            if "recall          : 2/3" not in shipped:
+                return _fail("raw recall over every planted entry must still be reported "
+                             "as 2/3; got:\n%s" % shipped)
+
+            # 3. completeness is stated, not guessed
+            if "NO deliverable" not in shipped or "not by measurement" not in shipped:
+                return _fail("with no deliverable the scorer must say the amendment figures "
+                             "are 0 by absence rather than by measurement; got:\n%s" % shipped)
+
+            # NEUTRALISE: the assignment goes away (every run on disk today)
+            neut_dir = Path(tmp) / "neutralised"
+            _build(neut_dir, with_assignment=False)
+            neutralised = _run(neut_dir, corpus_name)
+            if "not asked     : unknown" not in neutralised:
+                return _fail("with no assignment on disk the scorer must report the "
+                             "not-asked question as unknown, never a confident count; "
+                             "got:\n%s" % neutralised)
+            if "recall, asked" in neutralised:
+                return _fail("with no assignment there is no honest asked-recall figure; "
+                             "it must be omitted, got:\n%s" % neutralised)
+            if "date_window=1" not in neutralised:
+                return _fail("the relation breakdown does not depend on the assignment and "
+                             "must still name date_window; got:\n%s" % neutralised)
+
+            # RESTORE
+            restored = _run(shipped_dir, corpus_name)
+            if "not asked     : 1" not in restored or "recall, asked : 2/2" not in restored:
+                return _fail("after restoring the assignment the not-asked count and the "
+                             "asked-recall figure must come back; got:\n%s" % restored)
+    finally:
+        _shutil.rmtree(corpus_dir, ignore_errors=True)
+
+    return _ok("the scorer reports a rule no agent could act on apart from a rule that was "
+               "asked and answered nothing (not asked = 1, raw recall 2/3, asked recall "
+               "2/2), names every relation the run actually produced including date_window "
+               "which no partition in the file covers, and states plainly that a run with no "
+               "deliverable yields 0 amendments by absence rather than by measurement; "
+               "neutralise (no convention_assignment.json, every run on disk today) reports "
+               "unknown and omits the asked figure, restore brings both back")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -19214,6 +19379,8 @@ CHECKS = [
      check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded),
     ("217 a gap between two timestamps is computed in Python (job C)",
      check_217_a_gap_between_two_timestamps_is_computed_in_python),
+    ("218 the scorer distinguishes not-asked from asked-and-nothing-found, and sees every relation",
+     check_218_the_scorer_distinguishes_not_asked_and_sees_every_relation),
 ]
 
 

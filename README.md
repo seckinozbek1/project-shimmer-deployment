@@ -1546,6 +1546,30 @@ not; a key without `kind` prints the overall figure alone), and it scores a run 
 before synthesis from the bus findings alone, printing a NOTE that no deliverable exists and
 that the amendment-based figures are therefore 0 and mean nothing, rather than refusing.
 
+**A rule nothing could act on is not a failed rule** (check 218). The scorer reads the run's
+own `audit/convention_assignment.json` and reports, apart from recall, how many planted entries
+name a rule whose status is `unassigned` (it carries subject tags and none matched an agent) or
+`assigned_no_consumer` (an agent declared its tag but consumes no rule in this mode). Both mean
+the rule was never put to anything. Scoring those as ordinary misses reports a mechanism failure
+where no mechanism ran, so a second figure, `recall, asked`, is given over the entries that were
+actually asked, and that is the figure that says something about the mechanism. A run that wrote
+no assignment (every run on disk today predates it) reports the question as `unknown` and marks
+each entry `?`, never a confident "asked".
+
+**The relation breakdown is built from the run, not from a list.** Every relation the run's typed
+findings actually carry is named and counted. This exists because `date_window`, the duration
+comparison, was computed, posted and counted toward recall while every relation-aware section of
+the scorer partitioned on the prior-version and band relations alone, so the newest mechanism was
+invisible in the only view a reader sees. A relation appended to the Finding record now appears
+the first run that produces one, with no edit here.
+
+**Run completeness is stated, not guessed.** A run directory carries no completion marker: the bus
+has a `BOOT` event and no closing one, and nothing else on disk records an exit. So a run stopped
+mid-phase and a run that finished with nothing to say are indistinguishable from artifacts alone,
+and the scorer says which facts are knowable rather than printing 0 as though it were measured.
+The server knows the difference (it holds `state` and `outcome` per job and derives `is_partial`),
+but the scorer reads a directory, not the server.
+
 The scorer also classifies every planted entry the run failed to produce, per entry, into
 exactly one of four classes, from the run's saved artifacts alone (`scripts/fn_evidence.py`;
 the scorer is the only reader of a key and hands each missed entry to the classifier as a
@@ -2362,7 +2386,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**218** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**219** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2377,7 +2401,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 217 have since raised the total to 218.
+table below; checks 210 to 218 have since raised the total to 219.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each
