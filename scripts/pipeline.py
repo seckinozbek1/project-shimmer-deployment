@@ -334,6 +334,33 @@ PRODUCTION_AGENTS_CORPUS_LEVEL = ["ARCHIVIST", "INST_FINDER", "CITATION_RESOLVER
 AUDIT_AGENTS_PER_DOC = ["VERIFIER", "FACT_CHECKER"]
 CONVENTION_REVIEW_AGENTS = ["PRACTICE_AUDITOR", "STYLE_GUARDIAN"]
 
+
+def _convention_review_firing_agents(convention_assignment):
+    """night chain W3, the firing gate (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md).
+    Which of CONVENTION_REVIEW_AGENTS actually has work to do this document,
+    given the BOOT-computed assignment.
+
+    An agent fires if EITHER is true: it has at least one rule genuinely
+    assigned to it (assignment["by_agent"][name] non-empty), OR at least one
+    loaded rule is untagged (status "untagged" in by_rule), since an
+    untagged rule keeps today's default routing to every convention-review
+    agent unchanged, per the operator's own instruction that tagging a
+    corpus is what changes call behavior, never the mere existence of the
+    assignment mechanism. Only when both are false, this agent has zero
+    assigned rules and zero untagged rules exist anywhere in the loaded
+    set, does it have nothing to do.
+
+    With convention_assignment None (a caller that predates W3, mainly the
+    gate's own older fixtures), every agent in CONVENTION_REVIEW_AGENTS
+    fires, identical to every commit before this one."""
+    if convention_assignment is None:
+        return list(CONVENTION_REVIEW_AGENTS)
+    by_agent = convention_assignment.get("by_agent") or {}
+    by_rule = convention_assignment.get("by_rule") or {}
+    any_untagged = any(row.get("status") == "untagged" for row in by_rule.values())
+    return [name for name in CONVENTION_REVIEW_AGENTS
+            if by_agent.get(name) or any_untagged]
+
 # local RUNDAY: the local-profile checkpoint ids are operator-selectable via
 # config/local_models.json (active_producer / active_auditor) so the original
 # full-precision checkpoints stay available by editing one file. The literals below are
@@ -1406,13 +1433,23 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                                       convention_registry, reference_index,
                                       embed_store=None, structural_inventory=None,
                                       max_concurrent_docs=4, review_mode="wide",
-                                      pairs_per_unit=None, prior_docs=()):
+                                      pairs_per_unit=None, prior_docs=(),
+                                      convention_assignment=None):
     """Convention-driven review: PRACTICE_AUDITOR + STYLE_GUARDIAN against the registry.
 
     Per Part XXI amendment, both agents receive provision-aware context refs
     (baseline doc query + per-convention-rule queries merged). Per Part XXVI,
     PRACTICE_AUDITOR additionally receives the structural inventory in its
     work payload so its absence-detection directive has data to work with.
+
+    `convention_assignment` (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, night
+    chain W3) is the BOOT-computed comparison's `by_rule`/`by_agent` result,
+    or None for a caller that predates it (the gate's own fixtures, mainly):
+    with None, wide mode's firing gate and paired mode's per-pair agent
+    choice both fall back to exactly today's behavior (every
+    CONVENTION_REVIEW_AGENTS agent dispatched; PRACTICE_AUDITOR judges every
+    pair), so this parameter changes nothing for a caller that does not pass
+    it.
     """
     out = []
     all_context_refs = [e.as_dict() for e in reference_index.entries
@@ -1485,10 +1522,23 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
             return prior_results + await _paired_convention_review(
                 orch, keys, doc, pairing, convention_registry, refs_excerpt,
                 run_objectives, doc_pos, n_docs, pairs_per_unit,
-                context_refs=all_context_refs)
+                context_refs=all_context_refs,
+                convention_assignment=convention_assignment)
+
+        # night chain W3: the firing gate. An agent with a real, live rule
+        # assignment fires; an agent with none STILL fires as long as at
+        # least one loaded rule is untagged, since an untagged rule keeps
+        # today's default routing (every convention-review agent), per the
+        # operator's own instruction that this changes nothing until a
+        # corpus is tagged. Only when BOTH are false, zero assigned rules
+        # and zero untagged rules exist, does the agent have nothing to do.
+        # With no assignment computed at all (convention_assignment is
+        # None, a caller that predates W3), every agent fires, exactly as
+        # before this gate existed.
+        firing_agents = _convention_review_firing_agents(convention_assignment)
 
         tasks = []
-        for name in CONVENTION_REVIEW_AGENTS:
+        for name in firing_agents:
             wrapper = _build_wrapper(name, orch, keys)
             payload = dict(base_payload)
             if name == "PRACTICE_AUDITOR" and structural_inventory:
@@ -1503,7 +1553,7 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                                   _progress=(5.5, doc_pos[doc["id"]], n_docs, name)))
         rev_results = await _gather_or_serial(tasks)
         return prior_results + [{"scope": "doc", "doc_id": doc["id"], "agent": name, **r}
-                                for name, r in zip(CONVENTION_REVIEW_AGENTS, rev_results)]
+                                for name, r in zip(firing_agents, rev_results)]
 
     for sub in await _gather_docs(op_docs, _process_doc, max_concurrent_docs):
         out.extend(sub)
@@ -1593,9 +1643,39 @@ async def _polish_findings(orch, keys, doc, findings, rules_by_id, unit_texts,
     return out, polished_count
 
 
+def _paired_judging_agent(rule, convention_assignment):
+    """night chain W3, answer 7: the SUBJECT chooses the judging agent for a
+    paired-mode pair, replacing the fixed CONVENTION_REVIEW_AGENTS[0] pin.
+    Never filters a pair out: every rule still gets judged, only by whichever
+    agent the assignment names, so a wording-subject rule now reaches
+    STYLE_GUARDIAN instead of being silently dropped by a fixed-agent filter.
+
+    Deterministic: the first of the rule's own real, live consumer agents
+    (by_rule[rule_id].consumer_agents, already sorted by
+    convention_assignment.assign_conventions) that is a CONVENTION-REVIEW
+    agent wins. Only a convention-review agent can judge a paired call: a
+    rule whose consumers all sit outside phase 5.5 (a [redaction] rule is
+    REDACTOR's, read in phase 9 by its own path; an [editorial] rule is the
+    board's, read in phase 6.5 by escalation) is still judged here by
+    PRACTICE_AUDITOR exactly as every rule is today, never dispatched to a
+    rank that is summoned by escalation, and never dropped from the review.
+    An untagged rule, or one whose consumer_agents holds no convention-review
+    agent for any other reason (no convention_assignment computed; a rule id
+    not in by_rule; no consumer matched at all), falls back the same way:
+    PRACTICE_AUDITOR, today's paired-mode default, unchanged until a rule is
+    tagged for STYLE_GUARDIAN."""
+    if convention_assignment is not None:
+        row = (convention_assignment.get("by_rule") or {}).get(rule.get("id"))
+        for name in (row or {}).get("consumer_agents") or []:
+            if name in CONVENTION_REVIEW_AGENTS:
+                return name
+    return CONVENTION_REVIEW_AGENTS[0]
+
+
 async def _paired_convention_review(orch, keys, doc, pairing, convention_registry,
                                     refs_excerpt, run_objectives, doc_pos, n_docs,
-                                    pairs_per_unit, *, context_refs=()):
+                                    pairs_per_unit, *, context_refs=(),
+                                    convention_assignment=None):
     """structure H5. One narrow call per (unit, rule) pair, arithmetic in Python.
 
     Three outcomes per pair, and only one of them costs a call:
@@ -1610,7 +1690,14 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                              text, on ONE unit against ONE rule.
       the figures agree      No finding and NO CALL. This is where the saving is.
 
-    A pair the cap drops is counted and logged, never silently skipped."""
+    A pair the cap drops is counted and logged, never silently skipped.
+
+    night chain W3, answer 7: the judging agent is chosen PER PLAN by
+    _paired_judging_agent, not fixed to CONVENTION_REVIEW_AGENTS[0]. Plans
+    are grouped by their chosen agent after judging, so each agent that
+    actually judged at least one pair posts its own envelope and its own
+    bus message, one result dict per agent that fired, instead of always
+    exactly one result for the whole document."""
     if not pairing:
         return []
     rules_by_id = {c["id"]: c for c in convention_registry.get("conventions", [])}
@@ -1677,10 +1764,16 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
               f"calls={len(plans)} saved={len(pairs) - len(plans)}",
               run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
 
-    agent = CONVENTION_REVIEW_AGENTS[0]
-    computed_items, results = [], []
+    # night chain W3, answer 7: the judging agent is chosen PER PLAN by its
+    # rule's own subject, never a single fixed agent for the whole document.
+    # computed_items_by_agent accumulates each agent's own findings, so each
+    # agent that actually judged something posts its own envelope below,
+    # instead of one envelope always posted under a single fixed name.
+    computed_items_by_agent: dict = {}
+    results = []
     for plan in plans:
         unit, rule, checks = plan["unit"], plan["rule"], plan["checks"]
+        agent = _paired_judging_agent(rule, convention_assignment)
         source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
         wrapper = _build_wrapper(agent, orch, keys)
@@ -1705,42 +1798,67 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
         explanation = _first_explanation(r)
         for check in paired_review_mod.disagreements(checks):
-            computed_items.append(paired_review_mod.finding_from_check(
-                unit_id=unit["unit_id"], rule=rule, check=check,
-                source_rule_id=source_rule_id, refs=refs, explanation=explanation))
+            computed_items_by_agent.setdefault(agent, []).append(
+                paired_review_mod.finding_from_check(
+                    unit_id=unit["unit_id"], rule=rule, check=check,
+                    source_rule_id=source_rule_id, refs=refs, explanation=explanation))
         results.append(r)
 
-    # Every unit the map matched to nothing is still a finding, not a silence.
-    computed_items.extend(pairing.get("missing_field_findings", []))
-    items = paired_review_mod.dedupe(computed_items)
-    log_event(_LOG, f"paired_review_findings count={len(items)}",
-              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
-    envelope = agent_wrapper.make_envelope(agent, str(doc["id"]), items)
-    # The COMPUTED findings go on the bus. They did not, before this: the envelope
-    # was returned in memory to phase 6 and never posted, so the bus carried only
-    # the model's raw judging responses. Everything that reads the bus was blind to
-    # the findings Python actually made: GET /findings, the held-out scorer, and
-    # INFRA-037's own promise that consumers read by reference. Found by scoring the
-    # first unseen corpus, where three correct findings could not be proven from
-    # any typed record. Posted through the same wrapper method and message shape
-    # as a model's output, with backend "paired" and model "python" so provenance
-    # is not misstated: these are Python's records under the agent's name.
-    if items:
-        try:
-            _build_wrapper(agent, orch, keys).post_to_bus(
-                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
-                body={"event": "AGENT_OUTPUT", "backend": "paired", "model": "python",
-                      "item_count": len(items), "parse_trace": {}, "payload": envelope},
-                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
-                                    "resolution": "computed in code from the unit's own "
-                                                  "figures; no model judged these values"})
-        except Exception as e:  # a bus that refuses must not take the review down
-            log_event(_LOG, f"paired_review_bus_post_error error_type={type(e).__name__}",
-                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
-    return [{"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
-             "parsed": envelope, "raw_text": "", "contract_missing": [],
-             "error": None, "item_count": len(items),
-             "backend": "paired", "model": "python+model"}]
+    # Every unit the map matched to nothing is still a finding, not a
+    # silence, routed by its own nearest-miss rule's subject the same way a
+    # judged pair is; a rule id the assignment does not recognise falls back
+    # to the paired-mode default, same as _paired_judging_agent's own fallback.
+    for finding in pairing.get("missing_field_findings", []):
+        rule = rules_by_id.get(finding.get("rule_id")) or {"id": finding.get("rule_id")}
+        agent = _paired_judging_agent(rule, convention_assignment)
+        computed_items_by_agent.setdefault(agent, []).append(finding)
+
+    out_results = []
+    for agent, raw_items in computed_items_by_agent.items():
+        items = paired_review_mod.dedupe(raw_items)
+        log_event(_LOG, f"paired_review_findings agent={agent} count={len(items)}",
+                  run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+        envelope = agent_wrapper.make_envelope(agent, str(doc["id"]), items)
+        # The COMPUTED findings go on the bus. They did not, before this: the envelope
+        # was returned in memory to phase 6 and never posted, so the bus carried only
+        # the model's raw judging responses. Everything that reads the bus was blind to
+        # the findings Python actually made: GET /findings, the held-out scorer, and
+        # INFRA-037's own promise that consumers read by reference. Found by scoring the
+        # first unseen corpus, where three correct findings could not be proven from
+        # any typed record. Posted through the same wrapper method and message shape
+        # as a model's output, with backend "paired" and model "python" so provenance
+        # is not misstated: these are Python's records under the agent's name.
+        if items:
+            try:
+                _build_wrapper(agent, orch, keys).post_to_bus(
+                    recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                    body={"event": "AGENT_OUTPUT", "backend": "paired", "model": "python",
+                          "item_count": len(items), "parse_trace": {}, "payload": envelope},
+                    constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                        "resolution": "computed in code from the unit's own "
+                                                      "figures; no model judged these values"})
+            except Exception as e:  # a bus that refuses must not take the review down
+                log_event(_LOG, f"paired_review_bus_post_error agent={agent} "
+                                f"error_type={type(e).__name__}",
+                          run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+        out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
+                            "parsed": envelope, "raw_text": "", "contract_missing": [],
+                            "error": None, "item_count": len(items),
+                            "backend": "paired", "model": "python+model"})
+
+    # No plan and no missing-field finding at all: the document had nothing to
+    # pair, but the phase still owes a result so downstream progress counting
+    # and _items_for's per-agent lookups behave exactly as before this
+    # per-agent split (an empty envelope under the paired-mode default agent,
+    # the same shape a zero-plan document always returned).
+    if not out_results:
+        default_agent = CONVENTION_REVIEW_AGENTS[0]
+        envelope = agent_wrapper.make_envelope(default_agent, str(doc["id"]), [])
+        out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": default_agent,
+                            "ok": True, "parsed": envelope, "raw_text": "",
+                            "contract_missing": [], "error": None, "item_count": 0,
+                            "backend": "paired", "model": "python+model"})
+    return out_results
 
 
 def _first_explanation(result):
@@ -3388,7 +3506,8 @@ def main(argv=None):
                 embed_store=embed_store, structural_inventory=structural_inventory,
                 max_concurrent_docs=args.max_concurrent_docs,
                 review_mode=args.review_mode, pairs_per_unit=args.pairs_per_unit,
-                prior_docs=prior_docs))
+                prior_docs=prior_docs,
+                convention_assignment=convention_assignment_result))
             log_phase_done(_LOG, "5.5", run_id=run_ctx.run_id,
                            duration_ms=int((time.perf_counter() - _t55) * 1000))
         else:

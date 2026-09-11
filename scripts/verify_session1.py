@@ -8934,15 +8934,37 @@ def check_157_wide_mode_is_intact_and_the_default_rule_holds():
         return _fail("the wide path's own assembly is gone from phase 5.5: wide mode is "
                      "not intact and the rollback lever does not exist")
     branch = source.split('review_mode == "paired"', 1)[1]
-    if "for name in CONVENTION_REVIEW_AGENTS" not in branch:
+    # night chain W3: the wide-mode dispatch loop now iterates firing_agents
+    # (CONVENTION_REVIEW_AGENTS filtered by the convention assignment's firing
+    # gate, scripts/pipeline.py's _convention_review_firing_agents), not the
+    # raw constant directly; a caller with no assignment computed still gets
+    # every agent (_convention_review_firing_agents(None) == list(
+    # CONVENTION_REVIEW_AGENTS)), so wide mode's real behavior is unchanged
+    # for any caller that predates W3. The check now proves that structure:
+    # the loop exists, and the list it iterates is genuinely derived from
+    # CONVENTION_REVIEW_AGENTS via the firing gate, not some unrelated list.
+    if "for name in firing_agents" not in branch:
         return _fail("the wide branch no longer follows the paired branch: the old path "
                      "is unreachable")
+    if "firing_agents = _convention_review_firing_agents(convention_assignment)" not in branch:
+        return _fail("the wide branch's firing_agents is no longer derived from "
+                     "CONVENTION_REVIEW_AGENTS via the firing gate: the rollback lever "
+                     "(every agent fires with no assignment) may be gone")
     if "_paired_convention_review" not in source:
         return _fail("the paired branch has no implementation to call")
+    # Directly confirm the firing gate's own fallback: with no assignment
+    # computed, every agent in CONVENTION_REVIEW_AGENTS still fires, so a
+    # caller that predates W3 (or a run where BOOT never computed one) sees
+    # wide mode's exact pre-W3 behavior.
+    if _pl._convention_review_firing_agents(None) != list(_pl.CONVENTION_REVIEW_AGENTS):
+        return _fail("_convention_review_firing_agents(None) does not return every "
+                     "agent: the no-assignment rollback path is broken")
     return _ok("resolve_review_mode gives paired on local and wide on cloud, an explicit "
                "flag wins in both directions, --review-mode offers both with no hardcoded "
-               "default, --pairs-per-unit exists, and phase 5.5 still carries the wide "
-               "path's own assembly behind the paired branch")
+               "default, --pairs-per-unit exists, phase 5.5 still carries the wide path's "
+               "own assembly behind the paired branch, its dispatch loop is genuinely "
+               "derived from CONVENTION_REVIEW_AGENTS via the W3 firing gate, and with no "
+               "assignment computed every agent still fires, unchanged from before W3")
 
 
 # --- H6: the retrieval excerpt budget ---------------------------------------
@@ -14980,6 +15002,179 @@ def check_198_convention_assignment_comparison_route_and_console():
                "holders, the fetch) confirmed present")
 
 
+def check_199_the_firing_gate_and_the_subject_chosen_paired_agent():
+    """Convention assignment, commit 3 (night chain W3, unblocked). "An agent
+    with no conventions assigned does not run" (docs/fix/STEP_W3_REPORT.md:5),
+    the exact state that could not occur before the assignment existed
+    (STEP_W3_REPORT.md:12-19). Two mechanisms, both against real code:
+
+    Wide mode's firing gate: _convention_review_firing_agents(assignment)
+    dispatches an agent only if it has a real assignment OR at least one
+    loaded rule is untagged (an untagged rule keeps today's default routing
+    unchanged, per the operator's own instruction that tagging a corpus, not
+    the mere existence of the assignment mechanism, is what changes
+    routing). Proven directly, and through phase_5_5_convention_review's own
+    real source (the loop now iterates firing_agents, not the raw constant).
+
+    Paired mode's judging agent, answer 7: the SUBJECT chooses which agent
+    judges a pair, replacing the fixed CONVENTION_REVIEW_AGENTS[0] pin. This
+    is the first time STYLE_GUARDIAN can fire in paired mode at all. Driven
+    live: the real _paired_convention_review runs on a real orchestrator and
+    a real bus (_run_one stubbed, no model called, the same executed-not-read
+    pattern check 177 already established), with one conformance-tagged rule
+    and one wording-tagged rule, each independently computable on its own
+    unit, in the SAME document, so both agents must judge in the same
+    paired-mode call and each must post its own separate bus envelope under
+    its own name, never a single fixed agent's name for both."""
+    import asyncio as _asyncio
+    import finding_record as _fr
+    import pipeline as _pl
+    import pairing_map as _pm
+    import convention_assignment as _ca
+    from harness.run_agent import build_orchestrator as _boot
+
+    # Site 1: the firing gate, direct and via real source structure (the
+    # direct-call shapes are also exercised in check_198's neighbourhood;
+    # this check adds the "genuinely skips an idle agent" case check_198
+    # does not cover, since check_198 is about the comparison, not firing).
+    assignment_pa_only = {
+        "by_agent": {"PRACTICE_AUDITOR": ["CONV-001"], "STYLE_GUARDIAN": []},
+        "by_rule": {"CONV-001": {"status": "assigned"}},
+    }
+    firing = _pl._convention_review_firing_agents(assignment_pa_only)
+    if firing != ["PRACTICE_AUDITOR"]:
+        return _fail(f"STYLE_GUARDIAN (no assignment, no untagged rule to fall back "
+                     f"on) must not be in the firing list: got {firing}")
+    if _pl._convention_review_firing_agents(None) != list(_pl.CONVENTION_REVIEW_AGENTS):
+        return _fail("with no assignment computed, every agent must still fire "
+                     "(the rollback path)")
+
+    # Only a convention-review agent can judge a paired call. A rule whose
+    # consumers all sit outside phase 5.5 (the editorial board, read on
+    # escalation in 6.5; REDACTOR, read in 9) must still be judged here by
+    # PRACTICE_AUDITOR, as every rule is today, never dispatched to a rank
+    # that is summoned by escalation and never dropped from the review.
+    # Found while estimating the remaining work, before this commit landed:
+    # the first draft took consumer_agents[0] verbatim, which for an
+    # [editorial] rule is EDITOR_CLERK.
+    board_only = {"by_rule": {"CONV-E": {"consumer_agents": ["EDITOR_CLERK", "EDITOR_DG"]}}}
+    if _pl._paired_judging_agent({"id": "CONV-E"}, board_only) != "PRACTICE_AUDITOR":
+        return _fail("a rule whose only consumers sit outside phase 5.5 must still be "
+                     "judged by PRACTICE_AUDITOR in paired mode, never dispatched to an "
+                     f"editorial rank: got "
+                     f"{_pl._paired_judging_agent({'id': 'CONV-E'}, board_only)!r}")
+    mixed = {"by_rule": {"CONV-M": {"consumer_agents": ["EDITOR_CLERK", "STYLE_GUARDIAN"]}}}
+    if _pl._paired_judging_agent({"id": "CONV-M"}, mixed) != "STYLE_GUARDIAN":
+        return _fail("a rule with a convention-review consumer beside a non-review one "
+                     "must be judged by the convention-review agent")
+
+    # Site 2: the paired-mode agent choice, live, both agents in one call.
+    registry = {"conventions": [
+        {"id": "CONV-001", "category": "conv-a01", "severity": "required",
+         "subjects": ["conformance"],
+         "rule": "The sum of the declared parts must equal the declared total extent."},
+        {"id": "CONV-002", "category": "conv-b01", "severity": "advisory",
+         "subjects": ["wording"],
+         "rule": "The sum of the declared components must equal the declared total weight."},
+    ]}
+    agents = {"PRACTICE_AUDITOR": {"subjects": ["conformance"]},
+              "STYLE_GUARDIAN": {"subjects": ["wording"]}}
+    assignment = _ca.assign_conventions(registry["conventions"], agents)
+    if assignment["by_rule"]["CONV-001"]["consumer_agents"] != ["PRACTICE_AUDITOR"]:
+        return _fail(f"fixture assignment did not route CONV-001 to PRACTICE_AUDITOR: "
+                     f"{assignment['by_rule']['CONV-001']}")
+    if assignment["by_rule"]["CONV-002"]["consumer_agents"] != ["STYLE_GUARDIAN"]:
+        return _fail(f"fixture assignment did not route CONV-002 to STYLE_GUARDIAN: "
+                     f"{assignment['by_rule']['CONV-002']}")
+
+    # Two units, one per rule, each independently computable (a real, disagreeing
+    # sum_mismatch on each): CONV-001 names "total declared extent" (Unit 7's own
+    # field), CONV-002 names "total declared weight" (Unit 8's own field). Two
+    # separate arithmetic checks, not one shared with the other, so both
+    # genuinely produce a Finding and both genuinely post to the bus under
+    # their own chosen agent.
+    doc = {"id": "zqprobe_doc", "name": "zqprobe_doc.md", "text": "\n".join([
+        "## Unit 7", "", "Total declared extent: 40.0 zed", "",
+        "| Part | Extent (zed) |", "|---|---|", "| P-A | 18.0 |", "| P-B | 14.0 |", "",
+        "## Unit 8", "", "Total declared weight: 55.0 kg", "",
+        "| Component | Weight (kg) |", "|---|---|", "| C-A | 20.0 |", "| C-B | 20.0 |", "",
+    ])}
+
+    async def _stub_run_one(wrapper, payload, objectives, **kw):
+        return {"ok": True, "parsed": [{"explanation": "stubbed judging reply"}],
+                "agent": wrapper.name}
+
+    def _bus_posts(orch):
+        out = []
+        for m in orch.bus.read_all():
+            body = m.get("body") or {}
+            if body.get("event") != "AGENT_OUTPUT" or body.get("backend") != "paired":
+                continue
+            payload = body.get("payload") or {}
+            items = [it for it in (payload.get("items") or []) if _fr.is_finding(it)]
+            out.append((m.get("sender"), items))
+        return out
+
+    def _run(assignment_arg, out_root):
+        pairing = _pm.build_pairing_map(doc["text"], registry["conventions"],
+                                        document_id=doc["id"], convention_registry=registry)
+        orch = _boot(root=ROOT, out_root=out_root)
+        saved = _pl._run_one
+        _pl._run_one = _stub_run_one
+        try:
+            _asyncio.run(_pl._paired_convention_review(
+                orch, {}, doc, pairing, registry, [], "objectives",
+                {doc["id"]: 1}, 1, None, context_refs=[],
+                convention_assignment=assignment_arg))
+        finally:
+            _pl._run_one = saved
+        return _bus_posts(orch)
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_convassign3_") as tmp:
+        posts = _run(assignment, tmp)
+
+    senders = {s for s, _items in posts}
+    if senders != {"PRACTICE_AUDITOR", "STYLE_GUARDIAN"}:
+        return _fail(f"expected both PRACTICE_AUDITOR and STYLE_GUARDIAN to post their "
+                     f"own envelope, got senders {senders}: {posts}")
+    by_sender = dict(posts)
+    if not any(it.get("relation") == "sum_mismatch" and it.get("rule_id") == "CONV-001"
+               for it in by_sender["PRACTICE_AUDITOR"]):
+        return _fail(f"PRACTICE_AUDITOR's own post does not carry CONV-001's computed "
+                     f"sum_mismatch: {by_sender['PRACTICE_AUDITOR']}")
+    if not any(it.get("relation") == "sum_mismatch" and it.get("rule_id") == "CONV-002"
+               for it in by_sender["STYLE_GUARDIAN"]):
+        return _fail(f"STYLE_GUARDIAN's own post does not carry CONV-002's computed "
+                     f"sum_mismatch: {by_sender['STYLE_GUARDIAN']}")
+
+    # NEUTRALISE AND RESTORE: with convention_assignment=None (the pre-W3
+    # shape), only PRACTICE_AUDITOR (CONVENTION_REVIEW_AGENTS[0]) must post,
+    # since the fixed-agent fallback is the exact pre-W3 behavior; the
+    # wording-tagged rule's finding must be posted under PRACTICE_AUDITOR's
+    # name too, never dropped, never under STYLE_GUARDIAN.
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_convassign3_none_") as tmp2:
+        posts_none = _run(None, tmp2)
+    senders_none = {s for s, _items in posts_none}
+    if senders_none != {"PRACTICE_AUDITOR"}:
+        return _fail(f"with convention_assignment=None, only PRACTICE_AUDITOR (the "
+                     f"pre-W3 fixed default) should post; got {senders_none}")
+    total_items_none = sum(len(items) for _s, items in posts_none)
+    total_items_tagged = sum(len(items) for _s, items in posts)
+    if total_items_none != total_items_tagged:
+        return _fail(f"neutralising the assignment changed which findings exist, not "
+                     f"just who posts them: {total_items_none} vs {total_items_tagged}")
+
+    return _ok("the firing gate correctly excludes an agent with nothing assigned and no "
+               "untagged fallback, and correctly restores every agent with no assignment "
+               "computed at all; a single live paired-mode call carrying one conformance-"
+               "tagged and one wording-tagged rule, each independently computable on its "
+               "own unit, produces two separate bus posts, one under PRACTICE_AUDITOR and "
+               "one under STYLE_GUARDIAN (the first time STYLE_GUARDIAN fires in paired "
+               "mode), each with its own real computed finding; with no assignment, only "
+               "PRACTICE_AUDITOR posts, carrying both findings, the same total count as "
+               "the tagged run, only the attribution differs")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -15188,6 +15383,8 @@ CHECKS = [
      check_197_convention_heading_brackets_read_subject_and_severity),
     ("198 the convention assignment comparison, its route and its console state (convention assignment 2)",
      check_198_convention_assignment_comparison_route_and_console),
+    ("199 the firing gate and the subject-chosen paired agent (convention assignment 3 / night W3)",
+     check_199_the_firing_gate_and_the_subject_chosen_paired_agent),
 ]
 
 
