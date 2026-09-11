@@ -228,7 +228,17 @@ def needed_fields(rule_text, vocabulary):
     # named by any rule. Found by the R3-standard review of the negotiation design,
     # not by a run: every corpus so far has been written in unaccented English.
     words = set(w for w in re.split(r"[\W_]+", (rule_text or "").lower(), flags=re.UNICODE) if w)
-    return {label for label in vocabulary if label and set(label) <= words}
+    named = {label for label in vocabulary if label and set(label) <= words}
+    # Longest match only (D, option 1, 2026-09-11, built without measurement). A
+    # label whose words are a proper subset of another named label's words is the
+    # shorter phrase inside the longer one, not a second field the rule requires:
+    # a rule saying "calibration authority signature" names that label, not also
+    # the glossary's "calibration authority". Before this, the shorter label was
+    # required of every unit too, and on the first tagged corpus that rejected the
+    # rule for the very entries that carried the signature. A rule that genuinely
+    # needs both labels loses the shorter one here; the map's reason line shows it.
+    return {label for label in named
+            if not any(label != other and set(label) < set(other) for other in named)}
 
 
 # ---------------------------------------------------------------------------
