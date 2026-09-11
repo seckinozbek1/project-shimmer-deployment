@@ -846,7 +846,15 @@ holds the editorial and contract-violation artifacts, plus `pairing_map.json` (w
 could apply to which units and why, the `band_conditions` record described in section B, and
 per unit the `prior_comparisons` block: earlier figures found, every check made, every
 refusal), and `logs/` holds the append-only
-`agent_bus.jsonl`, the cost tracker, and the run summary. Runs never overwrite
+`agent_bus.jsonl`, the cost tracker, the run summary, and `call_evidence.jsonl`: one record
+per model call, written by the agent wrapper just before dispatch, carrying the STRUCTURAL
+identifiers of what that call was shown and nothing else (the reviewed unit id, the
+neighbouring unit ids supplied as context, the heading unit, the document map's unit ids,
+the reference ids supplied and the subset present in the bytes sent, the rule ids, the
+agent, backend, model, run, phase, a fresh call id and the prompt length; never a passage
+of text, so the file is not a second copy of the document). The same call id sits on the
+call's cost row and on the bus post it produced, so the three join; gate check 204
+reconstructs one executed call from the file alone. Runs never overwrite
 each other. Follow a run live with `py -3.9 scripts/bus_viewer.py --follow`.
 
 ### 4. The single-agent harness (`scripts/harness/`)
@@ -944,6 +952,26 @@ may plant several kinds on purpose, to separate what a mechanism catches from wh
 not; a key without `kind` prints the overall figure alone), and it scores a run that ended
 before synthesis from the bus findings alone, printing a NOTE that no deliverable exists and
 that the amendment-based figures are therefore 0 and mean nothing, rather than refusing.
+
+The scorer also classifies every planted entry the run failed to produce, per entry, into
+exactly one of four classes, from the run's saved artifacts alone (`scripts/fn_evidence.py`;
+the scorer is the only reader of a key and hands each missed entry to the classifier as a
+dict): `EVIDENCE_PRESENT_IN_MODEL_PAYLOAD` (a recorded call in `logs/call_evidence.jsonl`
+carried the rule and showed the unit, as the reviewed unit, a supplied neighbour, or inside
+an unclipped whole-document payload; possibly a reasoning failure),
+`EVIDENCE_PRESENT_UPSTREAM_BUT_NOT_IN_PAYLOAD` (the unit is in the parsed document and the
+rule was loaded, but no call carried both: the pairing map never paired them, or the run's
+evidence file records no such call; a rule that was never paired is always this class,
+never the first), `EVIDENCE_ABSENT_FROM_CORPUS` (the key names a unit the parsed document
+does not contain, or a rule the run never loaded: a gold-key problem), and `UNKNOWN`
+(whatever the artifacts cannot prove: no pairing map, a rule id no saved artifact maps to a
+registry id, or a planned pair on a run that predates the recording). Nothing is inferred;
+every classification prints the artifact it rests on. The mapping from the operator's own
+rule id to the registry id is saved per run at BOOT in `audit/convention_assignment.json`
+(`source_rule_id` beside every registry id), so a run older than that column classifies
+its misses `UNKNOWN` rather than guessing. Gate check 205 proves the four classes on
+fixtures; a rule the model was never asked and a rule it failed to answer no longer land in
+one recall number.
 
 | corpus | source | what it tests |
 |---|---|---|
@@ -1627,7 +1655,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**204** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**206** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -1648,7 +1676,7 @@ first run, not something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 204 checks on an empty checkout would be proving nothing about those
+A gate that passed all 206 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Every
 other check passes on a fresh clone with no setup beyond `py -3.9 -m pip install -r
 requirements.txt`. Once you have run the launcher (or built `input/` and staged a corpus

@@ -19,11 +19,13 @@ import os
 import sys
 import threading
 import time
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import call_evidence
 from bus_reader import (_estimate_tokens, assemble_context,
                         begin_truncation_capture, end_truncation_capture)
 from constitution import CheckResult, Constitution
@@ -577,6 +579,9 @@ class AgentWrapper:
             # -> "" / 0, exactly the prior behavior.
             phase=getattr(self, "_cost_phase", ""), doc_id=getattr(self, "_cost_doc_id", ""),
             duration_ms=duration_ms,
+            # call evidence: the id run_task minted for this call, so the cost row
+            # joins logs/call_evidence.jsonl. "" outside run_task, as phase/doc_id are.
+            call_id=getattr(self, "_cost_call_id", ""),
         )
 
     def check_constitution(self, situation): return self.constitution.check(situation)
@@ -1414,14 +1419,38 @@ class AgentWrapper:
         contract_max = self.contract.get("max_output_tokens")
         if isinstance(contract_max, int) and contract_max > 0:
             max_tokens = max(max_tokens, contract_max)
+        # Call evidence (scripts/call_evidence.py): the prompt below is about to be
+        # sent and then dropped, so this is the one point that knows everything the
+        # call was shown. Record the STRUCTURAL identifiers of it (unit, neighbours,
+        # heading, references, rules, model, backend, run, a fresh call id), never
+        # the text, under <run>/logs/call_evidence.jsonl. The same call id goes on
+        # this call's cost row and on the bus post it produces, so the three saved
+        # artifacts join. A write failure is logged and never takes the call down.
+        call_id = uuid.uuid4().hex
+        try:
+            evidence_written = call_evidence.record(self.run_context, call_evidence.extract(
+                work_payload, call_id=call_id,
+                run_id=getattr(self.run_context, "run_id", "") or "",
+                phase=phase or "", doc_id=doc_id or "", agent=self.name,
+                backend=self.backend, model=self.model or "",
+                convention_registry=convention_registry,
+                reference_index_excerpt=reference_index_excerpt,
+                prompt_chars=len(stable_prefix) + len(dynamic_suffix),
+                prompt_text=stable_prefix + dynamic_suffix))
+        except Exception as e:  # never fail a call for its own bookkeeping
+            evidence_written = None
+            log_event(_LOG, f"call_evidence_write_error error_type={type(e).__name__}",
+                      level="warning", agent=self.name,
+                      run_id=getattr(self.run_context, "run_id", "") or "")
         # productization STEP 4: cost dimensions. _cost_phase/_cost_doc_id are
         # transient instance state, read by _record_cost (called from inside
         # dispatch -> call_claude/call_gpt/call_qwen, each of which also times
         # its own SDK call into _cost_duration_ms) and cleared in the finally
         # block so they never leak into an unrelated later call on the same
-        # wrapper instance.
+        # wrapper instance. _cost_call_id joins the cost row to the evidence record.
         self._cost_phase = phase or ""
         self._cost_doc_id = doc_id or ""
+        self._cost_call_id = call_id
         try:
             if self.backend in ("qwen_local", "local_producer", "local_auditor"):
                 result = self.dispatch(stable_prefix, dynamic_suffix, max_new_tokens=min(max_tokens, 1024))
@@ -1430,15 +1459,17 @@ class AgentWrapper:
         finally:
             self._cost_phase = ""
             self._cost_doc_id = ""
+            self._cost_call_id = ""
         if not result.ok:
             self.post_to_bus(recipient=recipient, channel=channel, msg_type="YIELD",
                              body={"event": "BACKEND_ERROR", "backend": result.backend, "model": result.model,
-                                   "error": result.error},
+                                   "error": result.error, "call_id": call_id},
                              constitution_check=self.build_constitution_check(
                                  laws_consulted=["LAW-V"], result="RESOLVED",
                                  resolution="agent yielded on backend error"))
             return {"ok": False, "agent": self.name, "backend": result.backend, "model": result.model,
-                    "parsed": None, "raw_text": "", "contract_missing": [], "error": result.error}
+                    "parsed": None, "raw_text": "", "contract_missing": [], "error": result.error,
+                    "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}
         parsed, missing = self.parse_contract_output(result.raw_text)
         if parsed is None or missing:
             # Persist the full raw_text to disk so post-mortem analysis can
@@ -1457,6 +1488,7 @@ class AgentWrapper:
                     "raw_excerpt": result.raw_text[:400],
                     "raw_text_path": str(raw_text_path) if raw_text_path else None,
                     "raw_text_bytes": len(result.raw_text.encode("utf-8")) if result.raw_text else 0,
+                    "call_id": call_id,
                 },
                 constitution_check=self.build_constitution_check(
                     laws_consulted=["LAW-II"], result="RESOLVED",
@@ -1467,7 +1499,8 @@ class AgentWrapper:
                     "parsed": parsed, "raw_text": result.raw_text, "contract_missing": missing,
                     "raw_text_path": str(raw_text_path) if raw_text_path else None,
                     "error": "contract_violation",
-                    "parse_trace": dict(self.last_parse_trace)}
+                    "parse_trace": dict(self.last_parse_trace),
+                    "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}
         # First task (post-D4): a contract-valid empty envelope (items: []) is a
         # legitimate "nothing to report" hold (INFRA-037; verify_session1.py:1005-1008
         # asserts this must stay accepted) and must keep recording ok=True/error=None
@@ -1487,7 +1520,7 @@ class AgentWrapper:
         self.post_to_bus(recipient=recipient, channel=channel, msg_type="INFORM",
                          body={"event": "AGENT_OUTPUT", "backend": result.backend, "model": result.model,
                                "item_count": item_count, "parse_trace": parse_trace,
-                               "payload": parsed},
+                               "payload": parsed, "call_id": call_id},
                          constitution_check=self.build_constitution_check(
                              laws_consulted=["LAW-V"],
                              result=check.layer or ("RESOLVED" if check.resolved else "RESOLVED"),
@@ -1495,4 +1528,5 @@ class AgentWrapper:
                                          else "no governing rule yet; novel action recorded")))
         return {"ok": True, "agent": self.name, "backend": result.backend, "model": result.model,
                 "parsed": parsed, "raw_text": result.raw_text, "contract_missing": [], "error": None,
-                "item_count": item_count, "parse_trace": parse_trace}
+                "item_count": item_count, "parse_trace": parse_trace,
+                "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}

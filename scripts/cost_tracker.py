@@ -140,6 +140,11 @@ class CostEvent:
     phase: str = ""
     doc_id: str = ""
     duration_ms: int = 0
+    # call evidence: the id AgentWrapper.run_task minted for the call this row
+    # records, the join to <run>/logs/call_evidence.jsonl and to the bus post the
+    # call produced. "" for a call recorded outside run_task (a gate check's own
+    # direct call), never invented.
+    call_id: str = ""
 
     def as_dict(self): return self.__dict__
 
@@ -173,7 +178,7 @@ class CostTracker:
 
     def record(self, *, agent, backend, model, input_tokens, output_tokens, ok, error="",
                cache_read_input_tokens=None, cache_creation_input_tokens=None,
-               cached_input_tokens=None, phase="", doc_id="", duration_ms=0):
+               cached_input_tokens=None, phase="", doc_id="", duration_ms=0, call_id=""):
         family = _model_family(model or backend)
         in_tok = int(input_tokens or 0); out_tok = int(output_tokens or 0)
         cache_read = int(cache_read_input_tokens or 0)
@@ -187,7 +192,8 @@ class CostTracker:
                           cache_creation_input_tokens=cache_write,
                           cached_input_tokens=cached_in,
                           phase=phase or "", doc_id=doc_id or "",
-                          duration_ms=int(duration_ms or 0))
+                          duration_ms=int(duration_ms or 0),
+                          call_id=str(call_id or ""))
         with self._lock:
             self._events.append(event)
             self._total_calls += 1
