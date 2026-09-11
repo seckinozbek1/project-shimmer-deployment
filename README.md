@@ -616,12 +616,46 @@ service interval..." so the glossary lives INSIDE `device_log_flawed.md` itself,
 separate `device_class_reference.md` the way D01's class tolerance bands do, and excluding the
 document under review (Job A's own table-reading pattern, copied here uncritically at first)
 made D05 permanently unsolvable until the document's own text was searched too. **D05's date
-pair is still not found, for a different reason a stem cannot reach:** its value line's
-connecting words carry "last", "next" and "record", none of which the rule states, because
-`_label_lines_with_dates` collects the whole post-date remainder as if it were vocabulary the
-rule could name. That is noise collection rather than matching, and it is named here rather
-than papered over; check 217 pins it and says plainly that the assertion must be inverted, not
-deleted, when the extraction is narrowed.
+pair needed a second, separate fix, one no stem could reach:** its value line's connecting
+words carried "last", "next" and "record", none of which the rule states, because
+`_label_lines_with_dates` collected the whole post-date remainder as if it were vocabulary the
+rule could name. That was noise collection rather than matching. The connecting words are now
+drawn PER DATE, from the window running from the previous date to this one, and for a two-date
+line only their INTERSECTION is kept: a word describing what the pair IS sits beside both dates,
+a word telling one date FROM the other sits beside only one. On the service record the windows
+are {last, calibration, visit} and {next, calibration, visit, logged}, and the intersection is
+{calibration, visit}, exactly what the rule names. The line's own label and its date
+description are also kept as two independent routes rather than unioned, since requiring a rule
+to state both meant the wrapper label "Service record" blocked a pair the rule describes
+outright. Nothing here knows that "last" is an ordinal; it knows only that it sits beside one
+date and not the other. **Both duration rules now settle on the flawed twin**, and on the clean
+twin both compute, agree (9 hours against a 24-hour window, 73 days against a 90-day interval)
+and cost no call at all.
+
+### What the two fixes cost in model calls
+
+The plan on both device twins, recomputed deterministically with the current tree and no run,
+against the baseline this work started from:
+
+| | flawed twin | clean twin |
+|---|---|---|
+| model calls before (normalisation and connecting words both unfixed) | 32 | 41 |
+| model calls now | **17** | **23** |
+| cut | 47% | 44% |
+
+Where the calls went, flawed twin: D01 moves from `uncomputable` to 6 computed `band` plans
+(the three class labels are distinguishable, so each reading meets its own class's tolerance
+band), D04 and D05 each become one computed `duration` plan, and D02's 5 `absence_computed`
+plans are unchanged. On the clean twin D01 yields 3 computed bands and both duration rules
+compute, agree and produce no plan at all, which is why its settled count is lower while its
+calls still fall. The remaining calls are D03 (genuine judgment, by the operator's own
+decision) and D06 (neighbouring-entry, genuine judgment); D07 and D08 are never paired, being
+properties of a finding's shape rather than comparisons over a document's fields.
+
+This is the figure the work is judged on, and it is the one predicted from tracing the two
+blockers rather than from the rule-to-field matcher, which was measured separately and changes
+nothing on this corpus (field relevance does not propagate to unit pairing when a requirement
+set is already satisfied).
 
 ### Typed Finding records
 

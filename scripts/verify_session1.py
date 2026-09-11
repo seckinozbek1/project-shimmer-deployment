@@ -18643,16 +18643,21 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
     plural on BOTH sides, so:
 
       D04: date pair FOUND and bound FOUND. It settles.
-      D05: bound FOUND, date pair still NOT FOUND, and NOT for a word-form
-           reason. Its value line's connecting words carry "last", "next"
-           and "record", none of which appear in the rule at all; that is
-           _label_lines_with_dates collecting the whole post-date remainder
-           as if it were the rule's own vocabulary, a separate defect from
-           the tokenizer and not one a stem can reach.
+      D05: bound FOUND; its date pair was still unfound at that point, and
+           NOT for a word-form reason. Its value line's connecting words
+           carried "last", "next" and "record", none of which appear in the
+           rule at all, because _label_lines_with_dates collected the whole
+           post-date remainder as if it were the rule's own vocabulary.
 
-    Both facts are pinned below. D05's own assertion is deliberately written
-    to fail loudly if it starts passing, so the next change to the
-    connecting-word extraction cannot land silently.
+    That second defect is now closed too, and separately: the connecting
+    words are drawn PER DATE (the window from the previous date to this one)
+    and, for a two-date line, only their INTERSECTION is kept, so a word
+    describing what the pair IS survives and a word distinguishing one date
+    FROM the other does not. The line's own label and the words describing
+    its dates are also kept as two independent routes rather than unioned,
+    since requiring a rule to state both meant "Service record" blocked a
+    pair whose description the rule states outright. D05 now settles as
+    well, and the neutralise below proves the narrowing is the mechanism.
 
     Asserted, executed on pure functions and one real plan_calls run, no
     model, no run:
@@ -18881,15 +18886,69 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
         return _fail("D05's bound was expected to be FOUND on the real corpus (found by "
                      "searching the document under review's own glossary, not only "
                      "context_refs); if this now fails, the wiring regressed")
-    if d05_pair is not None:
-        return _fail(f"D05's date pair was expected to be UNFOUND on the real corpus, and "
-                     f"NOT for a word-form reason: its value line's connecting words carry "
-                     f"'last', 'next' and 'record', none of which the rule states, so "
-                     f"_label_lines_with_dates is collecting the whole post-date remainder "
-                     f"rather than the words the rule could name. Got {d05_pair!r}. If the "
-                     f"connecting-word extraction was narrowed and this now passes, that is "
-                     f"the intended fix and this assertion must be inverted to pin it, not "
-                     f"deleted")
+    if d05_pair is None:
+        return _fail("D05's date pair must be FOUND on the real corpus now that the "
+                     "connecting words are drawn per date and intersected: its value line "
+                     "describes both dates as 'calibration visit' and distinguishes them "
+                     "with 'last' and 'next', so the intersection is exactly the concept "
+                     "the rule names. If this fails, the per-date windowing regressed")
+    # The gap is the one the document actually states, not a coincidence of
+    # which two dates happened to be picked: 2026-01-01 to 2026-06-01.
+    if (d05_pair[0].date().isoformat(), d05_pair[2].date().isoformat()) != (
+            "2026-01-01", "2026-06-01"):
+        return _fail(f"D05's pair must be the service record's own two dates, "
+                     f"got {d05_pair!r}")
+
+    # NEUTRALISE AND RESTORE on the narrowing itself: with the connecting
+    # words taken as the whole post-date remainder UNIONED with the label
+    # (the shape before this fix), D05's pair must go away again, proving
+    # the per-date intersection is what recovers it and not some accident
+    # of this corpus's wording.
+    import re as _re2
+    _orig_lines = _pr._label_lines_with_dates
+
+    def _old_lines(unit_text):
+        import pairing_map as _pm2
+        out = []
+        for line in (unit_text or "").splitlines():
+            m = _pr._LABEL_LINE.match(line)
+            if not m:
+                continue
+            label = _pm2._norm_label(m.group(1))
+            if not label:
+                continue
+            value = m.group(2).strip()
+            matches = list(_pr._ISO_DATETIME.finditer(value))
+            if not matches or len(matches) > 2:
+                continue
+            parsed = []
+            for mm in matches:
+                got = _pr._parse_iso_datetime(mm.group(0))
+                if got is None:
+                    parsed = None
+                    break
+                parsed.append(got)
+            if not parsed or len(parsed) != len(matches):
+                continue
+            remainder = _pr._ISO_DATETIME.sub(" ", value)
+            whole = set(label) | set(_pm2._norm_label(remainder))
+            # the pre-fix shape put everything in one bag; express it in the
+            # new two-route tuple so only the NARROWING is neutralised
+            out.append(((whole, whole), [p[0] for p in parsed],
+                        all(p[1] for p in parsed)))
+        return out
+
+    _pr._label_lines_with_dates = _old_lines
+    try:
+        d05_pair_old = _pr.date_pair_for_rule(vetch["text"], rule_d05)
+    finally:
+        _pr._label_lines_with_dates = _orig_lines
+    if d05_pair_old is not None:
+        return _fail(f"neutralised (connecting words as the whole post-date remainder, "
+                     f"the pre-fix shape) D05's pair must NOT be found, since 'last', "
+                     f"'next' and 'record' are not in the rule; got {d05_pair_old!r}")
+    if _pr.date_pair_for_rule(vetch["text"], rule_d05) is None:
+        return _fail("after restoring the per-date narrowing D05's pair must be found again")
 
     return _ok("date_pair_for_rule reads both real shapes (two label lines, one label "
                "line with two dates) and refuses ambiguity; scalar_bound_from_entries "
@@ -18900,11 +18959,13 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "a third instance one layer in (a scoped rule settled by duration no longer "
                "also gets its declared absence_judged plan, and still falls back to it "
                "when duration finds nothing), both proved with fixtures reproducing the "
-               "pre-existing shapes directly; on the real corpus D04 now finds BOTH its "
-               "pair and its 24-hour bound (the stem folds timestamp/timestamps on both "
-               "sides) and settles, while D05 finds its bound but still not its pair, for "
-               "a reason no stem can reach: its connecting words carry last, next and "
-               "record, which the rule never states")
+               "pre-existing shapes directly; on the real corpus BOTH duration rules now "
+               "settle: D04 finds its pair and its 24-hour bound (the stem folds "
+               "timestamp/timestamps on both sides), and D05 finds its own two dates and "
+               "its 90-day bound once the connecting words are drawn per date and "
+               "intersected, so last/next/record no longer enter; neutralise (the whole "
+               "post-date remainder, the pre-fix shape) loses D05's pair again, restore "
+               "recovers it")
 
 
 CHECKS = [
