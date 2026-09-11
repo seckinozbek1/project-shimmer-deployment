@@ -272,7 +272,11 @@ Phase 5.5 runs one of two ways. `--review-mode` selects it; with no flag the def
   them); nothing is computable (the model judges one unit against one rule on the text); the
   figures agree (no finding, **no call**). One call is made per distinct computed
   disagreement, not per pair. `--pairs-per-unit N` caps the pairs considered per unit; a pair
-  the cap drops is counted and logged, never silently skipped.
+  the cap drops is counted and logged, never silently skipped. A rule pairs with a unit when
+  the unit carries every field label the rule's text names, and a label counts as named by
+  the longest match only: a rule saying "calibration authority signature" names that label
+  and not also a shorter "calibration authority" the document defines elsewhere (D, option
+  1, 2026-09-11, built without measurement; gate check 208).
 
 The mode changes cost, not correctness: where arithmetic can decide, the finding carries
 Python's numbers whatever the model says about them.
@@ -1685,7 +1689,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**208** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**209** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -1706,7 +1710,7 @@ first run, not something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 208 checks on an empty checkout would be proving nothing about those
+A gate that passed all 209 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Every
 other check passes on a fresh clone with no setup beyond `py -3.9 -m pip install -r
 requirements.txt`. Once you have run the launcher (or built `input/` and staged a corpus

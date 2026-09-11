@@ -16555,6 +16555,88 @@ def check_207_recording_gaps_closed_rendered_draft_probe():
     return _ok(shipped[1] + "; neutralise (credulous report) FAILS, restore PASSES")
 
 
+def _d1_longest_match_body():
+    import pairing_map as _pm
+
+    vocab = {("calibration", "authority"), ("calibration", "authority", "signature"),
+             ("class",), ("device",), ("reading",), ("extent",), ("total", "declared", "extent")}
+    needs = _pm.needed_fields(
+        "Every Class-A sensor entry must state a calibration authority signature.", vocab)
+    if needs != {("calibration", "authority", "signature"), ("class",)}:
+        return _fail(f"a rule naming 'calibration authority signature' must need that label and "
+                     f"'class' only, not also the shorter 'calibration authority': {sorted(needs)}")
+    needs2 = _pm.needed_fields("The declared total extent must be stated.", vocab)
+    if needs2 != {("total", "declared", "extent")}:
+        return _fail(f"'total declared extent' must not also require the bare 'extent': {sorted(needs2)}")
+    needs3 = _pm.needed_fields("The calibration authority is named in the glossary.", vocab)
+    if needs3 != {("calibration", "authority")}:
+        return _fail(f"a rule naming only the shorter label still needs it: {sorted(needs3)}")
+    # through the real map: the entry carrying the signature pairs; the one without does
+    # not (that is gap D's absence case, option 2, not this fix); the glossary unit, which
+    # carries the short label alone, is rejected for lacking the signature and class.
+    text = "\n".join([
+        "## Glossary", "", "Calibration authority: the role that signs.", "",
+        "## Entry alpha", "", "Class: A", "Device: D-1", "Calibration authority signature: R. Smith", "",
+        "## Entry beta", "", "Class: A", "Device: D-2", "Note: no signature line here", "",
+    ])
+    rules = [{"id": "CONV-001", "rule": "Every Class-A sensor entry must state a calibration authority signature."}]
+    m = _pm.build_pairing_map(text, rules, document_id="d")
+    by = {u["unit_id"]: u for u in m["units"]}
+    alpha = next(u for k, u in by.items() if "alpha" in k)
+    beta = next(u for k, u in by.items() if "beta" in k)
+    gloss = next(u for k, u in by.items() if "glossary" in k)
+    if [p["rule_id"] for p in alpha["paired"]] != ["CONV-001"]:
+        return _fail(f"the entry that carries the signature and the class must pair: {alpha}")
+    if alpha["paired"][0]["reason"].count("calibration authority") != 1:
+        return _fail(f"the pairing reason still names the short label: {alpha['paired'][0]['reason']}")
+    if beta["paired"] or not any(r["rule_id"] == "CONV-001" and "calibration authority signature" in r["reason"]
+                                 and "calibration authority," not in r["reason"] for r in beta["rejected"]):
+        return _fail(f"the entry without the signature is rejected for the signature only: {beta}")
+    if gloss["paired"]:
+        return _fail("the glossary unit, carrying only the short label, must not pair")
+    return _ok("needed_fields keeps the longest matching label only: 'calibration authority "
+               "signature' no longer drags in 'calibration authority', 'total declared extent' "
+               "not 'extent'; a rule naming only the short label still needs it; through the real "
+               "map the entry carrying the signature pairs and the one without is rejected for "
+               "the signature alone")
+
+
+def check_208_longest_match_labels_in_needed_fields():
+    """D, option 1 (2026-09-11). Built without measurement: the gap was traced in
+    the stopped run's map, the fix is proved on fixtures here, and no run has
+    scored it. needed_fields marked a label as named by a rule when every word of
+    the label appeared in the rule text, so a rule mentioning "calibration
+    authority signature" was read as also requiring the glossary's "calibration
+    authority" of every entry, and rejected the entries that carried the
+    signature. Now a label whose words are a proper subset of another named
+    label's words is dropped: longest match only.
+
+    Neutralise-and-restore: with needed_fields restored to the word-subset test
+    alone, the short label comes back and the body must FAIL; restored, PASS."""
+    import re as _re
+    import pairing_map as _pm
+
+    shipped = _d1_longest_match_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _pm.needed_fields
+
+    def _old(rule_text, vocabulary):
+        words = set(w for w in _re.split(r"[\W_]+", (rule_text or "").lower(), flags=_re.UNICODE) if w)
+        return {label for label in vocabulary if label and set(label) <= words}
+    _pm.needed_fields = _old
+    try:
+        neutralised = _d1_longest_match_body()
+    finally:
+        _pm.needed_fields = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with the old word-subset test the body still passed ({neutralised})")
+    restored = _d1_longest_match_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring longest match the body no longer passes: {restored}")
+    return _ok(shipped[1] + "; neutralise (word-subset test) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -16781,6 +16863,8 @@ CHECKS = [
      check_206_convention_distribution_reaches_the_paired_path),
     ("207 recording gaps closed: rendered ids, the draft call, the probe (step C)",
      check_207_recording_gaps_closed_rendered_draft_probe),
+    ("208 longest-match labels in needed_fields (D, option 1)",
+     check_208_longest_match_labels_in_needed_fields),
 ]
 
 
