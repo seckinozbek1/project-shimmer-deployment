@@ -2350,6 +2350,66 @@ async def agent_harness():
             "unresolved_part_count": sum(len(v) for v in unresolved.values())}
 
 
+@app.get("/ontology", dependencies=[Depends(verify_token)])
+async def ontology_provenance():
+    """ontology chain job 1: the first read path the ontology store has ever had.
+
+    The store under ontology/stores/ has been written at the end of every run
+    since build B1 and read back by nothing. This route answers the one question
+    the store can actually answer: which agent produced which provision under
+    which rule, in which run, at which revision. Counts by agent, by rule and by
+    run over the whole scope, plus a per-provision list carrying identifiers and
+    provenance only, never a provision's own text (a provision's text is content;
+    this route's subject is provenance, and ontology_reader.SUMMARY_FIELDS is
+    where that boundary is drawn).
+
+    NOT run-scoped: the store is cross-run by construction, the same reasoning
+    /harness and /rules/{rule_id} already use for data that does not vary per run.
+    Read fresh on every call.
+
+    An EMPTY store is a 200 with zero counts and an empty list, not a 404 and not
+    an error: every store in this repository is empty today, because the only
+    writer is run-end capture. What this reading is good for, and what it is not,
+    is written in ontology_reader's module docstring rather than restated here.
+
+    `provision` (optional) additionally returns every revision of one provision
+    id, oldest first, which is what makes the storage layer's supersession
+    legible to a human for the first time."""
+    import ontology_reader as _reader
+    import ontology_store as _store_mod
+
+    store = _reader.read_store(scope=_store_mod.DEFAULT_SCOPE)
+    try:
+        summary = _reader.provenance_summary(store)
+    except OSError:
+        raise HTTPException(status_code=500, detail="ontology store unreadable")
+    return summary
+
+
+@app.get("/ontology/provisions/{provision_id:path}", dependencies=[Depends(verify_token)])
+async def ontology_provision_history(provision_id: str):
+    """One provision's every revision in the default scope, oldest first, as
+    provenance summaries (ontology chain job 1). The id is the capture hook's
+    composite `<document_id>::<ref_id>` (Q2), which carries a colon pair and so is
+    matched as a path parameter.
+
+    404 when the scope holds no such id, which is a real answer rather than an
+    empty list: "this store has never held that provision" and "that provision has
+    one revision" are different facts and a caller must be able to tell them
+    apart."""
+    import ontology_reader as _reader
+    import ontology_store as _store_mod
+
+    store = _reader.read_store(scope=_store_mod.DEFAULT_SCOPE)
+    rows = _reader.provision_history(store, provision_id)
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail="no provision with this id in the ontology store (scope %s)"
+                   % _store_mod.DEFAULT_SCOPE)
+    return {"id": provision_id, "scope": store.scope, "revisions": rows}
+
+
 @app.get("/rules/{rule_id}", dependencies=[Depends(verify_token)])
 async def rule_text(rule_id: str):
     """console fresh-eyes addition: a rule identifier shown anywhere on the

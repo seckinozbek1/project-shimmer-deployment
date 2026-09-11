@@ -1224,6 +1224,45 @@ function harnessHtml(body, human) {
   return html;
 }
 
+function ontologyStoreHtml(body, human) {
+  /* ontology chain job 1: the store's first reader on this surface.
+
+     The store under ontology/stores/ has been written at the end of every
+     run since build B1 and shown to nobody. This section shows what it
+     holds: which agent produced which provision under which rule, in which
+     run. Same discipline as every other section here, it disappears when it
+     has nothing true to say, and an EMPTY store is exactly that case, which
+     is the state of every store today (the only writer is run-end capture).
+
+     Deliberately modest wording: this is provenance of decisions already
+     made, not a cross-run signal the review draws on. Nothing here claims
+     the store helps a review in progress. */
+  if (!body || !body.provision_count) return "";
+  var agents = (body.agents || []).map(function (a) {
+    return '<li class="mono">' + escapeHtml(a.agent) + ': ' + a.provisions + '</li>';
+  }).join("");
+  var rules = (body.rules || []).map(function (r) {
+    return '<li class="mono">' + escapeHtml(r.convention_ref) + ': ' + r.provisions + '</li>';
+  }).join("");
+  var heading = human
+    ? "What the ontology store holds (" + body.provision_count + ")"
+    : "ontology.provisions (" + body.provision_count + ", scope " + escapeHtml(body.scope || "") + ")";
+  var note = human
+    ? "Provisions captured at the end of past runs, each with the agent whose finding it rests on and the rule that governed it. A record of what was decided before, for looking up afterwards; a review in progress does not read it."
+    : "GET /ontology: provenance only, no provision text. stubs=" + (body.stub_count || 0) +
+      ", superseded_in_live=" + (body.superseded_in_live || 0) +
+      ", log_events=" + (body.log_events || 0) +
+      ", without_provenance=" + (body.without_provenance || 0) + ".";
+  var out = '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p>';
+  if (agents) {
+    out += '<h3>' + (human ? "By agent" : "by_agent") + '</h3><ul class="amendment-refusals">' + agents + '</ul>';
+  }
+  if (rules) {
+    out += '<h3>' + (human ? "By rule" : "by_convention_ref") + '</h3><ul class="amendment-refusals">' + rules + '</ul>';
+  }
+  return out;
+}
+
 function renderAgents() {
   app.innerHTML = '<p class="muted">Loading…</p>';
   apiJson("/harness").then(function (res) {
@@ -1234,6 +1273,16 @@ function renderAgents() {
       return;
     }
     app.innerHTML = harnessHtml(res.body, isHumanView());
+    /* The ontology store is cross-run, like the harness itself, so it belongs
+       on this page rather than on any one run's page. Fetched separately so a
+       store that cannot be read never blanks the harness above it. */
+    var ontologyHolder = document.createElement("div");
+    ontologyHolder.id = "ontology-store-holder";
+    app.appendChild(ontologyHolder);
+    apiJson("/ontology").then(function (ontRes) {
+      if (currentRoute().view !== "agents") return;
+      ontologyHolder.innerHTML = ontRes.ok ? ontologyStoreHtml(ontRes.body, isHumanView()) : "";
+    });
   }).catch(function () {
     app.innerHTML = '<div class="notice error">The request did not reach the server.</div>';
   });

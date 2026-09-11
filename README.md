@@ -80,8 +80,9 @@ shimmer-deployment/
 │                                          (scripts/verify_session1.py), the convention
 │                                          assignment, the call-evidence recorder and the
 │                                          false-negative classifier, the harness builder,
-│                                          harness/, sensitivity_layer/, ui/ (the console,
-│                                          one HTML file plus its vendored typeface)
+│                                          the ontology store and its reader, harness/,
+│                                          sensitivity_layer/, ui/ (the console, one HTML
+│                                          file plus its vendored typeface)
 ├── corpus_ingest/                        the external corpus ingestion contract, validator,
 │                                          and its own test fixtures
 ├── config/                               governance and compiled config (constitution,
@@ -863,13 +864,37 @@ exist before you start; the tools that need them create them.
 `ontology/stores/` is unfinished, not dormant, and this is stated plainly rather than left
 for a reader to assume from its place in the architecture: it writes real state every run
 (a graph of documents, findings and the rules they cite, plus a small autoencoder fit over
-that graph's structure) but nothing in the pipeline reads either back. No agent payload, no
-Finding-producing code, and no phase before 8 opens `graph.json` or `gnn_state.json`; the
-only other consumers are the module that builds the next run's graph from the last one (a
-write-path detail, not a review-time read) and the gate's own non-mutating self-tests. It
-is real, executed machinery, not a stub, but it is a write with no reader yet, and should be
-read as exactly that rather than as a working cross-run relevance signal the review already
-draws on.
+that graph's structure) and **no phase of a review reads any of it back**. No agent payload,
+no Finding-producing code, and no phase before 8 opens `graph.json` or `gnn_state.json`; the
+only other write-path consumer is the module that builds the next run's graph from the last
+one. It is real, executed machinery, not a stub, but the review itself does not draw on it,
+and it should be read as exactly that rather than as a working cross-run relevance signal.
+
+**A human can now read the store** (ontology chain, job 1). `scripts/ontology_reader.py` is
+its first read path, and it answers the one question the store can answer today: which agent
+produced which provision, under which rule, in which run, at which revision. It is reachable
+three ways: `GET /ontology` and `GET /ontology/provisions/{id}` (section I), a section on the
+console's Agents page that disappears when the store is empty, and the module's own
+inspector, which needs no server and no run:
+
+```
+py -3.9 -X utf8 scripts/ontology_reader.py
+py -3.9 -X utf8 scripts/ontology_reader.py --json
+py -3.9 -X utf8 scripts/ontology_reader.py --provision "<document>::<REF-0001>"
+```
+
+What that reading is good for, said without overselling it: attribution after the fact (who
+said this, under what rule, when), coverage (which rules and agents the store has ever seen,
+so a rule that never produced a provision is visible), and the plain fact that the store is
+no longer write-only, since a store nobody can inspect is indistinguishable from one that is
+silently broken. What it is **not**: it is not retrieval, not relevance, and not a signal any
+review draws on; it reads the provenance of decisions already made. The long-range case is
+untouched by it, because that needs relations between provisions, which the store does not
+hold. The reader carries identifiers and provenance only and never a provision's own text.
+**Built, not measured**: every store in this repository is empty (`provisions.jsonl` is zero
+bytes), since the only writer is run-end capture and no run has been made since the store was
+scoped, so gate check 210 proves the read path on fixtures alone. The first real content
+arrives on the first run after the move to a GPU box.
 
 Its storage layer is `scripts/ontology_store.py` (night chain W7, the ontology foundations),
 and four things are decided there. Scope: every record carries the scope it was written
@@ -1583,6 +1608,8 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `GET` | `/runs/{run_id}/contract-violations` | token | A call whose output did not match its agent's own contract at all, so nothing usable was produced, not even a thin finding. Found live: after `finding_record`'s fields were made required for PRACTICE_AUDITOR (`relation`, `record_verdict`, `explanation`, closing a different gap where most of its real output asserted a violation with no supporting content: a reviewer learns nothing from "CONV-005 was violated" alone), the honest next question is what a stricter contract costs, since some calls that used to pass a looser bar now genuinely fail it. This route, together with `/runs/{run_id}/amendment-refusals`, closes the last visibility gap: a call now produces exactly one of three outcomes a reader can see somewhere, a real amendment, a refused finding, or a failed contract, never silently absent from all three. Per violation: `agent`, `backend`, `model`, `missing_fields` (what the contract required and the reply lacked) and `timestamp`; no `doc_id`, since a call can fail before its output is attributed to a document. Returned as `violations` with a `count`. `200` with an empty list, not an error, when nothing failed its contract, the common, expected case. Rendered in the console as its own section, disappearing when empty. |
 | `GET` | `/runs/{run_id}/convention-assignment` | token | The convention assignment computed once at this run's BOOT (`docs/api/CONVENTION_ASSIGNMENT_DESIGN.md`): a one-way subject label on each side, each agent's own declared `subjects` in `config/agent_registry.json`, each rule's own bracket tags read structurally off its heading by `convention_parser`, compared by `convention_assignment.assign_conventions`, code that names no subject itself. Per rule (`by_rule`): its `subjects`, the agent(s) matched, which of those have a live rule-consuming path today (`consumer_agents`), and `status` (`untagged`: no tag at all, today's routing is unchanged; `assigned`: matched an agent that can act on it; `assigned_no_consumer`: matched only an agent with no rule path today, for example a rule tagged for an agent that declares an empty `subjects` list; `unassigned`: no agent declares any of its tags at all). Per agent (`by_agent`): the rule ids it matched. Also `rule_count`, and `idle_agents`: every agent that declares a subject in the CURRENT `config/agent_registry.json` (or `SHIMMER_AGENT_REGISTRY`) but matched no rule this load, each entry naming the agent and the subjects it declares (`convention_assignment.idle_agents_summary`, read against the live registry, not the run, since agent declarations are not per-run data); the console renders these as the agents no tagged rule reached. A rule the assignment could not route anywhere is never dropped, the same discipline as `/amendment-refusals` and `/contract-violations`: it is also posted to the bus as `CONVENTION_UNASSIGNED` (computed, python, one item per unmatched or consumer-less rule, `rule_id`/`source_rule_id`/`subjects`/`reason`) when at least one such rule exists. Written once at BOOT to `audit/convention_assignment.json`; this route reads that file directly, not the bus, since the file is never rewritten mid-run. `200` with empty `by_rule`/`by_agent`, not an error, for a run that predates this route. Also (night W8) `untagged`, the count of rules with no tag, and `not_firing`, the convention-review agents the W3 firing gate kept from running on this assignment (`convention_assignment.not_firing_convention_review_agents`, the same function the pipeline's gate delegates to; empty for an assignment with no rules, where the gate decided nothing). |
 | `GET` | `/harness` | token | The nine-part agent harness (night W4), one entry per agent, as `scripts/build_agent_harness.py` generated it into `config/agent_harness.json` (or `SHIMMER_AGENT_HARNESS`): `agents`, `shared_parts`, `part_names`, and `unresolved` (per agent, the parts still `decided: false`, each carrying its own `unresolved_because` in `agents`), so the console's Agents page shows an undecided part as undecided rather than omitting it. Also `agent_count` and `unresolved_part_count` (18 and 18 for the shipped harness: every agent's ontology part is undecided until an agent reads the store). Not run-scoped. `404` with a distinct detail when the harness has not been built on this server; `500` with detail "agent harness unreadable" when the file exists but does not parse. |
+| `GET` | `/ontology` | token | ontology chain job 1: the first read path the ontology store has ever had. The store under `ontology/stores/` has been written at the end of every run since build B1 and read back by nothing; this route answers the one question it can answer, which agent produced which provision under which rule, in which run, at which revision. Returns `scope`, `provision_count`, `stub_count`, `without_provenance`, `superseded_in_live`, `log_events`, counts by `agents` / `rules` / `runs` over the whole scope, and `provisions`, a per-provision list carrying identifiers and provenance ONLY, never a provision's own text (that boundary is `ontology_reader.SUMMARY_FIELDS`, not a convention this route applies by hand). Not run-scoped: the store is cross-run by construction, the same reasoning `/harness` and `/rules/{rule_id}` already use. An EMPTY store is `200` with zero counts and an empty list, not a `404` and not an error, which is the state of every store in this repository today. What this reading is good for, and what it is not, is in section G. |
+| `GET` | `/ontology/provisions/{provision_id:path}` | token | One provision's every revision in the default scope, oldest first, as provenance summaries: what makes the storage layer's supersession (built at night W7, shown nowhere) legible to a human. The id is the capture hook's composite `<document_id>::<ref_id>`, so it carries a colon pair and is matched as a path parameter. `404`, not an empty list, when the scope holds no such id: "this store has never held that provision" and "that provision has one revision" are different facts and a caller must be able to tell them apart. |
 | `GET` | `/rules/{rule_id}` | token | console fresh-eyes addition: one rule's own text as the operator wrote it, from the current `config/convention_registry.json`. Not run-scoped, a rule's text does not vary per run. Matches by either id: the registry's own (`CONV-007`) or the operator's own (`CONV-A02`). Returns `id`, `source_rule_id`, `rule` (the operator's own text), `severity`, `action`, `source_file`, `source_location`. `404` with a distinct `detail` ("no rule with this id in the current registry") when the current registry, which regenerates at BOOT and can differ from whatever was in force when a citing run executed, has no such rule; that mismatch is itself informative, not hidden behind a generic not-found. |
 | `POST` | `/runs/{run_id}/cancel` | token | api STEP B2: stops a run. A queued job is removed before it ever starts; a running job's subprocess is terminated (then killed). Both land on `state="cancelled"`. `409` if the run is already in a terminal state (including already cancelled), refused with a reason naming its actual state, not a silent no-op. `404` for a malformed or unknown `run_id`. Deletes nothing on disk. |
 | `POST` | `/runs/{run_id}/approval` | token | api STEP B3: records a human's decision on the run's pending governed question. Body `decision` + `rationale`; writes `<run>/audit/approval_decision.json` atomically and **nothing else**, never evaluates whether the decision is an approval (that stays entirely with `model_registry`/`constitution_guard`, read back by the pipeline subprocess's own poll loop). `202`, never `200`: the response carries `recorded: true` and the run's `run_state` as it stood the instant *before* the write, and never claims the decision was approved, only that it was recorded. `404` for a malformed `run_id` or one with no pending approval; `409` if this approval was already answered (a decision file already exists); `400` if `decision` is missing or empty. This is the sole route that answers a pending approval (api STEP B5 unified it with the retired `POST /approvals/{run_id}`, which wrote the same file but returned `200` with a thinner body and no repeat-answer guard). |
@@ -2014,7 +2041,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**210** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**211** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2042,7 +2069,7 @@ something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 210 checks on an empty checkout would be proving nothing about those
+A gate that passed all 211 checks on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Two
 more checks depend on the machine rather than the tree: check 193 loads one of the
 local-profile models with the network blocked at the socket and fails until the weights are
@@ -2099,8 +2126,9 @@ with the per-plan judging agent; (200 to 202) the ontology store's scope, proven
 track; (203) the console current with the chain; (204 and 205) call evidence reconstructed
 from disk and the four-class false-negative classifier; (206 and 207) the convention
 distribution on the paired path and the three recording gaps; (208 and 209) longest-match
-labels and the declared-scope absence path. Everything from 186 on was built on 10 and 11
-September 2026 and is proved here on fixtures only.
+labels and the declared-scope absence path; (210) the ontology store's first reader, proved
+on fixture records because every store in this repository is empty. Everything from 186 on
+was built on 10 and 11 September 2026 and is proved here on fixtures only.
 
 ---
 
