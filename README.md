@@ -551,16 +551,25 @@ unit) named by the rule, a tie between two candidate sentences refused rather th
 found for the same rule; either alone computes nothing, the same honest outcome
 `bounds_from_rule` already gives a rule with no bound of its own.
 
-**A pre-existing defect surfaced while proving this, and the fix closes both.** An externally
-supplied bound (Job C's own `duration_bound`, and R1's own reference-table band before this fix)
-is invisible to `plan_calls`' "nothing computed" fallback, which re-derives from the rule's text
-alone and never receives the caller's external bound. A DISAGREEING external bound therefore
-double-booked: a correct plan from the per-rule loop, plus a spurious second one asking the
-model the same question again. Reproduced with no Job C code involved (an out-of-range table
-band, the R1 mechanism from before this job), so it was not new; closed for both mechanisms by
-tracking every rule a band OR a duration check reached ANY verdict for, agreeing or not, and
-excluding those from the fallback. An agreeing band or duration still costs no call at all, the
-"computed and settled" outcome both were always meant to give.
+**A pre-existing defect surfaced while proving this, in three places, and the fix closes all
+three.** An externally supplied bound (Job C's own `duration_bound`, and R1's own
+reference-table band before this fix) is invisible to `plan_calls`' "nothing computed" fallback,
+which re-derives from the rule's text alone and never receives the caller's external bound. A
+DISAGREEING external bound therefore double-booked: a correct plan from the per-rule loop, plus
+a spurious second one asking the model the same question again. Reproduced with no Job C code
+involved (an out-of-range table band, the R1 mechanism from before this job), so it was not new;
+closed for both mechanisms by tracking every rule a band OR a duration check reached ANY verdict
+for, agreeing or not, and excluding those from the fallback. An agreeing band or duration still
+costs no call at all, the "computed and settled" outcome both were always meant to give. A THIRD
+instance sits one layer further in: a rule that is BOTH scoped (D, option 2) AND settled by a
+duration check used to get its declared `absence_judged` plan (minted unconditionally, before
+the band/duration loop even runs) as well as the correct `duration` plan, asking the model a
+now-redundant question when Python had already answered the sharper one. Not observed on the
+device corpus today (D04's and D05's own duration checks do not currently succeed there), but
+latent the moment either wording gap below closes; closed by dropping a scoped rule's declared
+`absence_judged` plan when duration or band settles that same rule, while its own
+`absence_computed` plans and its fallback to `absence_judged` when nothing is computed are both
+left untouched.
 
 **Real-corpus honesty: neither device rule settles end to end on this corpus's exact wording,**
 and the reason is the same brittleness check 215 already named for a different pair of labels.
