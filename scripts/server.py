@@ -1211,6 +1211,21 @@ def _pairs_view(pairing, convention_registry=None):
         "unmatched_units": list(pairing.get("unmatched_units") or []),
         "missing_field_finding_count": len(pairing.get("missing_field_findings") or []),
         "units": units,
+        # Convention distribution, step A: the plans phase 5.5 did NOT judge because
+        # their rule has no convention-review consumer, and the computed plans it
+        # re-attributed to a rule that has one. Structural only: unit ids, rule ids,
+        # agent names and status words, never a passage of the document.
+        "not_judged": [
+            {"unit_id": r.get("unit_id"), "rule_id": r.get("rule_id"),
+             "source_rule_id": _fr.source_rule_id_for(r.get("rule_id"), registry),
+             "kind": r.get("kind"), "reason": r.get("reason"),
+             "consumer_agents": list(r.get("consumer_agents") or []), "status": r.get("status")}
+            for r in (pairing.get("not_judged") or [])],
+        "not_judged_count": int(pairing.get("not_judged_count") or 0),
+        "reattributed": [
+            {"unit_id": r.get("unit_id"), "from_rule_id": r.get("from_rule_id"),
+             "to_rule_id": r.get("to_rule_id"), "kind": r.get("kind")}
+            for r in (pairing.get("reattributed") or [])],
     }
 
 

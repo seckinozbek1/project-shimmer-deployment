@@ -15161,21 +15161,33 @@ def check_199_the_firing_gate_and_the_subject_chosen_paired_agent():
         return _fail("with no assignment computed, every agent must still fire "
                      "(the rollback path)")
 
-    # Only a convention-review agent can judge a paired call. A rule whose
-    # consumers all sit outside phase 5.5 (the editorial board, read on
-    # escalation in 6.5; REDACTOR, read in 9) must still be judged here by
-    # PRACTICE_AUDITOR, as every rule is today, never dispatched to a rank
-    # that is summoned by escalation and never dropped from the review.
-    # Found while estimating the remaining work, before this commit landed:
-    # the first draft took consumer_agents[0] verbatim, which for an
-    # [editorial] rule is EDITOR_CLERK.
-    board_only = {"by_rule": {"CONV-E": {"consumer_agents": ["EDITOR_CLERK", "EDITOR_DG"]}}}
-    if _pl._paired_judging_agent({"id": "CONV-E"}, board_only) != "PRACTICE_AUDITOR":
-        return _fail("a rule whose only consumers sit outside phase 5.5 must still be "
-                     "judged by PRACTICE_AUDITOR in paired mode, never dispatched to an "
-                     f"editorial rank: got "
+    # Only a convention-review agent can judge a paired call. Convention
+    # distribution step A (2026-09-11) reversed commit 3's fallback: a rule
+    # whose consumers all sit outside phase 5.5 (the editorial board, read on
+    # escalation in 6.5; REDACTOR, read in 9), or that matched no agent at
+    # all, now gets NO judging agent (None): no call is made and the plan is
+    # recorded in the pairing map as not judged (check 206 proves the record
+    # and the wide-mode excerpt). An untagged rule keeps PRACTICE_AUDITOR
+    # (answer 1); a rule the assignment does not know keeps the default too.
+    # Never dispatched to a rank that is summoned by escalation (the first
+    # draft of commit 3 took consumer_agents[0] verbatim, EDITOR_CLERK).
+    board_only = {"by_rule": {"CONV-E": {"status": "assigned",
+                                         "consumer_agents": ["EDITOR_CLERK", "EDITOR_DG"]}}}
+    if _pl._paired_judging_agent({"id": "CONV-E"}, board_only) is not None:
+        return _fail("a rule whose only consumers sit outside phase 5.5 must get no judging "
+                     "agent in paired mode (step A), never PRACTICE_AUDITOR by fallback and "
+                     f"never an editorial rank: got "
                      f"{_pl._paired_judging_agent({'id': 'CONV-E'}, board_only)!r}")
-    mixed = {"by_rule": {"CONV-M": {"consumer_agents": ["EDITOR_CLERK", "STYLE_GUARDIAN"]}}}
+    unassigned = {"by_rule": {"CONV-U": {"status": "unassigned", "consumer_agents": []}}}
+    if _pl._paired_judging_agent({"id": "CONV-U"}, unassigned) is not None:
+        return _fail("a rule no agent can act on must get no judging agent")
+    untagged = {"by_rule": {"CONV-T": {"status": "untagged", "consumer_agents": []}}}
+    if _pl._paired_judging_agent({"id": "CONV-T"}, untagged) != "PRACTICE_AUDITOR":
+        return _fail("an untagged rule keeps today's routing, PRACTICE_AUDITOR")
+    if _pl._paired_judging_agent({"id": "CONV-X"}, untagged) != "PRACTICE_AUDITOR":
+        return _fail("a rule the assignment does not know keeps the default")
+    mixed = {"by_rule": {"CONV-M": {"status": "assigned",
+                                    "consumer_agents": ["EDITOR_CLERK", "STYLE_GUARDIAN"]}}}
     if _pl._paired_judging_agent({"id": "CONV-M"}, mixed) != "STYLE_GUARDIAN":
         return _fail("a rule with a convention-review consumer beside a non-review one "
                      "must be judged by the convention-review agent")
@@ -16116,6 +16128,218 @@ def check_205_false_negative_evidence_classification():
                "the rule-id mapping; neutralise (map hidden) FAILS, restore PASSES")
 
 
+def _dist_paired_body():
+    """Convention distribution step A, executed on the real paired path with
+    _run_one stubbed (no model): a board-only rule is never judged, its plan is
+    recorded, a rule-independent computed plan is re-attributed to a rule that
+    has a judging agent, and wide mode's excerpt is filtered per agent."""
+    import asyncio as _asyncio
+    import finding_record as _fr
+    import pipeline as _pl
+    import pairing_map as _pm
+    import convention_assignment as _ca
+    from harness.run_agent import build_orchestrator as _boot
+
+    registry = {"conventions": [
+        {"id": "CONV-001", "category": "conv-a01", "severity": "required", "subjects": ["conformance"],
+         "rule": "The sum of the declared parts must equal the declared total extent."},
+        {"id": "CONV-002", "category": "conv-e01", "severity": "required", "subjects": ["editorial"],
+         "rule": "Every total declared weight line is read together with its neighbouring entry."},
+        {"id": "CONV-003", "category": "conv-a02", "severity": "required", "subjects": ["conformance"],
+         "rule": "The sum of the declared components must equal the total declared weight."},
+        {"id": "CONV-005", "category": "conv-e02", "severity": "required", "subjects": ["editorial"],
+         "rule": "Every remark line must be reviewed exactly as written."},
+    ]}
+    agents = {"PRACTICE_AUDITOR": {"subjects": ["conformance"]},
+              "STYLE_GUARDIAN": {"subjects": ["wording"]},
+              "EDITOR_CLERK": {"subjects": ["editorial"]}}
+    assignment = _ca.assign_conventions(registry["conventions"], agents)
+    for rid, want in (("CONV-001", "assigned"), ("CONV-002", "assigned"), ("CONV-003", "assigned"),
+                      ("CONV-005", "assigned")):
+        if assignment["by_rule"][rid]["status"] != want:
+            return _fail(f"fixture assignment: {rid} is {assignment['by_rule'][rid]['status']}")
+    if assignment["by_rule"]["CONV-002"]["consumer_agents"] != ["EDITOR_CLERK"] \
+            or assignment["by_rule"]["CONV-005"]["consumer_agents"] != ["EDITOR_CLERK"]:
+        return _fail("fixture: CONV-002 and CONV-005 must be board-only rules")
+    doc = {"id": "zqdist_doc", "name": "zqdist_doc.md", "text": "\n".join([
+        "## Unit 7", "", "Total declared extent: 40.0 zed", "",
+        "| Part | Extent (zed) |", "|---|---|", "| P-A | 18.0 |", "| P-B | 14.0 |", "",
+        "## Unit 8", "", "Total declared weight: 55.0 kg", "",
+        "| Component | Weight (kg) |", "|---|---|", "| C-A | 20.0 |", "| C-B | 20.0 |", "",
+        "## Unit 9", "", "Remark: stated once, no figure of any kind here.", "",
+    ])}
+    calls = []
+
+    async def _stub_run_one(wrapper, payload, objectives, **kw):
+        calls.append((wrapper.name, payload.get("unit_id"), payload.get("rule_id")))
+        return {"ok": True, "parsed": [{"explanation": "stubbed judging reply"}],
+                "agent": wrapper.name}
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_dist_") as tmp:
+        pairing = _pm.build_pairing_map(doc["text"], registry["conventions"],
+                                        document_id=doc["id"], convention_registry=registry)
+        orch = _boot(root=ROOT, out_root=tmp)
+        saved = _pl._run_one
+        _pl._run_one = _stub_run_one
+        try:
+            results = _asyncio.run(_pl._paired_convention_review(
+                orch, {}, doc, pairing, registry, [], "objectives",
+                {doc["id"]: 1}, 1, None, context_refs=[],
+                convention_assignment=assignment))
+        finally:
+            _pl._run_one = saved
+        judged_rules = {rid for _a, _u, rid in calls}
+        if judged_rules & {"CONV-002", "CONV-005"}:
+            return _fail(f"a board-only rule reached a judging call: {calls}")
+        if not calls:
+            return _fail("no judging call at all; the fixture's conformance rules should be judged")
+        if any(a != "PRACTICE_AUDITOR" for a, _u, _r in calls):
+            return _fail(f"a call went to an agent other than the conformance consumer: {calls}")
+        saved_map = json.loads((orch.run_context.audit_dir() / "pairing_map.json").read_text(encoding="utf-8"))
+        entry = saved_map.get(doc["id"]) or {}
+        nj = entry.get("not_judged")
+        if not isinstance(nj, list) or entry.get("not_judged_count") != len(nj):
+            return _fail(f"the pairing map carries no not_judged record: {sorted(entry)}")
+        if not any(r.get("rule_id") == "CONV-005" and r.get("unit_id") == "u03-unit-9"
+                   and r.get("kind") == "uncomputable" and "EDITOR_CLERK" in (r.get("reason") or "")
+                   for r in nj):
+            return _fail(f"the uncomputable board-only plan (u03-unit-9, CONV-005) is not recorded as "
+                         f"not judged with its consumers: {nj}")
+        if not all(r.get("rule_id") in ("CONV-002", "CONV-005") for r in nj):
+            return _fail(f"a rule with a judging agent was recorded as not judged: {nj}")
+        # the weight arithmetic on Unit 8 must survive under the conformance rule,
+        # whether _rule_for_check attributed it there or step A re-attributed it
+        posted = []
+        for m in orch.bus.read_all():
+            body = m.get("body") or {}
+            if body.get("event") == "AGENT_OUTPUT" and body.get("backend") == "paired":
+                for it in ((body.get("payload") or {}).get("items") or []):
+                    if _fr.is_finding(it):
+                        posted.append((m.get("sender"), it.get("unit_id"), it.get("rule_id"), it.get("relation")))
+        if ("PRACTICE_AUDITOR", "u02-unit-8", "CONV-003", "sum_mismatch") not in posted:
+            return _fail(f"Unit 8's computed sum mismatch was lost or posted under the board-only "
+                         f"rule instead of CONV-003: {posted}")
+        if any(rid in ("CONV-002", "CONV-005") for _s, _u, rid, _r in posted):
+            return _fail(f"a finding was posted under a board-only rule: {posted}")
+        if entry.get("reattributed") and not all(
+                r.get("from_rule_id") == "CONV-002" and r.get("to_rule_id") == "CONV-003"
+                for r in entry["reattributed"]):
+            return _fail(f"an unexpected re-attribution was recorded: {entry['reattributed']}")
+        if [r["agent"] for r in results] != ["PRACTICE_AUDITOR"]:
+            return _fail(f"results should come from PRACTICE_AUDITOR only: {[r['agent'] for r in results]}")
+
+    # the re-attribution helper, directly
+    plan = {"unit": {"unit_id": "u02-unit-8"}, "rule": registry["conventions"][1],
+            "checks": [{"relation": "sum_mismatch", "stated_field": "total declared weight"}],
+            "kind": "computed"}
+    rules_by_id = {c["id"]: c for c in registry["conventions"]}
+    alt = _pl._reattribute_computed_plan(plan, pairing, rules_by_id, assignment)
+    if alt is None or alt["id"] != "CONV-003":
+        return _fail(f"re-attribution should move the weight check to CONV-003: {alt}")
+    lonely = {"units": [{"unit_id": "u02-unit-8", "paired": [{"rule_id": "CONV-002"}]}]}
+    if _pl._reattribute_computed_plan(plan, lonely, rules_by_id, assignment) is not None:
+        return _fail("re-attribution invented a rule the unit was not paired with")
+
+    # wide mode's excerpt per agent: assigned rules plus untagged, board-only rules out
+    untagged_registry = {"conventions": registry["conventions"] + [
+        {"id": "CONV-009", "category": "conv-x", "severity": "advisory", "subjects": [], "rule": "untagged rule"}]}
+    assignment2 = _ca.assign_conventions(untagged_registry["conventions"], agents)
+    pa = _pl._wide_registry_for_agent(untagged_registry, assignment2, "PRACTICE_AUDITOR")
+    sg = _pl._wide_registry_for_agent(untagged_registry, assignment2, "STYLE_GUARDIAN")
+    if [c["id"] for c in pa["conventions"]] != ["CONV-001", "CONV-003", "CONV-009"]:
+        return _fail(f"PRACTICE_AUDITOR's wide excerpt is {[c['id'] for c in pa['conventions']]}, "
+                     f"expected its two assigned rules plus the untagged one")
+    if [c["id"] for c in sg["conventions"]] != ["CONV-009"]:
+        return _fail(f"STYLE_GUARDIAN's wide excerpt should hold only the untagged rule: "
+                     f"{[c['id'] for c in sg['conventions']]}")
+    if _pl._wide_registry_for_agent(untagged_registry, None, "STYLE_GUARDIAN") is not untagged_registry:
+        return _fail("with no assignment computed the whole registry must be shown, unchanged")
+    wide_nj = _pl._wide_not_judged(untagged_registry, assignment2)
+    if sorted(r["rule_id"] for r in wide_nj) != ["CONV-002", "CONV-005"]:
+        return _fail(f"wide mode's not-judged record should list exactly the board-only rules: {wide_nj}")
+    import inspect
+    src = inspect.getsource(_pl.phase_5_5_convention_review)
+    for needle in ("registry_for_agent = _wide_registry_for_agent(", "convention_registry=registry_for_agent",
+                   'payload["evaluate_against"] = [c.get("id") for c in'):
+        if needle not in src:
+            return _fail(f"the wide loop no longer applies the per-agent excerpt: {needle!r} missing")
+    return _ok("a board-only rule is never judged in paired mode and its plan is recorded in "
+               "the pairing map with its consumers (u03-unit-9, CONV-005, uncomputable); a "
+               "rule-independent computed finding is re-attributed to a paired rule with a "
+               "judging agent (Unit 8's sum mismatch posted under CONV-003, never under the "
+               "board rule); wide mode's excerpt per agent is its assigned rules plus the "
+               "untagged ones, board-only rules recorded as not judged")
+
+
+def check_206_convention_distribution_reaches_the_paired_path():
+    """Convention distribution, step A (2026-09-11). Built without measurement:
+    the gap was traced in code (the pairing map never read the assignment, so
+    the operator's tags changed nothing in paired mode and D06 to D08 still
+    reached the judging agent by commit 3's fallback), the fix is proved here on
+    fixtures, and no run has scored it. A plan whose rule has no convention-
+    review consumer (assigned to the editorial board only, or to no agent) now
+    makes no call and is recorded in the pairing map as not judged, never
+    silently dropped; a rule-independent computed plan is re-attributed to a
+    paired rule that has a judging agent before that; wide mode's registry
+    excerpt is filtered per agent the same way and the map records the rules no
+    convention-review agent was shown. Step B: the empty result a document owes
+    goes under an agent the firing gate lets fire, or nowhere.
+
+    Neutralise-and-restore: with _paired_judging_agent replaced by commit 3's
+    fallback (always PRACTICE_AUDITOR), a board-only rule reaches a judging call
+    and the body must FAIL; restored, PASS."""
+    import asyncio as _asyncio
+    import pipeline as _pl
+    import pairing_map as _pm
+    from harness.run_agent import build_orchestrator as _boot
+
+    shipped = _dist_paired_body()
+    if shipped[0] != "PASS":
+        return shipped
+    original = _pl._paired_judging_agent
+    _pl._paired_judging_agent = lambda rule, assignment: _pl.CONVENTION_REVIEW_AGENTS[0]
+    try:
+        neutralised = _dist_paired_body()
+    finally:
+        _pl._paired_judging_agent = original
+    if neutralised[0] != "FAIL":
+        return _fail(f"with commit 3's fallback restored the body still passed ({neutralised})")
+    restored = _dist_paired_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring step A the body no longer passes: {restored}")
+
+    # Step B: a document whose every rule is board-only owes no result under an
+    # agent the gate keeps from running; the phase returns nothing and logs it.
+    registry = {"conventions": [{"id": "CONV-002", "category": "conv-e01", "severity": "required",
+                                 "subjects": ["editorial"], "rule": "Total declared extent lines are read as written."}]}
+    assignment = {"by_rule": {"CONV-002": {"status": "assigned", "consumer_agents": ["EDITOR_CLERK"]}},
+                  "by_agent": {"PRACTICE_AUDITOR": [], "STYLE_GUARDIAN": [], "EDITOR_CLERK": ["CONV-002"]}}
+    doc = {"id": "zqboard_doc", "name": "zqboard_doc.md",
+           "text": "## Unit 1\n\nTotal declared extent: 12.0 zed\n"}
+    called = []
+
+    async def _stub_run_one(wrapper, payload, objectives, **kw):
+        called.append(wrapper.name)
+        return {"ok": True, "parsed": [], "agent": wrapper.name}
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_dist_b_") as tmp:
+        pairing = _pm.build_pairing_map(doc["text"], registry["conventions"],
+                                        document_id=doc["id"], convention_registry=registry)
+        orch = _boot(root=ROOT, out_root=tmp)
+        saved = _pl._run_one
+        _pl._run_one = _stub_run_one
+        try:
+            results = _asyncio.run(_pl._paired_convention_review(
+                orch, {}, doc, pairing, registry, [], "objectives", {doc["id"]: 1}, 1, None,
+                context_refs=[], convention_assignment=assignment))
+        finally:
+            _pl._run_one = saved
+    if called or results:
+        return _fail(f"with no firing agent the paired phase must make no call and return no "
+                     f"result under any agent's name: calls={called} results={[r.get('agent') for r in results]}")
+    return _ok(shipped[1] + "; with no firing agent the phase returns no result under anyone's "
+               "name (step B); neutralise (commit 3's fallback) FAILS, restore PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -16338,6 +16562,8 @@ CHECKS = [
      check_204_call_evidence_records_what_a_call_saw_as_identifiers),
     ("205 false-negative evidence classification, four classes from saved artifacts only",
      check_205_false_negative_evidence_classification),
+    ("206 convention distribution reaches the paired path and wide mode's excerpt (step A, B)",
+     check_206_convention_distribution_reaches_the_paired_path),
 ]
 
 
