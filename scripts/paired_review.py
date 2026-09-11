@@ -107,6 +107,17 @@ _TABLE_SEP = pairing_map._TABLE_SEP
 REL_TOLERANCE = 1e-6
 ABS_TOLERANCE = 1e-9
 
+# Job C: an ISO date, optionally with a time, exactly as the document writes one
+# ("2026-06-01" or "2026-06-01 09:00" or "...09:00:00"). Nothing looser: a
+# calendar written any other way (a month name, a slash-separated date, an
+# ordinal) is not matched, so a document that states a date differently gets
+# no duration check rather than a misread one. The two rules this job answers
+# (a fault window, a service interval) both compare a gap in hours or days,
+# never in minutes or seconds, so seconds are accepted but not required and
+# never read.
+_ISO_DATETIME = re.compile(
+    r"\b(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?\b")
+
 
 def norm_number(token):
     """'1 254 000' and '1,254,000' and '1254000' are the same number."""
@@ -206,6 +217,144 @@ def _unit_str(exponents):
     den = [_render(k, -v) for k, v in sorted(exponents.items()) if v < 0]
     head = "*".join(num) or "1"
     return head + ("/" + "*".join(den) if den else "")
+
+
+# ---------------------------------------------------------------------------
+# Job C: a gap between two timestamps, computed in Python, never guessed at.
+#
+# Two of the device rules ("acknowledged within the standard fault window",
+# "must not exceed the standard service interval") say "state the two
+# timestamps and the gap between them", which is an instruction to compute,
+# not to judge, but nothing in this pipeline subtracted two dates before this.
+# The shape is read structurally, the same discipline reference_tables.py
+# already holds for a range: a label line's own words are what connect it to
+# the rule, never a hardcoded word like "last" or "next", and more than the
+# expected count of dates in play is refused rather than picked from.
+
+
+def _parse_iso_datetime(token):
+    """One ISO date, optionally timed, as a (datetime, has_time) pair, or None.
+
+    Refuses rather than guesses: a token with no match, or a malformed one
+    (day 32, month 13) that datetime itself rejects, yields None. Never reads
+    a second candidate out of a longer string; the caller decides how many
+    dates a piece of text may hold."""
+    import datetime as _dt
+    m = _ISO_DATETIME.fullmatch(token.strip())
+    if not m:
+        return None
+    year, month, day, hour, minute, second = m.groups()
+    try:
+        if hour is not None:
+            return (_dt.datetime(int(year), int(month), int(day), int(hour),
+                                 int(minute), int(second or 0)), True)
+        return (_dt.datetime(int(year), int(month), int(day)), False)
+    except ValueError:
+        return None
+
+
+def _label_lines_with_dates(unit_text):
+    """Every `label: value` line whose value is EXACTLY one or EXACTLY two ISO
+    datetimes, as (connecting_words, [datetime, ...], has_time). A value
+    carrying any other number of dates, or a date alongside other non-date
+    text this function cannot separate cleanly, is not returned: ambiguous
+    material yields no candidate rather than a guessed one.
+
+    connecting_words is the label's own words UNIONED with the value's own
+    words (the dates themselves removed), not the label alone: the two-date
+    same-line shape's outer label ("Service record:") may use different
+    words from the ones actually describing each date ("last calibration
+    visit... next calibration visit logged..."), and a rule is far more
+    likely to share vocabulary with the descriptive words beside a figure,
+    the same reasoning Job A's column_phrase reads a table's own header
+    words rather than trusting an outer wrapper name."""
+    import pairing_map as _pm
+    out = []
+    for line in (unit_text or "").splitlines():
+        m = _LABEL_LINE.match(line)
+        if not m:
+            continue
+        label = _pm._norm_label(m.group(1))
+        if not label:
+            continue
+        value = m.group(2).strip()
+        matches = list(_ISO_DATETIME.finditer(value))
+        if not matches or len(matches) > 2:
+            continue
+        parsed = []
+        ok = True
+        for mm in matches:
+            got = _parse_iso_datetime(mm.group(0))
+            if got is None:
+                ok = False
+                break
+            parsed.append(got)
+        if not ok or len(parsed) != len(matches):
+            continue
+        value_without_dates = _ISO_DATETIME.sub(" ", value)
+        connecting = set(label) | set(_pm._norm_label(value_without_dates))
+        out.append((connecting, [p[0] for p in parsed], all(p[1] for p in parsed)))
+    return out
+
+
+def date_pair_for_rule(unit_text, rule_text):
+    """(earlier, earlier_label, later, later_label, has_time) for the ONE date
+    pair this rule's own words connect to in this unit, or None.
+
+    Two shapes, tried in order, EXACTLY one of which may match:
+
+      - ONE label line whose value holds two dates (UNIT-VETCH's "Service
+        record: last calibration visit 2026-01-01, next calibration visit
+        logged 2026-06-01"): its connecting words (the label's own words
+        UNIONED with the value's own words, dates removed, so "calibration
+        visit" reaches the test even when the outer label "Service record"
+        does not share the rule's vocabulary) must be named by the rule,
+        word containment, and the two dates are read in the order the
+        document writes them.
+      - TWO SEPARATE label lines, each holding one date, whose connecting
+        words together satisfy the rule (UNIT-TEASEL's "Fault logged:" /
+        "Fault acknowledged:"): both must be named by the rule, and exactly
+        two such single-date lines may be named, or the pair is refused as
+        ambiguous (which one goes with the rule is not decidable by field
+        matching alone once a third candidate exists).
+
+    A date the value line cannot resolve to a single unambiguous datetime, a
+    unit with no date-bearing line the rule names, or a unit where the rule
+    names three or more single-date lines all yield None: refuse rather than
+    pick one. The gap is never assumed to run forward; a pair where the
+    second date precedes the first is still returned (compute_checks reads
+    the gap as an absolute duration, never a signed one, since which entry
+    the document lists first is not a claim about order)."""
+    import pairing_map as _pm
+
+    candidates = _label_lines_with_dates(unit_text)
+    if not candidates:
+        return None
+    # Unicode-aware, the same split pairing_map.needed_fields uses against a
+    # rule's own text (not _norm_label, which also drops stopwords and short
+    # words: a rule word must survive here exactly as needed_fields tests it).
+    rule_words = set(
+        w for w in re.split(r"[\W_]+", (rule_text or "").lower(), flags=re.UNICODE) if w)
+
+    def _named(label):
+        return bool(label) and set(label) <= rule_words
+
+    two_date_lines = [(label, dts, has_time) for label, dts, has_time in candidates
+                      if len(dts) == 2 and _named(label)]
+    one_date_lines = [(label, dts[0], has_time) for label, dts, has_time in candidates
+                      if len(dts) == 1 and _named(label)]
+
+    if two_date_lines and one_date_lines:
+        return None  # both shapes matched: ambiguous, refuse rather than pick
+    if len(two_date_lines) > 1:
+        return None  # more than one same-line pair the rule names: ambiguous
+    if two_date_lines:
+        label, (d1, d2), has_time = two_date_lines[0]
+        return (d1, " ".join(label) + " (first)", d2, " ".join(label) + " (second)", has_time)
+    if len(one_date_lines) == 2:
+        (l1, d1, t1), (l2, d2, t2) = one_date_lines
+        return (d1, " ".join(l1), d2, " ".join(l2), t1 and t2)
+    return None  # zero, or three-or-more, single-date lines the rule names
 
 
 # ---------------------------------------------------------------------------
@@ -447,16 +596,22 @@ def _band_comparisons(scalars, columns, low, high, bound_unit):
 
 def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
                    needed=None, present_labels=None, reference_bands=(),
-                   vocabulary=None, unit_labels=None):
+                   vocabulary=None, unit_labels=None, unit_text="",
+                   duration_bound=None):
     """Every comparison the figures themselves support. The model computes nothing.
 
-    Three families, each proposed mechanically:
+    Four families, each proposed mechanically:
       sum_mismatch      a column summed against the scalar whose label contains the
                         column's label words
       product_mismatch  a scalar against the product of two fields whose units
                         multiply to the scalar's unit
       ratio_out_of_range / above_band / below_band
                         a ratio of two fields against bounds the RULE ITSELF states
+      date_window       (Job C) the gap between two timestamps this unit states,
+                        against a bound read from the reference corpus's own
+                        prose, when the rule names a date pair AND a bound is
+                        supplied (duration_bound); no duration is computed
+                        without both, and neither is guessed at
     """
     checks = []
 
@@ -644,6 +799,41 @@ def compute_checks(scalars, columns, *, rule_text="", row_counts=None,
                 if verdict == "model":
                     check["conditional_on"] = [" ".join(c) for c in condition]
             checks.append(check)
+
+    # Job C: two of the device rules say "state the two timestamps and the
+    # gap between them", an instruction to compute, not to judge. The rule
+    # must both connect to a date pair this unit states (date_pair_for_rule,
+    # refusing rather than guessing on any ambiguity) AND have a bound the
+    # caller found in the reference corpus's own prose (duration_bound,
+    # reference_tables.scalar_bound_from_entries, computed once per rule by
+    # the caller the same way reference_bands already is): with only one of
+    # the two, nothing is computed and the pair still gets its call, the same
+    # honest outcome bounds_from_rule already gives a rule with no bound.
+    if duration_bound is not None and unit_text:
+        pair = date_pair_for_rule(unit_text, rule_text)
+        if pair is not None:
+            earlier, earlier_label, later, later_label, has_time = pair
+            bound_value, bound_unit, bound_ref = duration_bound
+            gap_seconds = abs((later - earlier).total_seconds())
+            gap_by_unit = {"hours": gap_seconds / 3600.0, "days": gap_seconds / 86400.0}
+            # The gap unit must match the bound's own unit exactly (hours or
+            # days, the only two either device rule states); a bound in a
+            # unit this reader does not recognise computes nothing rather
+            # than converting through an assumed calendar.
+            if bound_unit in gap_by_unit:
+                gap = gap_by_unit[bound_unit]
+                agrees = gap <= bound_value or _close(gap, bound_value)
+                checks.append({
+                    "relation": "date_window",
+                    "computed": round(gap, 6), "computed_unit": bound_unit,
+                    "stated": bound_value, "stated_unit": bound_unit,
+                    "agrees": agrees,
+                    "basis": "%s to %s, %s in the reference corpus" % (
+                        earlier_label, later_label,
+                        ("a %s gap" % bound_unit)),
+                    "stated_field": earlier_label,
+                    "ref_id": bound_ref,
+                })
     return checks
 
 
@@ -951,8 +1141,12 @@ def absence_plans(unit, rule_ids, rules_by_id, present, *, required_fields_for=N
     return plans, scoped
 
 
+DURATION_RELATIONS = ("date_window",)
+
+
 def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for=None,
-               reference_bands_for=None, known_units=None, required_fields_for=None):
+               reference_bands_for=None, known_units=None, required_fields_for=None,
+               duration_bound_for=None):
     """One judging call per DISTINCT computed disagreement, not per pair.
 
     Found by measuring the plan at H7 rather than by reading the code. A sum or a
@@ -995,11 +1189,17 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
             if rule and rule_id not in scoped_rule_ids:
                 needed_union |= needed_fields_for(rule.get("rule", ""))
 
-        # Rule-independent: computed once for the unit.
+        # Rule-independent: computed once for the unit. date_window is excluded
+        # for the same reason BAND_RELATIONS is: it depends on a specific
+        # rule's own text (which date pair it names) and a duration_bound this
+        # call was not given, so it is never actually produced here (an empty
+        # rule_text names nothing, and duration_bound defaults to None), but
+        # the exclusion is made explicit rather than relying on that silently.
         shared = [c for c in compute_checks(scalars, columns, rule_text="",
                                             row_counts=row_counts, needed=needed_union,
                                             present_labels=present)
-                  if c["relation"] not in BAND_RELATIONS]
+                  if c["relation"] not in BAND_RELATIONS
+                  and c["relation"] not in DURATION_RELATIONS]
         seen = set()
         for check in disagreements(shared):
             key = (check["relation"], check.get("basis"), check.get("computed"),
@@ -1012,32 +1212,58 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
                 "checks": [check], "kind": "computed"})
 
         # Rule-dependent: a band lives in a rule's own text, or (R1) in a table in
-        # the reference corpus that the rule points at, so it is computed per rule.
+        # the reference corpus that the rule points at, or (Job C) a duration
+        # bound lives in the reference corpus's own prose, so each is computed
+        # per rule. settled_rule_ids tracks every rule this loop reached a
+        # verdict for, agreeing or not: an AGREEING band or duration (a value
+        # in range, a gap inside its window) is still Python having answered
+        # the question, and must not fall through to the uncomputable check
+        # below, which cannot see either bound (both are external to the
+        # rule's own text: a reference-table row and a reference-corpus
+        # sentence, neither reachable from compute_checks(rule_text=...)
+        # alone). Found while proving Job C: an out-of-range table band
+        # DISAGREES and used to double-book (a correct "band" plan plus a
+        # spurious "uncomputable" one asking the model the same question a
+        # second time), a pre-existing defect in the R1 mechanism this
+        # tracking now also closes, not only Job C's own new duration path.
+        settled_rule_ids = set()
         for rule_id in rule_ids:
             rule = rules_by_id.get(rule_id)
             if not rule:
                 continue
             bands = (reference_bands_for(unit.get("text", ""), rule)
                      if reference_bands_for else ())
-            band = [c for c in compute_checks(scalars, columns,
-                                              rule_text=rule.get("rule", ""),
-                                              row_counts=row_counts,
-                                              # R6: the band branch needs to know which
-                                              # fields THIS rule names, or a stated band
-                                              # is applied to every same-unit figure in
-                                              # the unit. Only BAND_RELATIONS are kept
-                                              # below, so the missing_field checks this
-                                              # now also computes are discarded here and
-                                              # still come from the shared pass above.
-                                              needed=needed_fields_for(rule.get("rule", "")),
-                                              present_labels=present,
-                                              reference_bands=bands,
-                                              vocabulary=vocabulary,
-                                              unit_labels=present)
-                    if c["relation"] in BAND_RELATIONS]
+            duration_bound = (duration_bound_for(rule) if duration_bound_for else None)
+            rule_checks = compute_checks(scalars, columns,
+                                         rule_text=rule.get("rule", ""),
+                                         row_counts=row_counts,
+                                         # R6: the band branch needs to know which
+                                         # fields THIS rule names, or a stated band
+                                         # is applied to every same-unit figure in
+                                         # the unit. Only BAND_RELATIONS and
+                                         # DURATION_RELATIONS are kept below, so the
+                                         # missing_field checks this now also
+                                         # computes are discarded here and still
+                                         # come from the shared pass above.
+                                         needed=needed_fields_for(rule.get("rule", "")),
+                                         present_labels=present,
+                                         reference_bands=bands,
+                                         vocabulary=vocabulary,
+                                         unit_labels=present,
+                                         unit_text=unit.get("text", ""),
+                                         duration_bound=duration_bound)
+            band = [c for c in rule_checks if c["relation"] in BAND_RELATIONS]
+            if band:
+                settled_rule_ids.add(rule_id)
             for check in disagreements(band):
                 plans.append({"unit": unit, "rule": rule, "checks": [check],
                               "kind": "band"})
+            duration = [c for c in rule_checks if c["relation"] in DURATION_RELATIONS]
+            if duration:
+                settled_rule_ids.add(rule_id)
+            for check in disagreements(duration):
+                plans.append({"unit": unit, "rule": rule, "checks": [check],
+                              "kind": "duration"})
 
         # A pair where nothing at all could be computed still needs the model, on
         # the text, for one unit against one rule.
@@ -1046,6 +1272,8 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
                 rule = rules_by_id.get(rule_id)
                 if rule is None or rule_id in scoped_rule_ids:
                     continue  # a scoped rule's question was planned above
+                if rule_id in settled_rule_ids:
+                    continue  # a band or duration verdict was planned above
                 if not compute_checks(scalars, columns, rule_text=rule.get("rule", ""),
                                       row_counts=row_counts, needed=set(),
                                       present_labels=present):

@@ -18559,6 +18559,264 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
                "call site; neutralise (no usage key) reads falsy, restore reads accurately")
 
 
+def check_217_a_gap_between_two_timestamps_is_computed_in_python():
+    """Job C: two of the device rules ("acknowledged within the standard fault
+    window", "must not exceed the standard service interval") say "state the
+    two timestamps and the gap between them", an instruction to compute, not
+    to judge. Nothing in this pipeline subtracted two dates before this.
+
+    paired_review.date_pair_for_rule reads a date pair from a unit by the
+    rule's own connecting words, two shapes: two separate label lines each
+    holding one date (UNIT-TEASEL's "Fault logged:" / "Fault acknowledged:"),
+    or one label line holding two (UNIT-VETCH's "Service record: last
+    calibration visit ..., next calibration visit logged ..."). Neither
+    shape is picked from a third candidate: an ambiguous unit yields no
+    pair. reference_tables.scalar_bound_from_entries reads a single-value
+    bound from the reference corpus's own prose ("the standard fault window
+    is 24 hours"), the sibling of Job A's range reader for a shape that
+    states one number, not two. compute_checks emits date_window only when
+    BOTH a pair and a bound are found for the same rule; either alone
+    computes nothing, the same honest outcome bounds_from_rule already gives
+    a rule with no bound.
+
+    A second, more consequential thing surfaced while proving this: an
+    externally-supplied bound (Job C's duration_bound, and R1's own
+    reference-table band before this fix) is invisible to plan_calls' own
+    "nothing computed" fallback, because that fallback re-derives from
+    rule_text alone and never receives the caller's external bound. A
+    DISAGREEING external bound therefore double-booked: a correct plan from
+    the per-rule loop, plus a spurious second one asking the model the same
+    question again. Proved a pre-existing defect in R1's own mechanism, not
+    only in this job's new one (reproduced with the fallback logic from
+    before this fix, no Job C code involved); closed for both by tracking
+    every rule a band OR a duration check reached a verdict for, agreeing or
+    not, and excluding those from the fallback.
+
+    Real-corpus honesty, recorded rather than hidden: on device_log_flawed.md
+    itself, D04's date pair is found (its two label lines share no
+    vocabulary problem) but its bound is not: the bound sentence says "fault
+    timestamp" (singular) and the rule says "state the two timestamps"
+    (plural), and word-containment does not stem. D05's bound is found (once
+    the document's own glossary is searched: this corpus keeps its glossary
+    INSIDE the document under review, not in a separate reference file, so
+    excluding the document under review, Job A's own table-reading pattern
+    copied here uncritically at first, made D05 permanently unsolvable) but
+    its date pair is not: the value says "calibration visit" (singular,
+    twice) and the rule says "logged calibration visits" (plural). Neither
+    rule settles end to end on this corpus's exact wording; both mechanisms
+    are proved correct on fixtures whose vocabulary aligns, and the
+    fixture-vs-corpus gap here is the same brittleness check 215 already
+    named for a different pair of labels (Class-A/Class-B), not a defect
+    unique to duration checking.
+
+    Asserted, executed on pure functions and one real plan_calls run, no
+    model, no run:
+      - date_pair_for_rule reads both real corpus shapes correctly when the
+        rule's words align (a fixture built to avoid the corpus's own
+        singular/plural gap), refuses an ambiguous unit (three candidate
+        single-date lines), refuses a wrong-rule mismatch, and returns None
+        on a unit with no date field the rule names;
+      - scalar_bound_from_entries reads a real single-value bound, refuses a
+        tie between two candidate sentences, and refuses a range sentence
+        (Job A's own shape, two quantities, never this function's);
+      - compute_checks emits date_window only with both a pair and a bound,
+        and computes the gap correctly in the bound's own unit (hours or
+        days);
+      - plan_calls buys ONE call for a DISAGREEING duration check, not two
+        (the double-booking fix), and the identical fix closes the
+        pre-existing R1 band defect (an out-of-range table band, proved with
+        a fixture carrying no Job C code at all, also used to double-book
+        and now does not); an AGREEING duration or band costs no call at
+        all, the "computed and settled, no model needed" outcome both
+        mechanisms were always meant to give;
+      - on the real corpus, D04 finds its date pair and not its bound, D05
+        finds its bound and not its date pair, and neither settles, proved
+        directly against benchmark/corpora/device_log_review's own files.
+    """
+    import reference_tables as _rt
+    import paired_review as _pr
+    import pairing_map as _pm
+
+    # date_pair_for_rule: both shapes, on fixtures whose vocabulary aligns
+    # with the rule (the real corpus's own mismatch is proved separately,
+    # below, as a recorded fact rather than a false pass here).
+    unit_two_lines = ("Device: UNIT-X\nFault logged: 2026-06-01 09:00\n"
+                      "Fault acknowledged: 2026-06-03 09:00\n")
+    rule_two_lines = ("A logged fault must be acknowledged within the standard fault "
+                      "window. State the two timestamps and the gap between them.")
+    pair = _pr.date_pair_for_rule(unit_two_lines, rule_two_lines)
+    if pair is None:
+        return _fail("two separate single-date label lines the rule names must yield a pair")
+    earlier, earlier_label, later, later_label, has_time = pair
+    if (earlier.isoformat(), later.isoformat()) != ("2026-06-01T09:00:00", "2026-06-03T09:00:00"):
+        return _fail(f"wrong datetimes read: {pair!r}")
+
+    unit_one_line = ("Device: UNIT-Y\nVisit record: 2026-01-01 and 2026-06-01\n")
+    rule_one_line = ("The gap between the two dates of a device's visit record must not "
+                     "exceed the standard interval. State the two dates and the gap.")
+    pair2 = _pr.date_pair_for_rule(unit_one_line, rule_one_line)
+    if pair2 is None:
+        return _fail("one label line holding two dates, named by the rule, must yield a pair")
+    if (pair2[0].isoformat(), pair2[2].isoformat()) != ("2026-01-01T00:00:00", "2026-06-01T00:00:00"):
+        return _fail(f"wrong datetimes read from the same-line shape: {pair2!r}")
+
+    # Ambiguity: three single-date candidates the rule could name, refused.
+    unit_ambiguous = ("Device: UNIT-Z\nFault logged: 2026-06-01 09:00\n"
+                      "Fault acknowledged: 2026-06-03 09:00\n"
+                      "Fault escalated: 2026-06-05 09:00\n")
+    rule_ambiguous = "The fault logged, acknowledged, and escalated timestamps are recorded."
+    if _pr.date_pair_for_rule(unit_ambiguous, rule_ambiguous) is not None:
+        return _fail("three candidate single-date lines the rule could name must be refused")
+
+    # A unit with no date field the rule names: None, not a guess.
+    if _pr.date_pair_for_rule("Device: UNIT-Q\nReading: 50 units\n", rule_two_lines) is not None:
+        return _fail("a unit with no date field must yield no pair")
+
+    # scalar_bound_from_entries: a real bound, a tie refused, a range refused.
+    passage = "The standard fault window is 24 hours."
+    entries = [{"ref_id": "REF-A", "document_id": "ref_doc", "text_excerpt": passage}]
+    bound = _rt.scalar_bound_from_entries(entries, rule_two_lines)
+    if bound != (24.0, "hours", "REF-A"):
+        return _fail(f"expected (24.0, 'hours', 'REF-A'), got {bound!r}")
+
+    tied_passage = "The standard fault window is 24 hours. The revised fault window is 48 hours."
+    tied_rule = "The standard fault window applies unless a revised fault window is stated."
+    tied_entries = [{"ref_id": "REF-B", "document_id": "ref_doc2", "text_excerpt": tied_passage}]
+    if _rt.scalar_bound_from_entries(tied_entries, tied_rule) is not None:
+        return _fail("a genuine tie between two candidate sentences must be refused")
+
+    range_entries = [{"ref_id": "REF-C", "document_id": "ref_doc3",
+                      "text_excerpt": "Class-A sensor: standard tolerance band 20 to 60 units."}]
+    if _rt.scalar_bound_from_entries(range_entries, "The class tolerance band applies.") is not None:
+        return _fail("a range sentence (Job A's own shape) must not be read as a single bound")
+
+    # compute_checks: date_window fires only with BOTH a pair and a bound.
+    scalars, columns, row_counts = _pr.extract_fields(unit_two_lines)
+    with_both = _pr.compute_checks(scalars, columns, rule_text=rule_two_lines,
+                                   row_counts=row_counts, unit_text=unit_two_lines,
+                                   duration_bound=(24.0, "hours", "REF-A"))
+    date_checks = [c for c in with_both if c["relation"] == "date_window"]
+    if len(date_checks) != 1:
+        return _fail(f"expected exactly one date_window check, got {date_checks!r}")
+    if abs(date_checks[0]["computed"] - 48.0) > 1e-6 or date_checks[0]["agrees"]:
+        return _fail(f"expected computed=48.0 hours, agrees=False (48 > 24), "
+                     f"got {date_checks[0]!r}")
+    without_bound = _pr.compute_checks(scalars, columns, rule_text=rule_two_lines,
+                                       row_counts=row_counts, unit_text=unit_two_lines,
+                                       duration_bound=None)
+    if any(c["relation"] == "date_window" for c in without_bound):
+        return _fail("with no duration_bound, no date_window check may be computed")
+
+    # plan_calls: a disagreeing duration buys ONE call, not two (the double-
+    # booking this job's own new path could have introduced).
+    unit_obj = {"unit_id": "u01-x", "title": "X", "text": unit_two_lines}
+    rule_obj = {"id": "CONV-DUR", "rule": rule_two_lines}
+    plans = _pr.plan_calls({unit_obj["unit_id"]: unit_obj},
+                           [(unit_obj["unit_id"], "CONV-DUR")],
+                           {"CONV-DUR": rule_obj}, set(),
+                           needed_fields_for=lambda t: set(),
+                           duration_bound_for=lambda r: (24.0, "hours", "REF-A"))
+    if len(plans) != 1 or plans[0]["kind"] != "duration":
+        return _fail(f"expected exactly one 'duration' plan, got {plans!r}")
+
+    # An AGREEING duration costs no call at all (Python settled it silently).
+    plans_agree = _pr.plan_calls({unit_obj["unit_id"]: unit_obj},
+                                 [(unit_obj["unit_id"], "CONV-DUR")],
+                                 {"CONV-DUR": rule_obj}, set(),
+                                 needed_fields_for=lambda t: set(),
+                                 duration_bound_for=lambda r: (72.0, "hours", "REF-A"))
+    if plans_agree:
+        return _fail(f"an agreeing duration (48h gap against a 72h bound) must cost no "
+                     f"call at all, got {plans_agree!r}")
+
+    # The pre-existing R1 defect, proved with NO Job C code involved: an
+    # out-of-range table band used to double-book identically.
+    unit_band = {"unit_id": "u02-alder", "title": "UNIT-ALDER",
+                "text": "Device: UNIT-ALDER\nClass: Class-A sensor\nReading: 99 units\n"}
+    rule_band = {"id": "CONV-BAND", "rule": "The reading must fall inside its class tolerance band."}
+
+    def _bands_for(text, rule):
+        return [{"low": 20.0, "high": 60.0, "unit": "units", "ref_id": "REF-BAND"}]
+
+    band_plans = _pr.plan_calls({unit_band["unit_id"]: unit_band},
+                                [(unit_band["unit_id"], "CONV-BAND")],
+                                {"CONV-BAND": rule_band}, set(),
+                                needed_fields_for=lambda t: set(),
+                                reference_bands_for=_bands_for)
+    if len(band_plans) != 1 or band_plans[0]["kind"] != "band":
+        return _fail(f"a disagreeing table band must buy exactly one 'band' plan (the "
+                     f"pre-existing R1 double-booking, closed by the same fix), "
+                     f"got {band_plans!r}")
+
+    # Real-corpus honesty: D04 and D05 each find exactly one of the two
+    # halves they need, proved directly against the corpus's own files.
+    corpus_ref = (SCRIPTS.parent / "benchmark" / "corpora" / "device_log_review" /
+                 "context" / "device_class_reference.md")
+    corpus_log = (SCRIPTS.parent / "benchmark" / "corpora" / "device_log_review" /
+                 "context" / "device_log_flawed.md")
+    if not corpus_ref.exists() or not corpus_log.exists():
+        return _fail("the device corpus fixtures are missing; this check needs them "
+                     "on disk to prove the real-corpus honesty claim")
+    log_text = corpus_log.read_text(encoding="utf-8")
+    ref_text = corpus_ref.read_text(encoding="utf-8")
+    real_units = _pm.split_units(log_text, document_id="device_log_flawed")
+    teasel = next((u for u in real_units if "TEASEL" in u["title"]), None)
+    vetch = next((u for u in real_units if "VETCH" in u["title"]), None)
+    if teasel is None or vetch is None:
+        return _fail("UNIT-TEASEL or UNIT-VETCH is missing from the real corpus's own "
+                     "split; the fixture this test depends on has changed")
+    rule_d04 = ("A device's own logged fault must be acknowledged within the standard "
+               "fault window stated in the glossary. An entry recording a longer gap "
+               "between a logged fault and its acknowledgement is an irregularity. "
+               "State the two timestamps and the gap between them.")
+    rule_d05 = ("The gap between a device's two most recently logged calibration visits "
+               "must not exceed the standard service interval stated in the glossary. "
+               "An entry recording a longer gap is an irregularity. State the two dates "
+               "and the gap between them.")
+
+    def _real_duration_bound(rule_text):
+        entries = [{"ref_id": "REF-REF", "document_id": "device_class_reference",
+                    "text_excerpt": ref_text},
+                  {"ref_id": "device_log_flawed", "document_id": "device_log_flawed",
+                   "text_excerpt": log_text}]
+        return _rt.scalar_bound_from_entries(entries, rule_text)
+
+    d04_pair = _pr.date_pair_for_rule(teasel["text"], rule_d04)
+    d04_bound = _real_duration_bound(rule_d04)
+    if d04_pair is None:
+        return _fail("D04's date pair was expected to be FOUND on the real corpus "
+                     "(UNIT-TEASEL's two label lines share no vocabulary problem with "
+                     "the rule); if this now fails, the corpus or the rule text changed")
+    if d04_bound is not None:
+        return _fail(f"D04's bound was expected to be UNFOUND on the real corpus (the "
+                     f"bound sentence says 'fault timestamp', singular, and the rule "
+                     f"says 'timestamps', plural); got {d04_bound!r} instead. If this "
+                     f"corpus or rule text was corrected to align, that is progress, "
+                     f"but this check must be updated to assert the new, better outcome "
+                     f"rather than silently accept a stale expectation")
+
+    d05_pair = _pr.date_pair_for_rule(vetch["text"], rule_d05)
+    d05_bound = _real_duration_bound(rule_d05)
+    if d05_pair is not None:
+        return _fail(f"D05's date pair was expected to be UNFOUND on the real corpus "
+                     f"(the value says 'calibration visit', singular, and the rule says "
+                     f"'visits', plural); got {d05_pair!r} instead")
+    if d05_bound is None:
+        return _fail("D05's bound was expected to be FOUND on the real corpus (found by "
+                     "searching the document under review's own glossary, not only "
+                     "context_refs); if this now fails, the wiring regressed")
+
+    return _ok("date_pair_for_rule reads both real shapes (two label lines, one label "
+               "line with two dates) and refuses ambiguity; scalar_bound_from_entries "
+               "reads a real bound and refuses a tie and a range sentence; date_window "
+               "fires only with both a pair and a bound; plan_calls buys one call for a "
+               "disagreeing duration and none for an agreeing one, and the identical fix "
+               "closes a pre-existing R1 double-booking on an out-of-range table band "
+               "(proved with no Job C code involved); on the real corpus D04 finds its "
+               "pair but not its bound and D05 finds its bound but not its pair, neither "
+               "settling, both halves proved separately correct on aligned fixtures")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -18803,6 +19061,8 @@ CHECKS = [
      check_215_a_labelled_prose_band_is_read_without_a_model),
     ("216 the output budget is sized per call type and a cut is recorded (job B)",
      check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded),
+    ("217 a gap between two timestamps is computed in Python (job C)",
+     check_217_a_gap_between_two_timestamps_is_computed_in_python),
 ]
 
 
