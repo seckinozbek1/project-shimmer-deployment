@@ -6,7 +6,7 @@ assignment commits, then W7), ahead of the W6 rerun, which waits on the operator
 the eight device rules; nothing in W7 depends on W6, and W7 a was written to run before W6
 writes to the stores in any case.
 
-## a. Archive and empty: NOT EXECUTED, blocked, the tool is built
+## a. Archive and empty: EXECUTED by the operator, after the commit
 
 The instruction: archive the ontology and GNN stores as a dated file outside the repository,
 then empty them. The tool that does exactly that is built, `tools/archive_ontology_stores.py`
@@ -14,16 +14,23 @@ then empty them. The tool that does exactly that is built, `tools/archive_ontolo
 `<repo parent>/shimmer-archives/ontology_stores_<UTC stamp>.zip`, read every member back and
 compare its sha256 before anything is emptied, then truncate the JSONL stores to zero bytes
 and remove the derived `graph.json` and `gnn_state.json`, which their modules rebuild from
-an empty store). Its dry run produced the manifest below. Running it for real was refused
-twice by the agent's tool permission layer (the action deletes files under the repository
-and writes outside it), and that refusal is not something to work around: the operator runs
-it, once, with
+an empty store). Running it from the agent was refused twice by the tool permission layer
+(the action deletes files under the repository and writes outside it), and that refusal was
+not worked around: the operator ran it once, after commit `b31fbb9`, with
 
 ```
 py -3.9 -X utf8 tools/archive_ontology_stores.py
 ```
 
-Dry-run manifest at 11:27:43Z (nothing written, nothing removed):
+The executed manifest, as the operator reported it (12:15:43Z): archive
+`C:\Users\secki\local\shimmer-archives\ontology_stores_20260911T121543Z.zip`, 13107 bytes;
+the three files archived with exactly the digests the dry run had listed (table below);
+`provisions.jsonl` emptied; `gnn_state.json` and `graph.json` removed; `dry_run: false`.
+Confirmed on disk afterwards: `ontology/stores/` holds one file, `provisions.jsonl`, of zero
+bytes, and the archive exists at that path with that size. The four old-shape records are
+in the archive and nowhere else; the next run writes only new-shape records.
+
+Dry-run manifest at 11:27:43Z (digests identical to the executed run's):
 
 | file | bytes | lines | sha256 |
 |---|---|---|---|
@@ -37,10 +44,10 @@ because two findings sat at one location, the id collision the storage layer bel
 turns into an honest revision 2). The 549 records night.md speaks of are the private
 repository's; this snapshot never carried them (`ontology/` has never been committed here:
 `git ls-files ontology` is empty and `.gitignore`'s claim that the JSONL stores "are
-tracked" was false and is corrected in this commit). Until the operator runs the tool, the
-four old-shape records stay on disk and are INVISIBLE to every read, because they carry no
-scope and the storage layer returns nothing that carries none; the first run after this
-commit writes new-shape records beside them. Nothing is lost either way.
+tracked" was false and is corrected in this commit). Between the commit and the operator's
+run of the tool, the four old-shape records stayed on disk and were INVISIBLE to every read,
+because they carry no scope and the storage layer returns nothing that carries none.
+Nothing was lost at any point.
 
 ## b. Provenance: built
 
@@ -222,6 +229,7 @@ earlier line.
 
 ---
 
-STEP W7 INCOMPLETE: (a) archive-and-empty is built and dry-run verified but NOT executed
-(refused by the tool permission layer; the operator runs the one command above); (b), (c),
-(d) and (e) are built, gate-proved by checks 200 to 202 and committed.
+STEP W7 COMPLETE: (a) archived and emptied by the operator at 12:15:43Z with the tool built
+here (the agent's own run of it was refused by the tool permission layer and not worked
+around); (b), (c), (d) and (e) built, gate-proved by checks 200 to 202 and committed in
+`b31fbb9`.

@@ -34,9 +34,9 @@ step has a report under `docs/fix/` (gitignored; every one is added with `git ad
 | CA2 | the comparison, its route, the fourth console state | COMPLETE | `3bbe3ec` | `STEP_CONVASSIGN_2_REPORT.md` |
 | CA3 (W3) | the firing gate and the subject-chosen paired agent | COMPLETE | `63d2774` | `STEP_CONVASSIGN_3_REPORT.md` |
 | CA4 | harness parts 3, 4 and 8 regenerated; the gate's unresolved set is ontology only | COMPLETE | `4db14aa` | `STEP_CONVASSIGN_4_REPORT.md` |
-| W7 | ontology foundations | INCOMPLETE: (b) to (e) built and gate-proved; (a) archive-and-empty built but not executed (see section 4) | `b31fbb9` | `STEP_W7_REPORT.md` |
+| W7 | ontology foundations | COMPLETE: (b) to (e) built and gate-proved in `b31fbb9`; (a) archived and emptied by the operator at 12:15:43Z with the tool built there (archive `shimmer-archives/ontology_stores_20260911T121543Z.zip`, 13107 bytes) | `b31fbb9` | `STEP_W7_REPORT.md` |
 | W8 | the console | COMPLETE, with screenshots | `ad495c2` | `STEP_W8_REPORT.md` |
-| W9 | close (this document) | COMPLETE | the commit carrying this file | `STEP_W9_REPORT.md` |
+| W9 | close (this document) | COMPLETE; written in `1acf6bd`, updated once after the operator's archive run | `1acf6bd` and the commit carrying this update | `STEP_W9_REPORT.md` |
 
 Nothing was pushed by any step. `main` stays at the merged `d007c27`; all of the above is
 on `night-2026-09-11`.
@@ -150,7 +150,7 @@ written scope.
 
 | item | where recorded | state |
 |---|---|---|
-| The ontology and GNN stores were not archived and emptied; the tool is built and dry-run verified, the run of it was refused by the agent's tool permission layer | `STEP_W7_REPORT.md` a | waits on the operator (one command) |
+| The ontology and GNN stores: archived outside the repository and emptied by the operator (the agent's own run of the tool was refused by its permission layer); `ontology/stores/` now holds an empty `provisions.jsonl` only | `STEP_W7_REPORT.md` a | closed |
 | No engagement concept: the scope identifier has one value and no binding to a real client | `STEP_W7_REPORT.md` c | mechanism built, concept not |
 | Deletion in the ontology store: declared, refuses | `STEP_W7_REPORT.md` e | operator decision not finalised |
 | GNN learning, the candidate finder, the long-range mechanism, curation interfaces, developer defaults, the two rule sets, any convention hierarchy | `STEP_W7_REPORT.md` | not started, by instruction |
@@ -177,7 +177,6 @@ written scope.
 | decision | what depends on it |
 |---|---|
 | **Tag the eight device rules** (`benchmark/corpora/device_log_review/.../device_conventions.md`, bracket subject tags on the headings, from the subjects the registry declares) | The W6 rerun on the new call count, both runs, scored. Nothing else in the chain is blocked on it; the tagging is the operator's knowledge and is not to be invented by an agent |
-| **Run the archive-and-empty once**: `py -3.9 -X utf8 tools/archive_ontology_stores.py` | W7 a. Until then four old-shape records sit invisible beside the new store (no scope, so no read returns them) |
 | **Free about 3 GB before a measurement run, or accept the paged pace** | Wall clock of the W6 rerun: about 1 h per run with memory free, about 3 h paging, plus the driver-fault allowance |
 | **The machine for measurement, bursty and not always on** (the operator's own words) | A one-off estimate stands, no VM rented: one A100 80 GB class VM on demand (about $1.8 per hour on a GPU cloud, $26 to $28 on a hyperscaler for the whole effort) covers a pipeline run or the gate, both of which need CUDA (check 193 loads a local model); one A10G is about $6 to $8 for the same; a cloud API profile for runs is excluded by S3 and would change the measurement baseline. The build and report work does not shrink with GPU; only the runs and gates do |
 | **The user-facing deletion case in the ontology store** | `ProvisionStore.delete` (declared, refuses) and the logging of a deletion |
@@ -192,11 +191,13 @@ written scope.
 1. The operator tags the eight device rules and runs the W6 rerun (flawed and clean twin,
    scored by `tools/score_corpus.py`); the numbers go into `STEP_W6_REPORT.md`'s owed section
    and replace section 2 above.
-2. The operator runs `tools/archive_ontology_stores.py` once and the W7 report's (a) is closed.
-3. The gate once more on a clean clone with a fresh `.venv` from the pinned
+2. The gate once more on a clean clone with a fresh `.venv` from the pinned
    `requirements.txt`; expect exactly the two source-only failures.
-4. An independent read-only audit at the merge HEAD: this chain wrote its own checks (195
+3. An independent read-only audit at the merge HEAD: this chain wrote its own checks (195
    to 203), and a check that passes for the wrong reason is caught only by a reader who did
    not write it. An adversarial review before commit 4 found four real defects in that
    commit's prose and one check; that is the argument for doing it again at the end.
-5. Merge, and push only on the operator's word.
+4. Merge, and push only on the operator's word.
+
+(The archive-and-empty that stood here as step 2 was done by the operator at 12:15:43Z on
+2026-09-11, after `b31fbb9`; see the W7 report.)

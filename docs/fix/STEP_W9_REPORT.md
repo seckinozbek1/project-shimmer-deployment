@@ -49,6 +49,15 @@ conventions/device_conventions.md` exists; `scripts/sensitivity_layer/__init__.p
 Nothing under `scripts/`, `config/`, `tools/` or `scripts/ui/` changed in this step. The
 only files in this commit are the state document and this report.
 
+## Updated once, after the operator closed W7 (a)
+
+After `1acf6bd` the operator ran `tools/archive_ontology_stores.py` (12:15:43Z: archive
+`shimmer-archives/ontology_stores_20260911T121543Z.zip`, 13107 bytes, the three files with
+the digests the dry run had listed, `provisions.jsonl` emptied, `graph.json` and
+`gnn_state.json` removed). The W7 report's (a) now records the executed manifest and the
+step ends COMPLETE; the state document's W7 row, its section 3 entry, its section 4
+decision row and its section 5 order were updated to match. Still no code.
+
 ## Gate result
 
 ```
