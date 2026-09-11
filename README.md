@@ -2424,6 +2424,22 @@ Stated honestly, from operator testing:
 
 ## L. The verification gate
 
+### A note on em dashes
+
+The project rule is no em dashes: use commas, colons, periods, or parentheses. The rule
+applies to **anything newly written from here on**, in code, comments, documentation and
+commit messages.
+
+It is not retroactive, and reading the existing text will not teach it to you. About 340 em
+dashes are already in the tree, across roughly 31 files, and they are staying. Most of them
+are in `genesis.md` (156) and `config/constitution.json` (21), which are append-only governed
+files that must not be rewritten to satisfy a style rule, and the rest sit in module
+docstrings written before the rule was adopted. Do not take any of them as permission, and do
+not "fix" them in passing: a diff that rewrites an existing line for punctuation alone buries
+the change that matters, and in the governed files it would trip the constitution guard.
+
+New text, no em dashes. Existing text, left alone.
+
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
 CHECKS list (**221** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
