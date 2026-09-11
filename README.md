@@ -273,6 +273,39 @@ GPT-4o, so the separation buys far less scrutiny than the cloud pairing. Two con
 worth stating plainly: the quality figures in section J are local-profile figures, and no
 cloud run of the newer corpora has been made.
 
+**The output budget is sized per call type, not one number for every local call** (check 216).
+Before 11 September every local call, regardless of what it was being asked to produce, was
+capped by one hardcoded ceiling in `agent_wrapper.py`, `min(max_tokens, 1024)`, a proxy for a
+wall-clock bound rather than a measured content requirement (local `generate()` has no
+wall-clock timeout parameter, so wall time is bounded by token count instead, decoding speed on
+a given device being roughly constant). Measured on a real run against the device corpus: 9 of
+16 calls hit exactly 1024, several producing zero usable items (`parse_trace` showed dozens of
+recovery candidates, mostly empty, the shape a response cut mid-item leaves behind), and the one
+preserved raw truncated response lost its sixth finding entirely, cut mid-string with no closing
+quote. The five PRACTICE_AUDITOR paired-judging calls that did NOT hit the cap ranged 202 to 645
+tokens, real evidence that call type's true ceiling sits well under 1024. `pipeline.py` now
+names five budgets, each wired to its real call site: `PAIRED_JUDGING_MAX_TOKENS` (768, below
+the old 1024 with headroom above the largest real, uncapped call observed), and
+`AUDIT_MAX_TOKENS`/`PRODUCTION_MAX_TOKENS`/`DEEPEN_MAX_TOKENS`/`WIDE_REVIEW_MAX_TOKENS` (2048,
+raised rather than left at 1024 for every call type with direct evidence of losing output
+there; wide-mode review was not exercised on the measured run, so its number is carried forward
+unchanged rather than guessed). `agent_wrapper.LOCAL_MAX_OUTPUT_TOKENS` (4096) replaces the old
+1024 as an outer backstop only, well above every named budget, so a caller that forgets to size
+one cannot run the wall clock away unboundedly; both local models' own context windows (Qwen
+32768, Phi 131072 positions) are far larger than any of these figures.
+
+**A cut is now recorded as a cut, never silently parsed as a whole answer.** `call_local` and
+`call_qwen` compare the generated length against the cap they were given (the model's own
+end-of-sequence token always yields fewer tokens than the cap; reaching the cap always yields
+exactly it, so no heuristic on the text is needed) and set `usage["truncated"]` accordingly.
+`AgentWrapper.run_task` carries the flag three ways: onto a `CONTRACT_VIOLATION` bus post (a
+truncated response that failed to parse, the shape a real VERIFIER call took), onto an
+`AGENT_OUTPUT` bus post even when parsing succeeded (the more dangerous silent case: a cut
+landing exactly at the end of a complete item reports fewer items than the agent actually had,
+with nothing before this saying so), and onto the returned dict either way. Cloud calls do not
+yet carry this signal: `call_claude`/`call_gpt` do not surface the SDK's own stop reason here,
+a gap recorded rather than closed by this job.
+
 ### Pipeline phases
 
 A run executes in this order. The phase numbers are the project's own labels, not a
@@ -2189,7 +2222,7 @@ Stated honestly, from operator testing:
 ## L. The verification gate
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**216** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**217** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2204,7 +2237,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 215 have since raised the total to 216.
+table below; checks 210 to 216 have since raised the total to 217.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each
