@@ -69,8 +69,13 @@ ENV PYTHONPATH=/app/scripts:/app
 # Stage 3: the entry point. One command decides what the container does
 # (serve/run/verify, verify by default); everything else is rejected with a
 # message naming the three. tools/entrypoint.sh is already inside the image
-# from the `COPY tools/` above; it only needs the executable bit.
-RUN chmod +x tools/entrypoint.sh
+# from the `COPY tools/` above; it needs the executable bit, and its line
+# endings normalised: a Windows checkout with autocrlf turned the script into
+# CRLF, the kernel then looked for an interpreter named "/bin/sh\r" and the
+# container failed at start with "no such file or directory" (found at the first
+# offline test of the image, 2026-09-11). .gitattributes pins the file to LF as
+# well; this line holds for any checkout regardless.
+RUN sed -i 's/\r$//' tools/entrypoint.sh && chmod +x tools/entrypoint.sh
 ENTRYPOINT ["tools/entrypoint.sh"]
 
 # Stage 4: the model weights, two build modes behind one build argument.

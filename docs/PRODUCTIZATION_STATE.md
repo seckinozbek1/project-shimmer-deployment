@@ -196,6 +196,28 @@ written scope.
 | **Whether the harness's ontology part should be marked decided as "draws nothing today"** | Check 195's unresolved set; the Agents page's undecided marker. Left undecided because an agent that reads the store does not yet exist |
 | **Push** | Nothing has been pushed from this clone by any step. The push target guard stands |
 
+## 4a. After the close: the fixes built without measurement (2026-09-11, afternoon)
+
+Added after the second W6 stop, under the standing rule (no pipeline run from this
+machine). Each was traced in code, proved on fixtures by a gate check with neutralise, fail,
+restore, pass, and committed on its own; none is known to be correct until a run on the VM
+scores it. Every report under `docs/fix/` says so.
+
+| commit | what | check |
+|---|---|---|
+| `bb39bdd` | W6 stopped a second time; the standing no-runs rule in `CLAUDE.md` | |
+| `0daeb26` | call evidence recorded per model call (structural ids only) and the four-class false-negative classifier through the scorer | 204, 205 |
+| `e385ed6` | convention distribution reaches the paired path: board-only rules never judged, recorded; wide excerpt filtered; paired-mode firing (step B) | 206, 199 updated |
+| `33803de` | the three recording gaps closed: rendered ids read off the finished sections, the draft call, the probe | 207 |
+| `3733565` | longest-match labels in the pairing map (D, option 1) | 208 |
+| `cc20ffd` | declared scope and Python-first absence (D, option 2): `[scope: ...]`, `[requires: ...]`, computed and judged paths recorded | 209 |
+| the commit carrying this line | the container: entrypoint line endings, `accelerate` pinned, check 197 freed of the corpus file; the first offline gate inside the image | 197 updated |
+
+The container's offline gate, network blocked, host cache mounted: PASS=204 SKIP=2
+FAIL/ERROR=4 of 210, the four failures the documented source-only ones. The device rules
+carry no `[scope: ...]` or `[requires: ...]` declaration yet: that is the operator's to
+write before the VM run. The W6 measurement is still owed.
+
 ## 5. Before this branch merges into `main`, in order
 
 1. The operator tags the eight device rules and runs the W6 rerun (flawed and clean twin,
