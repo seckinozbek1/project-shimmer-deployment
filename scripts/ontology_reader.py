@@ -140,40 +140,54 @@ def relation_summary(store):
     Separate from provenance_summary because they answer different questions and
     because job 2's two mechanisms must stay distinguishable: the operator scores the
     deterministic baseline against the candidate finder later, and one undifferentiated
-    total would make that comparison impossible. Counts by relation type, by method and
-    by pattern; the rows carry unit ids and never a unit's text.
+    total would make that comparison impossible.
 
-    An empty result is the honest answer for every store today.
+    One row per unordered pair since the merge: a record carries `found_by` (the
+    mechanisms that found it) rather than a single `method`, so `by_method` counts
+    OBSERVATIONS while `relation_count` counts PAIRS, and the two no longer sum to the
+    same number once any pair is agreed. `agreed_count` is the figure the concatenated
+    form could not report at all, because agreement showed up there only as duplication.
+
+    The rows carry unit ids and never a unit's text. An empty result is the honest
+    answer for every store today.
     """
     rows = [r for r in store.current() if r.get("node") == "Relation"]
     by_type, by_method, by_pattern = Counter(), Counter(), Counter()
     out = []
     for r in rows:
         by_type[r.get("relation_type")] += 1
-        by_method[r.get("method")] += 1
-        if r.get("pattern"):
-            by_pattern[r["pattern"]] += 1
+        observations = r.get("observations") or []
+        for method in (r.get("found_by") or []):
+            by_method[method] += 1
+        for o in observations:
+            if o.get("pattern"):
+                by_pattern[o["pattern"]] += 1
         prov = _provenance_of(r)
         out.append({
             "id": r.get("id"),
             "document_id": r.get("document_id"),
             "relation_type": r.get("relation_type"),
-            "method": r.get("method"),
+            "found_by": list(r.get("found_by") or []),
+            "agreed": bool(r.get("agreed")),
+            "observations": observations,
             "source_unit": r.get("source_unit"),
             "target_unit": r.get("target_unit"),
-            "pattern": r.get("pattern"),
             "score": r.get("score"),
             "run": prov.get("run"),
             "revision": r.get("revision"),
         })
-    out.sort(key=lambda r: (r["document_id"] or "", r["source_unit"] or "",
-                            r["target_unit"] or ""))
+    # The operator's one declared ordering rule, applied on the read path too: a pair
+    # found by both mechanisms ranks above a pair found by one. Nothing beyond that is
+    # ordered, because ordering the rest would need a weight that has not been declared.
+    out.sort(key=lambda r: (not r["agreed"], r["document_id"] or "",
+                            r["source_unit"] or "", r["target_unit"] or ""))
     return {
         "scope": store.scope,
         "relation_count": len(out),
+        "agreed_count": sum(1 for r in out if r["agreed"]),
         "by_type": [{"relation_type": k, "relations": n} for k, n in by_type.most_common()],
-        "by_method": [{"method": k, "relations": n} for k, n in by_method.most_common()],
-        "by_pattern": [{"pattern": k, "relations": n} for k, n in by_pattern.most_common()],
+        "by_method": [{"method": k, "observations": n} for k, n in by_method.most_common()],
+        "by_pattern": [{"pattern": k, "observations": n} for k, n in by_pattern.most_common()],
         "relations": out,
     }
 

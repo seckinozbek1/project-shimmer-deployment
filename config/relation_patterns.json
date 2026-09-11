@@ -22,6 +22,14 @@
     "min_score": 0.75,
     "max_per_unit": 3,
     "min_units_apart": 2,
-    "why_min_units_apart": "A unit is trivially similar to the one beside it, and the adjacent-neighbour mechanism already carries that case into the payload. Only pairs at least this far apart are recorded, so this mechanism addresses the distance the neighbour work explicitly does not reach."
+    "why_min_units_apart": "A unit is trivially similar to the one beside it, and the adjacent-neighbour mechanism already carries that case into the payload. Only pairs at least this far apart are recorded, so this mechanism addresses the distance the neighbour work explicitly does not reach.",
+    "evidence": "NONE of the three numbers below is a measured value. min_score 0.75 and max_per_unit 3 are CONVENTIONAL DEFAULTS with no evidence under them: they were written when the mechanism was built and no corpus has ever been scored against them. min_units_apart 2 is the one with an argument behind it, and the argument is structural rather than empirical: a unit is trivially similar to the one beside it and the adjacent-neighbour mechanism already carries that case, so the value follows from what this mechanism is for. Change any of them freely; none is a finding and none should be read as one.",
+    "min_score_note": "conventional default, no evidence",
+    "max_per_unit_note": "conventional default, no evidence",
+    "min_units_apart_note": "follows from the adjacent-neighbour mechanism already covering neighbours; not a measured value either, but it has a structural reason rather than none"
+  },
+  "weighting": {
+    "description": "There is deliberately NO weighting between the two mechanisms, and none will be declared until the long-range corpus is scored. The reason is recorded here so nobody adds one casually: a cross-reference is a boolean (a pattern matched and resolved unambiguously) and a similarity is a score that on the fixtures occupied a band about 0.07 wide, so any weight mixing them would let the boolean decide every ordering while the weight only appeared to be doing work.",
+    "the_one_declared_rule": "A pair found by BOTH mechanisms ranks above a pair found by one. That needs no number, so it is declared now; everything beyond it waits on measurement."
   }
 }
