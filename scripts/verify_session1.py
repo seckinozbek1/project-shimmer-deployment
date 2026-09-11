@@ -18108,6 +18108,182 @@ def check_214_console_missing_screens_and_citations():
                             "restore PASSES")
 
 
+def check_215_a_labelled_prose_band_is_read_without_a_model():
+    """Job A: reference_tables.py said plainly, at its own line 48, that a band
+    stated in prose rather than in a table is not read. That is why the device
+    corpus's reference material, which states real bounds (20 to 60 units, 70
+    to 110, 24 hours, 90 days) as sentences instead of table cells, produced
+    zero computed pairs and sent all 64 to a model.
+
+    reference_tables.parse_prose_band_sentence reads the one shape asked for: a
+    LABEL, a colon, and a RANGE in the same sentence ("Class-A sensor: standard
+    tolerance band 20 to 60 units."). parse_prose_bands groups every matching
+    sentence in a passage into synthetic table records, wired into parse_tables
+    (tables_from_entries's own reader), so bands_for_unit and every caller of it
+    (pipeline.py's two call sites) read a labelled prose band with no second
+    code path and no rewrite of the reference material itself.
+
+    Asserted, executed on pure functions, no model, no run:
+      - a labelled range sentence yields a band, matched to the right unit, with
+        the right (low, high, unit) and a citation to the passage it came from;
+      - two unrelated figures in one sentence (no shared range shape) are
+        refused, not guessed at, exactly the caution the module states for one
+        table cell;
+      - a sentence with only one figure (a single bound, not a range) is
+        refused: that shape belongs to duration arithmetic (Job C), not to a
+        band;
+      - a descending pair, a colon ending a long clause rather than a label,
+        and an uncorroborated unit are each refused;
+      - NEUTRALISE AND RESTORE: with parse_prose_bands's own contribution
+        withheld (calling parse_table's markdown-table path alone, the
+        pre-fix reader), the same reference passage yields no band at all;
+        restored, it yields the band again.
+
+    Real-corpus honesty, recorded rather than hidden: on device_class_reference
+    .md itself, the fixture above is proved on labels the existing word-length
+    filter (pairing_map._norm_label, len(w) > 2) can tell apart. The corpus's
+    OWN three labels, "Class-A sensor" / "Class-B sensor" / "Class-C sensor",
+    reduce to the identical word set {class, sensor} once the single-letter
+    suffix is dropped, so match_row correctly refuses THAT table as a tie
+    between rows, whether the table is this prose reader's synthetic one or a
+    real markdown table with the same three labels (proved below, both ways).
+    This is a pre-existing limit of the shared tokenizer, not something this
+    check's own mechanism introduces, and fixing it is out of this job's scope
+    (it would change how every label in every corpus is read). The corpus's
+    real bounds for D01 are therefore not yet computed end to end; the report
+    says this plainly instead of claiming a number this fixture does not
+    support.
+    """
+    import reference_tables as _rt
+
+    # A labelled range sentence yields a band.
+    passage = ("Alpha sensor: standard tolerance band 20 to 60 units. Requires a "
+               "calibration authority signature.\n\n"
+               "Beta sensor: standard tolerance band 70 to 110 units. Self-calibrating.\n")
+    tables = _rt.parse_prose_bands(passage, ref_id="REF-A01", document_id="fixture_ref")
+    if len(tables) != 1 or len(tables[0]["rows"]) != 2:
+        return _fail("expected one grouped table of two rows (both bands share the unit "
+                     "'units' and the phrase 'standard tolerance band'), got %r" % (tables,))
+    unit_alpha = "Device: UNIT-ONE\nClass: Alpha sensor\nReading: 41 units\n"
+    rule = "The reading must fall inside its class's standard tolerance band."
+    bands = _rt.bands_for_unit(tables, unit_alpha, rule)
+    if len(bands) != 1:
+        return _fail("expected exactly one band for the Alpha unit, got %r" % (bands,))
+    band = bands[0]
+    if (band["low"], band["high"], band["unit"], band["ref_id"]) != (20.0, 60.0, "units", "REF-A01"):
+        return _fail("wrong band read from the labelled sentence: %r" % (band,))
+    unit_beta = "Device: UNIT-TWO\nClass: Beta sensor\nReading: 90 units\n"
+    bands_b = _rt.bands_for_unit(tables, unit_beta, rule)
+    if len(bands_b) != 1 or (bands_b[0]["low"], bands_b[0]["high"]) != (70.0, 110.0):
+        return _fail("wrong band read for the Beta unit: %r" % (bands_b,))
+
+    # Two unrelated figures in one sentence: refused, not guessed.
+    unrelated = "Widget count: 4 units were shipped in March and 7 more in April."
+    if _rt.parse_prose_band_sentence(unrelated) is not None:
+        return _fail("two unrelated figures in one sentence must be refused, "
+                     "got %r" % (_rt.parse_prose_band_sentence(unrelated),))
+
+    # A single bound (Job C's shape, not a range) is refused here.
+    single = "Fault window: 24 hours."
+    if _rt.parse_prose_band_sentence(single) is not None:
+        return _fail("a single bound is not a range and must be refused by the band "
+                     "reader, got %r" % (_rt.parse_prose_band_sentence(single),))
+
+    # A descending pair is refused (cell_range's own discipline, inherited).
+    descending = "Gamma sensor: standard tolerance band 60 to 20 units."
+    if _rt.parse_prose_band_sentence(descending) is not None:
+        return _fail("a descending pair must be refused, got %r"
+                     % (_rt.parse_prose_band_sentence(descending),))
+
+    # A colon ending a long clause, not introducing a label, is refused.
+    long_clause = ("This is a very long introductory clause that goes on for quite a "
+                   "while before finally reaching a colon: 20 to 60 units.")
+    if _rt.parse_prose_band_sentence(long_clause) is not None:
+        return _fail("a colon ending a clause longer than PROSE_LABEL_MAX_CHARS must not "
+                     "be read as a label, got %r"
+                     % (_rt.parse_prose_band_sentence(long_clause),))
+
+    # An uncorroborated unit is refused when known_units is given; accepted when
+    # the unit is one the document under review actually writes (self-validation,
+    # the same discipline resolve_unit already holds).
+    delta = "Delta sensor: standard tolerance band 20 to 60 zorkles."
+    if _rt.parse_prose_band_sentence(delta, known_units={"units"}) is not None:
+        return _fail("a unit the document under review never writes must be refused "
+                     "when known_units is given")
+    if _rt.parse_prose_band_sentence(delta, known_units={"zorkles"}) is None:
+        return _fail("a unit the document under review DOES write must be accepted")
+
+    # The real corpus: parse_prose_bands finds nothing false-positive in the
+    # Glossary's non-range sentences (Fault window / Service interval), and
+    # correctly finds the Class-A/B/C sentences but refuses to bind any of them
+    # to a unit, because the label word-set tie is real, not a defect in this
+    # reader. Both facts are asserted so neither drifts unnoticed.
+    _repo_root = Path(__file__).resolve().parent.parent
+    real_ref_path = (_repo_root / "benchmark" / "corpora" / "device_log_review" /
+                     "context" / "device_class_reference.md")
+    real_log_path = (_repo_root / "benchmark" / "corpora" / "device_log_review" /
+                     "context" / "device_log_flawed.md")
+    if not real_ref_path.exists() or not real_log_path.exists():
+        return _fail("the device corpus fixtures are missing; this check needs them "
+                     "on disk to prove the real-corpus honesty claim")
+    real_ref_text = real_ref_path.read_text(encoding="utf-8")
+    real_log_text = real_log_path.read_text(encoding="utf-8")
+    log_prose_tables = _rt.parse_prose_bands(real_log_text, ref_id="REF-LOG")
+    if log_prose_tables:
+        return _fail("the Glossary's fault-window/service-interval sentences must not be "
+                     "read as bands (no colon-then-range shape); got %r" % (log_prose_tables,))
+    ref_prose_tables = _rt.parse_prose_bands(real_ref_text, ref_id="REF-REAL")
+    if len(ref_prose_tables) != 1 or len(ref_prose_tables[0]["rows"]) != 3:
+        return _fail("expected one grouped table of three class rows from the real "
+                     "reference passage, got %r" % (ref_prose_tables,))
+    unit_alder = "Device: UNIT-ALDER\nClass: Class-B sensor\nReading: 41 units\n"
+    rule_d01 = ("The reading stated for a device must fall inside its class's standard "
+               "tolerance band, 20 to 60 units.")
+    real_bands = _rt.bands_for_unit(ref_prose_tables, unit_alder, rule_d01)
+    if real_bands:
+        return _fail("the real corpus's Class-A/B/C labels are a genuine word-set tie "
+                     "under the existing tokenizer (both reduce to {class, sensor}); a "
+                     "band must NOT be minted from a tie, got %r" % (real_bands,))
+    # The same tie exists in a REAL markdown table with the same three labels,
+    # proving it is the shared tokenizer's limit and not something this prose
+    # reader introduces.
+    md_table_text = ("| Class | Tolerance band (units) |\n|---|---|\n"
+                     "| Class-A sensor | 20 to 60 |\n| Class-B sensor | 20 to 60 |\n"
+                     "| Class-C sensor | 70 to 110 |\n")
+    md_tables = _rt.parse_tables(md_table_text, ref_id="REF-MD", document_id="md_test")
+    md_bands = _rt.bands_for_unit(md_tables, unit_alder, rule_d01)
+    if md_bands:
+        return _fail("a real markdown table with the same three class labels was expected "
+                     "to hit the identical tie (proving it is not this prose reader's own "
+                     "defect), but it minted a band: %r" % (md_bands,))
+
+    # NEUTRALISE AND RESTORE: withhold parse_prose_bands's own contribution by
+    # calling the pre-fix reader alone (parse_table over the markdown blocks,
+    # the only path that existed before this job).
+    from pairing_map import _table_blocks as _blocks
+    neutralised_tables = [t for block in _blocks(passage)
+                          if (t := _rt.parse_table(block, ref_id="REF-A01",
+                                                   document_id="fixture_ref")) is not None]
+    neutralised_bands = _rt.bands_for_unit(neutralised_tables, unit_alpha, rule)
+    if neutralised_bands:
+        return _fail("neutralised (markdown-table path alone, the pre-fix reader) must "
+                     "yield no band on a passage with no markdown table at all, got %r"
+                     % (neutralised_bands,))
+    restored_bands = _rt.bands_for_unit(
+        _rt.parse_tables(passage, ref_id="REF-A01", document_id="fixture_ref"),
+        unit_alpha, rule)
+    if len(restored_bands) != 1:
+        return _fail("restored (parse_tables, markdown plus prose) must yield the band "
+                     "again, got %r" % (restored_bands,))
+
+    return _ok("labelled prose band accepted and matched to the right unit; two unrelated "
+               "figures, a single bound, a descending pair, an over-long label and an "
+               "uncorroborated unit are each refused; the real corpus's Class-A/B/C tie is "
+               "genuine (reproduced in a real markdown table too) and left unminted rather "
+               "than guessed; neutralise (markdown path alone) FAILS to find the fixture "
+               "band, restore (parse_tables) PASSES")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -18348,6 +18524,8 @@ CHECKS = [
      check_213_gnn_candidate_finder),
     ("214 the console's missing screens and the citation surface",
      check_214_console_missing_screens_and_citations),
+    ("215 a labelled prose band is read without a model (job A)",
+     check_215_a_labelled_prose_band_is_read_without_a_model),
 ]
 
 

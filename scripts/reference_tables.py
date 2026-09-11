@@ -45,9 +45,16 @@ Deliberate limits, recorded rather than hidden:
     and is refused as a tie rather than guessed. Resolving it would need a list of
     direction words, which is a domain and language leak of exactly the kind the
     vocabulary probe exists to catch. Such a table yields no band and no finding.
-  * A band stated in PROSE rather than in a table is not read here. The rule-text
-    path (paired_review.bounds_from_rule) still covers a rule that states its own
-    numbers.
+  * A band stated in PROSE rather than in a table is not read here, UNLESS the
+    prose has the one shape parse_prose_bands reads: a label, a colon, and a
+    range in the same sentence ("Class-A sensor: standard tolerance band 20 to
+    60 units."). That shape is a table with the punctuation removed, not a
+    judgment, and reading it is not corpus-tuning: the reference material is
+    read as it was written, nothing about it is rewritten, and the same refusal
+    discipline applies (RANGE_MAX_GAP, one range per sentence, a tie refused).
+    A sentence with two figures that are not a labelled range of one unit is
+    left alone; the rule-text path (paired_review.bounds_from_rule) still
+    covers a rule that states its own numbers.
 """
 
 from __future__ import annotations
@@ -66,6 +73,18 @@ RANGE_MAX_GAP = 12
 # read, so a longer connector costs nothing; the cap exists to stop a whole
 # parenthetical sentence being read as a unit.
 PROSE_UNIT_MAX_TOKENS = 4
+
+# A labelled prose band's own label, "Class-A sensor" in "Class-A sensor:
+# standard tolerance band 20 to 60 units.", is at most this many characters
+# before the colon. Long enough for a real label, short enough that a colon
+# ending a much longer clause is not mistaken for one.
+PROSE_LABEL_MAX_CHARS = 48
+
+# A sentence boundary: a period, question mark or exclamation mark followed by
+# whitespace, or the end of the text. Does not split on a period inside a
+# number (RANGE_MAX_GAP already keeps the two bounds of a range close together,
+# so a decimal point never reaches this split).
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 
 _QUANTITY = None  # bound lazily from paired_review to avoid an import cycle
 
@@ -344,6 +363,127 @@ def parse_table(block, *, ref_id="", document_id="", known_units=()):
             "unit_column": unit_column}
 
 
+def _sentences(text):
+    """A passage split into sentences, stripped of markdown table rows and
+    blank lines: a prose band never lives inside a cell parse_table already
+    reads, and reading it twice would double the same figure into two bands."""
+    out = []
+    for para in re.split(r"\n\s*\n", text or ""):
+        lines = [ln for ln in para.splitlines()
+                 if ln.strip() and not ln.lstrip().startswith("|")
+                 and not ln.lstrip().startswith("#")]
+        if not lines:
+            continue
+        joined = " ".join(ln.strip() for ln in lines)
+        for sentence in _SENTENCE_END.split(joined):
+            sentence = sentence.strip()
+            if sentence:
+                out.append(sentence)
+    return out
+
+
+def parse_prose_band_sentence(sentence, *, known_units=()):
+    """(label, remainder, low, high, unit, column_phrase) for one sentence, or
+    None.
+
+    The one shape read: LABEL, a colon, then a RANGE in the same sentence
+    ("Class-A sensor: standard tolerance band 20 to 60 units."). The label is
+    the text before the first colon; the range is read from the text after it
+    by cell_range, the same function a table cell uses, so the same discipline
+    applies without a second implementation to keep in step: exactly two
+    quantities of one unit, close enough together to be a range and not two
+    unrelated figures, tied bounds refused, a descending pair refused. The
+    words between the colon and the range's first figure ("standard tolerance
+    band") are read as column_phrase: the same role a table header plays,
+    naming what the two numbers mean, so bands_for_unit's own rule "the rule
+    must name the range column" has real words to test against a prose band
+    exactly as it does a table's header.
+
+    Refuses, returning None, rather than guessing, when:
+      - there is no colon, or the text before it is not label-shaped (empty,
+        or longer than PROSE_LABEL_MAX_CHARS, which is the sign of a colon
+        ending a clause rather than introducing a label);
+      - the text after the colon does not reduce to exactly one range by
+        cell_range's own test (no range, or MORE than two quantities in play,
+        such as a second, unrelated figure later in the same sentence: two
+        unrelated figures in one sentence are not a band, the same caution
+        the module already holds for one table cell);
+      - known_units is given and the range's unit is not one the document
+        under review itself writes (the same self-validation resolve_unit
+        uses: an uncorroborated unit is left alone, not trusted on its own).
+    """
+    if ":" not in sentence:
+        return None
+    label, _, remainder = sentence.partition(":")
+    label = label.strip()
+    remainder = remainder.strip()
+    if not label or len(label) > PROSE_LABEL_MAX_CHARS:
+        return None
+    if not remainder:
+        return None
+    # The sentence must carry exactly the two quantities that make the range:
+    # a third figure anywhere in the remainder means this sentence states more
+    # than one fact, and picking one reading over another is exactly the
+    # coin-toss this module refuses elsewhere.
+    quantities = _cell_quantities(remainder)
+    if len(quantities) != 2:
+        return None
+    band = cell_range(remainder, "")
+    if band is None:
+        return None
+    low, high, unit = band
+    if not unit:
+        return None
+    known = {str(u) for u in known_units if u}
+    if known and unit not in known:
+        return None
+    first_start = quantities[0][2]
+    column_phrase = remainder[:first_start].strip(" .,;:")
+    return (label, remainder, low, high, unit, column_phrase)
+
+
+def parse_prose_bands(text, *, ref_id="", document_id="", known_units=()):
+    """Every labelled prose band in a passage, grouped into synthetic tables.
+
+    Every sentence in the passage that matches parse_prose_band_sentence's one
+    shape becomes one ROW (label, range-cell); rows are grouped by their
+    (unit, column_phrase) into one synthetic table per distinct range kind,
+    matching what an operator who had written this as a real table would have
+    produced (one column of labels, one column of ranges, headed by what the
+    ranges mean, one unit per table). Grouping, not one table per sentence, is
+    what lets key_column_indexes recognise the label column as discriminating
+    at all: that test requires at least two distinct cells, which a
+    single-row table can never have, and device_class_reference.md states
+    three such sentences (Class-A, Class-B, Class-C) in the one passage,
+    exactly the shape a real table would have three rows for. Grouping by
+    column_phrase as well as unit keeps two different kinds of bound that
+    happen to share a unit (a tolerance band and, elsewhere, a separate
+    distance band both in the same unit) as two tables, not one column that
+    would answer either rule's question with the wrong row. A tie between two
+    labels is then a tie between two ROWS of the one table, handled by
+    match_row exactly as a real table's rows are.
+    """
+    by_group = {}
+    for sentence in _sentences(text):
+        hit = parse_prose_band_sentence(sentence, known_units=known_units)
+        if hit is None:
+            continue
+        label, remainder, low, high, unit, column_phrase = hit
+        by_group.setdefault((unit, column_phrase), []).append((label, remainder))
+    out = []
+    for (unit, column_phrase), rows in by_group.items():
+        out.append({
+            "ref_id": ref_id, "document_id": document_id,
+            "raw_headers": ["label", column_phrase],
+            "headers": [(), pairing_map.header_label(column_phrase)],
+            "header_units": ["", unit],
+            "kinds": ["text", "range"],
+            "rows": [[label, remainder] for label, remainder in rows],
+            "unit_column": None,
+        })
+    return out
+
+
 def parse_tables(text, *, ref_id="", document_id="", known_units=()):
     """Every markdown table in a passage, as structured records."""
     out = []
@@ -352,6 +492,8 @@ def parse_tables(text, *, ref_id="", document_id="", known_units=()):
                             known_units=known_units)
         if table is not None:
             out.append(table)
+    out.extend(parse_prose_bands(text, ref_id=ref_id, document_id=document_id,
+                                 known_units=known_units))
     return out
 
 
