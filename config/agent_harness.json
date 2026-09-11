@@ -1,0 +1,1026 @@
+{
+  "schema_version": "1.0.0",
+  "description": "The nine-part harness specification (night chain W4): what an agent is and how it behaves. Built from config/agent_registry.json and config/agent_contracts.json by scripts/build_agent_harness.py; never hand-edited directly, since that would let it drift from the source it is supposed to describe.",
+  "shared_parts": {
+    "constitution_by_default": {
+      "decided": true,
+      "where": "scripts/agent_wrapper.py, AgentWrapper.run_task: check = self.check_constitution(situation), the first thing run_task does, unconditionally, every call, every agent. Never matched or selected: the same constitution.check() call runs regardless of which agent or which convention is in scope."
+    },
+    "receive_format": {
+      "decided": true,
+      "where": "scripts/bus_reader.py, assemble_context(): builds the package an agent receives (governance/constitution text, run objectives, precedents, work_payload, convention registry, reference excerpts, recent bus context), called from AgentWrapper.run_task for every agent identically."
+    },
+    "hand_format": {
+      "decided": true,
+      "where": "The canonical envelope (INFRA-037, CLAUDE.md): {agent, doc_id, items[]}, one flat item per finding/output, every value a scalar or array of scalars. Every agent posts this same shape; consumers read by reference off the append-only bus."
+    },
+    "refire_condition_and_limit": {
+      "decided": true,
+      "where": "None. Confirmed by direct trace: pipeline.py's _run_one calls wrapper.run_task exactly once (no while/for-retry loop around the call); agent_wrapper.py's run_task itself has no retry loop either (confirmed: no genuine while statement in its body, only a rate-limit backoff inside call_claude/call_gpt for a 429/529 transport error, a different thing from a contract violation). A CONTRACT_VIOLATION is posted to the bus and the item is dropped (agent_wrapper.py's _items_for skips any result with ok=False); it is never re-attempted. Re-fire limit: 0. This is a real, decided answer, not an unresolved part: the code decides it by having no retry mechanism at all."
+    }
+  },
+  "agents": {
+    "PROCESSOR": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Extract content from source documents",
+          "Draft outputs in prose or structured form",
+          "Compile findings from other agents into deliverables"
+        ],
+        "does_not": [
+          "Verify its own work",
+          "Override other agents",
+          "Correct source data"
+        ],
+        "category": "content_production",
+        "backend": "claude_api",
+        "model": "claude-sonnet-4-6",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.PROCESSOR"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "extraction",
+      "contract_required_fields": [
+        "section_id",
+        "draft_text",
+        "extraction_method"
+      ]
+    },
+    "VERIFIER": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Cross-check outputs against source documents",
+          "Flag divergence between draft and source",
+          "Report findings in structured form"
+        ],
+        "does_not": [
+          "Fix problems (report only)",
+          "Search the web",
+          "Draft content"
+        ],
+        "category": "verification",
+        "backend": "openai_api",
+        "model": "gpt-4o",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.VERIFIER"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "finding",
+      "contract_required_fields": [
+        "paragraph",
+        "finding",
+        "severity",
+        "reasoning"
+      ]
+    },
+    "FACT_CHECKER": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Extract verifiable claims from drafts",
+          "Search external sources for evidence",
+          "Produce factual verdicts with source citations"
+        ],
+        "does_not": [
+          "Judge procedures",
+          "Draft content",
+          "Check style",
+          "Correct source"
+        ],
+        "category": "verification",
+        "backend": "openai_api",
+        "model": "gpt-4o",
+        "may_use_web": true,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.FACT_CHECKER"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "finding",
+      "contract_required_fields": [
+        "claim_id",
+        "verdict",
+        "search_method"
+      ]
+    },
+    "PRACTICE_AUDITOR": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Check procedures against current best practice",
+          "Flag anti-patterns",
+          "Evaluate operational content against the convention registry",
+          "Perform absence detection: compare the operational document against the corpus structural inventory and flag elements present in a majority of context documents but absent here"
+        ],
+        "does_not": [
+          "Verify raw facts",
+          "Draft content",
+          "Assess legal basis"
+        ],
+        "category": "verification",
+        "backend": "openai_api",
+        "model": "gpt-4o",
+        "may_use_web": true,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.PRACTICE_AUDITOR"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "finding (use kind='absence' for absence-detection items)",
+      "contract_required_fields": [
+        "procedure_id",
+        "verdict",
+        "relation",
+        "record_verdict",
+        "explanation"
+      ]
+    },
+    "LEGAL_ANALYST": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Assess legal basis of source claims",
+          "Evaluate precedent",
+          "Analyze regulatory framework",
+          "Perform absence detection on legal mechanisms (redress, conformity, post-market monitoring) using the corpus structural inventory"
+        ],
+        "does_not": [
+          "Draft correspondence",
+          "Make policy judgments",
+          "Search the web independently"
+        ],
+        "category": "analysis",
+        "backend": "claude_api",
+        "model": "claude-opus-4-8",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.LEGAL_ANALYST"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "finding (use kind='absence' for absent legal mechanisms)",
+      "contract_required_fields": [
+        "claim_id",
+        "verdict",
+        "reasoning"
+      ]
+    },
+    "STYLE_GUARDIAN": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Enforce linguistic register",
+          "Check style consistency",
+          "Evaluate terminology/rephrasing/borrowing conventions"
+        ],
+        "does_not": [
+          "Change content (style only)",
+          "Draft",
+          "Verify facts"
+        ],
+        "category": "style",
+        "backend": "claude_api",
+        "model": "claude-haiku-4-5",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.STYLE_GUARDIAN"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "finding",
+      "contract_required_fields": [
+        "segment_id",
+        "register_target",
+        "register_observed",
+        "deviation"
+      ]
+    },
+    "ARCHIVIST": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Index documents",
+          "Establish chronology",
+          "Maintain reference chains",
+          "Produce a structural inventory of the corpus, listing structural elements and the count of documents containing each (indexing across documents, not evaluating their merit)"
+        ],
+        "does_not": [
+          "Draft",
+          "Analyze (evaluative judgment, not structural indexing)",
+          "Recommend"
+        ],
+        "category": "organization",
+        "backend": "claude_api",
+        "model": "claude-sonnet-4-6",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.ARCHIVIST"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "index (per-document) or inventory (one item per corpus governance element)",
+      "contract_required_fields": []
+    },
+    "INST_FINDER": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Map topics to institutions",
+          "Build institution registries"
+        ],
+        "does_not": [
+          "Draft correspondence",
+          "Make policy judgments"
+        ],
+        "category": "organization",
+        "backend": "claude_api",
+        "model": "claude-haiku-4-5",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.INST_FINDER"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "institution",
+      "contract_required_fields": [
+        "name",
+        "role"
+      ]
+    },
+    "CITATION_RESOLVER": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Build cross-document reference graphs",
+          "Map citation chains"
+        ],
+        "does_not": [
+          "Interpret citations (that is PROCESSOR's role)",
+          "Search external"
+        ],
+        "category": "organization",
+        "backend": "claude_api",
+        "model": "claude-haiku-4-5",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.CITATION_RESOLVER"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "citation",
+      "contract_required_fields": [
+        "source_document",
+        "resolved"
+      ]
+    },
+    "SPEECH_ACT_TAGGER": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Classify pragmatic intent of utterances",
+          "Build speech act taxonomy"
+        ],
+        "does_not": [
+          "Make policy judgments from speech acts"
+        ],
+        "category": "analysis",
+        "backend": "claude_api",
+        "model": "claude-haiku-4-5",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.SPEECH_ACT_TAGGER"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Always, once per its fixed phase, unconditionally.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL, AUDIT_AGENTS_PER_DOC, CONVENTION_REVIEW_AGENTS, the four fixed per-phase lists that name this agent. No per-agent rule-cluster gate exists (W2 stopped before one could), so every agent in these lists runs on every document today."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "tag",
+      "contract_required_fields": [
+        "utterance_id",
+        "speech_act"
+      ]
+    },
+    "REDACTOR": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Apply the operator redaction rules to document spans (pattern-based PII, named entities); propose one redaction item per matched span"
+        ],
+        "does_not": [
+          "Add content",
+          "Judge on its own what is sensitive (it applies operator rules)"
+        ],
+        "category": "privacy",
+        "backend": "qwen_local",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "may_use_web": false,
+        "may_handle_sensitive": true,
+        "where": "config/agent_registry.json, agents.REDACTOR"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Phase 9 (redaction) always RUNS, but REDACTOR itself only posts bus messages when the sensitivity layer is active (LAYER_ACTIVE / sensitivity_layer.is_active()). Confirmed live: a completed run with LAYER_ACTIVE False produced zero REDACTOR bus messages, the phase itself still ran (waived, logged) but the agent's own call did not fire.",
+        "where": "scripts/pipeline.py line ~3438 (\"Phase 9: redaction (ALWAYS runs...)\") and line ~3536-3543 (the LAYER_ACTIVE confirmation note on a completed run, cb4c557b)."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "redaction (one item per proposed redaction; items:[] means nothing to redact)",
+      "contract_required_fields": [
+        "span",
+        "category"
+      ]
+    },
+    "AMENDMENT_DRAFTER": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Compile findings from PRACTICE_AUDITOR, STYLE_GUARDIAN, VERIFIER, FACT_CHECKER, and LEGAL_ANALYST into a tracked-changes document",
+          "Produce margin comments with precision references to conventions, context documents, and operational passages",
+          "Propose rephrased text for flagged passages per convention guidelines"
+        ],
+        "does_not": [
+          "Invent findings (compiles only what other agents reported)",
+          "Override convention rules",
+          "Make value judgments beyond what conventions specify",
+          "Produce content without a reference citation"
+        ],
+        "category": "amendment",
+        "backend": "claude_api",
+        "model": "claude-opus-4-8",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.AMENDMENT_DRAFTER"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "Skipped if a fresh AMENDMENT_DRAFTER payload already exists on the bus for that doc_id (existing_amendments); otherwise runs once per operational document. Off by default as a MODEL CALL under refine R2 rules (--amendment-polish gates the wording pass specifically); the deterministic template path still produces the amendment either way.",
+        "where": "scripts/pipeline.py line ~2030 (\"# AMENDMENT_DRAFTER (skip if we have a fresh payload already on the bus)\")."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "amendment (one item per amendment)",
+      "contract_required_fields": [
+        "location",
+        "convention_ref",
+        "original_text",
+        "action",
+        "comment",
+        "ref_ids"
+      ]
+    },
+    "EDITOR_CLERK": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Conduct senior editorial review of the assembled deliverable's substance and drafting (soundness, internal coherence, necessity, and the quality of the amendments and analysis)",
+          "Emit advisory editorial observations, one per item, each carrying a verdict and a prose rationale"
+        ],
+        "does_not": [
+          "Modify the deliverable or the amendments master",
+          "Gate whether the deliverable ships (advisory only)",
+          "Mask, detect PII, or scrub (no privacy function)",
+          "Use the web"
+        ],
+        "category": "editorial",
+        "backend": "claude_api",
+        "model": "claude-opus-4-8",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.EDITOR_CLERK"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
+        "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "contract_required_fields": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_HEAD_OF_UNIT": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Review the drafting and soundness of an editorial observation escalated from EDITOR_CLERK, at provision-and-neighbors scope",
+          "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"
+        ],
+        "does_not": [
+          "Modify the deliverable or the amendments master",
+          "Gate whether the deliverable ships (advisory only)",
+          "Mask, detect PII, or scrub (no privacy function)",
+          "Use the web"
+        ],
+        "category": "editorial",
+        "backend": "claude_api",
+        "model": "claude-opus-4-8",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.EDITOR_HEAD_OF_UNIT"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
+        "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "contract_required_fields": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_HEAD_OF_SECTION": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Review the drafting and soundness of an editorial observation escalated from EDITOR_HEAD_OF_UNIT, at provision-and-neighbors scope",
+          "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"
+        ],
+        "does_not": [
+          "Modify the deliverable or the amendments master",
+          "Gate whether the deliverable ships (advisory only)",
+          "Mask, detect PII, or scrub (no privacy function)",
+          "Use the web"
+        ],
+        "category": "editorial",
+        "backend": "claude_api",
+        "model": "claude-opus-4-8",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.EDITOR_HEAD_OF_SECTION"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
+        "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "contract_required_fields": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_HEAD_OF_DEPARTMENT": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Review the whole-deliverable coherence of the assembled deliverable on escalation from EDITOR_HEAD_OF_SECTION",
+          "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"
+        ],
+        "does_not": [
+          "Modify the deliverable or the amendments master",
+          "Gate whether the deliverable ships (advisory only)",
+          "Mask, detect PII, or scrub (no privacy function)",
+          "Use the web"
+        ],
+        "category": "editorial",
+        "backend": "openai_api",
+        "model": "gpt-4o",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.EDITOR_HEAD_OF_DEPARTMENT"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
+        "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "contract_required_fields": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_DEPUTY_DG": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Assess the necessity and proportionality of the deliverable's content on escalation from EDITOR_HEAD_OF_DEPARTMENT",
+          "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"
+        ],
+        "does_not": [
+          "Modify the deliverable or the amendments master",
+          "Gate whether the deliverable ships (advisory only)",
+          "Mask, detect PII, or scrub (no privacy function)",
+          "Use the web"
+        ],
+        "category": "editorial",
+        "backend": "openai_api",
+        "model": "gpt-4o",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.EDITOR_DEPUTY_DG"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
+        "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "contract_required_fields": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    },
+    "EDITOR_DG": {
+      "agent_itself": {
+        "decided": true,
+        "does": [
+          "Decide the existential editorial question — whether the content is needed at all — when summoned as the highest rank",
+          "Render the board's terminal editorial verdict, emitting one observation per item with a verdict and a prose rationale"
+        ],
+        "does_not": [
+          "Modify the deliverable or the amendments master",
+          "Gate whether the deliverable ships (advisory only)",
+          "Mask, detect PII, or scrub (no privacy function)",
+          "Use the web"
+        ],
+        "category": "editorial",
+        "backend": "openai_api",
+        "model": "gpt-4o",
+        "may_use_web": false,
+        "may_handle_sensitive": false,
+        "where": "config/agent_registry.json, agents.EDITOR_DG"
+      },
+      "constitution_by_default": {
+        "see": "shared_parts.constitution_by_default"
+      },
+      "rule_cluster": {
+        "decided": false,
+        "unresolved_because": "W2 (docs/fix/STEP_W2_REPORT.md) stopped at its own premise check: no agent contract declares a subject/scope an assignment could be derived from, and no convention's own category matches an agent's category vocabulary. Every agent receives the full, unclustered convention registry today."
+      },
+      "testing_against_cluster": {
+        "decided": false,
+        "unresolved_because": "Depends directly on rule_cluster, above, which is unresolved for the same reason."
+      },
+      "ontology": {
+        "decided": false,
+        "unresolved_because": "Ontology work is W7 in this chain, not yet run when this harness was built. No agent draws ontological knowledge in today (confirmed W7 tonight, if it ran, or by the ontology's own write-only status traced earlier tonight: nothing in the pipeline reads ontology/stores/graph.json or gnn_state.json outside of writing them)."
+      },
+      "receive_format": {
+        "see": "shared_parts.receive_format"
+      },
+      "hand_format": {
+        "see": "shared_parts.hand_format"
+      },
+      "fires_at_all": {
+        "decided": true,
+        "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
+        "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
+      },
+      "refire_condition_and_limit": {
+        "see": "shared_parts.refire_condition_and_limit"
+      },
+      "contract_item_kind": "editorial_observation (one item per observation; items:[] means no editorial observations)",
+      "contract_required_fields": [
+        "ref",
+        "verdict",
+        "rationale"
+      ]
+    }
+  }
+}

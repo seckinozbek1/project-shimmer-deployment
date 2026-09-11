@@ -850,6 +850,31 @@ operator's corpus), and `score_envelope.py` scores a batch of `run_agent.py` res
 envelope compliance, verdict accuracy and latency. An empty but valid envelope counts as
 compliant, because that is what the contract says.
 
+### 4a. The nine-part agent harness (`config/agent_harness.json`)
+
+A different sense of "harness" from section 4 above: not a tool for running one agent call,
+but the complete specification of what an agent IS, nine parts per agent (the agent itself;
+the constitution it carries by default; the rule cluster assigned to it; testing against that
+cluster; ontological knowledge drawn in as required; the format it receives work in; the
+format it hands work back in; whether it fires at all; how far it re-fires). Built by
+`scripts/build_agent_harness.py` from `config/agent_registry.json` and
+`config/agent_contracts.json` directly, so it cannot drift from the source it describes; never
+hand-edited. Four parts (constitution-by-default, receive-format, hand-format,
+re-fire-condition-and-limit) are decided once, identically, for every agent and live in the
+file's `shared_parts` block; the re-fire limit is 0, since no retry mechanism exists anywhere
+between `pipeline.py` and `agent_wrapper.py`, a contract violation drops the item rather than
+retrying it. Firing (part 8) is traced per agent group: the fixed per-phase lists fire
+unconditionally; REDACTOR fires only while the sensitivity layer is active; AMENDMENT_DRAFTER
+skips when a fresh payload already sits on the bus; the editorial board fires by parsimony,
+each rank above EDITOR_CLERK summoned only on a confidence-below-threshold or
+`out_of_mandate` escalation. Two parts (rule cluster, testing against that cluster) are
+genuinely undecided today: no per-agent convention assignment mechanism exists, so every agent
+still receives the full, unclustered convention registry. A third (ontology) is undecided
+because the ontology work has not run. All three are written into the file as
+`"decided": false` with a stated reason, never omitted: an omitted part is indistinguishable
+from one nobody thought of, and gate check 195 fails if any of the 18 agents is missing a part
+or has an unresolved part silently marked decided.
+
 ### Benchmarking (`benchmark/keys/`, never committed)
 
 `benchmark/keys/` holds the answer key, the control document, the ledger scripts and the

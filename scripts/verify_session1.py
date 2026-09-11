@@ -14345,6 +14345,182 @@ def check_194_agent_contract_field_names_match_what_a_consumer_reads():
                f"brings resolution back")
 
 
+def check_195_every_agent_has_a_nine_part_harness_and_unresolved_is_visible():
+    """night chain W4 (the harness). The operator's own definition of a
+    harness: nine parts per agent (the agent itself; the constitution
+    carried by default; the rule cluster assigned to it; testing against
+    that cluster; ontological knowledge drawn in as required; the
+    receive-format from other agents; the hand-format to other agents;
+    whether it fires at all; how far it re-fires). config/agent_harness.json
+    is built by scripts/build_agent_harness.py from the real
+    config/agent_registry.json and config/agent_contracts.json, so it
+    cannot silently drift from the source it describes.
+
+    Three of the nine parts (rule_cluster, testing_against_cluster,
+    ontology) are genuinely undecided in this codebase today: W2
+    (docs/fix/STEP_W2_REPORT.md) stopped before any per-agent convention
+    assignment existed, and the ontology work is W7, not yet run when this
+    harness was built. This check does not require those three to be
+    resolved; it requires them to be PRESENT and explicitly marked
+    unresolved (decided: false, with a reason), the thing the night chain's
+    own W4 instruction asked for: "no dormant-but-claimed-built scaffold";
+    an unresolved part must be visible as unresolved, never simply absent
+    from the file, which would look identical to a part nobody thought of."""
+    import json
+
+    harness_path = Path(__file__).resolve().parent.parent / "config" / "agent_harness.json"
+    registry_path = Path(__file__).resolve().parent.parent / "config" / "agent_registry.json"
+    if not harness_path.exists():
+        return _fail("config/agent_harness.json does not exist; run "
+                     "scripts/build_agent_harness.py")
+    harness = json.loads(harness_path.read_text(encoding="utf-8"))
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry_agents = set(registry.get("agents", {}).keys())
+    harness_agents = set(harness.get("agents", {}).keys())
+
+    if harness_agents != registry_agents:
+        missing = registry_agents - harness_agents
+        extra = harness_agents - registry_agents
+        return _fail(f"agent_harness.json agents do not match agent_registry.json: "
+                     f"missing={sorted(missing)} extra={sorted(extra)}")
+
+    NINE_PARTS = (
+        "agent_itself", "constitution_by_default", "rule_cluster",
+        "testing_against_cluster", "ontology", "receive_format",
+        "hand_format", "fires_at_all", "refire_condition_and_limit",
+    )
+    # Parts resolved once, identically, in shared_parts (see indirection
+    # below) vs. parts that must carry a real per-agent value directly.
+    SHARED_INDIRECTION_PARTS = {
+        "constitution_by_default", "receive_format", "hand_format",
+        "refire_condition_and_limit",
+    }
+    KNOWN_UNRESOLVED_PARTS = {"rule_cluster", "testing_against_cluster", "ontology"}
+    shared = harness.get("shared_parts", {})
+
+    for agent in sorted(registry_agents):
+        entry = harness["agents"][agent]
+        missing_parts = [p for p in NINE_PARTS if p not in entry]
+        if missing_parts:
+            return _fail(f"{agent}'s harness entry is missing part(s) {missing_parts}; "
+                         f"a missing part is indistinguishable from one nobody declared, "
+                         f"the exact thing this check exists to catch")
+        for part in NINE_PARTS:
+            value = entry[part]
+            if not isinstance(value, dict):
+                return _fail(f"{agent}.{part} is not a structured record ({value!r})")
+            if part in SHARED_INDIRECTION_PARTS:
+                see = value.get("see")
+                if not see or not see.startswith("shared_parts."):
+                    return _fail(f"{agent}.{part} does not point into shared_parts; "
+                                 f"got {value!r}")
+                shared_key = see.split(".", 1)[1]
+                shared_value = shared.get(shared_key)
+                if not shared_value or shared_value.get("decided") is not True:
+                    return _fail(f"{agent}.{part} points at shared_parts.{shared_key}, "
+                                 f"which is not itself marked decided: true")
+                continue
+            if "decided" not in value:
+                return _fail(f"{agent}.{part} carries no 'decided' field at all "
+                             f"({value!r}); unresolved must be a visible, explicit "
+                             f"claim, not an inferred absence")
+            if part in KNOWN_UNRESOLVED_PARTS:
+                if value["decided"] is not False:
+                    return _fail(f"{agent}.{part} is marked decided (should be "
+                                 f"unresolved, per W2/W7): {value!r}")
+                if not value.get("unresolved_because"):
+                    return _fail(f"{agent}.{part} is marked unresolved but gives no "
+                                 f"reason; an unresolved part must say WHY, not just "
+                                 f"that it is unresolved")
+            else:
+                if value["decided"] is not True:
+                    return _fail(f"{agent}.{part} is marked unresolved, but this part "
+                                 f"({part}) is supposed to be decided for every agent: "
+                                 f"{value!r}")
+
+    # NEUTRALISE AND RESTORE: prove the check actually looks at the file,
+    # not just that the file happens to be well-formed today. Strip one
+    # agent's rule_cluster.decided flag entirely (the exact "missing part
+    # reads as silently absent" failure mode this check exists to catch)
+    # and confirm this check fails; restore, confirm it passes again.
+    _orig_text = harness_path.read_text(encoding="utf-8")
+    mutated = json.loads(_orig_text)
+    del mutated["agents"]["PROCESSOR"]["rule_cluster"]["decided"]
+    harness_path.write_text(json.dumps(mutated), encoding="utf-8")
+    try:
+        neutralised = _run_195_body()
+    finally:
+        harness_path.write_text(_orig_text, encoding="utf-8")
+    if neutralised[0] != "FAIL":
+        return _fail("stripping PROCESSOR.rule_cluster.decided did not make this check "
+                     f"fail (got {neutralised}); the check is not actually reading the "
+                     f"live file's structure")
+    restored = _run_195_body()
+    if restored[0] != "PASS":
+        return _fail(f"after restoring agent_harness.json verbatim, this check no "
+                     f"longer passes ({restored}); the restore did not work")
+
+    return _ok(f"all {len(registry_agents)} registry agents have a harness entry with "
+               f"all nine parts present; rule_cluster/testing_against_cluster/ontology "
+               f"are explicitly decided:false with a stated reason for every agent; "
+               f"constitution_by_default/receive_format/hand_format/"
+               f"refire_condition_and_limit resolve through shared_parts, itself "
+               f"decided:true; neutralise-and-restore on a stripped 'decided' field "
+               f"proves this check reads the live file, not a cached assumption")
+
+
+def _run_195_body():
+    """The body of check_195 re-invoked for the neutralise/restore proof,
+    factored out so the neutralising write above can call it a second time
+    without re-doing the write/restore dance recursively."""
+    import json
+
+    harness_path = Path(__file__).resolve().parent.parent / "config" / "agent_harness.json"
+    registry_path = Path(__file__).resolve().parent.parent / "config" / "agent_registry.json"
+    harness = json.loads(harness_path.read_text(encoding="utf-8"))
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry_agents = set(registry.get("agents", {}).keys())
+    harness_agents = set(harness.get("agents", {}).keys())
+    if harness_agents != registry_agents:
+        return _fail("agent set mismatch")
+
+    NINE_PARTS = (
+        "agent_itself", "constitution_by_default", "rule_cluster",
+        "testing_against_cluster", "ontology", "receive_format",
+        "hand_format", "fires_at_all", "refire_condition_and_limit",
+    )
+    SHARED_INDIRECTION_PARTS = {
+        "constitution_by_default", "receive_format", "hand_format",
+        "refire_condition_and_limit",
+    }
+    KNOWN_UNRESOLVED_PARTS = {"rule_cluster", "testing_against_cluster", "ontology"}
+    shared = harness.get("shared_parts", {})
+
+    for agent in sorted(registry_agents):
+        entry = harness["agents"][agent]
+        for part in NINE_PARTS:
+            if part not in entry:
+                return _fail(f"{agent}.{part} missing")
+            value = entry[part]
+            if not isinstance(value, dict):
+                return _fail(f"{agent}.{part} malformed")
+            if part in SHARED_INDIRECTION_PARTS:
+                see = value.get("see", "")
+                shared_key = see.split(".", 1)[1] if see.startswith("shared_parts.") else None
+                if not shared_key or not (shared.get(shared_key) or {}).get("decided"):
+                    return _fail(f"{agent}.{part} shared indirection broken")
+                continue
+            if "decided" not in value:
+                return _fail(f"{agent}.{part} no decided field")
+            if part in KNOWN_UNRESOLVED_PARTS:
+                if value["decided"] is not False or not value.get("unresolved_because"):
+                    return _fail(f"{agent}.{part} unresolved marking broken")
+            else:
+                if value["decided"] is not True:
+                    return _fail(f"{agent}.{part} should be decided")
+    return _ok("body check passed")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -14545,6 +14721,8 @@ CHECKS = [
      check_193_the_real_local_loader_never_reaches_the_network_when_cached),
     ("194 agent contract field names match what a consumer reads",
      check_194_agent_contract_field_names_match_what_a_consumer_reads),
+    ("195 every agent has a nine-part harness, unresolved parts are visible (night W4)",
+     check_195_every_agent_has_a_nine_part_harness_and_unresolved_is_visible),
 ]
 
 
