@@ -7,39 +7,45 @@
       "does": ["Extract content from source documents", "Draft outputs in prose or structured form", "Compile findings from other agents into deliverables"],
       "does_not": ["Verify its own work", "Override other agents", "Correct source data"],
       "model": "claude-sonnet-4-6", "backend": "claude_api", "category": "content_production",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": [], "subjects_note": "No convention-review path reaches PROCESSOR today (it runs in production, before any convention is in scope); an empty list rather than a subject nobody can act on, per the convention assignment design."
     },
     "VERIFIER": {
       "does": ["Cross-check outputs against source documents", "Flag divergence between draft and source", "Report findings in structured form"],
       "does_not": ["Fix problems (report only)", "Search the web", "Draft content"],
       "model": "gpt-4o", "backend": "openai_api", "category": "verification",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["fidelity"]
     },
     "FACT_CHECKER": {
       "does": ["Extract verifiable claims from drafts", "Search external sources for evidence", "Produce factual verdicts with source citations"],
       "does_not": ["Judge procedures", "Draft content", "Check style", "Correct source"],
       "model": "gpt-4o", "backend": "openai_api", "category": "verification",
-      "may_use_web": true, "may_handle_sensitive": false
+      "may_use_web": true, "may_handle_sensitive": false,
+      "subjects": ["facts"]
     },
     "PRACTICE_AUDITOR": {
       "does": ["Check procedures against current best practice", "Flag anti-patterns", "Evaluate operational content against the convention registry",
                 "Perform absence detection: compare the operational document against the corpus structural inventory and flag elements present in a majority of context documents but absent here"],
       "does_not": ["Verify raw facts", "Draft content", "Assess legal basis"],
       "model": "gpt-4o", "backend": "openai_api", "category": "verification",
-      "may_use_web": true, "may_handle_sensitive": false
+      "may_use_web": true, "may_handle_sensitive": false,
+      "subjects": ["conformance"]
     },
     "LEGAL_ANALYST": {
       "does": ["Assess legal basis of source claims", "Evaluate precedent", "Analyze regulatory framework",
                 "Perform absence detection on legal mechanisms (redress, conformity, post-market monitoring) using the corpus structural inventory"],
       "does_not": ["Draft correspondence", "Make policy judgments", "Search the web independently"],
       "model": "claude-opus-4-8", "backend": "claude_api", "category": "analysis",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["basis"]
     },
     "STYLE_GUARDIAN": {
       "does": ["Enforce linguistic register", "Check style consistency", "Evaluate terminology/rephrasing/borrowing conventions"],
       "does_not": ["Change content (style only)", "Draft", "Verify facts"],
       "model": "claude-haiku-4-5", "backend": "claude_api", "category": "style",
       "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["wording"],
       "note": "Per Part XVIII Section C, STYLE_GUARDIAN participates in convention review. When Qwen local is unavailable, falls back to Claude with a tight prompt."
     },
     "ARCHIVIST": {
@@ -47,31 +53,36 @@
                 "Produce a structural inventory of the corpus, listing structural elements and the count of documents containing each (indexing across documents, not evaluating their merit)"],
       "does_not": ["Draft", "Analyze (evaluative judgment, not structural indexing)", "Recommend"],
       "model": "claude-sonnet-4-6", "backend": "claude_api", "category": "organization",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": [], "subjects_note": "No convention-review path reaches ARCHIVIST today; its own does_not rules out the evaluative judgment a routed rule would ask for. An empty list rather than a subject nobody can act on."
     },
     "INST_FINDER": {
       "does": ["Map topics to institutions", "Build institution registries"],
       "does_not": ["Draft correspondence", "Make policy judgments"],
       "model": "claude-haiku-4-5", "backend": "claude_api", "category": "organization",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": [], "subjects_note": "AUDIT-ONLY by contract: its output is posted for audit and read by no deliverable today. An empty list rather than a subject nobody can act on."
     },
     "CITATION_RESOLVER": {
       "does": ["Build cross-document reference graphs", "Map citation chains"],
       "does_not": ["Interpret citations (that is PROCESSOR's role)", "Search external"],
       "model": "claude-haiku-4-5", "backend": "claude_api", "category": "organization",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": [], "subjects_note": "AUDIT-ONLY by contract: its output is posted for audit and read by no deliverable today. An empty list rather than a subject nobody can act on."
     },
     "SPEECH_ACT_TAGGER": {
       "does": ["Classify pragmatic intent of utterances", "Build speech act taxonomy"],
       "does_not": ["Make policy judgments from speech acts"],
       "model": "claude-haiku-4-5", "backend": "claude_api", "category": "analysis",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": [], "subjects_note": "No convention-review path reaches SPEECH_ACT_TAGGER today; no consumer of its tags exists. An empty list rather than a subject nobody can act on."
     },
     "REDACTOR": {
       "does": ["Apply the operator redaction rules to document spans (pattern-based PII, named entities); propose one redaction item per matched span"],
       "does_not": ["Add content", "Judge on its own what is sensitive (it applies operator rules)"],
       "model": "Qwen/Qwen2.5-7B-Instruct", "backend": "qwen_local", "category": "privacy",
-      "may_use_web": false, "may_handle_sensitive": true
+      "may_use_web": false, "may_handle_sensitive": true,
+      "subjects": ["redaction"]
     },
     "AMENDMENT_DRAFTER": {
       "does": [
@@ -86,49 +97,56 @@
         "Produce content without a reference citation"
       ],
       "model": "claude-opus-4-8", "backend": "claude_api",
-      "category": "amendment", "may_use_web": false, "may_handle_sensitive": false
+      "category": "amendment", "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": [], "subjects_note": "Reads findings other agents reported, not rules directly, and its model call is off by default; declaring a subject would let an operator tag a rule for AMENDMENT_DRAFTER and get silence. An empty list rather than a subject nobody can act on."
     },
     "EDITOR_CLERK": {
       "does": ["Conduct senior editorial review of the assembled deliverable's substance and drafting (soundness, internal coherence, necessity, and the quality of the amendments and analysis)",
                 "Emit advisory editorial observations, one per item, each carrying a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "claude-opus-4-8", "backend": "claude_api", "category": "editorial",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["editorial"]
     },
     "EDITOR_HEAD_OF_UNIT": {
       "does": ["Review the drafting and soundness of an editorial observation escalated from EDITOR_CLERK, at provision-and-neighbors scope",
                 "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "claude-opus-4-8", "backend": "claude_api", "category": "editorial",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["editorial"]
     },
     "EDITOR_HEAD_OF_SECTION": {
       "does": ["Review the drafting and soundness of an editorial observation escalated from EDITOR_HEAD_OF_UNIT, at provision-and-neighbors scope",
                 "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "claude-opus-4-8", "backend": "claude_api", "category": "editorial",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["editorial"]
     },
     "EDITOR_HEAD_OF_DEPARTMENT": {
       "does": ["Review the whole-deliverable coherence of the assembled deliverable on escalation from EDITOR_HEAD_OF_SECTION",
                 "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "gpt-4o", "backend": "openai_api", "category": "editorial",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["editorial"]
     },
     "EDITOR_DEPUTY_DG": {
       "does": ["Assess the necessity and proportionality of the deliverable's content on escalation from EDITOR_HEAD_OF_DEPARTMENT",
                 "Confirm, override, or escalate the lower rank's editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "gpt-4o", "backend": "openai_api", "category": "editorial",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["editorial"]
     },
     "EDITOR_DG": {
       "does": ["Decide the existential editorial question — whether the content is needed at all — when summoned as the highest rank",
                 "Render the board's terminal editorial verdict, emitting one observation per item with a verdict and a prose rationale"],
       "does_not": ["Modify the deliverable or the amendments master", "Gate whether the deliverable ships (advisory only)", "Mask, detect PII, or scrub (no privacy function)", "Use the web"],
       "model": "gpt-4o", "backend": "openai_api", "category": "editorial",
-      "may_use_web": false, "may_handle_sensitive": false
+      "may_use_web": false, "may_handle_sensitive": false,
+      "subjects": ["editorial"]
     }
   }
 }

@@ -1060,6 +1060,30 @@ def _contract_violations_for_run(run_dir):
     return out
 
 
+def _convention_assignment_for_run(run_dir):
+    """This run's convention assignment as written by convention_assignment.
+    write_assignment, or {"by_rule": {}, "by_agent": {}} if the run predates
+    this route or never reached BOOT. Document-independent (computed once,
+    before any document is in scope), unlike pairing_map, so there is no
+    per-document key to read into. Same direct-file-read pattern as
+    _pairing_map: the assignment is written once, at load, never rewritten
+    mid-run, so a live bus read (the amendment-refusals/contract-violations
+    pattern) would only ever see the same facts a plain file read already
+    has, for extra cost; CONVENTION_UNASSIGNED on the bus exists for a
+    reader that wants the unassigned rules specifically, without decoding
+    the whole assignment."""
+    path = run_dir / "audit" / "convention_assignment.json"
+    if not path.is_file():
+        return {"by_rule": {}, "by_agent": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"by_rule": {}, "by_agent": {}}
+    if not isinstance(data, dict):
+        return {"by_rule": {}, "by_agent": {}}
+    return {"by_rule": data.get("by_rule") or {}, "by_agent": data.get("by_agent") or {}}
+
+
 def _pairing_map(run_dir):
     """This run's pairing map as written, keyed by document id, or {}."""
     path = run_dir / "audit" / "pairing_map.json"
@@ -1099,6 +1123,29 @@ def _load_convention_registry():
     except (OSError, ValueError):
         return {}
     return data if isinstance(data, dict) else {}
+
+
+# Same override pattern as CONVENTION_REGISTRY_PATH, for the same reason: a
+# test harness (tools/console_preview.py) needs its own throwaway registry
+# rather than ever reading the real repository's config/ directory.
+AGENT_REGISTRY_PATH = Path(os.environ.get("SHIMMER_AGENT_REGISTRY")
+                            or (ROOT / "config" / "agent_registry.json"))
+
+
+def _load_agent_registry_agents():
+    """The current agent registry's own "agents" sub-dict (name -> spec,
+    including each agent's declared `subjects`), or {} when it does not
+    exist or does not parse. Read fresh on every call, same reasoning as
+    _load_convention_registry: this server process is long-lived and the
+    file can change between restarts."""
+    if not AGENT_REGISTRY_PATH.is_file():
+        return {}
+    try:
+        data = json.loads(AGENT_REGISTRY_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    agents = data.get("agents") if isinstance(data, dict) else None
+    return agents if isinstance(agents, dict) else {}
 
 
 def _pairs_view(pairing, convention_registry=None):
@@ -2192,6 +2239,44 @@ async def contract_violations(run_id: str):
     run_dir = _validated_run_dir(run_id)
     items = _contract_violations_for_run(run_dir)
     return {"run_id": run_id, "count": len(items), "violations": items}
+
+
+@app.get("/runs/{run_id}/convention-assignment", dependencies=[Depends(verify_token)])
+async def convention_assignment_route(run_id: str):
+    """The convention assignment computed once at this run's BOOT
+    (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md): a one-way subject label on
+    each side (each agent's own declared subjects, each rule's own bracket
+    tags), compared by code that names no subject itself. Per rule:
+    subjects, matched agents, which of those have a live rule-consuming
+    path (consumer_agents), and status (untagged / assigned /
+    assigned_no_consumer / unassigned). Per agent: the rule ids it matched.
+
+    A rule matching no agent, or matching only an agent with no consuming
+    path today, is never dropped: it is the SAME visibility discipline as
+    /runs/{run_id}/amendment-refusals and /contract-violations, one more
+    outcome a reader can see rather than a routing decision that silently
+    goes nowhere. The mirror case, an agent that declares a subject but
+    matched nothing this load, is `idle_agents`: each entry names the
+    agent and the subjects it declares, read against the CURRENT
+    config/agent_registry.json (agent declarations are not per-run data,
+    unlike the assignment itself, so this is the live file, the same
+    reasoning /rules/{rule_id} already uses for the convention registry).
+
+    Read-only, non-mutating, reads this run's own audit/
+    convention_assignment.json directly (written once at BOOT, never
+    rewritten mid-run, so there is nothing further for a live bus read to
+    add over the file itself). 404 for a malformed/unknown run_id. 200 with
+    an empty by_rule/by_agent/idle_agents, not an error, for a run that
+    predates this route or never reached BOOT."""
+    import convention_assignment as _ca
+
+    run_dir = _validated_run_dir(run_id)
+    data = _convention_assignment_for_run(run_dir)
+    agents = _load_agent_registry_agents()
+    idle = _ca.idle_agents_summary(data, agents)
+    return {"run_id": run_id, "rule_count": len(data["by_rule"]),
+            "by_rule": data["by_rule"], "by_agent": data["by_agent"],
+            "idle_agents": idle}
 
 
 @app.get("/rules/{rule_id}", dependencies=[Depends(verify_token)])

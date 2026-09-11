@@ -51,6 +51,7 @@ import ontology_capture
 import ontology_graph
 import ontology_gnn
 from convention_parser import parse_conventions, write_registry
+import convention_assignment
 from sensitivity_layer import redaction_rules
 import sensitivity_layer
 from corpus_validator import extract_distinctive_terms, validate_corpus_entry
@@ -3227,6 +3228,46 @@ def main(argv=None):
     convention_review_enabled = bool(conv_registry_dict.get("conventions"))
     log_event(_LOG, f"convention_registry rules={len(conv_registry_dict.get('conventions', []))} "
                     f"review_enabled={convention_review_enabled}", run_id=run_ctx.run_id, phase="0")
+
+    # Convention assignment (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md): the one-way
+    # subject comparison, computed ONCE here at BOOT, never per call, never per
+    # document. `resolved_agents` may still be None (cloud backend with
+    # --skip-model-check, the one path that never sets it above); fall back to the
+    # tracked file, the same idiom already used at line ~3134 for the same reason.
+    assignment_agents = resolved_agents or json.loads(
+        (ROOT / "config" / "agent_registry.json").read_text(encoding="utf-8"))["agents"]
+    convention_assignment_result = convention_assignment.assign_conventions(
+        conv_registry_dict.get("conventions", []), assignment_agents)
+    convention_assignment.write_assignment(run_ctx, convention_assignment_result)
+    _untagged = convention_assignment.untagged_count(convention_assignment_result)
+    _unassigned = convention_assignment.unassigned_summary(convention_assignment_result)
+    for _row in _unassigned:
+        _row["source_rule_id"] = finding_record.source_rule_id_for(
+            _row["rule_id"], conv_registry_dict)
+        _row["reason"] = ("no agent declares: " + ", ".join(_row["subjects"])
+                          if _row["status"] == "unassigned" else
+                          "matched " + ", ".join(_row["agents"]) + ", no rule-consuming "
+                          "path today")
+    log_event(_LOG, f"convention_assignment rules={len(convention_assignment_result['by_rule'])} "
+                    f"untagged={_untagged} unassigned={len(_unassigned)}",
+              run_id=run_ctx.run_id, phase="0")
+    # A convention matching no agent, or matching only an agent with no rule-
+    # consuming path today, is never dropped: it is surfaced on the bus (the
+    # same "post it, never swallow it" discipline as AMENDMENT_REFUSED), so
+    # /runs/{run_id}/convention-assignment and the console can read it, not
+    # only this log line. Document-independent (computed once at BOOT, before
+    # any document is in scope), so doc_id is empty, matching the design
+    # document's own stated shape.
+    if _unassigned:
+        orch._post_orchestrator(
+            recipient="BROADCAST", channel="main", msg_type="INFORM",
+            body={"event": "CONVENTION_UNASSIGNED", "backend": "computed",
+                  "model": "python", "item_count": len(_unassigned), "parse_trace": {},
+                  "payload": {"agent": "ORCHESTRATOR", "doc_id": "", "items": _unassigned}},
+            constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                "resolution": "a convention no agent can act on is "
+                                              "surfaced visibly rather than silently "
+                                              "routed nowhere"})
 
     # 1c: OPERATOR-RULE HARD-STOP (operator-sovereignty, mirrors the qwen / sensitivity
     # gates). Redaction may act ONLY on what a compiled operator rule declares redactable;

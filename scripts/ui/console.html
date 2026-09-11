@@ -2144,6 +2144,65 @@ function contractViolationsHtml(violations, human) {
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
 }
 
+function conventionAssignmentHtml(byRule, human) {
+  /* The fourth visible state (night chain W3, once convention assignment
+     exists): a rule the assignment could not route anywhere an agent can
+     act on it. Same disappears-when-empty discipline as the other three
+     (an amendment, a refused finding, a failed contract): shown only when
+     at least one rule is genuinely unassigned or assigned to an agent with
+     no consuming path today, never a placeholder for the common case
+     where every tagged rule routed cleanly. Untagged rules (today's
+     default routing, unchanged) are never listed here: they are not a
+     problem to surface, only a fact reported once in the BOOT log. */
+  var rows = Object.keys(byRule || {}).map(function (id) {
+    return Object.assign({ rule_id: id }, byRule[id]);
+  }).filter(function (r) {
+    return r.status === "unassigned" || r.status === "assigned_no_consumer";
+  });
+  if (rows.length === 0) return "";
+  var items = rows.map(function (r) {
+    var subjects = (r.subjects || []).join(", ");
+    var why = r.status === "unassigned"
+      ? "no agent declares: " + subjects
+      : "matched " + (r.agents || []).join(", ") + ", no rule-consuming path today";
+    return human
+      ? '<li>' + ruleLinkHtml(r.rule_id, r.source_rule_id || r.rule_id) + ': ' + escapeHtml(why) + '</li>'
+      : '<li class="mono">' + escapeHtml(r.rule_id) + ' [' + escapeHtml(subjects) + ']: ' + escapeHtml(why) + '</li>';
+  }).join("");
+  var heading = human
+    ? "Rules no agent handles (" + rows.length + ")"
+    : "convention_assignment.unassigned (" + rows.length + ")";
+  var note = human
+    ? "Each of these rules carries a subject tag, but no agent that can act on it declares that subject today. Relabel the rule or add the subject to an agent."
+    : "Rules with status unassigned or assigned_no_consumer; see GET /runs/{run_id}/convention-assignment.";
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
+}
+
+function idleAgentsHtml(idleAgents, human) {
+  /* The mirror of conventionAssignmentHtml: an agent that declares a
+     subject but matched zero rules this load, exactly as the server's own
+     GET /runs/{run_id}/convention-assignment already computed it
+     (idle_agents_summary against the live agent registry). Same
+     discipline: shown only when it is genuinely true of at least one
+     agent. An agent declaring an empty subjects list (with a
+     subjects_note) is never idle in this sense, it was never expected to
+     match anything. */
+  if (!idleAgents || idleAgents.length === 0) return "";
+  var items = idleAgents.map(function (a) {
+    var subs = (a.subjects || []).join(", ");
+    return human
+      ? '<li>' + escapeHtml(a.agent) + ' has nothing to check (declares: ' + escapeHtml(subs) + ')</li>'
+      : '<li class="mono">' + escapeHtml(a.agent) + ': [' + escapeHtml(subs) + ']</li>';
+  }).join("");
+  var heading = human
+    ? "Agents with nothing to check (" + idleAgents.length + ")"
+    : "convention_assignment.agents_with_nothing_assigned (" + idleAgents.length + ")";
+  var note = human
+    ? "Each of these agents declares a subject, but no rule loaded this run carries a matching tag."
+    : "Agents with a non-empty subjects list whose by_agent entry is empty; see GET /runs/{run_id}/convention-assignment.";
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
+}
+
 function loadFindings(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "findings-holder";
@@ -2151,14 +2210,26 @@ function loadFindings(runId, isPartial) {
   refusalHolder.id = "amendment-refusals-holder";
   var violationHolder = document.createElement("div");
   violationHolder.id = "contract-violations-holder";
+  var unassignedHolder = document.createElement("div");
+  unassignedHolder.id = "convention-unassigned-holder";
+  var idleAgentsHolder = document.createElement("div");
+  idleAgentsHolder.id = "convention-idle-agents-holder";
   app.appendChild(holder);
   app.appendChild(refusalHolder);
   app.appendChild(violationHolder);
+  app.appendChild(unassignedHolder);
+  app.appendChild(idleAgentsHolder);
   apiJson("/runs/" + encodeURIComponent(runId) + "/amendment-refusals").then(function (refRes) {
     refusalHolder.innerHTML = refRes.ok ? amendmentRefusalsHtml(refRes.body.refusals, isHumanView()) : "";
   });
   apiJson("/runs/" + encodeURIComponent(runId) + "/contract-violations").then(function (violRes) {
     violationHolder.innerHTML = violRes.ok ? contractViolationsHtml(violRes.body.violations, isHumanView()) : "";
+  });
+  apiJson("/runs/" + encodeURIComponent(runId) + "/convention-assignment").then(function (caRes) {
+    if (!caRes.ok) { unassignedHolder.innerHTML = ""; idleAgentsHolder.innerHTML = ""; return; }
+    unassignedHolder.innerHTML = conventionAssignmentHtml(caRes.body.by_rule, isHumanView());
+    wireRuleLinks(unassignedHolder);
+    idleAgentsHolder.innerHTML = idleAgentsHtml(caRes.body.idle_agents, isHumanView());
   });
   Promise.all([
     apiJson("/runs/" + encodeURIComponent(runId) + "/findings"),

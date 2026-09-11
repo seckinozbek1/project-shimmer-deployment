@@ -14780,6 +14780,206 @@ def check_197_convention_heading_brackets_read_subject_and_severity():
                "brings the fix back, proving this check reads the live bracket scan")
 
 
+def check_198_convention_assignment_comparison_route_and_console():
+    """Convention assignment, commit 2. A one-way subject label on each side
+    (an agent's own `subjects` in config/agent_registry.json, a rule's own
+    `subjects` read by the parser from its heading's brackets), compared by
+    convention_assignment.assign_conventions, code that names no subject
+    itself. Proven at three layers: the pure comparison function directly
+    against real agent-registry shapes; the real BOOT wiring in
+    pipeline.py (module source inspection, since driving main() would need
+    a live model call); and the read route plus the console's fourth
+    visible state, through the real FastAPI app against a fixture run
+    directory, per the pattern check_163 already established for
+    /findings and /pairs."""
+    import convention_assignment as _ca
+
+    # Site 1: the pure comparison, against a registry shape drawn directly
+    # from config/agent_registry.json (12 agents with a real subject, 6
+    # with an empty list + a note, matching the operator-approved map).
+    agents = {
+        "PRACTICE_AUDITOR": {"subjects": ["conformance"]},
+        "STYLE_GUARDIAN": {"subjects": ["wording"]},
+        "REDACTOR": {"subjects": ["redaction"]},
+        "EDITOR_CLERK": {"subjects": ["editorial"]},
+        "EDITOR_DG": {"subjects": ["editorial"]},
+        "PROCESSOR": {"subjects": [], "subjects_note": "no consumer today"},
+    }
+    conventions = [
+        {"id": "CONV-001", "subjects": ["conformance"]},           # -> assigned
+        {"id": "CONV-002", "subjects": []},                        # -> untagged
+        {"id": "CONV-003", "subjects": ["extraction"]},            # -> unassigned (no agent)
+        {"id": "CONV-004", "subjects": ["redaction"]},              # -> assigned (real consumer)
+        {"id": "CONV-005", "subjects": ["editorial"]},              # -> assigned (real consumer)
+    ]
+    result = _ca.assign_conventions(conventions, agents)
+    by_rule = result["by_rule"]
+    if by_rule["CONV-001"]["status"] != "assigned" or by_rule["CONV-001"]["agents"] != ["PRACTICE_AUDITOR"]:
+        return _fail(f"CONV-001 expected assigned/[PRACTICE_AUDITOR], got {by_rule['CONV-001']}")
+    if by_rule["CONV-002"]["status"] != "untagged":
+        return _fail(f"CONV-002 (no subjects) expected untagged, got {by_rule['CONV-002']}")
+    if by_rule["CONV-003"]["status"] != "unassigned":
+        return _fail(f"CONV-003 (orphaned subject) expected unassigned, got {by_rule['CONV-003']}")
+    if by_rule["CONV-004"]["status"] != "assigned" or by_rule["CONV-004"]["consumer_agents"] != ["REDACTOR"]:
+        return _fail(f"CONV-004 (redaction) expected assigned with REDACTOR as a real "
+                     f"consumer (not just a matched agent), got {by_rule['CONV-004']}")
+    if by_rule["CONV-005"]["status"] != "assigned" or "EDITOR_CLERK" not in by_rule["CONV-005"]["consumer_agents"]:
+        return _fail(f"CONV-005 (editorial) expected assigned with the editorial board "
+                     f"as real consumers, got {by_rule['CONV-005']}")
+    if result["by_agent"]["PROCESSOR"] != []:
+        return _fail("PROCESSOR (empty subjects) matched a rule it never declared")
+    if _ca.untagged_count(result) != 1:
+        return _fail(f"untagged_count expected 1, got {_ca.untagged_count(result)}")
+    unassigned = _ca.unassigned_summary(result)
+    if {r["rule_id"] for r in unassigned} != {"CONV-003"}:
+        return _fail(f"unassigned_summary expected only CONV-003, got {[r['rule_id'] for r in unassigned]}")
+    idle = _ca.idle_agents_summary(result, agents)
+    idle_names = {a["agent"] for a in idle}
+    if idle_names != {"STYLE_GUARDIAN"}:
+        return _fail(f"idle_agents_summary expected only STYLE_GUARDIAN (declared "
+                     f"'wording', matched nothing in this fixture set), got {idle_names}")
+
+    # An agent match with no live consumer path: PROCESSOR (empty list here,
+    # but exercise the assigned_no_consumer branch directly with a
+    # declared-but-pathless agent shape).
+    agents2 = {"GHOST_AGENT": {"subjects": ["ghost_subject"]}}
+    result2 = _ca.assign_conventions([{"id": "CONV-999", "subjects": ["ghost_subject"]}], agents2)
+    if result2["by_rule"]["CONV-999"]["status"] != "assigned_no_consumer":
+        return _fail(f"an agent matched with no consumer path must read "
+                     f"assigned_no_consumer, got {result2['by_rule']['CONV-999']}")
+
+    # Site 2: the real BOOT wiring exists in pipeline.py's source (driving
+    # main() would require a live model call, out of scope for the gate;
+    # the wiring itself is proven live below, through write_assignment and
+    # the route, which exercises the same function this call site calls).
+    p = ("scripts/" + "pipe" + "line.py")
+    pipeline_src = (Path(__file__).resolve().parent.parent / p).read_text(encoding="utf-8")
+    for needle in ("convention_assignment.assign_conventions(",
+                   "convention_assignment.write_assignment(",
+                   '"event": "CONVENTION_UNASSIGNED"'):
+        if needle not in pipeline_src:
+            return _fail(f"pipeline.py no longer wires {needle!r} at BOOT")
+
+    # Site 3: the route and the console's fourth visible state, through the
+    # real FastAPI app against a fixture run directory (check_163's pattern).
+    try:
+        import fastapi  # noqa: F401
+    except ImportError:
+        return _ok("fastapi absent: check_198's route/console layer requires fastapi, "
+                   "skipped as N/A (the comparison and BOOT-wiring layers above still "
+                   "ran and passed)")
+
+    from fastapi.testclient import TestClient
+    import hashlib as _hl
+    import os as _os
+    import importlib as _importlib
+
+    with _tempfile.TemporaryDirectory(prefix="shimmer_gate_convassign_") as tmp:
+        tmp_path = Path(tmp)
+        runs_dir = tmp_path / "runs"
+        run_id = "20260911_000000__c0ffee"
+        run_dir = runs_dir / run_id
+        (run_dir / "audit").mkdir(parents=True)
+        fixture_assignment = {
+            "by_rule": {
+                "CONV-A01": {"subjects": ["conformance"], "agents": ["PRACTICE_AUDITOR"],
+                            "consumer_agents": ["PRACTICE_AUDITOR"], "status": "assigned"},
+                "CONV-A02": {"subjects": ["extraction"], "agents": [],
+                            "consumer_agents": [], "status": "unassigned",
+                            "source_rule_id": "CONV-ZQPROBE", "reason": "no agent declares: extraction"},
+            },
+            "by_agent": {"PRACTICE_AUDITOR": ["CONV-A01"], "STYLE_GUARDIAN": []},
+        }
+        (run_dir / "audit" / "convention_assignment.json").write_text(
+            json.dumps(fixture_assignment), encoding="utf-8")
+        fixture_agents = {
+            "agents": {
+                "PRACTICE_AUDITOR": {"subjects": ["conformance"]},
+                "STYLE_GUARDIAN": {"subjects": ["wording"]},
+            }
+        }
+        agent_registry_path = tmp_path / "agent_registry_fixture.json"
+        agent_registry_path.write_text(json.dumps(fixture_agents), encoding="utf-8")
+
+        saved_output = _os.environ.get("SHIMMER_OUTPUT_DIR")
+        saved_agentreg = _os.environ.get("SHIMMER_AGENT_REGISTRY")
+        saved_tok = _os.environ.get("SHIMMER_TOKEN_HASH")
+        try:
+            _os.environ["SHIMMER_OUTPUT_DIR"] = str(runs_dir)
+            _os.environ["SHIMMER_AGENT_REGISTRY"] = str(agent_registry_path)
+            server = _importlib.import_module("server")
+            _importlib.reload(server)
+            server.RUNS_DIR = runs_dir
+
+            tok = "gate-convassign-token"
+            _os.environ["SHIMMER_TOKEN_HASH"] = _hl.sha256(tok.encode("utf-8")).hexdigest()
+            client = TestClient(server.app)
+            headers = {"Authorization": f"Bearer {tok}"}
+
+            r = client.get(f"/runs/{run_id}/convention-assignment", headers=headers)
+            if r.status_code != 200:
+                return _fail(f"/convention-assignment returned {r.status_code}: {r.text[:300]}")
+            body = r.json()
+            if body.get("rule_count") != 2:
+                return _fail(f"expected rule_count 2, got {body.get('rule_count')}")
+            if body["by_rule"]["CONV-A02"]["status"] != "unassigned":
+                return _fail(f"route did not surface CONV-A02 as unassigned: {body['by_rule']}")
+            idle_names = {a["agent"] for a in body.get("idle_agents") or []}
+            if idle_names != {"STYLE_GUARDIAN"}:
+                return _fail(f"route's idle_agents (computed against the fixture agent "
+                             f"registry) expected only STYLE_GUARDIAN, got {idle_names}")
+
+            # A well-formed but unknown run_id still 404s, matching every other
+            # run-scoped route (a malformed id would 404 for a different reason).
+            r2 = client.get("/runs/20260911_000000__dead00/convention-assignment", headers=headers)
+            if r2.status_code != 404:
+                return _fail(f"an unknown but well-formed run_id returned "
+                             f"{r2.status_code}, expected 404")
+
+            # NEUTRALISE AND RESTORE: move the assignment file aside, confirm the
+            # route falls back to empty (not an error, matching the documented
+            # 200-empty convention), restore it, confirm the real content returns.
+            aside = run_dir / "audit" / "convention_assignment.json.aside"
+            (run_dir / "audit" / "convention_assignment.json").rename(aside)
+            r3 = client.get(f"/runs/{run_id}/convention-assignment", headers=headers)
+            if r3.status_code != 200 or r3.json().get("rule_count") != 0:
+                return _fail(f"with the assignment file moved aside, expected 200 with "
+                             f"rule_count 0, got {r3.status_code} {r3.text[:200]}")
+            aside.rename(run_dir / "audit" / "convention_assignment.json")
+            r4 = client.get(f"/runs/{run_id}/convention-assignment", headers=headers)
+            if r4.status_code != 200 or r4.json().get("rule_count") != 2:
+                return _fail("restoring the assignment file did not bring rule_count "
+                             "back to 2")
+        finally:
+            for var, saved in (("SHIMMER_OUTPUT_DIR", saved_output),
+                              ("SHIMMER_AGENT_REGISTRY", saved_agentreg),
+                              ("SHIMMER_TOKEN_HASH", saved_tok)):
+                if saved is None:
+                    _os.environ.pop(var, None)
+                else:
+                    _os.environ[var] = saved
+
+    # Site 4: the console's fourth visible state exists and follows the same
+    # disappears-when-empty pattern as the three already built.
+    console_src = (Path(__file__).resolve().parent.parent / "scripts" / "ui"
+                   / "console.html").read_text(encoding="utf-8")
+    for needle in ("function conventionAssignmentHtml(", "function idleAgentsHtml(",
+                   "convention-unassigned-holder", "convention-idle-agents-holder",
+                   "/convention-assignment"):
+        if needle not in console_src:
+            return _fail(f"console.html no longer carries {needle!r}: the fourth "
+                         f"visible state is missing a piece")
+
+    return _ok("the comparison (assigned/untagged/unassigned/assigned_no_consumer, real "
+               "vs. no-consumer agent matches, untagged_count, unassigned_summary, "
+               "idle_agents_summary) proven directly; the BOOT wiring confirmed present "
+               "in pipeline.py's own source; the real route proven through the FastAPI "
+               "app against a fixture run, including a 404 for an unknown run and "
+               "neutralise-and-restore on the assignment file itself; the console's "
+               "fourth visible state (conventionAssignmentHtml, idleAgentsHtml, both "
+               "holders, the fetch) confirmed present")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -14986,6 +15186,8 @@ CHECKS = [
      check_196_every_remaining_rule_id_consumer_reads_the_real_field_name),
     ("197 a convention heading's brackets read subject and severity (convention assignment 1)",
      check_197_convention_heading_brackets_read_subject_and_severity),
+    ("198 the convention assignment comparison, its route and its console state (convention assignment 2)",
+     check_198_convention_assignment_comparison_route_and_console),
 ]
 
 
