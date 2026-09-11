@@ -1,12 +1,18 @@
 # Built in stages, proven before the next is written.
 # Stage 1 (below): base environment. Python, CUDA-enabled torch, and the rest
 # of requirements.txt install cleanly on top of a CUDA runtime image.
-# Stage 2 (further down): source copied (scripts/, config/, tools/,
+# Stage 2 (further down): the model weights, behind --build-arg BAKE_WEIGHTS=true;
+# false (the default) leaves them to a mounted volume at run time. This stage
+# sits BEFORE the source stage on purpose (2026-09-11): a layer's cache key is
+# its parent chain, so with the weights last every edit under scripts/ threw
+# the three downloaded checkpoints away and pulled them again through the
+# Docker Desktop proxy that has already dropped TLS on them twice. With the
+# weights before the source, a source-only rebuild of the baked image reuses
+# the weight layers and copies the new source on top of them.
+# Stage 3 (further down still): source copied (scripts/, config/, tools/,
 # corpus_ingest/, the three root markdown files), import path set.
-# Stage 3 (further down still): the entry point (tools/entrypoint.sh),
+# Stage 4 (last): the entry point (tools/entrypoint.sh),
 # serve/run/verify, verify by default.
-# Stage 4 (last): the model weights, behind --build-arg BAKE_WEIGHTS=true;
-# false (the default) leaves them to a mounted volume at run time.
 
 FROM nvidia/cuda:12.1.1-base-ubuntu22.04
 
@@ -41,44 +47,7 @@ RUN python -m pip install --no-cache-dir \
 COPY requirements.txt /tmp/requirements.txt
 RUN python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Stage 2: source, no weights yet. Only the paths named below; no .git, no
-# .claude, no benchmark/keys, no virtual environment (none of those exist in
-# the build context to begin with, per .dockerignore, but the COPY list below
-# is explicit regardless of what .dockerignore does or does not catch).
-WORKDIR /app
-
-COPY scripts/ ./scripts/
-COPY config/ ./config/
-COPY tools/ ./tools/
-COPY corpus_ingest/ ./corpus_ingest/
-COPY README.md CLAUDE.md genesis.md ./
-# Also at /app/requirements.txt, not only /tmp: gate check 118 (every
-# module-level third-party import under scripts/ is ==pinned) reads it from
-# the repo root, same as it would on a real checkout.
-COPY requirements.txt ./
-
-# pipeline.py and server.py each insert scripts/ and the repo root onto
-# sys.path THEMSELVES once they are running (ROOT = parent.parent of their own
-# file), but that self-bootstrap only takes effect after Python has already
-# located and executed the module. A bare `import pipeline` needs scripts/ on
-# PYTHONPATH before that point; the repo root covers corpus_ingest (M1) once
-# pipeline's own insert runs. Set here rather than relied on implicitly, since
-# earlier work found a bare import fails without it.
-ENV PYTHONPATH=/app/scripts:/app
-
-# Stage 3: the entry point. One command decides what the container does
-# (serve/run/verify, verify by default); everything else is rejected with a
-# message naming the three. tools/entrypoint.sh is already inside the image
-# from the `COPY tools/` above; it needs the executable bit, and its line
-# endings normalised: a Windows checkout with autocrlf turned the script into
-# CRLF, the kernel then looked for an interpreter named "/bin/sh\r" and the
-# container failed at start with "no such file or directory" (found at the first
-# offline test of the image, 2026-09-11). .gitattributes pins the file to LF as
-# well; this line holds for any checkout regardless.
-RUN sed -i 's/\r$//' tools/entrypoint.sh && chmod +x tools/entrypoint.sh
-ENTRYPOINT ["tools/entrypoint.sh"]
-
-# Stage 4: the model weights, two build modes behind one build argument.
+# Stage 2: the model weights, two build modes behind one build argument.
 #
 #   docker build .                          -> BAKE_WEIGHTS=false (default):
 #     small, fast dev build; weights are NOT downloaded; the image expects
@@ -146,3 +115,40 @@ RUN if [ "$BAKE_WEIGHTS" = "true" ]; then \
         done; \
         [ "$ok" = "1" ] || { echo "Qwen2.5-7B download failed after 5 attempts" >&2; exit 1; }; \
     fi
+
+# Stage 3: source, on top of the weights. Only the paths named below; no .git, no
+# .claude, no benchmark/keys, no virtual environment (none of those exist in
+# the build context to begin with, per .dockerignore, but the COPY list below
+# is explicit regardless of what .dockerignore does or does not catch).
+WORKDIR /app
+
+COPY scripts/ ./scripts/
+COPY config/ ./config/
+COPY tools/ ./tools/
+COPY corpus_ingest/ ./corpus_ingest/
+COPY README.md CLAUDE.md genesis.md ./
+# Also at /app/requirements.txt, not only /tmp: gate check 118 (every
+# module-level third-party import under scripts/ is ==pinned) reads it from
+# the repo root, same as it would on a real checkout.
+COPY requirements.txt ./
+
+# pipeline.py and server.py each insert scripts/ and the repo root onto
+# sys.path THEMSELVES once they are running (ROOT = parent.parent of their own
+# file), but that self-bootstrap only takes effect after Python has already
+# located and executed the module. A bare `import pipeline` needs scripts/ on
+# PYTHONPATH before that point; the repo root covers corpus_ingest (M1) once
+# pipeline's own insert runs. Set here rather than relied on implicitly, since
+# earlier work found a bare import fails without it.
+ENV PYTHONPATH=/app/scripts:/app
+
+# Stage 4: the entry point. One command decides what the container does
+# (serve/run/verify, verify by default); everything else is rejected with a
+# message naming the three. tools/entrypoint.sh is already inside the image
+# from the `COPY tools/` above; it needs the executable bit, and its line
+# endings normalised: a Windows checkout with autocrlf turned the script into
+# CRLF, the kernel then looked for an interpreter named "/bin/sh\r" and the
+# container failed at start with "no such file or directory" (found at the first
+# offline test of the image, 2026-09-11). .gitattributes pins the file to LF as
+# well; this line holds for any checkout regardless.
+RUN sed -i 's/\r$//' tools/entrypoint.sh && chmod +x tools/entrypoint.sh
+ENTRYPOINT ["tools/entrypoint.sh"]

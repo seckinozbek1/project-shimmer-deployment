@@ -45,7 +45,8 @@ x-shimmer-common: &shimmer-common
     # by the operator and by the pipeline (section D).
     - ./input:/app/input
     # The model cache: HF_HOME inside the image is /root/.cache/huggingface
-    # (Dockerfile stage 4), the same path embedding_store.py and
+    # (Dockerfile stage 2, the weights stage, set before the downloads so a
+    # baked image and a mounted cache land at the same path), the same path embedding_store.py and
     # agent_wrapper.py already read with no override. Mounting the host's
     # cache here is what lets the UNBAKED image (the default build) find
     # weights that already exist on this machine; a baked image finds its
