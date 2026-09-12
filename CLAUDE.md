@@ -48,9 +48,20 @@ processing swarm governed by an append-only constitution.
 - Every convention review finding cites at least one CONV-* and at least one REF-*.
 - A convention heading that carries the operator's own rule id keeps that id as its
   `category`, and NOTHING else is consulted for it: `finding_record.source_rule_id_for` reads
-  it back for attribution. The parser's English keyword table (`_CATEGORY_KEYWORDS`) applies
-  only to a heading with no id. It used to run first and silently reclassified an operator slug
-  containing the word "value", losing attribution for every finding under that rule.
+  it back for attribution. The parser's English keyword table (`_CATEGORY_KEYWORDS`) is now
+  DELETED (CLASSIFIER-B): a heading with no rule id keeps its own first word, read rather than
+  interpreted. The table used to run first and silently reclassified an operator slug containing
+  the word "value", losing attribution for every finding under that rule; when measured it fired
+  on 0 of 44 shipped headings, returned order-dependent answers ("Borrowing and attribution"
+  became `citation_style`), and still mapped "Naming and values" into the ethics bucket. Do not
+  reintroduce it; gate check 176 refuses its return.
+- WORDS-A: where a decision rests on WHAT WORDS MEAN it is decided by the five-voter ensemble
+  (`scripts/semantic_ensemble.py`), never by a literal keyword table and never by one method
+  alone. References live in `config/semantic_references.json`, thresholds in
+  `config/semantic_thresholds.json` with the error rate each produces. Regex keeps everything
+  STRUCTURAL: declared syntax, bracket declarations, ids, delimiters, formats, run-id shapes.
+  A place that already REFUSES rather than guessing (document dating) stays as it is and is
+  never converted into something that votes.
 - A heading's brackets carry the severity, the subject tags, and two DECLARATIONS read by their
   leading word only: `[scope: class=A, device]` (the field labels, optionally pinned to a value,
   that identify the units the rule governs) and `[requires: calibration authority signature]`

@@ -444,15 +444,13 @@ def _strip_list_marker(line):
     return re.sub(r"^\s*(?:[-*+]|\d+[.)])\s+", "", line).strip()
 
 
-_CATEGORY_KEYWORDS = {
-    "terminology":     ("terminology", "term", "vocabulary", "wording"),
-    "red_flags":       ("red flag", "flag", "warning", "alert"),
-    "rephrasing":      ("rephrase", "rewrite", "rephrasing", "language"),
-    "citation_style":  ("citation", "cite", "reference", "borrowing"),
-    "structural":      ("structure", "structural", "format", "section"),
-    "value_alignment": ("value", "alignment", "ethics", "principles"),
-    "borrowing":       ("borrow", "external", "foreign", "attribution"),
-}
+# _CATEGORY_KEYWORDS was DELETED here (CLASSIFIER-B / WORDS-B). It mapped an
+# id-less heading's English words to one of seven buckets, fired on zero of the
+# 44 shipped headings, returned order-dependent answers, and still carried the
+# "value" defect that once cost a whole corpus its attribution. See
+# _normalize_category's docstring for the measurement and the reasoning. A
+# heading with no rule id now keeps its own first word, which is read rather
+# than interpreted.
 
 
 _HEADING_RULE_ID = re.compile(r"\bconv-[a-z0-9]+(?:-[a-z0-9]+)*\b", re.IGNORECASE)
@@ -634,14 +632,34 @@ def _normalize_category(heading):
     ever pointed at wrote "conv-value-in-range", the word "value" matched the
     "value_alignment" bucket (which is about ethics), the operator's id was
     overwritten, and attribution for every finding under that rule was lost.
-    Nothing warned. The keyword table is English and is kept only for a heading
-    that carries no id at all, where it is the sole signal there is.
+    Nothing warned.
+
+    CLASSIFIER-B / WORDS-B: THE KEYWORD TABLE IS NOW GONE, deleted rather than
+    converted to the five-voter ensemble. Three measurements decided it:
+
+      - it fired on ZERO of the 44 shipped convention headings. Every one
+        carries an operator rule id, so the table decided nothing for any corpus
+        that exists;
+      - its output was ORDER-DEPENDENT and not self-consistent: "Borrowing and
+        attribution" returned `citation_style`, not `borrowing`, because
+        whichever dict key came first won;
+      - it still carried the original defect in the no-id path. "Naming and
+        values" returned `value_alignment`, which is the ethics bucket, by the
+        same "value" match that lost attribution for a whole corpus.
+
+    Converting it to an ensemble would have built a five-voter decision for a
+    decision nothing makes, against reference text nobody has written, replacing
+    a wrong answer with an expensive one. Deleting it leaves the heading's own
+    first word, which is what the operator actually wrote and is not a guess at
+    all: a heading reading "Terminology rules" now yields `terminology` by
+    reading it, where the table yielded the same answer by interpreting it.
+
+    If a real corpus ever needs semantic categorisation of id-less headings,
+    that is a decision to convert under WORDS-A, with references an operator
+    writes. It is not one to infer today.
     """
     h = heading.lstrip("# ").strip().lower()
     own = _HEADING_RULE_ID.search(h)
     if own:
         return own.group(0)
-    for cat, keys in _CATEGORY_KEYWORDS.items():
-        if any(k in h for k in keys):
-            return cat
     return h.split()[0] if h else _DEFAULT_CATEGORY

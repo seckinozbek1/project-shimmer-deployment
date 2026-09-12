@@ -11298,37 +11298,91 @@ def check_176_an_operator_rule_id_survives_the_category_keyword_table():
     "value_alignment" (a bucket about ethics) and every finding under that rule
     lost its attribution. Nothing warned.
 
-    Asserted, on the real _normalize_category:
-      - a heading carrying an operator id keeps that id whatever else the heading
-        says, including a keyword from every bucket in the table;
-      - a heading with NO id still classifies by keyword, so operator files that
-        use plain headings ("Confidentiality", "Citation style") are unchanged;
-      - NEUTRALISE AND RESTORE: strip the id from the same heading and the keyword
-        wins again; put it back and the id wins again.
-    """
-    from convention_parser import _normalize_category as norm, _CATEGORY_KEYWORDS as kw
+    CLASSIFIER-B / WORDS-B: THE KEYWORD TABLE IS NOW DELETED, so this check
+    proves a stronger property than it used to. It used to assert that the id
+    beat the table; it now asserts that THE TABLE IS GONE AND CANNOT COME BACK,
+    which is the only version of this guard that cannot rot.
 
-    for bucket, keys in kw.items():
-        heading = "## CONV-Q07 , conv-%s-check [required]" % keys[0].replace(" ", "-")
+    Three measurements decided the deletion, and each is re-asserted here so the
+    reasoning is not only in a commit message:
+      - the table fired on ZERO of the 44 shipped headings, every one of which
+        carries an operator rule id;
+      - its output was order-dependent: "Borrowing and attribution" returned
+        `citation_style`, not `borrowing`, because whichever dict key came first
+        won;
+      - the original defect survived in the no-id path: "Naming and values"
+        returned `value_alignment`, the ethics bucket, by the same "value" match
+        that lost a corpus its attribution.
+
+    Asserted, on the real _normalize_category:
+      - a heading carrying an operator id keeps that id whatever else it says;
+      - a heading with NO id keeps ITS OWN FIRST WORD, read rather than
+        interpreted, and specifically is NOT mapped into a bucket;
+      - no keyword table exists in the module to be consulted;
+      - NEUTRALISE AND RESTORE on the id branch, which is the load-bearing half.
+    """
+    import convention_parser as _cp176
+    norm = _cp176._normalize_category
+
+    if hasattr(_cp176, "_CATEGORY_KEYWORDS"):
+        return _fail("a category keyword table is back in convention_parser. It "
+                     "fired on 0 of 44 shipped headings, returned order-dependent "
+                     "answers, and still mapped a heading containing 'value' into "
+                     "the ethics bucket. A heading with no rule id keeps its own "
+                     "first word.")
+    # An operator id survives every word that used to be a bucket keyword.
+    for _kw in ("value", "reference", "section", "terminology", "flag", "rephrase",
+                "structure", "borrow", "attribution", "citation", "alignment"):
+        heading = "## CONV-Q07 , conv-%s-check [required]" % _kw
         got = norm(heading)
         if got != "conv-q07":
-            return _fail(f"an operator id lost to the {bucket!r} keyword {keys[0]!r}: "
-                         f"{heading!r} -> {got!r}")
-    if norm("## Confidentiality") != "confidentiality":
-        return _fail("a plain heading with no id no longer classifies")
-    if norm("## Citation style") != "citation_style":
-        return _fail("a plain keyword heading no longer reaches its bucket")
-    # NEUTRALISE: the same slug with the id removed is keyword-classified.
-    if norm("## conv-value-in-range [required]") == "conv-value-in-range":
-        pass  # an id-shaped slug is itself an id; that is correct
-    if norm("## value in range [required]") != "value_alignment":
-        return _fail("with no id the keyword table did not apply")
-    # RESTORE.
-    if norm("## CONV-Q07 , value in range [required]") != "conv-q07":
-        return _fail("the id did not win again once restored")
+            return _fail("an operator id lost to the word %r: %r -> %r"
+                         % (_kw, heading, got))
+    # A heading with NO id keeps its own first word and is NOT bucketed.
+    for heading, want in (("## Confidentiality", "confidentiality"),
+                          ("## Borrowing and attribution", "borrowing"),
+                          ("## Naming and values", "naming"),
+                          ("## Terminology rules", "terminology")):
+        got = norm(heading)
+        if got != want:
+            return _fail("an id-less heading %r yielded %r, expected its own first "
+                         "word %r. The keyword table used to answer %r here for the "
+                         "second and third of these, both wrongly."
+                         % (heading, got, want, "a bucket name"))
+    # NEUTRALISE the id branch, the half that carries the attribution guarantee.
+    # THIRTEEN-B: the neutralised build must BEHAVE differently, and it does,
+    # because the id and the first word differ for this heading.
+    # The probe's FIRST WORD must differ from its rule id, or the two paths
+    # return the same string by coincidence and the neutralise proves nothing.
+    # Caught by THIRTEEN-B's own test: "CONV-Q07 , conv-value-in-range" has
+    # `conv-q07` as both its id AND its first word once the heading marker is
+    # stripped, so it returned 'conv-q07' with the id match on and off.
+    _probe = "## Values and naming , conv-value-in-range [required]"
+    _before = norm(_probe)
+    if _before != "conv-value-in-range":
+        return _fail("the operator id is not winning even before neutralise: %r"
+                     % _before)
+    _orig_re = _cp176._HEADING_RULE_ID
+    _cp176._HEADING_RULE_ID = re.compile(r"(?!)")  # matches nothing, ever
+    try:
+        _n = norm(_probe)
+        if _n == _before:
+            return _fail("neutralising the id match changed nothing observable, so "
+                         "this proof was never at risk (THIRTEEN-B). Got %r both "
+                         "ways." % _n)
+    finally:
+        _cp176._HEADING_RULE_ID = _orig_re
+    if norm(_probe) != _before:
+        return _fail("restore failed: the operator id no longer wins")
     return _ok("a heading that carries an operator rule id keeps that id against every "
-               "keyword in the parser's table, a heading with no id still classifies by "
-               "keyword, and removing and restoring the id flips the outcome both ways")
+               "word that used to be a bucket keyword; the category keyword table is "
+               "DELETED and its return is refused, having fired on 0 of 44 shipped "
+               "headings, returned order-dependent answers, and still mapped a heading "
+               "containing 'value' into the ethics bucket; a heading with no id now "
+               "keeps its own first word, read rather than interpreted, so 'Borrowing "
+               "and attribution' yields 'borrowing' where the table said "
+               "'citation_style'; and neutralising the id match is proved to change "
+               "behaviour before the check is consulted")
 
 
 
