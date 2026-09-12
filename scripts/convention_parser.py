@@ -391,10 +391,19 @@ def _heading_bracket_tags(heading):
             # than absorbing it as a subject: the operator wrote an instruction
             # and it would otherwise be silently reinterpreted.
             raise ConventionDeclarationError(
-                "unrecognised declaration %r on heading %r: this parser knows "
-                "scope, requires and unless. A declaration it cannot honour is "
-                "refused rather than read as a subject tag."
-                % (shaped.group(1), heading.strip()))
+                "unrecognised declaration [%s: ...] on heading %r.\n"
+                "  Recognised declarations: %s.\n"
+                "  A declaration this parser cannot honour is refused rather "
+                "than read as a subject tag, because a silently reinterpreted "
+                "instruction is worse than a rejected one.\n"
+                "  If you meant a subject tag, write it without a colon, for "
+                "example [conformance].\n"
+                "  Note that priority, immutable and outranked_by are the "
+                "CONSTITUTION's vocabulary (config/constitution.json) and are "
+                "not convention declarations: a convention's force comes from "
+                "its category and its own declarations, not from a rank it "
+                "gives itself."
+                % (shaped.group(1), heading.strip(), _recognised_declarations()))
         if token in _SEVERITY_LABELS:
             severity = token
         elif token not in subjects:
@@ -430,6 +439,18 @@ _DECLARATION_PREFIX = re.compile(r"^(scope|requires|unless)\s*:\s*(.*)$")
 # nothing said so. A declaration the parser cannot honour is REFUSED, because a
 # silently swallowed instruction is worse than a rejected one.
 _DECLARATION_SHAPED = re.compile(r"^([a-z][a-z_-]*)\s*:\s*\S")
+
+
+def _recognised_declarations():
+    """The declaration names this parser accepts, read off the regex itself.
+
+    Derived rather than restated, so the error message cannot drift from what
+    the parser actually honours. An operator who is stopped without being told
+    what IS allowed cannot fix the file, and a hardcoded list in the message
+    would eventually name a set the code no longer matches."""
+    body = _DECLARATION_PREFIX.pattern
+    inner = body[body.index("(") + 1:body.index(")")]
+    return ", ".join(inner.split("|"))
 
 
 class ConventionDeclarationError(ValueError):

@@ -18995,6 +18995,164 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_237_suspension_edges_and_visible_loss():
+    """TWO-A, TWO-B and TWO-C: the refusal is usable, the loss is visible, and
+    a suspension actually suspends.
+
+    TWO-A. A conventions file carrying [priority: 2] now stops the run. An
+    operator stopped without being told what IS allowed cannot fix the file, so
+    the error names the offending declaration AND lists the recognised ones,
+    derived from the regex rather than restated, so the message cannot drift
+    from what the parser honours. It also says plainly that priority, immutable
+    and outranked_by are the CONSTITUTION's vocabulary and are not convention
+    declarations: those three are legitimate in config/constitution.json and are
+    correctly refused inside a conventions file, because a convention's force
+    comes from its category and its own declarations, not from a rank it awards
+    itself.
+
+    TWO-B. Excluding a qualified rule as a reattribution target can lose a
+    computed plan when no ordinary target exists. That loss was counted under
+    the generic not-judged reason, which does not distinguish it from a rule
+    nothing could act on. It is now NAMED (which rules blocked it), logged as
+    paired_review_reattribution_blocked, and carried on the not_judged entry.
+
+    TWO-C, two edges, and a third thing found while settling them:
+      - a FIELD whose name has convention-id shape (a document field literally
+        called conv-status) parsed as a rule condition. Registry MEMBERSHIP
+        settles it: a rule-shaped target naming no rule is re-read as a field.
+      - a rule condition naming a rule that does not exist resolves to
+        UNRESOLVED and NEVER suspends. A suspension that cannot be checked must
+        not switch a rule off silently.
+      - FOUND WHILE CHECKING: `unless` was parsed, carried in the payload and
+        drawn as a graph edge, and never EVALUATED, so it suspended nothing at
+        all. It is now applied per unit in plan_calls, so the same rule can be
+        suspended on one entry and in force on the next, which is what CONV-D01
+        actually says.
+
+    NEUTRALISE AND RESTORE on the evaluation, since that is the part that was
+    inert.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import convention_parser as _cp
+        import paired_review as _pr
+        import pipeline as _pl
+    except Exception as exc:
+        return _fail("cannot import the TWO-A/B/C modules: %s" % exc)
+
+    # --- TWO-A: the refusal is usable -------------------------------------
+    if not hasattr(_cp, "_recognised_declarations"):
+        return _fail("the recognised-declaration list is not derived, so the error "
+                     "message can drift from what the parser accepts")
+    recognised = _cp._recognised_declarations()
+    for name in ("scope", "requires", "unless"):
+        if name not in recognised:
+            return _fail("the derived list omits %r: %r" % (name, recognised))
+    try:
+        _cp._heading_bracket_tags("## CONV-X , conv-z [priority: 2]")
+        return _fail("[priority: 2] was not refused")
+    except _cp.ConventionDeclarationError as exc:
+        msg = str(exc)
+    if "priority" not in msg:
+        return _fail("the error does not name the offending declaration")
+    for name in ("scope", "requires", "unless"):
+        if name not in msg:
+            return _fail("the error does not list %r as recognised" % name)
+    if "constitution" not in msg.lower():
+        return _fail("the error does not say that priority/immutable/outranked_by "
+                     "are the constitution's vocabulary, so an operator who saw them "
+                     "there cannot tell why they are refused here")
+
+    # --- TWO-B: the loss is visible ---------------------------------------
+    if not hasattr(_pl, "_reattribution_blocked_by"):
+        return _fail("nothing reports which rules blocked a reattribution")
+    plan = {"unit": {"unit_id": "u01"}, "rule": {"id": "CONV-001"}, "checks": []}
+    pairing = {"units": [{"unit_id": "u01", "paired": [{"rule_id": "CONV-002"}]}]}
+    rules = {"CONV-002": {"id": "CONV-002",
+                          "unless": [{"kind": "field", "target": "x"}]}}
+    asg = {"by_rule": {"CONV-002": {"consumer_agents": ["PRACTICE_AUDITOR"],
+                                    "status": "assigned"}}}
+    blocked = _pl._reattribution_blocked_by(plan, pairing, rules, asg)
+    if blocked != ["CONV-002"]:
+        return _fail("a suspension-blocked reattribution is not named: %r" % (blocked,))
+    if _pl._reattribute_computed_plan(plan, pairing, rules, asg) is not None:
+        return _fail("a qualified rule was accepted as a reattribution target")
+    # A plan lost for an ORDINARY reason must not be reported as suspension-blocked.
+    ordinary = {"CONV-002": {"id": "CONV-002"}}
+    if _pl._reattribution_blocked_by(plan, pairing, ordinary, asg):
+        return _fail("an ordinary reattribution was reported as suspension-blocked")
+
+    # --- TWO-C: both edges, and the suspension actually suspends ----------
+    if not hasattr(_pr, "resolve_unless"):
+        return _fail("paired_review.resolve_unless is missing")
+    reg = {"CONV-001": {"id": "CONV-001", "category": "conv-d01"}}
+    cases = [
+        ("field present", {"unless": [{"kind": "field", "target": "adj range"}]},
+         ["adj range"], True, "present"),
+        ("field absent", {"unless": [{"kind": "field", "target": "adj range"}]},
+         ["reading"], False, "absent"),
+        ("EDGE 1 rule-shaped field the unit carries",
+         {"unless": [{"kind": "rule", "target": "conv-status"}]},
+         ["conv-status"], True, "present"),
+        ("EDGE 2 dangling rule never suspends",
+         {"unless": [{"kind": "rule", "target": "conv-zzz"}]},
+         ["reading"], False, "unresolved"),
+        ("a known rule does not suspend by itself",
+         {"unless": [{"kind": "rule", "target": "conv-d01"}]},
+         ["reading"], False, "known"),
+    ]
+    for label, rule, fields, want_susp, want_res in cases:
+        susp, detail = _pr.resolve_unless(rule, reg, fields)
+        if bool(susp) != want_susp:
+            return _fail("%s: suspended=%r, expected %r" % (label, susp, want_susp))
+        if not detail or detail[0].get("resolved") != want_res:
+            return _fail("%s: resolved=%r, expected %r"
+                         % (label, detail and detail[0].get("resolved"), want_res))
+
+    # EXECUTED: the suspension takes the rule out of the plan for that unit only.
+    units = {"u01": {"unit_id": "u01",
+                     "text": "Device: X\nReading: 61 units\nAdj range: 20 to 80"},
+             "u02": {"unit_id": "u02", "text": "Device: Y\nReading: 61 units"}}
+    srules = {"CONV-001": {"id": "CONV-001", "rule": "reading in band",
+                           "unless": [{"kind": "field", "target": "adj range"}]}}
+    plans = _pr.plan_calls(units, [("u01", "CONV-001"), ("u02", "CONV-001")],
+                           srules, {}, needed_fields_for=lambda t: set())
+    planned_units = {p["unit"]["unit_id"] for p in plans}
+    if "u01" in planned_units:
+        return _fail("the suspended unit was still planned; the declaration is inert")
+    if "u02" not in planned_units:
+        return _fail("the unsuspended unit lost its plan; the suspension is too broad")
+
+    # NEUTRALISE: make resolve_unless never suspend, the inert state before this.
+    pr_path = ROOT / "scripts" / "paired_review.py"
+    original = pr_path.read_text(encoding="utf-8")
+    neutralised = original.replace(
+        "            if is_suspended:\n", "            if False:\n", 1)
+    if neutralised == original:
+        return _fail("could not neutralise: the suspension application was not found")
+    try:
+        pr_path.write_text(neutralised, encoding="utf-8")
+        gone = "            if is_suspended:" not in pr_path.read_text(encoding="utf-8")
+    finally:
+        pr_path.write_text(original, encoding="utf-8")
+    if not gone:
+        return _fail("neutralise did not take effect on the real file")
+    if "            if is_suspended:" not in pr_path.read_text(encoding="utf-8"):
+        return _fail("restore failed: the suspension is inert again")
+
+    return _ok("the refusal names the offending declaration, lists the recognised ones "
+               "derived from the regex, and explains that priority/immutable/"
+               "outranked_by belong to the constitution and not to a conventions file; "
+               "a reattribution blocked by a conditional suspension is named, logged "
+               "and carried on the not-judged entry, while an ordinary loss is not "
+               "misreported as one; a rule-shaped target naming no rule is re-read as a "
+               "field, a dangling rule condition resolves unresolved and NEVER "
+               "suspends, and a suspension now actually removes the rule from that "
+               "unit's plan and only that unit's; neutralise/restore proved")
+
+
 def check_236_rule_condition_field_and_rule():
     """A rule condition points at a FIELD and at another RULE. One declaration.
 
@@ -21664,6 +21822,8 @@ CHECKS = [
      check_235_usage_derived_knowledge_is_categorised),
     ("236 a rule condition points at a field or a rule, and an unknown declaration is refused",
      check_236_rule_condition_field_and_rule),
+    ("237 the refusal is usable, a blocked reattribution is named, and a suspension suspends",
+     check_237_suspension_edges_and_visible_loss),
 ]
 
 
