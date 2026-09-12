@@ -1,5 +1,48 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## ELEVEN CLOSED, 2026-09-12
+
+TEN committed 6ddea2a. Baseline execution of the actual console JavaScript found
+36 identical reviewer/developer rows: testing_against_cluster and fires_at_all
+for all 18 agents. A part lacking a summary silently returned its technical
+condition. output/eleven_harness_baseline.json preserves that measurement.
+
+Added source-authored summaries in build_agent_harness.py and regenerated the
+harness, never hand-edited its output. Six firing policies have distinct reviewer
+sentences; test descriptions separate routing-mechanism checks from a test of an
+agent's entire rule group, which does not exist. Empty groups are explicit. While
+writing the legal agent's firing summary, corrected its stale technical sentence
+claiming one follow-up per initial finding without the existing DEEPEN_MAX_FINDINGS
+cap. No firing policy or test coverage was expanded.
+
+The reviewer renderer accepts explicit summary text after the existing declared
+subjects and role description branches. Missing summary text produces an explicit
+notice; it no longer falls back to a technical condition or method. Developer
+field selection is unchanged. Decision: describe the existing behavior at the
+source and state missing descriptions rather than pretending technical prose is
+a reviewer translation. README describes the distinction.
+
+No gate check was added or changed for this reversible text change. The focused
+proof executes the actual JavaScript summary function, HTML renderer and escaping
+function in installed host Node, over the generated 18-agent file. Fixture validity
+is established before assertions. All 36 summaries reach rendered reviewer HTML;
+developer details remain present. Five independent mutations produce observable
+output changes, FAIL, restore, PASS: remove either part's summaries separately,
+disable the reviewer branch, restore technical fallback, or route reviewer HTML
+to developer text. No source file is mutated (output/eleven_mutation_proof.py/log).
+
+shimmer:eleven passed check 195 with --network none and no mounts. Its exact UI
+and generated harness, extracted read-only, also passed the rendered-HTML proof
+in host Node. Node is an existing development tool, not a new image dependency.
+All 122 shipped files match (output/eleven_source_audit.json); image sha256:d6edb1adf2c6b8ed386b42a5cfc8ac731e5f19d2030fbfd31419e7e92bcba1c2,
+size 14408251106 bytes. Cached refresh and focused proofs took about 10 seconds and reused
+model layers. Full host gate: PASS=245 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=247,
+known failures 01/145 only (output/eleven_host_gate.log). Adversarial read confirms
+the summaries do not invent agent-wide tests or widen when an agent may run.
+Developer text is identical in 35/36 rows; the one change is the corrected legal
+follow-up cap. README/image debt is paid. Continue TWELVE after this commit.
+
+
 ## TEN CLOSED, 2026-09-12
 
 NINE committed b5eaad0. The handoff's directory-shape gap was real for CLI runs,
