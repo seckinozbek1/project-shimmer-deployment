@@ -1373,7 +1373,7 @@ trailing CR before setting the executable bit); no local model could load becaus
 corpus file the image does not ship (its corpus assertions now run where the file exists and
 are named absent otherwise, and its proof runs on a synthetic heading every tree has).
 
-**Measured inside the unbaked image rebuilt at the current HEAD**, network blocked
+**Measured inside the unbaked image rebuilt at commit `139083a`**, network blocked
 (`--network none`) and the host model cache mounted: `PASS=215 WARN=0 SKIP=7 FAIL/ERROR=6
 TOTAL=228` in about 390 s.
 
@@ -1391,7 +1391,7 @@ between a deliberate shipping decision and a broken check. Checks 220 and 225 pa
 half they cannot verify there narrowed, and each says so in its own result line rather than
 claiming a proof it did not run.
 
-The host offline gate at the current HEAD is `PASS=224 WARN=0 SKIP=2 FAIL/ERROR=2 TOTAL=228`,
+The host offline gate at that same commit is `PASS=224 WARN=0 SKIP=2 FAIL/ERROR=2 TOTAL=228`,
 and the full host gate is `PASS=226 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=228`.
 
 The figures further down are from an earlier image built at commit `9e3302f`, kept as the
