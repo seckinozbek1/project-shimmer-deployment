@@ -1782,7 +1782,8 @@ The server submission gate also joins its stubbed background worker before resto
 subprocess execution or cleaning its isolated input/run directories. This prevents
 an intermittent Windows cleanup race while retaining the real HTTP submission path.
 
-SIXTEEN rechecked the current `shimmer:fifteen` product image after all later changes:
+Historical SIXTEEN measurement, before baseline normalization of checks 01/145:
+SIXTEEN rechecked `shimmer:fifteen` after that checkpoint's changes:
 **239 PASS, 0 WARN, 8 SKIP, 4 FAIL, 251 total**, in 140.9 seconds with `--network none`,
 `--gpus all` and no mounts. Checks 139 and 193 both pass. The four failures remain
 01, 28, 31 (deliberately absent runtime/input paths) and 145 (the absent ignored
@@ -1803,7 +1804,7 @@ left by another gate check does not constitute a corpus. The deliberately
 absent runtime directories account for checks 01, 28 and 31, and the absent ignored
 contamination fixture accounts for 145. These source-only limits remain visible.
 
-Eight checks are skipped in the baked offline image: 15 and 38 require network access;
+At that historical checkpoint, eight checks were skipped in the baked offline image: 15 and 38 require network access;
 215, 217, 224, 227 and 230 require corpora deliberately not shipped; 222 needs the
 host launcher files, also intentionally absent. The image carries
 `scripts/`, `config/`, `tools/`, `corpus_ingest/`, root documentation and the three declared
@@ -2103,10 +2104,15 @@ key and corpus under `benchmark/keys/` locally. Only the scorer reads the key. N
 `scripts/`, `config/` or `tests/` may contain a planted benchmark figure: gate check 145
 (the contamination probe) scans those directories plus the harness fixtures for the key's
 figures and fails if one appears, which is what makes a recall number mean anything.
-**This repository does not ship a `tests/` directory**, so check 145 fails here with
-"tests/fixtures/planted_figure_hashes.json is missing: the contamination probe cannot run,
-so contamination cannot be ruled out" (see section L) until an operator adds that fixture;
-that failure says the probe has nothing to check, not that contamination was found.
+**This repository does not supply `tests/fixtures/planted_figure_hashes.json`.**
+Check 145 reports **SKIP** when that optional local fixture is absent and states that
+contamination cannot be ruled out. This is unavailable coverage, not a clean scan.
+A supplied fixture must be a readable JSON object with a nonempty `strong` mapping
+or list of lowercase SHA256 digests. Malformed data, a wrong file/parent type,
+missing source roots, source read/traversal errors, unsupported nested directory links,
+disappearing text entries and detected figures all **FAIL**.
+The scanner checks plain and grouped numeric spellings and reports locations without
+printing planted values. No benchmark answer key is opened to create a fixture.
 
 ---
 
@@ -3143,7 +3149,7 @@ coverage needs explicit claim-to-consumer mappings and more executable mutations
 scans cannot infer them reliably.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**253** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**255** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -3163,31 +3169,28 @@ recovery baseline at `64b83e0` is `PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244
 the known environment ones: check 01 (`prompts/` and `snapshots/` absent in this working
 tree) and check 145 (the contamination-probe fixture is gitignored and absent).
 
-**On a fresh clone of this snapshot, four checks fail, by design, before you have run
-anything.** All four fail for the same reason: this repository ships source only, and each
-of these checks proves something about a directory a tool or the pipeline creates later, not
-something this repository carries.
+**Checks 01 and 145 now distinguish unavailable local coverage from failure.**
+The old two-failure host baseline above is historical. Neither absence is a PASS:
+the gate records an explicit SKIP with the missing path and the coverage it could
+not establish. It does not create empty directories or a dummy hash file to make
+the gate appear complete.
 
-| check | fails because |
-|---|---|
-| 01, directory structure | `input/`, `output/`, `durable/`, `prompts/`, `snapshots/` and their subdirectories are not shipped; the pipeline creates `output/` and `durable/` on first run, `input/` comes from the intake wizard or `tools/stage_corpus.py`, `snapshots/` is created by `--save-snapshot NAME` and `prompts/` by nothing, so those two are made by hand (or by saving one snapshot) for this check to pass |
-| 28, `input/` exists and accepts documents | `input/` is not shipped; it is where the pipeline reads documents from, and it does not exist until you or the wizard create it |
-| 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
-| 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
+| Check | Unavailable coverage | Conditions that still FAIL |
+|---|---|---|
+| 01, directory structure | A wholly absent local `input/`, `output/`, `durable/`, `prompts/` or `snapshots/` tree is SKIP, with its provisioning reason. | `config/` and `scripts/` remain mandatory. Any present wrong type, or missing declared child under a present local tree, fails before optional absence is considered. Loose root-file warnings remain visible. |
+| 145, planted-figure contamination | Missing optional `tests/fixtures/planted_figure_hashes.json` is SKIP; contamination cannot be ruled out. | A malformed/unreadable fixture, invalid or empty digest set, wrong parent/file type, missing source root, incomplete scan or actual planted-figure hit fails. |
 
-A gate that passed every check on an empty checkout would be proving nothing about those
-four; failing loudly is correct here; there is nothing to test, not something broken. Two
-more checks depend on the machine rather than the tree: check 193 loads one of the
-local-profile models with the network blocked at the socket and fails until the weights are
-in the local Hugging Face cache (it also needs a CUDA device); checks 15 and 38 make network
-calls and are skipped, not failed, only under `--offline`. Checks 28 and 31 pass once
-`input/` and its three subdirectories exist. Check 01 additionally requires `prompts/` and
-`snapshots/`, which no run creates for you (`--save-snapshot NAME` creates `snapshots/`;
-nothing creates `prompts/`): on the operator's own machine it fails on exactly those two
-directories after every run, and that is the expected state of a checkout that has never
-saved a snapshot or held a job spec. Check 145 needs a `tests/` directory
-with planted-figure fixtures, which this snapshot does not carry and an operator adds locally
-if they want that specific check.
+Check 254 executes valid, absent and invalid synthetic layouts/fixtures against both
+real checks. It proves that optional absence cannot hide a source regression,
+malformed hash data, an unreadable subtree or a detected figure. Its fixture supplies
+its own synthetic digest, not an answer key. Complete layouts and valid clean fixture
+scans still pass; the existing loose-file WARN is retained.
+
+Checks 28 and 31 are unchanged by this normalization. They still fail in an unmounted
+image that has no `input/` tree, and pass once the intake directory and its declared
+children exist. Check 193 requires a cached local-profile model and CUDA. Checks 15
+and 38 require network access and are skipped only under `--offline`. Skipped coverage
+remains distinct from both tested success and actual failure.
 
 **The vocabulary probe (check 174) and `config/domain_vocabulary.json`.** A standing,
 deterministic check that no operator-declared domain term appears in the code surface
