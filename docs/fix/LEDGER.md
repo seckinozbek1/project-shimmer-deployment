@@ -1,5 +1,154 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## Recovery and ZERO-C, 2026-09-12
+
+Recovered main at 64b83e0, ahead of origin/main (2c88112) by 31 commits.
+Starting local-only commits, newest first: `64b83e0`, `e1fbad7`, `31744ad`, `6877744`, `c7f23ee`, `2b699ea`, `7d07e5a`, `3753314`, `45aae4d`, `9b7b25c`, `d08fc17`, `1721eb5`, `a499bfa`, `a6bd658`, `f1f09cd`, `a4d86de`, `b146d82`, `61c1f34`, `5496cff`, `44e3168`, `b17c4be`, `9b4f027`, `015e062`, `119bf60`, `ce05cbd`, `dc6a271`, `139083a`, `4afe561`, `72651b4`, `524770c`, `2bd395f`.
+
+No staged or tracked edits. Preserved the untracked handoff, durable state, and
+tools/container_offline_probe.py. ZERO-A and ZERO-B were completed in 64b83e0;
+the RESUME label "ONE: image" means ZERO-C, not the already closed learning item.
+The ledger and WORDS_TODO were older than the code and RESUME.
+
+The sandbox hid user-installed Python packages, Docker and cached models. Its
+gate returned 157 PASS, 1 WARN, 86 FAIL/ERROR out of 244. The same requested
+Python 3.9 command with host access returned 242 PASS, 0 WARN, 0 SKIP, 2 FAIL
+(01 and 145), TOTAL 244. No checks were changed to recover that baseline.
+Docker is installed per user under AppData/Local/Programs/DockerDesktop.
+
+Inherited image shimmer:baked2 (1f7c5a1c05de) was built from 64b83e0 on this day.
+Build history jz2a69nwrl13bqysol1hwthx2 completed at 14:50:14 UTC. Checked source
+hashes, including the untracked probe, matched the working tree. Thus the rebuild
+had already happened, but offline proof and documentation were unfinished.
+
+The cache-only container load fails because torch 2.5.1 cannot load bge-m3's
+pytorch_model.bin. No model.safetensors exists in the inherited image. The old
+fallback both contacts the network and calls an unsafe pickle reader directly.
+Decision: prepare the same state dict as safetensors during the image build,
+using torch 2.6.0 CPU with weights_only=True, and refuse conversion on older torch.
+Reason: the runtime needs usable weights offline, not merely a cache directory.
+The inherited six-step probe eventually PASSED, but only after network retries
+and runtime conversion. Its pass did not prove the absence of attempted network
+access or that the baked weights were directly loadable. The strengthened probe
+checks both. Docker with --gpus all reports CUDA available and one device, so
+the earlier claim that this container cannot reach a GPU is stale.
+Dependency reason: torch 2.6.0 CPU is an isolated, temporary BUILD dependency for
+safe conversion; it is removed in the same layer. Runtime requirements, model ids,
+thresholds, references, and redaction reach are unchanged.
+
+Rebuild expectation: add loadable bge-m3 safetensors and current source; the six
+offline probe steps must pass with --network none and no mounts. Checks 139 and
+193 will be executed in that environment separately from the host gate.
+
+Build-cache evidence for SEVENTEEN: the producer download ran again for 170.4 s
+on the inherited build, while the other two weight layers were cached. The
+producer cache record is now absent, though its image layer exists. buildx
+inspect reports a 20 GiB GC policy; buildx du reports 21.51 GB of remaining cache.
+Automatic GC is consistent with these facts; no log of the historical eviction
+was recovered, so the specific event is not claimed as proven.
+[Docker's GC documentation](https://docs.docker.com/build/cache/garbage-collection/)
+explains why no manual prune is needed for cache records to disappear.
+Decision: export and reuse a local BuildKit cache under ignored output/ for the
+rebuild. Reason: preserve expensive layers independently of the builder's GC
+without changing global Docker settings or uploading an image. Host free disk
+was 105 GB before the build; the additional cache footprint will be measured.
+
+Check 244's focused proof passed. Neutralising the old-reader refusal changes
+the outcome from no read/no file to a read and a file, then the check FAILS.
+Neutralising the writer changes a usable file to no file, then the check FAILS
+because the real embedding loader cannot prepare weights. Restoring each returns PASS. Both observable effects
+were measured before consulting the check, satisfying THIRTEEN-B. The real
+full-checkpoint conversion was subsequently proved by the build and probe.
+The build has now converted the real bge-m3 state dict to 2,271,064,456 bytes of
+safetensors using torch 2.6.0 CPU. The temporary installation was removed.
+
+Adversarial read found inherited image debt: checks 238 and 239 require declared
+fixtures the Dockerfile omits, while 236 skips its condition fixture. Decision:
+ship those three existing synthetic fixtures by explicit COPY. Reason: execute
+these behavioral proofs in the product image. No corpus, held-out answer key or
+operator input is added. The subsequent source rebuild includes this correction.
+The adversarial read also strengthened check 244 to exercise the real
+embedding_store conversion consumer through a cache-only snapshot lookup.
+Deleting that consumer call produces no file and makes the check FAIL; restore
+passes. The probe's vote validator and network-attempt guard were separately
+neutralised: missing scores and attempted-access-followed-by-success become
+accepted, the proofs fail, and restoring each returns PASS. The focused proof
+log is output/zero_c_focused_proof.log. No neutralisation changed a real source file.
+
+The strengthened probe passed all six steps, without mounts or attempted network
+access. Its corrected counts are three cached models and four configured decisions.
+Checks 139 and 193 PASS inside that GPU-enabled, network-none image. The old
+container limitation is closed: SIXTEEN now has measured positive evidence.
+A source rebuild importing output/shimmer_build_cache reused ALL three weight
+RUN layers and the conversion layer. The local cache occupies 14,411,270,809 bytes.
+This solves the repeated-download cost without claiming a recovered GC event.
+
+The first complete image gate returned 232 PASS, 8 SKIP and 5 failures of 245.
+Four are deliberate source-only absences (01, 28, 31 and 145). The fifth, check
+239, was a CHECK defect: after its severity proof it demanded unshipped corpora
+and aborted before its other synthetic proofs. It now names that unavailable
+corpus coverage and finishes the synthetic proofs; a nonempty but incomplete
+corpus set still fails fixture validation. Its old source-text-only mutation
+was also replaced with execution: disabling advisory withholding creates an
+amendment and removes the refusal record. No product semantics changed.
+The compiled convention registry was reviewed against durable_paths.py: it is
+RULE-derived authority and explicitly ships as-is. It remains untouched.
+Runtime directories remain mount-supplied, as the shipping contract declares.
+
+A second adversarial image read found a deeper SIXTEEN defect: the old check 193
+passed while Transformers 4.52.3 retried custom_generate/generate.py by repo id.
+The library catches that failure and still loads, so successful blocked loading
+was not proof of zero attempted access. Installed source and the versioned
+[upstream implementation](https://github.com/huggingface/transformers/blob/v4.52.3/src/transformers/generation/utils.py)
+show the file_exists request bypasses the local_files_only keyword. Decision:
+resolve snapshot_download(local_files_only=True) once and pass the resulting
+local directory to all tokenizer/config/model loads. Keep the configured id for
+cache keys and logs. Reason: preserve the existing cached-model contract without
+changing packages, models or process-global offline flags. Check 193 now counts
+HTTP Session.send, connect, connect_ex and DNS attempts, including caught errors.
+The first full-suite mutation produced no socket event despite a repo-id load.
+Socket-only guards miss HTTP requests using an existing pooled connection; adding
+the HTTP boundary makes that attempted request observable independently of pool
+state. The check refused the no-op proof rather than accepting it as evidence. Its neutralisation
+removes actual snapshot resolution, replacing the old forced tokenizer exception.
+Check 139's two weightless model doubles stub snapshot resolution explicitly.
+Resolving a Hub cache to a local path must also not grant implicit permission to
+custom generation code. The helper refuses a snapshot carrying that override;
+the configured checkpoints contain none. A declared, parsed Python fixture
+proves refusal, and removing the guard returns the path and makes check 193 FAIL.
+The real upstream custom-generation lookup independently proves the core effect:
+a local directory has zero attempts, the repository id attempts access. The real
+model check then passed, its resolver was neutralised and FAILED, and restoration
+PASSED with zero attempts. Check 139's quantisation branch was likewise removed,
+changed actual loader kwargs, FAILED and restored PASS. Logs are
+output/zero_c_loader_proof.log and output/zero_c_custom_code_proof.log.
+The image gate also exposed that earlier checks create an empty corpora parent.
+Check 239 now tests actual corpus files, not that incidental directory: any
+nonempty incomplete set fails, zero files reports absent coverage explicitly.
+
+ZERO-C CLOSED by the commit containing this entry, subject
+`ZERO-C: bake safely loadable weights and prove offline decisions`.
+Final host gate: PASS=243 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=245. Only 01 and 145
+remain, matching the recovered environment. Final container: PASS=233 WARN=0
+SKIP=8 FAIL/ERROR=4 TOTAL=245, in 138.2 seconds with the six-step probe included, then 122.8 seconds on the final refresh.
+Only 01, 28, 31 and 145 fail for the documented source-only absences; all eight
+skips name network or unshipped-file coverage. Checks 139, 193, 239 and 244 PASS.
+The real check 193 mutation produces one attempted HTTP access, and restoration
+loads with zero attempts. The final probe also makes zero attempted accesses.
+Full logs: output/zero_c_resolved_host_gate.log and
+output/zero_c_resolved_container_validation.log. The tested image digest is
+31ea6534411f4827e4a8035467787ae4eb2bdb605c0400627fbce8f4610d61b4.
+All 121 copied files matched the tree by SHA256 after normalizing line endings.
+The final README records these totals. Its refresh also recopied source whose
+line endings the host gate normalized, so the final image was verified directly
+again: the same 233/245 image result and all six probe steps PASS. The final
+image is sha256:3593728d036a31f9fb9d76ebcca54d1126cb2aa18f762da70626f10bb1dee910. All 121 final files match the tree;
+per-file hashes are recorded in output/zero_c_source_audit.json. Final image log:
+output/zero_c_release_container_validation.log. Adversarial read is
+complete. Next is FOUR; no other backlog implementation was opened.
+
+No pipeline, provider model call, paid operation, reset, or push was performed.
+
 Opened 2026-09-12. Kept because the operator moved the README pass and the image
 rebuild to the end of a working run rather than before every commit (see README
 section L, the discipline boundary at `9b4f027`). This is the record of what those

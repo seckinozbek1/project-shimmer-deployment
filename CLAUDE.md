@@ -339,12 +339,19 @@ processing swarm governed by an append-only constitution.
   named, passes everything else through, and samples RAM/VRAM to a JSON file rewritten after
   every sample so the peaks survive a kill.
 - `Dockerfile` / `compose.yaml` / `tools/entrypoint.sh`: the container. The image copies
-  source only (`scripts/`, `config/`, `tools/`, `corpus_ingest/`, the three root markdown
-  files, `requirements.txt`); the entry point takes `serve`, `run` (through
+  source (`scripts/`, `config/`, `tools/`, `corpus_ingest/`, the three root markdown
+  files, `requirements.txt`) and the three declared synthetic `benchmark/fixtures/`
+  files used by the condition, severity and external-rule checks; the entry point takes `serve`, `run` (through
   `tools/run_local_demo.py`, never naming the pipeline file) or `verify` (the gate with
   `--offline`), `verify` by default. The weight layers (`--build-arg BAKE_WEIGHTS=true`) sit
-  BEFORE the source layers so a source-only rebuild never re-downloads them; keep that
-  order. `.gitattributes` pins shell scripts to LF; the Dockerfile strips a trailing CR
+  BEFORE the source layers so a source rebuild reuses retained weight cache; keep
+  that order. A local cache export under output/ protects against builder GC.
+  The baked build prepares bge-m3 safetensors with a temporary patched CPU
+  torch reader; runtime pins stay unchanged and old torch refuses pickle conversion.
+  The offline probe requires five votes and fails on attempted network access.
+  The local generation loader resolves a cache-only snapshot before loading, so
+  nested custom-generation lookups stay local too; unapproved overrides refuse.
+  `.gitattributes` pins shell scripts to LF; the Dockerfile strips a trailing CR
   regardless. A container gate loads models on the GPU: never overlap it with the host gate
   or a run.
 - `scripts/pipeline.py`: the pipeline driver (the flags above).

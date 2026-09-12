@@ -123,6 +123,25 @@ def _checkpoint_is_prequantised(transformers, model_id) -> bool:
     return getattr(cfg, "quantization_config", None) is not None
 
 
+def _local_checkpoint_path(model_id):
+    """Resolve a local model once, without a Hub metadata request.
+
+    Transformers 4.52.3 probes custom generation code by repo id even when
+    from_pretrained carries local_files_only=True. A snapshot path keeps that
+    nested lookup local as well. The configured id remains the cache/log key.
+    """
+    if Path(model_id).is_dir():
+        snapshot = Path(model_id).resolve()
+    else:
+        from huggingface_hub import snapshot_download
+        snapshot = Path(snapshot_download(model_id, local_files_only=True))
+    # A Hub cache becoming a local path must not implicitly authorize code
+    # overriding generate(). The configured checkpoints use standard generation.
+    if (snapshot / "custom_generate" / "generate.py").is_file():
+        raise RuntimeError("custom generation code is not authorized by the local loader")
+    return str(snapshot)
+
+
 def _load_qwen(model_id):
     """Return the shared resident (tokenizer, model) for `model_id`, loading it at
     most once. Double-checked locking: the fast path returns the cached instance
@@ -154,8 +173,9 @@ def _load_qwen(model_id):
     with _QWEN_LOAD_LOCK:
         cached = _QWEN_MODELS.get(model_id)        # re-check under the lock
         if cached is None:
+            checkpoint_path = _local_checkpoint_path(model_id)
             _evict_generation_models(keep_model_id=model_id)
-            tok = transformers.AutoTokenizer.from_pretrained(model_id, local_files_only=True)
+            tok = transformers.AutoTokenizer.from_pretrained(checkpoint_path, local_files_only=True)
             # BP-6 (GPU placement): PIN the 4-bit model fully onto GPU 0. The old
             # device_map="auto" let accelerate offload layers to CPU under VRAM
             # pressure, which ran generation at CPU speed (~1 tok/s). 4-bit NF4 with
@@ -164,14 +184,14 @@ def _load_qwen(model_id):
             # No CUDA -> plain CPU load (functional, slow, never a silent failure).
             prequantised = False
             if torch.cuda.is_available():
-                prequantised = _checkpoint_is_prequantised(transformers, model_id)
+                prequantised = _checkpoint_is_prequantised(transformers, checkpoint_path)
                 if prequantised:
                     # Weights are ALREADY 4-bit on disk: no fp16 host staging, and no
                     # BitsAndBytesConfig may be passed (it would be silently discarded,
                     # see _checkpoint_is_prequantised). device_map pins it to GPU 0 as
                     # before; compute dtype comes from the checkpoint's own config.
                     mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                        model_id, device_map={"": 0}, local_files_only=True)
+                        checkpoint_path, device_map={"": 0}, local_files_only=True)
                 else:
                     # Quantise on the fly (the original path, unchanged except for
                     # double quant): reads the full fp16 checkpoint through host RAM.
@@ -183,14 +203,14 @@ def _load_qwen(model_id):
                         bnb_4bit_compute_dtype=torch.float16,
                         bnb_4bit_use_double_quant=True)
                     mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                        model_id, quantization_config=bnb, device_map={"": 0},
+                        checkpoint_path, quantization_config=bnb, device_map={"": 0},
                         local_files_only=True)
             else:
                 # No CUDA: unchanged fallback, except torch_dtype. Without it the model
                 # materialises at the fp32 default (a 7B is ~30 GB), which cannot
                 # complete on a 16 GB machine and dies after committing all of it.
                 mdl = transformers.AutoModelForCausalLM.from_pretrained(
-                    model_id, torch_dtype=torch.float16, local_files_only=True)
+                    checkpoint_path, torch_dtype=torch.float16, local_files_only=True)
             # Log the ACTUAL device every run, so a CPU fallback is never silent.
             try:
                 dev = next(mdl.parameters()).device

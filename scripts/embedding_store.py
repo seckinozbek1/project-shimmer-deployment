@@ -103,20 +103,23 @@ def _ensure_safetensors(name):
     ONCE, and return the local snapshot dir (or None on failure).
 
     Why: torch < 2.6 + transformers refuse to load pickle (.bin) weights via
-    torch.load (CVE-2025-32434), and some models (e.g. BAAI/bge-m3) publish ONLY
-    .bin. Converting to safetensors uses the allowed, safe loading path. Idempotent:
+    torch.load (CVE-2025-32434). Conversion itself requires torch >= 2.6 and
+    weights_only=True; an older runtime needs weights prepared at build time.
+    Idempotent:
     if safetensors already exist (here or upstream), just return the dir. After this
     runs once, even the normal SentenceTransformer(name) load finds the safetensors.
     Writes into the HF cache snapshot, never the repo. Degrades to None on any error
     (the caller then reports the model unavailable and the pipeline uses Zipfian)."""
     try:
         from huggingface_hub import snapshot_download
-        from safetensors.torch import save_file
-        import torch
+        from model_weights import ensure_safetensors
     except Exception:
         return None
     try:
-        snap = Path(snapshot_download(name))
+        try:
+            snap = Path(snapshot_download(name, local_files_only=True))
+        except Exception:
+            snap = Path(snapshot_download(name))
     except Exception:
         return None
     if (snap / "model.safetensors").exists() or (snap / "model.safetensors.index.json").exists():
@@ -125,13 +128,9 @@ def _ensure_safetensors(name):
     if not bin_path.exists():
         return None
     try:
-        sd = torch.load(str(bin_path), map_location="cpu", weights_only=False)
-        if isinstance(sd, dict) and "state_dict" in sd:
-            sd = sd["state_dict"]
-        sd = {k: v.contiguous() for k, v in sd.items() if hasattr(v, "contiguous")}
-        save_file(sd, str(snap / "model.safetensors"), metadata={"format": "pt"})
-        print(f"[embedding_store] materialized safetensors for {name!r} (torch<2.6 .bin "
-              f"workaround)", file=sys.stderr, flush=True)
+        ensure_safetensors(snap)
+        print(f"[embedding_store] materialized safetensors for {name!r}",
+              file=sys.stderr, flush=True)
         return str(snap)
     except Exception as e:
         print(f"[embedding_store] safetensors conversion failed for {name!r} "
