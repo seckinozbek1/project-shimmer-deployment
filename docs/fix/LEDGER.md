@@ -1,5 +1,45 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## FIVE CLOSED, 2026-09-12
+
+FOUR closed in f928fa92eb8263fcc0ced334059a777e72bcd58c.
+Read-only replay disproves the claimed three wrapper-only failures in the second
+saved run. With the configured cached producer tokenizer, LEGAL_ANALYST has
+6552 characters / 2048 tokens and no balanced JSON; PROCESSOR has 7420 / 2048,
+19 complete inner candidates and an unfinished envelope; SPEECH_ACT_TAGGER has
+5092 / 2048, 34 complete inner candidates and an unfinished envelope. None is a
+complete valid payload. output/five_saved_reply_audit.json records parser results.
+The first measurement selected an uncached model id and correctly refused a
+cache-only lookup; the accepted measurement reads active_producer from config.
+
+The current parser already recovers complete envelopes from prose and fences.
+Decision: retain it and its payload contract; strengthen check 148 through real
+run_task with mocked dispatch. This avoids presenting invented closing syntax or
+an incomplete extraction as the model's complete work. The check now proves
+fences, prose plus fences, inline code, field retention, and rejection of nested
+items, missing core fields, bare lists, cut envelopes and absent JSON. Fixture
+validity is established before behavioral assertions. No generation or pipeline
+invocation, no new dependency, and no claim to have solved future model adherence.
+README now corrects the stale packaging claim. The adversarial read checked
+complete versus cut envelopes and that the proof does not fabricate a wrapper.
+Three mutations independently changed actual run_task outcomes: removing recovery
+rejects a valid reply, removing only flatness rejection admits a nested item,
+and taking the first empty candidate loses later content. Each then makes check
+148 FAIL, with restoration PASS (output/five_mutation_proof.log). An initial
+all-validation bypass also broke the parser's list assumptions; the accepted
+mutation isolates the flatness branch instead of counting that exception.
+The image refresh ships only the changed README and check, with unchanged runtime
+and model layers. shimmer:five is
+sha256:8bd5fe355d5c8f48a5e56907141c7627c25bbdab0b8b139ec2d65f72c0c64b84,
+14,408,235,510 bytes. All 121 shipped files match the tree after CRLF normalization
+(output/five_source_audit.json). Check 148 PASS in that image with --network none
+and no mounts (output/five_container_check.log). An initial shell-quoted status
+assertion lost its Python string quotes after printing PASS; stdin-based execution
+confirmed exit 0. No GPU workload or full model probe was repeated for this
+check/documentation-only change; FOUR's full image validation remains the runtime
+baseline. Full host gate: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246,
+unchanged known failures 01 and 145 (output/five_host_gate.log). No new failure.
+
 ## FOUR CLOSED, 2026-09-12
 
 ZERO-C closed in 963cae2. FOUR traced the PROCESSOR -> phase-5 audit dependency;

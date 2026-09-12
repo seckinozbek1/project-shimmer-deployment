@@ -317,6 +317,18 @@ a model's entire prompt is independent of PROCESSOR.
 The FOUR host gate is 244 PASS and the two known environment failures out of
 246 checks. The local checkpoint image for this change is `shimmer:four`.
 
+**Reply packaging and payload validity are separate.** The existing parser accepts
+a complete canonical envelope inside prose, a Markdown code fence or inline code.
+It prefers a populated valid envelope over an earlier empty one. Check 148 now
+executes all those forms through `run_task` with mocked dispatch and verifies
+that supplied item fields survive. Nested items, missing core fields, bare lists,
+cut envelopes and replies with no JSON remain contract violations. No parser or
+payload contract was loosened for FIVE. Replaying the three saved clean-run
+violations found two unfinished envelopes and one reply with no JSON, all at
+2048 tokens, rather than three valid payloads lost to packaging. This closes the
+packaging claim; it does not establish that future model replies finish or obey
+the contract. FOUR separately supplies measured room for local PROCESSOR output.
+
 **A cut is now recorded as a cut, never silently parsed as a whole answer.** `call_local` and
 `call_qwen` compare the generated length against the cap they were given (the model's own
 end-of-sequence token always yields fewer tokens than the cap; reaching the cap always yields

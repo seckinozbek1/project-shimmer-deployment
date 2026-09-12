@@ -8216,11 +8216,34 @@ def check_148_recovery_prefers_a_populated_envelope():
     empty = _json.dumps({"agent": agent, "doc_id": "d", "items": []})
     full = _json.dumps({"agent": agent, "doc_id": "d", "items": [item]})
 
+    # FIVE: packaging is recoverable only around a complete, valid payload.
+    # Establish the fixture before asserting what recovery does with it.
+    declared = _json.loads(full)
+    _require_fixture(declared["agent"] == agent and declared["doc_id"] == "d"
+                     and declared["items"] == [item]
+                     and all(k in item for k in ("ref", "kind", "confidence"))
+                     and all(k in item for k in con[agent].get("required", [])),
+                     "packaging fixture must be a complete one-item envelope")
+    invalid_nested = {**declared, "items": [{**item, "nested": {"value": "x"}}]}
+    invalid_required = {**declared, "items": [{k: v for k, v in item.items()
+                                               if k != "confidence"}]}
+    _require_fixture(isinstance(invalid_nested["items"][0]["nested"], dict)
+                     and "confidence" not in invalid_required["items"][0],
+                     "negative payloads must actually violate flatness or a core field")
+
     cases = {
         "empty_then_full": "Here is my hold:\n" + empty + "\nOn reflection:\n" + full,
         "full_then_empty": "First:\n" + full + "\nAnd a hold:\n" + empty,
         "empty_only": "Nothing to report.\n" + empty,
         "two_empties_then_full": empty + "\n" + empty + "\n" + full,
+        "fenced": "```json\n" + full + "\n```",
+        "prose_fenced": "Result follows:\n```json\n" + full + "\n```\nEnd of result.",
+        "inline_code": "Result: `" + full + "`.",
+        "invalid_nested": "Result:\n" + _json.dumps(invalid_nested),
+        "invalid_required": "Result:\n" + _json.dumps(invalid_required),
+        "invalid_bare_list": "Result:\n" + _json.dumps([item]),
+        "invalid_cut": "```json\n" + full[:-2],
+        "invalid_no_json": "No structured payload was produced.",
     }
     got = {}
     with _tempfile.TemporaryDirectory(prefix="shimmer_gate_h2a_") as tmp:
@@ -8255,10 +8278,22 @@ def check_148_recovery_prefers_a_populated_envelope():
                      "become a violation")
     if hold.get("item_count") != 0:
         return _fail(f"empty-only hold reported {hold.get('item_count')} items")
-    return _ok("real run_task path (dispatch stubbed) x4: a populated envelope wins over "
+    for label in ("fenced", "prose_fenced", "inline_code"):
+        result = got[label]
+        items = (result.get("parsed") or {}).get("items", [])
+        if (not result.get("ok") or len(items) != 1
+                or any(items[0].get(k) != v for k, v in item.items())):
+            return _fail(f"{label} packaging lost a valid payload through run_task")
+    for label in ("invalid_nested", "invalid_required", "invalid_bare_list",
+                  "invalid_cut", "invalid_no_json"):
+        if got[label].get("ok"):
+            return _fail(f"recovery accepted {label}: packaging must not loosen the payload contract")
+    return _ok("real run_task path (dispatch stubbed): a populated envelope wins over "
                "a valid-but-empty one whether the hold comes first, last, or twice; an "
                "empty envelope alone is still a clean hold with item_count=0; parse_trace "
-               "records the chosen candidate and how many holds were passed over")
+               "records the chosen candidate and how many holds were passed over; code "
+               "fences, surrounding prose and inline code retain every supplied item field; "
+               "nested items, missing core fields, bare lists, cuts and absent JSON are rejected")
 
 
 def check_149_field_forms_declared_in_the_contract_reach_prompt_and_validator():
