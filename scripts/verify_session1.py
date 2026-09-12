@@ -18995,6 +18995,179 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_236_rule_condition_field_and_rule():
+    """A rule condition points at a FIELD and at another RULE. One declaration.
+
+    `[unless: <target>]` declares a conditional suspension: when the target
+    holds, the rule does not fire. One syntax, because a second syntax for a
+    second kind of target is a second thing to learn and to get wrong, and the
+    parser decides the kind from what is written. A target matching the
+    convention id shape is a RULE condition; anything else is a FIELD condition.
+
+    CONV-D01 is the working field case, in the operator's own words: a reading
+    must fall in its band "UNLESS a locally adjusted range ... has been stated
+    in the entry", which survived only as a substring nothing parsed.
+
+    Three things travel with it, all pinned here:
+
+    1. AN UNRECOGNISED DECLARATION IS REFUSED. `[overrides: CONV-D02]` used to
+       become the subject tag "overrides: conv-d02" silently. An instruction the
+       parser cannot honour now raises rather than being reinterpreted.
+    2. REATTRIBUTION EXCLUDES A QUALIFIED RULE. _reattribute_computed_plan rests
+       on the premise that the comparison is the same whichever rule prompted
+       it. That holds for arithmetic and stops holding when a rule can be
+       suspended: swapping a computed plan onto a rule carrying `unless` would
+       import a suspension the original rule never had. Such a rule is excluded
+       as a target, so a plan can still find an ordinary rule.
+    3. THE PAYLOAD CARRIES BOTH RULES. A model asked about an exception in
+       isolation from the rule it qualifies gives the wrong answer however well
+       it reads, so `qualified_by` carries the qualifying rule's own text.
+
+    THE ONTOLOGY EDGE IS BUILT, not skipped again. The skip recorded earlier had
+    a stated trigger (a genuine rule-to-rule relation) and that relation now
+    exists, so Convention -> Convention QUALIFIED_BY is drawn. It is the first
+    edge in this graph between two rules.
+
+    No corpus holds a rule-to-rule condition, so that half is proved against a
+    DECLARED fixture (benchmark/fixtures/rule_condition_fixture.md) rather than
+    a rule quietly added to a measurement corpus.
+
+    NEUTRALISE AND RESTORE on the refusal.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import convention_parser as _cp
+        import ontology_graph as _og
+        import pipeline as _pl
+        import paired_review as _pr
+        import inspect as _inspect
+    except Exception as exc:
+        return _fail("cannot import the item TWO modules: %s" % exc)
+
+    if not hasattr(_cp, "ConventionDeclarationError"):
+        return _fail("convention_parser.ConventionDeclarationError is missing")
+
+    # Both kinds, decided from the target's own shape.
+    _s, _r, unless = _cp._heading_bracket_declarations(
+        "## CONV-D01 , conv-x [required] [unless: locally adjusted range]")
+    if unless != [{"kind": "field", "target": "locally adjusted range"}]:
+        return _fail("a field condition was not read as a field: %r" % (unless,))
+    _s, _r, unless = _cp._heading_bracket_declarations(
+        "## CONV-D09 , conv-y [required] [unless: conv-d01]")
+    if unless != [{"kind": "rule", "target": "conv-d01"}]:
+        return _fail("a rule condition was not read as a rule: %r" % (unless,))
+    _s, _r, unless = _cp._heading_bracket_declarations(
+        "## CONV-D09 , conv-y [unless: conv-d01, locally adjusted range]")
+    if [u["kind"] for u in unless] != ["rule", "field"]:
+        return _fail("one declaration carrying both kinds was misread: %r" % (unless,))
+
+    # An unrecognised declaration is REFUSED, not absorbed.
+    try:
+        _cp._heading_bracket_tags("## CONV-X , conv-z [required] [overrides: CONV-D02]")
+        return _fail("an unrecognised declaration was absorbed instead of refused; "
+                     "it would have become the subject tag 'overrides: conv-d02'")
+    except _cp.ConventionDeclarationError:
+        pass
+    # A plain subject tag (no colon) is still a subject, not a refusal.
+    sev, subs = _cp._heading_bracket_tags("## CONV-X , conv-z [required] [conformance]")
+    if sev != "required" or subs != ["conformance"]:
+        return _fail("an ordinary subject tag stopped working: %r %r" % (sev, subs))
+
+    # Every shipped corpus still parses: the refusal must not break real files.
+    corpora = ROOT / "benchmark" / "corpora"
+    if corpora.is_dir():
+        for conv in sorted(corpora.rglob("*conventions*.md")):
+            try:
+                _cp._parse_text_lines(conv.read_text(encoding="utf-8"), conv.name, [1])
+            except _cp.ConventionDeclarationError as exc:
+                return _fail("the refusal broke a shipped corpus (%s): %s"
+                             % (conv.name, exc))
+
+    # The declared fixture carries both kinds.
+    fixture = ROOT / "benchmark" / "fixtures" / "rule_condition_fixture.md"
+    if fixture.is_file():
+        rules = _cp._parse_text_lines(fixture.read_text(encoding="utf-8"),
+                                      fixture.name, [1])
+        kinds = {c["kind"] for r in rules for c in (r.unless or [])}
+        if kinds != {"rule", "field"}:
+            return _fail("the declared fixture does not carry both condition kinds: %r"
+                         % (kinds,))
+    else:
+        return _skip("the rule-condition fixture is not in this tree")
+
+    # Reattribution refuses a qualified rule as a target.
+    rsrc = _inspect.getsource(_pl._reattribute_computed_plan)
+    if 'r.get("unless")' not in rsrc:
+        return _fail("_reattribute_computed_plan still treats a rule carrying a "
+                     "conditional suspension as interchangeable; an exception and "
+                     "its parent are not swappable")
+
+    # The payload carries the qualifying rule's text.
+    psrc = _inspect.getsource(_pr.build_pair_payload)
+    if "qualified_by" not in psrc:
+        return _fail("the pair payload does not carry the qualifying rule, so a model "
+                     "would be asked about an exception in isolation")
+    if "qualifying_rules" not in _inspect.signature(_pr.build_pair_payload).parameters:
+        return _fail("build_pair_payload does not accept qualifying_rules")
+
+    # The ontology edge exists and an unresolvable target draws nothing.
+    import tempfile as _tf
+    with _tf.TemporaryDirectory(prefix="shimmer_qual_") as tmp:
+        d = Path(tmp)
+        conv = d / "c.json"
+        conv.write_text(json.dumps({"conventions": [
+            {"id": "CONV-001", "category": "conv-f01", "rule": "band"},
+            {"id": "CONV-009", "category": "conv-f02", "rule": "exempt",
+             "unless": [{"kind": "rule", "target": "conv-f01"}]},
+            {"id": "CONV-010", "category": "conv-f03", "rule": "dangling",
+             "unless": [{"kind": "rule", "target": "conv-nothing"}]},
+        ]}), encoding="utf-8")
+        empty = d / "e.json"
+        empty.write_text("{}", encoding="utf-8")
+        prov = d / "p.jsonl"
+        prov.write_text("", encoding="utf-8")
+        graph = _og.build_graph(sources={
+            "provisions": prov, "document_dates": empty, "conventions": conv,
+            "citation_forms": empty, "speech_acts": empty,
+            "operator_decisions": empty}, out_path=d / "g.json")
+        qual = [(e["source"], e["target"]) for e in graph["edges"]
+                if e["type"] == "QUALIFIED_BY"]
+        if qual != [("CONV-009", "CONV-001")]:
+            return _fail("the rule-to-rule edge is wrong: %r" % (qual,))
+
+    # NEUTRALISE: stop refusing an unknown declaration.
+    cp_path = ROOT / "scripts" / "convention_parser.py"
+    original = cp_path.read_text(encoding="utf-8")
+    neutralised = original.replace(
+        "        shaped = _DECLARATION_SHAPED.match(token)\n",
+        "        shaped = None\n", 1)
+    if neutralised == original:
+        return _fail("could not neutralise: the refusal was not found")
+    try:
+        cp_path.write_text(neutralised, encoding="utf-8")
+        gone = "shaped = _DECLARATION_SHAPED.match(token)" not in cp_path.read_text(
+            encoding="utf-8")
+    finally:
+        cp_path.write_text(original, encoding="utf-8")
+    if not gone:
+        return _fail("neutralise did not take effect on the real file")
+    if "shaped = _DECLARATION_SHAPED.match(token)" not in cp_path.read_text(
+            encoding="utf-8"):
+        return _fail("restore failed: the refusal is gone")
+
+    return _ok("one [unless: ...] declaration carries both target kinds, decided from "
+               "the target's own shape; an unrecognised declaration is refused rather "
+               "than absorbed as a subject tag while an ordinary tag still works and "
+               "every shipped corpus still parses; reattribution excludes a rule "
+               "carrying a suspension, since an exception and its parent are not "
+               "interchangeable; the payload carries the qualifying rule's text; the "
+               "Convention to Convention QUALIFIED_BY edge is built and an unresolvable "
+               "target draws none; the rule-to-rule half is proved on a declared "
+               "fixture because no corpus holds one; neutralise/restore proved")
+
+
 def check_235_usage_derived_knowledge_is_categorised():
     """Three kinds of knowledge, separated, and only one of them ships empty.
 
@@ -21489,6 +21662,8 @@ CHECKS = [
      check_234_operator_decision_carries_its_subject),
     ("235 usage-derived knowledge is declared, reset, and ships empty",
      check_235_usage_derived_knowledge_is_categorised),
+    ("236 a rule condition points at a field or a rule, and an unknown declaration is refused",
+     check_236_rule_condition_field_and_rule),
 ]
 
 

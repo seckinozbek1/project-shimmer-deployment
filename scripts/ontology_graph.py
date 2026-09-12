@@ -154,6 +154,7 @@ def build_graph(sources=None, out_path=None, *, sensitive=False,
                  date_confidence=d.get("date_confidence"), title=d.get("title"), stub=False)
 
     # Convention nodes (id = CONV-*)
+    conventions_raw = []
     for c in (_load_json(src["conventions"], {}).get("conventions") or []):
         cid = c.get("id")
         if not cid:
@@ -162,6 +163,7 @@ def build_graph(sources=None, out_path=None, *, sensitive=False,
                  rule=mask_field(c.get("rule"), "CONVENTION_RULE", sensitive=sensitive),  # Q5 (P4)
                  source_file=c.get("source_file"), source_location=c.get("source_location"),
                  severity=c.get("severity"), action=c.get("action"))
+        conventions_raw.append(c)
 
     # CitationForm nodes (id = name) + compiled CITES patterns
     citation_patterns = []
@@ -247,6 +249,34 @@ def build_graph(sources=None, out_path=None, *, sensitive=False,
         if did and has("Document", did):
             edges.append({"type": "HAS_PROVISION", "source_type": "Document", "source": did,
                           "target_type": "Provision", "target": n["id"]})
+
+    # QUALIFIED_BY: Convention -> Convention, the first edge in this graph
+    # between two rules. Drawn from an [unless: CONV-X] declaration, which is a
+    # rule saying it is suspended when another rule holds. The skip recorded
+    # when this edge was first considered had a stated trigger, a genuine
+    # rule-to-rule relation, and that relation now exists, so the edge is built
+    # rather than skipped again. The target is matched on the registry id and on
+    # the operator own id (category), since the operator writes their own id in
+    # the declaration; an unresolvable target draws no edge and is counted, so a
+    # dangling reference is visible rather than silent.
+    unresolved_unless = 0
+    for c in conventions_raw:
+        for cond in (c.get("unless") or []):
+            if cond.get("kind") != "rule":
+                continue
+            want = str(cond.get("target") or "").strip().lower()
+            target_id = None
+            for cand in conventions_raw:
+                if want and want in (str(cand.get("id") or "").lower(),
+                                     str(cand.get("category") or "").lower()):
+                    target_id = cand.get("id")
+                    break
+            if target_id and has("Convention", target_id):
+                edges.append({"type": "QUALIFIED_BY", "source_type": "Convention",
+                              "source": c.get("id"), "target_type": "Convention",
+                              "target": target_id})
+            else:
+                unresolved_unless += 1
 
     # DECIDED_ON: an operator's verdict, pointed at what it was about. The first
     # edge type in this graph whose source is not a Provision, and the first that

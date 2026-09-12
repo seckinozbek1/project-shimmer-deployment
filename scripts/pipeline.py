@@ -1871,6 +1871,16 @@ def _reattribute_computed_plan(plan, pairing, rules_by_id, convention_assignment
     candidates = [rules_by_id.get(p.get("rule_id")) for p in (entry or {}).get("paired", [])]
     candidates = [r for r in candidates if r and r.get("id") != plan["rule"].get("id")
                   and _paired_judging_agent(r, convention_assignment) is not None]
+    # A rule carrying a CONDITIONAL SUSPENSION is not interchangeable with one
+    # that does not. This function's premise, that the comparison is the same
+    # whichever rule prompted it, holds for the arithmetic and stops holding the
+    # moment a rule can be suspended: swapping a computed plan onto a rule with
+    # an `unless` would silently import that rule's suspension, so the same
+    # figures would be judged under a condition the original rule never carried.
+    # An exception and its parent are not swappable. Such a rule is excluded as
+    # a TARGET rather than the swap being blocked outright, so a plan can still
+    # find an ordinary rule and is only left unjudged when none exists.
+    candidates = [r for r in candidates if not (r.get("unless") or [])]
     if not candidates:
         return None
     field = str((plan.get("checks") or [{}])[0].get("stated_field") or "").lower()
@@ -2108,10 +2118,26 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         # given here because a paired call is exactly the narrow question this
         # design was built to answer without reopening wide mode's whole-
         # document framing.
+        # A rule this one declares itself suspended by travels WITH it. The
+        # target is matched against the registry id and the operator's own id
+        # (category), because the operator writes their own id in the
+        # declaration. A target naming no rule this registry holds is left out
+        # rather than guessed at; the pairing map records the declaration either
+        # way, so a dangling reference is visible rather than silent.
+        qualifying = []
+        for cond in (rule.get("unless") or []):
+            if cond.get("kind") != "rule":
+                continue
+            want = str(cond.get("target") or "").strip().lower()
+            for cand in rules:
+                if want and want in (str(cand.get("id") or "").lower(),
+                                     str(cand.get("category") or "").lower()):
+                    if cand not in qualifying:
+                        qualifying.append(cand)
         payload = paired_review_mod.build_pair_payload(
             unit=unit, rule=rule, checks=checks, refs=refs,
             source_rule_id=source_rule_id, unit_texts=unit_text,
-            document_units=pairing.get("units"))
+            document_units=pairing.get("units"), qualifying_rules=qualifying)
         if plan.get("kind") == "absence_judged":
             # D, option 2, the model only where Python cannot settle it: the rule
             # declares its scope and this unit is in it, but the requirement is
