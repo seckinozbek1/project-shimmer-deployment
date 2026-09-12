@@ -2618,7 +2618,7 @@ Stated honestly, from operator testing:
 
 ### A change of working discipline, and where it starts
 
-**From commit `1bd0dc1` onward the README is checked once at the end of a working run, not
+**From commit `9b4f027` onward the README is checked once at the end of a working run, not
 before every commit.** Before that commit, every single commit was preceded by a full README
 pass. The operator made this change on 2026-09-12 to cut repetition rather than rigour, and it
 is recorded here so a reader can tell that a commit from last week and a commit from today
@@ -2630,7 +2630,7 @@ what it contains. Those two have earned their place. Between 10 and 12 September
 caught six wrongly-passing checks and ten real defects, including two checks of mine that
 passed against a mock while the real code was broken.
 
-A reader auditing a commit from before `1bd0dc1` can assume its README was current at that
+A reader auditing a commit from before `9b4f027` can assume its README was current at that
 commit. A reader auditing one after it should look to the end of that working run for the
 README pass that covers it.
 
