@@ -1509,8 +1509,9 @@ graph narrows, a model decides, the reasoning stays in text, and the score is sh
 than hidden.
 
 **What the ranking rests on, said here as plainly as in the code and the console: graph
-structure alone.** Node type, degree, edges. With no Tier-2 signal the engine has learned
-nothing, so `ranked_on`, `learned_relevance: false` and `tier2_signal: empty` travel in the
+structure alone.** Node type, degree, edges. The current objective fits its own safe
+features and has no demonstrated relevance signal, so `ranked_on`,
+`learned_relevance: false` and `tier2_signal: empty` travel in the
 response beside every candidate and in the state summary, and no consumer can render a
 candidate set without them. A candidate set ranked on structure is a real thing and a modest
 one; it is never learned relevance. Gate check 213 proves the finder, both routes and the
@@ -1559,11 +1560,28 @@ persisted encoder and decoder weights when the feature dimensions match, keeps a
 mark of the node ids it has already trained on, backpropagates only over nodes new since
 that mark, and persists the updated mark; the feature width is constant across runs by
 construction (deterministic feature hashing into fixed buckets), which is exactly what makes
-a persisted weight matrix stay valid. Weights accumulate. What is absent is the **Tier-2
-signal** (recurrence of proposals and findings across runs, verification verdicts,
-precedent), which stays empty until runs populate it. So the engine learns nothing because
-there is nothing yet to learn from, not because it forgets. The distinction matters for what
-can be built on it: persistence is not the missing piece, a signal is.
+a persisted weight matrix stay valid. Weights accumulate. The loss still reconstructs
+those input features; it does not read a correctness label or operator verdict. More
+records alone do not change the objective. Fitting structure is possible, while learned
+review relevance remains unproved.
+
+**TWENTY recommendation:** retain the candidate finder and measure its additions against
+the deterministic baseline at a fixed review budget. Executable arithmetic and structural
+rules supply a third, narrow source of supervision, but training on those labels teaches
+the baseline's task. It does not establish general relation truth. Recurrence, another
+model's judgment and reference authority are not independent labels for every candidate;
+benchmark keys must retain their evaluation role. Independently adjudicated pairs, matched
+to the target and permitted features, would be needed before a new learning component
+could be justified. Keep document families and synthetic variants together in evaluation
+splits and measure added confirmed relations, misses, precision, recall and review cost.
+The operator decides whether to pursue that build; none is made here.
+
+The 13 September audit found 22 raw provision rows but five current scoped records, and
+all 78 apparent operator-verdict rows matched check 107's synthetic fixture. They are
+excluded from this learning assessment, with the append-only ledger preserved. Check 107
+now isolates the durable verdict destination as well as the run folder, so verification
+cannot keep adding those synthetic verdicts to the operator's ledger. Full candidate
+assessment, rejected sources and evidence: `docs/fix/TWENTY_LEARNING_SIGNAL.md`.
 
 To install dependencies without the launcher (for example, in a CI environment that manages
 its own venv):
@@ -2537,7 +2555,7 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `POST` | `/ontology/conflicts/{conflict_id}/answer` | token | Record the operator's answer to one ontology-versus-rule conflict, in the same file-backed pattern `POST /runs/{run_id}/approval` uses and with the same two constraints: it WRITES the answer and nothing else (the next run applies it, through `apply_resolutions`), and the response says the answer was RECORDED, never that anything was resolved. Body `{"answer": "rule"|"store"|"refuse", ...}` with the two sides optional and recorded when given, so a later reader sees what the conflict WAS. Three answers, not two: "refuse" is a real decision and is distinguishable from never having answered. An unrecognised answer is a `400` and is never written. Re-answering supersedes, by the storage layer's own rule: an operator may change their mind. |
 | `GET` | `/ontology` | token | ontology chain job 1: the first read path the ontology store has ever had. The store under `ontology/stores/` has been written at the end of every run since build B1 and read back by nothing; this route answers the one question it can answer, which agent produced which provision under which rule, in which run, at which revision. Returns `scope`, `provision_count`, `stub_count`, `without_provenance`, `superseded_in_live`, `log_events`, counts by `agents` / `rules` / `runs` over the whole scope, and `provisions`, a per-provision list carrying identifiers and provenance ONLY, never a provision's own text (that boundary is `ontology_reader.SUMMARY_FIELDS`, not a convention this route applies by hand). Not run-scoped: the store is cross-run by construction, the same reasoning `/harness` and `/rules/{rule_id}` already use. An EMPTY store is `200` with zero counts and an empty list, not a `404` and not an error, which is the state of every store in this repository today. What this reading is good for, and what it is not, is in section G. |
 | `GET` | `/ontology/provisions/{provision_id:path}` | token | One provision's every revision in the default scope, oldest first, as provenance summaries: what makes the storage layer's supersession (built at night W7, shown nowhere) legible to a human. The id is the capture hook's composite `<document_id>::<ref_id>`, so it carries a colon pair and is matched as a path parameter. `404`, not an empty list, when the scope holds no such id: "this store has never held that provision" and "that provision has one revision" are different facts and a caller must be able to tell them apart. |
-| `GET` | `/ontology/gnn` | token | ontology chain job 4: the GNN's persisted state, structural metadata only (the state file holds weights and counts and no raw content by construction; this surfaces the counts, never the weights). Three fields are always present because they are the most important thing about this state and must not be a caveat a reader can skip: `tier2_signal` is `empty`, `learned_relevance` is `false`, and `ranked_on` says the ranking rests on graph structure alone. The engine persists and restores its weights across runs, so it does not forget; it has learned nothing because there is no signal yet to learn from, which is a different thing. Not run-scoped. A state never written is a `200` with `exists: false`, not a `404`, which is every installation today. |
+| `GET` | `/ontology/gnn` | token | ontology chain job 4: the GNN's persisted state, structural metadata only (the state file holds weights and counts and no raw content by construction; this surfaces the counts, never the weights). Three fields are always present because they are the most important thing about this state and must not be a caveat a reader can skip: `tier2_signal` is `empty`, `learned_relevance` is `false`, and `ranked_on` says the ranking rests on graph structure alone. The engine persists and restores its weights across runs, so it does not forget; its current objective fits structure and has no demonstrated relevance signal. Not run-scoped. A state never written is a `200` with `exists: false`, not a `404`; inspect the response for the installation's current state. |
 | `GET` | `/ontology/candidates` | token | ontology chain job 4: candidate provision pairs the graph proposes, `top_k` per provision (1 to 50, an out-of-range value being a `400` rather than a silent default) and `min_score` to drop weak pairs. Decision 9's shape: the graph NARROWS here, a model DECIDES, and the reasoning stays in text. These are pairs that MAY relate; nothing here asserts that they do, no relation record is written from them, and the deterministic baseline stays beside this rather than being replaced. **Ranked on graph structure alone** (node type, degree, edges), with `ranked_on`, `learned_relevance` and `tier2_signal` travelling in the body beside every candidate. A graph with fewer than two provisions is a `200` with an empty list. |
 | `GET` | `/ontology/conflicts` | token | ontology chain job 3: which ontology-versus-rule conflicts the operator has answered, how, and in which run, plus `override_rate`. A conflict is the narrow structural case where the store remembers one governing rule for a provision and the current run would apply another; in the run that meets it the pair is REFUSED and never guessed, the refusals are put to the operator together at the end, and the answer is written into the ontology so the same conflict is never put to them twice. `override_rate` is an object, not a bare number: `answered`, `overrode_store` (answers where the current rule won over the store's memory), `kept_store`, `kept_refusing`, a nested `override_rate`, and `caveat`, which carries its own qualifier in the response body rather than in documentation alone: at single-operator volume the rate is not statistically meaningful and must never be read as a quality measure. The NESTED `override_rate` is `null`, never `0.0`, when nothing has been answered, because "no answers yet" and "never overrode" are different facts; the object itself is always present, so a caller testing the top-level field for null never sees one. Not run-scoped; a store with no answers is a `200` with an empty list, which is every store today. |
 | `GET` | `/rules/{rule_id}` | token | console fresh-eyes addition: one rule's own text as the operator wrote it, from the current `config/convention_registry.json`. Not run-scoped, a rule's text does not vary per run. Matches by either id: the registry's own (`CONV-007`) or the operator's own (`CONV-A02`). Returns `id`, `source_rule_id`, `rule` (the operator's own text), `severity`, `action`, `source_file`, `source_location`. `404` with a distinct `detail` ("no rule with this id in the current registry") when the current registry, which regenerates at BOOT and can differ from whatever was in force when a citing run executed, has no such rule; that mismatch is itself informative, not hidden behind a generic not-found. |

@@ -4775,6 +4775,7 @@ def check_107_file_operator_handler_relays_not_decides():
     import pipeline
     import run_context as _rc
     import threading as _threading
+    import durable_paths
     importlib.reload(pipeline)  # pick up this step's --operator-channel wiring
 
     for decision_word, expect_ok in (("APPROVE", True), ("DENY", False)):
@@ -4793,19 +4794,32 @@ def check_107_file_operator_handler_relays_not_decides():
                 }), encoding="utf-8")
 
             saved_wait = _os.environ.get("SHIMMER_APPROVAL_WAIT_S")
+            saved_root = pipeline.ROOT
+            writer = None
             _os.environ["SHIMMER_APPROVAL_WAIT_S"] = "10"
             try:
+                # The verdict ledger is rooted at the project, independently
+                # of the per-run files. Keep both in this fixture's directory.
+                pipeline.ROOT = root
                 handler = pipeline._make_file_operator_handler(run_ctx)
                 writer = _threading.Thread(target=_write_decision_soon, daemon=True)
                 writer.start()
                 decision = handler("MODEL_DEPRECATED", {"agent": "PROCESSOR"})
                 writer.join(timeout=2)
             finally:
+                if writer is not None:
+                    writer.join()
+                pipeline.ROOT = saved_root
                 if saved_wait is None:
                     _os.environ.pop("SHIMMER_APPROVAL_WAIT_S", None)
                 else:
                     _os.environ["SHIMMER_APPROVAL_WAIT_S"] = saved_wait
 
+            ledger = durable_paths.operator_decisions_path(root)
+            records = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()
+                       if line.strip()] if ledger.exists() else []
+            if len(records) != 1 or records[0].get("decision") != decision_word:
+                return _fail("the file handler did not persist its verdict inside the isolated fixture")
             if decision.decision != decision_word:
                 return _fail(f"file handler returned decision={decision.decision!r}, "
                              f"expected {decision_word!r} (it must relay the file verbatim)")
