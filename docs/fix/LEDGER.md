@@ -1,5 +1,72 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## SEVEN CLOSED, 2026-09-12
+
+SIX closed in f772a84d7a9c6a9eb0d381a79821a83c2571bd77.
+The scorer already read convention_assignment.json; the handoff's claim that it
+never did was stale. The remaining defect was real: every assigned rule became
+asked=True, without consulting calls or per-unit suspension. The new review-state
+column consumes existing pairing_map[document].suspended records and the saved
+call evidence. It reports never_assigned, no_consumer, suspended, asked,
+assigned_not_asked and unknown. No condition is re-evaluated and no rule's authority
+changes. Suspension matches the exact unit and either the recorded registry id or
+its operator-id alias. Ambiguous unit shorthand across documents stays unknown.
+
+Decision: require recorded rule text and unit exposure to an assigned consumer
+for asked recall. Assignment alone is not a call, and a production-only agent
+seeing a rule is not its judge. Missing consumer metadata, including older
+untagged assignments without their fallback consumer list, stays unknown. This
+is a reporting limitation, not a change to untagged-rule dispatch. Existing
+call_evidence.calls_exposing excludes clipped rules and clipped whole-document
+payloads; the scorer also filters document and consumer identity.
+Decision: preserve raw recall over every planted entry. Display suspended rows
+and their count, exclude them from asked recall and false-negative mechanism
+diagnosis. The withdrawal is the paired-review decision even if an earlier broad
+prompt exposed the rule; a finding on that unit remains visible in raw recall.
+Recorded exposure does not assert a successful response or correct reasoning.
+
+Check 218 now executes the scorer's CLI entry point in-process over declared
+artifacts and a synthetic key entirely inside a temporary directory. It no longer
+creates/removes a fixed directory in the real benchmark tree. The fixture proves
+its eight distinct entries, two typed findings, and one suspension of a rule
+shared with an unsuspended sibling before behavioral assertions. Raw recall is
+2/8, asked recall 2/4, two asked entries have no matched finding, one assigned
+entry has no qualifying call, and one suspended entry is not a false-negative
+mechanism failure. Missing evidence and ambiguous units remain unknown. Existing
+date_window/above_band visibility and no-deliverable qualifications stay proved.
+
+Five mutations independently change the scorer's actual output before checking:
+remove the suspension reader, spread a suspension to its sibling unit, treat
+assignment as exposure, count a production-only caller as a judge, and reject
+the numeric document-position format in real paired-call logs. Each makes
+check 218 FAIL and restoration PASS (output/seven_mutation_proof.log). Adversarial
+read found the consumer-identity issue during the initial full gate, so that
+in-flight gate is intermediate only; the final source requires a fresh full gate.
+A shape-only replay over all 152 recorded unit-rule combinations in each saved
+run initially reported every entry as uncalled. Investigation found doc_id='1'
+in paired-call logs while pairing_map uses the document name. The reader now
+accepts that observed numeric logging format only after uniquely resolving the
+unit across documents; a numeric value that is an actual document key retains
+its identity. The fixture now carries that real format, and removing the branch
+changes 2/4 asked recall to 0/1 before the check FAILS. A fresh saved-artifact
+replay finds 36 and 39 exposed combinations, with 116 and 113 uncalled; this is
+an exposure census, not a gold-key score (output/seven_saved_shape_audit.json).
+No saved run contains a suspension, so that new-state proof remains synthetic.
+README now explains every state and denominator. No new dependency, pipeline run,
+model generation or real answer-key read. The intermediate host gate returned
+242 PASS and four failures: known 01/145, the old in-flight fixture missing the
+new consumer metadata, and check 174 flagging an incidental domain-reserved word
+in the new docstring. The word was replaced without relaxing the guard. Checks
+174 and 218 now PASS locally and in the final image. No behavior changed for the
+docstring correction. Final host gate: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246,
+known failures 01 and 145 only (output/seven_final_host_gate.log).
+Adversarial read, README/image debt and final validation are complete.
+Final shimmer:seven is sha256:4c7714a97517538a5ca385b48f977f45d49bb76a9585de25cc537f6194e4e3f4,
+14,408,239,160 bytes. All 121 shipped files match after CRLF normalization
+(output/seven_source_audit.json). Checks 174 and 218 PASS with --network none and
+no mounts (output/seven_container_check.log). Model layers remain unchanged and
+were reused. No GPU model probe repeated for this scorer-only change.
+
 ## SIX CLOSED, 2026-09-12
 
 FIVE closed in 2ff8e23762ade7958a3e2a236e6fe425f362db13.

@@ -256,6 +256,35 @@ validate the clerk's claims or count the five uncalled ranks as finding nothing.
 The saved logs, board artifacts and executed predicate results are recorded in
 `docs/fix/LEDGER.md` under SIX.
 
+#### What the scorer can say about a rule's review
+
+`tools/score_corpus.py` displays a review state for each planted entry. It reads
+`audit/convention_assignment.json`, the unit's existing `suspended` record in
+`audit/pairing_map.json`, and `logs/call_evidence.jsonl`. It never re-evaluates an
+`unless` condition or treats assignment as proof that a model was asked.
+
+| Review state | Recorded evidence |
+|---|---|
+| `never_assigned` | The rule's assignment says `unassigned`. |
+| `no_consumer` | The rule's assignment says `assigned_no_consumer`. |
+| `suspended` | The planner withdrew this exact unit and rule. Another unit under the same rule is unaffected. |
+| `asked` | A call to an assigned consumer received the rule text and the unit. A clipped or merely requested rule does not count. |
+| `assigned_not_asked` | Call evidence exists, but no assigned consumer has recorded exposure to that unit and rule. |
+| `unknown` | Required evidence is missing or ambiguous, including an older or untagged assignment with no recorded consumer list. |
+
+The scorer separately counts asked entries with no matching finding. That does
+not prove the response succeeded or that the model made a reasoning error. Raw
+recall still includes every planted entry, including any finding on a suspended
+unit. Asked recall includes only recorded exposure to assigned consumers and
+excludes suspended entries; it remains a measure of location, not correct reason.
+A suspended entry is shown in the table and suspension count, and is excluded
+from the false-negative mechanism diagnosis. Its withdrawal remains the paired
+review's state even if an earlier broad prompt exposed the rule. Missing or
+ambiguous artifacts stay visible as unknown. Older paired-call logs store a numeric
+document position; the reader accepts that format only with a uniquely resolved
+unit, while an actual document identifier retains its own scope. Check 218 executes these distinctions
+through the real scorer over declared temporary artifacts and a synthetic key.
+
 #### The local profile (`--backend-profile local`)
 
 `--backend-profile local` remaps **17 of the 18 agents** to two local models and makes no
