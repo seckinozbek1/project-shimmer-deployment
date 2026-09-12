@@ -70,6 +70,8 @@
   "contracts": {
     "PROCESSOR": {
       "item_kind": "extraction",
+      "local_max_output_tokens": 8192,
+      "local_max_output_tokens_note": "Complete current-source extraction envelopes measured 6288 and 6081 tokens with the local producer tokenizer. 8192 is the next doubling of the former 4096 backstop that fits those envelopes plus the largest measured item (157 tokens). This is capacity, not proof that a model will finish; truncation remains explicit.",
       "fields": {
         "section_id": "string",
         "draft_text": "string",

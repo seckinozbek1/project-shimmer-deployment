@@ -14,52 +14,49 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-ZERO-C, the commit containing this checkpoint, subject
-`ZERO-C: bake safely loadable weights and prove offline decisions`.
-Resolve its hash with `git log -1 --format=%H -- scripts/model_weights.py`.
-The code parent at recovery was 64b83e0; ZERO-A and ZERO-B were already closed.
+FOUR, the commit containing this checkpoint,
+`FOUR: preserve local extraction capacity and audit draft state`.
+Resolve its exact hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until
+another item updates this file. Previous item ZERO-C closed in
+963cae235d1ef2f2e949f72133259a05a1647fe1.
 
-The inherited image carried a raw bge-m3 checkpoint. Its old probe passed only
-after network retries and unsafe runtime conversion. The image now prepares
-safetensors with an isolated torch 2.6.0 CPU reader using weights_only=True,
-then removes the converter installation. Runtime pins and model ids stay fixed.
-The probe refuses attempted network access and requires five votes with scores
-and references. Check 244 proves safe conversion through the real loader.
-Check 239 now finishes its synthetic proofs without unshipped corpora and names
-that missing coverage; a nonempty but incomplete corpus still fails. Its mutation
-executes the actual consumer rather than merely rewriting source text.
+PROCESSOR's local allowance and the outer cap are now 8192, measured against
+6288/6081-token complete current-source extraction envelopes. Other active and
+cloud budgets stay unchanged. Phase 5 withholds failed-contract best-effort
+objects and gives both auditors draft availability/truncation explicitly.
+Check 245 proves all 61 declared items reach both auditors through real phase
+functions and mocked dispatch. Four observable mutations fail, restoration passes.
+The two saved outputs were cut at 2048 tokens and contain 21/19 complete items,
+not all 18 units as the older handoff claimed. Paired planning reads source;
+optional recent bus context can still carry PROCESSOR output. No generation ran.
+README, CLAUDE and shimmer:four are current. Full host and image gates passed
+at their known environment bars. Adversarial read complete; details in LEDGER.
 
 ## Current item
 
-ZERO-C is complete. Commit this checkpoint if still uncommitted, then open FOUR:
-establish whether paired review depends on PROCESSOR extraction, then fix its
-truncation loss. No other backlog implementation was opened in this session.
-The loader now resolves a local snapshot and refuses custom generation overrides;
-check 193 observes HTTP attempts as well as new connections, so a reused pool
-cannot hide a request. Its actual resolver mutation fails and restoration passes.
-SIXTEEN already has positive evidence. SEVENTEEN has a measured cache remedy,
-with the historical GC event unproven.
+None open. Continue with FIVE after the FOUR commit. Inspect saved raw envelope
+failures against the actual parser before deciding what needs repair. Do not
+loosen valid payload contracts or salvage a truncated response as complete.
 
 ## Ordered remaining work
 
-1. FOUR: PROCESSOR extraction dependency and loss.
-2. FIVE: parse valid envelopes through packaging, retain the payload contract.
-3. SIX: explain each of the eight agents that never called a model.
-4. SEVEN: scorer distinguishes never assigned, suspended, asked with no finding.
-5. EIGHT: verify date_window visibility in the current scorer.
-6. NINE: compute whether Python now settles ROWAN.
-7. TEN: distinguish incomplete runs from completed empty runs.
-8. ELEVEN: plain-language harness facts or explicit absence.
-9. TWELVE: one run-id format.
-10. THIRTEEN: structural proof against reading-only and no-op neutralisations.
-11. FOURTEEN: trace typed records through real amendment artifacts.
-12. FIFTEEN: pairing fallback value and WORDS-A compliance.
-13. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-14. SEVENTEEN: close the cache diagnosis with measured build reuse.
-15. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-16. NINETEEN: classify document_dates.json in the manifest.
-17. TWENTY: answer the learning-signal question, no GNN build.
-18. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. FIVE: parse valid envelopes through packaging, retain the payload contract.
+2. SIX: explain each of the eight agents that never called a model.
+3. SEVEN: scorer distinguishes never assigned, suspended, asked with no finding.
+4. EIGHT: verify date_window visibility in the current scorer.
+5. NINE: compute whether Python now settles ROWAN.
+6. TEN: distinguish incomplete runs from completed empty runs.
+7. ELEVEN: plain-language harness facts or explicit absence.
+8. TWELVE: one run-id format.
+9. THIRTEEN: structural proof against reading-only and no-op neutralisations.
+10. FOURTEEN: trace typed records through real amendment artifacts.
+11. FIFTEEN: pairing fallback value and WORDS-A compliance.
+12. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+13. SEVENTEEN: close the cache diagnosis with measured build reuse.
+14. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+15. NINETEEN: classify document_dates.json in the manifest.
+16. TWENTY: answer the learning-signal question, no GNN build.
+17. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -79,6 +76,10 @@ with the historical GC event unproven.
    overrides: preserve offline loading without granting new execution permission.
 8. Count HTTP attempts as well as socket events: a pooled connection must not
    hide access from the verification proof.
+9. Give local PROCESSOR 8192 output tokens: measured complete replies exceed
+   4096; retain cloud budgets until evidence from that backend exists.
+10. Withhold failed-contract drafts and label cuts for auditors: missing
+    extraction is not evidence of missing source content.
 
 ## Decisions made in the operator's place
 
@@ -122,28 +123,24 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final host: PASS=243 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=245.
-Final image: PASS=233 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=245, plus all six offline
-probe steps PASS, 122.8 seconds combined on the final image. Tests used --network none, --gpus all,
-and no mounts. Checks 139, 193, 239 and 244 PASS. The two host failures are 01
-(prompts/snapshots absent) and 145 (missing ignored contamination fixture).
-The image's four source-only failures are 01, 28, 31 and 145; skips explicitly
-name the coverage not run. No new unexplained failure remains.
-
-Final logs: output/zero_c_resolved_host_gate.log and
-output/zero_c_release_container_validation.log (the final image repeated the
-233/245 result after the README refresh). Focused proofs are in
-output/zero_c_loader_proof.log, output/zero_c_custom_code_proof.log,
-output/zero_c_239_proof.log and output/zero_c_focused_proof.log. Each changed
-check has an independent observable mutation effect and fail/restore/pass.
-No neutralisation modified a real source file for the new proofs.
+Final FOUR host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
+Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
+offline probe steps PASS, 163 seconds combined. Tests used --network none,
+--gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
+(missing ignored contamination fixture). Image source-only failures: 01, 28,
+31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
+Logs: output/four_host_gate.log, output/four_container_validation.log and
+output/four_mutation_proof.log. Focused changes prove independently observable
+mutation effects before fail/restore/pass. No proof mutates real source files.
+ZERO-C's earlier logs and image remain preserved; see LEDGER.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:zero-c carries the fixed runtime; old image
-tags remain intact. All 121 copied files matched the tree. The final README
-refresh carries the measured totals; the final image itself was verified again. Latest image identity and source audit: output/zero_c_source_audit.json.
+GPU model workload at a time. shimmer:four carries the current runtime;
+shimmer:zero-c and the older tags remain intact. All 121 copied files matched
+the tree. Image identity and per-file source hashes: output/four_source_audit.json.
+The 7.4-second build reused model and conversion layers.
 Build cache: output/shimmer_build_cache, about 14.41 GB, ignored and local only.
 Reuse it with the --cache-from/--cache-to commands in README; no global Docker
 configuration change or registry upload was made.
