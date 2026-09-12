@@ -145,6 +145,15 @@ class CostEvent:
     # call produced. "" for a call recorded outside run_task (a gate check's own
     # direct call), never invented.
     call_id: str = ""
+    # Whether the model's output hit its own ceiling (out_tokens >= the call's
+    # max_new_tokens), computed by agent_wrapper and carried here. It used to
+    # stop at the wrapper: the 2026-09-12 overnight runs recorded truncated=None
+    # on every row while PROCESSOR's extraction hit its 2048-token cap EXACTLY
+    # and was cut off mid-string, so the run knew the envelope was malformed and
+    # not that it had been cut, and the reason had to be reconstructed by hand
+    # from the preserved raw text. None means the caller did not say, which is
+    # not the same as False.
+    truncated: "bool | None" = None
 
     def as_dict(self): return self.__dict__
 
@@ -178,7 +187,8 @@ class CostTracker:
 
     def record(self, *, agent, backend, model, input_tokens, output_tokens, ok, error="",
                cache_read_input_tokens=None, cache_creation_input_tokens=None,
-               cached_input_tokens=None, phase="", doc_id="", duration_ms=0, call_id=""):
+               cached_input_tokens=None, phase="", doc_id="", duration_ms=0, call_id="",
+               truncated=None):
         family = _model_family(model or backend)
         in_tok = int(input_tokens or 0); out_tok = int(output_tokens or 0)
         cache_read = int(cache_read_input_tokens or 0)
@@ -193,7 +203,8 @@ class CostTracker:
                           cached_input_tokens=cached_in,
                           phase=phase or "", doc_id=doc_id or "",
                           duration_ms=int(duration_ms or 0),
-                          call_id=str(call_id or ""))
+                          call_id=str(call_id or ""),
+                          truncated=(None if truncated is None else bool(truncated)))
         with self._lock:
             self._events.append(event)
             self._total_calls += 1

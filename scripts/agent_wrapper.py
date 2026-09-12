@@ -574,6 +574,11 @@ class AgentWrapper:
             cache_read_input_tokens=u.get("cache_read_input_tokens"),
             cache_creation_input_tokens=u.get("cache_creation_input_tokens"),
             cached_input_tokens=u.get("cached_input_tokens"),
+            # Job B's own measurement, carried to the row instead of stopping at
+            # the wrapper: a response that hit its ceiling is a DIFFERENT fact
+            # from one that came back short, and the 2026-09-12 runs could not
+            # tell them apart on disk. None when the backend reported no usage.
+            truncated=u.get("truncated"),
             ok=r.ok, error=r.error,
             # productization STEP 4: cost dimensions. phase/doc_id are transient
             # instance attributes run_task sets immediately before calling
