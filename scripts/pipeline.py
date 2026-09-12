@@ -3315,6 +3315,55 @@ def _interactive_handler(topic, payload):
 # OperatorDecision or a bare string). It only WRITES the pending question, WAITS
 # (polling, mirroring block_gate.BlockHandle's wait(timeout) shape) for a decision
 # file, and returns whatever decision it finds (or DEFERRED on timeout) verbatim.
+def _record_operator_decision(run_ctx, *, topic, payload, decision, rationale,
+                              asked_at, decided_at):
+    """Append one operator verdict, JOINED to the subject it was about.
+
+    The per-run approval_decision.json carries {decision, rationale, decided_at}
+    and nothing that says what was decided; the pending file holding the topic
+    is deleted at the next escalation. So a verdict could be read back with no
+    way to know its subject, which is why the only record in this system with
+    both a target and a human verdict had zero rows.
+
+    Each line here stands alone: the topic, the subject identifiers lifted from
+    the escalation payload, the verdict and both timestamps. Durable and
+    append-only, under durable/governance/, so it survives a reset and a run
+    directory being cleared.
+
+    SUBJECT IDENTIFIERS ONLY. The payload may carry document text; this reads a
+    fixed allowlist of id-shaped keys off it and never the whole blob, the same
+    discipline the exposure ledger and the payload-free date store already
+    apply. A key the payload does not carry is simply absent, never invented.
+    """
+    subject = {}
+    for key in ("unit_id", "rule_id", "source_rule_id", "doc_id", "document_id",
+                "finding_id", "item_id", "conflict_id", "provision_id",
+                "amendment_id", "relation", "model", "agent"):
+        value = payload.get(key) if isinstance(payload, dict) else None
+        if isinstance(value, (str, int, float)) and str(value).strip():
+            subject[key] = value
+    record = {
+        "schema": "operator_decision/v1",
+        "run_id": getattr(run_ctx, "run_id", "") or "",
+        "topic": str(topic or ""),
+        "subject": subject,
+        "subject_known": bool(subject),
+        "decision": decision,
+        "rationale": rationale,
+        "asked_at": asked_at,
+        "decided_at": decided_at,
+    }
+    try:
+        import durable_paths as _dp
+        path = _dp.operator_decisions_path(ROOT)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError as e:  # bookkeeping must never take a run down
+        log_event(_LOG, f"operator_decision_write_error error_type={type(e).__name__}",
+                  run_id=getattr(run_ctx, "run_id", "") or "")
+
+
 def _make_file_operator_handler(run_ctx):
     import os as _os
     pending_path = run_ctx.audit_dir() / "pending_approval.json"
@@ -3352,13 +3401,36 @@ def _make_file_operator_handler(run_ctx):
             if decision_path.exists():
                 try:
                     rec = json.loads(decision_path.read_text(encoding="utf-8"))
-                    return OperatorDecision(
-                        decision=str(rec.get("decision", "")).strip() or "DEFERRED",
+                    decision = str(rec.get("decision", "")).strip() or "DEFERRED"
+                    decided_at = str(rec.get("decided_at")
+                                     or datetime.now(timezone.utc).isoformat())
+                    # The verdict is joined to its SUBJECT here, where both are
+                    # in hand, and appended to a durable ledger. The decision
+                    # file carries only {decision, rationale, decided_at}: a
+                    # verdict with no identifier teaches nothing, and the
+                    # pending file that holds the topic is deleted at the next
+                    # escalation, so the pairing was lost by design. The record
+                    # is fixed rather than the deletion, which stays: a stale
+                    # pending file read as the current topic's answer is a worse
+                    # failure than a lost pairing.
+                    _record_operator_decision(
+                        run_ctx, topic=topic, payload=payload, decision=decision,
                         rationale=str(rec.get("rationale", "")),
-                        timestamp=str(rec.get("decided_at") or datetime.now(timezone.utc).isoformat()))
+                        asked_at=asked_at, decided_at=decided_at)
+                    return OperatorDecision(
+                        decision=decision,
+                        rationale=str(rec.get("rationale", "")),
+                        timestamp=decided_at)
                 except (json.JSONDecodeError, OSError):
                     pass  # a decision file mid-write; poll again rather than fail the run.
             time.sleep(min(poll_s, max(0.0, deadline - time.monotonic())) or poll_s)
+        # A timeout is a real outcome and is recorded as one: DEFERRED used to
+        # be returned in memory and never written, so a run that waited an hour
+        # and proceeded unapproved left no trace of having asked.
+        _record_operator_decision(
+            run_ctx, topic=topic, payload=payload, decision="DEFERRED",
+            rationale="no decision within wait", asked_at=asked_at,
+            decided_at=datetime.now(timezone.utc).isoformat())
         return OperatorDecision(decision="DEFERRED", rationale="no decision within wait")
 
     return _handler
