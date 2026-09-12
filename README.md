@@ -2165,6 +2165,15 @@ move while the run is in flight:
   paired mode**; in wide mode it is `null`, because a phase-5.5 call there is a whole-document
   review and subtracting it from a pair count would be arithmetic on unlike things.
 
+Each cost row carries `truncated`: `true` when the response hit its own output ceiling,
+`false` when it came back short, and `null` when the backend reported no usage, because a
+caller that did not say is not the same as one that said no. The wrapper computed this from
+the start and it stopped there. On the 2026-09-12 runs every row read `null` while
+PROCESSOR's extraction hit its 2048-token cap exactly and was cut off mid-string, so the run
+recorded that the envelope was malformed and not that it had been cut, and the reason had to
+be reconstructed by hand from the preserved raw text. A response that hit its ceiling and one
+that came back short looked identical on disk.
+
 **The `sensitive` field and the console's privacy choice.** `/submit` accepts a `sensitive`
 form field (`"true"`/`"false"`, default `SHIMMER_SENSITIVE`) so privacy posture is a visible,
 per-run choice rather than only a server-wide default. The console renders it as an explicit
@@ -2562,7 +2571,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**226** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**227** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2577,7 +2586,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 225 have since raised the total to 226.
+table below; checks 210 to 226 have since raised the total to 227.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

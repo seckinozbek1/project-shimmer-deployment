@@ -18992,6 +18992,117 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_226_truncated_reaches_the_cost_row():
+    """Job B computed `truncated` and it stopped at the wrapper.
+
+    The 2026-09-12 overnight runs recorded truncated=None on every cost row.
+    PROCESSOR's phase 3 extraction hit its 2048-token ceiling EXACTLY and was
+    cut off mid-string at "Fault acknowledged: 2026-06", so the envelope was
+    unparseable and correctly refused. But the run recorded only THAT the
+    envelope was malformed, never that it had been cut off, and the reason had
+    to be reconstructed by hand from the preserved raw text. A response that
+    hit its ceiling is a different fact from one that came back short, and both
+    looked identical on disk.
+
+    CostEvent now carries `truncated` and record() accepts it, defaulting to
+    None so a caller that does not say is not recorded as False. AgentWrapper
+    passes the value its own usage dict already held.
+
+    EXECUTED against the real CostTracker on a tempdir: True, False and the
+    unstated None each persist to the row. WIRED: the wrapper's record() call
+    passes usage's truncated through.
+
+    NEUTRALISE AND RESTORE on the wrapper's own pass-through.
+    """
+    import json as _json
+    import tempfile as _tf
+
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import cost_tracker as _ct
+    except Exception as exc:
+        return _fail("cannot import cost_tracker: %s" % exc)
+
+    if "truncated" not in getattr(_ct.CostEvent, "__dataclass_fields__", {}):
+        return _fail("CostEvent has no `truncated` field, so a cut response and a "
+                     "short one stay indistinguishable on disk")
+
+    with _tf.TemporaryDirectory(prefix="shimmer_trunc_") as tmp:
+        d = Path(tmp)
+        tracker = _ct.CostTracker(log_dir=d, events_path=d / "cost.jsonl",
+                                  snapshot_path=d / "snap.json")
+        tracker.print_live = False
+        tracker.record(agent="HIT", backend="local", model="m", input_tokens=10,
+                       output_tokens=2048, ok=True, truncated=True)
+        tracker.record(agent="SHORT", backend="local", model="m", input_tokens=10,
+                       output_tokens=200, ok=True, truncated=False)
+        tracker.record(agent="UNSTATED", backend="local", model="m", input_tokens=10,
+                       output_tokens=5, ok=True)
+        rows = {}
+        for line in (d / "cost.jsonl").read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                row = _json.loads(line)
+                rows[row.get("agent")] = row
+        if rows.get("HIT", {}).get("truncated") is not True:
+            return _fail("a response that hit its ceiling recorded truncated=%r"
+                         % (rows.get("HIT", {}).get("truncated"),))
+        if rows.get("SHORT", {}).get("truncated") is not False:
+            return _fail("a short response recorded truncated=%r"
+                         % (rows.get("SHORT", {}).get("truncated"),))
+        if rows.get("UNSTATED", {}).get("truncated") is not None:
+            return _fail("a caller that said nothing recorded truncated=%r; unstated "
+                         "is not the same as False"
+                         % (rows.get("UNSTATED", {}).get("truncated"),))
+
+    # WIRED: the wrapper passes its usage's own truncated to the row.
+    wrapper_src = (ROOT / "scripts" / "agent_wrapper.py").read_text(
+        encoding="utf-8", errors="replace")
+    if 'truncated=u.get("truncated")' not in wrapper_src:
+        return _fail("AgentWrapper does not pass usage's truncated to cost_tracker."
+                     "record, so the flag still stops at the wrapper")
+
+    # NEUTRALISE: drop the value on the way in, the behaviour before this fix.
+    original = _ct.CostTracker.record
+
+    def _drops_truncated(self, **kw):
+        kw["truncated"] = None
+        return original(self, **kw)
+
+    _ct.CostTracker.record = _drops_truncated
+    try:
+        with _tf.TemporaryDirectory(prefix="shimmer_trunc_n_") as tmp:
+            d = Path(tmp)
+            tracker = _ct.CostTracker(log_dir=d, events_path=d / "cost.jsonl",
+                                      snapshot_path=d / "snap.json")
+            tracker.print_live = False
+            tracker.record(agent="HIT", backend="local", model="m", input_tokens=10,
+                           output_tokens=2048, ok=True, truncated=True)
+            row = _json.loads((d / "cost.jsonl").read_text(encoding="utf-8").splitlines()[0])
+            if row.get("truncated") is not None:
+                return _fail("neutralise did not take effect")
+    finally:
+        _ct.CostTracker.record = original
+
+    # RESTORE.
+    with _tf.TemporaryDirectory(prefix="shimmer_trunc_r_") as tmp:
+        d = Path(tmp)
+        tracker = _ct.CostTracker(log_dir=d, events_path=d / "cost.jsonl",
+                                  snapshot_path=d / "snap.json")
+        tracker.print_live = False
+        tracker.record(agent="HIT", backend="local", model="m", input_tokens=10,
+                       output_tokens=2048, ok=True, truncated=True)
+        row = _json.loads((d / "cost.jsonl").read_text(encoding="utf-8").splitlines()[0])
+        if row.get("truncated") is not True:
+            return _fail("restore failed: truncated is dropped again")
+
+    return _ok("a response that hit its ceiling records truncated=True, a short one "
+               "False, and a caller that says nothing None (unstated is not False); "
+               "the wrapper passes its usage's own value through; neutralise/restore "
+               "proved")
+
+
 def check_225_judged_absence_refused_on_form_and_on_fact():
     """Fix two from the 2026-09-12 overnight measurement.
 
@@ -20296,6 +20407,8 @@ CHECKS = [
      check_224_review_rule_reaches_a_judging_agent),
     ("225 a missing_field claim that names no field, or names a field the unit carries, is refused",
      check_225_judged_absence_refused_on_form_and_on_fact),
+    ("226 a truncated response is recorded as truncated on its own cost row",
+     check_226_truncated_reaches_the_cost_row),
 ]
 
 
