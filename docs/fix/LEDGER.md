@@ -57,3 +57,23 @@ This is a falsifiable prediction about model compliance, recorded here rather
 than left in a report so the next run can be checked against it. If the model
 complies, `absence_refused` stays empty and 14 findings carry quotes. If it does
 not, the refused count says how often, and the refusal reason says which.
+
+### 5496cff  Item ONE: operator verdict joined to its subject
+
+**README will have to say:** a new durable store,
+`durable/governance/operator_decisions.jsonl`, holding an operator verdict joined
+to its subject; a timeout now recorded as DEFERRED rather than returned only in
+memory; a sixth source, a sixth node type (`OperatorDecision`) and a sixth edge
+type (`DECIDED_ON`) in the Tier-1 graph, the first edge whose source is not a
+Provision and the first carrying a human judgement. Also that the tier2 literal
+and the GNN node vocabulary are deliberately unchanged, and why. Gate total
+moves 234 to 235.
+
+**Image affected: YES.** `scripts/durable_paths.py`, `scripts/ontology_graph.py`,
+the pipeline driver, `scripts/verify_session1.py`.
+
+**Reasoning recorded at** `docs/fix/LEARNING_SIGNAL.md`, which the README should
+point at rather than restate. Its headline for the README: the rows this
+produces are not a training set (order of one DeltaProposal and zero conflicts
+per run), and they are worth creating for audit and for conflict memory, not on
+the argument that the GNN will learn from them.
