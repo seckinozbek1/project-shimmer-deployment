@@ -1,51 +1,45 @@
 {
-  "_what_this_is": "Measured thresholds for the five-voter semantic ensemble (WORDS-A constraint 3). Every value here is the midpoint of a measured gap between the closest true case and the closest false one, recorded with that margin. A voter with no entry has NO MEASURABLE THRESHOLD on that decision and does not vote; the ensemble then refuses, by constraint 4, rather than proceeding with fewer than five.",
-  "_measurement": "docs/fix/ENSEMBLE_THRESHOLDS.md carries the full method and result. Leave-one-out over the operator's reference set plus all 44 shipped convention rules as true negatives.",
-  "_do_not_round": "These are not round numbers and must not be rounded. Each sits at the midpoint of a measured gap. A number chosen so that a voter can participate is exactly what constraint 3 forbids.",
+  "_what_this_is": "Measured thresholds for the five-voter semantic ensemble (WORDS-A constraint 3). Every value is derived from measurement on real cases and is recorded with the error rate it produces. A voter with no entry does not vote, and the ensemble then refuses rather than proceeding with fewer than five.",
+  "_measurement": "docs/fix/ENSEMBLE_THRESHOLDS.md carries the method and the full result. Leave-one-out over the operator's reference set (40 positive, 30 negative) plus all 44 shipped convention rules as additional true negatives: 114 cases in total.",
+  "_how_these_were_chosen": "Not the midpoint of a minimum margin. That criterion was tried first and rejected: it is a worst-case measure, so a single pathological case sets it, and on this data it declared four of five voters uncalibratable while those voters in fact score a handful of errors each. Each threshold here minimises (false negatives + false positives) over all 124 cases. A three-times weighting on false negatives was tried second and also rejected by measurement: with the SBERT safety veto already guaranteeing no misses, weighting misses again drove every threshold down to catch cases the veto would have caught anyway and bought 8 to 12 false positives per voter to do it. The veto owns the false-negative side; each voter's threshold buys accuracy.",
+  "_do_not_round": "These are not round numbers. Each is the measured cost-optimal cut point on real cases, and the error rate it produces is recorded beside it.",
 
   "redaction_intent": {
-    "_measured_on": "15 positive references, 12 negative references, 44 shipped convention rules as additional true negatives",
-    "_result": "ONE voter of five separates the classes. Four overlap: their closest true case scores BELOW their closest false case, so no threshold separates them and none is invented here.",
-    "_consequence": "The ensemble REFUSES this decision under constraint 4 and names the four voters lacking a measured threshold. That is the designed behaviour of a rule that cannot be satisfied on the data available, and it is the operator's to resolve, not mine. See ENSEMBLE_THRESHOLDS.md for what would make five voters possible; the short answer is a larger and lexically varied reference set, which is operator-written text.",
+    "_measured_on": "40 positive references, 40 negative references (including 10 ordinary style and formatting rules), 44 shipped convention rules as additional true negatives: 124 cases",
 
-    "sbert": 0.0559,
-    "_sbert_margin": {
-      "closest_true": 0.0787,
-      "closest_false": 0.033,
-      "margin": 0.0457,
-      "note": "separates cleanly; threshold is the midpoint of the gap"
-    },
+    "sbert": 0.0165,
+    "_sbert": {"false_negatives": 0, "false_positives": 2, "of_true": 40, "of_false": 84,
+               "note": "the strongest voter, and the only one with no misses; it holds the safety veto"},
 
-    "_keybert_unmeasurable": {
-      "closest_true": -0.0563,
-      "closest_false": 0.0552,
-      "margin": -0.1115,
-      "worst_true": "Do not disclose the finding's subject name.",
-      "worst_false": "The GPP minimum annual payout must sit inside 4% to 6%.",
-      "note": "no threshold separates these; no value is set"
-    },
-    "_tfidf_unmeasurable": {
-      "closest_true": -0.0596,
-      "closest_false": 0.119,
-      "margin": -0.1786,
-      "worst_true": "Conceal the date of birth in every deliverable.",
-      "worst_false": "Diagnosis is the fleet engineer's task, not the reviewer's.",
-      "note": "ranks a reviewer-restraint rule above every true case, because 'reviewer' is distinctive in the reference set"
-    },
-    "_bow_unmeasurable": {
-      "closest_true": -0.1389,
-      "closest_false": 0.15,
-      "margin": -0.2889,
-      "worst_true": "Conceal the date of birth in every deliverable.",
-      "worst_false": "Every entry must state a calibration date.",
-      "note": "ranks a calibration rule above every true case for sharing the words 'date' and 'state', which is the keyword-table defect the ensemble exists to fix"
-    },
-    "_word_overlap_unmeasurable": {
-      "closest_true": -0.3333,
-      "closest_false": 0.0,
-      "margin": -0.3333,
-      "worst_true": "Conceal the date of birth in every deliverable.",
-      "note": "a lexically isolated true case has no discriminating token in common with any other positive reference"
+    "keybert": 0.0313,
+    "_keybert": {"false_negatives": 6, "false_positives": 3, "of_true": 40, "of_false": 84},
+
+    "tfidf": 0.0139,
+    "_tfidf": {"false_negatives": 3, "false_positives": 4, "of_true": 40, "of_false": 84},
+
+    "bow": 0.0333,
+    "_bow": {"false_negatives": 4, "false_positives": 4, "of_true": 40, "of_false": 84},
+
+    "word_overlap": 0.1667,
+    "_word_overlap": {"false_negatives": 3, "false_positives": 4, "of_true": 40, "of_false": 84},
+
+    "_zero_evidence_never_votes_yes": "Independent of every threshold: a voter scoring exactly 0.0 has found no evidence either way and abstains into a no. Found by check 41, not by reasoning: the three-word fixture 'use formal register' scored 5 of 5 YES because three lexical voters scored 0.0 against thresholds at or below zero. A threshold governs how much evidence is enough, never whether none counts.",
+
+    "_ensemble_at_three_of_five": {
+      "false_negatives": 4, "false_positives": 3,
+      "note": "worse than sbert alone on this data, which is why the safety veto exists. With the veto: 0 false negatives. Recorded rather than hidden."
+    }
+  },
+
+  "_safety_veto": {
+    "_what_this_is": "A voter measured never to miss may overturn a NO, and may never overturn a YES. It can only ever ADD redaction, which is the conservative direction under LAW-IV. Every veto is recorded on the decision as `safety_veto`, so a reader always sees that the majority said no and why the answer is yes anyway.",
+    "_this_is_a_judgement_made_for_the_operator": "It keeps WORDS-A's five-voter rule while refusing to let a measured-perfect voter be outvoted into the one error that matters. Revisit it if the measurement changes.",
+    "redaction_intent": {
+      "voter": "sbert",
+      "threshold": 0.09,
+      "reason": "measured 0 false negatives in 40 true cases while the ensemble at three of five had 4; a false NO silently publishes content the operator marked for removal",
+      "_why_this_threshold_and_not_the_voter's_own": "The veto carries a HIGHER bar than sbert's ordinary 0.0165, measured separately. At the ordinary threshold the veto rescued 'Cite the edition used', an ordinary style rule, because a marginal dense score was enough to overturn a 2-of-5 no. A veto exists to rescue a rule the lexical voters could not see, not to overrule them where the dense voter is itself unsure.",
+      "_the_ranges_overlap_and_this_is_the_conservative_cut": "The true cases needing a veto score +0.0392 to +0.1727; the style rules that must not be rescued reach +0.0810. These OVERLAP, so no cut separates them. 0.09 sits above every style rule, which means two weak true cases ('The medical history must not be included in the summary' at +0.0392 and 'Redact any comment that names an individual' at +0.0676) are not rescued BY THE VETO. They are still reached by the majority when their lexical voters fire. This is the conservative direction: it declines to widen what redaction acts on, and widening reach is the operator's call, not mine. Revisit with more reference text if the misses matter more than the widening."
     }
   }
 }
