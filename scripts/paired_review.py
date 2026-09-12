@@ -2005,6 +2005,20 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         "derived_from": "computed_finding",
         "finding_unit_id": item.get("unit_id"),
         "finding_rule_id": rule_id,
+        # The TYPED record, carried through rather than dropped. finding_type
+        # above is a coarse label ("factual"), not the Finding record's own
+        # relation, so an amendment used to be the one artifact from which a
+        # claim could be located but never checked: UNIT-VETCH scored as
+        # "reason unverifiable" on 2026-09-11 for exactly this reason, because
+        # it was reachable only through an amendment. The typed fields exist on
+        # the item this amendment is built from; they are copied here, never
+        # invented, and absent when the item carries none.
+        "finding_relation": item.get("relation"),
+        "finding_field_label": item.get("field_label"),
+        "finding_value_a": item.get("value_a"),
+        "finding_unit_a": item.get("unit_a"),
+        "finding_value_b": item.get("value_b"),
+        "finding_unit_b": item.get("unit_b"),
         # night W7 b: the agent whose Finding this amendment rests on, so the ontology's
         # provenance struct can name it. Absent when the item carries none; never invented.
         "agent": item.get("agent"),
