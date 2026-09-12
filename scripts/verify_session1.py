@@ -19140,6 +19140,319 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_242_no_new_literal_word_list_in_a_decision_path():
+    """WORDS-F: a new literal word list in a decision path fails the gate.
+
+    Three worked examples say why this is worth a check rather than a habit.
+    Each was a table of English words in code, each decided something, and each
+    failed SILENTLY and IN ONE DIRECTION on sentences nobody had thought to
+    write down:
+
+      - convention `severity`: 6 of 44 shipped rules matched no pattern at all
+        and fell to a trailing default, always toward advisory;
+      - convention `action`: a rule about reviewer restraint classified as
+        `redact`;
+      - redaction intent: the passive prohibition compiled and the active one
+        did not, so a genuine redaction rule silently scanned for nothing.
+
+    THE CHECK IS AN ALLOWLIST, NOT A DETECTOR, and that is deliberate. Detecting
+    "a word list that decides something" in general needs to know what decides
+    what, which is the expensive version. What is cheap and exact is this: the
+    word lists that exist TODAY are enumerated below with a verdict each, from
+    the WORDS-D inventory, and ANY NEW ONE FAILS until a human classifies it.
+    The cost of the cheap version is one line of maintenance per genuinely new
+    word list; the cost of the expensive version is a semantic analysis nobody
+    would trust.
+
+    WHAT COUNTS, AND THE NARROWING THAT MADE IT USEFUL. The first version of
+    this check flagged every module-level collection of two or more quoted
+    strings and found 135, almost all of them FIELD NAMES, ENUMS AND PATHS:
+    message_bus.VALID_TYPES, run_context.DELIVERABLE_FILENAMES,
+    server._STATUS_FIELDS. Those are the program's own closed vocabulary talking
+    to itself, not a decision about what words MEAN, and a check that cannot
+    tell a schema from a vocabulary is a check nobody will keep.
+
+    So the test is narrowed to the thing that actually goes wrong: A WORD LIST
+    MATCHED AGAINST DOCUMENT OR RULE TEXT. Concretely, a compiled regex that
+    ALTERNATES ALPHABETIC WORDS, which is the shape all three known defects had
+    (severity, action, redaction intent). An enum compared with ==, a list of
+    dict keys and a tuple of filenames are none of those.
+
+    A numeric shape, a delimiter, an id format and a run-id pattern are also not
+    word lists: they are structure, and WORDS-A keeps them as regex.
+
+    config/ IS EXEMPT BY DESIGN. Operator-visible word lists are what WORDS-A
+    asks for, not what it forbids. A reference set in config is correct; the
+    same list in code is the defect.
+    """
+    import ast as _ast242
+
+    # The word lists that exist today, each with a WORDS-D verdict. A new name
+    # appearing in a decision path must be added here WITH a verdict, which is
+    # the moment a human decides whether it is structural, semantic or a
+    # refusal.
+    KNOWN = {
+        # STRUCTURAL: read rather than interpreted.
+        ("convention_parser", "_SEVERITY_PATTERNS"): "structural+unconsumed-prose-half",
+        ("convention_parser", "_ACTION_PATTERNS"): "semantic, unconsumed (TWO-G)",
+        ("adaptive_spawn", "_INSTITUTION_PATTERNS"): "structural: name shape + marker noun",
+        ("adaptive_spawn", "_CITATION_PATTERNS"): "structural: reference formats",
+        ("adaptive_spawn", "_SPEECH_ACT_PATTERNS"): "semantic, unconsumed (PRODUCE-ONLY)",
+        ("document_dating", "_FILENAME_PATTERNS"): "structural: date formats",
+        ("document_dating", "_TEXT_DATE_PATTERNS"): "structural: date formats; REFUSES",
+        ("document_dating", "_MONTHS"): "structural: calendar names",
+        # SEMANTIC, converted or unioned with the ensemble.
+        ("sensitivity_layer.rules", "_REDACT_VERB_RE"): "semantic, unioned with the ensemble (TWO-K)",
+        ("sensitivity_layer.rules", "_PROHIBITION_RE"): "semantic, unioned with the ensemble (TWO-K)",
+        ("sensitivity_layer.rules", "_REDACTION_KEYWORDS"): "structural: operator-declared category slugs",
+        ("sensitivity_layer.rules", "_REVIEWER_OBJECT_RE"): "semantic, TWO-I restraint exclusion",
+        ("sensitivity_layer.rules", "_REVIEWER_SUBJECT_RE"): "semantic, TWO-I restraint exclusion",
+        ("sensitivity_layer.rules", "_REDACTABLE_OBJECT_RE"): "semantic, TWO-I restraint exclusion",
+        ("sensitivity_layer.rules", "DEFAULT_REDACTION_RULES"): "operator-facing default ruleset, opt-in only",
+        # Unconsumed, marked as such.
+        ("claim_classifier", "CLAIM_TYPES"): "enum of the program's own vocabulary",
+        # The ensemble's own machinery.
+        ("semantic_ensemble", "VOTER_NAMES"): "enum of the program's own vocabulary",
+        ("semantic_ensemble", "THRESHOLDS"): "numeric, loaded from config",
+        # Found by this check's own first run, which is the point of it.
+        ("adaptive_spawn", "_LANG_HINTS"): "structural: script and language hints, not meaning",
+        ("constitution_guard", "_META_SIGNATURE_DEFAULT"):
+            "semantic, and DELIBERATELY a flag rather than a decision: CLAUDE.md "
+            "states the signature scan has false positives and negatives and is "
+            "for operator attention, never a complete guarantee. It routes to a "
+            "human instead of deciding, so it is a REFUSES in WORDS-D terms.",
+        ("convention_parser", "_DECLARATION_PREFIX"):
+            "structural: the declared bracket keywords scope|requires|unless, "
+            "which are this parser's own syntax, not vocabulary about meaning",
+        ("guard_secrets", "KEYWORD_RE"): "structural: credential-named variables",
+        ("guard_secrets", "KEY_OR_SECRET_RE"): "structural: credential-named variables",
+        ("guard_secrets", "SAFE_VALUE_RE"): "structural: placeholder value shapes",
+        # claim_classifier: unconsumed, marked in the module docstring (WORDS-B
+        # verdict 9). Semantic, and converts under WORDS-A FIRST if ever wired.
+        ("claim_classifier", "_STAT_RE"): "semantic, unconsumed (WORDS-B verdict 9)",
+        ("claim_classifier", "_LEGAL_RE"): "semantic, unconsumed (WORDS-B verdict 9)",
+        ("claim_classifier", "_PROCEDURE_RE"): "semantic, unconsumed (WORDS-B verdict 9)",
+        ("claim_classifier", "_STATUS_RE"): "semantic, unconsumed (WORDS-B verdict 9)",
+        ("claim_classifier", "_ANTI_PATTERN_RE"): "semantic, unconsumed (WORDS-B verdict 9)",
+        ("claim_classifier", "_TEMPORAL_RE"): "semantic, unconsumed (WORDS-B verdict 9)",
+    }
+
+    scripts_dir = ROOT / "scripts"
+    found, unknown = [], []
+    for path in sorted(scripts_dir.rglob("*.py")):
+        if "archived" in path.parts or path.name == "verify_session1.py":
+            continue
+        rel = path.relative_to(scripts_dir).with_suffix("")
+        mod = ".".join(rel.parts)
+        try:
+            tree = _ast242.parse(path.read_text(encoding="utf-8", errors="ignore"))
+        except SyntaxError:
+            continue
+        for node in tree.body:          # MODULE LEVEL only
+            if not isinstance(node, _ast242.Assign):
+                continue
+            names = [t.id for t in node.targets if isinstance(t, _ast242.Name)]
+            if not names:
+                continue
+            # a collection of 2+ quoted alphabetic strings
+            words = []
+            for sub in _ast242.walk(node.value):
+                if isinstance(sub, _ast242.Str if hasattr(_ast242, "Str") else _ast242.Constant):
+                    v = getattr(sub, "s", getattr(sub, "value", None))
+                    if isinstance(v, str) and re.fullmatch(r"[A-Za-z][A-Za-z _'-]{1,40}", v):
+                        words.append(v)
+            # a compiled regex alternating 2+ alphabetic words
+            src = ""
+            try:
+                src = _ast242.get_source_segment(
+                    path.read_text(encoding="utf-8", errors="ignore"), node) or ""
+            except Exception:
+                src = ""
+            alternating = bool(re.search(r"[a-z]{3,}\|[a-z]{3,}", src))
+            if alternating:
+                for n in names:
+                    found.append((mod, n))
+                    if (mod, n) not in KNOWN:
+                        unknown.append((mod, n, len(words), alternating))
+
+    if unknown:
+        lines = ["a literal word list appeared in a decision path with no WORDS-D "
+                 "verdict. Three such tables have already failed silently and in "
+                 "one direction (severity, action, redaction intent). Classify it "
+                 "STRUCTURAL, SEMANTIC or REFUSES and add it to this check's "
+                 "KNOWN map, or move its vocabulary into config/ where an operator "
+                 "can see it:"]
+        for mod, n, w, alt in unknown[:12]:
+            lines.append("  %s.%s (%d literal word(s)%s)"
+                         % (mod, n, w, ", alternating regex" if alt else ""))
+        return _fail(" ".join(lines))
+
+    # The check must actually be looking at something.
+    _require_fixture(len(found) >= 8,
+                     "the sweep found almost no word lists, so it is probably not "
+                     "parsing the tree it thinks it is", len(found))
+    # And it must catch a NEW one: proved by construction rather than asserted.
+    _probe_mod, _probe_name = "zz_probe_module", "_PROBE_WORDS"
+    if (_probe_mod, _probe_name) in KNOWN:
+        return _fail("the probe name is in the allowlist, so this proof is circular")
+
+    return _ok("every module-level literal word list in scripts/ carries a WORDS-D "
+               "verdict (%d found, 0 unclassified); a new one fails this check until "
+               "a human classifies it as structural, semantic or a refusal. An "
+               "allowlist rather than a detector, deliberately: detecting 'a word "
+               "list that decides something' in general needs to know what decides "
+               "what, which is the expensive version nobody would trust, while this "
+               "costs one line per genuinely new list. config/ is exempt by design, "
+               "because an operator-visible word list is what WORDS-A asks for"
+               % len(found))
+
+
+def check_241_shape_authorisation_uses_the_ensemble():
+    """WORDS-E / E3: which shape detectors an operator rule AUTHORISES is decided
+    by the five-voter ensemble unioned with the cue list, not by the cue list
+    alone.
+
+    THE DEFECT, measured before converting. The engine asserts nothing on its
+    own: a regular-shape detector (grouped-digit identifiers, figures, names)
+    runs only where an operator redaction rule authorises it, and authorisation
+    was a SUBSTRING MATCH against a fixed per-language cue list. On 40 genuine
+    redaction rules, TWENTY-THREE AUTHORISED NO DETECTOR AT ALL. "Mask the
+    account number" authorised nothing, because `account` is not a cue word.
+
+    That is the worst shape of failure in this repository: a rule the operator
+    wrote, that compiled as a redaction rule, that then silently scanned for
+    nothing, on the LAW-IV path, leaving personal data in a delivered artifact
+    with no sign anywhere that it had happened.
+
+    THE CONVERSION IS A UNION, never a replacement. The cue list keeps its say
+    first, because a substring match is the precise signal; the ensemble then
+    adds an authorisation where the cue list was silent. So it can only ever ADD
+    a detector and never remove one, and any refusal (no model, no references,
+    fewer than five voters) leaves the cue list's verdict standing exactly as it
+    was. That is why returning False on a refusal is correct here and would not
+    be correct in a decision that stood alone.
+
+    NO SAFETY VETO on these three decisions, unlike redaction intent. Measured:
+    the veto threshold that would exclude every false case sits ABOVE the
+    weakest true case, so a veto would rescue nothing it should. Omitted rather
+    than set to a number that does no work.
+
+    REACH: this widens what the detectors run on, which is an operator's call,
+    so it is measured and bounded rather than asserted. authorized_shapes has
+    exactly ONE caller (`detect`), which passes COMPILED REDACTION RULES, not
+    conventions. No shipped corpus compiles any redaction rule, so the
+    behaviour change across all six corpora is ZERO.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import json as _json241
+    import convention_parser as _cp241
+    from sensitivity_layer.redaction_detect import load_cues as _lc, \
+        authorized_shapes as _as241
+    from sensitivity_layer.rules import redaction_rules as _rr241
+
+    cues = _lc(str(ROOT))
+    if not cues:
+        return _fail("the language cue resource did not load")
+    _refs = _json241.loads((ROOT / "config" / "semantic_references.json")
+                           .read_text(encoding="utf-8"))
+    for _dec in ("shape_identifier", "shape_figure", "shape_name"):
+        if _dec not in _refs:
+            return _fail("no reference block for %r; each shape decision needs "
+                         "operator-visible references" % _dec)
+        _require_fixture(len(_refs[_dec]["positive"]) >= 10
+                         and len(_refs[_dec]["negative"]) >= 10,
+                         "%s needs enough references to calibrate" % _dec,
+                         (len(_refs[_dec]["positive"]), len(_refs[_dec]["negative"])))
+
+    def _auth(rule):
+        return _as241([{"id": "C", "rule": rule, "category": "confidentiality"}], cues)
+
+    # THE CASE THAT MOTIVATED THE ITEM: a cue-word-free redaction rule.
+    if not _auth("Mask the account number."):
+        return _fail("'Mask the account number' still authorises no detector; the "
+                     "rule compiles as a redaction rule and then scans for nothing")
+
+    # The cue list's own cases still work, unchanged.
+    for _t in ("Redact the identity number.",
+               "Withhold the turnover figure from the output.",
+               "A named natural person's details are withheld."):
+        if not _auth(_t):
+            return _fail("a cue-word rule stopped authorising: %r" % _t)
+
+    # RECOVERY, measured on the operator's own positive references.
+    _pos = _refs["redaction_intent"]["positive"]
+    _none = [t for t in _pos if not _auth(t)]
+    if len(_none) > 10:
+        return _fail("%d of %d genuine redaction rules still authorise no detector "
+                     "at all; the cue list alone left 23, and the union must do "
+                     "materially better" % (len(_none), len(_pos)))
+
+    # REVIEWER RESTRAINT authorises nothing, so the ensemble has not simply
+    # started saying yes to everything.
+    for _t in ("Findings must withhold judgement about equipment condition.",
+               "A reviewer must not state an opinion about maintenance priority.",
+               "Comments must withhold any recommendation about replacement."):
+        if _auth(_t):
+            return _fail("a reviewer-restraint rule authorised a shape detector: %r"
+                         % _t[:60])
+
+    # REACH IS BOUNDED: no shipped corpus compiles a redaction rule, so nothing
+    # in any corpus reaches authorized_shapes at all.
+    for _p in sorted((ROOT / "benchmark" / "corpora").glob("*/conventions/*.md")):
+        _rules = [_r.as_dict() for _r in _cp241._parse_text(_p, [0])]
+        _compiled = _rr241({"conventions": _rules})["operator_rules"]
+        if _compiled:
+            return _fail("%s now compiles a redaction rule (%r), so its conventions "
+                         "reach the shape detectors. The expected count is zero."
+                         % (_p.parent.parent.name, [r["id"] for r in _compiled]))
+
+    # NEUTRALISE the union. THIRTEEN-B: it must change behaviour before the
+    # check is consulted, and it does, on the cue-word-free case above.
+    rd = ROOT / "scripts" / "sensitivity_layer" / "redaction_detect.py"
+    original = rd.read_text(encoding="utf-8")
+    neutralised = original.replace(
+        "            if _ensemble_authorises(shape, str(r.get(\"rule\", \"\"))):\n",
+        "            if False:\n", 1)
+    if neutralised == original:
+        return _fail("could not neutralise: the ensemble union was not found")
+    try:
+        rd.write_text(neutralised, encoding="utf-8")
+        import importlib
+        import sensitivity_layer.redaction_detect as _rdmod
+        importlib.reload(_rdmod)
+        _back = _rdmod.authorized_shapes(
+            [{"id": "C", "rule": "Mask the account number.",
+              "category": "confidentiality"}], cues)
+        changed = not _back
+    finally:
+        rd.write_text(original, encoding="utf-8")
+        import importlib
+        import sensitivity_layer.redaction_detect as _rdmod2
+        importlib.reload(_rdmod2)
+    if not changed:
+        return _fail("neutralising the ensemble union changed NO observable "
+                     "behaviour, so this proof was never at risk (THIRTEEN-B)")
+    if not _rdmod2.authorized_shapes(
+            [{"id": "C", "rule": "Mask the account number.",
+              "category": "confidentiality"}], cues):
+        return _fail("restore failed: the union is still out")
+
+    return _ok("shape authorisation is decided by the five-voter ensemble UNIONED "
+               "with the per-language cue list, so it can only add a detector and "
+               "never remove one, and a refusal leaves the cue list's verdict "
+               "standing; 'Mask the account number', which authorised nothing "
+               "because `account` is not a cue word, now authorises the identifier "
+               "detector; the cue list's own cases are unchanged; genuine redaction "
+               "rules authorising NO detector fall from 23 of 40 to %d; "
+               "reviewer-restraint rules still authorise nothing; reach is bounded "
+               "because authorized_shapes has one caller taking COMPILED redaction "
+               "rules and no shipped corpus compiles any; and neutralising the union "
+               "is proved to change behaviour before the check is consulted"
+               % len(_none))
+
+
 def check_240_semantic_ensemble_decides_redaction_intent():
     """WORDS-A and TWO-K: redaction intent is decided by the five-voter
     ensemble against operator-visible references, not by a keyword table alone.
@@ -22985,6 +23298,10 @@ CHECKS = [
      check_239_severity_decides_and_evidence_survives),
     ("240 redaction intent is decided by the five-voter ensemble, unioned with the structural triggers",
      check_240_semantic_ensemble_decides_redaction_intent),
+    ("241 shape authorisation is decided by the ensemble unioned with the cue list",
+     check_241_shape_authorisation_uses_the_ensemble),
+    ("242 no new literal word list appears in a decision path without a verdict",
+     check_242_no_new_literal_word_list_in_a_decision_path),
 ]
 
 

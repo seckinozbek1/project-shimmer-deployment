@@ -2712,7 +2712,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**241** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**243** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2727,8 +2727,8 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 240 have since raised the total to 241. The host gate at the
-time of writing is `PASS=239 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=241`, the two failures being
+table below; checks 210 to 242 have since raised the total to 243. The host gate at the
+time of writing is `PASS=241 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=243`, the two failures being
 the known environment ones: check 01 (`prompts/` and `snapshots/` absent in this working
 tree) and check 145 (the contamination-probe fixture is gitignored and absent).
 
