@@ -2485,6 +2485,15 @@ Stated honestly, from operator testing:
   asked for where it can actually check something, on absence claims. Cost, measured on the
   corpus: a field line is a median of 21 characters, about 6 tokens, 25 at the longest,
   against 461 tokens of unused paired-judging budget.
+- **What it would cost to make `quote` required, measured before deciding.** On the two
+  saved runs, requiring a quote on EVERY finding would turn all **62 of 62** into contract
+  violations at once; requiring it only where the relation is an absence claim would turn
+  **14 of 62 (23%)** into violations. Optional, as it stands today, turns **none** into
+  violations and refuses only a quote that is present and provably absent from the unit.
+  Required-on-absence-claims-only is the right middle and is where this should go, but not
+  yet: it is a real migration, every one of those 14 is a finding a past run already
+  published, and it should be taken deliberately rather than folded into a fix. The
+  operator decides; nothing has been made required.
 - **The scorer reports a claim worded identically in both twins.** The twins differ exactly
   where the defects are, so a sentence the model produces against both was not read off
   either. This is the signal that exposed UNIT-VETCH, found by a person reading two logs side
@@ -2500,13 +2509,14 @@ Stated honestly, from operator testing:
   were counted as catches. A coincidence that scores is worse than a miss, because it
   inflates the one number the project is judged on.
 
-- **The D6 deepening pass is uncapped.** In the local profile, phase 3 makes ONE extra
-  LEGAL_ANALYST call per finding that agent returned in pass one, with no ceiling
-  (`pipeline.py`, `_deepen_legal_analyst_findings_local`). Measured 2026-09-11: the flawed
-  twin returned 1 pass-one finding and made 1 deepening call (173 s); the clean twin returned
-  5 and made 5 (709 s, **27.7% of that run's whole wall clock**). At about 145 s per finding
-  on that machine, a document yielding ten pass-one findings would add roughly 24 minutes,
-  and nothing in the code path stops it. Recorded, not fixed.
+- **The D6 deepening pass is BOUNDED at 6 findings per document** (`DEEPEN_MAX_FINDINGS`).
+  It used to make one LEGAL_ANALYST call per pass-one finding with no ceiling at all.
+  Measured 2026-09-11: the flawed twin returned 1 finding and made 1 call (173 s); the clean
+  twin returned 5 and made 5 (709 s, **27.7% of that run's whole wall clock**) at about 145 s
+  each, so ten findings would have added roughly 24 minutes. The cap is one above the largest
+  number a real run has produced, so **neither measured run changes**, and when it binds it
+  says so on stderr and in the log rather than silently truncating: the undeepened findings
+  keep their pass-one form and are still reported.
 - **The clean twin produced five pass-one findings where the flawed twin produced one**, which
   is backwards: the document with its defects repaired yielded MORE observations than the one
   with defects in it. The two documents differ only in the repairs. Not explained by the
@@ -2606,6 +2616,24 @@ Stated honestly, from operator testing:
 
 ## L. The verification gate
 
+### A change of working discipline, and where it starts
+
+**From commit `1bd0dc1` onward the README is checked once at the end of a working run, not
+before every commit.** Before that commit, every single commit was preceded by a full README
+pass. The operator made this change on 2026-09-12 to cut repetition rather than rigour, and it
+is recorded here so a reader can tell that a commit from last week and a commit from today
+were made under different standards.
+
+What did NOT change, and is not negotiable: every new behaviour is still gate-proved by
+neutralise, fail, restore, pass, and every commit is still preceded by an adversarial read of
+what it contains. Those two have earned their place. Between 10 and 12 September 2026 they
+caught six wrongly-passing checks and ten real defects, including two checks of mine that
+passed against a mock while the real code was broken.
+
+A reader auditing a commit from before `1bd0dc1` can assume its README was current at that
+commit. A reader auditing one after it should look to the end of that working run for the
+README pass that covers it.
+
 ### A note on em dashes
 
 The project rule is no em dashes: use commas, colons, periods, or parentheses. The rule
@@ -2623,7 +2651,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**231** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**233** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2638,7 +2666,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 230 have since raised the total to 231.
+table below; checks 210 to 232 have since raised the total to 233.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

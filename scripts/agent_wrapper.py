@@ -1397,7 +1397,24 @@ class AgentWrapper:
     def run_task(self, *, work_payload, run_objectives="", channel="main",
                  recipient="ORCHESTRATOR", recent_bus_limit=30, max_tokens=4096,
                  relevant_precedent_ids=None, convention_registry=None,
-                 reference_index_excerpt=None, phase="", doc_id=""):
+                 reference_index_excerpt=None, phase="", doc_id="",
+                 items_are_advisory=False):
+        """`items_are_advisory` marks a call whose reply is NOT the record.
+
+        In paired mode the model is asked one narrow question about one unit
+        and one rule, and PYTHON mints the typed Finding from its own
+        arithmetic; the model's sentence is used as the explanation and nothing
+        else. The reply's own items are therefore an opinion, not a record, and
+        posting them as typed findings put 23 unattributed findings on the bus
+        of the 2026-09-11 clean run, carrying no rule_id and no unit_id, which
+        cannot be checked, cited or scored. Two of them were plainly false
+        (a Class-B entry that carries a signature called missing one; a reading
+        of 112 inside a 90 to 130 range called a violation).
+
+        With this set the envelope is still posted, with its item_count,
+        parse_trace and truncated intact, so nothing about the call is hidden:
+        only the ITEMS are withheld from the bus, because a caller that mints
+        its own records is the author of the record."""
         situation = {"agent": self.name, "action": "execute_task",
                      "tags": ["task_execution", self.spec.get("category", "")]}
         check = self.check_constitution(situation)
@@ -1572,11 +1589,23 @@ class AgentWrapper:
         # caller that treats a truncated hold as a complete "nothing to
         # report" would be parsing a cut answer as though it were whole,
         # which is exactly what this flag exists to prevent.
+        # An advisory reply's ITEMS are withheld from the bus: the caller mints
+        # the record from its own arithmetic and the model's items are an
+        # opinion, not a finding. Everything else about the call is posted
+        # unchanged, so the call is still fully on the record.
+        posted_payload = parsed
+        if items_are_advisory and isinstance(parsed, dict):
+            posted_payload = dict(parsed)
+            posted_payload["items"] = []
+            posted_payload["items_withheld"] = item_count
+            posted_payload["items_withheld_reason"] = (
+                "advisory reply: the caller mints the typed record from its own "
+                "arithmetic, so these items are an opinion and not a finding")
         self.post_to_bus(recipient=recipient, channel=channel, msg_type="INFORM",
                          body={"event": "AGENT_OUTPUT", "backend": result.backend, "model": result.model,
                                "item_count": item_count, "parse_trace": parse_trace,
                                "truncated": truncated,
-                               "payload": parsed, "call_id": call_id},
+                               "payload": posted_payload, "call_id": call_id},
                          constitution_check=self.build_constitution_check(
                              laws_consulted=["LAW-V"],
                              result=check.layer or ("RESOLVED" if check.resolved else "RESOLVED"),

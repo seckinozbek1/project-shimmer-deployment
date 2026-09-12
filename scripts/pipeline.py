@@ -366,6 +366,15 @@ PRODUCTION_MAX_TOKENS = 2048          # ARCHIVIST, INST_FINDER, CITATION_RESOLVE
                                        # 1024 and produced zero items; true
                                        # ceiling unmeasured, so raised rather
                                        # than guessed lower
+DEEPEN_MAX_FINDINGS = 6               # D6 pass two: the most pass-one findings to
+                                       # deepen in one document. Measured
+                                       # 2026-09-11: 5 findings cost 709 s, 27.7%
+                                       # of that run's wall clock, at ~145 s each,
+                                       # and the loop had no ceiling at all. Six
+                                       # is one above the largest number a real
+                                       # run has produced, so it bounds the tail
+                                       # without changing any measured run, and
+                                       # it SAYS SO when it binds.
 DEEPEN_MAX_TOKENS = 2048              # D6 pass two, LEGAL_ANALYST: one finding
                                        # deepened into three labelled parts
                                        # (provision, comparison, amendment);
@@ -1090,7 +1099,8 @@ async def _gather_or_serial(tasks):
 
 
 async def _run_one(wrapper, work_payload, run_objectives, channel="main", max_tokens=2048,
-                   convention_registry=None, reference_index_excerpt=None, _progress=None):
+                   convention_registry=None, reference_index_excerpt=None, _progress=None,
+                   items_are_advisory=False):
     # _progress, when set, is (phase, doc, docs, agent): emit a running/done pair around
     # the agent call so chat.py and server.py can show per-doc-per-agent progress.
     # productization STEP 4: this is also the cost-dimension signal (phase, doc_id),
@@ -1122,6 +1132,7 @@ async def _run_one(wrapper, work_payload, run_objectives, channel="main", max_to
         convention_registry=convention_registry,
         reference_index_excerpt=reference_index_excerpt,
         phase=phase_name, doc_id=doc_id,
+        items_are_advisory=items_are_advisory,
     )
     if _progress is not None:
         ph, dc, dcs, ag = _progress
@@ -1182,6 +1193,24 @@ async def _deepen_legal_analyst_findings_local(wrapper, findings, doc, embed_sto
     already posted by run_task keeps the freshly-stamped id (a known, stated audit-
     trail gap, not a functional one: deliverables read from `results`, never re-read
     the bus)."""
+    # BOUNDED. This used to be one call per pass-one finding with no ceiling at
+    # all. Measured 2026-09-11: the flawed twin returned 1 finding and made 1
+    # deepening call (173 s); the clean twin returned 5 and made 5 (709 s, 27.7%
+    # of that run's entire wall clock) at about 145 s per finding on that
+    # machine. Ten findings would have added roughly 24 minutes, and nothing
+    # stopped it. The cap is stated, and when it BINDS it says so rather than
+    # silently truncating the work: the findings it did not deepen keep their
+    # pass-one form and are still reported, so nothing is lost, only undeepened.
+    total = len(findings)
+    if total > DEEPEN_MAX_FINDINGS:
+        print(f"[pipeline] deepening cap: {total} pass-one findings, deepening the "
+              f"first {DEEPEN_MAX_FINDINGS}; the remaining {total - DEEPEN_MAX_FINDINGS} "
+              f"keep their pass-one form and are still reported",
+              file=sys.stderr, flush=True)
+        log_event(_LOG, f"deepen_capped total={total} deepened={DEEPEN_MAX_FINDINGS} "
+                        f"undeepened={total - DEEPEN_MAX_FINDINGS}",
+                  phase="3")
+    findings = findings[:DEEPEN_MAX_FINDINGS]
     _local_progress_bump_expected(len(findings))  # this many extra _run_one calls now known
     out = []
     for finding in findings:
@@ -2098,11 +2127,21 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 "from the unit text above that you are relying on, copied verbatim. "
                 "The quote is checked against the unit, so a claim resting on text "
                 "the unit does not contain is refused.")
+        # A judged-absence reply IS the record (its items are stamped with the
+        # unit and rule Python asked about, by _stamped_judged_items below). Any
+        # other paired reply is an OPINION: Python mints the typed finding from
+        # its own arithmetic and takes only the model's sentence as the
+        # explanation, so the reply's own items must not reach the bus as typed
+        # findings. Posting them put 23 findings carrying no rule_id and no
+        # unit_id on the 2026-09-11 clean run's bus, which nothing could check,
+        # cite or score, two of them plainly false.
+        advisory = plan.get("kind") != "absence_judged"
         r = await _run_one(
             wrapper, payload,
             f"{run_objectives}\nOne unit, one rule. Do not perform arithmetic.",
             max_tokens=PAIRED_JUDGING_MAX_TOKENS, convention_registry={"conventions": [rule]},
             reference_index_excerpt=refs_excerpt,
+            items_are_advisory=advisory,
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
         if plan.get("kind") == "absence_judged":
             judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)

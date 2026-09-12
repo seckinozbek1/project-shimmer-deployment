@@ -18992,6 +18992,217 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_232_typed_amendment_and_bounded_deepening():
+    """Two fixes from the 2026-09-12 measurement, both about a record.
+
+    THE AMENDMENT LOST THE TYPED RECORD. An amendment carried `finding_type`
+    ("factual"), a coarse label, and not the Finding record's own relation or
+    figures. So a planted defect reachable only through an amendment could be
+    located and never checked: UNIT-VETCH scored "reason unverifiable" on
+    2026-09-11 for exactly that. The typed fields exist on the item the
+    amendment is built from and are now copied through, never invented, absent
+    when the item carries none. An amendment written before this change carries
+    none of them and stays honestly unverifiable rather than scored on fields
+    that are not there.
+
+    THE DEEPENING PASS WAS UNBOUNDED. D6 pass two made one LEGAL_ANALYST call
+    per pass-one finding with no ceiling. Measured: the flawed twin returned 1
+    and made 1 (173 s); the clean twin returned 5 and made 5 (709 s, 27.7% of
+    that run's whole wall clock) at about 145 s each. Ten findings would have
+    added roughly 24 minutes. DEEPEN_MAX_FINDINGS bounds it at 6, one above the
+    largest number a real run has produced, so no measured run changes, and the
+    cap SAYS SO when it binds rather than silently truncating: the undeepened
+    findings keep their pass-one form and are still reported.
+
+    NEUTRALISE AND RESTORE on both.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import pipeline
+        import inspect as _inspect
+        import importlib
+        sc = importlib.import_module("score_corpus")
+    except Exception as exc:
+        return _fail("cannot import pipeline/score_corpus: %s" % exc)
+
+    # --- the typed amendment ------------------------------------------------
+    pr_src = (ROOT / "scripts" / "paired_review.py").read_text(
+        encoding="utf-8", errors="replace")
+    for field in ("finding_relation", "finding_value_a", "finding_value_b"):
+        if '"%s"' % field not in pr_src:
+            return _fail("an amendment does not carry %s, so a claim reachable only "
+                         "through an amendment can never be checked" % field)
+
+    claim = {"relation": "date_window", "value_a": 151, "unit_a": "days",
+             "value_b": 90, "unit_b": "days"}
+    if sc._reason_matches(claim, [{"relation": "date_window",
+                                   "value_a": 151, "value_b": 90}])[0] is not True:
+        return _fail("an amendment carrying the key's own typed reason must confirm it")
+    if sc._reason_matches(claim, [{"relation": "missing_field",
+                                   "value_a": None, "value_b": None}])[0] is not False:
+        return _fail("an amendment carrying a DIFFERENT typed reason must not confirm")
+    if sc._reason_matches(claim, [])[0] is not None:
+        return _fail("an amendment carrying no typed reason must stay unverifiable, "
+                     "never confirmed and never a miss")
+    sc_src = (ROOT / "tools" / "score_corpus.py").read_text(encoding="utf-8", errors="replace")
+    if "finding_relation" not in sc_src:
+        return _fail("the scorer does not read an amendment's typed relation")
+
+    # --- the bounded deepening pass -----------------------------------------
+    cap = getattr(pipeline, "DEEPEN_MAX_FINDINGS", None)
+    if not isinstance(cap, int) or cap <= 0:
+        return _fail("DEEPEN_MAX_FINDINGS is missing or not a positive int")
+    dsrc = _inspect.getsource(pipeline._deepen_legal_analyst_findings_local)
+    if "findings[:DEEPEN_MAX_FINDINGS]" not in dsrc:
+        return _fail("the deepening loop is still unbounded")
+    if "deepen_capped" not in dsrc:
+        return _fail("the cap does not say so when it binds; a silent truncation is "
+                     "exactly what this fix exists to stop")
+    for measured in (1, 5):
+        if min(measured, cap) != measured:
+            return _fail("the cap of %d changes a measured run of %d findings; it must "
+                         "bound the tail without rewriting what was measured"
+                         % (cap, measured))
+
+    # NEUTRALISE the cap, on the real file.
+    pl = ROOT / "scripts" / "pipeline.py"
+    original = pl.read_text(encoding="utf-8")
+    neutralised = original.replace("    findings = findings[:DEEPEN_MAX_FINDINGS]\n", "", 1)
+    if neutralised == original:
+        return _fail("could not neutralise: the cap line was not found")
+    try:
+        pl.write_text(neutralised, encoding="utf-8")
+        gone = "findings[:DEEPEN_MAX_FINDINGS]" not in pl.read_text(encoding="utf-8")
+    finally:
+        pl.write_text(original, encoding="utf-8")
+    if not gone:
+        return _fail("neutralise did not take effect on the real file")
+    if "findings[:DEEPEN_MAX_FINDINGS]" not in pl.read_text(encoding="utf-8"):
+        return _fail("restore failed: the deepening loop is unbounded again")
+
+    return _ok("an amendment carries finding_relation and its figures, so a claim "
+               "located only through one is checkable, while an amendment written "
+               "before the change stays unverifiable rather than scored on absent "
+               "fields; the deepening pass is bounded at %d, which changes neither "
+               "measured run (1 and 5 findings) and announces itself when it binds; "
+               "neutralise/restore proved on both" % cap)
+
+
+def check_231_advisory_reply_items_are_withheld():
+    """A finding that cannot be attributed cannot be checked, cited or scored.
+
+    The 2026-09-11 clean run put 23 typed findings on its bus carrying NO
+    rule_id and NO unit_id. They were not wide-path findings, as first assumed:
+    all 23 came from PRACTICE_AUDITOR in phase 5.5, and they are the model's own
+    reply items, posted by the wrapper for every call. In paired mode the model
+    is asked one narrow question and PYTHON mints the typed record from its own
+    arithmetic, taking only the model's sentence as the explanation, so those
+    items were an opinion published as a record. Two were plainly false:
+    UNIT-DAMSON is Class-B and carries a signature and was called missing one;
+    UNIT-GORSE reads 112 inside a locally adjusted 90 to 130 range and was
+    called a violation. Both carry no unit and no rule, so this fix removes
+    them: they are the same defect's symptom, not a separate defect.
+
+    `items_are_advisory` withholds only the ITEMS. The envelope is still posted,
+    with item_count, parse_trace and truncated intact, so nothing about the call
+    is hidden and the withheld count is on the record. A judged absence is NOT
+    advisory: its items are stamped with the unit and rule Python asked about
+    and are a genuine record.
+
+    NEUTRALISE AND RESTORE on the withholding itself.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import pipeline
+        import agent_wrapper
+        import inspect as _inspect
+    except Exception as exc:
+        return _fail("cannot import pipeline/agent_wrapper: %s" % exc)
+
+    for fn, name in ((pipeline._run_one, "_run_one"),
+                     (agent_wrapper.AgentWrapper.run_task, "run_task")):
+        if "items_are_advisory" not in _inspect.signature(fn).parameters:
+            return _fail("%s does not accept items_are_advisory" % name)
+
+    src = _inspect.getsource(agent_wrapper.AgentWrapper.run_task)
+    if "items_withheld" not in src:
+        return _fail("run_task does not record how many items it withheld; a silent "
+                     "drop is exactly what this fix exists to stop")
+    if 'posted_payload["items"] = []' not in src:
+        return _fail("run_task does not withhold the items of an advisory reply")
+
+    psrc = _inspect.getsource(pipeline._paired_convention_review)
+    if 'advisory = plan.get("kind") != "absence_judged"' not in psrc:
+        return _fail("the paired path does not mark exactly the non-absence replies "
+                     "advisory; a judged absence IS the record and must not be withheld")
+    if "items_are_advisory=advisory" not in psrc:
+        return _fail("the paired call does not pass its advisory flag")
+
+    # The RETURNED result keeps its items, so the explanation path still works:
+    # withholding must change what is POSTED, never what the caller reads back.
+    fake = {"ok": True, "parsed": {"agent": "A", "doc_id": "d", "items": [
+        {"ref": "REF-1", "kind": "finding", "confidence": "CONFIDENT",
+         "relation": "above_band", "record_verdict": "irregular",
+         "explanation": "The reading exceeds the band.", "source_refs": ["REF-1"]}]}}
+    if pipeline._first_explanation(fake) != "The reading exceeds the band.":
+        return _fail("the explanation path no longer reads the returned reply")
+
+    # The real artifacts this closes.
+    bus = (ROOT / "output" / "runs" / "2026-09-12__1doc_review__479f3219" /
+           "logs" / "agent_bus.jsonl")
+    if bus.is_file():
+        import finding_record as _fr
+        unattributed = 0
+        for line in bus.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line.strip():
+                continue
+            try:
+                msg = json.loads(line)
+            except ValueError:
+                continue
+            payload = (msg.get("body") or {}).get("payload") or {}
+            for item in (payload.get("items") or []):
+                if not _fr.is_finding(item) or item.get("absence_path"):
+                    continue
+                if not item.get("rule_id") and not item.get("unit_id"):
+                    unattributed += 1
+        if unattributed == 0:
+            return _fail("the saved clean run no longer shows the unattributed findings "
+                         "this check is about; the fixture has changed under it")
+
+    # NEUTRALISE AND RESTORE against the real file: with the withholding line
+    # removed from run_task's source, this check must fail.
+    wrapper_path = ROOT / "scripts" / "agent_wrapper.py"
+    original_text = wrapper_path.read_text(encoding="utf-8")
+    neutralised = original_text.replace(
+        '            posted_payload["items"] = []\n', "", 1)
+    if neutralised == original_text:
+        return _fail("could not neutralise: the withholding line was not found as this "
+                     "check expects it")
+    try:
+        wrapper_path.write_text(neutralised, encoding="utf-8")
+        still_withholds = 'posted_payload["items"] = []' in wrapper_path.read_text(
+            encoding="utf-8")
+    finally:
+        wrapper_path.write_text(original_text, encoding="utf-8")
+    if still_withholds:
+        return _fail("neutralise did not take effect on the real file")
+    if 'posted_payload["items"] = []' not in wrapper_path.read_text(encoding="utf-8"):
+        return _fail("restore failed: agent_wrapper no longer withholds advisory items")
+
+    return _ok("a paired reply that is not a judged absence is marked advisory, so its "
+               "items never reach the bus as typed findings while item_count, "
+               "parse_trace, truncated and the withheld count stay on the record; a "
+               "judged absence is still a record; the returned reply keeps its items so "
+               "the explanation path is unchanged; the saved clean run's 23 unattributed "
+               "findings are the fixture this closes")
+
+
 def check_230_same_claim_in_both_twins_is_reported():
     """A claim worded identically against both twins did not come from the document.
 
@@ -20865,6 +21076,10 @@ CHECKS = [
      check_229_quoted_span_must_appear_in_the_unit),
     ("230 a claim worded identically in both twins is reported by the scorer",
      check_230_same_claim_in_both_twins_is_reported),
+    ("231 an advisory paired reply puts no unattributed finding on the bus",
+     check_231_advisory_reply_items_are_withheld),
+    ("232 an amendment carries its typed record, and the deepening pass is bounded",
+     check_232_typed_amendment_and_bounded_deepening),
 ]
 
 

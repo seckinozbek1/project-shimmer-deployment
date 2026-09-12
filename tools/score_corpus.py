@@ -535,7 +535,19 @@ def score(corpus, run_dir):
         # vocabulary, so a located finding can be asked whether it says the
         # same thing. Without a claim the question is unanswerable and the
         # entry keeps exactly its old meaning, never a confident pass.
-        ok, why = _reason_matches(p.get("claim"), bus_hits)
+        # An amendment now carries the typed record it was built from
+        # (finding_relation and the figures), so a claim located only through an
+        # amendment can still be checked. Amendments written before that change
+        # carry none of these keys and contribute nothing here, so an old run
+        # stays honestly unverifiable rather than scored on absent fields.
+        amend_typed = [{"relation": a.get("finding_relation"),
+                        "field_label": a.get("finding_field_label"),
+                        "value_a": a.get("finding_value_a"),
+                        "value_b": a.get("finding_value_b")}
+                       for a in on_unit
+                       if str(a.get("source_convention_ref") or "").upper() == rule
+                       and a.get("finding_relation")]
+        ok, why = _reason_matches(p.get("claim"), bus_hits + amend_typed)
         if is_found and ok is None and via_rule and not via_bus and p.get("claim"):
             # Located through an AMENDMENT only. Amendments carry no typed
             # relation or figures (finding_type is a coarse label such as
