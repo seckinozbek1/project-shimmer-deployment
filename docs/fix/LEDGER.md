@@ -1,5 +1,56 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## SIXTEEN CLOSED, 2026-09-12
+
+FIFTEEN committed bdcaf01. Rechecked the complete current product image rather
+than relying only on earlier ZERO-C/FOUR evidence. shimmer:fifteen full gate with
+--network none --gpus all and no mounts: PASS=239 WARN=0 SKIP=8 FAIL/ERROR=4
+TOTAL=251, 140.9 seconds. Checks 139 and 193 both PASS. The latter's real cached
+Phi load makes zero network attempts; removing snapshot resolution produces one
+attempt even if the library catches it and still loads; restoration has zero.
+This is direct behavior, not an environment skip. Check 139 uses stubbed model
+construction on the real CUDA branch and proves configuration/quantization routing,
+not an actual Qwen weight load. Explicitly distinguish that in the README.
+
+The separate current-image offline probe passes all six steps in 30.5 seconds:
+three cached model directories, reference/threshold availability, real bge-m3
+loading, five-voter redaction intent, shape authorisation, and the compiled rule's
+retained votes. No network attempts, mounts, generation or provider calls. No GPU
+workloads overlapped. Logs: output/sixteen_container_gate.log and
+output/sixteen_offline_probe.log. This proves loadability and executed decisions,
+not end-to-end review success or generation quality for every cached model.
+
+Four image failures are still declared shipping facts: 01, 28, 31 need runtime/input
+paths, and 145 needs the ignored contamination fixture. Eight skips: 15/38 need
+network, 222 needs host launchers, and 215/217/224/227/230 need unshipped corpora.
+Other mixed synthetic/corpus checks explicitly name their unexecuted portions.
+Corrected the stale README paragraph saying seven skips and distinguished the
+launcher skip from corpus skips. No product runtime or dependency change.
+
+The host gate exposed an intermittent check 88 worker lifetime race: temporary
+run-directory cleanup raised WinError 145 while the server thread still wrote.
+Check 88 now tracks only this server's threads, joins them before restoring
+Popen or deleting the temporary directory, and isolates CONTEXT_DIR so the
+worker's auto-clear cannot touch operator input. A delayed real worker proves
+all three lifetime observations true; removing the join makes all three false;
+restoration restores them. Separately, disabling the real status writer removes
+the independently observed disk record BEFORE check 88 fails; restoration passes.
+Fifteen repeated submissions pass. No real pipeline process was observed running.
+Evidence: output/sixteen_worker_proof.py and .log. The initial host log is retained
+with 248 PASS / 3 FAIL including this new error, not rewritten as a passing run.
+Host gate: PASS=249 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=251, known 01/145 only
+(output/sixteen_host_gate_repaired.log). shimmer:sixteen ships the completed documentation;
+its product runtime source is unchanged from the fully tested shimmer:fifteen.
+The repaired check 88 also passes inside shimmer:sixteen, offline with no mounts. All 123
+shipped files match (output/sixteen_source_audit.json). Image
+sha256:4ff8b4a7e9d5bca0ef79d296ea85c7a1ad545cd4d70daa922a751bba4cba7ae8,
+size 14408279254 bytes. All model/conversion layers reused. No repeated GPU suite
+was needed for this documentation and fixture refresh. Adversarial read distinguishes
+stubbed model construction from real loading, cached weights from generation
+quality, absent coverage from passing coverage, and runtime requirements from
+source faults. README/image debt paid. Continue SEVENTEEN after this commit.
+
+
 ## FIFTEEN CLOSED, 2026-09-12
 
 FOURTEEN committed c014f21. The fallback was not similarity in the production

@@ -14,38 +14,36 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-FIFTEEN, the commit containing this checkpoint,
-`FIFTEEN: refuse uncalibrated fallback pairing and preserve uncertainty`.
+SIXTEEN, the commit containing this checkpoint,
+`SIXTEEN: verify the current image offline with GPU access`.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. FOURTEEN is c014f21; earlier hashes are in LEDGER.
+next item updates this file. FIFTEEN is bdcaf01; earlier hashes are in LEDGER.
 
-The fallback's dict-store adapter never ranked by similarity: it swallowed an
-AttributeError and returned registry order. It had no measured five-voter basis.
-Automatic promotion is retired; direct fields/scopes still pair and unresolved
-rules retain explicit saved/API/console REFUSES evidence. No votes/margins invented.
-Current twins retain 37/49 direct pairs and 38 undecided each. Prevented the
-secondary five/two new missing-field assertions by requiring fully decided
-applicability for the unmatched-unit inference. Saved fallback rules produced no
-typed bus findings; current fallback plans have no assigned judging agent. Loss
-of possible prose-only judgments elsewhere is explicit, not claimed absent.
-Changed checks 153/154 and new 250, three independent consumer mutations and actual
-console rendering proof pass. Host 249/251, known 01/145 only. Image focused checks
-pass offline; all 123 shipped files match. Exact image UI/API data also pass the
-host Node proof. Adversarial read and README/image debt paid. No new dependency.
+Current product image fully rechecked: 239 PASS, 8 SKIP, 4 known FAIL / 251 in
+140.9 seconds, network none, GPU exposed, no mounts. Checks 139/193 PASS. Separate
+six-step offline probe PASS in 30.5 seconds with no network attempts. Documented
+the exact limits: 139 stubs model construction; 193 really loads cached Phi;
+the probe loads bge-m3 and makes real five-voter decisions. No generation or
+completed review is claimed. Skips/failures name their unavailable resources.
+Host 249/251, known 01/145 only. shimmer:sixteen updates documentation with runtime
+source unchanged from the tested image; all 123 shipped files match. Adversarial
+read and README/image debt paid. No product runtime or dependency change. Check 88 now joins its real worker
+before restoring the stub or cleaning its isolated directories. Its status-writer
+mutation and delayed-worker lifetime proof pass, as does focused image check 88.
 
 ## Current item
 
-None open. Continue SIXTEEN: carry the earlier positive offline GPU/image evidence
-for checks 139 and 193 into the complete answer, respecting the shipping limits.
+None open. Continue SEVENTEEN: close the repeated model-download diagnosis from
+the recorded build history and measured local cache reuse; do not invent a
+historical GC eviction record that was never observed.
 
 ## Ordered remaining work
 
-1. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-2. SEVENTEEN: close the cache diagnosis with measured build reuse.
-3. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-4. NINETEEN: classify document_dates.json in the manifest.
-5. TWENTY: answer the learning-signal question, no GNN build.
-6. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. SEVENTEEN: close the cache diagnosis with measured build reuse.
+2. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+3. NINETEEN: classify document_dates.json in the manifest.
+4. TWENTY: answer the learning-signal question, no GNN build.
+5. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -147,31 +145,34 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final FIFTEEN host: PASS=249 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=251.
-Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
-offline probe steps PASS, 163 seconds combined. Tests used --network none,
---gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
-(missing ignored contamination fixture). Image source-only failures: 01, 28,
-31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/fifteen_host_gate.log, output/four_container_validation.log and
-output/fifteen_mutation_proof.log. Focused changes prove independently observable
-mutation effects before fail/restore/pass. No proof mutates real source files.
+Final SIXTEEN host: PASS=249 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=251.
+Current full image: PASS=239 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=251 on
+shimmer:fifteen, runtime source unchanged in shimmer:sixteen. Separate six-step
+offline probe PASS. Both used --network none, --gpus all and no mounts.
+Host failures 01/145 only; image failures 01/28/31/145. Skips 15/38 for network,
+222 for host launchers, 215/217/224/227/230 for unshipped corpora. Passing mixed
+checks explicitly limit their unexecuted corpus assertions.
+Logs: output/sixteen_host_gate_repaired.log, output/sixteen_container_gate.log,
+output/sixteen_offline_probe.log and output/fifteen_mutation_proof.log. Focused changes prove independently observable
+mutation effects before fail/restore/pass. New consumer proofs patch in memory; inherited gate checks can briefly mutate
+and restore source files. Verify the restored diff after the gate.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:fifteen carries the current source and
-README. All 123 shipped files match (output/fifteen_source_audit.json); checks
-153/154/250 pass offline with no mounts. Exact UI/API data pass host Node rendering.
+GPU model workload at a time. shimmer:sixteen carries the current source and
+README. All 123 shipped files match (output/sixteen_source_audit.json). Current
+full image and offline probe evidence is above. Exact UI/API data also pass host
+Node rendering in shimmer:fifteen.
 Check 249 passed in shimmer:fourteen offline.
 Check 248 passed in shimmer:thirteen offline.
 Checks 246 and 247 passed in shimmer:twelve offline. ELEVEN's exact UI/data also passed the
 rendering proof in host Node. EIGHT's
 computed date-window proof passed in shimmer:eight offline with no mounts.
 SEVEN's checks 174 and 218 passed in its image.
-The full image gate above was run on shimmer:four; the model loader, pins and
-weights remain unchanged. All older tags remain intact. Source refreshes reused
+The full image gate above ran on shimmer:fifteen; runtime source, pins and
+weights remain unchanged in shimmer:sixteen. All older tags remain intact. Source refreshes reused
 model/conversion layers.
 Build cache: output/shimmer_build_cache, about 14.41 GB, ignored and local only.
 Reuse it with the --cache-from/--cache-to commands in README; no global Docker

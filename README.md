@@ -1625,6 +1625,30 @@ runtime exposes one CUDA device. The six-step ensemble probe also PASSes with no
 mounts and no attempted network access. This proves local loading and semantic
 decisions, not a completed review; no pipeline run was performed.
 
+SIXTEEN distinguishes the two checks' claims. Check 139 executes the CUDA loading branch
+with model construction stubbed, proving that a prequantized checkpoint bypasses full-
+precision staging and that configuration selects the right backend ID. It does not load
+weights. Check 193 loads the real cached Phi checkpoint with network access blocked and
+counts attempted HTTP/socket access, including attempts the library catches. The separate
+six-step probe loads bge-m3 and makes real five-voter redaction/shape decisions. These prove
+loading, branch behavior and semantic decisions; none is an end-to-end review or generation
+quality test. GPU exposure is required for the CUDA branch, and baked weights supply the
+cache without host mounts. The three cached model directories alone do not prove all three
+models have generated successfully.
+
+The server submission gate also joins its stubbed background worker before restoring
+subprocess execution or cleaning its isolated input/run directories. This prevents
+an intermittent Windows cleanup race while retaining the real HTTP submission path.
+
+SIXTEEN rechecked the current `shimmer:fifteen` product image after all later changes:
+**239 PASS, 0 WARN, 8 SKIP, 4 FAIL, 251 total**, in 140.9 seconds with `--network none`,
+`--gpus all` and no mounts. Checks 139 and 193 both pass. The four failures remain
+01, 28, 31 (deliberately absent runtime/input paths) and 145 (the absent ignored
+contamination fixture). They are declared limitations, not silently converted to passes.
+The separate six-step offline probe also passes in 30.5 seconds: bge-m3 loads and
+all five votes, scores and references survive the redaction decisions, with no
+attempted network access. It uses no host mounts and performs no generation.
+
 The completed ZERO-C host gate is **243 PASS, 0 WARN, 0 SKIP, 2 FAIL, 245 total**.
 The image gate is **233 PASS, 0 WARN, 8 SKIP, 4 FAIL, 245 total**, with network
 disabled, GPU enabled and no mounts. The six-step ensemble probe passes.
@@ -1637,13 +1661,13 @@ left by another gate check does not constitute a corpus. The deliberately
 absent runtime directories account for checks 01, 28 and 31, and the absent ignored
 contamination fixture accounts for 145. These source-only limits remain visible.
 
-Seven skips: the two network checks `--offline` always skips, plus five that need files the
-image does not ship. The image copies `scripts/`, `config/`, `tools/` and `corpus_ingest/`
-only, so the launchers and `benchmark/corpora/` are absent **by design**. Checks 215, 217,
-222, 224 and 227 name the absent file and why rather than failing, which is the difference
-between a deliberate shipping decision and a broken check. Checks 220 and 225 pass with the
-half they cannot verify there narrowed, and each says so in its own result line rather than
-claiming a proof it did not run.
+Eight checks are skipped in the baked offline image: 15 and 38 require network access;
+215, 217, 224, 227 and 230 require corpora deliberately not shipped; 222 needs the
+host launcher files, also intentionally absent. The image carries
+`scripts/`, `config/`, `tools/`, `corpus_ingest/`, root documentation and the three declared
+synthetic gate fixtures. Runtime state, launcher files and `benchmark/corpora/` are absent
+by design. Other checks that combine synthetic and corpus coverage name the corpus portion
+they cannot verify; a passing synthetic proof does not silently claim that coverage.
 
 The host offline gate at that same commit is `PASS=224 WARN=0 SKIP=2 FAIL/ERROR=2 TOTAL=228`,
 and the full host gate is `PASS=226 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=228`.

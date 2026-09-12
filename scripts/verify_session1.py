@@ -3576,6 +3576,7 @@ def check_88_status_json_written_on_submit():
     import hashlib as _hl
     import os as _os
     import subprocess as _subprocess
+    from types import SimpleNamespace
 
     with _tempfile.TemporaryDirectory(prefix="shimmer_gate_step2_") as tmp:
         runs_dir = Path(tmp) / "runs"
@@ -3583,10 +3584,25 @@ def check_88_status_json_written_on_submit():
 
         saved_tok = _os.environ.get("SHIMMER_TOKEN_HASH")
         saved_popen = _subprocess.Popen
+        saved_threading = server.threading
+        saved_context = server.CONTEXT_DIR
+        workers = []
+
+        def tracked_thread(*args, **kwargs):
+            worker = saved_threading.Thread(*args, **kwargs)
+            workers.append(worker)
+            return worker
+
+        # Patch this module's reference only. TestClient's own threads are not
+        # workers and must not be joined here.
+        server.threading = SimpleNamespace(**vars(saved_threading))
+        server.threading.Thread = tracked_thread
         try:
             tok = "gate-step2-token"
             _os.environ["SHIMMER_TOKEN_HASH"] = _hl.sha256(tok.encode("utf-8")).hexdigest()
             server.RUNS_DIR = runs_dir  # belt and suspenders alongside the env var
+            server.CONTEXT_DIR = Path(tmp) / "context"
+            server.CONTEXT_DIR.mkdir()
             _subprocess.Popen = lambda *a, **k: _FakePopen(*a, returncode=0, **k)
             server.subprocess.Popen = _subprocess.Popen
 
@@ -3611,6 +3627,12 @@ def check_88_status_json_written_on_submit():
             if record.get("run_id") != run_id:
                 return _fail(f"status.json run_id mismatch: {record.get('run_id')!r} != {run_id!r}")
         finally:
+            # A terminal status can precede the worker's last cleanup/write.
+            # Keep Popen stubbed and the directory alive until the thread exits.
+            for worker in workers:
+                worker.join()
+            server.threading = saved_threading
+            server.CONTEXT_DIR = saved_context
             _subprocess.Popen = saved_popen
             if saved_tok is None:
                 _os.environ.pop("SHIMMER_TOKEN_HASH", None)
