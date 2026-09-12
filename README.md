@@ -2483,6 +2483,10 @@ failure; the **developer view** is the original field-level surface (raw `run_id
 `relation`, the full stop_reason detail, the raw pairing/findings tables) and stays fully
 intact under the switch. The reviewer view is a rewording, never a filtering: nothing the
 developer view shows is dropped, only reworded or moved into a small secondary citation.
+The harness generator supplies reviewer summaries for when each agent runs and how its rule
+assignment is tested. The descriptions distinguish testing the routing mechanism from testing
+an individual agent's entire rule group. If a decided part lacks a reviewer summary, the console
+says so explicitly; technical conditions and test details remain available in the developer view.
 Findings and the pairing map are fetched for every state a run can be in except `queued`, not
 only a clean `succeeded` completion: phase 5.5 writes both the moment it pairs a unit, with no
 outcome of its own, so a run that later crashes, times out, is stopped by a rule, is

@@ -1170,20 +1170,10 @@ var HARNESS_PART_LABELS_HUMAN = {
 };
 
 function harnessPartSummary(part, shared, human) {
-  /* One line for a decided part.
-
-     console audit finding 7. This served BOTH views identically, so for five of
-     the nine parts, on every one of the eighteen agents, a reviewer was shown
-     raw source prose: file paths, function names and JSON field paths. The
-     human/developer split reached the LABEL and never the value.
-
-     Two changes. `where` is the CODE LOCATION of a part, which is exactly what a
-     developer wants and exactly what a reviewer cannot use, so it is read only
-     in the developer view. And the declared_subjects branch moves ABOVE the
-     generic field loop: every rule_cluster part carries BOTH `where` and
-     `declared_subjects`, so the plain-language sentence the harness file
-     supplies for this purpose was unreachable in both views. It is now the
-     answer a reviewer gets, and the developer view is unchanged. */
+  /* The declared_subjects and does fields already describe the agent for a
+     reviewer. Other decided parts need an explicit summary from the harness.
+     Technical condition/how/location fields belong to the developer view;
+     a missing reviewer summary is stated, never silently replaced with those. */
   if (!part || typeof part !== "object") return "";
   if (part.see && typeof part.see === "string" && part.see.indexOf("shared_parts.") === 0) {
     var key = part.see.slice("shared_parts.".length);
@@ -1194,13 +1184,15 @@ function harnessPartSummary(part, shared, human) {
     return "declares no subject, by decision" + (part.subjects_note ? ": " + part.subjects_note : "");
   }
   if (Array.isArray(part.does) && part.does.length) return part.does.join("; ");
-  var fields = human
-    ? ["condition", "how", "summary", "text", "note", "reason", "limit"]
-    : ["condition", "how", "where", "summary", "text", "note", "reason", "limit"];
+  if (human) {
+    if (typeof part.summary === "string" && part.summary.trim()) return part.summary;
+    return "decided, with no plain-language summary recorded";
+  }
+  var fields = ["condition", "how", "where", "summary", "text", "note", "reason", "limit"];
   for (var i = 0; i < fields.length; i++) {
     if (typeof part[fields[i]] === "string" && part[fields[i]]) return part[fields[i]];
   }
-  return human ? "decided, with no plain-language summary recorded" : "decided";
+  return "decided";
 }
 
 function harnessHtml(body, human) {

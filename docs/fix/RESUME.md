@@ -14,44 +14,40 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-TEN, the commit containing this checkpoint,
-`TEN: persist pipeline completion and distinguish completed empty work`.
+ELEVEN, the commit containing this checkpoint,
+`ELEVEN: give reviewers explicit harness summaries and name missing descriptions`.
 Resolve its exact hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until
-another item updates this file. Prior NINE is b5eaad0, EIGHT is b688d26; earlier
-item hashes and the complete recovery trail are in LEDGER.
+another item updates this file. Prior TEN is 6ddea2a, NINE b5eaad0 and EIGHT
+b688d26; the complete recovery and earlier local hashes are in LEDGER.
 
-Both launch paths now write audit/run_completion.json through the tracked main
-entry point. Success requires the explicit final-work mark and exit code 0.
-Early zero/nonzero returns, exceptions, interruptions, and final unsuccessful
-returns remain distinct; hard kills leave start-only evidence. Only exception
-types are saved. The record follows a renamed run folder. Both scorer routes
-read it, preserve old server process-state limits, and leave old CLI runs unknown.
-No historical artifact is backfilled; all 22 saved runs lack completion evidence.
-New check 246 and seven independent mutations FAIL then restore PASS. Final host
-gate 245/247, known 01/145 only. shimmer:ten passes check 246 offline with no
-mounts and has all 122 shipped files matching. README/image debt paid and
-adversarial read complete. No pipeline or provider call was made; the focused
-completion proofs used no model.
+The harness generator now supplies reviewer summaries for testing_against_cluster
+and fires_at_all on all 18 agents. Missing reviewer text is explicit; technical
+facts remain in the developer view. Corrected the legal agent's stale description
+of the existing follow-up cap. No firing policy, test coverage or dependency was
+added. No gate check changed. The actual JavaScript and HTML renderer show all 36
+summaries; five mutations have independently observed effects, FAIL and restored
+PASS. Developer text stays identical in 35/36 rows, with only the cap correction.
+shimmer:eleven passes check 195 offline and its exact UI/data pass the rendering
+proof in host Node. All 122 shipped files match. Full host gate 245/247, known
+01/145 only. Adversarial read done and README/image debt paid. Details in LEDGER.
 
 ## Current item
 
-None open. Continue ELEVEN after this commit: supply plain-language facts for
-the two harness parts whose reviewer wording is currently technical, or explicitly
-show that a plain-language fact is absent. Inspect the actual current source.
+None open. Continue TWELVE after this commit: resolve the two run-id formats from
+the current sources and real artifacts, preserving existing run identities.
 
 ## Ordered remaining work
 
-1. ELEVEN: plain-language harness facts or explicit absence.
-2. TWELVE: one run-id format.
-3. THIRTEEN: structural proof against reading-only and no-op neutralisations.
-4. FOURTEEN: trace typed records through real amendment artifacts.
-5. FIFTEEN: pairing fallback value and WORDS-A compliance.
-6. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-7. SEVENTEEN: close the cache diagnosis with measured build reuse.
-8. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-9. NINETEEN: classify document_dates.json in the manifest.
-10. TWENTY: answer the learning-signal question, no GNN build.
-11. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. TWELVE: one run-id format.
+2. THIRTEEN: structural proof against reading-only and no-op neutralisations.
+3. FOURTEEN: trace typed records through real amendment artifacts.
+4. FIFTEEN: pairing fallback value and WORDS-A compliance.
+5. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+6. SEVENTEEN: close the cache diagnosis with measured build reuse.
+7. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+8. NINETEEN: classify document_dates.json in the manifest.
+9. TWENTY: answer the learning-signal question, no GNN build.
+10. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -93,6 +89,8 @@ show that a plain-language fact is absent. Inspect the actual current source.
     two writers own different facts, and exit code 0 alone can mean an early stop.
 19. Leave historical completion unknown without evidence: a new marker cannot
     retroactively establish how an older run ended.
+20. Supply explicit reviewer summaries and name missing descriptions: technical
+    prose is not a translation, and routing tests do not prove each agent's quality.
 
 ## Decisions made in the operator's place
 
@@ -136,23 +134,24 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final TEN host: PASS=245 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=247.
+Final ELEVEN host: PASS=245 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=247.
 Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
 offline probe steps PASS, 163 seconds combined. Tests used --network none,
 --gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
 (missing ignored contamination fixture). Image source-only failures: 01, 28,
 31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/ten_final_host_gate.log, output/four_container_validation.log and
-output/ten_mutation_proof.log. Focused changes prove independently observable
+Logs: output/eleven_host_gate.log, output/four_container_validation.log and
+output/eleven_mutation_proof.log. Focused changes prove independently observable
 mutation effects before fail/restore/pass. No proof mutates real source files.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:ten carries the current source and
-README. All 122 shipped files match (output/ten_source_audit.json); check 246
-passed in the image offline with no mounts. EIGHT's
+GPU model workload at a time. shimmer:eleven carries the current source and
+README. All 122 shipped files match (output/eleven_source_audit.json); check
+195 passed in the image offline with no mounts. Its exact UI/data pass the
+rendering proof in host Node. TEN's check 246 passed in shimmer:ten offline. EIGHT's
 computed date-window proof passed in shimmer:eight offline with no mounts.
 SEVEN's checks 174 and 218 passed in its image.
 The full image gate above was run on shimmer:four; the model loader, pins and

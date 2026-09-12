@@ -109,6 +109,7 @@ ONTOLOGY_PART = {
 # the D6 pass-two calls under the local profile), REDACTOR (layer-gated),
 # AMENDMENT_DRAFTER (bus-dedup-gated) and the editorial board (parsimony escalation).
 FIRES_UNCONDITIONALLY = {
+    "summary": "Runs whenever its scheduled stage has work to process.",
     "condition": "Always, once per its fixed phase, unconditionally.",
     "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, "
              "PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the "
@@ -118,6 +119,11 @@ FIRES_UNCONDITIONALLY = {
              "the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3).",
 }
 FIRES_CONVENTION_REVIEW = {
+    "summary": "In whole-document review, runs when it receives a matching rule "
+               "or a rule without a subject label. In passage-by-passage review, "
+               "a rule goes to the first eligible reviewer for its subject; a "
+               "rule without a subject goes to PRACTICE_AUDITOR. A rule with no "
+               "eligible reviewer stays unreviewed, with the reason recorded.",
     "condition": "Wide mode: fires if at least one rule is assigned to it by "
                  "the convention assignment OR at least one loaded rule is "
                  "untagged (an untagged rule keeps today's default routing to "
@@ -138,11 +144,14 @@ FIRES_CONVENTION_REVIEW = {
              "Gate checks 199 and 206 prove both, executed, neutralised and restored.",
 }
 FIRES_LEGAL_ANALYST = {
+    "summary": "Reviews each document once. With local models, it can then "
+               "receive a limited number of follow-up questions about its "
+               "findings, one at a time. The other findings retain their first review.",
     "condition": "Once in phase 3 per operational document, unconditionally, "
                  "as a production agent; under the local backend profile ALSO "
-                 "once per finding its first call produced (D6, the two-pass "
-                 "split: a second, narrower question per finding, always "
-                 "serial, bounded by the pass-one count). Not a retry: the "
+                 "once per finding up to DEEPEN_MAX_FINDINGS (D6, the two-pass "
+                 "split: a second, narrower question per selected finding, "
+                 "always serial; other findings keep their pass-one form). Not a retry: the "
                  "re-fire limit on a contract violation stays 0.",
     "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC and "
              "_deepen_legal_analyst_findings_local (D6). Observed live on "
@@ -150,6 +159,9 @@ FIRES_LEGAL_ANALYST = {
              "then 5 pass-two calls, 6 in all.",
 }
 FIRES_REDACTOR = {
+    "summary": "Can be asked only when sensitivity handling and redaction are "
+               "enabled and a document is ready for redaction. If redaction "
+               "is waived, that decision is recorded as skipped.",
     "condition": "Phase 9 (redaction) always RUNS, but REDACTOR itself only "
                  "posts bus messages when the sensitivity layer is active "
                  "(LAYER_ACTIVE / sensitivity_layer.is_active()). Confirmed "
@@ -161,6 +173,10 @@ FIRES_REDACTOR = {
              "note on a completed run, cb4c557b).",
 }
 FIRES_AMENDMENT_DRAFTER = {
+    "summary": "Amendments are normally built directly from computed findings. "
+               "This agent is asked to polish the wording only when you enable "
+               "that option and no fresh amendment reply is already available "
+               "for the document.",
     "condition": "Skipped if a fresh AMENDMENT_DRAFTER payload already exists "
                  "on the bus for that doc_id (existing_amendments); otherwise "
                  "runs once per operational document. Off by default as a "
@@ -172,6 +188,10 @@ FIRES_AMENDMENT_DRAFTER = {
              "already on the bus)\").",
 }
 FIRES_EDITORIAL_BOARD = {
+    "summary": "The clerk reviews each deliverable. A higher level is called "
+               "only if the level below reports confidence below the configured "
+               "threshold or, when enabled, an issue beyond its authority. "
+               "Escalation stops at the configured highest level.",
     "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, "
                  "always fires once per deliverable. Each higher rank "
                  "(EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, "
@@ -237,6 +257,9 @@ def _rule_cluster_part(name, reg):
 
 def _testing_against_cluster_part(name, reg):
     subjects = list(reg.get("subjects") or [])
+    summary = ("Checks verify how rules are assigned and which reviewer is called. "
+               "A separate tool can try this agent on a passage and a rule you "
+               "choose. No test of this agent's entire assigned rule group is recorded.")
     how = ("Gate check 198 proves the comparison, its route and its console state "
            "on fixture registries; gate check 199 proves the firing gate and the "
            "subject-chosen paired judging agent executed against the real "
@@ -248,10 +271,12 @@ def _testing_against_cluster_part(name, reg):
            "other per-agent cluster test exists; per run, the rules this agent "
            "was actually given are read from <run>/audit/convention_assignment.json.")
     if not subjects:
+        summary += " This agent has no rule group by design."
         how += (" This agent declares no subjects, so there is no cluster to test "
                 "against.")
     return {
         "decided": True,
+        "summary": summary,
         "how": how,
         "cluster_is_empty_by_decision": not subjects,
     }
