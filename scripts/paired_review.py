@@ -936,7 +936,7 @@ def adjacent_units(unit, unit_texts):
 
 
 def build_pair_payload(*, unit, rule, checks, refs=None, source_rule_id="",
-                       unit_texts=None, document_units=None):
+                       unit_texts=None, document_units=None, qualifying_rules=None):
     """The work payload for one (unit, rule) pair.
 
     Carries the computed values and NOT the arithmetic. The model is asked whether
@@ -979,6 +979,15 @@ def build_pair_payload(*, unit, rule, checks, refs=None, source_rule_id="",
         "document_text": unit.get("text", ""),
         "rule_id": rule["id"],
         "rule_text": rule.get("rule", ""),
+        # A rule this one is suspended by, carried WITH it. A model asked about
+        # an exception in isolation from the rule it qualifies gives the wrong
+        # answer however well it reads, so when this rule declares
+        # [unless: CONV-X] the text of CONV-X travels in the same payload. Empty
+        # for the ordinary case, so a pair with no qualifying rule is unchanged.
+        "qualified_by": [
+            {"rule_id": q.get("id"), "rule_text": q.get("rule", ""),
+             "source_rule_id": q.get("category")}
+            for q in (qualifying_rules or []) if q],
         "evaluate_against": [rule["id"]],
         "computed_comparisons": [
             {

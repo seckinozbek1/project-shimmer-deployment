@@ -64,12 +64,20 @@ class ConventionRule:
     # unit in scope is a finding Python decides. Both empty when not declared.
     scope: list = field(default_factory=list)
     requires: list = field(default_factory=list)
+    # A CONDITIONAL SUSPENSION: when the condition holds, this rule does not
+    # fire. [{"kind": "rule"|"field", "target": str}]. A field condition
+    # resolves against the unit the way scope does; a rule condition resolves
+    # against the rule it names, and the agent payload then carries both rules
+    # together, since a model asked about an exception in isolation from the
+    # rule it qualifies gives the wrong answer however well it reads.
+    unless: list = field(default_factory=list)
 
     def as_dict(self):
         return {"id": self.id, "category": self.category, "rule": self.rule,
                 "source_file": self.source_file, "source_location": self.source_location,
                 "severity": self.severity, "action": self.action,
-                "subjects": self.subjects, "scope": self.scope, "requires": self.requires}
+                "subjects": self.subjects, "scope": self.scope, "requires": self.requires,
+                "unless": self.unless}
 
 
 @dataclass
@@ -168,7 +176,28 @@ def _parse_json(path, seq):
             scope=_scope_entries(item.get("scope")),
             requires=[str(s).strip().lower() for s in (item.get("requires") or [])
                       if str(s).strip()] if isinstance(item.get("requires"), list) else [],
+            unless=_unless_entries(item.get("unless")),
         ))
+    return out
+
+
+def _unless_entries(raw):
+    """Normalise an unless declaration into [{"kind", "target"}], from a JSON
+    file giving strings or dicts. The kind is decided by the target's own shape,
+    exactly as the heading path decides it, so a rule declared in JSON and one
+    declared on a heading mean the same thing."""
+    out = []
+    for entry in (raw or []) if isinstance(raw, list) else []:
+        if isinstance(entry, dict):
+            target = str(entry.get("target") or "").strip().lower()
+        else:
+            target = str(entry).strip().lower()
+        if not target:
+            continue
+        item = {"kind": "rule" if _HEADING_RULE_ID.match(target) else "field",
+                "target": target}
+        if item not in out:
+            out.append(item)
     return out
 
 
@@ -226,6 +255,7 @@ def _parse_text_lines(text, source_name, seq):
             severity=severity or _classify_severity(joined),
             action=_classify_action(joined), subjects=list(subjects),
             scope=[dict(s) for s in current_scope], requires=list(current_requires),
+            unless=[dict(u) for u in current_unless],
         )]
 
     for raw_line in text.splitlines():
@@ -239,7 +269,7 @@ def _parse_text_lines(text, source_name, seq):
             current_category = _normalize_category(line)
             current_section = line.lstrip("# ").strip().lower()
             current_severity, current_subjects = _heading_bracket_tags(line)
-            current_scope, current_requires = _heading_bracket_declarations(line)
+            current_scope, current_requires, current_unless = _heading_bracket_declarations(line)
             if before_first_operator_heading and heading_carries_rule_id(line):
                 before_first_operator_heading = False
             continue
@@ -256,6 +286,7 @@ def _parse_text_lines(text, source_name, seq):
                     severity=current_severity or _classify_severity(stripped),
                     action=_classify_action(stripped), subjects=list(current_subjects),
                     scope=[dict(s) for s in current_scope], requires=list(current_requires),
+                    unless=[dict(u) for u in current_unless],
                 ))
             continue
         if not line.strip():
@@ -353,7 +384,17 @@ def _heading_bracket_tags(heading):
     for m in _HEADING_BRACKET.finditer(heading):
         token = m.group(1).strip().lower()
         if not token or _DECLARATION_PREFIX.match(token):
-            continue  # a scope/requires declaration is not a subject (below)
+            continue  # a scope/requires/unless declaration is not a subject (below)
+        shaped = _DECLARATION_SHAPED.match(token)
+        if shaped:
+            # Declaration-shaped and not one this parser knows. Refuse it rather
+            # than absorbing it as a subject: the operator wrote an instruction
+            # and it would otherwise be silently reinterpreted.
+            raise ConventionDeclarationError(
+                "unrecognised declaration %r on heading %r: this parser knows "
+                "scope, requires and unless. A declaration it cannot honour is "
+                "refused rather than read as a subject tag."
+                % (shaped.group(1), heading.strip()))
         if token in _SEVERITY_LABELS:
             severity = token
         elif token not in subjects:
@@ -369,15 +410,51 @@ def _heading_bracket_tags(heading):
 # The labels and values are the operator's own words, carried verbatim
 # (lowercased) and normalised by the pairing map the way it normalises the
 # document's own labels; this module knows the two prefixes and no label at all.
-_DECLARATION_PREFIX = re.compile(r"^(scope|requires)\s*:\s*(.*)$")
+#
+# "[unless: <target>]" declares a CONDITIONAL SUSPENSION: when the target holds,
+# this rule does not fire. The operator writes one declaration and the parser
+# decides which kind of target it is from what is written, because a second
+# syntax for a second kind of target is a second thing to learn and to get
+# wrong. A target matching the convention id shape (CONV-*, the operator's own
+# id form) is a RULE condition, resolved against that rule; anything else is a
+# FIELD condition, resolved against the unit the way scope and requires are.
+#
+# CONV-D01 is the working field case: its own words say a reading must fall in
+# the band "UNLESS a locally adjusted range ... has been stated in the entry",
+# which survived only as an opaque substring that nothing parsed.
+_DECLARATION_PREFIX = re.compile(r"^(scope|requires|unless)\s*:\s*(.*)$")
+
+# A bracket that looks like a declaration (it carries a colon) but whose leading
+# word this parser does not know. Absorbing it as a subject tag is what happened
+# before: "[overrides: CONV-D02]" became the subject "overrides: conv-d02" and
+# nothing said so. A declaration the parser cannot honour is REFUSED, because a
+# silently swallowed instruction is worse than a rejected one.
+_DECLARATION_SHAPED = re.compile(r"^([a-z][a-z_-]*)\s*:\s*\S")
+
+
+class ConventionDeclarationError(ValueError):
+    """A heading carries a declaration this parser does not recognise.
+
+    Raised rather than absorbed. The operator wrote an instruction in
+    declaration form and the parser cannot honour it, so the run stops here
+    instead of proceeding with the instruction silently reinterpreted as a
+    subject tag."""
 
 
 def _heading_bracket_declarations(heading):
-    """(scope entries, required labels) read from the declaration brackets on a
-    heading line: scope as [{"label", "value"}] (value None when the entry is a
-    bare label), requires as a list of labels. Comma-separated, order kept,
-    duplicates dropped. A heading without them yields ([], [])."""
-    scope, requires = [], []
+    """(scope entries, required labels, unless conditions) from the declaration
+    brackets on a heading line.
+
+    scope    [{"label", "value"}] (value None for a bare label)
+    requires [label, ...]
+    unless   [{"kind": "rule"|"field", "target": str}, ...]
+
+    Comma-separated, order kept, duplicates dropped. A heading without them
+    yields ([], [], []). An `unless` target is classified by its own shape: one
+    matching the convention id form is a rule condition, anything else is a
+    field condition. The parser therefore needs no second syntax and no hint
+    from the operator beyond what they already write."""
+    scope, requires, unless = [], [], []
     for m in _HEADING_BRACKET.finditer(heading):
         d = _DECLARATION_PREFIX.match(m.group(1).strip().lower())
         if not d:
@@ -388,11 +465,17 @@ def _heading_bracket_declarations(heading):
             for entry in _scope_entries(parts):
                 if entry not in scope:
                     scope.append(entry)
-        else:
+        elif kind == "requires":
             for p in parts:
                 if p not in requires:
                     requires.append(p)
-    return scope, requires
+        else:  # unless
+            for p in parts:
+                entry = {"kind": "rule" if _HEADING_RULE_ID.match(p) else "field",
+                         "target": p}
+                if entry not in unless:
+                    unless.append(entry)
+    return scope, requires, unless
 
 
 def _normalize_category(heading):
