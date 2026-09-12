@@ -23389,6 +23389,149 @@ def check_245_processor_extraction_reaches_its_auditors():
                % (result["tokens"], board_budgets[0]))
 
 
+def _run_completion_fixture():
+    """Execute lifecycle boundaries and both scorer routes on declared artifacts."""
+    import importlib
+    import run_completion as completion
+    import run_context
+    from unittest.mock import patch
+    sys.path.insert(0, str(ROOT / "tools"))
+    scorer = importlib.import_module("score_corpus")
+    results = {}
+    with _tempfile.TemporaryDirectory(prefix="shimmer_completion_") as td:
+        root = Path(td)
+        corpus = root / "corpora" / "declared"
+        corpus.mkdir(parents=True)
+        key = {"fixture": True, "planted": [], "clean": []}
+        (corpus / "answer_key.json").write_text(json.dumps(key), encoding="utf-8")
+        _require_fixture(json.loads((corpus / "answer_key.json").read_text())["planted"] == [],
+                         "completion fixture declares an empty held-out set")
+        for mode in ("empty", "early_zero", "blocked", "end_blocked", "exception", "end_exception", "interrupt"):
+            ctx = run_context.create_run(root / mode, run_id="fixture")
+            if mode == "empty":
+                dest = ctx.doc_deliverables_dir("declared")
+                dest.mkdir(parents=True)
+                (dest / "review_data.json").write_text('{"amendments": []}', encoding="utf-8")
+                _require_fixture(json.loads((dest / "review_data.json").read_text())["amendments"] == [],
+                                 "completed-empty fixture has a real parsed empty deliverable")
+
+            @completion.tracked
+            def body():
+                evidence = completion.begin(ctx)
+                if mode in ("empty", "end_blocked", "end_exception"):
+                    evidence.reached_end(document_count=1, amendment_count=0)
+                if mode in ("exception", "end_exception"):
+                    raise ValueError("declared failure")
+                if mode == "interrupt":
+                    raise KeyboardInterrupt()
+                return 5 if mode in ("blocked", "end_blocked") else 0
+
+            raised, returned = None, None
+            try:
+                returned = body()
+            except (ValueError, KeyboardInterrupt) as exc:
+                raised = type(exc).__name__
+            path = ctx.audit_dir() / completion.COMPLETION_NAME
+            disk = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+            out = io.StringIO()
+            with patch.object(scorer, "CORPORA", root / "corpora"), contextlib.redirect_stdout(out):
+                scorer.main(["--corpus", "declared", "--run", str(ctx.run_dir)])
+            results[mode] = {"disk": disk, "text": out.getvalue(), "raised": raised, "returned": returned}
+            if mode == "empty":
+                # The second scorer route must consume the same completion fact.
+                rounds = io.StringIO()
+                with contextlib.redirect_stdout(rounds):
+                    scorer.score_rounds("declared", {"prior_records": [], "band_irregularities": []}, ctx.run_dir)
+                results["rounds_text"] = rounds.getvalue()
+
+        # A hard-kill-shaped record has only the start, with no terminal writer.
+        active = run_context.create_run(root / "active", run_id="active")
+        completion.RunCompletion(active)
+        results["active_text"] = scorer._completeness_note(active.run_dir, [])
+        # An older server record describes process state, not pipeline completion.
+        legacy = run_context.create_run(root / "legacy", run_id="legacy")
+        (legacy.run_dir / "status.json").write_text(json.dumps({"status": "completed", "exit_code": 0}), encoding="utf-8")
+        results["server_text"] = scorer._completeness_note(legacy.run_dir, [])
+        (legacy.run_dir / "status.json").unlink()
+        results["unknown_text"] = scorer._completeness_note(legacy.run_dir, [])
+        (legacy.audit_dir() / completion.COMPLETION_NAME).write_text(
+            json.dumps({"schema_version": 1, "state": "completed", "reached_end": False, "exit_code": 0}), encoding="utf-8")
+        results["malformed_text"] = scorer._completeness_note(legacy.run_dir, [])
+        (legacy.audit_dir() / completion.COMPLETION_NAME).write_text(
+            json.dumps({"schema_version": 1, "state": []}), encoding="utf-8")
+        results["malformed_state_text"] = scorer._completeness_note(legacy.run_dir, [])
+        # Rename after work, before the terminal decorator write: the final file
+        # must follow the real move and must not recreate the provisional folder.
+        original = run_context.create_run(root / "rename", run_id="rename")
+        rename_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        rename_root = run_context.runs_root(original.project_root).resolve()
+        rename_target = (rename_root / run_context.date_run_dirname(rename_time, "declared")).resolve()
+        _require_fixture(original.run_dir.resolve().parent == rename_root and rename_target.parent == rename_root,
+                         "the real rename source and destination stay inside the declared temporary run root")
+        moved = []
+
+        @completion.tracked
+        def renamed_body():
+            evidence = completion.begin(original)
+            final = run_context.rename_run(original, "declared", now=rename_time)
+            evidence.run_context = final
+            moved.append(final)
+            evidence.reached_end(document_count=0, amendment_count=0)
+            return 0
+
+        renamed_body()
+        results["rename"] = {"old_exists": original.run_dir.exists(),
+                             "record": completion.read(moved[0].run_dir)}
+    return results
+
+
+def check_246_run_completion_reaches_the_scorer():
+    result = _run_completion_fixture()
+    for mode, state in (("empty", "completed"), ("early_zero", "stopped"),
+                        ("blocked", "stopped"), ("end_blocked", "stopped"),
+                        ("exception", "failed"), ("end_exception", "failed"), ("interrupt", "interrupted")):
+        row = result[mode]
+        record = row["disk"] or {}
+        if record.get("state") != state or not record.get("finished_at"):
+            return _fail("%s did not persist its actual terminal state: %r" % (mode, record))
+        label = ("COMPLETED:" if mode == "empty" else "FINISHED WITHOUT SUCCESS:"
+                 if mode in ("end_blocked", "end_exception") else "INCOMPLETE:")
+        if label not in row["text"]:
+            return _fail("the scorer did not consume %s completion evidence" % mode)
+        if mode == "empty" and (record.get("amendment_count") != 0
+                                or "completed with zero reported amendments" not in row["text"]
+                                or "deliverable present (0 amendment(s))" not in row["text"]):
+            return _fail("completed empty work was not distinguished from missing artifacts")
+    if result["early_zero"]["returned"] != 0 or result["blocked"]["returned"] != 5:
+        return _fail("completion recording changed an existing return code")
+    if result["exception"]["raised"] != "ValueError" or result["interrupt"]["raised"] != "KeyboardInterrupt":
+        return _fail("completion recording swallowed an exception or interruption")
+    for name, needle in (("rounds_text", "COMPLETED:"), ("active_text", "started with no recorded finish"),
+                         ("server_text", "server recorded process status=completed"),
+                         ("unknown_text", "completion UNKNOWN"), ("malformed_text", "completion UNKNOWN"),
+                         ("malformed_state_text", "completion UNKNOWN")):
+        if needle not in result[name]:
+            return _fail("completion evidence lost or overstated in %s" % name)
+    if result["rename"]["old_exists"] or (result["rename"]["record"] or {}).get("state") != "completed":
+        return _fail("terminal evidence failed to follow the renamed run directory")
+    # Structural wiring, separate from the executed lifecycle proof above. No
+    # pipeline invocation: its real entry point must wrap every post-start return
+    # and mark the end only after the final progress update and thread shutdown.
+    tree = ast.parse((SCRIPTS / "pipeline.py").read_text(encoding="utf-8"))
+    main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    decorators = [ast.unparse(n) for n in main.decorator_list]
+    calls = [(ast.unparse(n.func), n.lineno) for n in ast.walk(main) if isinstance(n, ast.Call)]
+    names = [name for name, line in calls]
+    if "run_completion_mod.tracked" not in decorators or names.count("run_completion_mod.begin") != 1:
+        return _fail("pipeline main is not wired to the executed lifecycle boundary")
+    end = [line for name, line in calls if name == "completion.reached_end"]
+    stop = [line for name, line in calls if name == "_LOCAL_PROGRESS_STOP.set"]
+    if len(end) != 1 or len(stop) != 1 or end[0] <= stop[0] or end[0] >= main.body[-1].lineno:
+        return _fail("pipeline completion is not marked at its final return boundary")
+    return _ok("completed empty work, early zero/nonzero returns, exceptions, interruption and rename "
+               "produce distinct disk evidence consumed by both scorer routes; old/absent records stay qualified")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -23691,6 +23834,8 @@ CHECKS = [
      check_244_cached_embedding_weights_are_prepared_safely),
     ("245 PROCESSOR extraction reaches its auditors with truncation made explicit",
      check_245_processor_extraction_reaches_its_auditors),
+    ("246 pipeline completion distinguishes completed empty work from an incomplete run",
+     check_246_run_completion_reaches_the_scorer),
 ]
 
 
