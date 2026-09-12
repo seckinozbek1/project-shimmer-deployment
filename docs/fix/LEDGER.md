@@ -102,3 +102,74 @@ signal).
 
 **Also records the reshaped item TWO proposal** (one relation, `[unless: <field>]`)
 which is NOT yet built.
+
+### f1f09cd  Item TWO: a rule condition points at a field AND at another rule
+
+**README will have to say:** a third heading declaration, `[unless: <target>]`,
+alongside `scope` and `requires`, with both target kinds decided from the
+target's own shape; that an unrecognised declaration is now REFUSED
+(`ConventionDeclarationError`) rather than absorbed as a subject tag, which is a
+behaviour change an operator can hit by writing a declaration this parser does
+not know; a new `unless` field on the convention registry entry; a new
+`qualified_by` key in the paired payload; and a sixth graph edge type,
+`QUALIFIED_BY`, the first between two Conventions. Gate total moves 236 to 237.
+
+**Image affected: YES.** `scripts/convention_parser.py`, `scripts/paired_review.py`,
+the pipeline driver, `scripts/ontology_graph.py`, `scripts/verify_session1.py`.
+(`benchmark/fixtures/` is not shipped in the image.)
+
+**Behaviour change worth calling out separately in the README:** the refusal.
+Every shipped corpus was verified to still parse, but an operator's own
+conventions file carrying, say, `[priority: 2]` would now stop the run where it
+previously proceeded with that instruction silently reinterpreted.
+
+---
+
+## Items still open at the end of this session
+
+Recorded here because the working TODO does not survive the session.
+
+**Closed this session:** ONE (both halves except the conflict rows, which travel
+with THREE), TWO.
+
+**Open, in the operator's stated order:**
+
+- **THREE** the two rule sets: operator conventions and external rules kept
+  separate, parallel application, conflict refusal put to the operator, and the
+  answer stored so the same conflict is never raised twice. This is also what
+  gives the conflict record its rows, so ONE is not fully closed until this is.
+  Build no discovery and no search.
+- **FOUR** PROCESSOR's extraction is thrown away every run. First establish
+  whether paired review depends on those extractions (asked twice, never
+  answered), then fix the loss.
+- **FIVE** envelope-shape violations at source: strip the packaging, still refuse
+  a genuinely malformed payload.
+- **SIX** eight of eighteen agents never ran; say why each, and whether correct.
+- **SEVEN** the scorer cannot tell not-asked from asked-and-found-nothing.
+  Worsened by TWO and THREE landing, since more rules will legitimately not be
+  asked.
+- **EIGHT** whether the scorer surfaces a `date_window` finding.
+- **NINE** whether Python now settles ROWAN by arithmetic (the prose band reader
+  landed after that run).
+- **TEN** the run directory cannot distinguish not-finished from
+  finished-with-nothing.
+- **ELEVEN** two harness parts read technically in both views.
+- **TWELVE** two run_id formats.
+- **THIRTEEN** the pattern behind six wrongly-passing checks: propose something
+  cheap and structural.
+- **FOURTEEN** whether the typed record now survives the amendment path for a
+  real run, and which artifacts a scorer reads.
+- **FIFTEEN** the pairing map's similarity fallback: what it catches that an
+  exact match does not.
+- **SIXTEEN** two checks that cannot pass in the container (analysis only, no
+  container run).
+- **SEVENTEEN** the image layer ordering (diagnose from records only, no
+  rebuild).
+- **EIGHTEEN** the payable README and image debt as one list (this file).
+- **NINETEEN** decide the category of `document_dates.json` and let the manifest
+  carry the ruling.
+- **TWENTY** whether the GNN can learn at all: name a third source or recommend
+  keeping it as a candidate finder. Answer only.
+- **TWENTY-ONE** record the quote prediction where a run checks it (the
+  prediction is already in this file, under "This run"; it still needs to be
+  somewhere a run reads).
