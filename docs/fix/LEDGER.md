@@ -1,5 +1,66 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## FIFTEEN CLOSED, 2026-09-12
+
+FOURTEEN committed c014f21. The fallback was not similarity in the production
+path. embedding_store builds/loads a dictionary, while embedding_ranker called
+.query on it; AttributeError was swallowed and the candidates returned in registry
+order. Reversing candidate order reversed the result with the document unchanged.
+The top-three cap was never an applicability threshold; there were no five-voter
+records, applicable reference set, measured thresholds or margin. Scores/margins
+are unavailable, not zero. No new calibration was fabricated and no new dependency
+was introduced. WORDS-A requires refusal without a calibrated five-voter decision.
+
+Saved audit: flawed 38/78 pairs and clean 38/87, all CONV-007/008, the two reviewer-
+conduct rules. Neither rule appears among the saved typed bus findings (28/34
+findings total). Current-source audit: direct 37/49 versus fallback 75/87, adding
+38 pairs per twin. The fallback adds 38 uncomputable plans per twin, each with no
+assigned convention judging agent. Planning measurement omitted reference callbacks
+and is labelled as such; it is not a full-run latency/recall estimate. See
+output/fifteen_fallback_baseline.json and fifteen_plan_baseline.json.
+
+Decision: retire automatic semantic promotion and the broken adapter, retain
+unresolved rules as undecided with explicit REFUSES metadata in the saved map,
+API and both console views. Direct fields and declared scopes remain active;
+registry membership and agent assignments are not removed. In general this loses
+possible judgments for prose-only rules naming no document field. These twin audits
+establish no lost typed catch and do not establish recall elsewhere. Name fields
+or declare scope for structural applicability. Building calibrated semantic
+applicability would require its own measured references/votes and a scope decision,
+not a silently repaired single-score ranker.
+
+A simple fallback deletion also produced five/two NEW missing-field findings,
+because unmatched_findings treated undecided rules as proof that no rule applies.
+That inference is now refused while any rule remains undecided. This prevents an
+unintended expansion of findings while retiring the fallback. Final current maps
+have 37/49 direct pairs, 38 undecided each and zero new missing-field findings
+(output/fifteen_after_audit.json). The original field-only missing-field mechanism
+still runs when applicability is completely decided, proved separately.
+
+Changed checks 153 and 154; new check 250 executes the real review phase with an
+observing dispatch stub, proves zero calls and persists the refusal through the
+actual map writer/API. A regression promotion produces one real mocked dispatch
+and one call-evidence record. Three independent mutations cover promotion,
+invented absence and missing refusal evidence, with changed outcomes before FAIL
+and restored outcomes/PASS, including each changed check. Fixture validity precedes
+behavior assertions. The first fixture run exposed None for absent call evidence;
+corrected the fixture to measure the expected no-file state as zero calls, not a
+bad-fixture result. Actual console JavaScript in host Node renders the notice in
+both views, loses it when its rendering branch is neutralised, and restores it.
+No source files or saved runs were mutated. These proofs read no answer keys and
+made no provider calls or model generation. Full host gate: PASS=249 WARN=0
+SKIP=0 FAIL/ERROR=2 TOTAL=251, known 01/145 only (output/fifteen_host_gate.log).
+shimmer:fifteen passes 153/154/250 offline with no mounts/GPU. Exact image UI/API
+projection passes the rendering and mutation proof in host Node. All 123 shipped
+files match (output/fifteen_source_audit.json). Image
+sha256:2a98ef38b6e6280ba20af27308fd8c98040f07b7410b795683458682524eb401,
+size 14408278060 bytes. Seven-second cached refresh reused model layers.
+Adversarial read checked registry order versus real similarity, uncalibrated
+authority, preserved undecided records, structural/scoped decisions, the secondary
+absence effect, API privacy and actual console rendering. README records benefit,
+loss and limits; image debt paid. Continue SIXTEEN after this commit.
+
+
 ## FOURTEEN CLOSED, 2026-09-12
 
 THIRTEEN committed 08c0095. The current typed minting/writing path already retains

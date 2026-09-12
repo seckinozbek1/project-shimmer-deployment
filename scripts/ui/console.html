@@ -3056,6 +3056,7 @@ function loadPairs(runId, isPartial, human) {
         : escapeHtml(d.document_id) + ': ' + d.pair_count + ' paired, ' + d.rejected_count +
           ' rejected, ' + d.undecided_count + ' undecided';
       return '<details class="pairs-doc"><summary>' + summary + '</summary>' +
+        (d.semantic_pairing ? '<div class="notice">' + escapeHtml(d.semantic_pairing.reason) + '</div>' : '') +
         '<div class="pairs-body">' + units + '</div></details>';
     }).join("");
 

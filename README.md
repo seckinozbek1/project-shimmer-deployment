@@ -1124,6 +1124,35 @@ must not be a silent one, or the operator believes content is being removed when
 redaction rule in force, a run hard-stops for a conscious operator choice (supply a rule, or
 pass `--no-redaction-override`).
 
+### Unresolved rule applicability
+
+Automatic similarity fallback pairing is retired (checks 153, 154 and 250). A rule
+that names document fields still pairs structurally; a declared scope still governs
+its applicability. A rule with neither stays `undecided`, with a `REFUSES` record in
+`audit/pairing_map.json`, the pairs API and both console views. Unresolved applicability
+cannot by itself create a new missing-field finding. The rule remains in its registry
+and assigned agent context; this change removes automatic fallback pairing.
+
+The former adapter called `.query()` on the production dictionary store, swallowed
+the resulting exception and returned registry order. Its reason nevertheless claimed
+similarity. Even a repaired single-score ranker would lack WORDS-A's five recorded
+votes, operator reference set, measured thresholds and margin. These are explicitly
+unavailable for applicability, not fabricated as votes or a zero margin. A top-three
+cap is a call-budget setting, not evidence that a rule applies.
+
+Measured on the two saved reviews, fallback accounted for 38/78 and 38/87 pairs,
+always the two reviewer-conduct rules. Neither rule produced a typed bus finding.
+On current source the fallback added 38 pairs to each twin, producing 38 uncomputable
+plans each with no assigned convention judging agent. Removing it leaves 37 and 49
+direct pairs. A separate guard prevents the five and two new missing-field assertions
+that simple deletion alone would have introduced for units with unresolved rules.
+
+In general, fallback could create judgments for a prose rule that names no known field;
+removal loses that possible coverage. These two audits establish no confirmed lost
+catch, and do not establish recall on other corpora. Name the governed fields or supply
+an explicit scope to make applicability structural. A future semantic applicability
+mechanism needs its own calibrated five-voter evidence and an explicit scope decision.
+
 ### The five-voter semantic ensemble
 
 Where a decision rests on **what words mean**, it is decided by five independent voters against
@@ -2948,7 +2977,7 @@ coverage needs explicit claim-to-consumer mappings and more executable mutations
 scans cannot infer them reliably.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**250** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**251** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
