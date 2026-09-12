@@ -1,0 +1,52 @@
+{
+  "_declared_fixture": "DECLARED FIXTURE, not a real external rule. No real external rule exists anywhere in this system, and no code path fetches one: there is no discovery and no search, by decision. These four entries were written by hand to exercise the two-rule-set separation, and they are the ONLY external rules in existence. Anything that reads this file is reading a fixture and must say so.",
+  "_why_each_entry": {
+    "EXT-001": "OVERLAPS AND DISAGREES with a convention on severity. Must be detected, refused, and put to the operator. This is the row the conflict record never had.",
+    "EXT-002": "OVERLAPS AND AGREES. Must NOT be reported as a conflict: both apply. An agreeing rule reported as a conflict would make the operator arbitrate a question nobody is asking.",
+    "EXT-003": "DOES NOT OVERLAP at all. Must NOT be reported as a conflict: both apply, on different subjects.",
+    "EXT-004": "OVERLAPS and declares a conditional suspension the convention does not. That is a disagreement about when the rule applies, not about how severe it is, and it is detected as one."
+  },
+  "external_rules": [
+    {
+      "id": "EXT-001",
+      "origin": "external:fixture",
+      "status": "proposed",
+      "rule": "A reading outside the adjacent range is reported for information only.",
+      "scope": [{"label": "Reading"}],
+      "requires": ["Reading"],
+      "severity": "info",
+      "action": "note"
+    },
+    {
+      "id": "EXT-002",
+      "origin": "external:fixture",
+      "status": "proposed",
+      "rule": "A missing calibration date is an irregularity.",
+      "scope": [{"label": "Calibration date"}],
+      "requires": ["Calibration date"],
+      "severity": "irregular",
+      "action": "flag"
+    },
+    {
+      "id": "EXT-003",
+      "origin": "external:fixture",
+      "status": "proposed",
+      "rule": "An operator initial is recorded beside each entry.",
+      "scope": [{"label": "Operator initial"}],
+      "requires": ["Operator initial"],
+      "severity": "irregular",
+      "action": "flag"
+    },
+    {
+      "id": "EXT-004",
+      "origin": "external:fixture",
+      "status": "proposed",
+      "rule": "A reading outside the adjacent range is an irregularity, unless the entry carries a fault acknowledgement.",
+      "scope": [{"label": "Reading"}],
+      "requires": ["Reading"],
+      "severity": "irregular",
+      "action": "flag",
+      "unless": [{"kind": "field", "target": "fault acknowledged"}]
+    }
+  ]
+}
