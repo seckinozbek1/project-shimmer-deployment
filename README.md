@@ -2462,22 +2462,26 @@ gate is unchanged.
 
 Stated honestly, from operator testing:
 
-- **The scorer credits a finding on unit and rule without checking whether its stated reason
-  is true, so EVERY recall figure this project has reported carries that doubt, including the
-  6 of 9 below.** Found on 2026-09-12 by comparing the two device twins. The model produced a
-  `missing_field` claim on UNIT-SPRUCE and UNIT-VETCH in BOTH twins, with near-identical
-  wording; on VETCH it said the document "does not mention the next calibration visit" when
-  the entry states it in plain words. One of those wrong sentences landed on a unit the
-  answer key calls flawed, and the scorer counted it as a catch because the unit and the rule
-  matched. It was a coincidence that scored, not a detection. Removing those two took the
-  flawed twin's long-range recall from 3/3 to 1/3, which is the honest figure.
-  **What it would take to check a reason rather than a location:** the scorer would have to
-  compare the finding's own typed fields against what the key says is wrong, not merely
-  against where. That needs the key to state the defect in the same typed vocabulary a
-  Finding record uses (the relation, the field, the two figures), which today it states only
-  as prose in `what`. Until the key carries a machine-checkable claim, a matched unit and
-  rule is the strongest evidence available, and it is weaker than it looks. Nothing has been
-  changed in the scorer: the figures above and below are as measured.
+- **The scorer now checks a reason, not only a location, on any corpus whose key states one.**
+  Until 2026-09-12 a planted entry scored FOUND when a typed finding named its unit and
+  carried its relation, and nothing asked whether the stated reason was true. The device key
+  now states each defect as a typed `claim` (relation, field_label, the two figures, in the
+  Finding record's own vocabulary) and the scorer reports THREE outcomes: reason confirmed,
+  **RIGHT PLACE WRONG REASON**, and unverifiable (located only through an amendment, which
+  carries no typed reason). Recomputed on the 2026-09-11 flawed run: **6 of 10 located, but
+  only 4 of 10 reason confirmed**, with UNIT-LARCH exposed as a wrong-reason match and
+  UNIT-VETCH as unverifiable. **Every recall figure reported before that date is a location
+  count, not a detection count, including the 6 of 9 below**, and the corpora other than
+  device_log_review still have untyped keys, so their figures carry the same doubt and the
+  scorer says so rather than passing silently.
+
+  The evidence that forced this: the model produced a `missing_field` claim on UNIT-SPRUCE
+  and UNIT-VETCH in BOTH twins with near-identical wording, and on VETCH the claim is false
+  in both, saying the document "does not mention the next calibration visit" when the entry
+  states it plainly. Two of those wrong sentences landed on units the key calls flawed and
+  were counted as catches. A coincidence that scores is worse than a miss, because it
+  inflates the one number the project is judged on.
+
 - **Everything built on 10 and 11 September 2026 is unmeasured.** The last scored run
   predates all of it (section J opening); every mechanism from those two days is proved on
   gate fixtures only, the device-corpus measurement was stopped twice, and it is owed.
@@ -2588,7 +2592,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**228** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**229** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2603,7 +2607,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 227 have since raised the total to 228.
+table below; checks 210 to 228 have since raised the total to 229.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

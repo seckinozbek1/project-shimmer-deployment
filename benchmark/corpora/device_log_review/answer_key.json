@@ -18,7 +18,16 @@
       "kind": "neighbour-dependent, reads sound alone but contradicted by its neighbour",
       "rule": "CONV-D06",
       "what": "ELDER states a reading of 47 units with a valid signature and reads as a clean entry in isolation, but FIRTH, the entry immediately after it, states that ELDER's device was re-read immediately afterward and returned 71, and that the 47 figure was a transcription error that should not be carried forward. Reading ELDER alone misses this.",
-      "relation": "changed_from_prior"
+      "relation": "changed_from_prior",
+      "claim": {
+        "relation": "changed_from_prior",
+        "field_label": "reading",
+        "value_a": 47,
+        "unit_a": "units",
+        "value_b": 71,
+        "unit_b": "units",
+        "depends_on_unit": "UNIT-FIRTH"
+      }
     },
     {
       "unit": "UNIT-IVY",
@@ -26,7 +35,14 @@
       "kind": "neighbour-dependent, reads sound alone but contradicted by its neighbour",
       "rule": "CONV-D06",
       "what": "IVY states a reading of 45 units, within the standard tolerance band, and reads as a clean entry in isolation, but JUNIPER, the entry immediately after it, states that the sensor supplying IVY's reading was flagged faulty by the rack controller three hours before that reading was logged, so the reading is not valid and should not be filed as reviewed. Reading IVY alone misses this.",
-      "relation": null
+      "relation": null,
+      "claim": {
+        "relation": "changed_from_prior",
+        "field_label": "reading",
+        "value_a": 45,
+        "unit_a": "units",
+        "depends_on_unit": "UNIT-JUNIPER"
+      }
     },
     {
       "unit": "UNIT-LARCH",
@@ -34,7 +50,14 @@
       "kind": "neighbour-dependent, reads sound alone but contradicted by its neighbour",
       "rule": "CONV-D06",
       "what": "LARCH states a reading of 44 units with a valid signature and reads as a clean entry in isolation, but MAPLE, the entry immediately after it, states that LARCH's device was formally decommissioned two days before the log date on that entry, so the reading is not a valid device reading and should not be reviewed as one. Reading LARCH alone misses this.",
-      "relation": null
+      "relation": null,
+      "claim": {
+        "relation": "changed_from_prior",
+        "field_label": "reading",
+        "value_a": 44,
+        "unit_a": "units",
+        "depends_on_unit": "UNIT-MAPLE"
+      }
     },
     {
       "unit": "UNIT-TEASEL",
@@ -42,7 +65,14 @@
       "kind": "long-range, term defined near the start conflicts with its use near the end",
       "rule": "CONV-D04",
       "what": "TEASEL logs a fault at 2026-06-01 09:00, acknowledged at 2026-06-03 09:00, a 48-hour gap. The glossary, at the very start of the document, states the standard fault window as 24 hours. TEASEL is 16 of 19 units away from the definition it depends on.",
-      "relation": "date_window"
+      "relation": "date_window",
+      "claim": {
+        "relation": "date_window",
+        "value_a": 48,
+        "unit_a": "hours",
+        "value_b": 24,
+        "unit_b": "hours"
+      }
     },
     {
       "unit": "UNIT-VETCH",
@@ -50,7 +80,15 @@
       "kind": "long-range, term defined near the start conflicts with its use near the end",
       "rule": "CONV-D05",
       "what": "VETCH logs calibration visits on 2026-01-01 and 2026-06-01, a 151-day gap. The glossary, at the very start of the document, states the standard service interval as 90 days. VETCH is 18 of 19 units away, the last unit in the document, from the definition it depends on.",
-      "relation": "date_window"
+      "relation": "date_window",
+      "claim": {
+        "relation": "date_window",
+        "field_label": "service record",
+        "value_a": 151,
+        "unit_a": "days",
+        "value_b": 90,
+        "unit_b": "days"
+      }
     },
     {
       "unit": "UNIT-SPRUCE",
@@ -58,7 +96,11 @@
       "kind": "long-range, term defined near the start conflicts with its use near the end",
       "rule": "CONV-D03",
       "what": "SPRUCE's calibration authority signature is from 'R. Vance, engineering lead', with no certificate stated. The glossary, at the very start of the document, states that only a technician holding a current calibration certificate may sign a calibration record as complete. SPRUCE is 16 of 19 units away from the definition it depends on.",
-      "relation": null
+      "relation": null,
+      "claim": {
+        "relation": "missing_field",
+        "field_label": "calibration certificate"
+      }
     },
     {
       "unit": "UNIT-OAK",
@@ -66,7 +108,15 @@
       "kind": "self-contained, visible in one unit alone",
       "rule": "CONV-D07",
       "what": "OAK states a logged reading of 39 units and, in the same entry, a note that the reading was confirmed at 52 units on manual recheck, superseding the logged figure. Two different values for the same field within one unit, visible without reading any other unit.",
-      "relation": null
+      "relation": null,
+      "claim": {
+        "relation": "changed_from_prior",
+        "field_label": "reading",
+        "value_a": 39,
+        "unit_a": "units",
+        "value_b": 52,
+        "unit_b": "units"
+      }
     },
     {
       "unit": "UNIT-PINE",
@@ -74,7 +124,11 @@
       "kind": "self-contained, visible in one unit alone",
       "rule": "CONV-D02",
       "what": "PINE is a Class-A sensor with no calibration authority signature field at all. CONV-D02 requires the field for every Class-A entry. Visible from PINE's own text against the rule, without reading any other unit.",
-      "relation": "missing_field"
+      "relation": "missing_field",
+      "claim": {
+        "relation": "missing_field",
+        "field_label": "calibration authority signature"
+      }
     },
     {
       "unit": "UNIT-TEASEL",
@@ -82,7 +136,11 @@
       "kind": "self-contained, visible in one unit alone",
       "relation": "missing_field",
       "depends_on": null,
-      "what": "TEASEL is a Class-A sensor entry stating a reading of 46 units with no calibration authority signature field at all. CONV-D02 requires the field for every Class-A entry that states a reading. Visible from TEASEL own text against the rule, without reading any other entry. TEASEL also carries a separate CONV-D04 flaw on its fault window; the two are independent and are listed separately. ADDED 2026-09-12: this entry was originally listed as clean and the pipeline flagged it. The rule, the entry and the key were written by one party, and the contradiction was found by the measurement rather than by review. It was resolved in favour of the RULE: CONV-D02 is unchanged and the key was corrected, because marking a correct finding as a false positive would corrupt the measurement in the direction that flatters the pipeline."
+      "what": "TEASEL is a Class-A sensor entry stating a reading of 46 units with no calibration authority signature field at all. CONV-D02 requires the field for every Class-A entry that states a reading. Visible from TEASEL own text against the rule, without reading any other entry. TEASEL also carries a separate CONV-D04 flaw on its fault window; the two are independent and are listed separately. ADDED 2026-09-12: this entry was originally listed as clean and the pipeline flagged it. The rule, the entry and the key were written by one party, and the contradiction was found by the measurement rather than by review. It was resolved in favour of the RULE: CONV-D02 is unchanged and the key was corrected, because marking a correct finding as a false positive would corrupt the measurement in the direction that flatters the pipeline.",
+      "claim": {
+        "relation": "missing_field",
+        "field_label": "calibration authority signature"
+      }
     },
     {
       "unit": "UNIT-ROWAN",
@@ -90,7 +148,15 @@
       "kind": "self-contained, visible in one unit alone",
       "rule": "CONV-D01",
       "what": "ROWAN states a reading of 61 units and, in the same entry, a note claiming the reading is within the standard tolerance band, 20 to 60 units. 61 is outside the range its own note claims it falls inside, visible without reading any other unit.",
-      "relation": "above_band"
+      "relation": "above_band",
+      "claim": {
+        "relation": "above_band",
+        "field_label": "reading",
+        "value_a": 61,
+        "unit_a": "units",
+        "value_b": 60,
+        "unit_b": "units"
+      }
     }
   ],
   "precision_test": [
@@ -124,5 +190,6 @@
     "UNIT-JUNIPER",
     "UNIT-MAPLE"
   ],
-  "notes": "9 planted defects (real recall test, the pipeline should flag these) plus 3 precision_test entries (the pipeline should flag NOTHING there; an amendment against one is a false positive by the same mechanism as the clean list) across 18 device entries plus the glossary unit. Six units listed as clean are the NEIGHBOURS a planted or precision_test entry depends on, not defects themselves: ALDER, CEDAR and GORSE correctly state real local exceptions that clear their dependent neighbour (BIRCH, DAMSON, HOLLY, in precision_test), and FIRTH, JUNIPER and MAPLE correctly report a real correction that makes their dependent neighbour (ELDER, IVY, LARCH, in planted) unsound; an amendment filed directly against any of these six units, rather than against the unit whose defect or clearance they explain, is a false positive. Several planted relation values are null rather than a finding_record relation: several of these flaws (a decommissioned-device contradiction, an invalid calibration signature, an internal figure contradiction) are logical, not arithmetic, and do not map onto the closed finding_record relation set (sum_mismatch, above_band, etc.); a real wide-mode agent is expected to state one of these as a free-text relation value of its own choosing, same as PRACTICE_AUDITOR's real output tonight used 'type_mismatch', a value outside the declared set. Scoring for these entries goes through the scorer's via_rule path (unit + operator rule id on a real amendment), not via_bus (which requires an exact relation-string match); this is documented, not hidden: recall for a null-relation entry can only be proven by an amendment actually being built, not by a bus-only finding with no amendment. device_log_clean.md is the clean twin: every planted and precision_test defect repaired, every other detail unchanged, scored separately as its own corpus run with an empty planted list and a clean list naming all 18 device entries, to measure false positives on a genuinely clean input."
+  "notes": "9 planted defects (real recall test, the pipeline should flag these) plus 3 precision_test entries (the pipeline should flag NOTHING there; an amendment against one is a false positive by the same mechanism as the clean list) across 18 device entries plus the glossary unit. Six units listed as clean are the NEIGHBOURS a planted or precision_test entry depends on, not defects themselves: ALDER, CEDAR and GORSE correctly state real local exceptions that clear their dependent neighbour (BIRCH, DAMSON, HOLLY, in precision_test), and FIRTH, JUNIPER and MAPLE correctly report a real correction that makes their dependent neighbour (ELDER, IVY, LARCH, in planted) unsound; an amendment filed directly against any of these six units, rather than against the unit whose defect or clearance they explain, is a false positive. Several planted relation values are null rather than a finding_record relation: several of these flaws (a decommissioned-device contradiction, an invalid calibration signature, an internal figure contradiction) are logical, not arithmetic, and do not map onto the closed finding_record relation set (sum_mismatch, above_band, etc.); a real wide-mode agent is expected to state one of these as a free-text relation value of its own choosing, same as PRACTICE_AUDITOR's real output tonight used 'type_mismatch', a value outside the declared set. Scoring for these entries goes through the scorer's via_rule path (unit + operator rule id on a real amendment), not via_bus (which requires an exact relation-string match); this is documented, not hidden: recall for a null-relation entry can only be proven by an amendment actually being built, not by a bus-only finding with no amendment. device_log_clean.md is the clean twin: every planted and precision_test defect repaired, every other detail unchanged, scored separately as its own corpus run with an empty planted list and a clean list naming all 18 device entries, to measure false positives on a genuinely clean input.",
+  "claim_note": "The typed statement of what is wrong, in the same vocabulary a Finding record uses (config/agent_contracts.json, finding_record). Added 2026-09-12. Before this the key stated only WHICH unit and WHICH rule, so a scorer could match a location and never a reason: two of three long-range catches on 2026-09-11 were the model's identical wrong sentence landing on a flawed unit. relation and field_label are required for a claim to be checkable; value_a and value_b are stated only where the key's own prose states the figures."
 }
