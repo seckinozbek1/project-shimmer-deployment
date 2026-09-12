@@ -2337,11 +2337,16 @@ def check_69_chokepoint_query_masked():
                "engine under sensitive mode; inert when the layer is inactive")
 
 
-def check_70_chokepoint_date_web_suppressed():
-    """INFRA-041 P2 chokepoint 4: the BOOT date-web egress is SUPPRESSED (not masked) under sensitive
-    mode -- no document title is sent to the web. EXECUTED: date_from_web makes no search call and
-    returns None under sensitive mode, calls search under non-sensitive. WIRED: resolve_dates threads
-    sensitive, and pipeline.main passes it to _populate_operational (source). No network."""
+def check_70_chokepoint_date_web_removed():
+    """INFRA-041 P2 chokepoint 4, STRENGTHENED: the BOOT date-web egress is not merely
+    suppressed under sensitive mode, it is REMOVED. The tier used to send the document's
+    title to a search engine on every non-sensitive run, and it decided review membership
+    (an undated document falls out of the operational set) from a network result that can
+    differ between two runs over the same bytes.
+
+    EXECUTED: date_from_web returns None and makes NO search call under either mode, and
+    the cascade does not call it at all. WIRED: pipeline.main still passes the sensitive
+    flag to _populate_operational (it is read elsewhere in the run). No network."""
     import inspect
     import document_dating as DD
     from search_router import SearchResult
@@ -2352,22 +2357,29 @@ def check_70_chokepoint_date_web_suppressed():
             self.calls.append(q)
             return SearchResult(query=q, hits=[], strategy_used="x", verdict="UNVERIFIABLE", diagnostic={})
 
-    r = _Rec()
-    if DD.date_from_web("Confidential Merger File 2024", search_router=r, sensitive=True) is not None:
-        return _fail("date_from_web must return None (suppressed) under sensitive mode")
-    if r.calls:
-        return _fail("date_from_web must NOT call search under sensitive mode (raw title would egress)")
-    r2 = _Rec()
-    DD.date_from_web("Public Title 2024", search_router=r2, sensitive=False)
-    if not r2.calls:
-        return _fail("date_from_web must call search under non-sensitive mode")
-    if "sensitive=sensitive" not in inspect.getsource(DD.resolve_dates):
-        return _fail("resolve_dates must thread sensitive to date_from_web")
+    for sensitive in (True, False):
+        rec = _Rec()
+        if DD.date_from_web("Confidential Merger File 2024",
+                            search_router=rec, sensitive=sensitive) is not None:
+            return _fail("date_from_web must return None (removed), sensitive=%r" % sensitive)
+        if rec.calls:
+            return _fail("date_from_web must NOT call search under any mode "
+                         "(the title is document content), sensitive=%r" % sensitive)
+
+    # The cascade must not reach for it at all, in any spelling.
+    cascade_src = inspect.getsource(DD.resolve_dates)
+    if "date_from_web" in cascade_src:
+        return _fail("resolve_dates still references date_from_web; the web tier must be "
+                     "gone from the cascade, not merely conditional")
+    if '"web"' in cascade_src or "'web'" in cascade_src:
+        return _fail("resolve_dates still mints a 'web' date_source")
+
     import pipeline
     if "sensitive=sensitivity_layer.is_active() and redaction_enabled" not in inspect.getsource(pipeline.main):
-        return _fail("pipeline.main must pass sensitive to _populate_operational")
-    return _ok("chokepoint 4 date-web SUPPRESSED under sensitive mode (no title to the web); "
-               "non-sensitive still searches; resolve_dates + pipeline thread the sensitive flag")
+        return _fail("pipeline.main must still pass the sensitive flag to _populate_operational")
+    return _ok("chokepoint 4 date-web REMOVED, not merely suppressed: no search call under "
+               "either mode, the cascade never calls it and mints no 'web' source, so review "
+               "membership can no longer depend on a network result")
 
 
 def check_71_boot_stores_payload_free():
@@ -18968,6 +18980,185 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_221_dating_cascade_local_precise_and_loud():
+    """The dating cascade decided which documents were REVIEWED AT ALL, and it
+    was wrong three ways. A document's date feeds review_scope.apply_cutoff,
+    which keeps only dates at or after the cutoff; an unresolved date is never
+    at or after anything, so an undated document silently left the review set.
+
+    1. FULL DATE FIRST. The cascade called the year-only reader, so a filename
+       stating 2024-09-23 resolved to 2024-01-01: the month and day were
+       discarded and nothing downstream could recover them (_sort_by_date could
+       not order four documents that all became January 1st). date_from_filename
+       already parsed it correctly and was simply never called from here.
+    2. NOT TRUNCATED. The content scan read text[:3000]. The device log states
+       its own dates at character 4179 and its clean twin at 3701, so documents
+       that name their dates in a format this module already parses resolved as
+       UNDATED. The same dates are read by the duration arithmetic elsewhere.
+    3. NO WEB TIER. See check 70.
+
+    And an unresolved date is now LOUD: named in the run record
+    (audit/undated_documents.json), served by GET /runs/{run_id}/undated-documents,
+    and rendered in the console, with `excluded` distinguishing a document that
+    was never reviewed from one that was reviewed and produced nothing.
+
+    NEUTRALISE AND RESTORE: with the content scan truncated to 3000 characters
+    again, a document stating its date past that point must go back to
+    unresolved; restored, it resolves.
+    """
+    import json as _json
+    import tempfile as _tf
+
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import document_dating as DD
+        from review_scope import apply_cutoff
+    except Exception as exc:
+        return _fail("cannot import document_dating/review_scope: %s" % exc)
+
+    for name in ("unresolved_documents", "write_undated_report"):
+        if not hasattr(DD, name):
+            return _fail("document_dating.%s is missing" % name)
+
+    with _tf.TemporaryDirectory() as tmp:
+        tmpdir = Path(tmp)
+
+        # 1. Full date from the filename, not just the year.
+        dated = tmpdir / "company_a_union_b_offer_2024_09_23.md"
+        dated.write_text("# Offer\n\nNo year in this body text.\n", encoding="utf-8")
+        rec = DD.resolve_dates([dated])[0]
+        if rec["date"] != "2024-09-23":
+            return _fail("filename 2024_09_23 resolved to %r, expected 2024-09-23 "
+                         "(the year-only reader is still winning)" % (rec["date"],))
+        if rec["date_source"] != "filename":
+            return _fail("expected date_source=filename, got %r" % (rec["date_source"],))
+
+        # 2. A date stated past the old 3000-character window.
+        filler = "Padding line that carries no year at all.\n" * 120
+        late = tmpdir / "device_log_like.md"
+        late.write_text("# Device log\n\n" + filler + "\nFault logged: 2026-06-01 09:00\n",
+                        encoding="utf-8")
+        if len(filler) < 3000:
+            return _fail("fixture error: filler is only %d chars, not past the window"
+                         % len(filler))
+        rec_late = DD.resolve_dates([late])[0]
+        if not rec_late["date"]:
+            return _fail("a document stating 2026-06-01 past character 3000 resolved as "
+                         "%r; the content scan is still truncated" % (rec_late["date_source"],))
+        if not rec_late["date"].startswith("2026"):
+            return _fail("expected a 2026 date from the document's own text, got %r"
+                         % (rec_late["date"],))
+
+        # 3. A document nothing local can date stays unresolved, and is EXCLUDED.
+        undatable = tmpdir / "no_year_anywhere.md"
+        undatable.write_text("# Reference\n\nNothing here states a year.\n", encoding="utf-8")
+        rec_none = DD.resolve_dates([undatable])[0]
+        if rec_none["date"] is not None:
+            return _fail("a document with no year anywhere resolved to %r; nothing local "
+                         "could have dated it" % (rec_none["date"],))
+        if rec_none["date_source"] != "unresolved":
+            return _fail("expected date_source=unresolved, got %r" % (rec_none["date_source"],))
+
+        # The cutoff really does drop it (this is the cost being made visible).
+        scope = {"cutoff_type": "date", "cutoff_date": "2025-06-01"}
+        all_recs = [rec, rec_late, rec_none]
+        operational = {r["filename"] for r in apply_cutoff(all_recs, scope)}
+        if rec_none["filename"] in operational:
+            return _fail("fixture error: the undated document was not dropped by the cutoff")
+        if rec_late["filename"] not in operational:
+            return _fail("the content-dated 2026 document should now pass a 2025 cutoff")
+
+        # LOUD: unresolved_documents names it, and the report separates excluded
+        # from reviewed-anyway.
+        undated = DD.unresolved_documents(all_recs)
+        if [u["filename"] for u in undated] != [rec_none["filename"]]:
+            return _fail("unresolved_documents returned %r" % (undated,))
+
+        class _Ctx:
+            def __init__(self, d): self._d = d
+            def audit_dir(self): return self._d
+
+        audit = tmpdir / "audit"
+        path = DD.write_undated_report(_Ctx(audit), all_recs, operational)
+        report = _json.loads(Path(path).read_text(encoding="utf-8"))
+        if [d["filename"] for d in report["excluded"]] != [rec_none["filename"]]:
+            return _fail("report excluded=%r, expected the undated document"
+                         % (report["excluded"],))
+        if report["reviewed_anyway"]:
+            return _fail("nothing should be reviewed_anyway here, got %r"
+                         % (report["reviewed_anyway"],))
+        # An undated document a manifest DID put under review is not a drop.
+        report2 = _json.loads(Path(DD.write_undated_report(
+            _Ctx(audit), all_recs, operational | {rec_none["filename"]}
+        )).read_text(encoding="utf-8"))
+        if report2["excluded"]:
+            return _fail("an undated document under review must not be reported excluded")
+        if [d["filename"] for d in report2["reviewed_anyway"]] != [rec_none["filename"]]:
+            return _fail("expected reviewed_anyway to name it, got %r"
+                         % (report2["reviewed_anyway"],))
+
+        # The route and the console consume it.
+        server_src = (ROOT / "scripts" / "server.py").read_text(encoding="utf-8", errors="replace")
+        if "/runs/{run_id}/undated-documents" not in server_src:
+            return _fail("server.py has no undated-documents route")
+        console = (ROOT / "scripts" / "ui" / "console.html").read_text(encoding="utf-8", errors="replace")
+        for token in ("undatedDocumentsHtml", "/undated-documents"):
+            if token not in console:
+                return _fail("console.html does not carry %s" % token)
+
+        # NEUTRALISE: truncate the content scan again. BOTH content readers are
+        # truncated one at a time as well as together, because they are two
+        # independent routes to the same date: truncating only one leaves the
+        # other resolving the document, so a single-function regression would
+        # pass a check that only ever patched both at once.
+        original = DD._years_from_first_page
+        original_text = DD.date_from_text
+
+        def _truncated_years(text):
+            return original((text or "")[:3000])
+
+        def _truncated_text(text):
+            return original_text((text or "")[:3000])
+
+        cases = (("both readers", True, True),
+                 ("the bare-year scan only", True, False),
+                 ("the full-date reader only", False, True))
+        for label, cut_years, cut_text in cases:
+            if cut_years:
+                DD._years_from_first_page = _truncated_years
+            if cut_text:
+                DD.date_from_text = _truncated_text
+            try:
+                neutralised = DD.resolve_dates([late])[0]
+            finally:
+                DD._years_from_first_page = original
+                DD.date_from_text = original_text
+            if cut_years and cut_text:
+                if neutralised["date"] is not None:
+                    return _fail("with both content readers truncated to 3000 chars the "
+                                 "late-dated document still resolved to %r"
+                                 % (neutralised["date"],))
+            else:
+                # The surviving reader must still find it: that is what makes
+                # each path independently load-bearing rather than decorative.
+                if not neutralised["date"]:
+                    return _fail("with %s truncated the document stopped resolving; the "
+                                 "other content reader should still have found its date"
+                                 % label)
+
+        # RESTORE.
+        if not DD.resolve_dates([late])[0]["date"]:
+            return _fail("restore failed: the late-dated document no longer resolves")
+
+    return _ok("filename 2024_09_23 keeps its month and day (was 2024-01-01); a date stated "
+               "past character 3000 resolves from the document's own text; a document with no "
+               "year anywhere stays unresolved, is dropped by the cutoff, and is named in "
+               "audit/undated_documents.json with excluded apart from reviewed_anyway, served "
+               "by a route and rendered in the console; neutralise/restore proved")
+
+
 def check_220_local_profile_reaches_the_menu_and_is_passed_on():
     """Two launcher defects, both proved by executing the real code.
 
@@ -19443,7 +19634,7 @@ CHECKS = [
     ("67 masking idempotent + inert under non-sensitive + no silent passthrough (INFRA-041 P1)", check_67_masking_idempotent_and_inert),
     ("68 chokepoint 1 prompt egress masked (network) / exempt (qwen_local) (INFRA-041 P2)", check_68_chokepoint_prompt_masked),
     ("69 chokepoint 2 web query masked before egress (INFRA-041 P2)", check_69_chokepoint_query_masked),
-    ("70 chokepoint 4 BOOT date-web suppressed under sensitive mode (INFRA-041 P2)", check_70_chokepoint_date_web_suppressed),
+    ("70 chokepoint 4 BOOT date-web REMOVED, not merely suppressed (INFRA-041 P2)", check_70_chokepoint_date_web_removed),
     ("71 BOOT stores payload-free by construction (citation/situational/linguistic) (INFRA-041 P3)", check_71_boot_stores_payload_free),
     ("72 document_dates payload-free + OGE ingest still builds (INFRA-041 P3)", check_72_document_dates_payload_free_and_ingest),
     ("73 graph.json masks Convention.rule + CitationForm.examples under sensitive (INFRA-041 P4)", check_73_graph_masks_cross_run_fields),
@@ -19624,6 +19815,8 @@ CHECKS = [
      check_219_intake_classifies_conventions_by_content),
     ("220 a local run reaches the menu without cloud keys, and the profile is passed on",
      check_220_local_profile_reaches_the_menu_and_is_passed_on),
+    ("221 the dating cascade is local, precise, and loud about what it cannot date",
+     check_221_dating_cascade_local_precise_and_loud),
 ]
 
 

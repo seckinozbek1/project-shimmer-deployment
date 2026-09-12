@@ -1084,6 +1084,30 @@ def _convention_assignment_for_run(run_dir):
     return {"by_rule": data.get("by_rule") or {}, "by_agent": data.get("by_agent") or {}}
 
 
+_UNDATED_EMPTY = {"undated": [], "excluded": [], "reviewed_anyway": [],
+                  "note": ""}
+
+
+def _undated_documents_for_run(run_dir):
+    """This run's undated-document record as written by document_dating.
+    write_undated_report, or empty lists for a run that predates it. Same
+    direct-file-read pattern as _convention_assignment_for_run: written once at
+    BOOT, never rewritten mid-run."""
+    path = run_dir / "audit" / "undated_documents.json"
+    if not path.is_file():
+        return dict(_UNDATED_EMPTY)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return dict(_UNDATED_EMPTY)
+    if not isinstance(data, dict):
+        return dict(_UNDATED_EMPTY)
+    return {"undated": data.get("undated") or [],
+            "excluded": data.get("excluded") or [],
+            "reviewed_anyway": data.get("reviewed_anyway") or [],
+            "note": data.get("note") or ""}
+
+
 def _pairing_map(run_dir):
     """This run's pairing map as written, keyed by document id, or {}."""
     path = run_dir / "audit" / "pairing_map.json"
@@ -2264,6 +2288,39 @@ async def contract_violations(run_id: str):
     run_dir = _validated_run_dir(run_id)
     items = _contract_violations_for_run(run_dir)
     return {"run_id": run_id, "count": len(items), "violations": items}
+
+
+@app.get("/runs/{run_id}/undated-documents", dependencies=[Depends(verify_token)])
+async def undated_documents_route(run_id: str):
+    """The documents this run could not date, and which of those therefore
+    went unreviewed.
+
+    A document with no resolvable date fails the review cutoff
+    (review_scope.apply_cutoff keeps dates at or after the cutoff, and None is
+    never at or after anything), so it leaves the operational set. That used to
+    happen silently, and a document that was never reviewed was indistinguishable
+    in the output from one that was reviewed and produced no findings. This is
+    the SAME visibility discipline as /runs/{run_id}/convention-assignment,
+    /amendment-refusals and /contract-violations: an outcome a reader can see,
+    rather than a decision that silently goes nowhere.
+
+    `excluded` is the load-bearing list (undated AND not under review).
+    `reviewed_anyway` is an undated document an operator manifest still put
+    under review, which is not a silent drop.
+
+    Read-only, non-mutating, reads this run's own audit/undated_documents.json
+    directly (written once at BOOT, never rewritten mid-run). 404 for a
+    malformed/unknown run_id. 200 with empty lists, not an error, for a run
+    that predates this route."""
+    run_dir = _validated_run_dir(run_id)
+    data = _undated_documents_for_run(run_dir)
+    return {"run_id": run_id,
+            "undated": data["undated"],
+            "excluded": data["excluded"],
+            "reviewed_anyway": data["reviewed_anyway"],
+            "undated_count": len(data["undated"]),
+            "excluded_count": len(data["excluded"]),
+            "note": data["note"]}
 
 
 @app.get("/runs/{run_id}/convention-assignment", dependencies=[Depends(verify_token)])
