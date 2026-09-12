@@ -20115,9 +20115,13 @@ def check_239_severity_decides_and_evidence_survives():
             return _fail("a refused pair never reaches the run summary")
         if "EXT-001" not in withconf or "CONV-001" not in withconf:
             return _fail("the run summary does not name BOTH sides of the refusal")
-        if "REFUSED" not in withconf or "NEITHER" not in withconf:
-            return _fail("the run summary does not say the run applied neither rule; "
-                         "an operator could read a refusal as a decision")
+        applicable = _xr.applicable(
+            [{"id": "CONV-001"}], ext_for_summary, conflicts_for_summary)
+        if applicable["conventions"] != [{"id": "CONV-001"}]:
+            return _fail("the external conflict displaced the operator's convention")
+        if "REFUSED" not in withconf or "Your conventions remain in force" not in withconf:
+            return _fail("the run summary must state that external additions are withheld "
+                         "while operator conventions remain in force")
         if rep["limit_notice"][:40] not in withconf:
             return _fail("the limit of the overlap test did not travel with the "
                          "list to the operator's surface")
@@ -23992,6 +23996,79 @@ def check_250_semantic_pairing_refuses_uncalibrated_promotion():
                "a new missing-field assertion; direct field decisions remain active")
 
 
+def _advisory_visibility_fixture():
+    """A declared advisory finding through real synthesis, bus and API reader."""
+    import asyncio
+    import agent_wrapper as aw
+    import convention_parser as cp
+    import finding_record as fr
+    import paired_review as pr
+    import pipeline as pl
+    import reference_builder as rb
+    import server
+    from harness.run_agent import build_orchestrator
+    from unittest.mock import patch
+    with _tempfile.TemporaryDirectory(prefix="shimmer_advisory_visibility_") as td:
+        root = Path(td)
+        convention = root / "declared.md"
+        convention.write_text("## CONV-ZQ01 , conv-zq01 [advisory]\n\n"
+                              "Consider reporting a reading above 60 units.\n", encoding="utf-8")
+        rules = cp._parse_text(convention, [0])
+        _require_fixture(len(rules) == 1 and rules[0].severity == "advisory",
+                         "declared rule parses as exactly one advisory convention")
+        rule = rules[0].as_dict()
+        doc = {"id": "declared", "name": "declared.md", "text": "## Entry\n\nReading: 61 units."}
+        units = pr.unit_texts_for(doc["text"], doc["id"])
+        matches = [u for u in units.values() if "Reading: 61" in u["text"]]
+        _require_fixture(len(matches) == 1, "declared source has exactly one reading unit")
+        finding = {"kind": "finding", "record_verdict": "irregular", "rule_id": rule["id"],
+                   "unit_id": matches[0]["unit_id"], "relation": "above_band", "value_a": 61,
+                   "unit_a": "units", "value_b": 60, "unit_b": "units",
+                   "source_refs": ["REF-0001"], "explanation": "Declared reading 61 exceeds 60."}
+        _require_fixture(fr.is_finding(finding), "injected advisory input is a typed Finding")
+        envelope = {"scope": "doc", "doc_id": doc["id"], "agent": "PRACTICE_AUDITOR",
+                    "ok": True, "error": None, "item_count": 1, "backend": "paired", "model": "python",
+                    "parsed": {"agent": "PRACTICE_AUDITOR", "doc_id": doc["id"], "items": [finding]}}
+        orch = build_orchestrator(root=ROOT, out_root=root / "synthesis")
+        index = rb.ReferenceIndex.open(ROOT, index_path=root / "refs.json")
+        index.add(input_type="context", document_id="ref", document_name="ref.md",
+                  location={"page": 1}, text_excerpt="Declared upper bound: 60 units.")
+        with patch.object(aw.AgentWrapper, "run_task", side_effect=AssertionError("no model calls")):
+            pl._build_wrapper("PRACTICE_AUDITOR", orch, {}).post_to_bus(
+                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                body={"event": "RESULT", "payload": envelope["parsed"]},
+                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED"})
+            deliverables = asyncio.run(pl.phase_6_synthesis(
+                orch, {}, [doc], [], [], [envelope], "declared proof",
+                {"conventions": [rule]}, index, embed_store=None, max_concurrent_docs=1))
+        run_dir = orch.run_context.run_dir
+        info = deliverables.get(doc["id"]) or {}
+        master_path = Path(info["amendments_json"]) if info.get("amendments_json") else None
+        master = json.loads(master_path.read_text(encoding="utf-8")) if master_path and master_path.exists() else None
+        bus_path = run_dir / "logs" / "agent_bus.jsonl"
+        bus = [json.loads(line) for line in bus_path.read_text(encoding="utf-8").splitlines() if line.strip()] if bus_path.exists() else []
+        posted = [m.get("body", {}).get("payload", {}).get("items", []) for m in bus]
+        with patch.object(server, "_validated_run_dir", return_value=run_dir):
+            response = asyncio.run(server.amendment_refusals(orch.run_context.run_id))
+        return {"master_written": master is not None,
+                "amendments": len((master or {}).get("amendments", [])),
+                "finding_retained": any(finding in items for items in posted),
+                "refusals": response["refusals"]}
+
+
+def check_251_advisory_withholding_remains_visible():
+    result = _advisory_visibility_fixture()
+    if not result["master_written"] or result["amendments"] != 0 or not result["finding_retained"]:
+        return _fail("advisory synthesis must retain its finding while writing no amendment")
+    rows = result["refusals"]
+    if len(rows) != 1 or rows[0].get("severity") != "advisory" or rows[0].get("finding_stands") is not True:
+        return _fail("the real synthesis/bus/API path lost the advisory withholding record")
+    if "finding stands" not in rows[0].get("reason", "") or not rows[0].get("explanation"):
+        return _fail("the operator cannot read why the advisory amendment was withheld")
+    return _ok("real synthesis writes no advisory amendment, retains its Finding and posts a refusal; "
+               "the API preserves the reason, severity, finding_stands and explanation without a model call")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24304,6 +24381,8 @@ CHECKS = [
      check_249_typed_amendment_survives_real_artifact_path),
     ("250 semantic pairing refuses uncalibrated promotion without inventing absence",
      check_250_semantic_pairing_refuses_uncalibrated_promotion),
+    ("251 advisory amendment withholding stays visible through synthesis and API",
+     check_251_advisory_withholding_remains_visible),
 ]
 
 

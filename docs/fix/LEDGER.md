@@ -1,5 +1,80 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## EIGHTEEN CLOSED, 2026-09-13
+
+SEVENTEEN committed d2b22ba. Audited all 47 local commits at that point against
+origin/main: 36 changed source/config/tools or build inputs, 25 of those changed
+README in the same commit, 11 did not. A README filename in a commit is not proof
+of coverage; read the current descriptions against the affected code. Inventory:
+output/eighteen_commit_inventory.json. The inherited omissions now map to these
+current README descriptions:
+
+| Commit(s) | Behavior now described |
+|---|---|
+| 5496cff | file-channel verdict subject, graph node/edge, unlinked unknown subjects and unchanged GNN features |
+| b146d82 | knowledge authority, usage-derived manifest, ontology reset and protected state |
+| f1f09cd, a499bfa | field/rule unless, unresolved target, real suspension and actionable declaration refusal |
+| 1721eb5, 9b7b25c | local external-rule input, proposed standing, structural conflict limits, persisted answers and promotion boundary |
+| 3753314 | advisory withholding, finding retained, refusal surface, suspension audit and conflict summary |
+| 7d07e5a, 2b699ea | undeclared required fallback, retired prose severity decision, declared action and scoped refusal/proof doctrine |
+| c7f23ee | five voters, retained scores/references, measured thresholds and missing-voter REFUSES |
+| 31744ad | removed category keyword table and dormant claim classifier |
+
+Fixed README's direct contradiction that severity still came from prose. It now
+names all three severities, structured unknown-severity refusal versus unknown
+plain subject brackets, and the advisory operator path. Historical 44-rule counts
+remain attributed to their audit, not claimed as an advisory test. Amendment-only
+exports still omit refusal sections; README tells the reader where the finding
+and reason live. No amendment policy was reopened or new authority granted.
+
+The console already renders the advisory reason in both views, but its generic
+heading/note called deliberate withholding a failure to act. Renamed the reviewer
+section to Findings without a proposed correction and made both notes cover
+policy withholding and unavailable corrections. The API now also preserves
+severity and finding_stands; missing historical fields remain null. New check 251
+runs a parsed declared advisory input through real phase 6, real bus posting and
+the API endpoint reader, with model calls blocked. The input Finding survives,
+the real master has zero amendments, and the operator gets the reason, severity,
+finding_stands and explanation. Three consumer mutations change disk/API outcomes
+BEFORE 251 fails; restoration passes. Actual console JavaScript in host Node
+shows the reason in both views; removing it changes rendered HTML and restoration
+passes. Logs: output/eighteen_proof.log and eighteen_ui_proof.log.
+
+The debt audit also found a false operator statement in the run summary: it said
+NEITHER rule applied after an external conflict, but applicable() retains operator
+conventions and BOOT still assigns their unchanged registry. Corrected the summary
+to say conflicting external additions are refused while operator conventions
+remain in force. Existing check 239 had demanded the false statement. It now
+compares retained authority and asserts the accurate summary. An independent real
+writer observation changes when that statement is falsified, THEN 239 fails;
+restoration passes. This repairs the report, not the ratified authority policy.
+No semantic conflict detector or automatic external-rule merge was built.
+
+Image proof uses two directions: tracked intended shipping paths versus image
+inventory, then every shipped file's normalized SHA256 versus the working tree.
+The tracked set is 122 files, with no omission in shimmer:seventeen. Its one extra
+is config/convention_registry.json, the explicitly ratified rule-derived AS-IS
+asset, not an unexplained extra. The final image must match all 123 current files
+including this untracked generated registry. This is stronger than comparing
+only files the image happens to contain. Runtime/input, full benchmark corpora,
+held-out keys, local launchers and docs/fix history stay outside the declared
+product image; these omissions are already documented in README. Existing image
+coverage counts distinguish those limits from source mismatches.
+
+Decisions: expose the existing advisory policy accurately rather than change it;
+retain missing historical policy fields as unknown; correct the external-conflict
+report to actual authority behavior. No new dependency. README coverage and the current image debt are both paid;
+final evidence follows.
+Full host gate: PASS=250  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=252
+(output/eighteen_host_gate.log), known 01/145 only. shimmer:eighteen:
+sha256:678e1657a61271398839cfb7356c3ef3af96e35ac25f8c0b0b506d4b436c6bf1, 14408284165 bytes.
+All 123 shipped files match;
+output/eighteen_source_audit.json. All weight/conversion layers reused.
+Focused checks 239/251 pass offline in the image. Exact image UI/API data
+pass the host Node renderer proof. No model, dependency or authority-policy change.
+Adversarial read complete. README/image debt paid. No push.
+
+
 ## SEVENTEEN CLOSED, 2026-09-12
 
 SIXTEEN committed b768481. Re-read Dockerfile, original build logs, archived

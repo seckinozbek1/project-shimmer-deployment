@@ -14,37 +14,40 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-SEVENTEEN, the commit containing this checkpoint,
-`SEVENTEEN: close the cache diagnosis with measured reuse`.
+EIGHTEEN, the commit containing this checkpoint,
+`EIGHTEEN: pay inherited documentation debt and expose withholding accurately`.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. Previous item: SIXTEEN b768481. Full trail in LEDGER.
+next item updates this file. Previous item: SEVENTEEN d2b22ba. Full trail in LEDGER.
 
-Original logs and BuildKit history confirm 165.7/165.5/170.4 s Qwen fetches.
-Subsequent explicit local-cache imports reuse all model layers. Missing usable
-cache metadata is the observed boundary; a specific historical GC eviction is
-not proven. Retained the verified local-cache remedy and unchanged layer ordering.
-README now supersedes the old claim that every source build downloads Qwen.
+Audited 47 prior local commits, including eleven source commits without a
+same-commit README update. Current descriptions now cover inherited conditions,
+severity, authority, feedback and semantic boundaries. Advisory refusal API
+retains severity/finding_stands and the console labels withholding accurately.
+New 251 proves real synthesis/bus/API and three consumer mutations; actual Node
+rendering proves both views. Corrected the external-conflict summary's false
+NEITHER claim to retained operator authority; changed 239 and its independent
+writer mutation pass. No amendment policy or authority expansion. Image inventory
+is complete in both directions, including the ratified generated rule registry.
 
-Full host gate: PASS=249  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=251
-(output/seventeen_host_gate.log), known 01/145 only. shimmer:seventeen:
-sha256:40a8b88fc247279d1aac8e0aa2c7154da1643d302d55fa22b654d2a53109255f, 14408279876 bytes.
+Full host gate: PASS=250  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=252
+(output/eighteen_host_gate.log), known 01/145 only. shimmer:eighteen:
+sha256:678e1657a61271398839cfb7356c3ef3af96e35ac25f8c0b0b506d4b436c6bf1, 14408284165 bytes.
 All 123 shipped files match;
-output/seventeen_source_audit.json. All weight/conversion layers reused.
-No runtime/check change. The fully tested product runtime remains unchanged
-from shimmer:sixteen. No repeated GPU suite needed for this documentation refresh.
+output/eighteen_source_audit.json. All weight/conversion layers reused.
+Focused checks 239/251 pass offline in the image. Exact image UI/API data
+pass the host Node renderer proof. No model, dependency or authority-policy change.
 Adversarial read complete. README/image debt paid. No push.
 
 ## Current item
 
-None open. Continue EIGHTEEN: audit the README and image debt, including the
-inherited advisory convention amendment-withholding behavior.
+None open. Continue NINETEEN: explicitly classify document_dates.json in the
+usage-derived manifest and prove it ships empty while local data is preserved.
 
 ## Ordered remaining work
 
-1. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-2. NINETEEN: classify document_dates.json in the manifest.
-3. TWENTY: answer the learning-signal question, no GNN build.
-4. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. NINETEEN: classify document_dates.json in the manifest.
+2. TWENTY: answer the learning-signal question, no GNN build.
+3. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -105,6 +108,8 @@ inherited advisory convention amendment-withholding behavior.
     fallback must not create new unsupported missing-field findings.
 28. Keep the measured cache import/export remedy and existing layer order: repeat
     downloads are solved without claiming an unobserved historical GC event.
+29. Describe advisory withholding and external-conflict authority as they execute:
+    preserve policy, expose missing historical fields as unknown and repair misleading reports.
 
 ## Decisions made in the operator's place
 
@@ -148,9 +153,9 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final SEVENTEEN host: PASS=249  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=251
+Final EIGHTEEN host: PASS=250  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=252
 Known failures: 01 (prompts/snapshots absent), 145 (ignored contamination fixture).
-Log: output/seventeen_host_gate.log. No new unexplained failure remains.
+Log: output/eighteen_host_gate.log. No new unexplained failure remains.
 
 Latest complete product GPU/offline gate: shimmer:fifteen, PASS=239 WARN=0 SKIP=8
 FAIL/ERROR=4 TOTAL=251. Separate six-step offline probe PASS, both with network
@@ -158,11 +163,11 @@ none, GPU exposed and no mounts. Logs: output/sixteen_container_gate.log and
 sixteen_offline_probe.log. This is loading/decision evidence, not a completed review.
 Image failures 01/28/31/145; skips 15/38 network, 222 host launchers,
 215/217/224/227/230 unshipped corpora. Mixed checks name absent corpus coverage.
-Current image shimmer:seventeen matches 123 shipped files;
-output/seventeen_source_audit.json. Later focused evidence is in the current ledger
+Current image shimmer:eighteen matches 123 shipped files;
+output/eighteen_source_audit.json. Later focused evidence is in the current ledger
 entry; the complete image suite is not claimed rerun for every source refresh.
-Earlier tags and evidence remain intact. No runtime/check change. The fully tested product runtime remains unchanged
-from shimmer:sixteen. No repeated GPU suite needed for this documentation refresh.
+Earlier tags and evidence remain intact. Focused checks 239/251 pass offline in the image. Exact image UI/API data
+pass the host Node renderer proof. No model, dependency or authority-policy change.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox

@@ -2686,11 +2686,11 @@ function amendmentRefusalsHtml(refusals, human) {
         (r.explanation ? '<div class="muted">' + escapeHtml(r.explanation) + '</div>' : '') + '</li>';
   }).join("");
   var heading = human
-    ? "Findings the pipeline could not act on (" + refusals.length + ")"
+    ? "Findings without a proposed correction (" + refusals.length + ")"
     : "amendment_refusals (" + refusals.length + ")";
   var note = human
-    ? "Each of these was a real, irregular finding, but the pipeline could not build a correction from it. Named here rather than left to look the same as a clean document."
-    : "Real irregular findings that ensure_amendments_for_findings could not turn into an amendment; see GET /runs/{run_id}/amendment-refusals.";
+    ? "Each finding remains reported. Its reason explains whether a correction was withheld by the rule or could not be built."
+    : "Findings with a withheld or unavailable amendment; see GET /runs/{run_id}/amendment-refusals for the reason, severity and finding_stands record.";
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
 }
 

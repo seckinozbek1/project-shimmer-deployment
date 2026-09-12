@@ -1035,9 +1035,10 @@ set is normally two markdown files, by convention rather than requirement:
   reports as `source_rule_id`. Each finding cites at least one registry CONV-* id and carries
   the operator's own id alongside it. A heading may also carry bracket tags,
   `## CONV-D01 , conv-value-in-range [required] [conformance]`: a token matching one of the
-  three severity words the parser already classifies from rule text (`required`,
-  `recommended`, `advisory`) sets that rule's severity directly instead of the text
-  classification; every other token is a subject, carried on the registry entry's
+  three declared severities (`required`, `recommended`, `advisory`) sets the rule's
+  severity. With no declaration the rule uses `required`; a prose suggestion is
+  recorded for inspection and never decides the severity. Every other plain token
+  is a subject, carried on the registry entry's
   `subjects` list, read verbatim and lowercased, for the convention-assignment comparison:
   at BOOT each rule's tags are compared with the subjects each agent declares in
   `config/agent_registry.json` by exact token equality (code that names no subject), the
@@ -1045,8 +1046,8 @@ set is normally two markdown files, by convention rather than requirement:
   `GET /runs/{run_id}/convention-assignment`, an untagged rule keeps today's routing to every
   convention-review agent, and a rule no agent can act on is posted to the bus as
   `CONVENTION_UNASSIGNED` rather than dropped (section H 4a for what an agent's cluster is,
-  section I for the route). Two further bracket forms are declarations, read by their leading word and never
-  as subjects (D, option 2, 2026-09-11, built without measurement; gate check 209):
+  section I for the route). The scope and requires bracket forms are declarations, read by their leading word
+  and never as subjects (D, option 2, 2026-09-11, built without measurement; gate check 209):
   `[scope: class=A, device]` names the field labels, each optionally pinned to a value, that
   identify the units the rule governs, and `[requires: calibration authority signature]`
   names the field labels whose absence from a unit in scope is a finding. A rule with a
@@ -1123,6 +1124,66 @@ text matches none of them. Authorising nothing is the correct answer for such a 
 must not be a silent one, or the operator believes content is being removed when it is not. There is no engine-side default: with no compiled
 redaction rule in force, a run hard-stops for a conscious operator choice (supply a rule, or
 pass `--no-redaction-override`).
+
+### Declared severity, exceptions and authority
+
+`[advisory]` means report the finding and propose no automatic amendment. The
+finding remains on the bus; its amendment refusal explains that the rule does
+not ask for a change. Read it in the console's **Findings without a proposed
+correction** section, or `GET /runs/{run_id}/amendment-refusals`. The API retains
+`severity`, `finding_stands`, the reason and the original explanation. Older
+records lacking those fields remain unspecified. Amendment-only exports do not
+include this refusal section, so their absence of a proposed correction is not
+evidence that the document was clean. Required and recommended conventions still
+produce automatic amendments; an undeclared severity defaults to required. An
+unrecognised severity supplied through structured rule data is refused when
+synthesis attempts to act on it. A plain unknown bracket such as `[urgent]` is a
+subject tag, not a severity declaration. The historical six-corpus audit found
+all 44 conventions resolved to required; advisory behavior is proved with a
+declared fixture, not inferred from that one-severity corpus.
+
+`[unless: calibration authority signature]` suspends a rule on units containing
+that field. `[unless: CONV-X]` resolves a known rule and carries its text beside
+the rule being judged; knowing the referenced rule exists does not automatically
+suspend anything. A rule-shaped target absent from the registry is tried as a
+field name; an unresolved target does not switch the rule off. The pairing audit
+retains suspension evidence, and the scorer distinguishes it from never assigned
+or asked and found nothing. Unknown declaration forms such as `[priority: 1]`
+stop parsing with an explanation. Priority, immutable and outranked_by belong to
+the constitution; conventions cannot give themselves that authority.
+
+Categories preserve the operator's heading ID. For headings without an ID, the
+parser reads the first word; the old semantic keyword category table is retired.
+A prose-derived action is reported but does not drive review amendments or
+explicit-action redaction. The separate `claim_classifier` module remains dormant
+outside its gate checks; its labels are not a production decision.
+
+External rules may be supplied as JSON under `input/external_rules/`. They enter
+as proposals even if a file calls them accepted. BOOT compares declared subjects
+and differences in severity, action and conditional suspension, and the run
+summary carries unresolved conflicts with the limits of that structural test.
+This is not a test of every contradiction in prose. Operator conventions remain
+in force; conflicting external additions are withheld. Stored answers are read
+against conflict IDs, and promotion requires an owner. These local helpers do
+not discover rules or automatically merge the external set into the convention
+registry. With no external rule files the ordinary review path is unchanged.
+
+### Knowledge and operator feedback
+
+The manifest in `scripts/durable_paths.py` separates ratified constitution,
+operator rule data and usage-derived knowledge. Usage-derived caches, learnings,
+references and `ontology/stores` ship empty. Reset clears the usage-derived
+ontology stores after snapshotting too; their location outside `durable/` no
+longer lets a previous operator's provisions, graph or GNN state survive unnoticed.
+Governance and the declared global caches remain protected. Shipping does not
+require erasing the operator's local working data.
+
+The file approval channel records a decision with its topic and allowed subject
+identifiers in `durable/governance/operator_decisions.jsonl`. The graph reads
+OperatorDecision nodes and links known convention subjects with DECIDED_ON;
+unknown subjects remain unlinked. This preserves human feedback with its subject.
+It does not add a verdict training target or widen the existing GNN feature
+vocabulary. The learning recommendation is a separate decision.
 
 ### Unresolved rule applicability
 
@@ -2449,7 +2510,7 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `GET` | `/runs` | token | Every run as the complete run resource (see `/runs/{run_id}` below), oldest submission first. |
 | `GET` | `/runs/{run_id}` | token | api STEP B1/B2/B3/B4/B5: one run's complete record in a single call: `state` (`queued` / `running` / `awaiting_approval` / `stopped` / `cancelled`), `outcome` (populated once `state` is `stopped` or `cancelled`: `succeeded` / `governance_stop` / `crashed` / `timed_out` / `cancelled`), `stop_reason`, `pending_approval` (populated once `state` is `awaiting_approval`: `topic`, `message`, `payload`, `asked_at`, `default_on_timeout`, `timeout_at`), `documents` (per-document `status` and `deliverables_url`, a REAL fetchable route once that document is done, not a display string), `log_url`, `has_log` (whether `<run>/logs/pipeline_stdout.log` exists yet, checked on disk on every call, so a caller can say plainly whether there is a log to read before ever calling `log_url`, rather than discovering a 404 only after asking), plus `task`/`submitted_at`/`started_at`/`completed_at`/`exit_code`/`error`/`progress`/`files`/`sensitive`/`review_mode`/`question`. Does **not** carry the raw internal `status` string (dropped in api STEP B5: `state`/`outcome`/`stop_reason` is the sole vocabulary here, so a caller never has to reconcile two descriptions of the same run). |
 | `GET` | `/runs/{run_id}/findings` | token | The run's typed **Finding records** as JSON (section B), including the ok-verdict prior-version records with `field_label`, `delta`, `band_distance_change` and `provenance`; filter on `relation` in `moved_toward` / `moved_away` / `changed_from_prior` / `unchanged_from_prior` / `absent_since_prior` to answer the round question by program. |
-| `GET` | `/runs/{run_id}/pairs` | token | The run's **pairing map**: counts, and per unit the rules paired / rejected with the reason for each plus the undecided rule ids (ids only, no reason), and per unit `prior_hit_count`, `prior_check_count` and `prior_refused_count` (integers only). No document text. Each paired/rejected entry now also carries `source_rule_id` (the operator's own id for that rule, `finding_record.source_rule_id_for`, the same lookup a Finding record already uses), so a rule reads the same identifier here as it does in `/findings`, never the registry's bare number alone. Also (convention distribution step A) `not_judged` and `not_judged_count`, the plans phase 5.5 made no call for because their rule has no convention-review consumer (unit, rule and operator id, kind, the consumers it was assigned to, status; in wide mode one entry per such rule with no unit), and `reattributed`, the rule-independent computed plans moved to a paired rule that has a judging agent. The declared-absence record the map carries on disk (`absence`, `absence_computed_count`, `absence_judged_count`: which declared absences Python decided and which went to the model, with the judged call ids) is not yet served by this route, nor is `band_conditions`; read `audit/pairing_map.json` directly for them. |
+| `GET` | `/runs/{run_id}/pairs` | token | The run's **pairing map**: counts, and per unit the rules paired / rejected with the reason for each plus the undecided rule ids and the top-level `semantic_pairing` refusal explaining unresolved applicability, and per unit `prior_hit_count`, `prior_check_count` and `prior_refused_count` (integers only). No document text. Each paired/rejected entry now also carries `source_rule_id` (the operator's own id for that rule, `finding_record.source_rule_id_for`, the same lookup a Finding record already uses), so a rule reads the same identifier here as it does in `/findings`, never the registry's bare number alone. Also (convention distribution step A) `not_judged` and `not_judged_count`, the plans phase 5.5 made no call for because their rule has no convention-review consumer (unit, rule and operator id, kind, the consumers it was assigned to, status; in wide mode one entry per such rule with no unit), and `reattributed`, the rule-independent computed plans moved to a paired rule that has a judging agent. The declared-absence record the map carries on disk (`absence`, `absence_computed_count`, `absence_judged_count`: which declared absences Python decided and which went to the model, with the judged call ids) is not yet served by this route, nor is `band_conditions`; read `audit/pairing_map.json` directly for them. |
 | `GET` | `/runs/{run_id}/amendments` | token | console fresh-eyes addition: the run's proposed corrections, read from every DONE document's own `deliverables/<doc_id>/review_data.json` (BP-16), the same master file the archive's `review_findings.md`/`tracked_changes.docx` are pure renders of. Per amendment: `original_text` (the document's actual passage, since the source fix in `paired_review.py`'s `amendment_from_finding`; a run produced before that fix still carries the old shape, the bare unit id, on disk, flagged by `original_text_is_passage: false` rather than presented as the real passage), `proposed_text` (`null` unless a model or `--amendment-polish` supplied one), `source_rule_id` (the operator's own id, falling back to `convention_ref` only when absent, the same rule every rule id on this surface follows), `comment` (the reasoning, required by both the computed and model-drafted contracts), `unit_id_repaired_to` (`null` unless the boundary repair below fired), plus `finding_unit_id`/`finding_rule_id` to join back to the Finding it corrects. `200` with an empty list, not an error, when no document has finished yet or none produced an irregular finding. A real cloud run against a benchmark corpus found a second, real gap in the source fix itself: `unit_texts` is keyed by the pipeline's own `split_units` id (`u02-record-cat-birch`), but a WIDE-mode agent (`PRACTICE_AUDITOR`) was writing a Finding's `unit_id` as the document's own identifier for the record it described (`CAT-BIRCH`), never told which id space to use, so the lookup silently missed for every wide-mode finding. Closed at three layers: `pipeline.py`'s convention-review payload now carries `document_units` (the real id/title list) to both convention-review agents, `config/agent_contracts.json`'s `finding_record.says.unit_id` now tells them to copy from it verbatim, and `amendment_from_finding` still tries one narrow, structural second chance (`_repair_unit_id`) for whatever a model gets wrong anyway: the miss-shaped id found written inside exactly one unit's own text, case-insensitively. A single unambiguous match is used and recorded as `unit_id_repaired_to`; zero or multiple matches refuse, same honest fallback as before, never guessed. |
 | `GET` | `/runs/{run_id}/amendment-refusals` | token | A real, irregular finding the pipeline could not turn into an amendment, named plainly rather than left to vanish. Found live: PRACTICE_AUDITOR wrote genuinely irregular findings (real `relation`, real `record_verdict: irregular`, a real explanation) whose rule id landed under a field name `amendment_from_finding` did not yet recognise, since `config/agent_contracts.json` used to declare a different rule-id field name per agent (`procedure_id`, `conv_id`, `rule_id`, `convention_ref`, four names for one concept); before this route and its underlying fix, every one of those findings was silently dropped, with nothing on the bus, in a deliverable, or here, saying it had ever existed. Fixed at the source (`finding_record.resolved_rule_id`, one shared resolver checking all four names). First wired into `amendment_from_finding` and its dedup key; a later pass (night chain W5) found and closed three more call sites reading a rule id under only one or two of the four names (`pipeline.py`'s `_category_for_conv` caller and `_stamp_source_rule_ids`, `finding_record.index_findings`, `server.py`'s `_project_finding`), plus a `KeyError` in `apply_typed_fields` that `index_findings`' own fix exposed (it matched a finding by any of the four names, then still read the amendment's copied `convention_ref` back off a bare `rule_id` key). All now resolve through the same one function, gate check 196. This route exists for whatever a future finding still cannot be built from: `paired_review.ensure_amendments_for_findings` takes an optional `refusal_sink`, and `pipeline.py` posts whatever lands in it as a distinct bus event (`AMENDMENT_REFUSED`), never Finding-shaped, so it is correctly invisible to `/findings` (a refusal is not a finding) while still reachable here. Per refusal: `doc_id`, `unit_id`, `rule_id` (the resolved value, if any), `reason`, and the source finding's own `relation`/`explanation`. `200` with an empty list, not an error, when nothing was refused, the common case. Rendered in the console as its own section, disappearing when empty, same discipline as every other content-dependent section on this surface. |
 | `GET` | `/runs/{run_id}/contract-violations` | token | A call whose output did not match its agent's own contract at all, so nothing usable was produced, not even a thin finding. Found live: after `finding_record`'s fields were made required for PRACTICE_AUDITOR (`relation`, `record_verdict`, `explanation`, closing a different gap where most of its real output asserted a violation with no supporting content: a reviewer learns nothing from "CONV-005 was violated" alone), the honest next question is what a stricter contract costs, since some calls that used to pass a looser bar now genuinely fail it. This route, together with `/runs/{run_id}/amendment-refusals`, closes the last visibility gap: a call now produces exactly one of three outcomes a reader can see somewhere, a real amendment, a refused finding, or a failed contract, never silently absent from all three. Per violation: `agent`, `backend`, `model`, `missing_fields` (what the contract required and the reply lacked) and `timestamp`; no `doc_id`, since a call can fail before its output is attributed to a document. Returned as `violations` with a `count`. `200` with an empty list, not an error, when nothing failed its contract, the common, expected case. Rendered in the console as its own section, disappearing when empty. |
@@ -3021,7 +3082,7 @@ coverage needs explicit claim-to-consumer mappings and more executable mutations
 scans cannot infer them reliably.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**251** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**252** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:

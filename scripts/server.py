@@ -1002,6 +1002,8 @@ def _amendment_refusals_for_run(run_dir):
                 "unit_id": it.get("unit_id"),
                 "rule_id": it.get("rule_id"),
                 "reason": it.get("reason") or "",
+                "severity": it.get("severity"),
+                "finding_stands": it.get("finding_stands"),
                 "relation": (it.get("item") or {}).get("relation"),
                 "explanation": (it.get("item") or {}).get("explanation") or "",
             })
