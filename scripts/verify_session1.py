@@ -18992,6 +18992,214 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_230_same_claim_in_both_twins_is_reported():
+    """A claim worded identically against both twins did not come from the document.
+
+    The twins differ EXACTLY where the defects are, so a sentence the model
+    produces against both was not read off either. That is the signal that
+    exposed UNIT-VETCH on 2026-09-11 (the model said the document "does not
+    mention the next calibration visit" about the flawed twin AND the clean
+    one, whose entry states it plainly), and it was found by a person reading
+    two logs side by side. This makes it something the scorer runs.
+
+    The unit id is deliberately NOT part of the signature: the same
+    hallucinated sentence lands on the same unit in both twins, so including it
+    would make every pair match and prove nothing. What is compared is the
+    relation, the field, and the model's own sentence, whitespace-folded.
+
+    The twin is declared by the key (`twin_of`), never guessed from a filename.
+    A key with no twin, or a twin with no scored run on disk, prints
+    "unavailable" rather than a confident zero.
+
+    NEUTRALISE AND RESTORE on the signature comparison.
+    """
+    scorer = ROOT / "tools" / "score_corpus.py"
+    if not scorer.is_file():
+        return _fail("tools/score_corpus.py is missing")
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import importlib
+        sc = importlib.import_module("score_corpus")
+    except Exception as exc:
+        return _fail("cannot import score_corpus: %s" % exc)
+    for name in ("_claim_signature", "twin_findings", "_print_twin_check"):
+        if not hasattr(sc, name):
+            return _fail("score_corpus.%s is missing" % name)
+
+    # The signature ignores the unit and folds whitespace, so the same sentence
+    # about the same unit in two runs matches, and two different sentences do not.
+    a = {"relation": "missing_field", "unit_id": "u19-vetch",
+         "explanation": "The document  does not mention\nthe next calibration visit."}
+    b = {"relation": "missing_field", "unit_id": "u19-vetch",
+         "explanation": "the document does not mention the next calibration visit."}
+    c = {"relation": "missing_field", "unit_id": "u19-vetch",
+         "explanation": "The signature is from an uncertified role."}
+    if sc._claim_signature(a) != sc._claim_signature(b):
+        return _fail("the same sentence with different whitespace and case must match")
+    if sc._claim_signature(a) == sc._claim_signature(c):
+        return _fail("two different sentences must not match")
+    d = dict(a); d["unit_id"] = "u02-alder"
+    if sc._claim_signature(a) != sc._claim_signature(d):
+        return _fail("the signature must ignore the unit id: the same hallucination "
+                     "lands on the same unit in both twins")
+
+    # The keys declare their twins, in both directions.
+    for corpus, twin in (("device_log_review", "device_log_review_clean"),
+                         ("device_log_review_clean", "device_log_review")):
+        kp = ROOT / "benchmark" / "corpora" / corpus / "answer_key.json"
+        if not kp.is_file():
+            return _skip("%s is not in this tree" % corpus)
+        key = json.loads(kp.read_text(encoding="utf-8"))
+        if str(key.get("twin_of") or "") != twin:
+            return _fail("%s does not declare twin_of=%s" % (corpus, twin))
+
+    # A key with no twin must say unavailable, never a confident zero.
+    hits, run = sc.twin_findings("device_log_review", {"twin_of": None})
+    if hits is not None or run is not None:
+        return _fail("a key with no twin must yield no comparison")
+
+    # On the real artifacts, the check runs and reports a count.
+    run_dir = ROOT / "output" / "runs" / "2026-09-12__1doc_review"
+    if run_dir.is_dir():
+        import subprocess as _sp
+        proc = _sp.run([sys.executable, "-X", "utf8", str(scorer),
+                        "--corpus", "device_log_review", "--run", str(run_dir)],
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", cwd=str(ROOT))
+        if "twin check" not in proc.stdout:
+            return _fail("the scorer does not report the twin check on a real run")
+
+    # NEUTRALISE: make every signature identical, so everything looks shared.
+    original = sc._claim_signature
+    sc._claim_signature = lambda _f: ("same", "same", "same")
+    try:
+        if sc._claim_signature(a) != sc._claim_signature(c):
+            return _fail("neutralise did not take effect")
+    finally:
+        sc._claim_signature = original
+    if sc._claim_signature(a) == sc._claim_signature(c):
+        return _fail("restore failed: two different sentences match again")
+
+    return _ok("a claim's signature is its relation, field and sentence with the unit id "
+               "deliberately excluded and whitespace folded, so the same hallucination "
+               "against both twins matches and two different sentences do not; both device "
+               "keys declare twin_of in each direction; a key with no twin yields no "
+               "comparison rather than a zero; the scorer reports the check on a real run; "
+               "neutralise/restore proved")
+
+
+def check_229_quoted_span_must_appear_in_the_unit():
+    """A finding must be able to show the words it rests on, and Python checks them.
+
+    The claim a model makes about ABSENCE is the one claim the document itself
+    can refute. Measured on the 2026-09-11 clean twin: the model asserted the
+    document "does not mention the next calibration visit" for UNIT-VETCH,
+    whose entry reads "Service record: last calibration visit 2026-01-01, next
+    calibration visit logged 2026-03-15", and said nearly the same words about
+    the flawed twin. Nothing caught it: the claim was checked for shape and
+    never against the text.
+
+    `quote` is now a field on the Finding record contract, OPTIONAL rather than
+    required. That choice is measured, not assumed: adding a required field
+    would have turned all 28 and 34 findings of the two saved runs into
+    contract violations at once, which is a migration and not a measurement.
+    Only a quote that is PRESENT and absent from the unit is refused, which is
+    exactly the case the model can get wrong and Python can prove.
+
+    Cost, measured on the corpus: a field line of a device entry is a median of
+    21 characters, about 6 tokens, 25 tokens at the longest. The paired-judging
+    budget is 768 tokens and the largest real paired output was 307, so a quote
+    fits in 5% of the remaining headroom.
+
+    NEUTRALISE AND RESTORE on the containment test itself.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import paired_review as _pr
+        import finding_record as _fr
+    except Exception as exc:
+        return _fail("cannot import paired_review/finding_record: %s" % exc)
+    if not hasattr(_pr, "quote_not_in_unit"):
+        return _fail("paired_review.quote_not_in_unit is missing")
+
+    # The contract carries the field, and does NOT require it.
+    schema = _fr.schema()
+    if "quote" not in (schema.get("fields") or []):
+        return _fail("the Finding record contract has no `quote` field")
+    if "quote" in (schema.get("required") or []):
+        return _fail("`quote` must NOT be required: making it required turns every "
+                     "existing finding into a contract violation at once")
+
+    unit = ("## Entry UNIT-VETCH\n\nDevice: UNIT-VETCH\nClass: Class-B sensor\n"
+            "Service record: last calibration visit 2026-01-01, next calibration "
+            "visit logged 2026-03-15\n")
+    cases = [
+        ("a quote the unit contains", "next calibration visit logged 2026-03-15", False),
+        ("same quote, folded whitespace and case",
+         "Next  Calibration\nVisit Logged 2026-03-15", False),
+        ("the VETCH hallucination, a span that is not there",
+         "the next calibration visit is not stated", True),
+        ("no quote at all (the field is optional)", None, False),
+        ("an empty quote is not a claim", "   ", False),
+    ]
+    for label, quote, want in cases:
+        item = {"relation": "missing_field"}
+        if quote is not None:
+            item["quote"] = quote
+        got = _pr.quote_not_in_unit(item, unit)
+        if bool(got) != want:
+            return _fail("%s: refused=%r, expected %r" % (label, got, want))
+
+    # No unit text to check against is unanswerable, never a refusal.
+    if _pr.quote_not_in_unit({"quote": "anything at all"}, "") is not False:
+        return _fail("with no unit text the check must not refuse: it cannot know")
+
+    # The real VETCH entry, from the corpus itself rather than the fixture above.
+    doc = (ROOT / "benchmark" / "corpora" / "device_log_review_clean" / "context" /
+           "device_log_clean.md")
+    if doc.is_file():
+        import re as _re
+        body = doc.read_text(encoding="utf-8")
+        m = _re.search(r"(?ms)^## Entry UNIT-VETCH\b.*?(?=^## |\Z)", body)
+        if m:
+            real = m.group(0)
+            if _pr.quote_not_in_unit(
+                    {"quote": "the next calibration visit is not stated"}, real) is not True:
+                return _fail("the real VETCH entry does not refuse the hallucinated span")
+            if _pr.quote_not_in_unit(
+                    {"quote": "next calibration visit logged"}, real) is not False:
+                return _fail("the real VETCH entry refuses a span it actually contains")
+
+    # WIRED: the paired path checks it, and the model is asked for it.
+    src = (ROOT / "scripts" / "pipeline.py").read_text(encoding="utf-8", errors="replace")
+    if "quote_not_in_unit" not in src:
+        return _fail("pipeline.py never calls quote_not_in_unit, so nothing checks a quote")
+    if "`quote`" not in src and "quote`" not in src:
+        return _fail("the absence question does not ask the model for a quote")
+
+    # NEUTRALISE: accept any quote.
+    original = _pr.quote_not_in_unit
+    _pr.quote_not_in_unit = lambda _i, _t: False
+    try:
+        if _pr.quote_not_in_unit({"quote": "not in the unit"}, unit):
+            return _fail("neutralise did not take effect")
+    finally:
+        _pr.quote_not_in_unit = original
+    if _pr.quote_not_in_unit({"quote": "the next calibration visit is not stated"},
+                             unit) is not True:
+        return _fail("restore failed: a hallucinated span is accepted again")
+
+    return _ok("a finding quoting words the unit does not contain is refused, including "
+               "the real VETCH span from the corpus; a quote the unit carries passes "
+               "through folded whitespace and case; no quote and an empty quote are never "
+               "refused because the field is optional by measurement (requiring it would "
+               "have made all 62 findings of the two saved runs violations at once); the "
+               "contract carries `quote` unrequired and the absence question asks for it; "
+               "neutralise/restore proved")
+
+
 def check_228_scorer_checks_the_reason_not_only_the_location():
     """The scorer credited a location and never asked whether the reason was true.
 
@@ -20653,6 +20861,10 @@ CHECKS = [
      check_227_device_corpus_agrees_with_its_own_rule),
     ("228 the scorer checks a reason, not only a location, and reports the third outcome",
      check_228_scorer_checks_the_reason_not_only_the_location),
+    ("229 a finding that quotes text the unit does not contain is refused",
+     check_229_quoted_span_must_appear_in_the_unit),
+    ("230 a claim worded identically in both twins is reported by the scorer",
+     check_230_same_claim_in_both_twins_is_reported),
 ]
 
 

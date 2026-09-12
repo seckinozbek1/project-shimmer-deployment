@@ -1231,6 +1231,47 @@ def refuses_judged_absence(item, rule, fields_present):
     return claimed in have
 
 
+def _squash(text):
+    """Whitespace-folded, lowercased text, for comparing a quote against a unit
+    without being defeated by a line break or a doubled space."""
+    return " ".join(str(text or "").split()).lower()
+
+
+def quote_not_in_unit(item, unit_text):
+    """True when a finding quotes words that do NOT appear in the unit it is about.
+
+    The claim a model makes about ABSENCE is the one claim it can make that the
+    document itself refutes, and until now nothing checked it. Measured on the
+    2026-09-11 clean twin: the model asserted that the document "does not
+    mention the next calibration visit" for UNIT-VETCH, whose entry reads
+    "Service record: last calibration visit 2026-01-01, next calibration visit
+    logged 2026-03-15". It said the same thing, almost word for word, about the
+    flawed twin. Nothing caught it, because the claim was checked for shape and
+    never against the text.
+
+    The contract now asks for a `quote`: the exact words the finding rests on,
+    copied from the unit text the model was shown (that same text is sent to it
+    as `document_text`). This compares the quote against the unit, folding
+    whitespace and case so a line break cannot defeat it, and nothing else: no
+    model, no embedding, no second call.
+
+    Deliberately narrow. A finding with NO quote is not refused here, because
+    the field is optional in the contract and most relations are settled by
+    arithmetic that needs no quote; requiring one everywhere would turn every
+    existing finding into a violation, which is not a measurement, it is a
+    migration. Only a quote that is present AND absent from the unit is refused,
+    which is the case the model can get wrong and Python can prove."""
+    if not isinstance(item, dict):
+        return False
+    quote = item.get("quote")
+    if not quote or not str(quote).strip():
+        return False
+    if not str(unit_text or "").strip():
+        # No text to check against: unanswerable, so never a refusal.
+        return False
+    return _squash(quote) not in _squash(unit_text)
+
+
 def absence_plans(unit, rule_ids, rules_by_id, present, *, required_fields_for=None):
     """D, option 2, Python first: for every rule paired on this unit that declares
     a scope, a plan per declared required field the unit does not carry

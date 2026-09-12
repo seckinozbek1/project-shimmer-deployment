@@ -31,5 +31,7 @@
     "UNIT-TEASEL",
     "UNIT-VETCH"
   ],
-  "notes": "Zero planted defects, by design: this is the clean twin. Every one of the 18 device entries is listed as clean. Any amendment produced by a run against this document is a false positive; recall is meaningless here (0/0) and is expected to print that way. The number that matters from this corpus is false positives and distractor hits, both expected to be zero on a correctly working pipeline."
+  "notes": "Zero planted defects, by design: this is the clean twin. Every one of the 18 device entries is listed as clean. Any amendment produced by a run against this document is a false positive; recall is meaningless here (0/0) and is expected to print that way. The number that matters from this corpus is false positives and distractor hits, both expected to be zero on a correctly working pipeline.",
+  "twin_of": "device_log_review",
+  "twin_note": "The corpus this one is a twin of: the same document with the planted defects repaired (or introduced). A claim a run makes IDENTICALLY against both twins did not come from the document, because the documents differ exactly where the defects are. Declared here so the scorer can run that check rather than a person noticing it by hand, which is how it was found on 2026-09-11."
 }
