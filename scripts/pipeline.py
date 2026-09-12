@@ -1615,16 +1615,14 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
     async def _process_doc(doc):
         # structure H4: decide which rules could apply to which units BEFORE any
         # agent judges anything, and record the reason for every pairing and every
-        # non-pairing. Written to <run>/audit/pairing_map.json. Nothing consumes it
-        # to drive calls yet (that is paired review mode, H5); it is produced here
-        # so the map is a real per-run artifact rather than a scaffold, and so the
-        # counts can be read against a run that actually happened.
+        # non-pairing. Written to <run>/audit/pairing_map.json and consumed by
+        # paired review. Rules with no structural applicability remain undecided;
+        # uncalibrated semantic ranking cannot authorise a call.
         pairing = None
         try:
             pairing = pairing_map_mod.build_pairing_map(
                 doc["text"], convention_registry.get("conventions", []),
                 document_id=doc["id"],
-                rank=pairing_map_mod.embedding_ranker(embed_store),
                 convention_registry=convention_registry,
             )
             pairing_map_mod.write_pairing_map(orch.run_context, doc["id"], pairing)

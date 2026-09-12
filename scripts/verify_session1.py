@@ -8741,12 +8741,13 @@ def check_153_pairing_needs_the_fields_the_rule_names():
         if seen != {r["id"] for r in _H4_RULES}:
             return _fail(f"unit {e['unit_id']} does not account for every rule: {sorted(seen)}")
 
-    # The ranker only ever orders the undecided, and only when one is supplied.
+    # FIFTEEN: a rank is not calibrated applicability. Even a supplied ranker
+    # cannot promote the undecided or change a structural decision.
     ranked = _pm.pair_units(units, _H4_RULES, vocabulary=vocab,
                             rank=lambda text, cands: [c[0] for c in cands])
     r_one = [e for e in ranked if e["unit_id"] == one["unit_id"]][0]
-    if "CONV-003" not in [x["rule_id"] for x in r_one["paired"]]:
-        return _fail("with a ranker supplied the undecided rule was still not ranked in")
+    if "CONV-003" not in r_one["undecided"] or "CONV-003" in [x["rule_id"] for x in r_one["paired"]]:
+        return _fail("a ranker promoted an undecided rule without a calibrated applicability decision")
     if any(x["rule_id"] == "CONV-001" for x in r_one["rejected"]):
         return _fail("the ranker changed a decision the deterministic pass had already made")
 
@@ -8755,7 +8756,7 @@ def check_153_pairing_needs_the_fields_the_rule_names():
                f"from its own text; a unit lacking a named field is rejected with the "
                f"missing field named; a rule naming no field of the document is undecided, "
                f"not guessed; every rule is accounted for on every unit; a supplied ranker "
-               f"orders only the undecided")
+               f"cannot promote the undecided")
 
 
 def check_154_a_unit_no_rule_matches_produces_a_missing_field_finding():
@@ -8768,12 +8769,14 @@ def check_154_a_unit_no_rule_matches_produces_a_missing_field_finding():
     import pairing_map as _pm
     import finding_record as _fr
 
+    # Every rule must have decided applicability for "no rule applies" to hold.
+    rules = _H4_RULES[:2]
     registry = {"conventions": [dict(r, category="conv-x%02d" % i)
-                                for i, r in enumerate(_H4_RULES, 1)]}
-    pairing = _pm.build_pairing_map(_H4_DOC, _H4_RULES, document_id="synthetic",
+                                for i, r in enumerate(rules, 1)]}
+    pairing = _pm.build_pairing_map(_H4_DOC, rules, document_id="synthetic",
                                     convention_registry=registry)
 
-    if pairing["unit_count"] != 3 or pairing["rule_count"] != 3:
+    if pairing["unit_count"] != 3 or pairing["rule_count"] != 2:
         return _fail(f"unexpected map shape: {pairing['unit_count']} units, "
                      f"{pairing['rule_count']} rules")
     three_id = pairing["units"][2]["unit_id"]
@@ -8807,6 +8810,10 @@ def check_154_a_unit_no_rule_matches_produces_a_missing_field_finding():
         if entry["paired"] and entry["unit_id"] in matched_ids:
             return _fail(f"unit {entry['unit_id']} was paired yet also raised a "
                          f"missing_field finding")
+
+    unresolved = _pm.build_pairing_map(_H4_DOC, _H4_RULES, document_id="synthetic")
+    if unresolved["missing_field_findings"]:
+        return _fail("unresolved applicability became a new missing-field assertion")
 
     # And the map is written where the run can find it.
     import tempfile as _tempfile
@@ -23890,6 +23897,79 @@ def check_249_typed_amendment_survives_real_artifact_path():
                "wrong figures do not, and old untyped amendments remain unverifiable")
 
 
+def _semantic_pairing_refusal_fixture():
+    import asyncio
+    import pairing_map as pm
+    import pipeline as pl
+    import reference_builder as rb
+    import agent_wrapper as aw
+    import call_evidence
+    from harness.run_agent import build_orchestrator
+    from unittest.mock import patch
+    units = pm.split_units(_H4_DOC)
+    vocab = pm.field_vocabulary(units)
+    _require_fixture(len(units) == 3 and not pm.needed_fields(_H4_RULES[2]["rule"], vocab),
+                     "three declared units and one rule with no field match")
+    ranks = []
+
+    def rank(text, candidates):
+        ranks.append(len(candidates))
+        return [rid for rid, text in candidates]
+
+    mapping = pm.build_pairing_map(_H4_DOC, _H4_RULES, document_id="declared", rank=rank)
+    result = {"pair_count": mapping["pair_count"], "undecided_count": mapping["undecided_count"],
+              "rank_calls": len(ranks), "missing_count": len(mapping["missing_field_findings"]),
+              "refusal": mapping.get("semantic_pairing"),
+              "retired_adapter": pm.embedding_ranker({"models": {}}) is None}
+    with _tempfile.TemporaryDirectory(prefix="shimmer_pairing_refusal_") as td:
+        root = Path(td)
+        server = _step2_server_module(root / "server")
+        result["api_refusal"] = server._pairs_view(mapping).get("semantic_pairing")
+        # The real phase must not turn an uncalibrated candidate into a call.
+        # Dispatch is an observing stub, so even a regression cannot generate.
+        doc = {"id": "declared", "name": "declared.md", "text": "## Entry\n\nAlpha count: 7"}
+        registry = {"conventions": [_H4_RULES[2]]}
+        _require_fixture(not pm.needed_fields(_H4_RULES[2]["rule"], pm.field_vocabulary(pm.split_units(doc["text"]))),
+                         "real-phase input has no structural applicability")
+        orch = build_orchestrator(root=ROOT, out_root=root / "phase")
+        index = rb.ReferenceIndex.open(ROOT, index_path=root / "refs.json")
+        dispatched = []
+
+        def dispatch(wrapper, stable_prefix, dynamic_suffix="", **kw):
+            dispatched.append(wrapper.name)
+            return aw.CallResult(backend=wrapper.backend, model="fixture", raw_text="",
+                                 ok=False, error="declared observing stub")
+
+        with patch.object(aw.AgentWrapper, "dispatch", dispatch):
+            asyncio.run(pl.phase_5_5_convention_review(
+                orch, {}, [doc], "declared proof", registry, index,
+                embed_store={"models": {}}, max_concurrent_docs=1, review_mode="paired"))
+        result["dispatches"] = len(dispatched)
+        result["calls"] = len(call_evidence.load(orch.run_context.run_dir) or [])
+        saved = json.loads((orch.run_context.audit_dir() / "pairing_map.json").read_text(encoding="utf-8"))
+        result["saved_refusal"] = saved[doc["id"]].get("semantic_pairing")
+    return result
+
+
+def check_250_semantic_pairing_refuses_uncalibrated_promotion():
+    result = _semantic_pairing_refusal_fixture()
+    if result["pair_count"] != 3 or result["undecided_count"] != 3 or result["rank_calls"]:
+        return _fail("an uncalibrated rank promoted or evaluated unresolved rules")
+    if result["missing_count"]:
+        return _fail("an undecided rule became a missing-field assertion")
+    if result["calls"] or result["dispatches"] or not result["retired_adapter"]:
+        return _fail("the real phase or retired adapter still makes uncalibrated judging calls")
+    for name in ("refusal", "api_refusal", "saved_refusal"):
+        row = result[name] or {}
+        if (row.get("status") != "REFUSES" or len(row.get("required_voters", [])) != 5
+                or row.get("votes") != [] or not row.get("reason")
+                or row.get("measured_thresholds") is not None or row.get("measured_margin") is not None):
+            return _fail("%s hides or invents semantic decision evidence" % name)
+    return _ok("uncalibrated semantic pairing stays undecided with explicit saved/API refusal, no invented votes "
+               "or margins, no ranker call and no real phase dispatch; unresolved applicability never becomes "
+               "a new missing-field assertion; direct field decisions remain active")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24200,6 +24280,8 @@ CHECKS = [
      check_248_mutation_protocol_requires_effect_and_restoration),
     ("249 typed amendments survive synthesis, real artifacts and both scorer readers",
      check_249_typed_amendment_survives_real_artifact_path),
+    ("250 semantic pairing refuses uncalibrated promotion without inventing absence",
+     check_250_semantic_pairing_refuses_uncalibrated_promotion),
 ]
 
 

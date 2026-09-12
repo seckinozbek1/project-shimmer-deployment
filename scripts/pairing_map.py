@@ -17,8 +17,8 @@ So this module decides pairs, deterministically first:
 Nothing here knows anything about any domain (S5). The field vocabulary is read
 out of the operator's document, and what a rule needs is read out of the operator's
 rule text. A rule that names a label the document uses pairs with the units that
-carry it; a rule that names none of them is ambiguous and is handed to the
-embedding pass to rank, never guessed at here.
+carry it; a rule that names none of them stays undecided. Uncalibrated semantic
+ranking cannot establish applicability or authorise a judging call.
 """
 
 from __future__ import annotations
@@ -368,13 +368,9 @@ def pair_units(units, rules, *, vocabulary=None, rank=None, rank_cap=3):
     Deterministic first. A rule that names fields the document uses pairs only
     with the units that carry all of them, and the reason is recorded either way.
     A rule that names none of the document's field labels carries no mechanical
-    signal at all; it is marked ambiguous and, when a ranker is supplied, only
-    then is similarity used, and only to ORDER the candidates the deterministic
-    pass could not decide.
-
-    `rank` is an optional callable (unit_text, [(rule_id, rule_text)]) -> ordered
-    list of rule_ids. Injected rather than imported so this module never depends
-    on an embedding store being present.
+    signal at all and stays undecided. A rank alone is not the measured five-voter
+    applicability decision WORDS-A requires. rank/rank_cap remain accepted for
+    caller compatibility, but cannot promote undecided rules or trigger ranking.
     """
     if vocabulary is None:
         vocabulary = field_vocabulary(units)
@@ -438,14 +434,6 @@ def pair_units(units, rules, *, vocabulary=None, rank=None, rank_cap=3):
                     "reason": "unit lacks " + ", ".join(" ".join(f) for f in sorted(missing)),
                     "missing_count": len(missing),
                 })
-        if ambiguous and rank is not None:
-            ordered = rank(unit.get("text", ""),
-                           [(r["id"], r.get("rule", "")) for r in rules if r["id"] in set(ambiguous)])
-            for rid in list(ordered)[:rank_cap]:
-                paired.append({"rule_id": rid,
-                               "reason": "no field the rule names is used by this document; "
-                                         "ranked by similarity among the undecided"})
-            ambiguous = [r for r in ambiguous if r not in set(list(ordered)[:rank_cap])]
         entries.append({
             "unit_id": unit["unit_id"],
             "title": unit.get("title", ""),
@@ -472,7 +460,9 @@ def unmatched_findings(entries, rules, *, convention_registry=None):
     """
     out = []
     for entry in entries:
-        if entry["paired"]:
+        # An unresolved rule may apply. Refusing its semantic pairing cannot be
+        # turned into a new assertion that no rule applies to this unit.
+        if entry["paired"] or entry.get("undecided"):
             continue
         candidates = sorted(entry["rejected"], key=lambda r: r.get("missing_count", 99))
         if not candidates:
@@ -499,6 +489,17 @@ def unmatched_findings(entries, rules, *, convention_registry=None):
     return out
 
 
+def semantic_pairing_refusal(count):
+    """Explicit evidence of no semantic decision, never invented votes or scores."""
+    from semantic_ensemble import VOTER_NAMES
+    return {"status": "REFUSES", "rule_unit_count": count,
+            "reason": "Shimmer cannot establish where these rules apply. Name the fields they govern or declare their scope.",
+            "required_voters": list(VOTER_NAMES), "votes": [],
+            "measured_thresholds": None, "measured_margin": None,
+            "reference_set": None,
+            "detail": "Automatic similarity promotion is retired: no calibrated five-voter applicability decision exists."}
+
+
 def build_pairing_map(text, rules, *, document_id="", rank=None,
                       convention_registry=None):
     """Units, pairs, rejections with reasons, and a finding per unmatched unit."""
@@ -514,6 +515,8 @@ def build_pairing_map(text, rules, *, document_id="", rank=None,
         "pair_count": sum(len(e["paired"]) for e in entries),
         "rejected_count": sum(len(e["rejected"]) for e in entries),
         "undecided_count": sum(len(e["undecided"]) for e in entries),
+        "semantic_pairing": semantic_pairing_refusal(sum(len(e["undecided"]) for e in entries))
+                            if any(e["undecided"] for e in entries) else None,
         "unmatched_units": [e["unit_id"] for e in entries if not e["paired"]],
         "units": entries,
         "missing_field_findings": findings,
@@ -538,29 +541,10 @@ def write_pairing_map(run_context, document_id, pairing):
 
 
 def embedding_ranker(embed_store):
-    """Adapt the existing embedding store into the `rank` callable.
+    """Retired compatibility entry point: context retrieval is not applicability.
 
-    Returns None when there is no store, so the deterministic pass stands alone
-    and nothing has to pretend a ranker exists.
+    The old adapter called .query on the real dictionary store, swallowed the
+    error and returned registry order while claiming similarity. Even a repaired
+    single-score ranker would not provide WORDS-A's calibrated five-voter decision.
     """
-    if embed_store is None:
-        return None
-
-    def rank(unit_text, candidates):
-        if not candidates:
-            return []
-        try:
-            hits = embed_store.query(unit_text, top_k=len(candidates))
-        except Exception:
-            return [rid for rid, _ in candidates]
-        order = []
-        seen = set()
-        for hit in hits or []:
-            rid = (hit or {}).get("rule_id") if isinstance(hit, dict) else None
-            if rid and rid not in seen:
-                order.append(rid)
-                seen.add(rid)
-        order += [rid for rid, _ in candidates if rid not in seen]
-        return order
-
-    return rank
+    return None

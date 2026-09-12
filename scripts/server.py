@@ -1202,6 +1202,7 @@ def _pairs_view(pairing, convention_registry=None):
     rule on one screen. Empty string when the registry has no such rule (the
     function's own documented behavior), never invented."""
     import finding_record as _fr
+    import pairing_map as _pairing_map
     registry = convention_registry if convention_registry is not None else {}
 
     def _paired_or_rejected(p):
@@ -1229,6 +1230,11 @@ def _pairs_view(pairing, convention_registry=None):
         "pair_count": pairing.get("pair_count"),
         "rejected_count": pairing.get("rejected_count"),
         "undecided_count": pairing.get("undecided_count"),
+        # Regenerate fixed diagnostic text; never echo arbitrary saved document
+        # text through this new field. Older maps receive no retrospective claim.
+        "semantic_pairing": _pairing_map.semantic_pairing_refusal(
+            sum(len(e.get("undecided") or []) for e in pairing.get("units") or []))
+            if pairing.get("semantic_pairing") else None,
         "unmatched_units": list(pairing.get("unmatched_units") or []),
         "missing_field_finding_count": len(pairing.get("missing_field_findings") or []),
         "units": units,
