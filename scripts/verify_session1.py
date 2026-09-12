@@ -18995,6 +18995,180 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_234_operator_decision_carries_its_subject():
+    """A verdict with no identifier teaches nothing. Item ONE of the C1 round.
+
+    The only record in this system with both a target and a human verdict is a
+    conflict Resolution, and it has zero rows. The approval path produces the
+    other human verdict, and it recorded {decision, rationale, decided_at} with
+    NOTHING saying what was decided: the subject lived in a sibling
+    pending_approval.json that is deleted at the next escalation, so the pairing
+    was lost by design rather than by accident.
+
+    Three things, none of them a new mechanism:
+      1. the verdict is JOINED to its subject and appended to a durable
+         append-only ledger (durable/governance/operator_decisions.jsonl), each
+         line standing alone, id-shaped subject keys only and never the payload,
+         so document text cannot ride along
+      2. a TIMEOUT is recorded too: DEFERRED used to be returned in memory and
+         never written, so a run that waited and proceeded unapproved left no
+         trace of having asked
+      3. the graph builder READS it, and an OperatorDecision whose subject names
+         a known rule gets a DECIDED_ON edge to that Convention, the first edge
+         in this graph whose source is not a Provision
+
+    Deliberately NOT done, and the check pins it: OperatorDecision is not added
+    to the GNN's NODE_TYPE_VOCAB. Adding it would change the feature width and
+    invalidate the persisted weights for a signal that is still empty, which is
+    the "flag that claims a signal exists when it does not" failure this project
+    keeps finding. The node enters the graph with an all-zero type one-hot.
+
+    NEUTRALISE AND RESTORE on the subject join.
+    """
+    import tempfile as _tf
+
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import pipeline
+        import durable_paths
+        import ontology_graph
+        import ontology_gnn
+    except Exception as exc:
+        return _fail("cannot import the item ONE modules: %s" % exc)
+
+    if not hasattr(durable_paths, "operator_decisions_path"):
+        return _fail("durable_paths has no operator_decisions_path")
+    if not hasattr(pipeline, "_record_operator_decision"):
+        return _fail("pipeline._record_operator_decision is missing")
+
+    # The verdict carries its subject, and the payload's text does not ride along.
+    class _Ctx:
+        run_id = "gatecheck234"
+
+        def __init__(self, d):
+            self._d = d
+
+        def audit_dir(self):
+            return self._d
+
+    with _tf.TemporaryDirectory(prefix="shimmer_opdec_") as tmp:
+        d = Path(tmp)
+        saved_root = pipeline.ROOT
+        target = d / "durable" / "governance" / "operator_decisions.jsonl"
+        try:
+            pipeline.ROOT = d
+            pipeline._record_operator_decision(
+                _Ctx(d), topic="amendment_approval",
+                payload={"unit_id": "u19-vetch", "rule_id": "CONV-005",
+                         "original_text": "SENSITIVE DOCUMENT TEXT"},
+                decision="APPROVED", rationale="correct",
+                asked_at="t0", decided_at="t1")
+            if not target.is_file():
+                return _fail("no durable operator-decision record was written")
+            rec = json.loads(target.read_text(encoding="utf-8").strip().splitlines()[-1])
+        finally:
+            pipeline.ROOT = saved_root
+
+    if rec.get("subject", {}).get("rule_id") != "CONV-005":
+        return _fail("the verdict does not carry its subject rule: %r" % (rec.get("subject"),))
+    if rec.get("subject", {}).get("unit_id") != "u19-vetch":
+        return _fail("the verdict does not carry its subject unit")
+    if rec.get("subject_known") is not True:
+        return _fail("subject_known is not set when a subject was identified")
+    if "SENSITIVE DOCUMENT TEXT" in json.dumps(rec):
+        return _fail("the escalation payload's text rode along into the record; only "
+                     "id-shaped keys may be read off the payload")
+    if rec.get("decision") != "APPROVED":
+        return _fail("the verdict itself was not recorded")
+
+    # The graph reads it, and links a known rule.
+    if "operator_decisions" not in ontology_graph.DEFAULT_SOURCES:
+        return _fail("the graph builder does not read the operator decisions ledger")
+    with _tf.TemporaryDirectory(prefix="shimmer_opgraph_") as tmp:
+        d = Path(tmp)
+        dec = d / "dec.jsonl"
+        dec.write_text(json.dumps({
+            "schema": "operator_decision/v1", "run_id": "r1", "topic": "t",
+            "subject": {"rule_id": "CONV-001"}, "subject_known": True,
+            "decision": "APPROVED", "rationale": "", "asked_at": "t0",
+            "decided_at": "t1"}) + "\n", encoding="utf-8")
+        conv = d / "conv.json"
+        conv.write_text(json.dumps(
+            {"conventions": [{"id": "CONV-001", "rule": "r", "category": "c"}]}),
+            encoding="utf-8")
+        empty = d / "empty.json"
+        empty.write_text("{}", encoding="utf-8")
+        prov = d / "prov.jsonl"
+        prov.write_text("", encoding="utf-8")
+        graph = ontology_graph.build_graph(sources={
+            "provisions": prov, "document_dates": empty, "conventions": conv,
+            "citation_forms": empty, "speech_acts": empty,
+            "operator_decisions": dec}, out_path=d / "graph.json")
+        types = {n["type"] for n in graph["nodes"]}
+        if "OperatorDecision" not in types:
+            return _fail("no OperatorDecision node reached the graph: %r" % (types,))
+        decided = [e for e in graph["edges"] if e["type"] == "DECIDED_ON"]
+        if not decided or decided[0]["target"] != "CONV-001":
+            return _fail("no DECIDED_ON edge to the subject rule: %r" % (graph["edges"],))
+
+        # A decision naming a rule the graph does not hold is left UNLINKED,
+        # never attached to a guess.
+        dec.write_text(json.dumps({
+            "schema": "operator_decision/v1", "run_id": "r2", "topic": "t",
+            "subject": {"rule_id": "CONV-999"}, "subject_known": True,
+            "decision": "REJECTED", "rationale": "", "asked_at": "t0",
+            "decided_at": "t2"}) + "\n", encoding="utf-8")
+        graph2 = ontology_graph.build_graph(sources={
+            "provisions": prov, "document_dates": empty, "conventions": conv,
+            "citation_forms": empty, "speech_acts": empty,
+            "operator_decisions": dec}, out_path=d / "graph2.json")
+        if [e for e in graph2["edges"] if e["type"] == "DECIDED_ON"]:
+            return _fail("a decision naming an unknown rule was linked anyway")
+
+    # The GNN vocabulary is deliberately unchanged.
+    if "OperatorDecision" in ontology_gnn.NODE_TYPE_VOCAB:
+        return _fail("OperatorDecision was added to NODE_TYPE_VOCAB, which changes the "
+                     "feature width and invalidates the persisted weights for a signal "
+                     "that is still empty")
+
+    # NEUTRALISE: drop the subject from the record.
+    original = pipeline._record_operator_decision
+
+    def _subjectless(run_ctx, **kw):
+        kw2 = dict(kw)
+        kw2["payload"] = {}
+        return original(run_ctx, **kw2)
+
+    pipeline._record_operator_decision = _subjectless
+    try:
+        with _tf.TemporaryDirectory(prefix="shimmer_opdec_n_") as tmp:
+            d = Path(tmp)
+            saved_root = pipeline.ROOT
+            try:
+                pipeline.ROOT = d
+                pipeline._record_operator_decision(
+                    _Ctx(d), topic="t", payload={"rule_id": "CONV-005"},
+                    decision="APPROVED", rationale="", asked_at="t0", decided_at="t1")
+                path = d / "durable" / "governance" / "operator_decisions.jsonl"
+                bad = json.loads(path.read_text(encoding="utf-8").strip().splitlines()[-1])
+            finally:
+                pipeline.ROOT = saved_root
+        if bad.get("subject_known") is not False:
+            return _fail("neutralise did not take effect")
+    finally:
+        pipeline._record_operator_decision = original
+
+    return _ok("an operator verdict is written to a durable append-only ledger joined to "
+               "its subject (id-shaped keys only, the escalation payload's text never "
+               "rides along), a timeout is recorded as DEFERRED rather than vanishing, "
+               "the graph builder reads the ledger and links a known subject rule with "
+               "DECIDED_ON while leaving an unknown one unlinked, and OperatorDecision is "
+               "deliberately NOT in the GNN vocabulary while the signal is empty; "
+               "neutralise/restore proved")
+
+
 def check_233_absence_claim_requires_a_quote():
     """An absence claim must show the words it rests on. FORWARD ONLY.
 
@@ -21187,6 +21361,8 @@ CHECKS = [
      check_232_typed_amendment_and_bounded_deepening),
     ("233 an absence claim with no quote is refused, forward only",
      check_233_absence_claim_requires_a_quote),
+    ("234 an operator verdict is joined to its subject and reaches the graph",
+     check_234_operator_decision_carries_its_subject),
 ]
 
 

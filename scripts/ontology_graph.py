@@ -10,6 +10,7 @@ Sources (Q9: OGE data under ontology/; the rest are the existing durable/config 
   config/convention_registry.json          Convention nodes (id = CONV-*)
   durable/learnings/citation_convention.json  CitationForm nodes (id = name) + CITES patterns
   durable/learnings/speech_acts_taxonomy.json SpeechAct nodes (id = name) + EXHIBITS patterns
+  durable/governance/operator_decisions.jsonl OperatorDecision nodes (a verdict joined to its subject)
 
 PAYLOAD-FREE (BUILD INVARIANT): ingest reads provisions AS STORED and never unmasks. If B1
 stored a provision field masked (sensitive run), the graph node carries the placeholder. The
@@ -23,6 +24,9 @@ Edges (SCHEMA B + C5/C6):
   CROSS_REFERENCES Provision -> Provision  (context_refs -> ref_id; missing targets become stubs, Q3)
   CITES            Provision -> CitationForm (re.search(form.pattern, original_text AS STORED))
   EXHIBITS         Provision -> SpeechAct    (re.search(act.pattern, original_text AS STORED))
+  DECIDED_ON       OperatorDecision -> Convention (the subject rule an operator ruled on; the
+                   first edge whose source is not a Provision, and the first carrying a human
+                   judgement rather than an identifier match or a regex)
 """
 
 from __future__ import annotations
@@ -48,6 +52,12 @@ DEFAULT_SOURCES = {
     "conventions": ROOT / "config" / "convention_registry.json",
     "citation_forms": ROOT / "durable" / "learnings" / "citation_convention.json",
     "speech_acts": ROOT / "durable" / "learnings" / "speech_acts_taxonomy.json",
+    # An operator's verdict, joined to the subject it was about. Until this the
+    # builder read five files and no operator decision reached the graph at all,
+    # so the one record type carrying both a target and a human verdict was
+    # invisible to everything downstream. An absent file yields no nodes, which
+    # is the current state and is not an error.
+    "operator_decisions": ROOT / "durable" / "governance" / "operator_decisions.jsonl",
 }
 DEFAULT_GRAPH_PATH = OGE_STORES_DIR / "graph.json"
 
@@ -176,6 +186,24 @@ def build_graph(sources=None, out_path=None, *, sensitive=False,
                  evidence_count=a.get("evidence_count"), examples=a.get("examples", []) or [])
         speechact_patterns.append((nm, _safe_compile(a.get("pattern"))))
 
+    # OperatorDecision nodes: a human verdict, joined to its subject. Read from
+    # durable/governance/operator_decisions.jsonl, one record per line, each
+    # standing alone. SAFE fields only: the decision, the topic, whether a
+    # subject was identified, and the subject's id-shaped keys. The record
+    # carries no document text by construction (the writer reads an allowlist of
+    # id keys off the escalation payload and never the payload itself), so there
+    # is nothing here to mask.
+    operator_decisions = []
+    for line in _load_jsonl(src.get("operator_decisions")):
+        did = line.get("decided_at")
+        subject = line.get("subject") if isinstance(line.get("subject"), dict) else {}
+        node_id = "decision::%s::%s" % (line.get("run_id") or "", did or "")
+        add_node("OperatorDecision", node_id,
+                 topic=line.get("topic"), decision=line.get("decision"),
+                 subject_known=bool(line.get("subject_known")),
+                 run_id=line.get("run_id"), decided_at=did)
+        operator_decisions.append((node_id, subject))
+
     # Provision nodes: the scope's CURRENT records, AS STORED (one per id; the storage layer
     # already excluded superseded revisions and every other scope). Provenance and revision
     # are SAFE metadata (no content) and travel onto the node.
@@ -219,6 +247,28 @@ def build_graph(sources=None, out_path=None, *, sensitive=False,
         if did and has("Document", did):
             edges.append({"type": "HAS_PROVISION", "source_type": "Document", "source": did,
                           "target_type": "Provision", "target": n["id"]})
+
+    # DECIDED_ON: an operator's verdict, pointed at what it was about. The first
+    # edge type in this graph whose source is not a Provision, and the first that
+    # carries a human judgement rather than an identifier match or a regex. A
+    # decision whose subject names a rule this registry holds points at that
+    # Convention; one whose subject names nothing the graph knows is left
+    # unlinked rather than attached to a guess, and subject_known on the node
+    # says which it was.
+    #
+    # NOT added to the GNN feature vocabulary, deliberately. An OperatorDecision
+    # node is not in ontology_gnn.NODE_TYPE_VOCAB, so its type one-hot is all
+    # zeros: the node is in the graph and reachable, and contributes no learned
+    # type signal. Adding it would change the feature width and invalidate the
+    # persisted weights (feature_dim 28) in exchange for a signal that is still
+    # empty. The vocabulary changes when there is a real corpus of decisions and
+    # a model that can read a label, not before.
+    for node_id, subject in operator_decisions:
+        rule_ref = subject.get("rule_id") or subject.get("source_rule_id")
+        if rule_ref and has("Convention", rule_ref):
+            edges.append({"type": "DECIDED_ON", "source_type": "OperatorDecision",
+                          "source": node_id, "target_type": "Convention",
+                          "target": rule_ref})
 
     stats = {"unmatched_convention_refs": 0}
     for n in provisions:

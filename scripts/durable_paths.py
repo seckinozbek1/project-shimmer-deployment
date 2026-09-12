@@ -75,6 +75,12 @@ def redaction_waivers_path(pr): return governance_dir(pr) / "redaction_waivers.j
 def sensitivity_overrides_path(pr): return governance_dir(pr) / "sensitivity_overrides.jsonl"
 def exposure_ledger_path(pr): return governance_dir(pr) / "exposure_ledger.jsonl"  # LAW-IV masking audit trail (INFRA-041)
 def redaction_format_warnings_path(pr): return governance_dir(pr) / "redaction_format_warnings.jsonl"  # redactor format-failure HELD warnings (M5)
+# An operator verdict JOINED to the subject it was about. The per-run
+# approval_decision.json carries {decision, rationale, decided_at} and nothing
+# identifying what was decided, and the pending file holding the topic is
+# deleted at the next escalation, so the pairing was lost by design. This is
+# durable, append-only, and each line stands alone.
+def operator_decisions_path(pr): return governance_dir(pr) / "operator_decisions.jsonl"
 
 
 def ensure_dirs(project_root) -> None:
