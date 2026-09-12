@@ -6,10 +6,12 @@ Every run writes ONLY into its own run-scoped folder:
         deliverables/   per-document deliverables
         logs/           agent_bus.jsonl, cost_tracker.{jsonl,json}, run_summary_*.md
         audit/          reference_index.json, audit_synthesis.md, delta_proposals.json,
-                        contract_violations/, run_completion.json
+                        contract_violations/, run_completion.json, run_identity.json
 
 Two runs never overwrite each other: each gets a distinct folder (timestamp +
-random run id, unique even within the same second). Modeled on durable_paths.py:
+random UUID, unique even within the same second). Server folders use the UUID alone;
+the persisted identity stays fixed when a CLI folder gains a readable label.
+Modeled on durable_paths.py:
 every per-run writer derives its path from a RunContext rather than hardcoding an
 output/ subpath.
 
@@ -21,6 +23,7 @@ under output/runs/, never under durable/ or config/.
 
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import uuid
@@ -30,6 +33,10 @@ from pathlib import Path
 
 OUTPUT_DIRNAME = "output"
 RUNS_DIRNAME = "runs"
+IDENTITY_FILENAME = "run_identity.json"
+# STRUCTURAL: new opaque UUIDs and the legacy server identifiers still in URLs.
+SERVER_RUN_ID_RE = re.compile(r"^(?:[0-9a-f]{32}|\d{8}_\d{6}__[0-9a-f]{6})\Z")
+_SAFE_RECORDED_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}\Z")
 
 # BP-16: each document's artifacts live in deliverables/<doc_id>/, and the
 # filename inside drops the doc-name prefix (the folder already names the
@@ -56,8 +63,8 @@ def runs_root(project_root) -> Path:
 
 
 def new_run_id() -> str:
-    """A short, collision-resistant run id (8 hex chars)."""
-    return uuid.uuid4().hex[:8]
+    """One opaque UUID format for new CLI and server runs (32 lowercase hex)."""
+    return uuid.uuid4().hex
 
 
 def _stamp(now: datetime) -> str:
@@ -87,6 +94,11 @@ def rename_run(run_ctx: "RunContext", slug: str, *, now=None) -> "RunContext":
         return run_ctx
     if target.exists():
         target = root / f"{date_run_dirname(now, slug)}__{run_ctx.run_id}"
+    # A rename belongs wholly to this project's run root, including after path
+    # resolution. A caller-supplied external output folder is never moved here.
+    resolved_root = root.resolve()
+    if run_ctx.run_dir.resolve().parent != resolved_root or target.resolve().parent != resolved_root:
+        return run_ctx
     try:
         shutil.move(str(run_ctx.run_dir), str(target))
     except OSError:
@@ -150,10 +162,20 @@ class RunContext:
         return self.run_dir / "status.json"
 
     def ensure(self) -> "RunContext":
-        """Create the run folder and its standard subdirectories."""
+        """Create the run folders and preserve their identity independently of naming."""
+        if not _safe_id(self.run_id):
+            raise ValueError("run context contains an invalid identity")
         for d in (self.deliverables_dir(), self.logs_dir(),
                   self.audit_dir(), self.contract_violations_dir()):
             d.mkdir(parents=True, exist_ok=True)
+        path = self.audit_dir() / IDENTITY_FILENAME
+        if path.exists():
+            if _identity_record(path, strict=True) != self.run_id:
+                raise ValueError("run context conflicts with its recorded identity")
+        else:
+            temp = path.with_suffix(".json.tmp")
+            temp.write_text(json.dumps({"schema_version": 1, "run_id": self.run_id}) + "\n", encoding="utf-8")
+            temp.replace(path)
         return self
 
 
@@ -165,15 +187,85 @@ def create_run(project_root, *, now=None, run_id=None) -> RunContext:
     """
     now = now or datetime.now(timezone.utc)
     rid = run_id or new_run_id()
+    if not _safe_id(rid):
+        raise ValueError("invalid run identity")
     rd = runs_root(project_root) / run_dirname(now, rid)
     return RunContext(project_root=Path(project_root), run_id=rid, run_dir=rd).ensure()
 
 
+def _safe_id(value):
+    return isinstance(value, str) and _SAFE_RECORDED_ID_RE.fullmatch(value) is not None
+
+
+def _identity_record(path, *, strict=False):
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        if strict:
+            raise ValueError("run identity record is unreadable") from None
+        return None
+    rid = record.get("run_id") if isinstance(record, dict) else None
+    if _safe_id(rid) and (not strict or record.get("schema_version") == 1):
+        return rid
+    if strict:
+        raise ValueError("run identity record is malformed")
+    return None
+
+
+def _recorded_run_id(run_dir):
+    identity = run_dir / "audit" / IDENTITY_FILENAME
+    if identity.exists():
+        return _identity_record(identity, strict=True)
+    # Completion owns the pipeline's recorded identity. Older server metadata
+    # owns its published identifier. Neither is reconstructed from a folder slug.
+    for path in (run_dir / "audit" / "run_completion.json", run_dir / "status.json"):
+        rid = _identity_record(path)
+        if rid:
+            return rid
+    # Old renamed CLI runs predate both records, but their actual calls may still
+    # name one run id. Read it without changing those historical artifacts.
+    evidence = run_dir / "logs" / "call_evidence.jsonl"
+    ids = set()
+    if evidence.is_file():
+        for line in evidence.read_text(encoding="utf-8", errors="replace").splitlines():
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            rid = row.get("run_id") if isinstance(row, dict) else None
+            if _safe_id(rid):
+                ids.add(rid)
+    if len(ids) > 1:
+        raise ValueError("run call evidence contains conflicting identities")
+    return next(iter(ids)) if ids else None
+
+
 def for_run_dir(project_root, run_dir) -> RunContext:
-    """Build a RunContext around an EXISTING run folder (no mkdir of a new run)."""
+    """Open an existing run by recorded identity, without creating or rewriting it."""
     run_dir = Path(run_dir)
-    rid = run_dir.name.split("__", 1)[1] if "__" in run_dir.name else run_dir.name
+    rid = _recorded_run_id(run_dir)
+    if rid is None:
+        # Bare server paths can be opened before status.json is first written.
+        # Preserve legacy URL ids whole as well as the new UUID format.
+        if SERVER_RUN_ID_RE.fullmatch(run_dir.name):
+            rid = run_dir.name
+        else:
+            # Retain the old path-only fallback for runs with no identity evidence.
+            rid = run_dir.name.split("__", 1)[1] if "__" in run_dir.name else run_dir.name
     return RunContext(project_root=Path(project_root), run_id=rid, run_dir=run_dir)
+
+
+def start_run_in(project_root, run_dir) -> RunContext:
+    """Start in a caller-pinned folder, preserving a recorded or published identity.
+
+    A fresh arbitrary folder label is a location, not a run id. Give it the same
+    generated UUID as an automatic run and persist that identity before work.
+    """
+    run_dir = Path(run_dir)
+    rid = _recorded_run_id(run_dir)
+    if rid is None:
+        rid = run_dir.name if SERVER_RUN_ID_RE.fullmatch(run_dir.name) else new_run_id()
+    return RunContext(project_root=Path(project_root), run_id=rid, run_dir=run_dir).ensure()
 
 
 def latest_run(project_root) -> "RunContext | None":
