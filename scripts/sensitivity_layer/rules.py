@@ -35,9 +35,32 @@ _REDACT_VERB_RE = re.compile(
 _REDACTION_KEYWORDS = ("confiden", "redact", "privacy", "pii")
 
 # Prohibition phrasing that implies redaction without an explicit redact verb.
+# ZERO (operator's decision): the ACTIVE voice is now matched as well as the
+# passive. This regex covered "the address must not BE PUBLISHED" and did not
+# cover "the reviewer must not PUBLISH the client's address", so an operator
+# writing the active form had written a redaction rule the system silently
+# discarded. Under LAW-IV a silent non-compile is worse than compiling one rule
+# too many.
+#
+# The widening is limited to the ACTIVE AND PASSIVE FORMS OF THE SAME
+# PROHIBITION: the same verbs, in the same modal frame, with the participle
+# dropped. No new verb and no new frame are introduced, so the set of rules this
+# can newly match is exactly the set that was already intended and missed.
+#
+# TWO-I's restraint exclusion still applies on top of this and is what keeps
+# "a reviewer must not state an opinion" out, in both voices.
 _PROHIBITION_RE = re.compile(
     r"\b(?:must|shall|may)\s+not\s+(?:contain|include|appear|carry|state|name|be\s+"
     r"(?:published|disclosed|printed|included|shown|present))"
+    # The ACTIVE form of the same prohibition: "must not publish/disclose/...".
+    # `show` was in this list and was removed by an adversarial read: "we must
+    # not show favouritism" compiled as a redaction rule, and TWO-I does not
+    # catch it because "favouritism" is neither a reviewer object nor redactable
+    # content. `show` is the weakest of these verbs, the one whose object is
+    # least often document content, and the passive `not be shown` already
+    # covers the case that matters. The rest all take content as their object.
+    r"|\b(?:must|shall|may)\s+not\s+"
+    r"(?:publish|disclose|print|reveal|release|transmit)\b"
     r"|\bnot\s+be\s+(?:published|disclosed|printed|included|shown)\b",
     re.IGNORECASE)
 

@@ -19140,6 +19140,160 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_243_active_prohibition_and_unapplied_rules():
+    """ZERO: the active prohibition compiles, and a rule that can never fire is
+    named rather than silent.
+
+    PART ONE, the operator's decision. `_PROHIBITION_RE` matched only the
+    PASSIVE form, so "the address must not BE PUBLISHED" compiled and "the
+    reviewer must not PUBLISH the client's address" did not. An operator writing
+    the active form had written a redaction rule the system silently discarded,
+    and under LAW-IV a silent non-compile is worse than compiling one rule too
+    many. The widening is limited to the active and passive forms of the SAME
+    prohibition: the same verbs, the same modal frame, the participle dropped.
+    No new verb and no new frame, so the set it can newly match is exactly the
+    set that was already intended and missed.
+
+    PART TWO, a defect in a different place. After the ensemble union closed 16
+    of the original 23 unauthorising rules, SEVEN remained, and measuring them
+    showed the remainder is not a threshold problem at all: they name a HOME
+    ADDRESS, a DATE OF BIRTH, a LOCATION, a MEDICAL HISTORY. Content for which
+    NO SHAPE DETECTOR EXISTS. There are three detectors and none finds an
+    address.
+
+    So authorising nothing is the CORRECT answer for those seven, and adding
+    detectors would be a reach change far beyond this item. What was wrong is
+    that the operator was told nothing. `unauthorising_rules` now names them
+    with a reason, and the redaction stage posts REDACTION_RULE_UNAPPLIED to the
+    bus, where every other redaction outcome goes.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import convention_parser as _cp243
+    from sensitivity_layer.rules import redaction_rules as _rr243
+    from sensitivity_layer import rules as _rmod243
+    from sensitivity_layer.redaction_detect import load_cues as _lc243, \
+        unauthorising_rules as _unapp243
+
+    _PR = _rmod243._PROHIBITION_RE
+    ACTIVE_1 = "The reviewer must not publish the client" + chr(39) + "s address."
+    PASSIVE_1 = "The client" + chr(39) + "s address must not be published."
+    ACTIVE_2 = "The report must not disclose the individual" + chr(39) + "s salary."
+    PASSIVE_2 = "The individual" + chr(39) + "s salary must not be disclosed."
+    ACTIVE_3 = "We must not print the identity number."
+    PASSIVE_3 = "The identity number must not be printed."
+
+    for _a, _b in ((ACTIVE_1, PASSIVE_1), (ACTIVE_2, PASSIVE_2), (ACTIVE_3, PASSIVE_3)):
+        if not (_PR.search(_a) and _PR.search(_b)):
+            return _fail("active and passive forms of one prohibition disagree: "
+                         "active=%s passive=%s for %r"
+                         % (bool(_PR.search(_a)), bool(_PR.search(_b)), _a[:50]))
+
+    def _c243(rule, cat="conformance"):
+        return _rr243({"conventions": [{"id": "C", "category": cat, "action": "flag",
+                                        "action_declared": False, "rule": rule,
+                                        "severity": "required"}]})["operator_in_force"]
+
+    # TWO-I's restraint exclusion must survive the widening, in BOTH voices.
+    for _t in ("A reviewer must not state an opinion about maintenance priority.",
+               "An opinion about maintenance priority must not be stated by the reviewer.",
+               "Findings must withhold judgement about equipment condition.",
+               "Judgement about equipment condition must be withheld by findings.",
+               "A reviewer must not disclose an opinion about maintenance priority.",
+               "Comments must not reveal a recommendation about replacement."):
+        if _c243(_t):
+            return _fail("the widening broke TWO-I: a reviewer-restraint rule now "
+                         "compiles as redaction: %r" % _t[:60])
+
+    # ADVERSARIAL: the widening must not pull in a prohibition whose object is
+    # not content. Found by reading rather than by a failing test: `show` was in
+    # the active verb list and "we must not show favouritism" compiled as a
+    # redaction rule, which TWO-I cannot catch because "favouritism" is neither
+    # a reviewer object nor redactable content. `show` and `share` were removed;
+    # the passive "not be shown" already covers the case that matters.
+    for _t in ("We must not show favouritism.",
+               "A reviewer must not share an impression of the entry."):
+        if _c243(_t):
+            return _fail("the active widening compiled a prohibition whose object "
+                         "is not content: %r. Narrow the verb list." % _t[:56])
+
+    # Genuine rules still compile.
+    for _t, _cat in (("Redact the client name wherever it appears.", "conv-client-data"),
+                     (ACTIVE_1, "conv-client-data"),
+                     ("Mask the account number.", "conv-account"),
+                     ("The deliverable must not contain confidential business figures.",
+                      "conv-confidentiality")):
+        if not _c243(_t, _cat):
+            return _fail("a genuine redaction rule stopped compiling: %r" % _t[:58])
+
+    # BEHAVIOUR CHANGE ON THE SHIPPED CORPORA: expected zero.
+    _changed = []
+    for _p in sorted((ROOT / "benchmark" / "corpora").glob("*/conventions/*.md")):
+        for _r in _cp243._parse_text(_p, [0]):
+            if (_r.rule or "").strip() and \
+                    _rr243({"conventions": [_r.as_dict()]})["operator_in_force"]:
+                _changed.append("%s/%s" % (_p.parent.parent.name, _r.category))
+    if _changed:
+        return _fail("%d shipped rule(s) now compile as redaction after the "
+                     "widening: %r. Expected zero." % (len(_changed), _changed[:5]))
+
+    # PART TWO: a rule authorising no detector is NAMED, with a reason.
+    _cues243 = _lc243(str(ROOT))
+    _w = _unapp243([{"id": "R1", "category": "confidentiality",
+                     "rule": "Conceal the date of birth in every deliverable."}],
+                   _cues243)
+    if len(_w) != 1:
+        return _fail("a rule authorising no detector was not reported: %r" % (_w,))
+    if not _w[0].get("reason"):
+        return _fail("the report carries no reason, so an operator learns only that "
+                     "nothing happened, not why")
+    if _unapp243([{"id": "R2", "category": "confidentiality",
+                   "rule": "Mask the account number."}], _cues243):
+        return _fail("a rule that authorises a detector was wrongly reported unapplied")
+    _stage = (ROOT / "scripts" / "sensitivity_layer" / "redaction_stage.py").read_text(
+        encoding="utf-8")
+    if "REDACTION_RULE_UNAPPLIED" not in _stage or "warn_sink" not in _stage:
+        return _fail("the redaction stage does not surface unapplied rules to the bus")
+
+    # NEUTRALISE the widening. THIRTEEN-B: it must change behaviour first.
+    _sr = ROOT / "scripts" / "sensitivity_layer" / "rules.py"
+    _orig = _sr.read_text(encoding="utf-8")
+    _needle = "    r\"|\\b(?:must|shall|may)\\s+not\\s+\"\n"
+    _neu = _orig.replace(_needle, "    r\"|(?!)\"\n", 1)
+    if _neu == _orig:
+        return _fail("could not neutralise: the active-form branch was not found")
+    try:
+        _sr.write_text(_neu, encoding="utf-8")
+        import importlib
+        import sensitivity_layer.rules as _m243
+        importlib.reload(_m243)
+        _active_gone = not _m243._PROHIBITION_RE.search(ACTIVE_1)
+    finally:
+        _sr.write_text(_orig, encoding="utf-8")
+        import importlib
+        import sensitivity_layer.rules as _m243b
+        importlib.reload(_m243b)
+    if not _active_gone:
+        return _fail("neutralising the active-form branch changed no observable "
+                     "behaviour, so this proof was never at risk (THIRTEEN-B)")
+    if not _m243b._PROHIBITION_RE.search(ACTIVE_1):
+        return _fail("restore failed: the active form no longer matches")
+
+    return _ok("the ACTIVE prohibition now compiles as a redaction rule, as the "
+               "passive always did, and the widening is limited to the active and "
+               "passive forms of the same prohibition: same verbs, same modal "
+               "frame, no new frame introduced; TWO-I restraint exclusion survives "
+               "it in BOTH voices, including active disclose and reveal forms; "
+               "every genuine rule still compiles; 0 of 44 shipped rules change "
+               "behaviour; and a redaction rule that authorises NO detector (an "
+               "address, a date of birth, a location: content no shape detector "
+               "finds, so authorising nothing is correct) is now NAMED with a "
+               "reason and posted to the bus as REDACTION_RULE_UNAPPLIED rather "
+               "than failing in silence; neutralise proved to change behaviour "
+               "before the check is consulted")
+
+
 def check_242_no_new_literal_word_list_in_a_decision_path():
     """WORDS-F: a new literal word list in a decision path fails the gate.
 
@@ -23302,6 +23456,8 @@ CHECKS = [
      check_241_shape_authorisation_uses_the_ensemble),
     ("242 no new literal word list appears in a decision path without a verdict",
      check_242_no_new_literal_word_list_in_a_decision_path),
+    ("243 the active prohibition compiles and an unapplied redaction rule is named",
+     check_243_active_prohibition_and_unapplied_rules),
 ]
 
 

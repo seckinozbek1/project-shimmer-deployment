@@ -270,15 +270,57 @@ def _item(span, rule_id, category, detector):
             "source": "deterministic", "detector": detector}
 
 
-def detect(project_root, text: str, operator_rules: list) -> list:
+def unauthorising_rules(operator_rules, cues):
+    """The operator redaction rules that authorise NO shape detector at all.
+
+    ZERO: after the ensemble union closed 16 of the original 23, SEVEN remained,
+    and measuring them showed the remainder is not a threshold problem. They name
+    a HOME ADDRESS, a DATE OF BIRTH, a LOCATION, a MEDICAL HISTORY, and
+    "protected health information": content for which NO SHAPE DETECTOR EXISTS.
+    There are three detectors (identifier, figure, name) and none of them finds
+    an address or a date of birth.
+
+    So authorising nothing is the CORRECT answer for these rules, and adding
+    detectors for them would be a reach change well beyond this item. What was
+    wrong is that the operator was told nothing: a rule they wrote, that
+    compiled as a redaction rule, that then scanned for nothing, in silence.
+
+    This names them so the caller can warn. A rule that cannot be applied is a
+    reportable fact, not an empty result."""
+    out = []
+    for r in operator_rules or []:
+        if not authorized_shapes([r], cues):
+            out.append({
+                "id": r.get("id"),
+                "category": r.get("category"),
+                "reason": ("this rule compiled as a redaction rule but authorises "
+                           "none of the available shape detectors (%s). It names "
+                           "content no detector finds, such as an address, a date "
+                           "of birth, a location or free text, so nothing will be "
+                           "redacted for it. Either narrow the rule to content a "
+                           "detector can find, or redact those spans by hand."
+                           % ", ".join(_SHAPES)),
+            })
+    return out
+
+
+def detect(project_root, text: str, operator_rules: list, *, warn_sink=None) -> list:
     """Run the deterministic local detectors over `text`, but ONLY for shapes an
     operator rule authorizes. Returns canonical INFRA-037 redaction items. Pure,
-    local, no network/API/translator."""
+    local, no network/API/translator.
+
+    `warn_sink` (ZERO): an optional list the caller supplies, appended with one
+    entry per operator rule that authorises NO detector. Additive, so every
+    existing caller is byte-identical; without it the behaviour is exactly as
+    before. With it, a redaction rule that can never fire is VISIBLE rather than
+    silently empty, which is the whole defect this closes."""
     if not text or not operator_rules:
         return []
     cues = load_cues(str(project_root))
     if not cues:
         return []
+    if warn_sink is not None:
+        warn_sink.extend(unauthorising_rules(operator_rules, cues))
     auth = authorized_shapes(operator_rules, cues)
     if not auth:
         return []
