@@ -19117,6 +19117,154 @@ def check_238_two_rule_sets():
     if not all("operator" in r for r in withheld.values()):
         return _fail("a withheld rule does not say it was put to the operator")
 
+    # THREE-A: the answer is STORED, so the same conflict is never raised twice
+    # ACROSS RUNS and not merely within one. Proved through a real scoped store
+    # that is reopened between the write and the read, because an answer held in
+    # memory would pass a weaker test and fail the actual requirement.
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as _td:
+        store = _xr.open_store(Path(_td))
+        by_id = {c["conflict_id"]: c for c in conflicts}
+        target = by_id[[c["conflict_id"] for c in conflicts
+                        if c["external_rule_id"] == "EXT-001"][0]]
+        _applied, _to_ask = _xr.unanswered(conflicts, store)
+        if len(_to_ask) != 2:
+            return _fail("an empty store should leave both conflicts to ask")
+        summary, rejected = _xr.write_resolutions(
+            store, {target["conflict_id"]: _xr.ANSWER_CONVENTION},
+            run_id="r1", agent="operator", conflicts_by_id=by_id)
+        if summary.get("written") != 1 or rejected:
+            return _fail("the answer was not written: %r %r" % (summary, rejected))
+        # REOPEN: a fresh store instance must see it, or nothing persisted.
+        store2 = _xr.open_store(Path(_td))
+        _applied, _to_ask = _xr.unanswered(conflicts, store2)
+        if target["conflict_id"] in {c["conflict_id"] for c in _to_ask}:
+            return _fail("an answered conflict is raised again on the next run; the "
+                         "answer did not persist")
+        if [a["external_rule_id"] for a in _applied] != ["EXT-001"]:
+            return _fail("the stored answer was not applied: %r"
+                         % ([a.get("external_rule_id") for a in _applied],))
+        if [c["external_rule_id"] for c in _to_ask] != ["EXT-004"]:
+            return _fail("an unanswered conflict stopped being asked")
+        # A CHANGED SIDE is a new question and must be asked again.
+        moved_conv = [dict(c, id="CONV-009") if c["id"] == "CONV-001" else c
+                      for c in conventions]
+        _a2, _t2 = _xr.unanswered(
+            _xr.detect_external_conflicts(moved_conv, ext), store2)
+        if "EXT-001" not in {c["external_rule_id"] for c in _t2}:
+            return _fail("a conflict between different rules was treated as already "
+                         "answered; a changed side is a new question")
+        # An unrecognised answer is refused AT WRITE TIME, never stored.
+        s3, rej3 = _xr.write_resolutions(store2, {"xconflict-deadbeef": "obey"},
+                                         run_id="r2", conflicts_by_id=by_id)
+        if s3.get("written") or len(rej3) != 1:
+            return _fail("an unrecognised answer was written to the store, so every "
+                         "later run would read it as an instruction")
+        # The operator can change their mind; the latest answer is what is read.
+        s4, _ = _xr.write_resolutions(store2,
+                                      {target["conflict_id"]: _xr.ANSWER_EXTERNAL},
+                                      run_id="r3", conflicts_by_id=by_id)
+        if not s4.get("superseded"):
+            return _fail("a re-answered conflict did not supersede its earlier answer")
+        rec = _xr.resolutions_in(_xr.open_store(Path(_td)))[target["conflict_id"]]
+        if rec.get("answer") != _xr.ANSWER_EXTERNAL:
+            return _fail("the earlier answer is still the one a later run reads")
+        # Identifiers only: rule or document TEXT must never reach durable state.
+        # `scope` in a stored record is the STORAGE LAYER's partition name, not
+        # the rule's scope declaration, so it is not a leak and is not named
+        # here. What must not appear is the rule's own prose or its conditions.
+        # `subject` IS kept deliberately: it is a normalised label token from the
+        # operator's own declaration, an identifier rather than text, and it is
+        # what makes a stored answer readable a year later.
+        for _k in ("rule", "text", "requires", "unless", "severity", "action"):
+            if _k in rec:
+                return _fail("the store record carries %r; a durable record is an "
+                             "identifier record, so rule or document prose cannot "
+                             "ride along into durable state" % _k)
+        _blob = json.dumps(rec, default=str)
+        for _r in ext:
+            if _r.get("rule") and str(_r["rule"]) in _blob:
+                return _fail("an external rule's own text reached the store record")
+        # The node type is this module's own, so an ontology-versus-rule answer
+        # is never read as an answer to a different question.
+        import ontology_conflicts as _oc
+        if _xr.EXTERNAL_RESOLUTION_NODE == _oc.RESOLUTION_NODE:
+            return _fail("the two kinds of answer share a node type in one store, so "
+                         "an answer to one question can be read as an answer to the "
+                         "other")
+        if _oc.resolutions_in(_xr.open_store(Path(_td))):
+            return _fail("an external-rule answer is visible as an ontology conflict "
+                         "resolution")
+
+    # THREE-B: the entry point. An operator drops a file into a directory, the
+    # same way input/conventions/ works. No network and no discovery: this is
+    # the ONLY route by which an external rule enters.
+    with _tf.TemporaryDirectory() as _td:
+        root = Path(_td)
+        if _xr.load_external_rules_dir(root) != ([], []):
+            return _fail("a missing external-rules directory should yield nothing")
+        d = _xr.external_rules_dir(root)
+        d.mkdir(parents=True)
+        (d / "supplied.json").write_text(json.dumps({"external_rules": [
+            {"id": "EXT-900", "status": "accepted", "scope": [{"label": "Reading"}],
+             "requires": ["Reading"], "severity": "info", "action": "note"},
+        ]}), encoding="utf-8")
+        rules, sources = _xr.load_external_rules_dir(root)
+        if len(rules) != 1 or sources != ["supplied.json"]:
+            return _fail("an operator-supplied file did not load: %r %r"
+                         % (rules, sources))
+        if rules[0]["status"] != _xr.STATUS_PROPOSED:
+            return _fail("a file declared its own rule ACCEPTED and was believed; "
+                         "acceptance is the operator's act, recorded with an owner, "
+                         "and a self-accepting file defeats the whole separation")
+        if rules[0].get("source_file") != "supplied.json":
+            return _fail("a loaded rule does not carry the file it came from")
+        # An entry point that reaches outside would be the thing item THREE
+        # forbids. Proved structurally: the module references nothing that can.
+        _src = (ROOT / "scripts" / "external_rules.py").read_text(encoding="utf-8")
+        for _bad in ("import requests", "urllib", "http://", "https://", "socket",
+                     "urlopen", "httpx"):
+            if _bad in _src:
+                return _fail("external_rules.py references %r; there is no discovery "
+                             "and no network by decision" % _bad)
+        # A malformed file stops rather than reading as empty.
+        (d / "broken.json").write_text("{not json", encoding="utf-8")
+        try:
+            _xr.load_external_rules_dir(root)
+            return _fail("a malformed rules file read as empty; an operator who "
+                         "wrote a file and got no rules would think the mechanism "
+                         "was off")
+        except ValueError:
+            pass
+        (d / "broken.json").unlink()
+        # Two files claiming one id is ambiguous and is refused, since a stored
+        # answer is keyed to the rule it was about.
+        (d / "other.json").write_text(json.dumps({"external_rules": [
+            {"id": "EXT-900", "scope": [{"label": "Reading"}]}]}), encoding="utf-8")
+        try:
+            _xr.load_external_rules_dir(root)
+            return _fail("a duplicate external rule id was accepted, so which rule an "
+                         "answer refers to would depend on filename order")
+        except ValueError:
+            pass
+
+    # THREE-C: the conflict list carries what the overlap test cannot see.
+    report = _xr.conflict_report(conflicts, external_rules=ext)
+    if report.get("count") != len(conflicts):
+        return _fail("the report miscounts the conflicts")
+    if report.get("external_rules_compared") != len(ext):
+        return _fail("the report does not say how many rules were compared; a list "
+                     "of zero from one rule and from forty are different facts")
+    notice = str(report.get("limit_notice") or "")
+    if not notice:
+        return _fail("the conflict list does not carry its own limit, so an operator "
+                     "can be shown it without being told what it cannot contain")
+    for _need in ("declare", "different words", "short list"):
+        if _need.lower() not in notice.lower():
+            return _fail("the limit notice does not explain %r: an operator reading a "
+                         "short list must know it is not evidence the rules agree"
+                         % _need)
+
     try:
         _xr.promote(ext[0], owner="   ")
         return _fail("an external rule gained authority with nobody named as owner")
@@ -19159,8 +19307,18 @@ def check_238_two_rule_sets():
                "question is asked once and changed sides are a new question; an "
                "unrecognised answer is treated as unanswered rather than obeyed; a "
                "proposal cannot gain authority without a named owner and a promoted "
-               "rule leaves the external set; the fixture declares itself and no code "
-               "path fetches an external rule; neutralise/restore proved")
+               "rule leaves the external set; the answer is STORED through the scoped "
+               "ontology store under its own node type and survives a reopen, so an "
+               "answered conflict is never raised again, a changed side is a new "
+               "question, an unrecognised answer is refused at write time, a "
+               "re-answered conflict supersedes, and the record carries identifiers "
+               "only; an operator-supplied file under input/external_rules/ is the "
+               "ONE way in, arrives as a proposal whatever it claims, carries its "
+               "source file, refuses a malformed file and a duplicate id, and the "
+               "module references no network at all; the conflict list carries the "
+               "limit of the overlap test with it, so a short list is never read as "
+               "agreement; the fixture declares itself and no code path fetches an "
+               "external rule; neutralise/restore proved")
 
 
 def check_237_suspension_edges_and_visible_loss():
@@ -21992,7 +22150,7 @@ CHECKS = [
      check_236_rule_condition_field_and_rule),
     ("237 the refusal is usable, a blocked reattribution is named, and a suspension suspends",
      check_237_suspension_edges_and_visible_loss),
-    ("238 the two rule sets stay apart: agreement applies, disagreement is refused and asked once",
+    ("238 the two rule sets stay apart: agreement applies, disagreement is refused, answered once and stored",
      check_238_two_rule_sets),
 ]
 

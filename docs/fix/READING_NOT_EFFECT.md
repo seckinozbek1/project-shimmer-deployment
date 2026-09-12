@@ -1,0 +1,99 @@
+# Checks that prove a reading rather than an effect
+
+TWO-E. Carried here as the worked case for item THIRTEEN, which has to propose a
+cheap structural check that catches this shape.
+
+## The worked case: `unless` at f1f09cd
+
+The parser read `[unless: ...]`, the registry entry carried it, the paired
+payload carried it, and the ontology drew a `QUALIFIED_BY` edge for it. Check 236
+proved every one of those. All of it passed, and the declaration **suspended
+nothing**: no code evaluated it, so no rule was ever withheld from a unit because
+of it. The feature was built, gated, documented and inert, and the gate was
+green throughout.
+
+The check proved the declaration was READ. It never proved it CHANGED AN
+OUTCOME. Those are different claims, and only the second one is the feature.
+
+## What the pattern is, stated so item THIRTEEN can act on it
+
+A check of this shape:
+
+1. exercises a PRODUCER (a parser, a builder, a payload assembler) and asserts
+   on the structure it returns, and
+2. never calls the CONSUMER that is supposed to act on that structure, so
+3. removing the consumer entirely would leave the check green.
+
+The last line is the operational test, and it is the one worth automating:
+**if deleting the code that acts on X leaves the check that covers X passing,
+the check covers the reading of X and not the effect of X.**
+
+## What the scan found
+
+Two passes over all 239 checks.
+
+**First pass** looked for checks with "reading" assertions and no "effect"
+words. It returned 9 candidates. The three strongest (18, 39, 152) were all
+FALSE POSITIVES, and instructively so: they do test effects, by feeding
+malformed input and requiring rejection. That evidence reads as ordinary
+assertion syntax, so a word-based heuristic cannot see it. Recorded because item
+THIRTEEN will be tempted by the same heuristic.
+
+**Second pass** looked for checks that touch a producer and never a decider. It
+returned 48, which is too coarse to be a finding: the decider list is
+necessarily incomplete, so most are false positives too. A list of 48 suspects
+is not a result.
+
+Neither heuristic is good enough to ship as the check item THIRTEEN wants. What
+does work is the deletion test above, and that is what THIRTEEN should cost out.
+
+## The one confirmed second instance: a convention's declared severity
+
+Found by following the pattern rather than the heuristic, in the sibling of the
+check that missed `unless`.
+
+**Check 197** proves that a convention heading's brackets are read: it asserts
+CONV-D01 comes out `severity=required` with subjects `['conformance']`, CONV-D03
+comes out `advisory` with none, and so on. Every assertion is about what the
+PARSER PRODUCED.
+
+**Nothing decides anything from it.** Every computed amendment hardcodes
+`"severity": "required"` (`paired_review.py:2115`). The seven other places that
+read a rule's severity are all DISPLAY: the bus viewer, the summary generator, a
+graph node attribute, an API echo. Not one of them changes what the run does.
+
+So an operator who writes `[advisory]` on a heading gets:
+  - a correctly parsed `advisory` severity, proved by a green check
+  - an amendment marked `required` anyway
+  - and no error, anywhere
+
+**Why it stayed invisible:** all 8 rules in the shipped corpus declare
+`required`, so the hardcoded value is indistinguishable from the real one on
+every rule that exists. The corpus cannot reveal this defect; only reading the
+consumer can.
+
+**Not fixed here, and deliberately.** Deciding what `advisory` should DO is an
+operator's call, not a repair: it could lower the amendment's severity field,
+suppress amendment generation entirely, or route the finding to a different
+section. Recorded with a recommendation instead.
+
+**Recommendation:** an `advisory` rule should still produce its finding (the
+arithmetic is the same and the operator still wants to see it) but should not
+produce an AMENDMENT, since an amendment is a proposed change to the document
+and an advisory rule by its name is not asking for one. That is one branch at
+the amendment-minting site, and it makes the declared severity mean something
+for the first time.
+
+## Other places worth the same question, not yet checked
+
+Named so the next reader has somewhere to start, not asserted as defects:
+
+- **`action` on a convention: checked, and it is the same defect.** All 8 rules
+  declare `flag`, it is hardcoded `"flag"` at the same amendment site, and every
+  reader of it is display (bus viewer, summary, graph attribute, API echo) with
+  ONE real exception: `sensitivity_layer/rules.py:112` does decide from it, but
+  only for redaction rules, never for a review convention. The `chat.py` hits
+  are a different `action` entirely (a parsed chat command) and are not related.
+  So `severity` and `action` are one finding, not two.
+- the subject tags from check 197: they reach the convention assignment, which
+  does act on them, so this one is probably sound. Not verified.

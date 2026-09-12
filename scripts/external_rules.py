@@ -166,6 +166,45 @@ def detect_external_conflicts(conventions, external_rules):
     return out
 
 
+# THREE-C. What the overlap test CANNOT see, in the operator's own terms.
+#
+# A conflict is detected from DECLARED subjects: the scope and requires labels a
+# rule names. Two rules about the same thing in different words therefore never
+# register as conflicting, and the run will apply both without ever asking. The
+# limit is deliberate (guessing a subject from prose is the same mistake the
+# band reader's rules forbid), but it is invisible exactly where it matters: an
+# operator reading a SHORT conflict list will reasonably conclude the rules
+# mostly agree, when the truth may be that the detector could not see the
+# disagreement at all.
+#
+# So it travels WITH the list rather than living in a document nobody opens.
+OVERLAP_LIMIT_NOTICE = (
+    "How this list was built, and what it cannot contain: a conflict is found by "
+    "comparing the subjects the two rules DECLARE (their scope and requires "
+    "labels), not by reading what they say. Two rules about the same thing in "
+    "different words do not appear here, and both will be applied. A short list "
+    "is therefore not evidence that the rules agree: it may mean the subjects "
+    "were written differently. Where you know two rules touch the same subject, "
+    "declaring that subject the same way in both is what makes the disagreement "
+    "visible.")
+
+
+def conflict_report(conflicts, *, external_rules=None):
+    """The conflict list as the operator meets it, carrying its own limit.
+
+    The notice is part of the return value rather than something a caller may
+    add, so there is no path that shows an operator this list without telling
+    them what it cannot contain. `compared` names how many rules were actually
+    examined, since a list of zero from one rule and a list of zero from forty
+    are different facts."""
+    return {
+        "conflicts": list(conflicts or []),
+        "count": len(conflicts or []),
+        "external_rules_compared": len(external_rules or []),
+        "limit_notice": OVERLAP_LIMIT_NOTICE,
+    }
+
+
 def apply_external_resolutions(conflicts, resolutions):
     """Split conflicts into those already answered and those still to ask.
 
@@ -242,16 +281,193 @@ def applicable(conventions, external_rules, conflicts):
             "withheld": withheld}
 
 
+# The store node type for an answer about a convention-versus-external conflict.
+# Deliberately NOT ontology_conflicts.RESOLUTION_NODE: that node answers a
+# different question (does the ontology's memory or the current rule govern this
+# provision), and the two share a store. One node type for two questions would
+# let an answer about one be read as an answer about the other, and the ids
+# cannot collide by luck either, since they carry different prefixes.
+EXTERNAL_RESOLUTION_NODE = "ExternalRuleResolution"
+
+
+def resolutions_in(store):
+    """{conflict_id: resolution record} for convention-versus-external answers.
+
+    Read through the storage layer, so another scope's answers are never visible
+    here, the same as every other read. Only this module's node type is
+    returned, so an ontology-versus-rule answer is never mistaken for one of
+    these."""
+    out = {}
+    for r in store.current():
+        if r.get("node") != EXTERNAL_RESOLUTION_NODE:
+            continue
+        cid = r.get("conflict_id")
+        if cid:
+            out[cid] = r
+    return out
+
+
+def resolution_records(answers, *, run_id, provenance, conflicts_by_id=None):
+    """Shape the operator's answers as store records, so the next run finds them
+    and the same conflict is never put to the operator twice.
+
+    `answers`: {conflict_id: answer}. An answer this module does not recognise is
+    REFUSED HERE rather than written, which is ontology_conflicts' own rule:
+    writing it would make every later run either ask again or, worse, act on an
+    unrecognised instruction. The refusal is returned so the caller can report
+    it rather than discover a silently dropped answer.
+
+    The record carries BOTH RULE IDS and the subject, never any rule text: a
+    store record is an identifier record, so document or rule prose cannot ride
+    along into durable state."""
+    conflicts_by_id = conflicts_by_id or {}
+    out, rejected = [], []
+    for cid, answer in sorted((answers or {}).items()):
+        if answer not in ANSWERS:
+            rejected.append({"conflict_id": cid, "answer": answer,
+                             "reason": "not one of %s" % (", ".join(ANSWERS),)})
+            continue
+        c = conflicts_by_id.get(cid) or {}
+        out.append({
+            "node": EXTERNAL_RESOLUTION_NODE,
+            "id": "xresolution::" + cid,
+            "conflict_id": cid,
+            "answer": answer,
+            "subject": c.get("subject"),
+            "convention_rule_id": c.get("convention_rule_id"),
+            "external_rule_id": c.get("external_rule_id"),
+            "answered_in_run": run_id,
+            "answered_at": _now_iso(),
+            "provenance": provenance,
+        })
+    return out, rejected
+
+
+def write_resolutions(store, answers, *, run_id, agent=None, conflicts_by_id=None):
+    """Write the operator's answers into the ontology through the scoped store.
+
+    Returns (summary, rejected). A re-answered conflict supersedes its earlier
+    answer by the storage layer's own rule, so an operator can change their mind
+    and the latest answer is the one a later run reads. This is the half of item
+    THREE that makes "the same conflict is never raised twice" true across runs
+    rather than only within one."""
+    import ontology_store
+    prov = ontology_store.provenance(time=ontology_store.now_iso(), agent=agent,
+                                     run=run_id)
+    records, rejected = resolution_records(answers, run_id=run_id, provenance=prov,
+                                           conflicts_by_id=conflicts_by_id)
+    written = store.append(records) if records else {"written": 0, "superseded": 0}
+    return {"written": written.get("written", 0),
+            "superseded": written.get("superseded", 0),
+            "rejected": len(rejected)}, rejected
+
+
+def _now_iso():
+    try:
+        import ontology_store
+        return ontology_store.now_iso()
+    except Exception:
+        return datetime.now(timezone.utc).isoformat()
+
+
+def open_store(stores_dir=None, *, scope=None, live_path=None):
+    """Open the scoped store the same way every other reader does, so a caller
+    never constructs a path itself. Shares ontology_conflicts' scope default, so
+    both kinds of answer live in one place and one reset clears both."""
+    import ontology_conflicts
+    if scope is None:
+        scope = ontology_conflicts.DEFAULT_SCOPE
+    return ontology_conflicts.open_store(stores_dir, scope=scope, live_path=live_path)
+
+
+def unanswered(conflicts, store):
+    """The conflicts still to put to the operator, reading stored answers.
+
+    This is the whole point of persistence: a conflict answered in an earlier run
+    does not come back. A conflict whose SIDES changed has a different id and is
+    a new question, so it is asked, which is correct rather than a miss."""
+    applied, to_ask = apply_external_resolutions(conflicts, resolutions_in(store))
+    return applied, to_ask
+
+
 def load_external_rules(path):
-    """External rules as given. Returns [] when the file does not exist, which is
-    the normal state: nothing in this system produces an external rule, and no
-    code path fetches one."""
+    """External rules from ONE file the operator supplied. Returns [] when the
+    file does not exist, which is the normal state.
+
+    A malformed file is NOT silently empty: it raises, because an operator who
+    wrote a rules file and got no rules would conclude the mechanism is off
+    rather than that their JSON is broken. A missing file is a different fact
+    and is the quiet one."""
     p = Path(path)
     if not p.is_file():
         return []
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
-    except (ValueError, OSError):
-        return []
+    except ValueError as exc:
+        raise ValueError(
+            "external rules file %s is not valid JSON: %s. It is refused rather "
+            "than read as empty, because a file you wrote producing no rules "
+            "silently is worse than one that stops the run." % (p.name, exc))
     rules = data.get("external_rules") if isinstance(data, dict) else data
     return [r for r in (rules or []) if isinstance(r, dict)]
+
+
+# Where an operator hands over a rule found outside. THREE-B: this is the entry
+# point, and it needs no discovery and no network. The operator drops a file in,
+# exactly as they do for input/conventions/, and the rules in it arrive as
+# PROPOSALS. Nothing in this system reaches out to find one; the only route in
+# is an operator putting a file here.
+EXTERNAL_RULES_DIR = ("input", "external_rules")
+
+
+def external_rules_dir(project_root):
+    return Path(project_root).joinpath(*EXTERNAL_RULES_DIR)
+
+
+def load_external_rules_dir(project_root):
+    """Every external rule the operator has supplied, with its source file.
+
+    Returns (rules, sources). Mirrors convention_parser.parse_conventions: a
+    directory the operator drops files into, read at load time, with an
+    unrecognised file WARNED rather than silently dropped, so a rules file in
+    the wrong format is visible instead of absent.
+
+    Every rule is forced to `proposed` on the way in, whatever the file claims,
+    and carries the file it came from. A file cannot declare its own rules
+    accepted: acceptance is the operator's act, recorded with an owner through
+    `promote`, and a self-accepting file would be the whole separation defeated
+    by an attribute."""
+    d = external_rules_dir(project_root)
+    rules, sources = [], []
+    if not d.is_dir():
+        return rules, sources
+    seen = set()
+    for path in sorted(d.iterdir()):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() != ".json":
+            import text_extract
+            text_extract.warn_unsupported(path, where="/".join(EXTERNAL_RULES_DIR))
+            continue
+        found = load_external_rules(path)
+        if not found:
+            continue
+        sources.append(path.name)
+        for r in found:
+            rule = dict(r)
+            rid = str(rule.get("id") or "").strip()
+            if not rid:
+                continue
+            if rid in seen:
+                # Two files claiming the same id is ambiguous, and picking one
+                # would make the answer depend on filename order. Refused.
+                raise ValueError(
+                    "external rule id %r appears in more than one file under %s; "
+                    "ids must be unique, because a stored answer is keyed to the "
+                    "rule it was about" % (rid, "/".join(EXTERNAL_RULES_DIR)))
+            seen.add(rid)
+            rule["status"] = STATUS_PROPOSED
+            rule["origin"] = "external:operator_supplied"
+            rule["source_file"] = path.name
+            rules.append(rule)
+    return rules, sources
