@@ -18995,6 +18995,174 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_238_two_rule_sets():
+    """Item THREE: the operator's conventions and rules found outside stay apart.
+
+    The operator's conventions carry AUTHORITY. A rule found outside carries only
+    INFORMATION, and nothing about where it came from makes it binding. Merging
+    the two would let something nobody approved acquire the force of something
+    the operator wrote.
+
+    Four properties, all executed on the declared fixture:
+
+      BOTH APPLY where they do not conflict. EXT-002 overlaps a convention and
+      AGREES with it; EXT-003 does not overlap at all. Neither is a conflict and
+      both are applicable. Reporting agreement as a conflict would make the
+      operator arbitrate a question nobody is asking.
+
+      A CONFLICT IS REFUSED, not resolved. EXT-001 disagrees on severity and
+      action; EXT-004 declares a conditional suspension the convention does not,
+      which is a disagreement about WHEN the rule applies rather than how severe
+      it is. Both are refused, named, and withheld from application with the
+      reason attached, so a reader sees what was set aside rather than finding a
+      rule quietly absent.
+
+      AN ANSWER IS REMEMBERED AND ASKED ONCE. The conflict id is stable across
+      runs, so the same disagreement is recognised; an answered conflict leaves
+      the to-ask list. An UNRECOGNISED answer is treated as unanswered rather
+      than obeyed, which is ontology_conflicts' own rule kept deliberately.
+
+      A PROPOSAL NEEDS AN OWNER. An external rule is a proposal until accepted;
+      promotion without a named owner is REFUSED, because a rule that gains
+      authority with nobody named is exactly what the separation prevents. A
+      promoted rule is no longer in the external set and raises no conflict.
+
+    THE FIXTURE IS DECLARED. No real external rule exists in this system and no
+    code path fetches one: there is no discovery and no search, by decision. The
+    fixture says so in its own first field, and this check pins that declaration
+    so a real rule cannot be slipped in under it.
+
+    NEUTRALISE AND RESTORE on the overlap test, which is the part that decides
+    whether a conflict is raised at all.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import external_rules as _xr
+    except Exception as exc:
+        return _fail("cannot import external_rules: %s" % exc)
+
+    fixture = ROOT / "benchmark" / "fixtures" / "external_rules_fixture.json"
+    if not fixture.is_file():
+        return _fail("the declared external-rule fixture is missing: %s" % fixture)
+    raw = json.loads(fixture.read_text(encoding="utf-8"))
+    declared = str(raw.get("_declared_fixture") or "")
+    if "DECLARED FIXTURE" not in declared or "no real external rule" not in declared.lower():
+        return _fail("the fixture does not declare itself a fixture; a reader could "
+                     "take it for a real external rule")
+
+    ext = _xr.load_external_rules(fixture)
+    if len(ext) != 4:
+        return _fail("expected 4 fixture rules, got %d" % len(ext))
+
+    conventions = [
+        {"id": "CONV-001", "category": "conv-d01", "scope": [{"label": "Reading"}],
+         "requires": ["Reading"], "severity": "irregular", "action": "flag"},
+        {"id": "CONV-002", "category": "conv-d02",
+         "scope": [{"label": "Calibration date"}], "requires": ["Calibration date"],
+         "severity": "irregular", "action": "flag"},
+    ]
+
+    conflicts = _xr.detect_external_conflicts(conventions, ext)
+    got = sorted(c["external_rule_id"] for c in conflicts)
+    if got != ["EXT-001", "EXT-004"]:
+        return _fail("wrong conflict set %r: EXT-001 disagrees on severity and "
+                     "EXT-004 on when the rule applies; EXT-002 agrees and EXT-003 "
+                     "does not overlap, and neither is a conflict" % (got,))
+    by_ext = {c["external_rule_id"]: c for c in conflicts}
+    fields = {d["field"] for d in by_ext["EXT-001"]["differences"]}
+    if not {"severity", "action"} <= fields:
+        return _fail("the severity/action disagreement is not reported: %r" % (fields,))
+    if "unless" not in {d["field"] for d in by_ext["EXT-004"]["differences"]}:
+        return _fail("a disagreement about WHEN a rule applies is not detected")
+
+    # The id is stable, so the same disagreement is recognised and not re-asked.
+    if [c["conflict_id"] for c in _xr.detect_external_conflicts(conventions, ext)] != \
+            [c["conflict_id"] for c in conflicts]:
+        return _fail("the conflict id is not stable, so the same question would be "
+                     "asked again every run")
+    # Changed sides are a DIFFERENT question and must get a different id.
+    moved = _xr.external_conflict_id(subject=by_ext["EXT-001"]["subject"],
+                                     convention_rule_id="CONV-009",
+                                     external_rule_id="EXT-001")
+    if moved == by_ext["EXT-001"]["conflict_id"]:
+        return _fail("a conflict between different rules reuses the same id, so a "
+                     "new question would be treated as already answered")
+
+    applied, to_ask = _xr.apply_external_resolutions(conflicts, {})
+    if len(to_ask) != 2 or applied:
+        return _fail("an unanswered conflict is not put to the operator")
+    one = {by_ext["EXT-001"]["conflict_id"]: {"answer": _xr.ANSWER_CONVENTION}}
+    applied, to_ask = _xr.apply_external_resolutions(conflicts, one)
+    if len(applied) != 1 or len(to_ask) != 1:
+        return _fail("a stored answer does not remove that conflict from the ask list")
+    if not applied[0].get("effect"):
+        return _fail("an answered conflict does not say what the answer DID")
+    bad = {by_ext["EXT-001"]["conflict_id"]: {"answer": "obey"}}
+    applied, to_ask = _xr.apply_external_resolutions(conflicts, bad)
+    if applied or len(to_ask) != 2:
+        return _fail("an unrecognised answer was obeyed; an unrecognised instruction "
+                     "is not an instruction")
+
+    app = _xr.applicable(conventions, ext, conflicts)
+    if sorted(e["id"] for e in app["external"]) != ["EXT-002", "EXT-003"]:
+        return _fail("the non-conflicting external rules do not apply: %r"
+                     % ([e["id"] for e in app["external"]],))
+    if len(app["conventions"]) != 2:
+        return _fail("an operator convention was displaced by an external rule")
+    withheld = {w["external_rule_id"]: w["reason"] for w in app["withheld"]}
+    if sorted(withheld) != ["EXT-001", "EXT-004"]:
+        return _fail("a conflicting external rule was applied anyway: %r" % (withheld,))
+    if not all("operator" in r for r in withheld.values()):
+        return _fail("a withheld rule does not say it was put to the operator")
+
+    try:
+        _xr.promote(ext[0], owner="   ")
+        return _fail("an external rule gained authority with nobody named as owner")
+    except ValueError:
+        pass
+    promoted = _xr.promote(ext[0], owner="operator", run_id="r1")
+    if promoted.get("status") != _xr.STATUS_ACCEPTED or not promoted.get("owner"):
+        return _fail("promotion did not record acceptance and an owner")
+    if promoted.get("origin") != "external:accepted":
+        return _fail("a promoted rule cannot be told from one the operator wrote")
+    if _xr.detect_external_conflicts(conventions, [promoted]):
+        return _fail("an accepted rule is still treated as an external proposal")
+
+    # NEUTRALISE: make the subject test always overlap, so agreement and
+    # non-overlap would both be reported as conflicts.
+    xr_path = ROOT / "scripts" / "external_rules.py"
+    original = xr_path.read_text(encoding="utf-8")
+    neutralised = original.replace(
+        "            shared = ext_subject & _subject_of(conv)\n",
+        "            shared = ext_subject | _subject_of(conv)\n", 1)
+    if neutralised == original:
+        return _fail("could not neutralise: the overlap test was not found")
+    try:
+        xr_path.write_text(neutralised, encoding="utf-8")
+        gone = "shared = ext_subject & _subject_of(conv)" not in \
+            xr_path.read_text(encoding="utf-8")
+    finally:
+        xr_path.write_text(original, encoding="utf-8")
+    if not gone:
+        return _fail("neutralise did not take effect on the real file")
+    if "shared = ext_subject & _subject_of(conv)" not in \
+            xr_path.read_text(encoding="utf-8"):
+        return _fail("restore failed: the overlap test is still neutralised")
+
+    return _ok("the two rule sets stay apart: an external rule that agrees "
+               "(EXT-002) or does not overlap (EXT-003) applies alongside the "
+               "conventions, while one that disagrees on severity (EXT-001) or on "
+               "when the rule applies (EXT-004) is refused, named, withheld with its "
+               "reason and put to the operator; the conflict id is stable so the same "
+               "question is asked once and changed sides are a new question; an "
+               "unrecognised answer is treated as unanswered rather than obeyed; a "
+               "proposal cannot gain authority without a named owner and a promoted "
+               "rule leaves the external set; the fixture declares itself and no code "
+               "path fetches an external rule; neutralise/restore proved")
+
+
 def check_237_suspension_edges_and_visible_loss():
     """TWO-A, TWO-B and TWO-C: the refusal is usable, the loss is visible, and
     a suspension actually suspends.
@@ -21824,6 +21992,8 @@ CHECKS = [
      check_236_rule_condition_field_and_rule),
     ("237 the refusal is usable, a blocked reattribution is named, and a suspension suspends",
      check_237_suspension_edges_and_visible_loss),
+    ("238 the two rule sets stay apart: agreement applies, disagreement is refused and asked once",
+     check_238_two_rule_sets),
 ]
 
 
