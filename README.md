@@ -1955,12 +1955,22 @@ count above describes bus findings; amendment-only matches appear in the entry t
 score. EIGHT's declared fixture computes 48 hours against a 24-hour bound and confirms the reason
 through each artifact path independently.
 
-**Run completeness is stated, not guessed.** A run directory carries no completion marker: the bus
-has a `BOOT` event and no closing one, and nothing else on disk records an exit. So a run stopped
-mid-phase and a run that finished with nothing to say are indistinguishable from artifacts alone,
-and the scorer says which facts are knowable rather than printing 0 as though it were measured.
-The server knows the difference (it holds `state` and `outcome` per job and derives `is_partial`),
-but the scorer reads a directory, not the server.
+**Run completeness is saved for both launch paths** (check 246). The pipeline writes
+`audit/run_completion.json` when work starts and when its entry point returns or raises. It
+records the stable run id, UTC start/finish times, exit code, whether final work was reached,
+and final document/amendment counts when available. `completed` requires both the explicit
+end-of-work mark and exit code 0. An early return, including an operator stop returning 0,
+is `stopped`; exceptions and catchable interruptions are `failed` or `interrupted`. If final work
+was reached but the return was unsuccessful, the scorer says `FINISHED WITHOUT SUCCESS` and
+shows the exit code, rather than claiming the work never finished. A hard kill
+leaves `running`, which means started without a recorded finish and cannot establish completion.
+The record follows a renamed run folder. Only exception types are saved, never exception text.
+
+Both scorer routes read this evidence. Completed work with zero reported amendments is distinct
+from incomplete work; a missing deliverable remains an absence of amendment evidence even when
+completion was recorded. Older server runs retain their separate `status.json`, which describes
+process state and is reported as such when pipeline completion is absent. Older command-line
+runs without either record remain completion-unknown. Existing artifacts are not backfilled.
 
 The scorer also classifies every planted entry the run failed to produce, per entry, into
 exactly one of four classes, from the run's saved artifacts alone (`scripts/fn_evidence.py`;
@@ -2894,7 +2904,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**246** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**247** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:

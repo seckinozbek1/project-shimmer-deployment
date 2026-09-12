@@ -14,42 +14,44 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-NINE, the commit containing this checkpoint,
-`NINE: measure ROWAN arithmetic and retain its explanatory call`.
+TEN, the commit containing this checkpoint,
+`TEN: persist pipeline completion and distinguish completed empty work`.
 Resolve its exact hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until
-another item updates this file. Prior EIGHT is b688d26; FOUR scope follow-up is
-c07c0b44bc40d13ce885e9c16507df5aa8a353ab; earlier hashes are in LEDGER.
+another item updates this file. Prior NINE is b5eaad0, EIGHT is b688d26; earlier
+item hashes and the complete recovery trail are in LEDGER.
 
-Current source parsing and the prose reference reader produce above_band, 61 units
-versus the Class-B upper bound 60. Removing reference bands makes the plan
-uncomputable. The real paired consumer, isolated to ROWAN's exact field-based pair
-with actual neighbours, requests one explanation and posts the computed finding
-with both empty and failed mocked replies. Python now decides the discrepancy;
-the review is not zero-call. Preserve that existing policy. No runtime/check change.
-Corrected pipeline and README claims, including adjacent historical envelope and
-unit-id statements. Full host gate 244/246, known 01/145 only. Executable pipeline
-AST unchanged. shimmer:nine has all 121 shipped files matching. Adversarial read
-done; README/image debt paid. Details, source hashes and proof logs in LEDGER.
+Both launch paths now write audit/run_completion.json through the tracked main
+entry point. Success requires the explicit final-work mark and exit code 0.
+Early zero/nonzero returns, exceptions, interruptions, and final unsuccessful
+returns remain distinct; hard kills leave start-only evidence. Only exception
+types are saved. The record follows a renamed run folder. Both scorer routes
+read it, preserve old server process-state limits, and leave old CLI runs unknown.
+No historical artifact is backfilled; all 22 saved runs lack completion evidence.
+New check 246 and seven independent mutations FAIL then restore PASS. Final host
+gate 245/247, known 01/145 only. shimmer:ten passes check 246 offline with no
+mounts and has all 122 shipped files matching. README/image debt paid and
+adversarial read complete. No pipeline or provider call was made; the focused
+completion proofs used no model.
 
 ## Current item
 
-None open. Continue TEN after this commit: write durable run completion evidence
-so a consumer can distinguish an incomplete run from a completed empty run.
+None open. Continue ELEVEN after this commit: supply plain-language facts for
+the two harness parts whose reviewer wording is currently technical, or explicitly
+show that a plain-language fact is absent. Inspect the actual current source.
 
 ## Ordered remaining work
 
-1. TEN: distinguish incomplete runs from completed empty runs.
-2. ELEVEN: plain-language harness facts or explicit absence.
-3. TWELVE: one run-id format.
-4. THIRTEEN: structural proof against reading-only and no-op neutralisations.
-5. FOURTEEN: trace typed records through real amendment artifacts.
-6. FIFTEEN: pairing fallback value and WORDS-A compliance.
-7. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-8. SEVENTEEN: close the cache diagnosis with measured build reuse.
-9. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-10. NINETEEN: classify document_dates.json in the manifest.
-11. TWENTY: answer the learning-signal question, no GNN build.
-12. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. ELEVEN: plain-language harness facts or explicit absence.
+2. TWELVE: one run-id format.
+3. THIRTEEN: structural proof against reading-only and no-op neutralisations.
+4. FOURTEEN: trace typed records through real amendment artifacts.
+5. FIFTEEN: pairing fallback value and WORDS-A compliance.
+6. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+7. SEVENTEEN: close the cache diagnosis with measured build reuse.
+8. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+9. NINETEEN: classify document_dates.json in the manifest.
+10. TWENTY: answer the learning-signal question, no GNN build.
+11. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -87,6 +89,10 @@ so a consumer can distinguish an incomplete run from a completed empty run.
     claim: the earlier 4096 local cap had suppressed an explicit configuration.
 17. Keep ROWAN's explanation request while documenting arithmetic independence:
     the measured finding is reliable without changing the current review policy.
+18. Record pipeline work completion separately from server process status: the
+    two writers own different facts, and exit code 0 alone can mean an early stop.
+19. Leave historical completion unknown without evidence: a new marker cannot
+    retroactively establish how an older run ended.
 
 ## Decisions made in the operator's place
 
@@ -130,22 +136,23 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final NINE host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
+Final TEN host: PASS=245 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=247.
 Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
 offline probe steps PASS, 163 seconds combined. Tests used --network none,
 --gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
 (missing ignored contamination fixture). Image source-only failures: 01, 28,
 31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/nine_host_gate.log, output/four_container_validation.log and
-output/four_cap_mutation_proof.log. Focused changes prove independently observable
+Logs: output/ten_final_host_gate.log, output/four_container_validation.log and
+output/ten_mutation_proof.log. Focused changes prove independently observable
 mutation effects before fail/restore/pass. No proof mutates real source files.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:nine carries the current source and
-README. All 121 shipped files match (output/nine_source_audit.json). EIGHT's
+GPU model workload at a time. shimmer:ten carries the current source and
+README. All 122 shipped files match (output/ten_source_audit.json); check 246
+passed in the image offline with no mounts. EIGHT's
 computed date-window proof passed in shimmer:eight offline with no mounts.
 SEVEN's checks 174 and 218 passed in its image.
 The full image gate above was run on shimmer:four; the model loader, pins and

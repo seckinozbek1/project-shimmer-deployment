@@ -1,5 +1,68 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## TEN CLOSED, 2026-09-12
+
+NINE committed b5eaad0. The handoff's directory-shape gap was real for CLI runs,
+but its claim of no on-disk completion evidence anywhere was stale: the server
+already writes status.json. The scorer ignored that process record too. An early
+pipeline return can be 0 (operator abort before boot), so exit code alone cannot
+prove that all required work finished.
+
+Added scripts/run_completion.py and five entry-point wiring lines. A context-local
+decorator spans every post-start return/exception without moving the existing main
+body or changing its returns. Begin writes audit/run_completion.json atomically;
+the explicit final mark follows required run-end work, folder rename, completion
+progress and local sampler shutdown. The decorator records terminal state, exit
+code, UTC times, end-of-work evidence, final counts and only exception TYPE. It
+preserves raised exceptions. A caught interrupt is recorded; a hard kill leaves
+running evidence, which is not proof that a process remains live or that it finished.
+The writer follows the real renamed RunContext. A terminal write failure reports
+its type and preserves the original outcome; readers then lack completion proof.
+
+Decision: keep pipeline work completion separate from server-owned status.json.
+The two processes own different facts and must not overwrite each other's fields.
+Both scorer routes consume the new record, expose old server process state with
+its limits, and leave older CLI runs unknown. No artifacts are backfilled. A valid
+completed empty deliverable is distinguishable from absence of a deliverable.
+Final work reached with a nonzero return is FINISHED WITHOUT SUCCESS, not described
+as work that never finished. This distinction came from the adversarial read of
+redaction's final exit 5 and is proved separately from early nonzero returns.
+
+New check 246 executes the lifecycle on valid declared temporary artifacts and
+both actual scorer routes. It covers empty success, early zero/nonzero returns,
+end reached with failure, exceptions before/after the final mark, interruption,
+start-only evidence, legacy server/unknown/malformed records, and a real rename
+whose resolved source and target are checked inside the temporary run root.
+A separate AST assertion pins the real main decorator, begin and final mark;
+no pipeline invocation is used for the gate. output/ten_mutation_proof.py first
+observes the independent effect, then FAIL, restore, PASS for seven mutations:
+terminal write removed; final mark removed; zero exit alone trusted; error
+classification removed; reader disconnected; malformed record trusted; provisional
+path retained after rename. No source file is mutated. README and run-context
+layout docs describe the record and limits. No dependency added.
+
+Initial host gate: 244 PASS, 3 FAIL / 247 (output/ten_host_gate.log). Besides
+known 01/145, the in-flight older check 246 expected INCOMPLETE for end_blocked
+while the final scorer now correctly says FINISHED WITHOUT SUCCESS. Final
+check 246 and all seven mutation proofs pass; full final gate on stable sources
+is output/ten_final_host_gate.log. The reader also refuses malformed state types
+instead of raising on them. Final host gate: PASS=245 WARN=0 SKIP=0
+FAIL/ERROR=2 TOTAL=247, known 01/145 only (output/ten_final_host_gate.log).
+Check 246 PASS inside shimmer:ten with --network none and no mounts. All 122
+shipped files match (output/ten_source_audit.json). Image sha256:f6d7130f99f13c6d871cca825fa9ba3eeceabc05fbffff7063f3c042ec5718e9,
+size 14408249312 bytes. Model layers reused; the source refresh and focused image check
+took about 9 seconds. No new full GPU image gate was needed for completion
+bookkeeping; FOUR's full model-image evidence remains applicable to those loaders.
+
+Saved-artifact audit found 22 existing run directories with neither completion
+record. The two saved 12 September reviews each have a deliverable with 11
+amendments, so the scorer says synthesis was reached but later completion is
+unrecorded. None was backfilled (output/ten_saved_completion_audit.json).
+Adversarial read complete, including final nonzero returns, exception propagation,
+malformed record types, and renamed paths. README/image debt paid. Continue ELEVEN
+after this commit.
+
+
 ## NINE CLOSED, 2026-09-12
 
 EIGHT committed b688d26. Current-source measurement in output/nine_rowan_proof.py

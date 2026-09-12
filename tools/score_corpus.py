@@ -85,12 +85,10 @@ def _load_key(corpus):
 def _load_amendments(run_dir):
     hits = glob.glob(str(Path(run_dir) / "deliverables" / "*" / "review_data.json"))
     if not hits:
-        # A run stopped or crashed before synthesis has no deliverable. Score what
-        # exists (the typed findings on the bus) rather than refusing outright, and
-        # say so: with no amendments, via_rule, attribution, false positives and
-        # distractor hits are all necessarily 0 and say nothing about the run.
-        print("NOTE            : no review_data.json under %s (no deliverable: the run "
-              "ended before synthesis); scoring bus findings only, amendments = 0" % run_dir)
+        # Absence alone cannot prove where execution stopped. Completion evidence
+        # is reported separately; amendment-derived zeros are not measurements.
+        print("NOTE            : no review_data.json under %s (no deliverable); "
+              "scoring bus findings only, amendments = 0 by absence" % run_dir)
         return []
     data = json.loads(Path(hits[0]).read_text(encoding="utf-8"))
     return [a for a in data.get("amendments") or [] if isinstance(a, dict)]
@@ -161,25 +159,41 @@ def _print_relation_breakdown(findings):
 
 
 def _completeness_note(run_dir, amendments):
-    """What can honestly be said about whether this run finished.
-
-    A run directory carries NO completion marker: the bus has a BOOT event and
-    no closing one, and nothing else on disk records an exit. So a run that
-    was stopped mid-phase and a run that finished with nothing to say look
-    identical from the artifacts alone, and this says which of the two facts
-    are actually knowable rather than guessing between them. The server knows
-    (it holds state and outcome per job, and derives is_partial), but the
-    scorer reads a directory, not the server.
-    """
+    """Completion evidence and deliverable presence answer different questions."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import run_completion
+    record = run_completion.read(run_dir)
     has_deliverable = bool(glob.glob(str(Path(run_dir) / "deliverables" / "*" / "review_data.json")))
+    artifact = ("deliverable present (%d amendment(s))" % len(amendments) if has_deliverable
+                else "NO deliverable; amendment-derived zeros are by absence, not by measurement")
+    if record is not None:
+        if record["state"] == "completed":
+            result = "COMPLETED: pipeline reached its end and returned 0"
+            if record.get("amendment_count") == 0:
+                result += "; completed with zero reported amendments"
+            if not has_deliverable:
+                result += "; saved completion does not supply the missing deliverable"
+        elif record["state"] == "running":
+            result = "INCOMPLETE: started with no recorded finish; may still be running or have been killed"
+        else:
+            label = "FINISHED WITHOUT SUCCESS" if record.get("reached_end") else "INCOMPLETE"
+            result = "%s: %s (exit_code=%s, reached_end=%s)" % (
+                label, record["state"], record.get("exit_code"), record.get("reached_end"))
+        return result + "; " + artifact
+    # Older server runs already persist process state. It does not establish that
+    # every pipeline phase ran: historical early returns can also have exit code 0.
+    try:
+        job = json.loads((Path(run_dir) / "status.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        job = None
+    if isinstance(job, dict) and isinstance(job.get("status"), str):
+        return ("server recorded process status=%s, exit_code=%s; pipeline end-of-work "
+                "completion is unrecorded; %s" % (job["status"], job.get("exit_code"), artifact))
     if has_deliverable:
         return ("a deliverable exists, so synthesis was reached (%d amendment(s)); "
                 "whether every phase after it completed is not recorded on disk"
                 % len(amendments))
-    return ("NO deliverable: synthesis was never reached. From the run's own "
-            "artifacts a stopped run and a completed run that produced nothing "
-            "are indistinguishable (no completion marker is written), so every "
-            "amendment-derived figure below is 0 by absence, not by measurement")
+    return ("completion UNKNOWN: no valid pipeline or server record; " + artifact)
 
 
 def _claim_signature(finding):
@@ -515,6 +529,7 @@ def score_rounds(corpus, key, run_dir):
     print("corpus            : %s" % corpus)
     print("run               : %s" % run_dir)
     print("task              : %s" % key.get("task", ""))
+    print("run completeness  : %s" % _completeness_note(run_dir, amendments))
     print("prior records     : %d on the bus (computed), %d in review_data.json"
           % (len(prior), len(data.get("prior_comparisons") or [])))
     print("recall, exact     : %d/%d   (label + relation + figures)" % (exact, len(rows)))

@@ -6,7 +6,7 @@ Every run writes ONLY into its own run-scoped folder:
         deliverables/   per-document deliverables
         logs/           agent_bus.jsonl, cost_tracker.{jsonl,json}, run_summary_*.md
         audit/          reference_index.json, audit_synthesis.md, delta_proposals.json,
-                        contract_violations/
+                        contract_violations/, run_completion.json
 
 Two runs never overwrite each other: each gets a distinct folder (timestamp +
 random run id, unique even within the same second). Modeled on durable_paths.py:

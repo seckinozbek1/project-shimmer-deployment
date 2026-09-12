@@ -80,6 +80,7 @@ from sensitivity_layer.redaction_stage import run_redaction_phase
 import redaction_gate
 import role_resolution
 import run_context as run_context_mod
+import run_completion as run_completion_mod
 from review_scope import apply_cutoff
 from search_router import SearchRouter
 from summary_generators import render_context_summary, render_operative_summary
@@ -3735,6 +3736,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@run_completion_mod.tracked
 def main(argv=None):
     parser = _build_arg_parser()
     args = parser.parse_args(argv)
@@ -3782,6 +3784,7 @@ def main(argv=None):
         run_ctx = run_context_mod.for_run_dir(ROOT, args.output_dir).ensure()
     else:
         run_ctx = run_context_mod.create_run(ROOT)
+    completion = run_completion_mod.begin(run_ctx)
     try:
         _run_dir_shown = run_ctx.run_dir.relative_to(ROOT)
     except ValueError:
@@ -4606,6 +4609,7 @@ def main(argv=None):
         renamed = run_context_mod.rename_run(run_ctx, slug)
         if renamed.run_dir != run_ctx.run_dir:
             run_ctx = renamed
+            completion.run_context = run_ctx
             print(f"[pipeline] run folder: output/runs/{run_ctx.run_dir.name}",
                   file=sys.stderr, flush=True)
 
@@ -4615,6 +4619,7 @@ def main(argv=None):
                    cost=f"{final['total_cost_usd']:.2f}",
                    blocked=n_blocked, status="done")
     _LOCAL_PROGRESS_STOP.set()  # local progress display: stop the memory sampler thread
+    completion.reached_end(document_count=len(op_docs), amendment_count=total_amendments)
 
     # LAW-IV: a redaction BLOCK must not be silent, so fail the run so it surfaces.
     return 5 if n_blocked else 0
