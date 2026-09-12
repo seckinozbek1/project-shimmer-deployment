@@ -2663,10 +2663,10 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
                 f"compared against your conventions and none disagreed.")
         else:
             lines.append(
-                f"{rep['count']} pair(s) REFUSED. Your conventions and an "
-                f"external rule disagree, so this run applied NEITHER rule to "
-                f"that subject rather than choosing between them. Each needs "
-                f"your answer; once answered it is never raised again.")
+                f"{rep['count']} unresolved conflict(s). Conflicting external "
+                f"rules are REFUSED as additions. Your conventions remain in "
+                f"force; this report does not withdraw them. Each conflict needs "
+                f"your answer; an unchanged answered conflict is not raised again.")
             lines.append("")
             for c in rep.get("conflicts", []):
                 diffs = ", ".join(
