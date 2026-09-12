@@ -14,38 +14,36 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-NINETEEN, the commit containing this checkpoint,
-`NINETEEN: classify document dates and enforce empty shipping`.
+TWENTY, the commit containing this checkpoint,
+`TWENTY: recommend measured candidate finding and isolate fixture verdicts`.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. Previous item: EIGHTEEN 0a6a0fe. Full trail in LEDGER.
+next item updates this file. Previous item: NINETEEN 5af01db. Full trail in LEDGER.
 
-document_dates is explicitly usage-derived with shipping omission in the
-manifest; its existing writer/reader use that path. Parent-directory exclusion
-already covered it, so no prior leak is claimed. Added the read-only shipping
-CLI and a Dockerfile build invocation. New 252 proves real writer/reader/CLI
-behavior and local preservation; category and acceptance mutations fail after
-observed effects. An actual isolated build rejects synthetic date data; removing
-the product RUN accepts it before 252 fails. Restored rejection and check PASS.
-Existing reset check 235's title now states its actual scope.
+Answered the learning-signal question in TWENTY_LEARNING_SIGNAL.md and README.
+Recommend the candidate finder against a deterministic baseline; independently
+executable oracles give narrow supervision, not general relevance ground truth.
+No GNN build. All 78 apparent operator decisions are exact check 107 fixtures,
+not independent human labels. Isolated its durable writer and joined its worker.
+Independent enforcement and safe sentinel mutations change consumer behavior
+before the changed check fails; restoration passes. Historical rows preserved.
 
 Full host gate: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
-(output/nineteen_host_gate.log), known 01/145 only. shimmer:nineteen:
-sha256:fb7ca8752c0292518fb8d3426714ad2541ada06864a6f71315c77d6e5edaeec3, 14408288450 bytes.
+(output/twenty_host_gate.log), known 01/145 only. shimmer:twenty:
+sha256:8dcf36aaace39e511401bbf31f942eb572575cb0d816d6b7d0fb69efbbd98d60, 14408289853 bytes.
 All 124 shipped files match;
-output/nineteen_source_audit.json. All weight/conversion layers reused.
-Image checks 235/252 and the real shipping CLI pass offline. The image date
-reader returns []; the local date store remains byte-identical to its pre-item hash.
+output/twenty_source_audit.json. All weight/conversion layers reused.
+Image check 107 passes offline. All six live ontology/governance files and the
+local document-date store remain byte-identical to their pre-gate/item hashes.
 Adversarial read complete. README/image debt paid. No push.
 
 ## Current item
 
-None open. Continue TWENTY: answer the learning-signal question fully, naming
-third-source candidates and their limits. Recommend a direction; do not build a GNN.
+None open. Continue TWENTY-ONE: record the quote prediction in actual run
+verification, preserving computed absences and naming incomplete or changed cohorts.
 
 ## Ordered remaining work
 
-1. TWENTY: answer the learning-signal question, no GNN build.
-2. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -110,6 +108,8 @@ third-source candidates and their limits. Recommend a direction; do not build a 
     preserve policy, expose missing historical fields as unknown and repair misleading reports.
 30. Classify document-date conclusions as usage-derived and omit them from shipping:
     operator-specific filenames strengthen the empty-shipping rule; keep local data intact.
+31. Keep candidate finding subject to measured incremental value over the deterministic baseline:
+    no general independent truth source is demonstrated; fixture verdicts supply no human labels.
 
 ## Decisions made in the operator's place
 
@@ -153,9 +153,9 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final NINETEEN host: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
+Final TWENTY host: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
 Known failures: 01 (prompts/snapshots absent), 145 (ignored contamination fixture).
-Log: output/nineteen_host_gate.log. No new unexplained failure remains.
+Log: output/twenty_host_gate.log. No new unexplained failure remains.
 
 Latest complete product GPU/offline gate: shimmer:fifteen, PASS=239 WARN=0 SKIP=8
 FAIL/ERROR=4 TOTAL=251. Separate six-step offline probe PASS, both with network
@@ -163,11 +163,11 @@ none, GPU exposed and no mounts. Logs: output/sixteen_container_gate.log and
 sixteen_offline_probe.log. This is loading/decision evidence, not a completed review.
 Image failures 01/28/31/145; skips 15/38 network, 222 host launchers,
 215/217/224/227/230 unshipped corpora. Mixed checks name absent corpus coverage.
-Current image shimmer:nineteen matches 124 shipped files;
-output/nineteen_source_audit.json. Later focused evidence is in the current ledger
+Current image shimmer:twenty matches 124 shipped files;
+output/twenty_source_audit.json. Later focused evidence is in the current ledger
 entry; the complete image suite is not claimed rerun for every source refresh.
-Earlier tags and evidence remain intact. Image checks 235/252 and the real shipping CLI pass offline. The image date
-reader returns []; the local date store remains byte-identical to its pre-item hash.
+Earlier tags and evidence remain intact. Image check 107 passes offline. All six live ontology/governance files and the
+local document-date store remain byte-identical to their pre-gate/item hashes.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox

@@ -1,5 +1,58 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## TWENTY CLOSED, 2026-09-13
+
+NINETEEN committed 5af01db. Full answer in TWENTY_LEARNING_SIGNAL.md and concise
+answer in README. Recommendation: retain the candidate finder, measure against
+the deterministic baseline at a fixed reviewer budget, and leave any learned
+relevance build to the operator. Third-source answer: deterministic arithmetic
+and structural oracles provide narrow reliable labels when their inputs are
+validated. No demonstrated source here combines independent general truth, scale
+and labels for provision-pair relevance. Rejected as general truth sources:
+recurrence, graph edges, synthetic volume alone, other model judgments, reference
+texts, redaction labels, benchmark training leakage and run-level approvals.
+Adjudicated pairs are a future source, not current measured volume. No GNN build,
+feature change, new model/dependency, training dataset or authority change.
+
+Read the actual MSE reconstruction loss, feature allowlist, incremental state and
+candidate finder. The model can fit structure; it does not consume verdict labels.
+More data alone cannot wire a new objective. Primary distillation and GNN evaluation
+papers support the teacher/evaluation distinction and are linked in the answer;
+the recommendation itself is an inference from this repository, not a claim of
+measured gain. No benchmark key contents read. Current metadata-only inventory:
+22 provision rows, 17 history events, 5 current default-scope records, 1 raw delta
+proposal, a 2-node/1-edge graph and state metadata with 21 trained IDs/2 updates.
+These are snapshots and revisions, not a coherent labelled learning population.
+output/twenty_signal_inventory.json records the exact limits.
+
+Found a real fixture leak while checking the claimed human signal. All 78 rows
+in operator_decisions.jsonl exactly match check 107: 39 APPROVE and 39 DENY,
+fixed fixture run IDs/topic/rationale/subject/decision timestamp. Zero independent
+human-authored rows identified. The check isolated its run folder but the durable
+writer used pipeline.ROOT. Fixed check 107 to root both destinations in the fixture,
+verify one local verdict per case and join its writer before cleanup/restoration.
+This is a necessary evidence-quality repair in the answer item, not a learning
+component. Existing append-only records remain untouched and are excluded from
+this assessment; no claim that they form training data.
+
+Changed-check proof: an independent real enforce_current_models consumer changes
+DENY from false to true under neutralisation before check 107 fails; restore passes.
+The original out-of-fixture write is reproduced only through a safe sentinel
+redirect, never against the real ledger: removing isolation writes that sentinel
+and fails the fixture's ledger assertion, restoring it keeps writes in the fixture.
+The live ledger SHA256 remains unchanged after these proofs. No provider call.
+output/twenty_fixture_proof.log and twenty_operator_ledger_before.json.
+Other durable artifact hashes recorded before the gate to catch unintended writes.
+Full host gate: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
+(output/twenty_host_gate.log), known 01/145 only. shimmer:twenty:
+sha256:8dcf36aaace39e511401bbf31f942eb572575cb0d816d6b7d0fb69efbbd98d60, 14408289853 bytes.
+All 124 shipped files match;
+output/twenty_source_audit.json. All weight/conversion layers reused.
+Image check 107 passes offline. All six live ontology/governance files and the
+local document-date store remain byte-identical to their pre-gate/item hashes.
+Adversarial read complete. README/image debt paid. No push.
+
+
 ## NINETEEN CLOSED, 2026-09-13
 
 EIGHTEEN committed 0a6a0fe. Ruling: document_dates.json is usage-derived, because
