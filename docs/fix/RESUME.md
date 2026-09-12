@@ -6,46 +6,50 @@
 
 Recovered main at 64b83e0ff6925c374c6618b4ffa90aed4645dbfd, 31 commits ahead of
 origin/main (2c88112). No staged or tracked edits existed at takeover. Preserved
-SHIMMER_HANDOFF.md and all untracked durable state. The untracked
-tools/container_offline_probe.py belongs to the unfinished image item.
+SHIMMER_HANDOFF.md and all untracked durable state. At takeover, the untracked
+tools/container_offline_probe.py belonged to the unfinished image item; it is now
+completed and tracked.
 The older handoff, LEDGER and WORDS_TODO lag the code. ZERO-A and ZERO-B are
 closed by 64b83e0. The previous RESUME called the image item ONE; its canonical
 name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-TWENTY: implementation and README committed 2b863d2. The commit containing this
-checkpoint explicitly tracks the detailed answer excluded by the existing docs
-ignore rule: `TWENTY: retain the detailed learning-signal assessment`.
-No executable or shipped source changed in the follow-up.
+TWENTY-ONE, the commit containing this checkpoint,
+`TWENTY-ONE: check the quote forecast against actual run outcomes`.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. Previous item: NINETEEN 5af01db. Full trail in LEDGER.
+next item updates this file. Previous item: TWENTY 2b863d2 and ffd8c9c. Full trail in LEDGER.
 
-Answered the learning-signal question in TWENTY_LEARNING_SIGNAL.md and README.
-Recommend the candidate finder against a deterministic baseline; independently
-executable oracles give narrow supervision, not general relevance ground truth.
-No GNN build. All 78 apparent operator decisions are exact check 107 fixtures,
-not independent human labels. Isolated its durable writer and joined its worker.
-Independent enforcement and safe sentinel mutations change consumer behavior
-before the changed check fails; restoration passes. Historical rows preserved.
+Recorded the 14-judged/7-computed forecast in configuration read by real phase
+5.5. Per-question audit persists before calls and after replies; the real summary
+writer reads it. Quotes/refusals, computed work, changed counts, empty/other/failed
+answers, missing consumers and interruption remain distinguishable. Fixed misleading
+missing-quote refusal reasons without changing refusal policy. New check 253 and
+five independent restoring mutation proofs PASS, with model dispatch blocked.
 
-Full host gate: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
-(output/twenty_host_gate.log), known 01/145 only. shimmer:twenty:
-sha256:8dcf36aaace39e511401bbf31f942eb572575cb0d816d6b7d0fb69efbbd98d60, 14408289853 bytes.
-All 124 shipped files match;
-output/twenty_source_audit.json. All weight/conversion layers reused.
-Image check 107 passes offline. All six live ontology/governance files and the
-local document-date store remain byte-identical to their pre-gate/item hashes.
+Full host gate: PASS=252  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=254
+(output/twentyone_host_gate.log), known 01/145 only. shimmer:twentyone:
+sha256:103f29f6f3f1c4edbfd74156edca037e2b2c9753669a1e1696ba0e41ede868cf, 14408304202 bytes.
+All 126 shipped files match;
+output/twentyone_source_audit.json. All weight/conversion layers reused.
+Complete GPU/offline image gate: PASS=242 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=254,
+known image layout/fixture failures 01/28/31/145 only. Six-step offline model and
+ensemble probe PASS, zero attempted network access. Both run with no host mounts.
+Seven monitored live state files remain unchanged. Evidence is fixture/loading
+coverage, not a newly completed document review.
 Adversarial read complete. README/image debt paid. No push.
 
 ## Current item
 
-None open. Continue TWENTY-ONE: record the quote prediction in actual run
-verification, preserving computed absences and naming incomplete or changed cohorts.
+No ordered item remains open. Read PROTOTYPE_CHECKPOINT.md for the completed
+work, local-only commit inventory, decisions and exact verification limits.
+No pipeline run or push is authorised. The first real review remains for the
+approved GPU environment; a new learning component remains an operator decision.
 
 ## Ordered remaining work
 
-1. TWENTY-ONE: put the quote prediction where the next run checks it.
+None. The ordered takeover backlog is complete through TWENTY-ONE.
+
 
 ## Current-session decisions
 
@@ -112,12 +116,16 @@ verification, preserving computed absences and naming incomplete or changed coho
     operator-specific filenames strengthen the empty-shipping rule; keep local data intact.
 31. Keep candidate finding subject to measured incremental value over the deterministic baseline:
     no general independent truth source is demonstrated; fixture verdicts supply no human labels.
+32. Record old plan counts as a forecast and check actual emitted claims:
+    changed cohorts, empty answers and failed judging cannot confirm fourteen compliant claims.
+33. Preserve refusal policy while making its reason accurate:
+    missing quotes must not be described as a field already present.
 
 ## Decisions made in the operator's place
 
 Gathered so they can be read together. Each is one line plus its reason.
 
-**This session:**
+**Inherited ZERO-A/B decisions (completed before takeover):**
 
 1. **Closed the 7 unauthorising rules by making the silence visible, not by
    adding detectors.** They name content no shape detector finds, so authorising
@@ -155,21 +163,23 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final TWENTY host: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
+Final TWENTY-ONE host: PASS=252  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=254
 Known failures: 01 (prompts/snapshots absent), 145 (ignored contamination fixture).
-Log: output/twenty_host_gate.log. No new unexplained failure remains.
+Log: output/twentyone_host_gate.log. No new unexplained failure remains.
 
-Latest complete product GPU/offline gate: shimmer:fifteen, PASS=239 WARN=0 SKIP=8
-FAIL/ERROR=4 TOTAL=251. Separate six-step offline probe PASS, both with network
-none, GPU exposed and no mounts. Logs: output/sixteen_container_gate.log and
-sixteen_offline_probe.log. This is loading/decision evidence, not a completed review.
+Latest complete product GPU/offline gate: shimmer:twentyone, PASS=242 WARN=0 SKIP=8
+FAIL/ERROR=4 TOTAL=254, 134.6 seconds. Separate six-step offline probe PASS, both with network
+none, GPU exposed and no mounts. Logs: output/twentyone_container_gate.log and
+twentyone_offline_probe.log (probe 29.6 seconds). This is loading/decision evidence, not a completed review.
 Image failures 01/28/31/145; skips 15/38 network, 222 host launchers,
 215/217/224/227/230 unshipped corpora. Mixed checks name absent corpus coverage.
-Current image shimmer:twenty matches 124 shipped files;
-output/twenty_source_audit.json. Later focused evidence is in the current ledger
-entry; the complete image suite is not claimed rerun for every source refresh.
-Earlier tags and evidence remain intact. Image check 107 passes offline. All six live ontology/governance files and the
-local document-date store remain byte-identical to their pre-gate/item hashes.
+Current image shimmer:twentyone matches 126 shipped files;
+output/twentyone_source_audit.json. The complete suite and separate guarded probe were both rerun on this final image.
+Earlier tags and evidence remain intact. Complete GPU/offline image gate: PASS=242 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=254,
+known image layout/fixture failures 01/28/31/145 only. Six-step offline model and
+ensemble probe PASS, zero attempted network access. Both run with no host mounts.
+Seven monitored live state files remain unchanged. Evidence is fixture/loading
+coverage, not a newly completed document review.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox

@@ -70,6 +70,7 @@ from orchestrator import OperatorDecision, TopOrchestrator
 import finding_record
 import paired_review as paired_review_mod
 import pairing_map as pairing_map_mod
+import absence_prediction
 import reference_tables as reference_tables_mod
 from pipeline_amendment_validator import validate_amendment_payload
 import verifiability_gate
@@ -1605,6 +1606,8 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
     pair), so this parameter changes nothing for a caller that does not pass
     it.
     """
+    prediction = absence_prediction.AbsencePrediction(
+        orch.run_context, op_docs, review_mode, ROOT / "config" / "run_predictions.json")
     out = []
     all_context_refs = [e.as_dict() for e in reference_index.entries
                         if e.input_type == "context"]
@@ -1671,11 +1674,14 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                 for u in pairing["units"]
             ]
         if review_mode == "paired":
-            return prior_results + await _paired_convention_review(
+            reviewed = await _paired_convention_review(
                 orch, keys, doc, pairing, convention_registry, refs_excerpt,
                 run_objectives, doc_pos, n_docs, pairs_per_unit,
                 context_refs=all_context_refs,
-                convention_assignment=convention_assignment)
+                convention_assignment=convention_assignment, prediction=prediction)
+            if pairing is not None:
+                prediction.finished(doc["id"])
+            return prior_results + reviewed
 
         # night chain W3: the firing gate. An agent with a real, live rule
         # assignment fires; an agent with none STILL fires as long as at
@@ -1964,7 +1970,7 @@ def _wide_not_judged(convention_registry, convention_assignment):
 async def _paired_convention_review(orch, keys, doc, pairing, convention_registry,
                                     refs_excerpt, run_objectives, doc_pos, n_docs,
                                     pairs_per_unit, *, context_refs=(),
-                                    convention_assignment=None):
+                                    convention_assignment=None, prediction=None):
     """structure H5. One narrow call per (unit, rule) pair, arithmetic in Python.
 
     Three arithmetic outcomes per pair; a disagreement or an uncomputable
@@ -2114,7 +2120,9 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     refused_judged = []
     judged_items_by_agent: dict = {}
     judged_provenance: dict = {}
-    for plan in plans:
+    if prediction is not None:
+        prediction.planned(doc["id"], plans)
+    for plan_index, plan in enumerate(plans):
         unit, rule, checks = plan["unit"], plan["rule"], plan["checks"]
         agent = _paired_judging_agent(rule, convention_assignment)
         reattribution_blocked = None
@@ -2160,6 +2168,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     "conditional suspension and are not interchangeable with it"
                     % (reason, ", ".join(reattribution_blocked)))
             not_judged.append(entry)
+            if prediction is not None:
+                prediction.outcome(doc["id"], plan_index, "no_consumer")
             continue
         source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
@@ -2170,6 +2180,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             item = paired_review_mod.finding_from_check(
                 unit_id=unit["unit_id"], rule=rule, check=check,
                 source_rule_id=source_rule_id, refs=refs)
+            if prediction is not None:
+                prediction.outcome(doc["id"], plan_index, "computed")
             item["absence_path"] = "computed"
             computed_items_by_agent.setdefault(agent, []).append(item)
             absence.append({"unit_id": unit["unit_id"], "rule_id": rule["id"],
@@ -2251,11 +2263,17 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             # missing from an entry that states it. Refused items are recorded
             # in the map, never silently dropped.
             kept = []
+            refusal_start = len(refused_judged)
             for item in judged:
                 refusal = None
                 if paired_review_mod.refuses_judged_absence(
                         item, rule, fields_present_by_unit.get(unit["unit_id"])):
-                    refusal = "claims a field absent that this unit carries"
+                    if not str(item.get("quote") or "").strip():
+                        refusal = "absence claim supplies no quote"
+                    elif not pairing_map_mod._norm_label(item.get("stated_field") or item.get("field_label") or ""):
+                        refusal = "absence claim names no field"
+                    else:
+                        refusal = "claims a field absent that this unit carries"
                 elif paired_review_mod.quote_not_in_unit(item, unit.get("text")):
                     # The finding quotes words the unit does not contain, so the
                     # claim rests on text that is not there. Checked against the
@@ -2271,6 +2289,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                               run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
                     continue
                 kept.append(item)
+            if prediction is not None:
+                prediction.outcome(
+                    doc["id"], plan_index, "returned", raw=judged, kept=kept,
+                    refused=refused_judged[refusal_start:], unit_text=unit.get("text", ""),
+                    response_ok=isinstance(r, dict) and r.get("ok") is True)
             judged = kept
             judged_items_by_agent.setdefault(agent, []).extend(judged)
             judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
@@ -2608,7 +2631,8 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
                                    external_conflict_report=None):
     """BP-16: write the top-level deliverables/_run_summary.md index. Lists what was
     reviewed, the amendment count per document, the total cost, and a markdown link to
-    each per-document subfolder. Pure function of its inputs (testable). Returns the path.
+    each per-document subfolder. Reads the adjacent run quote audit when present.
+    Returns the summary path.
     `question` (R6): the operator's framing question, echoed when given.
 
     `external_conflict_report` (THREE-D): the pairs this run REFUSED because an
@@ -2680,6 +2704,7 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         if rep.get("limit_notice"):
             lines += ["", f"> {rep['limit_notice']}"]
 
+    lines += absence_prediction.summary_lines(absence_prediction.read_report(deliv_dir.parent))
     path = deliv_dir / run_context_mod.RUN_SUMMARY_NAME
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path

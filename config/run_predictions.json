@@ -1,0 +1,14 @@
+{
+  "absence_quotes": {
+    "id": "absence-quotes-forward-v1",
+    "expected_judged_plans": 14,
+    "expected_computed_plans": 7,
+    "historical_breakdown": {
+      "flawed_twin": {"judged": 5, "computed": 5},
+      "clean_twin": {"judged": 9, "computed": 2}
+    },
+    "source": "Saved pairing maps cited in docs/fix/LEDGER.md, prediction following 44e3168",
+    "claim": "Every emitted judged missing_field claim carries a quote from its unit or is recorded under absence_refused.",
+    "limit": "Historical plan counts are a forecast, not a required cohort size or a claim count. Matching counts do not establish identical documents. Computed absences need no quote."
+  }
+}
