@@ -90,7 +90,7 @@ def _load_amendments(run_dir):
         print("NOTE            : no review_data.json under %s (no deliverable); "
               "scoring bus findings only, amendments = 0 by absence" % run_dir)
         return []
-    data = json.loads(Path(hits[0]).read_text(encoding="utf-8"))
+    data = _load_review_data(run_dir)
     return [a for a in data.get("amendments") or [] if isinstance(a, dict)]
 
 
@@ -428,8 +428,20 @@ def _review_state(expected, assignment, artifacts):
 
 
 def _load_review_data(run_dir):
-    hits = glob.glob(str(Path(run_dir) / "deliverables" / "*" / "review_data.json"))
-    return json.loads(Path(hits[0]).read_text(encoding="utf-8")) if hits else {}
+    """Read every document's master, matching the run-wide scope of bus findings.
+
+    Keep the full single-document object for compatibility. For multiple masters,
+    combine only the record collections the scorer consumes, without deduplicating
+    findings or inventing any missing typed fields.
+    """
+    hits = sorted(Path(run_dir).glob("deliverables/*/review_data.json"))
+    if not hits:
+        return {}
+    records = [json.loads(path.read_text(encoding="utf-8")) for path in hits]
+    if len(records) == 1:
+        return records[0]
+    return {field: [item for record in records for item in (record.get(field) or [])]
+            for field in ("amendments", "prior_comparisons", "prior_refusals", "prior_orphans")}
 
 
 def score_rounds(corpus, key, run_dir):
@@ -661,7 +673,9 @@ def score(corpus, run_dir):
     checkable = [i for i in range(len(planted)) if reason_ok[i] is not None]
     confirmed = [i for i in checkable if reason_ok[i]]
     wrong_reason = [i for i in checkable if not reason_ok[i]]
-    if checkable:
+    # A key can state a claim even when every located artifact lacks typed
+    # evidence. Report those as unverifiable instead of blaming the key.
+    if any(p_claim(entry) for entry in planted):
         print("  RIGHT PLACE, WRONG REASON : %d   (located on the right unit and "
               "relation, but the finding does not state the key's own reason; "
               "counted as neither a catch nor a miss)" % len(wrong_reason))
