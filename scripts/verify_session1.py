@@ -19086,6 +19086,219 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_240_semantic_ensemble_decides_redaction_intent():
+    """WORDS-A and TWO-K: redaction intent is decided by the five-voter
+    ensemble against operator-visible references, not by a keyword table alone.
+
+    WHY. A keyword table is one person's vocabulary frozen into code, and it has
+    failed three times in this repository in the same shape: silently, in one
+    direction, on sentences nobody thought to write down. Redaction intent was
+    the third: `_PROHIBITION_RE` matched only the PASSIVE form, so "the reviewer
+    must not publish the client's address" silently did not compile while "the
+    address must not be published" did. Under LAW-IV a silent non-compile
+    publishes content the operator marked for removal.
+
+    UNION, NOT REPLACEMENT, and that is the conservative direction. The ensemble
+    is OR-ed with the existing structural triggers, so it can only ever ADD
+    redaction, never remove it. Both of the ensemble's own measured misses are
+    still caught by the regex, which is precisely why the union is built this
+    way rather than as a swap.
+
+    THE FIVE CONSTRAINTS, each asserted here rather than trusted:
+      1. every decision records ALL FIVE votes with scores and matched reference
+      2. references live in operator-visible config
+      3. thresholds are measured, with the error rate recorded
+      4. fewer than five voters REFUSES and names the missing ones
+      5. one interface for all five
+
+    TWO THINGS FOUND BY MEASUREMENT AND FIXED, both recorded because each was a
+    defect this check now pins:
+      - ZERO EVIDENCE IS NEVER A YES. Check 41's own fixture, the three-word
+        "use formal register", scored 5 of 5 YES: three lexical voters scored
+        exactly 0.0 against thresholds at or below zero, so "I have nothing to
+        say" counted as a vote FOR.
+      - THE VETO CARRIES A HIGHER BAR than the voter's own threshold. At the
+        ordinary threshold it rescued "Cite the edition used", a style rule,
+        because a marginal dense score overturned a 2-of-5 no.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import convention_parser as _cp240
+    from sensitivity_layer.rules import redaction_rules as _rr240
+    try:
+        import semantic_ensemble as _se
+    except Exception as exc:
+        return _fail("semantic_ensemble does not import: %s" % exc)
+
+    # constraint 2: references and thresholds are in operator-visible config
+    for _p in (_se.REFERENCES_PATH, _se.THRESHOLDS_PATH):
+        if not _p.is_file():
+            return _fail("%s is missing; the ensemble decides against "
+                         "operator-visible references and refuses without them" % _p)
+        if "scripts" in _p.parts:
+            return _fail("%s lives under scripts/; a reference set inside code is "
+                         "the keyword table mistake in a new place" % _p)
+    _refs = _se.load_references()["redaction_intent"]
+    _pos, _neg = _refs["positive"], _refs["negative"]
+    _require_fixture(len(_pos) >= 30 and len(_neg) >= 30,
+                     "the reference set must be large enough to calibrate the "
+                     "lexical voters; 15 positives left four of five uncalibratable",
+                     (len(_pos), len(_neg)))
+
+    # constraint 5 + 1: one interface, and every vote recorded
+    _rec = _se.decide("The reviewer must not publish the client's address.",
+                      "redaction_intent")
+    if [v["voter"] for v in _rec["votes"]] != list(_se.VOTER_NAMES):
+        return _fail("not all five voters reported: %r"
+                     % ([v["voter"] for v in _rec["votes"]],))
+    for _v in _rec["votes"]:
+        if _v["score"] is None or "vote" not in _v:
+            return _fail("voter %r recorded no score; a vote nobody can read is a "
+                         "keyword table with extra steps" % _v["voter"])
+    if not _rec["result"]:
+        return _fail("the ACTIVE prohibition, the case that motivated TWO-K, is "
+                     "still not recognised as redaction intent")
+
+    # constraint 4: fewer than five REFUSES and names them
+    _thin = {"redaction_intent": {"sbert": 0.01}}
+    try:
+        _se.decide("x", "redaction_intent", thresholds=_thin)
+        return _fail("the ensemble decided with one voter; three of three is a "
+                     "different rule from three of five and the difference must "
+                     "not be invisible")
+    except _se.EnsembleRefusal as _exc:
+        for _name in ("keybert", "tfidf", "bow", "word_overlap"):
+            if _name not in str(_exc):
+                return _fail("the refusal does not name the missing voter %r" % _name)
+
+    # ZERO EVIDENCE IS NEVER A YES (found by check 41's own fixture)
+    _r0 = _se.VOTERS["bow"]("qqzz xxyy", _pos, _neg, -1.0)
+    if _r0["score"] == 0.0 and _r0["vote"]:
+        return _fail("a voter with a score of exactly 0.0 voted YES; a threshold "
+                     "governs how much evidence is enough, never whether none counts")
+
+    # THE VETO carries a higher bar than the voter's own threshold
+    _thr = _se.load_thresholds()
+    _vt = (_thr.get("_safety_veto") or {}).get("redaction_intent") or {}
+    if _vt.get("threshold") is None:
+        return _fail("the safety veto has no threshold of its own; at the voter's "
+                     "ordinary threshold it rescued an ordinary style rule")
+    if float(_vt["threshold"]) <= float(_thr["redaction_intent"][_vt["voter"]]):
+        return _fail("the veto threshold is not above the voter's own, so a "
+                     "marginal dense score can overturn the majority")
+
+    # THE BEHAVIOUR, executed through the real compiler.
+    def _c(rule, cat="conformance"):
+        return _rr240({"conventions": [{"id": "C", "category": cat, "action": "flag",
+                                        "action_declared": False, "rule": rule,
+                                        "severity": "required"}]})
+
+    # active and passive forms of one prohibition reach the SAME outcome
+    _a = _c("The reviewer must not publish the client's address.", "conv-client-data")
+    _b = _c("The client's address must not be published.", "conv-client-data")
+    if not (_a["operator_in_force"] and _b["operator_in_force"]):
+        return _fail("active and passive prohibitions do not both compile: "
+                     "active=%s passive=%s"
+                     % (_a["operator_in_force"], _b["operator_in_force"]))
+    # constraint 1 again, through the real caller: the votes travel out
+    if not _a.get("semantic_votes"):
+        return _fail("redaction_rules does not carry the ensemble's votes, so a "
+                     "reader sees the outcome and not the reasoning")
+    _sv = _a["semantic_votes"][0]
+    if _sv.get("available") and len(_sv.get("votes") or []) != 5:
+        return _fail("fewer than five votes travelled to the caller")
+
+    # TWO-I's restraint exclusion still holds, in BOTH voices
+    for _t in ("Findings must withhold judgement about equipment condition.",
+               "A reviewer must not state an opinion about maintenance priority.",
+               "Comments must withhold any recommendation about replacement.",
+               "An opinion about maintenance priority must not be stated by the reviewer.",
+               "Judgement about equipment condition must be withheld by findings."):
+        if _c(_t)["operator_in_force"]:
+            return _fail("a reviewer-restraint rule compiled as redaction: %r" % _t[:60])
+
+    # the genuine rules still compile, by their original route
+    for _t, _cat in (("Redact the client name wherever it appears.", "conv-client-data"),
+                     ("Withhold the supplier turnover figure from the output.", "conv-client-data"),
+                     ("Do not publish the individual's address.", "conv-client-data"),
+                     ("Mask the account number.", "conv-account"),
+                     ("Personal identifiers may not appear in any artifact.", "conv-client-data"),
+                     ("Do not disclose the finding's subject name.", "conv-client-data"),
+                     ("Redact any comment that names an individual.", "conv-client-data"),
+                     ("The deliverable must not contain confidential business figures.",
+                      "conv-confidentiality")):
+        if not _c(_t, _cat)["operator_in_force"]:
+            return _fail("a genuine redaction rule stopped compiling: %r" % _t[:60])
+
+    # AND NOTHING IN THE SHIPPED CORPORA CHANGES BEHAVIOUR
+    _changed = []
+    for _p in sorted((ROOT / "benchmark" / "corpora").glob("*/conventions/*.md")):
+        for _r in _cp240._parse_text(_p, [0]):
+            if not (_r.rule or "").strip():
+                continue
+            if _rr240({"conventions": [_r.as_dict()]})["operator_in_force"]:
+                _changed.append("%s/%s" % (_p.parent.parent.name, _r.category))
+    if _changed:
+        return _fail("%d shipped rule(s) now compile as redaction that did not: %r. "
+                     "The expected count is zero." % (len(_changed), _changed[:5]))
+
+    # NEUTRALISE: remove the ensemble from the union. THIRTEEN-B's test applies,
+    # so the neutralised build must BEHAVE differently before the check is
+    # consulted: the active prohibition is the case only the ensemble catches.
+    sr = ROOT / "scripts" / "sensitivity_layer" / "rules.py"
+    original = sr.read_text(encoding="utf-8")
+    neutralised = original.replace(
+        "        if is_semantic and not _is_reviewer_restraint(rule_text):\n",
+        "        if False:\n", 1)
+    if neutralised == original:
+        return _fail("could not neutralise: the ensemble union was not found")
+    try:
+        sr.write_text(neutralised, encoding="utf-8")
+        import importlib
+        import sensitivity_layer.rules as _srmod
+        importlib.reload(_srmod)
+        _still = _srmod.redaction_rules({"conventions": [
+            {"id": "C", "category": "conv-client-data", "action": "flag",
+             "action_declared": False, "severity": "required",
+             "rule": "The reviewer must not publish the client's address."}]})
+        # The regex ALSO catches this one, so behaviour does not change here.
+        # Use a case only the ensemble can reach: a redaction rule with no
+        # redact verb and no prohibition phrasing at all.
+        _only = _srmod.redaction_rules({"conventions": [
+            {"id": "D", "category": "conformance", "action": "flag",
+             "action_declared": False, "severity": "required",
+             "rule": "Salary bands are confidential and are removed before delivery."}]})
+        changed_behaviour = not _only["operator_in_force"]
+    finally:
+        sr.write_text(original, encoding="utf-8")
+        import importlib
+        import sensitivity_layer.rules as _srmod2
+        importlib.reload(_srmod2)
+    if not changed_behaviour:
+        return _fail("neutralising the ensemble changed NO observable behaviour, so "
+                     "this proof was never at risk (THIRTEEN-B). The union is either "
+                     "not wired or is fully shadowed by the regexes.")
+    if not _srmod2.redaction_rules({"conventions": [
+            {"id": "D", "category": "conformance", "action": "flag",
+             "action_declared": False, "severity": "required",
+             "rule": "Salary bands are confidential and are removed before delivery."}]})["operator_in_force"]:
+        return _fail("restore failed: the ensemble is still out of the union")
+
+    return _ok("redaction intent is decided by the five-voter ensemble against "
+               "operator-visible references, UNIONED with the structural triggers so "
+               "it can only add redaction and never remove it; all five votes travel "
+               "to the caller with scores and matched reference; fewer than five "
+               "voters refuses and names them; a zero score never votes yes; the "
+               "safety veto carries a higher measured bar than the voter's own "
+               "threshold; active and passive prohibitions now reach the same "
+               "outcome, which is the defect that motivated the item; TWO-I's "
+               "restraint exclusion holds in both voices; every genuine rule still "
+               "compiles; 0 of 44 shipped rules change behaviour; and neutralising "
+               "the union is proved to change behaviour before the check is "
+               "consulted, so the proof is not a no-op")
+
+
 def check_239_severity_decides_and_evidence_survives():
     """TWO-F, SEVEN-A and THREE-D: a declared severity DECIDES something, the
     suspension evidence reaches an artifact, and the two rule sets meet a run.
@@ -22716,6 +22929,8 @@ CHECKS = [
      check_238_two_rule_sets),
     ("239 a declared severity decides, the suspension evidence survives, the two rule sets meet a run",
      check_239_severity_decides_and_evidence_survives),
+    ("240 redaction intent is decided by the five-voter ensemble, unioned with the structural triggers",
+     check_240_semantic_ensemble_decides_redaction_intent),
 ]
 
 

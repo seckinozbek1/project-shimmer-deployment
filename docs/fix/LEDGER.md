@@ -30,6 +30,43 @@ only `README.md` or `benchmark/` does not affect it.
 | `9b7b25c` | external answers persist; `input/external_rules/` entry point; conflict-list limit notice | **yes**: `scripts/external_rules.py`, `scripts/verify_session1.py` |
 | `3753314` | severity decides; suspensions reach the pairing map; the two rule sets meet a run | **yes**: `scripts/pipeline.py`, `scripts/paired_review.py`, `scripts/verify_session1.py` |
 
+### MODEL-A / TWO-K: the ensemble's weights, the image, and what offline now means
+
+**Dependencies added: NONE.** The ensemble uses the embedding model the project
+already ships (`BAAI/bge-m3`, via `embedding_store`'s own loader and cache), and
+`sentence-transformers`, `scikit-learn`, `numpy`, `scipy` and `torch` were
+already required. KeyBERT's own package is NOT installed: its algorithm is
+implemented directly against the same model plus scikit-learn's vectoriser,
+which is what the package wraps. So no new pip requirement, and no image size
+delta from packages.
+
+**The weights are the cost, and they are not new either.** bge-m3 is roughly
+2.3 GB and is downloaded at runtime by sentence-transformers. It was already
+load-bearing for semantic retrieval; what changed is that it is now reachable
+from a PARSE-TIME decision.
+
+**What offline means now, stated rather than left for later.** This is item
+SIXTEEN's question and it has an answer rather than a note:
+
+- with the weights present, the ensemble runs and redaction intent is decided by
+  four triggers;
+- **without them the ensemble REFUSES**, the refusal is recorded, and the three
+  structural triggers decide exactly as they did before TWO-K. Redaction
+  compilation does not fail and does not narrow;
+- so a container that does not carry the weights is not broken. It is the
+  pre-TWO-K product, which is a defensible state, and the difference is visible
+  in `semantic_votes` rather than silent.
+
+This was a deliberate construction: the ensemble is UNIONED with the regexes
+rather than replacing them, so a missing model can only cost the improvement,
+never the baseline. Replacing them would have made the weights a hard
+requirement for a LAW-IV path in an offline container.
+
+**Image decision:** the image does not carry the weights today and this change
+does not make it necessary. Adding 2.3 GB to make an offline container reach a
+fourth trigger it can already live without is the wrong trade, and it is
+recorded as the operator's to revisit.
+
 ### DEBT-A, operator-facing and stated as such
 
 **A convention that used to produce an amendment no longer does, and the

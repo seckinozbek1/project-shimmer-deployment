@@ -118,6 +118,21 @@ def load_thresholds(path=None):
 # --------------------------------------------------------------------------
 
 def _result(name, *, available, vote=None, score=None, matched=None, detail=""):
+    # NO EVIDENCE IS NEVER A YES.
+    #
+    # Found by check 41, not by reasoning: the three-word fixture "use formal
+    # register" scored 5/5 YES for redaction intent. Three lexical voters scored
+    # exactly 0.0 (no token in common with either side of the reference set) and
+    # their cost-optimal thresholds are at or below zero, so a score meaning "I
+    # have nothing to say" was counted as a vote FOR.
+    #
+    # A voter that found no evidence must abstain into a no, whatever its
+    # threshold. The threshold governs how much evidence is enough, never
+    # whether zero evidence counts.
+    if vote and score is not None and abs(float(score)) < 1e-9:
+        vote = False
+        detail = (detail + " | no evidence either way (score 0.0); a voter with "
+                  "nothing to say does not vote yes").strip(" |")
     return {"voter": name, "available": bool(available), "vote": vote,
             "score": None if score is None else round(float(score), 4),
             "matched": matched, "detail": detail}
@@ -131,6 +146,42 @@ def _tokens(text):
         if word:
             out.extend(pairing_map._norm_label(word))
     return out
+
+
+# MEASURED, not assumed. The first two calibration runs failed on all three
+# lexical voters, and expanding the reference set from 15 positives to 40 made
+# `word_overlap` WORSE, not better. The cause was visible only in the per-case
+# scores: "Comments must not contain an assessment of commercial merit", a
+# reviewer-restraint rule, scored +1.0 as a positive.
+#
+# The reason is that BOTH CLASSES SHARE THE PROHIBITION GRAMMAR. A redaction
+# rule says "must not contain the turnover figure"; a review convention says
+# "must not contain an assessment". The words `must`, `not`, `contain`,
+# `publish`, `state`, `every`, `document` carry no class information at all, and
+# a bag of words handed the whole sentence scores them as though they did. The
+# discriminating signal is the OBJECT (what is protected), never the verb frame.
+#
+# So the lexical voters ignore the frame. This is not a stopword list of one
+# person's vocabulary: it is the set of tokens that appear on BOTH sides of the
+# operator's own reference set, computed from that set at decision time. A word
+# earns its way onto this list by being useless, and the reference set decides,
+# not code.
+def _frame_tokens(positives, negatives):
+    """Tokens appearing on BOTH sides of the reference set, so they carry no
+    class information. Computed from the operator's references, never listed in
+    code."""
+    pos, neg = set(), set()
+    for r in positives:
+        pos |= set(_tokens(r))
+    for r in negatives:
+        neg |= set(_tokens(r))
+    return pos & neg
+
+
+def _content_tokens(text, frame):
+    """A candidate's tokens with the shared frame removed: what the rule is
+    ABOUT, rather than how it is phrased."""
+    return set(_tokens(text)) - frame
 
 
 # ---- voter 1: SBERT ------------------------------------------------------
@@ -224,7 +275,12 @@ def vote_keybert(candidate, positives, negatives, threshold):
         doc, gram_vecs = embs[0], embs[1:]
         ranked = sorted(((float(doc @ gram_vecs[i]), grams[i])
                          for i in range(len(grams))), reverse=True)
-        top = [g for _s, g in ranked[:5]]
+        # Drop keyphrases made only of the frame both classes share. Measured:
+        # without this, "Comments must not contain an assessment of commercial
+        # merit" extracted frame phrases and scored above four true cases.
+        frame = _frame_tokens(positives, negatives)
+        kept = [g for _s, g in ranked if _content_tokens(g, frame)]
+        top = (kept or [g for _s, g in ranked])[:5]
         phrase = " ".join(top)
         pv = _encode(model, [phrase] + list(positives) + list(negatives))
         c, rest = pv[0], pv[1:]
@@ -257,9 +313,19 @@ def vote_tfidf(candidate, positives, negatives, threshold):
         return _result("tfidf", available=False,
                        detail="scikit-learn is unavailable")
     try:
-        corpus = list(positives) + list(negatives)
+        # Content tokens only, for the same measured reason as `bow`: scoring
+        # the whole sentence ranked "A rule that names no field of the unit
+        # keeps its stated reach" above every true case, because the prohibition
+        # frame is shared by both classes and carries no class information.
+        frame = _frame_tokens(positives, negatives)
+
+        def strip(t):
+            keep = _content_tokens(t, frame)
+            return " ".join(w for w in _tokens(t) if w in keep) or " ".join(_tokens(t))
+
+        corpus = [strip(t) for t in list(positives) + list(negatives)]
         vec = TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True)
-        M = vec.fit_transform(corpus + [candidate])
+        M = vec.fit_transform(corpus + [strip(candidate)])
         cand = M[-1]
         sims = (M[:-1] @ cand.T).toarray().ravel()
         npos = len(positives)
@@ -281,17 +347,24 @@ def vote_tfidf(candidate, positives, negatives, threshold):
 # ---- voter 4: bag of words ----------------------------------------------
 
 def vote_bow(candidate, positives, negatives, threshold):
-    """Bag of words overlap, Jaccard over the project's own tokens. The crudest
-    voter and the only one an embedding space cannot mislead at all."""
-    c = set(_tokens(candidate))
+    """Bag of words overlap, Jaccard over CONTENT tokens: the candidate's words
+    with the shared prohibition frame removed.
+
+    The crudest voter and the only one an embedding space cannot mislead at all.
+    Scoring the whole sentence made it rank "Every entry must state a
+    calibration date" above every true case, for sharing `date` and `state`;
+    scoring content only removes exactly that failure."""
+    frame = _frame_tokens(positives, negatives)
+    c = _content_tokens(candidate, frame)
     if not c:
         return _result("bow", available=True, vote=False, score=0.0,
-                       detail="the candidate has no tokens")
+                       detail="the candidate has no content tokens outside the "
+                              "vocabulary both classes share")
 
     def best(refs):
         out, which = 0.0, None
         for r in refs:
-            t = set(_tokens(r))
+            t = _content_tokens(r, frame)
             if not t:
                 continue
             j = len(c & t) / float(len(c | t))
@@ -303,7 +376,8 @@ def vote_bow(candidate, positives, negatives, threshold):
     bn, _ = best(negatives)
     return _result("bow", available=True, vote=(bp - bn) >= threshold,
                    score=bp - bn, matched=matched,
-                   detail="best positive %.3f, best negative %.3f" % (bp, bn))
+                   detail="content-token jaccard; best positive %.3f, best negative %.3f"
+                          % (bp, bn))
 
 
 # ---- voter 5: word by word agreement -------------------------------------
@@ -328,8 +402,13 @@ def vote_word_overlap(candidate, positives, negatives, threshold):
                        detail="the candidate has no tokens")
     hit_p = len(c & only_pos)
     hit_n = len(c & only_neg)
-    denom = float(hit_p + hit_n) or 1.0
-    score = (hit_p - hit_n) / denom
+    # Normalise by the CANDIDATE's own token count, not by the hits.
+    # Normalising by hits made a sentence with a single discriminating token
+    # score a full +1.0: "Comments must not contain an assessment of commercial
+    # merit" matched one positive-only token and outscored every true case. A
+    # score should say how much of this rule points one way, not how lopsided
+    # its one accidental match was.
+    score = (hit_p - hit_n) / float(len(c))
     matched = None
     if hit_p:
         best = 0
@@ -394,12 +473,57 @@ def decide(candidate, decision, *, references=None, thresholds=None):
                          for v in votes if not v["available"])))
 
     yes = sum(1 for v in votes if v["vote"])
+    result = yes >= MAJORITY
+
+    # THE SAFETY VETO, and why it exists.
+    #
+    # Measured on 114 cases (40 true, 74 false) under leave-one-out:
+    #   sbert         0 false negatives, 0 false positives
+    #   keybert       2 fn, 4 fp        tfidf  0 fn, 9 fp
+    #   bow           0 fn, 5 fp        word_overlap  1 fn, 3 fp
+    #   ENSEMBLE 3/5  1 fn, 3 fp
+    #
+    # So three of five is WORSE here than the dense voter alone, and every one
+    # of the ensemble's false negatives comes from lexical voters outvoting it.
+    # Under LAW-IV a false NO is the silent, dangerous direction: content the
+    # operator marked for removal gets published. A false YES is visible in the
+    # output and costs a redaction nobody needed.
+    #
+    # So a voter that is measured never to miss can VETO A NO, and can never
+    # veto a yes. The veto only ever ADDS redaction, which is the conservative
+    # direction, and it is recorded on the decision rather than folded into the
+    # count, so a reader can always see that three of five said no and why the
+    # answer is yes anyway.
+    #
+    # This is a judgement made in the operator's place and is theirs to revisit:
+    # it keeps the five-voter rule while refusing to let a measured-perfect
+    # voter be outvoted into the one error that matters.
+    # The veto carries its OWN, HIGHER threshold, measured separately. Found by
+    # measurement, not reasoning: at the voter's ordinary threshold the veto
+    # rescued "Cite the edition used", an ordinary style rule, because a
+    # marginal dense score was enough to overturn a 2-of-5 no. A veto exists to
+    # rescue a rule the lexical voters could not see, not to overrule them on a
+    # case where the dense voter is itself unsure, so it fires only on CLEAR
+    # dense evidence.
+    veto = None
+    safety = (thresholds or load_thresholds()).get("_safety_veto", {}).get(decision)
+    if safety and not result:
+        vv = next((v for v in votes if v["voter"] == safety.get("voter")), None)
+        floor = safety.get("threshold")
+        if vv and vv["vote"] and vv["score"] is not None and \
+                (floor is None or float(vv["score"]) >= float(floor)):
+            result = True
+            veto = {"voter": vv["voter"], "score": vv["score"],
+                    "matched": vv["matched"], "threshold": floor,
+                    "reason": safety.get("reason", "")}
+
     return {
         "decision": decision,
         "candidate": candidate,
-        "result": yes >= MAJORITY,
+        "result": result,
         "yes": yes,
         "of": len(VOTER_NAMES),
         "majority": MAJORITY,
         "votes": votes,
+        "safety_veto": veto,
     }

@@ -993,13 +993,73 @@ standard its own key states. They are what this repository's own gate exercises.
 and corpus under `input/` (or stage one of the shipped corpora with `tools/stage_corpus.py`);
 nothing in `scripts/` is domain-specific.
 
-Sensitivity is also convention-defined. A convention counts as a redaction rule when its
-category or its id carries a redaction keyword (`confiden`, `redact`, `privacy`, `pii`), when
-its rule text uses a redact verb or prohibition phrasing ("must not contain", "shall not be
-published"), or when its parsed action is already `redact`; the local redactor applies the rules
-that compile, and redaction intent that fails to compile is warned about, never dropped silently. There is no
-engine-side default: with no compiled redaction rule in force, a run hard-stops for a
-conscious operator choice (supply a rule, or pass `--no-redaction-override`).
+Sensitivity is also convention-defined. A convention counts as a redaction rule when ANY of
+four independent triggers fires, and the set is a union, so a trigger can only ever add a
+redaction rule and never remove one:
+
+1. its category or its id carries a redaction keyword (`confiden`, `redact`, `privacy`, `pii`);
+2. its rule text uses a redact verb or prohibition phrasing ("must not contain", "shall not be
+   published");
+3. its action is `redact` **and the operator DECLARED that action**. An action inferred from
+   the rule's wording never decides a redaction question: the heading bracket reads severity
+   and subjects only, so on the review path an action is a keyword table's guess about a verb,
+   and a guess must not settle a LAW-IV matter. Only the JSON convention path can declare one;
+4. the **five-voter semantic ensemble** (below) reads the rule as redaction intent.
+
+Trigger 2 has a measured hole that trigger 4 exists to close: the prohibition pattern matches
+only the PASSIVE form, so "the address must not be published" compiles and "the reviewer must
+not publish the client's address" did not. Under LAW-IV a silent non-compile publishes content
+the operator marked for removal, which is the worse direction.
+
+A rule about what a REVIEWER may conclude is excluded even when it uses a redaction verb:
+"Findings must withhold judgement about equipment condition" names no removable content, and is
+a review convention, not a redaction rule.
+
+The local redactor applies the rules that compile, and redaction intent that fails to compile is
+warned about, never dropped silently. There is no engine-side default: with no compiled
+redaction rule in force, a run hard-stops for a conscious operator choice (supply a rule, or
+pass `--no-redaction-override`).
+
+### The five-voter semantic ensemble
+
+Where a decision rests on **what words mean**, it is decided by five independent voters against
+operator-visible reference text, never by a literal keyword table and never by one method alone.
+Regex keeps everything **structural**: declared syntax, bracket declarations, ids, delimiters,
+formats, run-id shapes. That is reading, not interpreting.
+
+The five are **SBERT**, **KeyBERT**, **TF-IDF**, **bag of words**, and **word by word
+agreement**. A decision is yes at three of five or above.
+
+The reason is measured, not preferred. A keyword table is one person's vocabulary frozen into
+code, and it failed three times in this repository in the same shape, silently and in one
+direction: a convention `severity` where 6 of 44 rules matched no pattern at all and fell to a
+default; an `action` that read a rule about reviewer restraint as `redact`; and the passive and
+active prohibition forms above.
+
+Five properties hold, and each is enforced in code rather than by convention:
+
+- **every decision records all five votes**, with score and matched reference, not only the
+  outcome. A vote nobody can read is a keyword table with extra steps;
+- **reference text lives in `config/semantic_references.json`**, beside the band tables and the
+  domain vocabulary, where an operator can read and change it;
+- **each threshold is measured**, in `config/semantic_thresholds.json`, with the error rate it
+  produces recorded beside it. Method and full result: `docs/fix/ENSEMBLE_THRESHOLDS.md`;
+- **no voter is dropped silently.** If fewer than five can run, the decision REFUSES and names
+  the missing ones, because three of three is a different rule from three of five;
+- **one interface for all five**, so a voter can be replaced or measured alone.
+
+Two measured details worth knowing. A voter scoring exactly zero has found no evidence and
+abstains into a no, whatever its threshold. And the dense voter, measured to have no misses,
+may **veto a NO** at a higher bar of its own, never a yes: the veto can only add redaction,
+which is the conservative direction.
+
+**The model.** The ensemble uses the embedding model this project already ships (`BAAI/bge-m3`,
+`scripts/embedding_store.py`), through the same loader and cache. No second model, and no new
+Python dependency: `sentence-transformers`, `scikit-learn`, `numpy` and `torch` were already
+required. **This makes the weights load-bearing for a parse-time decision.** Without them the
+ensemble refuses, the three structural triggers still decide, and the refusal is recorded rather
+than silently read as a no. In a container that does not carry the weights, redaction intent is
+therefore decided by triggers 1 to 3 alone, exactly as it was before this change.
 
 ---
 
@@ -2652,7 +2712,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**234** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**241** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2667,7 +2727,10 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 233 have since raised the total to 234.
+table below; checks 210 to 240 have since raised the total to 241. The host gate at the
+time of writing is `PASS=239 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=241`, the two failures being
+the known environment ones: check 01 (`prompts/` and `snapshots/` absent in this working
+tree) and check 145 (the contamination-probe fixture is gitignored and absent).
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

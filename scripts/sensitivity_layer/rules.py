@@ -145,6 +145,39 @@ def _has_redaction_phrasing(text) -> bool:
     return not _is_reviewer_restraint(t)
 
 
+def _ensemble_redaction_intent(rule_text):
+    """The five-voter verdict on whether this rule is redaction intent.
+
+    Returns (is_intent, record). `record` carries ALL FIVE VOTES with their
+    scores and matched reference (WORDS-A constraint 1) so a decision is always
+    readable, or the refusal reason when the ensemble could not run.
+
+    A REFUSAL IS NOT A NO. It leaves the regex verdict standing and is recorded,
+    because an ensemble that cannot run must not silently narrow what compiles as
+    a redaction rule. The import is local so the sensitivity layer keeps its
+    no-editorial-imports property: semantic_ensemble reads config and an
+    embedding model, and imports nothing editorial."""
+    if not str(rule_text or "").strip():
+        return False, None
+    try:
+        import semantic_ensemble as _se
+    except Exception as exc:
+        return False, {"available": False,
+                       "reason": "semantic_ensemble unavailable: %s" % type(exc).__name__}
+    try:
+        rec = _se.decide(rule_text, "redaction_intent")
+    except Exception as exc:
+        # EnsembleRefusal included: fewer than five voters, or no references.
+        return False, {"available": False, "reason": str(exc)[:400]}
+    return bool(rec["result"]), {
+        "available": True,
+        "result": rec["result"],
+        "yes": rec["yes"], "of": rec["of"], "majority": rec["majority"],
+        "votes": rec["votes"],
+        "safety_veto": rec.get("safety_veto"),
+    }
+
+
 def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
     """Compile OPERATOR REDACTION RULES from the convention registry and REPORT
     whether the operator's rules are in force or only the defaults apply.
@@ -177,6 +210,10 @@ def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
     redact-nothing for the run (logged to the governance ledger)."""
     convs = (registry.get("conventions") if isinstance(registry, dict) else None) or []
     operator, warnings = [], []
+    # TWO-K / WORDS-A constraint 1: every ensemble decision is recorded with all
+    # five votes, so a caller can always read WHY a rule was or was not taken as
+    # redaction intent, rather than only the outcome.
+    semantic_votes = []
     for c in convs:
         cid = str(c.get("id", ""))
         cat = str(c.get("category", "")).strip().lower()
@@ -184,6 +221,27 @@ def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
         rule_text = str(c.get("rule", "")).strip()
         is_cat = _is_redaction_category(cat, cid)
         is_phrase = _has_redaction_phrasing(rule_text)
+        # TWO-K. The five-voter ensemble decides redaction intent from what the
+        # rule MEANS, against the operator's own reference text, and is UNIONED
+        # with the regexes rather than replacing them.
+        #
+        # Union, not replacement, and that is a deliberate conservative choice.
+        # The regexes have a measured hole (the ACTIVE prohibition: "the reviewer
+        # must not publish the client's address" never compiled while the passive
+        # form did), and under LAW-IV a silent non-compile publishes content the
+        # operator marked for removal. Replacing them would close that hole and
+        # open the risk of a new one wherever the ensemble is weaker than a
+        # regex. A union can only ever ADD redaction, never remove it.
+        #
+        # A refusal (fewer than five voters, missing references, no model) leaves
+        # the regex verdict standing and is LOGGED, never silently treated as a
+        # no. The container question this raises is item SIXTEEN's and is
+        # answered in the README and the debt list rather than left here.
+        is_semantic, semantic_record = _ensemble_redaction_intent(rule_text)
+        if is_semantic and not _is_reviewer_restraint(rule_text):
+            is_phrase = True
+        if semantic_record is not None:
+            semantic_votes.append(dict(semantic_record, id=cid))
         # TWO-G. `action` is INFERRED FROM PROSE by convention_parser's keyword
         # table, never declared: a heading bracket reads severity and subjects
         # only. So `act == "redact"` was not the operator saying "redact this",
@@ -237,4 +295,9 @@ def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
         "source": source,
         "defaults_available": True,   # named ruleset exists for conscious opt-in (never auto)
         "warnings": warnings,
+        # WORDS-A constraint 1: all five votes, per convention, with scores and
+        # matched reference. Empty when the ensemble could not run at all; an
+        # entry with available=False carries the refusal reason, so "the model
+        # was missing" and "the ensemble said no" are never confused.
+        "semantic_votes": semantic_votes,
     }
