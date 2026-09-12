@@ -226,6 +226,24 @@ with THREE), TWO.
 - **SEVEN** the scorer cannot tell not-asked from asked-and-found-nothing.
   Worsened by TWO and THREE landing, since more rules will legitimately not be
   asked.
+- **SEVEN** the scorer cannot tell not-asked from asked-and-found-nothing.
+  **AMENDED BY THE OPERATOR (addendum, after `1721eb5`): THREE STATES, not
+  two.** A rule suspended by `unless` now produces no pair, so the scorer reads
+  it as not asked when it was DELIBERATELY not asked, which is a third fact and
+  the most defensible of the three. The states to distinguish when this item is
+  worked:
+    1. **never assigned** the rule was never paired to this unit at all
+    2. **assigned but suspended for this unit** the pairing existed and a
+       conditional suspension withdrew it. `plan_calls` accumulates exactly this
+       (unit, rule and resolved detail) in a local `suspensions` list at
+       `paired_review.py:1424` and **NEVER RETURNS IT**, so today the evidence is
+       computed and thrown away. That is the same reading-not-effect shape TWO-E
+       documents, in code I wrote three commits ago: the suspension changes the
+       plan, which is the important half and is gated, but its RECORD reaches
+       nobody. Carrying it out is the first half of this item and is cheap.
+    3. **asked and found nothing** the call was made and returned no finding
+  Note the asymmetry: state 2 is a CORRECT outcome and must never be scored as
+  a miss, whereas state 1 may be a coverage gap worth reporting.
 - **EIGHT** whether the scorer surfaces a `date_window` finding.
 - **NINE** whether Python now settles ROWAN by arithmetic (the prose band reader
   landed after that run).
