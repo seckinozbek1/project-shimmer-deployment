@@ -4,11 +4,29 @@
 The key lives in benchmark/corpora/<name>/answer_key.json, which the pipeline
 never reads. Matching is MECHANICAL and prose-free, on typed fields only:
 
-  recall        a planted entry is FOUND when a typed Finding on the run's bus
+  recall        a planted entry is LOCATED when a typed Finding on the run's bus
                 (logs/agent_bus.jsonl) names its unit and carries its relation, or
                 when an amendment in review_data.json names its unit and carries
                 its operator rule id. Relation and unit id are typed; nothing here
                 reads a sentence.
+  reason        located is NOT the same as detected. When the key's planted entry
+                carries a typed `claim` (relation, field_label, value_a/value_b,
+                in the Finding record's own vocabulary) the located finding is
+                asked whether it states the SAME REASON. Three outcomes, never
+                two: reason confirmed, RIGHT PLACE WRONG REASON, and unverifiable
+                (located only through an amendment, which carries no typed
+                reason). Only the first counts as a detection.
+
+                This exists because location alone inflated every recall figure
+                this project reported. Measured 2026-09-11: the model emitted a
+                near-identical missing_field sentence on UNIT-SPRUCE and
+                UNIT-VETCH in BOTH the flawed and the clean twin, false in both
+                (on VETCH it said the document does not mention the next
+                calibration visit when the entry states it plainly). Two of those
+                wrong sentences landed on units the key calls flawed and scored
+                as catches. A key with no `claim` scores exactly as before and
+                says the reason check is unavailable, so no other corpus silently
+                changes meaning.
   attribution   of the found entries, how many have an amendment carrying the
                 OPERATOR'S OWN rule id (source_convention_ref). Kept separate from
                 recall, as the frozen wheat scorer keeps it: a correct finding that
@@ -168,6 +186,90 @@ def _completeness_note(run_dir, amendments):
             "artifacts a stopped run and a completed run that produced nothing "
             "are indistinguishable (no completion marker is written), so every "
             "amendment-derived figure below is 0 by absence, not by measurement")
+
+
+def p_claim(entry):
+    """The typed claim on a planted entry, or None."""
+    c = entry.get("claim") if isinstance(entry, dict) else None
+    return c if isinstance(c, dict) and c else None
+
+
+def _claim_figures(claim):
+    """The two figures a typed claim states, as a set, ignoring order.
+
+    A claim that states 61 against a stated band of 60 and a finding that says
+    60 against 61 are the same claim read from opposite ends, so the pair is
+    compared as a set rather than positionally."""
+    out = set()
+    for k in ("value_a", "value_b"):
+        v = claim.get(k)
+        if v is None:
+            continue
+        try:
+            out.add(round(float(v), 6))
+        except (TypeError, ValueError):
+            out.add(str(v).strip().lower())
+    return out
+
+
+def _reason_matches(claim, bus_hits):
+    """Does a located finding state the SAME REASON the key states?
+
+    Returns (ok, why): ok is True when a finding agrees on the reason, False
+    when one was located but says something else, and None when the question
+    cannot be asked (no typed claim in the key, or nothing located).
+
+    The scorer used to match a planted entry on unit and relation alone and
+    call that a catch. Measured on 2026-09-11: the model produced a
+    near-identical missing_field sentence on UNIT-SPRUCE and UNIT-VETCH in BOTH
+    the flawed and the clean twin, and on VETCH the sentence is false in both
+    (it says the document does not mention the next calibration visit when the
+    entry states it in plain words). Two of those wrong sentences landed on
+    units the key calls flawed and were counted as catches. A coincidence that
+    scores is worse than a miss, because it inflates the figure the whole
+    project is judged on.
+
+    What is compared, all typed, no prose:
+      - the relation must be the one the key states
+      - the field_label, when both state one, must normalise equal
+      - the figures, when the key states them, must appear on the finding
+
+    A key with no `claim` yields None everywhere and the corpus scores exactly
+    as it did before, so no other corpus changes meaning."""
+    if not isinstance(claim, dict) or not claim:
+        return None, "key states no typed claim"
+    if not bus_hits:
+        return None, ""
+    want_rel = str(claim.get("relation") or "").strip().lower()
+    want_field = str(claim.get("field_label") or "").strip().lower()
+    want_figs = _claim_figures(claim)
+    misses = []
+    for f in bus_hits:
+        if want_rel and str(f.get("relation") or "").strip().lower() != want_rel:
+            misses.append("relation %r, key says %r"
+                          % (str(f.get("relation") or ""), want_rel))
+            continue
+        if want_field:
+            got_field = str(f.get("field_label") or f.get("stated_field") or "").strip().lower()
+            if got_field and got_field != want_field:
+                misses.append("field %r, key says %r" % (got_field, want_field))
+                continue
+        if want_figs:
+            got = set()
+            for k in ("value_a", "value_b"):
+                v = f.get(k)
+                if v is None:
+                    continue
+                try:
+                    got.add(round(float(v), 6))
+                except (TypeError, ValueError):
+                    got.add(str(v).strip().lower())
+            if not (want_figs <= got):
+                misses.append("figures %s, key states %s"
+                              % (sorted(got) or "none", sorted(want_figs)))
+                continue
+        return True, ""
+    return False, "; ".join(misses[:2]) or "no finding states the key's reason"
 
 
 def _not_asked_rules(assignment):
@@ -336,12 +438,14 @@ def score(corpus, run_dir):
     not_asked = _not_asked_rules(assignment)
 
     found, attributed, how, asked = [], [], [], []
+    reason_ok, reason_why = [], []
     for p in planted:
         unit, rule = str(p["unit"]).lower(), str(p["rule"]).upper()
         relation = str(p.get("relation") or "")
-        via_bus = any(unit in _lower(f.get("unit_id")) and
-                      (not relation or str(f.get("relation")) == relation)
-                      for f in findings)
+        bus_hits = [f for f in findings
+                    if unit in _lower(f.get("unit_id")) and
+                    (not relation or str(f.get("relation")) == relation)]
+        via_bus = bool(bus_hits)
         on_unit = [a for a in amendments
                    if unit in _lower(a.get("finding_unit_id"), a.get("original_text"))]
         via_rule = any(str(a.get("source_convention_ref") or "").upper() == rule for a in on_unit)
@@ -349,6 +453,22 @@ def score(corpus, run_dir):
         found.append(is_found)
         attributed.append(is_found and via_rule)
         how.append("bus:%s" % relation if via_bus else ("rule" if via_rule else ""))
+        # THE REASON, not only the location. A key entry carrying a typed
+        # `claim` states what is actually wrong in the Finding record's own
+        # vocabulary, so a located finding can be asked whether it says the
+        # same thing. Without a claim the question is unanswerable and the
+        # entry keeps exactly its old meaning, never a confident pass.
+        ok, why = _reason_matches(p.get("claim"), bus_hits)
+        if is_found and ok is None and via_rule and not via_bus and p.get("claim"):
+            # Located through an AMENDMENT only. Amendments carry no typed
+            # relation or figures (finding_type is a coarse label such as
+            # "factual", not the Finding record's relation), so the reason
+            # cannot be checked from this artifact. Reported as unknown, never
+            # as confirmed: an unverifiable catch must not count as a verified
+            # one, which is the whole point of this change.
+            why = "located via amendment only; amendments carry no typed reason"
+        reason_ok.append(ok if is_found else None)
+        reason_why.append(why)
         # Was this entry's rule put to anything at all? None when the run wrote
         # no assignment (the question is unanswerable for that run, never a
         # confident "yes"), True when the rule reached an agent that consumes
@@ -389,7 +509,35 @@ def score(corpus, run_dir):
     print("task            : %s" % key.get("task_given_to_the_pipeline", ""))
     print("run completeness: %s" % _completeness_note(run_dir, amendments))
     print("amendments      : %d   (typed findings on the bus: %d)" % (len(amendments), len(findings)))
-    print("recall          : %d/%d   (every planted entry)" % (sum(found), len(planted)))
+    print("recall          : %d/%d   (every planted entry, LOCATION ONLY)"
+          % (sum(found), len(planted)))
+    # The third outcome. A located finding whose stated reason is not the key's
+    # reason is neither a catch nor a miss, and counting it as a catch is what
+    # inflated every recall figure this project has reported.
+    checkable = [i for i in range(len(planted)) if reason_ok[i] is not None]
+    confirmed = [i for i in checkable if reason_ok[i]]
+    wrong_reason = [i for i in checkable if not reason_ok[i]]
+    if checkable:
+        print("  RIGHT PLACE, WRONG REASON : %d   (located on the right unit and "
+              "relation, but the finding does not state the key's own reason; "
+              "counted as neither a catch nor a miss)" % len(wrong_reason))
+        print("  recall, reason confirmed  : %d/%d   (THIS is the figure that says a "
+              "defect was actually detected)" % (len(confirmed), len(planted)))
+        unverifiable = [i for i in range(len(planted))
+                        if found[i] and reason_ok[i] is None and p_claim(planted[i])]
+        if unverifiable:
+            print("  reason unverifiable       : %d   (located, but from an artifact that "
+                  "carries no typed reason; NOT counted as confirmed)" % len(unverifiable))
+            for i in unverifiable:
+                print("      %-12s %-9s %s" % (planted[i]["unit"], planted[i]["rule"],
+                                               reason_why[i][:96]))
+        for i in wrong_reason:
+            print("      %-12s %-9s %s" % (planted[i]["unit"], planted[i]["rule"],
+                                           reason_why[i][:96]))
+    else:
+        print("  reason check  : unavailable   (this key states no typed `claim` per "
+              "planted entry, so a finding can only be matched by location; see "
+              "the answer key's claim_note)")
     if assignment is None:
         print("  not asked     : unknown   (this run wrote no "
               "audit/convention_assignment.json, so whether a rule reached an "
@@ -408,12 +556,13 @@ def score(corpus, run_dir):
     print("attribution     : %d of %d" % (sum(attributed), sum(found)))
     _print_relation_breakdown(findings)
     print()
-    print("  planted      rule      kind                  found  attributed  asked  matched via")
+    print("  planted      rule      kind                  found  reason  attributed  asked  matched via")
     for i, (p, f, a, h) in enumerate(zip(planted, found, attributed, how)):
         asked_cell = "?" if asked[i] is None else ("yes" if asked[i] else "NO")
-        print("  %-12s %-9s %-21s %-6s %-11s %-6s %s" % (p["unit"], p["rule"],
+        rcell = "-" if reason_ok[i] is None else ("yes" if reason_ok[i] else "WRONG")
+        print("  %-12s %-9s %-21s %-6s %-7s %-11s %-6s %s" % (p["unit"], p["rule"],
                                                          str(p.get("kind") or "unspecified"),
-                                                         "yes" if f else "no",
+                                                         "yes" if f else "no", rcell,
                                                          "yes" if a else "no",
                                                          asked_cell, h))
     if false_pos:

@@ -18992,6 +18992,129 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_228_scorer_checks_the_reason_not_only_the_location():
+    """The scorer credited a location and never asked whether the reason was true.
+
+    A planted entry was scored FOUND when a typed finding named its unit and
+    carried its relation. Measured 2026-09-11: the model emitted a
+    near-identical missing_field sentence on UNIT-SPRUCE and UNIT-VETCH in BOTH
+    twins, false in both (on VETCH, that the document does not mention the next
+    calibration visit, which the entry states plainly). Two landed on units the
+    key calls flawed and scored as catches. Every recall figure this project has
+    reported, including 6 of 9 on the declaration corpus, carries that doubt.
+
+    The key now states the reason in the Finding record's own vocabulary
+    (`claim`: relation, field_label, value_a/value_b) and the scorer compares a
+    reason against a reason, reporting THREE outcomes rather than two:
+    confirmed, RIGHT PLACE WRONG REASON, and unverifiable (located only through
+    an amendment, which carries no typed reason and so cannot be checked).
+
+    Proved on the shapes, then on the REAL saved artifacts of last night's
+    flawed run, where the corrected instrument reports 6/10 located but only
+    4/10 reason-confirmed, with UNIT-LARCH exposed as a wrong-reason match.
+
+    NEUTRALISE AND RESTORE on the reason comparison itself.
+    """
+    scorer = ROOT / "tools" / "score_corpus.py"
+    if not scorer.is_file():
+        return _fail("tools/score_corpus.py is missing")
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import importlib
+        sc = importlib.import_module("score_corpus")
+    except Exception as exc:
+        return _fail("cannot import score_corpus: %s" % exc)
+    if not hasattr(sc, "_reason_matches"):
+        return _fail("score_corpus._reason_matches is missing")
+
+    claim = {"relation": "date_window", "value_a": 151, "unit_a": "days",
+             "value_b": 90, "unit_b": "days"}
+    cases = [
+        ("same relation and figures", claim,
+         [{"relation": "date_window", "value_a": 151, "value_b": 90}], True),
+        ("figures reversed (a pair is a set)", claim,
+         [{"relation": "date_window", "value_a": 90, "value_b": 151}], True),
+        ("right relation, wrong figures", claim,
+         [{"relation": "date_window", "value_a": 12, "value_b": 34}], False),
+        ("wrong relation entirely (the VETCH shape)", claim,
+         [{"relation": "missing_field"}], False),
+        ("no typed claim in the key: unanswerable", None,
+         [{"relation": "missing_field"}], None),
+        ("nothing located: unanswerable", claim, [], None),
+    ]
+    for label, cl, hits, want in cases:
+        got, _why = sc._reason_matches(cl, hits)
+        if got is not want:
+            return _fail("%s: reason check returned %r, expected %r" % (label, got, want))
+
+    # A field the key names must not be contradicted by the finding's own label.
+    fclaim = {"relation": "missing_field", "field_label": "calibration authority signature"}
+    ok_same, _ = sc._reason_matches(
+        fclaim, [{"relation": "missing_field", "field_label": "Calibration Authority Signature"}])
+    if ok_same is not True:
+        return _fail("a field label differing only in case must still match")
+    ok_diff, _ = sc._reason_matches(
+        fclaim, [{"relation": "missing_field", "field_label": "reading"}])
+    if ok_diff is not False:
+        return _fail("a finding naming a DIFFERENT field must not confirm the reason")
+
+    # The real artifacts, when they are in this tree.
+    key_path = ROOT / "benchmark" / "corpora" / "device_log_review" / "answer_key.json"
+    run_dir = ROOT / "output" / "runs" / "2026-09-12__1doc_review"
+    if key_path.is_file():
+        key = json.loads(key_path.read_text(encoding="utf-8"))
+        planted = key.get("planted") or []
+        untyped = [p["unit"] for p in planted if not (isinstance(p.get("claim"), dict)
+                                                      and p.get("claim"))]
+        if untyped:
+            return _fail("the device key has planted entries with no typed claim, so "
+                         "their reason can never be checked: %s" % untyped[:4])
+        allowed = set(sc.__dict__.get("_ALLOWED_RELATIONS", ()) or [])
+        if not allowed:
+            sys.path.insert(0, str(ROOT / "scripts"))
+            import finding_record as _fr
+            allowed = set(_fr.schema().get("relations") or [])
+        for p in planted:
+            rel = str(p["claim"].get("relation") or "")
+            if rel and allowed and rel not in allowed:
+                return _fail("planted %s states relation %r, which is not in the Finding "
+                             "record's own vocabulary" % (p["unit"], rel))
+    if run_dir.is_dir():
+        import subprocess as _sp
+        proc = _sp.run([sys.executable, "-X", "utf8", str(scorer),
+                        "--corpus", "device_log_review", "--run", str(run_dir)],
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", cwd=str(ROOT))
+        out = proc.stdout
+        if "RIGHT PLACE, WRONG REASON" not in out:
+            return _fail("the scorer does not report the third outcome on a real run")
+        if "reason confirmed" not in out:
+            return _fail("the scorer does not report a reason-confirmed recall figure")
+        if "LOCATION ONLY" not in out:
+            return _fail("the scorer no longer labels the location-only recall figure "
+                         "as location only, so it reads as a detection count")
+
+    # NEUTRALISE: accept any located finding as the right reason.
+    original = sc._reason_matches
+    sc._reason_matches = lambda _c, hits: (True if hits else None, "")
+    try:
+        got, _ = sc._reason_matches(claim, [{"relation": "missing_field"}])
+        if got is not True:
+            return _fail("neutralise did not take effect")
+    finally:
+        sc._reason_matches = original
+    got, _ = sc._reason_matches(claim, [{"relation": "missing_field"}])
+    if got is not False:
+        return _fail("restore failed: a wrong-relation finding is confirmed again")
+
+    return _ok("a located finding is checked against the key's own typed claim: same "
+               "relation and figures confirms (in either order), wrong figures or wrong "
+               "relation is RIGHT PLACE WRONG REASON, an amendment-only match is "
+               "unverifiable and never confirmed, and a key with no claim says the check "
+               "is unavailable rather than passing; every device planted entry is typed "
+               "in the Finding record's own relation vocabulary; neutralise/restore proved")
+
+
 def check_227_device_corpus_agrees_with_its_own_rule():
     """The device corpus contradicted itself, and the contradiction was found by
     a measurement run rather than by review.
@@ -20528,6 +20651,8 @@ CHECKS = [
      check_226_truncated_reaches_the_cost_row),
     ("227 the device corpus agrees with its own rule: D02 scope, TEASEL, CEDAR",
      check_227_device_corpus_agrees_with_its_own_rule),
+    ("228 the scorer checks a reason, not only a location, and reports the third outcome",
+     check_228_scorer_checks_the_reason_not_only_the_location),
 ]
 
 
