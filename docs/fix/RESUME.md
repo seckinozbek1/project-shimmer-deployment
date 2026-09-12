@@ -14,36 +14,37 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-SIXTEEN, the commit containing this checkpoint,
-`SIXTEEN: verify the current image offline with GPU access`.
+SEVENTEEN, the commit containing this checkpoint,
+`SEVENTEEN: close the cache diagnosis with measured reuse`.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. FIFTEEN is bdcaf01; earlier hashes are in LEDGER.
+next item updates this file. Previous item: SIXTEEN b768481. Full trail in LEDGER.
 
-Current product image fully rechecked: 239 PASS, 8 SKIP, 4 known FAIL / 251 in
-140.9 seconds, network none, GPU exposed, no mounts. Checks 139/193 PASS. Separate
-six-step offline probe PASS in 30.5 seconds with no network attempts. Documented
-the exact limits: 139 stubs model construction; 193 really loads cached Phi;
-the probe loads bge-m3 and makes real five-voter decisions. No generation or
-completed review is claimed. Skips/failures name their unavailable resources.
-Host 249/251, known 01/145 only. shimmer:sixteen updates documentation with runtime
-source unchanged from the tested image; all 123 shipped files match. Adversarial
-read and README/image debt paid. No product runtime or dependency change. Check 88 now joins its real worker
-before restoring the stub or cleaning its isolated directories. Its status-writer
-mutation and delayed-worker lifetime proof pass, as does focused image check 88.
+Original logs and BuildKit history confirm 165.7/165.5/170.4 s Qwen fetches.
+Subsequent explicit local-cache imports reuse all model layers. Missing usable
+cache metadata is the observed boundary; a specific historical GC eviction is
+not proven. Retained the verified local-cache remedy and unchanged layer ordering.
+README now supersedes the old claim that every source build downloads Qwen.
+
+Full host gate: PASS=249  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=251
+(output/seventeen_host_gate.log), known 01/145 only. shimmer:seventeen:
+sha256:40a8b88fc247279d1aac8e0aa2c7154da1643d302d55fa22b654d2a53109255f, 14408279876 bytes.
+All 123 shipped files match;
+output/seventeen_source_audit.json. All weight/conversion layers reused.
+No runtime/check change. The fully tested product runtime remains unchanged
+from shimmer:sixteen. No repeated GPU suite needed for this documentation refresh.
+Adversarial read complete. README/image debt paid. No push.
 
 ## Current item
 
-None open. Continue SEVENTEEN: close the repeated model-download diagnosis from
-the recorded build history and measured local cache reuse; do not invent a
-historical GC eviction record that was never observed.
+None open. Continue EIGHTEEN: audit the README and image debt, including the
+inherited advisory convention amendment-withholding behavior.
 
 ## Ordered remaining work
 
-1. SEVENTEEN: close the cache diagnosis with measured build reuse.
-2. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-3. NINETEEN: classify document_dates.json in the manifest.
-4. TWENTY: answer the learning-signal question, no GNN build.
-5. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+2. NINETEEN: classify document_dates.json in the manifest.
+3. TWENTY: answer the learning-signal question, no GNN build.
+4. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -102,6 +103,8 @@ historical GC eviction record that was never observed.
     had no WORDS-A applicability evidence; keep uncertainty visible instead.
 27. Refuse unmatched-unit absence while applicability remains undecided: retiring
     fallback must not create new unsupported missing-field findings.
+28. Keep the measured cache import/export remedy and existing layer order: repeat
+    downloads are solved without claiming an unobserved historical GC event.
 
 ## Decisions made in the operator's place
 
@@ -145,38 +148,30 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final SIXTEEN host: PASS=249 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=251.
-Current full image: PASS=239 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=251 on
-shimmer:fifteen, runtime source unchanged in shimmer:sixteen. Separate six-step
-offline probe PASS. Both used --network none, --gpus all and no mounts.
-Host failures 01/145 only; image failures 01/28/31/145. Skips 15/38 for network,
-222 for host launchers, 215/217/224/227/230 for unshipped corpora. Passing mixed
-checks explicitly limit their unexecuted corpus assertions.
-Logs: output/sixteen_host_gate_repaired.log, output/sixteen_container_gate.log,
-output/sixteen_offline_probe.log and output/fifteen_mutation_proof.log. Focused changes prove independently observable
-mutation effects before fail/restore/pass. New consumer proofs patch in memory; inherited gate checks can briefly mutate
-and restore source files. Verify the restored diff after the gate.
-ZERO-C's earlier logs and image remain preserved; see LEDGER.
+Final SEVENTEEN host: PASS=249  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=251
+Known failures: 01 (prompts/snapshots absent), 145 (ignored contamination fixture).
+Log: output/seventeen_host_gate.log. No new unexplained failure remains.
+
+Latest complete product GPU/offline gate: shimmer:fifteen, PASS=239 WARN=0 SKIP=8
+FAIL/ERROR=4 TOTAL=251. Separate six-step offline probe PASS, both with network
+none, GPU exposed and no mounts. Logs: output/sixteen_container_gate.log and
+sixteen_offline_probe.log. This is loading/decision evidence, not a completed review.
+Image failures 01/28/31/145; skips 15/38 network, 222 host launchers,
+215/217/224/227/230 unshipped corpora. Mixed checks name absent corpus coverage.
+Current image shimmer:seventeen matches 123 shipped files;
+output/seventeen_source_audit.json. Later focused evidence is in the current ledger
+entry; the complete image suite is not claimed rerun for every source refresh.
+Earlier tags and evidence remain intact. No runtime/check change. The fully tested product runtime remains unchanged
+from shimmer:sixteen. No repeated GPU suite needed for this documentation refresh.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:sixteen carries the current source and
-README. All 123 shipped files match (output/sixteen_source_audit.json). Current
-full image and offline probe evidence is above. Exact UI/API data also pass host
-Node rendering in shimmer:fifteen.
-Check 249 passed in shimmer:fourteen offline.
-Check 248 passed in shimmer:thirteen offline.
-Checks 246 and 247 passed in shimmer:twelve offline. ELEVEN's exact UI/data also passed the
-rendering proof in host Node. EIGHT's
-computed date-window proof passed in shimmer:eight offline with no mounts.
-SEVEN's checks 174 and 218 passed in its image.
-The full image gate above ran on shimmer:fifteen; runtime source, pins and
-weights remain unchanged in shimmer:sixteen. All older tags remain intact. Source refreshes reused
-model/conversion layers.
-Build cache: output/shimmer_build_cache, about 14.41 GB, ignored and local only.
-Reuse it with the --cache-from/--cache-to commands in README; no global Docker
-configuration change or registry upload was made.
+GPU workload at a time. Local BuildKit cache: output/shimmer_build_cache, ignored,
+about 14.41 GB; use README's explicit cache import/export. No global Docker
+configuration change, new dependency or upload. New consumer proofs patch in
+memory; inherited gate checks can briefly mutate and restore source files.
+Verify the restored diff after the gate before building or committing.
 
 ## Standing terms
 

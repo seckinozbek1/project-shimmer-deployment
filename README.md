@@ -1565,6 +1565,26 @@ cache is the verified remedy and needs no global Docker configuration change.
 It is local build state, never source to commit, and retained blobs can grow across
 builds. No registry upload is involved.
 
+SEVENTEEN closes the build-cost question from the records. The older source-only
+builds spent 165.7 s and 165.5 s fetching Qwen; inherited BuildKit record
+`jz2a69nwrl13bqysol1hwthx2` spent 170.4 s. Both earlier models were cached.
+ZERO-C and SIXTEEN source refreshes with explicit local-cache import reuse all
+three downloads and the conversion layer; SIXTEEN's whole refresh took 7.5 s.
+Source COPY instructions follow the weight RUNs, so changing only source does not
+change those upstream instructions. A retained image layer or a cache entry seen
+after a build does not establish that a usable cache record survived until the
+next build. Likewise, no manual prune does not rule out periodic collection.
+[Docker documents that collection separately](https://docs.docker.com/build/cache/garbage-collection/).
+
+The specific cause of the old cache miss remains unproven: no matching GC event log
+was recovered. Cache availability is the diagnosed boundary and explicit import
+is the measured remedy. Preserve the local cache, pass both flags above, and
+confirm all three model RUNs say CACHED before describing a refresh as cheap.
+Changing model IDs, requirements, base layers or bake arguments can legitimately
+invalidate them. This does not promise cache retention without the imported
+artifact. [The local cache backend](https://docs.docker.com/build/cache/backends/local/)
+keeps exported blobs outside the builder's ordinary cache lifecycle.
+
 `compose.yaml` names `image: shimmer:local` and declares no `build:` key, so it runs the
 image the first line builds and builds nothing itself.
 
@@ -1687,12 +1707,12 @@ this was written, not the current HEAD), network blocked and
 three checkpoints resolving from the image's own layers
 (`docs/fix/STEP_BAKED_REBUILD_2_REPORT.md`). The failure and skip sets are identical to every
 earlier run; the extra passes are the checks added since, the ontology chain and the console
-audit. A source-only rebuild reuses **two of the three** weight layers and re-downloads the
-third (about 165 s), which is less than the layer reorder was expected to save. That has now
-happened on two consecutive rebuilds with near-identical timing, so it is systematic; three
-explanations were ruled out (the three RUN blocks are structurally identical, a cache entry
-for the third layer does exist with the same properties as the other two, and no prune
-happened between builds) and the cause is recorded as unestablished rather than guessed. **What is not proven:** no review has been run inside
+audit. Those two historical source rebuilds reused two weight layers and fetched
+Qwen again in 165.7 s and 165.5 s. The contemporaneous report did not establish a
+cause. SEVENTEEN's later cache-state evidence and measured local-cache remedy are
+above; the historical claim that every future source rebuild repeats the download
+is superseded. The archived reports remain the record of what was known then.
+**What is not proven:** no review has been run inside
 either container, so "the review runs offline in the container" is not claimed, only "the
 gate does, and the weights are there".
 

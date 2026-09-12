@@ -1,5 +1,47 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## SEVENTEEN CLOSED, 2026-09-12
+
+SIXTEEN committed b768481. Re-read Dockerfile, original build logs, archived
+rebuild reports and inherited BuildKit history jz2a69nwrl13bqysol1hwthx2. Logs show
+bge/Phi CACHED while Qwen ran 165.7 s and 165.5 s. The inherited history still
+exists and confirms 170.4 s. output/seventeen_build_evidence.json and
+seventeen_history_evidence.json retain the extracted observations. ZERO-C and
+SIXTEEN explicit local-cache imports reuse all three download layers; the latter
+also reused conversion and took 7.5 s overall. No new model download was needed
+to diagnose this item.
+
+The Dockerfile puts weight RUNs before source COPYs. Source edits cannot invalidate
+an unchanged upstream instruction chain. Identical RUN structure rules out a
+special Qwen command shape, not loss of its cache record. A record observed after
+a download proves reconstruction, not survival until the next build. A retained
+image blob likewise is not proof of reusable builder-cache metadata. No manual
+prune does not exclude automatic GC. The ZERO-C observation found the producer
+record absent while its image layer survived; builder policy reported 20 GiB,
+remaining cache 21.51 GB. Automatic collection is consistent with this, but the
+historical event log was not recovered. Do not turn this inference into a proven
+specific eviction cause. Docker's current GC and local-backend documentation
+support the distinction; linked in README.
+
+Decision: retain the already measured local export/import remedy, unchanged
+Dockerfile ordering and global Docker settings. Reason: it fixes the repeat cost
+without speculative layer surgery, redownloading weights, or widening deployment.
+The three earlier explanations were incomplete eliminations, not proof that cache
+retention was assured. The old reports are historical; README now explicitly
+supersedes their prediction that every source build downloads Qwen. Changes to
+base/dependencies/model ID/bake arguments can still invalidate cache. Local cache
+is ignored build state; no registry upload, new dependency or product change.
+No check changed; mutation proof is not applicable to a documentation diagnosis.
+Full host gate: PASS=249  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=251
+(output/seventeen_host_gate.log), known 01/145 only. shimmer:seventeen:
+sha256:40a8b88fc247279d1aac8e0aa2c7154da1643d302d55fa22b654d2a53109255f, 14408279876 bytes.
+All 123 shipped files match;
+output/seventeen_source_audit.json. All weight/conversion layers reused.
+No runtime/check change. The fully tested product runtime remains unchanged
+from shimmer:sixteen. No repeated GPU suite needed for this documentation refresh.
+Adversarial read complete. README/image debt paid. No push.
+
+
 ## SIXTEEN CLOSED, 2026-09-12
 
 FIFTEEN committed bdcaf01. Rechecked the complete current product image rather
