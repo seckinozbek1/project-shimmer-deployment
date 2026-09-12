@@ -15,41 +15,43 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-TWENTY-ONE, the commit containing this checkpoint,
-`TWENTY-ONE: check the quote forecast against actual run outcomes`.
-Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. Previous item: TWENTY 2b863d2 and ffd8c9c. Full trail in LEDGER.
+BASELINE NORMALIZATION, the commit containing this checkpoint:
+`Normalize unavailable baseline coverage without hiding regressions`.
+Previous checkpoint 2562578. Resolve this commit with
+`git log -1 --format=%H -- docs/fix/RESUME.md` until a later item updates this file.
 
-Recorded the 14-judged/7-computed forecast in configuration read by real phase
-5.5. Per-question audit persists before calls and after replies; the real summary
-writer reads it. Quotes/refusals, computed work, changed counts, empty/other/failed
-answers, missing consumers and interruption remain distinguishable. Fixed misleading
-missing-quote refusal reasons without changing refusal policy. New check 253 and
-five independent restoring mutation proofs PASS, with model dispatch blocked.
+Checks 01/145 distinguish unavailable local coverage from malformed or incomplete
+present inputs. Required source directories and present local-tree structure still
+fail when invalid. Nonempty digest schema, complete scan and actual contamination
+assertions remain active. Fixed grouped numeric extraction, silent read/traversal
+omissions, unsupported directory links and disappearing text entries.
+New 254 exercises valid, absent and invalid fixtures; nine mutations change real
+outcomes before 254 FAIL, then restoration recovers both outcomes and PASS.
 
-Full host gate: PASS=252  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=254
-(output/twentyone_host_gate.log), known 01/145 only. shimmer:twentyone:
-sha256:103f29f6f3f1c4edbfd74156edca037e2b2c9753669a1e1696ba0e41ede868cf, 14408304202 bytes.
-All 126 shipped files match;
-output/twentyone_source_audit.json. All weight/conversion layers reused.
-Complete GPU/offline image gate: PASS=242 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=254,
-known image layout/fixture failures 01/28/31/145 only. Six-step offline model and
-ensemble probe PASS, zero attempted network access. Both run with no host mounts.
-Seven monitored live state files remain unchanged. Evidence is fixture/loading
-coverage, not a newly completed document review.
-Adversarial read complete. README/image debt paid. No push.
+Full host gate: PASS=253  WARN=0  SKIP=2  FAIL/ERROR=0  TOTAL=255, native exit 0.
+output/baseline_host_gate.log and baseline_host_exit.json. Exactly 01/145 SKIP:
+optional local directories and an absent local contamination hash fixture.
+No known baseline FAIL remains. No SKIP claims successful contamination coverage.
+Full image gate: PASS=243  WARN=0  SKIP=10  FAIL/ERROR=2  TOTAL=255; only unchanged 28/31 FAIL,
+because the unmounted image has no intake tree. 01/145 SKIP and new 254 PASS.
+output/baseline_container_gate.log. Image shimmer:baseline:
+sha256:4a3321795ee3c01a91d2fe151517cce07da87b7c1818ec8beedd415cd8272a34, 14408312142 bytes. All 126 intended files match
+(output/baseline_source_audit.json); all model/conversion layers reused.
+Seven monitored live files unchanged (output/baseline_preservation.log).
+Independent adversarial review complete; nine restoring mutation proofs PASS.
+README/image debt paid. No production policy/dependency change, model generation,
+pipeline run or push. This is a gate normalization, not a new review acceptance run.
 
 ## Current item
 
-No ordered item remains open. Read PROTOTYPE_CHECKPOINT.md for the completed
-work, local-only commit inventory, decisions and exact verification limits.
-No pipeline run or push is authorised. The first real review remains for the
-approved GPU environment; a new learning component remains an operator decision.
+None open. The operator's requested host-baseline normalization is complete.
+The first real document review remains unrun under the standing no-pipeline rule.
+The ordered takeover report remains in PROTOTYPE_CHECKPOINT.md as a historical
+record of 2562578; this follow-up adds one local commit, leaving 53 unpushed.
 
 ## Ordered remaining work
 
-None. The ordered takeover backlog is complete through TWENTY-ONE.
-
+None. The takeover backlog and its baseline-normalization follow-up are complete.
 
 ## Current-session decisions
 
@@ -120,6 +122,8 @@ None. The ordered takeover backlog is complete through TWENTY-ONE.
     changed cohorts, empty answers and failed judging cannot confirm fourteen compliant claims.
 33. Preserve refusal policy while making its reason accurate:
     missing quotes must not be described as a field already present.
+34. Treat only declared absent local coverage as SKIP, per the operator's request:
+    invalid present inputs and incomplete scans cannot establish a clean result.
 
 ## Decisions made in the operator's place
 
@@ -162,33 +166,30 @@ Gathered so they can be read together. Each is one line plus its reason.
 
 ## Gate and environment
 
-Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final TWENTY-ONE host: PASS=252  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=254
-Known failures: 01 (prompts/snapshots absent), 145 (ignored contamination fixture).
-Log: output/twentyone_host_gate.log. No new unexplained failure remains.
+Full host gate: PASS=253  WARN=0  SKIP=2  FAIL/ERROR=0  TOTAL=255, native exit 0.
+output/baseline_host_gate.log and baseline_host_exit.json. Exactly 01/145 SKIP:
+optional local directories and an absent local contamination hash fixture.
+No known baseline FAIL remains. No SKIP claims successful contamination coverage.
+Full image gate: PASS=243  WARN=0  SKIP=10  FAIL/ERROR=2  TOTAL=255; only unchanged 28/31 FAIL,
+because the unmounted image has no intake tree. 01/145 SKIP and new 254 PASS.
+output/baseline_container_gate.log. Image shimmer:baseline:
+sha256:4a3321795ee3c01a91d2fe151517cce07da87b7c1818ec8beedd415cd8272a34, 14408312142 bytes. All 126 intended files match
+(output/baseline_source_audit.json); all model/conversion layers reused.
+Seven monitored live files unchanged (output/baseline_preservation.log).
+Independent adversarial review complete; nine restoring mutation proofs PASS.
+README/image debt paid. No production policy/dependency change, model generation,
+pipeline run or push. This is a gate normalization, not a new review acceptance run.
 
-Latest complete product GPU/offline gate: shimmer:twentyone, PASS=242 WARN=0 SKIP=8
-FAIL/ERROR=4 TOTAL=254, 134.6 seconds. Separate six-step offline probe PASS, both with network
-none, GPU exposed and no mounts. Logs: output/twentyone_container_gate.log and
-twentyone_offline_probe.log (probe 29.6 seconds). This is loading/decision evidence, not a completed review.
-Image failures 01/28/31/145; skips 15/38 network, 222 host launchers,
-215/217/224/227/230 unshipped corpora. Mixed checks name absent corpus coverage.
-Current image shimmer:twentyone matches 126 shipped files;
-output/twentyone_source_audit.json. The complete suite and separate guarded probe were both rerun on this final image.
-Earlier tags and evidence remain intact. Complete GPU/offline image gate: PASS=242 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=254,
-known image layout/fixture failures 01/28/31/145 only. Six-step offline model and
-ensemble probe PASS, zero attempted network access. Both run with no host mounts.
-Seven monitored live state files remain unchanged. Evidence is fixture/loading
-coverage, not a newly completed document review.
-
+The latest separate offline model/ensemble probe remains the TWENTY-ONE probe
+(output/twentyone_offline_probe.log). Production source and model layers did not
+change in this follow-up, so that probe was not repeated or relabelled.
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
-Host-access py -3.9 sees installed dependencies and cached models; the sandbox
-may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU workload at a time. Local BuildKit cache: output/shimmer_build_cache, ignored,
-about 14.41 GB; use README's explicit cache import/export. No global Docker
-configuration change, new dependency or upload. New consumer proofs patch in
-memory; inherited gate checks can briefly mutate and restore source files.
-Verify the restored diff after the gate before building or committing.
+Host py -3.9 has the installed pinned dependencies when run with host access.
+Only one GPU workload at a time. Build cache stays in output/shimmer_build_cache.
+Use direct process capture when redirecting the host gate: the initial PowerShell
+redirection emitted native stderr as an error record despite the zero-failure table.
+The preserved first log is output/baseline_powershell_gate.log; the final direct
+capture confirms native exit 0. No check or status filter changed between runs.
 
 ## Standing terms
 

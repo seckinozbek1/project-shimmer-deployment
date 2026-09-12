@@ -53,6 +53,16 @@ REQUIRED_DIRS = [
     "durable/reference", "durable/governance",
 ]
 
+# These complete roots are local inputs/state, not required source coverage.
+# A present root must still have every declared child in REQUIRED_DIRS.
+_LOCAL_DIRECTORY_REASONS = {
+    "input": "operator intake tree is not supplied in an unmounted source-only image",
+    "output": "run output tree is created when local runs are provisioned",
+    "durable": "operator state tree is created locally and intentionally omitted from shipping",
+    "prompts": "optional local job-spec directory is not supplied by this source snapshot",
+    "snapshots": "optional saved-state directory exists only after a snapshot is saved",
+}
+
 EXPECTED_AGENTS = {
     "PROCESSOR", "VERIFIER", "FACT_CHECKER", "PRACTICE_AUDITOR", "LEGAL_ANALYST",
     "STYLE_GUARDIAN", "ARCHIVIST", "INST_FINDER", "CITATION_RESOLVER",
@@ -207,8 +217,26 @@ def _nonmutating(*paths):
 
 
 def check_01_directory():
-    missing = [d for d in REQUIRED_DIRS if not (ROOT / d).is_dir()]
-    if missing: return _fail(f"missing dirs: {missing}")
+    missing, unavailable, invalid = [], [], []
+    for directory in REQUIRED_DIRS:
+        path = ROOT / directory
+        try:
+            if path.is_dir():
+                continue
+            if path.exists() or path.is_symlink():
+                invalid.append(directory)
+                continue
+            local_root = directory.split("/", 1)[0]
+            parent = ROOT / local_root
+            if (local_root in _LOCAL_DIRECTORY_REASONS
+                    and not parent.exists() and not parent.is_symlink()):
+                unavailable.append(directory)
+            else:
+                missing.append(directory)
+        except OSError as exc:
+            return _fail(f"directory inspection failed for {directory}: {type(exc).__name__}")
+    if missing or invalid:
+        return _fail(f"missing required dirs: {missing}; present but not directories: {invalid}")
     allowed_root_files = {
         "genesis.md", "CLAUDE.md", "README.md", "requirements.txt",
         ".gitignore", "project_shimmer_cover.png", ".env_path",
@@ -217,6 +245,12 @@ def check_01_directory():
     }
     extras = [p.name for p in ROOT.iterdir()
               if p.is_file() and p.name not in allowed_root_files]
+    if unavailable:
+        reasons = "; ".join(f"{root}/: {_LOCAL_DIRECTORY_REASONS[root]}"
+                            for root in sorted({d.split("/", 1)[0] for d in unavailable}))
+        return _skip(f"local directory coverage unavailable for {unavailable}; {reasons}; "
+                     "source directories and every present local tree were checked"
+                     + (f"; loose root files (WARN): {extras}" if extras else ""))
     return ("PASS" if not extras else "WARN",
             f"{len(REQUIRED_DIRS)} dirs present" + (f"; loose: {extras}" if extras else ""))
 
@@ -7922,7 +7956,7 @@ def check_144_chunker_keeps_table_rows_whole_and_with_header():
 
 # --- H0: the contamination probe -------------------------------------------
 # The benchmark answer key lives outside this repository and is never read from
-# here. What the repository carries is tests/fixtures/planted_figure_hashes.json:
+# here. An optional local tests/fixtures/planted_figure_hashes.json supplies
 # SHA-256 of every planted figure string, written by the frozen scorer. If one of
 # those figures ever appears in a prompt, a contract, a fixture or code, the
 # benchmark is void, so the gate scans for it. Values are never present here, only
@@ -7930,7 +7964,7 @@ def check_144_chunker_keeps_table_rows_whole_and_with_header():
 
 PLANTED_HASHES = ROOT / "tests" / "fixtures" / "planted_figure_hashes.json"
 
-_PLANTED_NUMBER_RE = re.compile(r"\d{1,3}(?:[   ]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?")
+_PLANTED_NUMBER_RE = re.compile(r"\d{1,3}(?:[ ,\u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?")
 _PLANTED_TEXT_SUFFIXES = {
     ".py", ".json", ".md", ".txt", ".yaml", ".yml", ".cfg", ".ini", ".toml",
     ".sh", ".ps1", ".bat", ".html", ".htm", ".js", ".css", ".jsonl", ".csv",
@@ -7960,22 +7994,37 @@ def _planted_variants(raw):
 
 def _scan_for_planted_figures(roots, strong_hashes, skip_paths=()):
     """Return [(path, line_no)] for every source line carrying a planted figure."""
+    import os as _os
+    import stat as _stat
+
+    def traversal_failed(error):
+        raise error
+
     skip = {Path(s).resolve() for s in skip_paths}
     hits = []
     for root in roots:
         root = Path(root)
         if not root.exists():
-            continue
-        candidates = [root] if root.is_file() else sorted(root.rglob("*"))
+            raise FileNotFoundError("contamination scan root disappeared")
+        candidates = [root] if root.is_file() else []
+        if root.is_dir():
+            for directory, subdirs, names in _os.walk(root, onerror=traversal_failed):
+                subdirs[:] = [name for name in subdirs if name != "__pycache__"]
+                for name in subdirs:
+                    child = Path(directory) / name
+                    attributes = getattr(child.lstat(), "st_file_attributes", 0)
+                    if child.is_symlink() or attributes & getattr(_stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0):
+                        raise OSError("linked directory cannot be covered by this non-following scan")
+                candidates.extend(Path(directory) / name for name in names)
+        candidates.sort()
         for path in candidates:
-            if not path.is_file() or path.suffix.lower() not in _PLANTED_TEXT_SUFFIXES:
+            if path.suffix.lower() not in _PLANTED_TEXT_SUFFIXES:
                 continue
             if path.resolve() in skip or "__pycache__" in path.parts:
                 continue
-            try:
-                text = path.read_text(encoding="utf-8", errors="replace")
-            except OSError:
-                continue
+            if not path.is_file():
+                raise OSError("enumerated text entry is no longer a readable regular file")
+            text = path.read_text(encoding="utf-8", errors="replace")
             for line_no, line in enumerate(text.splitlines(), 1):
                 for m in _PLANTED_NUMBER_RE.finditer(line):
                     for variant in _planted_variants(m.group(0)):
@@ -7990,19 +8039,37 @@ def _scan_for_planted_figures(roots, strong_hashes, skip_paths=()):
 
 def check_145_no_planted_benchmark_figure_in_repo():
     """No planted benchmark figure may appear in config, scripts, tests or fixtures."""
-    if not PLANTED_HASHES.exists():
-        return _fail("tests/fixtures/planted_figure_hashes.json is missing: the "
-                     "contamination probe cannot run, so contamination cannot be ruled out")
     try:
+        for root in (CONFIG, SCRIPTS):
+            if not root.is_dir():
+                return _fail(f"contamination scan requires the {root.name}/ source directory")
+        for parent in (ROOT / "tests", PLANTED_HASHES.parent):
+            if (parent.exists() or parent.is_symlink()) and not parent.is_dir():
+                return _fail("planted-figure fixture parent is present but not a directory")
+        if not PLANTED_HASHES.exists() and not PLANTED_HASHES.is_symlink():
+            return _skip("tests/fixtures/planted_figure_hashes.json is an optional local "
+                         "fixture not supplied by this source snapshot or image; planted-figure "
+                         "contamination coverage is unavailable, so contamination cannot be ruled out")
+        if not PLANTED_HASHES.is_file():
+            return _fail("planted_figure_hashes.json is present but not a readable regular file")
         payload = json.loads(PLANTED_HASHES.read_text(encoding="utf-8"))
-    except Exception as e:
-        return _fail(f"planted_figure_hashes.json unreadable: {type(e).__name__}: {e}")
-    strong = set(payload.get("strong") or {})
-    if not strong:
+    except (OSError, ValueError) as exc:
+        return _fail(f"planted_figure_hashes.json unreadable or malformed: {type(exc).__name__}")
+    if not isinstance(payload, dict):
+        return _fail("planted_figure_hashes.json must contain a JSON object")
+    declared = payload.get("strong")
+    if not isinstance(declared, (dict, list)) or not declared:
         return _fail("planted_figure_hashes.json carries no enforced hashes: the probe "
-                     "would pass on any repository, which proves nothing")
+                     "requires a nonempty strong mapping or list of SHA256 digests")
+    if any(not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
+           for digest in declared):
+        return _fail("planted_figure_hashes.json strong entries must be lowercase SHA256 digests")
+    strong = set(declared)
     roots = [CONFIG, SCRIPTS, ROOT / "tests"]
-    hits = _scan_for_planted_figures(roots, strong, skip_paths=[PLANTED_HASHES])
+    try:
+        hits = _scan_for_planted_figures(roots, strong, skip_paths=[PLANTED_HASHES])
+    except OSError as exc:
+        return _fail(f"contamination scan incomplete: {type(exc).__name__}; no clean result established")
     if hits:
         where = ", ".join(f"{p}:{n}" for p, n in hits[:8])
         return _fail(f"benchmark contamination: {len(hits)} source line(s) carry a planted "
@@ -24294,6 +24361,145 @@ def check_253_quote_prediction_is_checked_by_the_run():
                "interrupted and wide-mode outcomes distinguished; no model dispatch or historical rewrite")
 
 
+def _baseline_availability_fixture():
+    """Execute the two real checks against declared local layout and hash inputs."""
+    import os as _os
+    from unittest.mock import patch
+
+    def result(check):
+        try:
+            return check()
+        except Exception as exc:
+            return ("ERROR", type(exc).__name__)
+
+    observed = {}
+    layouts = {
+        "complete": (set(), None),
+        "optional_absent": ({"prompts", "snapshots"}, None),
+        "unmounted": (set(_LOCAL_DIRECTORY_REASONS), None),
+        "missing_source": ({"prompts", "snapshots", "config"}, None),
+        "missing_child": ({"prompts", "snapshots", "input/conventions"}, None),
+        "wrong_type": ({"prompts", "snapshots"}, "prompts"),
+        "loose_file": (set(), "extra.txt"),
+    }
+    for label, (absent, wrong_type) in layouts.items():
+        with _tempfile.TemporaryDirectory(prefix="shimmer_layout_coverage_") as td:
+            root = Path(td)
+            for directory in REQUIRED_DIRS:
+                if directory not in absent and directory.split("/", 1)[0] not in absent:
+                    (root / directory).mkdir(parents=True, exist_ok=True)
+            if wrong_type:
+                (root / wrong_type).write_text("declared file", encoding="utf-8")
+            _require_fixture((root / "scripts").is_dir()
+                             and all(not (root / path).is_dir() for path in absent),
+                             "declared source layout and absent paths are as intended")
+            with patch.dict(globals(), {"ROOT": root}):
+                observed["layout_" + label] = result(check_01_directory)
+
+    figure = str(73194628)
+    digest = hashlib.sha256(figure.encode("utf-8")).hexdigest()
+    payloads = {
+        "valid_mapping": {"strong": {digest: "declared fixture metadata"}},
+        "valid_list": {"strong": [digest]},
+        "empty": {"strong": []}, "missing_strong": {}, "null": {"strong": None},
+        "scalar": {"strong": digest}, "number": {"strong": 7},
+        "invalid_digest": {"strong": ["not-a-digest"]},
+        "wrong_entry": {"strong": [7]}, "nested_entry": {"strong": [{}]},
+        "uppercase": {"strong": [digest.upper()]}, "non_object": [],
+    }
+    cases = list(payloads) + ["absent", "malformed_json", "wrong_file_type", "wrong_parent",
+                             "unreadable_fixture", "unreadable_source", "unreadable_tree",
+                             "missing_source", "contaminated", "grouped_contamination",
+                             "linked_directory", "disappeared_source"]
+    for label in cases:
+        with _tempfile.TemporaryDirectory(prefix="shimmer_contamination_coverage_") as td:
+            root = Path(td)
+            for directory in ("config", "scripts", "tests/fixtures"):
+                (root / directory).mkdir(parents=True, exist_ok=True)
+            fixture = root / "tests/fixtures/planted_figure_hashes.json"
+            source = root / "scripts/declared.py"
+            source.write_text("# declared clean source\n", encoding="utf-8")
+            if label in payloads:
+                encoded = json.dumps(payloads[label])
+                _require_fixture(json.loads(encoded) == payloads[label],
+                                 "declared JSON boundary case round-trips without alteration")
+                fixture.write_text(encoded, encoding="utf-8")
+            elif label == "malformed_json":
+                fixture.write_text("{", encoding="utf-8")
+            elif label == "wrong_file_type":
+                fixture.mkdir()
+            elif label == "wrong_parent":
+                fixture.parent.rmdir()
+                fixture.parent.write_text("declared file", encoding="utf-8")
+            elif label != "absent":
+                fixture.write_text(json.dumps({"strong": [digest]}), encoding="utf-8")
+            if label == "missing_source":
+                (root / "config").rmdir()
+            if label in ("contaminated", "grouped_contamination"):
+                spelling = figure if label == "contaminated" else format(int(figure), ",")
+                source.write_text("# declared probe\nvalue = " + spelling + "\n", encoding="utf-8")
+                _require_fixture(figure in _planted_variants(spelling),
+                                 "the synthetic numeric spelling resolves to the declared digest input")
+            if label == "linked_directory":
+                (root / "scripts/linked").mkdir()
+            original_read, original_scandir = Path.read_text, _os.scandir
+            original_is_link, original_walk = Path.is_symlink, _os.walk
+
+            def read(path, *args, **kwargs):
+                target = fixture if label == "unreadable_fixture" else source
+                if label in ("unreadable_fixture", "unreadable_source") and path == target:
+                    raise PermissionError("declared read denial")
+                return original_read(path, *args, **kwargs)
+
+            def scandir(path):
+                if label == "unreadable_tree" and Path(path) == root / "scripts":
+                    raise PermissionError("declared traversal denial")
+                return original_scandir(path)
+
+            def is_link(path):
+                # Model the platform link attribute without requiring Windows
+                # symlink privileges; the declared directory itself is real.
+                return (label == "linked_directory" and path == root / "scripts/linked") or original_is_link(path)
+
+            def walk(*args, **kwargs):
+                for directory, subdirs, names in original_walk(*args, **kwargs):
+                    if label == "disappeared_source" and Path(directory) == source.parent:
+                        _require_fixture(source.name in names, "the declared race occurs after enumeration")
+                        source.unlink()
+                    yield directory, subdirs, names
+
+            _require_fixture(source.is_file() and (root / "tests").is_dir(),
+                             "the declared text source and fixture tree exist")
+            with patch.dict(globals(), {"ROOT": root, "CONFIG": root / "config",
+                                        "SCRIPTS": root / "scripts", "PLANTED_HASHES": fixture}), \
+                    patch.object(Path, "read_text", read), patch.object(_os, "scandir", scandir), \
+                    patch.object(Path, "is_symlink", is_link), patch.object(_os, "walk", walk):
+                observed["hash_" + label] = result(check_145_no_planted_benchmark_figure_in_repo)
+    return observed
+
+
+def check_254_baseline_skips_preserve_invalid_fixture_failures():
+    observed = _baseline_availability_fixture()
+    exceptions = {"layout_complete": "PASS", "layout_optional_absent": "SKIP",
+                  "layout_unmounted": "SKIP", "layout_loose_file": "WARN",
+                  "hash_absent": "SKIP", "hash_valid_mapping": "PASS", "hash_valid_list": "PASS"}
+    for name, (status, detail) in observed.items():
+        if status != exceptions.get(name, "FAIL"):
+            return _fail(f"{name}: expected {exceptions.get(name, 'FAIL')}, got {status}")
+    if not all(word in observed["layout_optional_absent"][1] for word in ("prompts", "snapshots", "optional")):
+        return _fail("directory SKIP does not name the unavailable optional coverage")
+    if "contamination cannot be ruled out" not in observed["hash_absent"][1]:
+        return _fail("an absent hash fixture was represented as a clean contamination scan")
+    for name in ("hash_contaminated", "hash_grouped_contamination"):
+        if "scripts/declared.py:2" not in observed[name][1].replace("\\", "/"):
+            return _fail("contamination failure lost its actual source location")
+        if str(73194628) in observed[name][1]:
+            return _fail("contamination diagnostics printed the planted value")
+    return _ok("real checks distinguish unavailable coverage from missing source, partial or wrong-type "
+               "directories, malformed/empty/invalid hash fixtures, read/traversal failures and actual "
+               "contamination; valid fixtures still scan and complete layouts retain loose-file WARN")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24611,6 +24817,8 @@ CHECKS = [
     ("252 document dates ship empty under an explicit manifest ruling",
      check_252_document_dates_have_an_executed_shipping_ruling),
     ("253 quote prediction is checked against actual run outcomes", check_253_quote_prediction_is_checked_by_the_run),
+    ("254 unavailable baseline coverage skips while invalid fixtures and regressions fail",
+     check_254_baseline_skips_preserve_invalid_fixture_failures),
 ]
 
 

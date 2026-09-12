@@ -1,5 +1,9 @@
 # Shimmer prototype checkpoint, 2026-09-13
 
+This records commit 2562578. The later operator-requested normalization of baseline
+checks 01/145 is recorded in LEDGER.md and RESUME.md; the measured counts below
+remain the historical checkpoint results.
+
 The ordered takeover backlog is complete through TWENTY-ONE. This is a source,
 fixture and container checkpoint. A new end-to-end document review has not been
 run: the standing no-pipeline-runs rule remains in force on this machine. Model

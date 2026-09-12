@@ -1,5 +1,54 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## BASELINE NORMALIZATION CLOSED, 2026-09-13
+
+User explicitly requested normalization of documented baseline checks 01/145,
+with SKIP for intentionally unavailable coverage and FAIL for invalid inputs or
+regressions. Recovered clean tracked HEAD 2562578, ahead 52, preserved untracked
+handoff and durable data. Independent read-only agent review completed.
+
+Check 01 retains REQUIRED_DIRS. Only wholly absent named local roots are optional;
+source directories, present wrong types and missing children of a present local
+root fail before any SKIP. Check 145 skips only the unavailable local hash fixture,
+with no clean-contamination claim. Present fixture schema/digests, source roots,
+read errors and traversal errors are validated and fail closed. No production
+policy, dependency, model call, pipeline run or push.
+
+New check 254 executes complete/absent/partial/wrong-type directory trees and
+valid, malformed, empty, wrong-shaped, unreadable and contaminated local fixtures.
+A grouped-number case exposed a pre-existing scanner gap: its normalization accepted
+comma grouping but token extraction split it. Fixed the structural numeric pattern.
+No planted values are printed; errors report types and source locations only.
+Nine independent restoring mutations change the real check outcomes before 254
+FAIL, then restore outcomes and PASS: missing coverage as FAIL, directory assertion
+removed, digest validation removed, scanner removed, read error swallowed, grouped
+token extraction removed, traversal error swallowed, nested link skipped and
+an enumerated text file disappearing. output/baseline_proof.log. Independent
+review identified the last two incomplete-scan gaps; both now fail. The directory
+link fixture models its platform attribute without Windows link privileges; the
+listed-file race actually removes only its temporary source after enumeration.
+README now describes the exact SKIP/FAIL boundary; old measured counts remain
+historical. Independent final review confirmed both findings closed and no further
+blocking issues. First full host table is 253 PASS, 2 SKIP, 0 WARN, 0 FAIL,
+TOTAL 255; original log preserved as output/baseline_powershell_gate.log. The
+PowerShell redirection wrapper still returned nonzero on stderr, so a direct
+subprocess capture repeated the gate and confirmed the native exit code explicitly.
+No assertion or result filter changes. Seven monitored live files unchanged.
+Full host gate: PASS=253  WARN=0  SKIP=2  FAIL/ERROR=0  TOTAL=255, native exit 0.
+output/baseline_host_gate.log and baseline_host_exit.json. Exactly 01/145 SKIP:
+optional local directories and an absent local contamination hash fixture.
+No known baseline FAIL remains. No SKIP claims successful contamination coverage.
+Full image gate: PASS=243  WARN=0  SKIP=10  FAIL/ERROR=2  TOTAL=255; only unchanged 28/31 FAIL,
+because the unmounted image has no intake tree. 01/145 SKIP and new 254 PASS.
+output/baseline_container_gate.log. Image shimmer:baseline:
+sha256:4a3321795ee3c01a91d2fe151517cce07da87b7c1818ec8beedd415cd8272a34, 14408312142 bytes. All 126 intended files match
+(output/baseline_source_audit.json); all model/conversion layers reused.
+Seven monitored live files unchanged (output/baseline_preservation.log).
+Independent adversarial review complete; nine restoring mutation proofs PASS.
+README/image debt paid. No production policy/dependency change, model generation,
+pipeline run or push. This is a gate normalization, not a new review acceptance run.
+
+
 ## TWENTY-ONE CLOSED, 2026-09-13
 
 The ordered takeover backlog is complete. The commit containing this checkpoint
