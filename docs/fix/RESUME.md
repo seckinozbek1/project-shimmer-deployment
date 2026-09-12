@@ -14,41 +14,42 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-EIGHT, the commit containing this checkpoint,
-`EIGHT: confirm date-window scoring through both typed artifact paths`.
+NINE, the commit containing this checkpoint,
+`NINE: measure ROWAN arithmetic and retain its explanatory call`.
 Resolve its exact hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until
-another item updates this file. Prior checkpoint FOUR scope follow-up is
-c07c0b44bc40d13ce885e9c16507df5aa8a353ab; earlier item hashes are in LEDGER.
+another item updates this file. Prior EIGHT is b688d26; FOUR scope follow-up is
+c07c0b44bc40d13ce885e9c16507df5aa8a353ab; earlier hashes are in LEDGER.
 
-The runtime already scores date_window generically. Real arithmetic and builders
-confirm a declared 48-hour gap against a 24-hour bound through bus-only and
-amendment-only scoring, each reason-confirmed 1/1. Bus relation counts name it;
-amendment-only results appear in the entry and reason tables. No runtime or check
-change. Corrected stale scorer and README claims about old untyped amendments and
-assignment implying a call. Host gate 244/246, known 01/145 only. shimmer:eight
-passed the focused proof offline with no mounts and all 121 shipped files match.
-Adversarial read complete; no README/image debt. Details and logs in LEDGER.
+Current source parsing and the prose reference reader produce above_band, 61 units
+versus the Class-B upper bound 60. Removing reference bands makes the plan
+uncomputable. The real paired consumer, isolated to ROWAN's exact field-based pair
+with actual neighbours, requests one explanation and posts the computed finding
+with both empty and failed mocked replies. Python now decides the discrepancy;
+the review is not zero-call. Preserve that existing policy. No runtime/check change.
+Corrected pipeline and README claims, including adjacent historical envelope and
+unit-id statements. Full host gate 244/246, known 01/145 only. Executable pipeline
+AST unchanged. shimmer:nine has all 121 shipped files matching. Adversarial read
+done; README/image debt paid. Details, source hashes and proof logs in LEDGER.
 
 ## Current item
 
-None open. Continue NINE after this commit: compute ROWAN from the current tree
-and determine whether its arithmetic path actually avoids a model call.
+None open. Continue TEN after this commit: write durable run completion evidence
+so a consumer can distinguish an incomplete run from a completed empty run.
 
 ## Ordered remaining work
 
-1. NINE: compute whether Python now settles ROWAN.
-2. TEN: distinguish incomplete runs from completed empty runs.
-3. ELEVEN: plain-language harness facts or explicit absence.
-4. TWELVE: one run-id format.
-5. THIRTEEN: structural proof against reading-only and no-op neutralisations.
-6. FOURTEEN: trace typed records through real amendment artifacts.
-7. FIFTEEN: pairing fallback value and WORDS-A compliance.
-8. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-9. SEVENTEEN: close the cache diagnosis with measured build reuse.
-10. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-11. NINETEEN: classify document_dates.json in the manifest.
-12. TWENTY: answer the learning-signal question, no GNN build.
-13. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. TEN: distinguish incomplete runs from completed empty runs.
+2. ELEVEN: plain-language harness facts or explicit absence.
+3. TWELVE: one run-id format.
+4. THIRTEEN: structural proof against reading-only and no-op neutralisations.
+5. FOURTEEN: trace typed records through real amendment artifacts.
+6. FIFTEEN: pairing fallback value and WORDS-A compliance.
+7. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+8. SEVENTEEN: close the cache diagnosis with measured build reuse.
+9. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+10. NINETEEN: classify document_dates.json in the manifest.
+11. TWENTY: answer the learning-signal question, no GNN build.
+12. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -84,6 +85,8 @@ and determine whether its arithmetic path actually avoids a model call.
     the saved logging format must work without spreading evidence across documents.
 16. Honor the editorial board's existing 8192 request and correct FOUR's scope
     claim: the earlier 4096 local cap had suppressed an explicit configuration.
+17. Keep ROWAN's explanation request while documenting arithmetic independence:
+    the measured finding is reliable without changing the current review policy.
 
 ## Decisions made in the operator's place
 
@@ -127,13 +130,13 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final EIGHT host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
+Final NINE host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
 Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
 offline probe steps PASS, 163 seconds combined. Tests used --network none,
 --gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
 (missing ignored contamination fixture). Image source-only failures: 01, 28,
 31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/eight_host_gate.log, output/four_container_validation.log and
+Logs: output/nine_host_gate.log, output/four_container_validation.log and
 output/four_cap_mutation_proof.log. Focused changes prove independently observable
 mutation effects before fail/restore/pass. No proof mutates real source files.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
@@ -141,9 +144,10 @@ ZERO-C's earlier logs and image remain preserved; see LEDGER.
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:eight carries the current source and
-README. All 121 shipped files match (output/eight_source_audit.json); EIGHT's
-computed date-window proof passed offline with no mounts. SEVEN's checks 174 and 218 passed in its image.
+GPU model workload at a time. shimmer:nine carries the current source and
+README. All 121 shipped files match (output/nine_source_audit.json). EIGHT's
+computed date-window proof passed in shimmer:eight offline with no mounts.
+SEVEN's checks 174 and 218 passed in its image.
 The full image gate above was run on shimmer:four; the model loader, pins and
 weights remain unchanged. All older tags remain intact. Source refreshes reused
 model/conversion layers.

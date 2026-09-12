@@ -1968,16 +1968,16 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                                     convention_assignment=None):
     """structure H5. One narrow call per (unit, rule) pair, arithmetic in Python.
 
-    Three outcomes per pair, and only one of them costs a call:
+    Three arithmetic outcomes per pair; a disagreement or an uncomputable
+    question costs a call when an assigned judging agent exists:
 
       the figures disagree   Python has already computed the comparison. The model
                              is shown the computed values and asked ONLY whether the
                              difference is material and how to state it. The finding
                              carries Python's numbers whatever the model says.
-      nothing computable     Python could compute no comparison for this pair, which
-                             is what happens when the band lives in the reference
-                             corpus rather than in the rule. The model judges on the
-                             text, on ONE unit against ONE rule.
+      nothing computable     Python could compute no comparison from the unit,
+                             rule and supported reference readers. The model judges
+                             on the text, on ONE unit against ONE rule.
       the figures agree      No finding and NO CALL. This is where the saving is.
 
     A pair the cap drops is counted and logged, never silently skipped.

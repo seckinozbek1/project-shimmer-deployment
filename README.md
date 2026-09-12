@@ -2057,12 +2057,22 @@ markdown table carrying the same three labels, not something check 215 introduce
 fixed at that shared layer ("Normalisation" below): the hyphen joins, the three classes are
 distinguishable, and check 215 pins the band minting from the corpus's own prose, with a
 Class-B unit taking the 20-to-60 row and a Class-C unit the 70-to-110 row.
-Two defects are recorded and not fixed: in paired mode the model never writes a unit id
-although Python knows it by construction (the declared-scope path now stamps it for absence
-findings; the general case is open), and a valid envelope wrapped in prose is refused as a
-contract violation. The false-negative classifier put all nine misses of the second run in
-`UNKNOWN`, because that run predates the saved rule-id mapping. Every one of these fixes is
-built without measurement, and the measurement is owed.
+
+**ROWAN now produces a computed finding, but still requests an explanation.** A current-tree
+replay of the real source, convention and reference computes `above_band`: 61 units against the
+Class-B upper bound of 60. Removing the reference reader's contribution changes that plan to
+`uncomputable`. The real paired-review consumer, isolated to this one field-based pair with its
+actual neighbours retained, makes one explanatory call and posts Python's typed finding even
+when the mocked reply is empty or failed. No model was called in this measurement. The old
+model miss no longer controls whether the arithmetic finding exists; this is not a claim of
+zero-call review or a new end-to-end run. The explanatory policy remains unchanged.
+
+Those historical runs also carried model items without unit ids and rejected some replies.
+The current paired path mints computed findings with unit ids and stamps judged absence
+findings. FIVE verified recovery of valid envelopes in prose and fences; the three saved
+violations were incomplete or absent JSON. The historical false-negative classifier put all
+nine misses of the second run in `UNKNOWN` because that run predates its saved rule-id mapping.
+Fixture and saved-artifact measurements above do not replace a new end-to-end quality run.
 
 ## I. The server and the corpus ingestion contract
 

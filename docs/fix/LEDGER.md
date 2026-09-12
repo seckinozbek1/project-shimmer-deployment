@@ -1,5 +1,45 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## NINE CLOSED, 2026-09-12
+
+EIGHT committed b688d26. Current-source measurement in output/nine_rowan_proof.py
+reads only the device document, class reference and conventions, not the answer
+key. It uses the real parser and records source hashes in nine_rowan_report.json.
+Validity first: eight parsed rules, one ROWAN unit, Class-B sensor, reading 61,
+exact reading field named by D01, one reference band with upper bound 60.
+
+The current planner produces one band plan: above_band, 61 versus upper bound 60,
+with the Class-B reference citation. With the reference-band contribution removed,
+the plan is uncomputable instead. This is an observable difference, not a no-op.
+The real _paired_convention_review consumer is then executed with only that exact
+pair selected, the whole current document retained for real neighbours, and
+_run_one mocked. Both a valid empty reply and a failed reply produce one explanatory
+call attempt and one computed typed finding returned and posted to the real bus.
+Temporary run artifacts isolate the proof; no pipeline invocation or model call.
+
+Answer: Python now decides ROWAN's numeric discrepancy and does not depend on the
+model to invent its finding. It does NOT avoid the explanatory call. Decision:
+retain the existing explanation/materiality request, since this item asks for an
+accurate current-tree answer and gives no evidence for changing that policy.
+No runtime or check changed. Existing check 215 covers the prose-band reader;
+the direct consumer replay establishes the additional ROWAN-specific behavior.
+
+Corrected the paired-phase docstring that claimed only one outcome cost a call
+and that reference bands were inherently uncomputable. README now distinguishes
+arithmetic independence from zero-call operation. Also corrected its adjacent
+historical claims about missing typed unit ids and unrecoverable valid envelopes,
+using the current paired consumer and FIVE's completed proof, not a new promise.
+Host gate: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246, known 01/145 only
+(output/nine_host_gate.log). Focused ROWAN proof PASS; executable pipeline AST
+unchanged after stripping documentation. No check change or new gate mutation claim.
+Final shimmer:nine carries all 121 matching shipped files; cached documentation
+refresh reused the model layers in about 6 seconds. Image sha256:03380d3dfc6d3dc2638d433e8703a7485cc646490aa143577f192b59c1f30eaa,
+size 14408240715 bytes (output/nine_source_audit.json). No runtime change required another
+GPU image run; last full image remains FOUR. Adversarial read checked the entire
+consumer through bus posting and confirmed the one remaining explanation request.
+README/image debt paid. Continue TEN after this commit.
+
+
 ## EIGHT CLOSED, 2026-09-12
 
 FOUR scope follow-up committed c07c0b44bc40d13ce885e9c16507df5aa8a353ab.
