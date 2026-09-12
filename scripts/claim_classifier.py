@@ -1,6 +1,33 @@
 """Claim extractor + classifier (genesis Part VIII).
 
 GPT-4o primary with deterministic regex fallback covering all 11 claim types.
+
+NOT CONSUMED ON ANY LIVE PATH (WORDS-B, verdict 9). Measured, not assumed: this
+module has ZERO callers outside scripts/verify_session1.py, which exercises it
+as a gate check. Nothing in the pipeline, the harness, the server or the tools
+imports it.
+
+That matters because several of the patterns below infer a claim's TYPE from
+prose keywords, which is exactly the shape that failed three times elsewhere in
+this repository (convention severity, convention action, redaction intent), each
+time silently and in one direction. Here it fails nowhere, because nothing reads
+the answer. An unconsumed inferred field still READS like a decision, so it is
+marked rather than left looking live.
+
+Two consequences a later reader should not have to rediscover:
+
+  - IF THIS IS EVER WIRED TO A CONSUMER, its prose classification converts to
+    the five-voter ensemble (WORDS-A, scripts/semantic_ensemble.py) FIRST, with
+    reference text in config/semantic_references.json and thresholds measured
+    against real cases. Wiring it as it stands would import the defect this
+    repository has spent three rounds removing.
+  - it is KEPT rather than deleted, deliberately. Removing a whole module with a
+    live gate check is a wider change than an inventory warrants, so it is
+    marked and left for the operator to delete if they want it gone.
+
+The STRUCTURAL patterns here (a date format, a currency shape, a standard
+reference like ISO 9001) are reading rather than interpreting, and would stay as
+they are under WORDS-A in any case.
 """
 
 from __future__ import annotations
