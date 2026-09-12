@@ -1,5 +1,49 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## TWENTY-ONE CLOSED, 2026-09-13
+
+The ordered takeover backlog is complete. The commit containing this checkpoint
+also contains PROTOTYPE_CHECKPOINT.md, the requested full report and commit inventory.
+No new full document review is claimed or permitted on this machine.
+
+TWENTY closed in 2b863d2 and detailed-answer follow-up ffd8c9c. Traced the real
+phase 5.5 planner, quote/refusal branches and run-summary writer. The historic
+14 counts are judged plans, not guaranteed claims; 7 computed plans need no quote.
+Added a machine-readable forecast, per-run audit updated before and after each
+question, and run-summary rendering. No new policy, model, dependency or pipeline run.
+Count differences, missing consumers, failed/empty/non-absence answers and partial
+execution stay distinct from quote compliance. The actual summary writer reads the
+adjacent run audit, so the report reaches a live consumer. The audit carries IDs
+and counts only, never quotes or document text. PASS verifies emitted claims, not
+model truth or the forecast of fourteen claims. No historical backfill.
+
+New 253 validates parsed rule declarations, exact 14/7 plans and typed input
+before executing actual phase 5.5 with model dispatch blocked. Four quoted claims,
+ten refused claims and seven computed bus findings reconcile against the saved
+map and summary. Empty and non-absence answers, failed calls, missing consumers,
+changed counts, interrupted review and wide mode have distinct outcomes. Found
+that missing-quote refusals were misleadingly labelled field-present; fixed the
+reason without changing which claims are refused.
+
+Five independent effect proofs: admit missing quotes, omit audit outcomes, lose
+refusal records, falsely credit empty answers, and hide the run-summary section.
+Each changes a stable consumer observation BEFORE new check 253 FAIL, then
+restoration recovers the observation and PASS. The first proof harness copied a
+function's globals, disconnecting the dispatch stub; the explicit no-dispatch
+tripwire stopped it. Corrected the in-memory binding; no model was dispatched.
+Evidence: output/twentyone_proof.log. Full host gate: PASS=252  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=254
+(output/twentyone_host_gate.log), known 01/145 only. shimmer:twentyone:
+sha256:103f29f6f3f1c4edbfd74156edca037e2b2c9753669a1e1696ba0e41ede868cf, 14408304202 bytes.
+All 126 shipped files match;
+output/twentyone_source_audit.json. All weight/conversion layers reused.
+Complete GPU/offline image gate: PASS=242 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=254,
+known image layout/fixture failures 01/28/31/145 only. Six-step offline model and
+ensemble probe PASS, zero attempted network access. Both run with no host mounts.
+Seven monitored live state files remain unchanged. Evidence is fixture/loading
+coverage, not a newly completed document review.
+Adversarial read complete. README/image debt paid. No push.
+
+
 ## TWENTY CLOSED, 2026-09-13
 
 Implementation/docs checkpoint 2b863d2. The existing docs ignore rule excluded the
@@ -1132,6 +1176,10 @@ whether the image is affected.
 
 ### A prediction to be checked against a real run
 
+Current status: TWENTY-ONE implements this forecast in config/run_predictions.json
+and the live phase 5.5 audit/run-summary path. The paragraph below is the historical
+prediction; its 14 saved-map entries are questions, not guaranteed emitted claims.
+
 The quote requirement (`44e3168`) predicts that on the next run **14 judged
 absence claims** (5 on the flawed twin, 9 on the clean, from the saved pairing
 maps) will either carry a quote or be refused and recorded under
@@ -1288,7 +1336,10 @@ implicit.
 
 ---
 
-## Items still open at the end of this session
+## Items still open at the end of this session (historical)
+
+This is the inherited starting backlog, preserved for context. Current closure
+and evidence are recorded in the dated checkpoint entries at the top of this file.
 
 Recorded here because the working TODO does not survive the session.
 

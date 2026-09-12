@@ -582,20 +582,49 @@ answer that a field is missing, and on the 2026-09-12 clean twin nine such answe
 false: seven asserted a calibration authority signature missing from entries whose own parsed
 fields list it. All nine named no field at all, so nothing could check, cite or score them.
 
-Two refusals now apply, and the first is about FORM rather than truth. A `missing_field`
+Field checks apply in addition to the forward quote requirement below. The first
+field check is about FORM rather than truth. A `missing_field`
 answer that names no field is refused as malformed: the operator's own grounding rule already
 requires a finding to state the entry and the figures it concerns, and this is the same
 discipline the verifiability gate applies when it downgrades an affirmative finding that
 cites nothing. A model that spots a real absence and forgets to name the field is refused
 too; naming it is the minimum for the claim to exist as a claim. Second, an answer that does
 name a field is refused when the unit demonstrably carries that field, which Python has
-already parsed into `fields_present`. Every other relation, and a named field the unit really
-lacks, are left untouched. Refused answers are recorded under `absence_refused` in the
+already parsed into `fields_present`. A named field the unit lacks must still meet the quote requirement. Other
+relations keep their existing checks. Refused answers are recorded under `absence_refused` in the
 pairing map, never silently dropped.
 
 No inference is made about which field an unnamed claim means. Two heuristics for that were
 tried against the real artifacts and both suppressed a legitimate answer on a rule scoped on
 one field whose requirement is about another.
+
+### The next run checks the absence-quote forecast
+
+`config/run_predictions.json` records the historical forecast: 14 judged questions
+(5 on the flawed twin, 9 on the clean) and 7 computed absences. A plan is a question,
+not a guaranteed model claim. Changes in documents, applicability or routing can
+change those counts; a matching count alone does not identify the same cohort.
+
+Phase 5.5 writes `audit/absence_quote_prediction.json` before judging and updates it
+as each question returns. The audit reconciles emitted `missing_field` claims with
+accepted quotes and `absence_refused` records. It records computed work separately,
+with no quote requirement. Missing quotes, unnamed fields, fields demonstrably present
+and quotes absent from the unit have distinct refusal reasons. Quote matching folds
+case and whitespace; a match proves text presence, not that the conclusion is true.
+
+The real `deliverables/_run_summary.md` writer reads that audit and shows the result:
+`PASS` for checked emitted claims, `FAIL` for a quote/refusal discrepancy, `incomplete`
+for unfinished or unsuccessful judging, `not_exercised` when there are no absence
+claims, and `not_applicable` for wide review. Empty and non-absence replies do not
+confirm fourteen claims. Counts that differ from the historical forecast remain
+visible. An interrupted run retains its partial audit even if it never reaches the
+summary writer; a historical run without the artifact remains unknown.
+
+Check 253 executes parsed synthetic documents through the real planner, bus, refusal
+map and summary writer with model dispatch blocked. It exercises the 14/7 forecast,
+changed counts, empty answers, other relations, failures, missing consumers and
+interruption. These are fixture proofs; the next real review remains unrun under the
+standing development rule. No finding policy, provider call or dependency is added.
 
 ### Normalisation: one tokeniser, shared
 
@@ -2939,8 +2968,8 @@ Stated honestly, from operator testing:
   judged, deliberately NOT in the contract's required-field list: putting it there would mark
   every finding of every past run a violation, including the 62 published on 2026-09-11, of
   which 14 are absence claims. A contract applies from the commit that introduces it. Measured
-  cost in the next run, from the saved pairing maps: 14 judged absences (5 flawed, 9 clean)
-  are the claims now asked to carry a quote; the 7 computed absences are Python's own
+  plan count from the saved pairing maps: 14 judged questions (5 flawed, 9 clean)
+  may yield absence claims that must carry a quote; the 7 computed absences are Python's own
   arithmetic and need none. A claim the model does not quote for is refused and recorded under
   `absence_refused`, not silently dropped.
 - **The scorer reports a claim worded identically in both twins.** The twins differ exactly
