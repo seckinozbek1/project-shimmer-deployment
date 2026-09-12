@@ -18505,7 +18505,7 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
        WIDE_REVIEW_MAX_TOKENS=2048, each wired to the real call site an AST
        walk of pipeline.py confirms still calls it). agent_wrapper.py's own
        hardcoded `min(max_tokens, 1024)` is gone, replaced by
-       LOCAL_MAX_OUTPUT_TOKENS=4096, an outer backstop far above any of the
+       LOCAL_MAX_OUTPUT_TOKENS, an outer backstop above the defaults for the
        five, never the budget itself.
     2. A cut is recorded as a cut. call_local and call_qwen compare the
        actual generated length against the cap they were given
@@ -18755,7 +18755,7 @@ def check_216_the_output_budget_is_sized_per_call_type_and_a_cut_is_recorded():
                "both a CONTRACT_VIOLATION post and an AGENT_OUTPUT post (parsed but "
                "possibly incomplete) and onto the returned dict; five named budgets "
                "(PAIRED_JUDGING 768, the rest 2048) replace the old blanket 1024, each "
-               "below LOCAL_MAX_OUTPUT_TOKENS=4096 and each wired by name to its real "
+               f"below LOCAL_MAX_OUTPUT_TOKENS={LOCAL_MAX_OUTPUT_TOKENS} and each wired by name to its real "
                "call site; neutralise (no usage key) reads falsy, restore reads accurately")
 
 
@@ -23238,6 +23238,135 @@ def check_244_cached_embedding_weights_are_prepared_safely():
                "reading, and prepared weights bypass pickle on the pinned runtime")
 
 
+def _processor_extraction_flow_fixture():
+    """Declared large reply through real production, parsing and audit consumers.
+
+    A cached tokenizer supplies the token boundary. Dispatch is the only model
+    double: it returns the declared reply cut to the budget it actually receives.
+    """
+    import asyncio
+    import copy
+    import os
+    import tempfile
+    from types import SimpleNamespace
+    from unittest.mock import patch
+    import agent_wrapper as aw
+    import pipeline as pl
+    from constitution import Constitution
+    from message_bus import MessageBus
+    from reference_builder import ReferenceIndex
+    from run_context import create_run
+    from transformers import AutoTokenizer
+
+    registry = json.loads((CONFIG / "agent_registry.json").read_text(encoding="utf-8"))["agents"]
+    contracts = json.loads((CONFIG / "agent_contracts.json").read_text(encoding="utf-8"))["contracts"]
+    model_id = pl._LOCAL_PROFILE["PROCESSOR"][1]
+    tokenizer = AutoTokenizer.from_pretrained(aw._local_checkpoint_path(model_id),
+                                             local_files_only=True)
+    declared = {"fixture": True, "items": [
+        {"ref": "REF-%04d" % (8000 + i), "kind": "extraction", "confidence": "CONFIDENT",
+         "section_id": "fixture/paragraph/%03d" % i,
+         "draft_text": ("Declared source paragraph %03d. The observation is copied "
+                        "without changing its wording." % i),
+         "extraction_method": "verbatim", "ref_ids": ["REF-%04d" % (8000 + i)]}
+        for i in range(61)]}
+    parsed_fixture = json.loads(json.dumps(declared))
+    _require_fixture(parsed_fixture == declared and len(parsed_fixture["items"]) == 61
+                     and len({i["section_id"] for i in parsed_fixture["items"]}) == 61,
+                     "extraction fixture must contain 61 distinct, complete paragraphs")
+    target = {"agent": "PROCESSOR", "doc_id": "fixture_doc", "items": parsed_fixture["items"]}
+    encoded = tokenizer.encode(json.dumps(target, indent=4), add_special_tokens=False)
+    _require_fixture(4096 < len(encoded) < 8192 and
+                     json.loads(tokenizer.decode(encoded)) == target,
+                     "declared reply must exceed both old ceilings and round-trip intact",
+                     len(encoded))
+    doc = {"id": "fixture_doc", "name": "declared_fixture.md",
+           "text": "\n\n".join(i["draft_text"] for i in target["items"])}
+    budgets, audits = [], {"whole": [], "failed": [], "partial": []}
+    mode = "whole"
+    original_run_task = aw.AgentWrapper.run_task
+
+    def observe(self, *args, **kwargs):
+        if self.name in ("VERIFIER", "FACT_CHECKER"):
+            audits[mode].append(copy.deepcopy(kwargs["work_payload"]))
+        return original_run_task(self, *args, **kwargs)
+
+    def dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
+        budget = kwargs.get("max_new_tokens", kwargs.get("max_tokens"))
+        budgets.append((self.name, self.backend, budget))
+        local_processor = self.name == "PROCESSOR" and self.backend == "local_producer"
+        raw = (tokenizer.decode(encoded[:budget]) if local_processor else
+               json.dumps({"agent": self.name, "doc_id": "fixture_doc", "items": []}))
+        return aw.CallResult(backend=self.backend, model=self.model, raw_text=raw,
+                             usage={"truncated": local_processor and budget < len(encoded)})
+
+    with tempfile.TemporaryDirectory() as td, \
+            patch.dict(os.environ, {"SHIMMER_BACKEND_PROFILE": "local"}), \
+            patch.object(aw.AgentWrapper, "run_task", observe), \
+            patch.object(aw.AgentWrapper, "dispatch", dispatch):
+        ctx = create_run(td)
+        reg_local = copy.deepcopy(registry)
+        for name, (backend, model) in pl._LOCAL_PROFILE.items():
+            reg_local[name].update(backend=backend, model=model)
+        orch = SimpleNamespace(
+            constitution=Constitution.load(CONFIG / "constitution.json"),
+            bus=MessageBus.open(ctx.logs_dir() / "bus.jsonl"), registry=reg_local,
+            contracts=contracts, cost_tracker=None, run_context=ctx)
+        refs = ReferenceIndex(project_root=Path(td))
+        production = asyncio.run(pl.phase_3_4_content_production(
+            orch, {}, [doc], [], "declared extraction fixture", {"conventions": []}, refs, []))
+        processor = next(r for r in production if r["agent"] == "PROCESSOR")
+        asyncio.run(pl.phase_5_audit(orch, {}, [doc], production,
+                                     "declared extraction fixture", {"conventions": []}, refs))
+        for mode, ok in (("failed", False), ("partial", True)):
+            incomplete = {"scope": "doc", "doc_id": doc["id"], "agent": "PROCESSOR",
+                          "ok": ok, "parsed": target, "truncated": True}
+            asyncio.run(pl.phase_5_audit(orch, {}, [doc], [incomplete],
+                                         "declared incomplete fixture", {"conventions": []}, refs))
+        # The measured local override must not enlarge an unmeasured cloud call.
+        cloud = aw.AgentWrapper(name="PROCESSOR", constitution=orch.constitution,
+                                bus=orch.bus, registry=registry, contracts=contracts,
+                                keys={}, run_context=ctx)
+        cloud.run_task(work_payload={"document_id": doc["id"]},
+                       max_tokens=pl.PRODUCTION_MAX_TOKENS)
+    return {"processor": processor, "audits": audits, "budgets": budgets,
+            "expected": target["items"], "tokens": len(encoded)}
+
+
+def check_245_processor_extraction_reaches_its_auditors():
+    result = _processor_extraction_flow_fixture()
+    proc = result["processor"]
+    if not proc.get("ok") or proc.get("truncated") or proc.get("item_count") != 61:
+        return _fail("the local production call still loses the declared full extraction")
+    for payload in result["audits"]["whole"]:
+        draft = payload.get("processor_draft") or {}
+        items = draft.get("items") or []
+        if (len(items) != 61 or items[-1].get("draft_text") != result["expected"][-1]["draft_text"]
+                or payload.get("processor_draft_available") is not True
+                or payload.get("processor_draft_truncated") is not False):
+            return _fail("the complete extraction did not reach an auditor intact")
+    for kind, expected_available in (("failed", False), ("partial", True)):
+        for payload in result["audits"][kind]:
+            if (payload.get("processor_draft_available") is not expected_available
+                    or payload.get("processor_draft_truncated") is not True
+                    or not payload.get("processor_draft_note")
+                    or (kind == "failed" and payload.get("processor_draft") is not None)):
+                return _fail("an unavailable or cut extraction is passed as a complete draft")
+    if any(len(rows) != 2 for rows in result["audits"].values()):
+        return _fail("the fixture did not reach both phase-5 auditors in every state")
+    for agent, backend, budget in result["budgets"]:
+        if agent != "PROCESSOR" and budget > 4096:
+            return _fail("the PROCESSOR allowance enlarged another agent's active budget")
+        if agent == "PROCESSOR" and backend == "claude_api" and budget != 2048:
+            return _fail("the measured local allowance changed the cloud production budget")
+    return _ok("real local production and audit phases preserve all 61 declared extraction "
+               "items (%d tokenizer tokens); the old 2048 production limit and 4096 "
+               "backstop cannot fit this reply; both auditors receive the last item, "
+               "failed best-effort objects are withheld, and valid partial drafts are "
+               "explicitly marked truncated; other agent and cloud budgets stay unchanged"
+               % result["tokens"])
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -23538,6 +23667,8 @@ CHECKS = [
      check_243_active_prohibition_and_unapplied_rules),
     ("244 cached embedding weights are prepared safely for offline loading",
      check_244_cached_embedding_weights_are_prepared_safely),
+    ("245 PROCESSOR extraction reaches its auditors with truncation made explicit",
+     check_245_processor_extraction_reaches_its_auditors),
 ]
 
 

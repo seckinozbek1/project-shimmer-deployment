@@ -1351,7 +1351,12 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
 
     async def _process_doc(doc):
         proc = by_doc_agent.get((doc["id"], "PROCESSOR"))
-        draft = proc.get("parsed") if proc else None
+        # A parser's best-effort object from a failed contract is not a draft.
+        draft = proc.get("parsed") if proc and proc.get("ok") else None
+        draft_state = {
+            "processor_draft_available": draft is not None,
+            "processor_draft_truncated": bool(proc and proc.get("truncated")),
+        }
         # structure H3: what one agent hands another is typed. PROCESSOR's draft
         # reaches VERIFIER and FACT_CHECKER with every prose field removed, so the
         # auditors judge the draft's fields and citations rather than reading its
@@ -1366,6 +1371,13 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
         fc_payload = {"task": "extract_and_verify_claims",
                       "document_name": doc["name"], "processor_draft": draft_typed,
                       "source_excerpt": _truncate_doc(doc["text"], 3500)}
+        for payload in (verifier_payload, fc_payload):
+            payload.update(draft_state)
+            if not draft_state["processor_draft_available"] or draft_state["processor_draft_truncated"]:
+                payload["processor_draft_note"] = (
+                    "The extraction is unavailable or was cut short. Its missing "
+                    "content is not evidence that the source lacks that content; "
+                    "use the supplied source when checking it.")
         tasks = []
         for name, payload in (("VERIFIER", verifier_payload), ("FACT_CHECKER", fc_payload)):
             wrapper = _build_wrapper(name, orch, keys)

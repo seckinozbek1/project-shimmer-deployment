@@ -1,5 +1,51 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## FOUR CLOSED, 2026-09-12
+
+ZERO-C closed in 963cae2. FOUR traced the PROCESSOR -> phase-5 audit dependency;
+paired unit planning and arithmetic read source directly, while optional recent
+bus context may still carry prior output. Both saved local PROCESSOR replies hit
+2048 tokens; the preserved replies contain 21/19 complete items and 17/7 distinct
+unit names, then cut mid-item. The handoff overstated their completeness.
+Current complete paragraph extraction envelopes measure 6288/6081 indented tokens
+(4588/4381 compact), with a largest item of 157, using the cached Qwen tokenizer.
+Decision: a local PROCESSOR allowance of 8192, the next doubling of the existing
+4096 backstop that fits the measured full envelope and item reserve. Other active
+agent budgets and cloud budgets remain unchanged. No new dependency. This is
+capacity for the measured case, not a claim that generation cannot hit a limit.
+Phase 5 now names unavailable/truncated drafts and refuses to pass a parser's
+best-effort object from a failed contract as though it were a usable extraction.
+Budget measurement: output/four_budget_measurement_current.json. References were
+deduplicated during investigation; the final measurement uses full current source
+paragraphs because saved aliases repeat spans and the clean tail changed since
+its saved run. No answer key was read and no model generation was run.
+
+Check 245 now proves effect through the real production and audit functions:
+a declared 5821-token response, parsed and round-tripped through the cached
+tokenizer, preserves all 61 items through both auditors. Dispatch is mocked;
+there is no model generation or pipeline invocation. Four mutations were proved
+independently before asking the check: removing the local override and restoring
+the old backstop both turn the complete extraction into a truncated failed
+contract; removing the failed-draft guard forwards its best-effort object; omitting
+the state update removes the audit flags. Each then makes check 245 FAIL, and
+each restoration returns PASS. output/four_mutation_proof.log records the effects.
+The first harness compilation needed class-method indentation dedented; this was
+a proof-harness defect fixed before accepting any mutation result.
+README and CLAUDE now describe the measured allowance, backend scope and explicit
+audit state. Final host gate: 244 PASS, 0 WARN, 0 SKIP, 2 known failures,
+246 total (01 and 145), output/four_host_gate.log. Final image gate: 234 PASS,
+0 WARN, 8 SKIP, 4 known source-only failures (01, 28, 31, 145), 246 total.
+All six offline probe steps passed with --network none, --gpus all and no mounts;
+combined validation took 163 seconds, output/four_container_validation.log.
+shimmer:four is sha256:ca369d682d718ab017187416ff3ca0d5fe5f919aebdcf2846115f9f9806da601,
+14,408,233,378 bytes. All 121 shipped files match the working tree after CRLF
+normalization (output/four_source_audit.json). The 7.4-second build reused the
+model and conversion layers from the local cache (output/four_build.log).
+Adversarial read checked backend scope, the effective outer cap, failed and
+valid-partial drafts, fixture validity, the last item at both consumers, and
+the source-versus-bus dependency qualification. No new failure remains.
+This proves capacity and data flow with mocked dispatch, not a new review run.
+
 ## Recovery and ZERO-C, 2026-09-12
 
 Recovered main at 64b83e0, ahead of origin/main (2c88112) by 31 commits.

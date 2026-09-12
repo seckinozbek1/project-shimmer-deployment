@@ -354,6 +354,10 @@ processing swarm governed by an append-only constitution.
   `.gitattributes` pins shell scripts to LF; the Dockerfile strips a trailing CR
   regardless. A container gate loads models on the GPU: never overlap it with the host gate
   or a run.
+- Local PROCESSOR extraction has an 8192-token contract allowance, measured from
+  complete source envelopes; the local backstop permits it. Other active budgets
+  and cloud budgets stay unchanged. Phase-5 auditors receive draft availability
+  and truncation explicitly; failed-contract best-effort objects are withheld.
 - `scripts/pipeline.py`: the pipeline driver (the flags above).
 
 ## Key paths

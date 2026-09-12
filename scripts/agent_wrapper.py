@@ -60,7 +60,7 @@ _QWEN_LOAD_LOCK = threading.Lock()      # guards first-load so a concurrent firs
 # that forgets to size one, or asks for something unreasonable, cannot run the
 # wall clock away unboundedly. Both local models' own context windows (Qwen
 # 32768, Phi 131072 positions) are far larger, so this is not a model limit.
-LOCAL_MAX_OUTPUT_TOKENS = 4096
+LOCAL_MAX_OUTPUT_TOKENS = 8192
 
 
 def _evict_generation_models(keep_model_id=None):
@@ -1482,6 +1482,13 @@ class AgentWrapper:
         contract_max = self.contract.get("max_output_tokens")
         if isinstance(contract_max, int) and contract_max > 0:
             max_tokens = max(max_tokens, contract_max)
+        # FOUR: measured local extraction needs more output space than the
+        # general production default. A local-only declaration keeps cloud
+        # budgets unchanged until there is evidence from that backend.
+        if self.backend in ("qwen_local", "local_producer", "local_auditor"):
+            local_contract_max = self.contract.get("local_max_output_tokens")
+            if isinstance(local_contract_max, int) and local_contract_max > 0:
+                max_tokens = max(max_tokens, local_contract_max)
         # Call evidence (scripts/call_evidence.py): the prompt below is about to be
         # sent and then dropped, so this is the one point that knows everything the
         # call was shown. Record the STRUCTURAL identifiers of it (unit, neighbours,
@@ -1525,7 +1532,7 @@ class AgentWrapper:
                 # exactly, several producing zero usable items). The caller
                 # now sets a budget sized to what that call type is shown to
                 # need (pipeline.py's call sites); LOCAL_MAX_OUTPUT_TOKENS is
-                # an outer backstop only, well above any budget in force, so a
+                # an outer backstop for the largest declared local budget, so a
                 # caller error cannot runaway the wall clock unboundedly.
                 result = self.dispatch(stable_prefix, dynamic_suffix,
                                        max_new_tokens=min(max_tokens, LOCAL_MAX_OUTPUT_TOKENS))

@@ -289,10 +289,33 @@ the old 1024 with headroom above the largest real, uncapped call observed), and
 `AUDIT_MAX_TOKENS`/`PRODUCTION_MAX_TOKENS`/`DEEPEN_MAX_TOKENS`/`WIDE_REVIEW_MAX_TOKENS` (2048,
 raised rather than left at 1024 for every call type with direct evidence of losing output
 there; wide-mode review was not exercised on the measured run, so its number is carried forward
-unchanged rather than guessed). `agent_wrapper.LOCAL_MAX_OUTPUT_TOKENS` (4096) replaces the old
+unchanged rather than guessed). `agent_wrapper.LOCAL_MAX_OUTPUT_TOKENS` (8192) replaces the old
 1024 as an outer backstop only, well above every named budget, so a caller that forgets to size
 one cannot run the wall clock away unboundedly; both local models' own context windows (Qwen
 32768, Phi 131072 positions) are far larger than any of these figures.
+
+Local PROCESSOR calls have a separate `local_max_output_tokens: 8192` allowance
+in `config/agent_contracts.json` (check 245). Both saved 12 September replies hit
+2048 tokens; complete extraction envelopes for the current source paragraphs
+measure 6288 and 6081 tokens with the cached producer tokenizer, or 4588 and 4381
+with compact JSON. The largest item is 157 tokens. 8192 is the next doubling of
+the former 4096 backstop that fits the measured full reply plus that reserve.
+The local backstop rises to 8192 so it actually permits the allowance; other
+agents keep their active budgets, and cloud calls ignore this local declaration.
+This gives the measured extraction room to finish; longer output can still hit
+the limit and remains explicitly marked as truncated.
+
+PROCESSOR feeds its parsed draft to VERIFIER and FACT_CHECKER in phase 5. Both
+now receive `processor_draft_available` and `processor_draft_truncated`; a failed
+contract's best-effort parse is withheld, and the auditors are told that missing
+extraction content is not evidence of missing source content. Valid partial
+replies remain available with their truncation flag. Paired review constructs
+its units, comparisons and work payload from source directly. Optional recent
+bus context can still carry previous agent output, so this is not a claim that
+a model's entire prompt is independent of PROCESSOR.
+
+The FOUR host gate is 244 PASS and the two known environment failures out of
+246 checks. The local checkpoint image for this change is `shimmer:four`.
 
 **A cut is now recorded as a cut, never silently parsed as a whole answer.** `call_local` and
 `call_qwen` compare the generated length against the cap they were given (the model's own
@@ -2780,7 +2803,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**245** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**246** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
