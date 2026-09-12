@@ -88,14 +88,54 @@ def authorized_shapes(operator_rules: list, cues: dict) -> dict:
     auth = {}
     for shape in _SHAPES:
         cue_words = [c.lower() for c in _union_shape_cue(cues, shape)]
-        if not cue_words:
-            continue
         for r in operator_rules or []:
             text = str(r.get("rule", "")).lower()
-            if any(cw in text for cw in cue_words):
+            # The CUE LIST first: a substring match is the precise signal and it
+            # stays exactly as it was.
+            if cue_words and any(cw in text for cw in cue_words):
+                auth[shape] = (r.get("id"), r.get("category") or "confidentiality")
+                break
+            # WORDS-E / E3: then the five-voter ensemble, UNIONED, never
+            # replacing. Measured on 40 genuine redaction rules, 23 AUTHORISED
+            # NO DETECTOR AT ALL under the cue list alone. "Mask the account
+            # number" authorised nothing, because `account` is not a cue word: a
+            # rule the operator wrote, that compiled, and that then silently
+            # scanned for nothing. On a LAW-IV path that is the worst direction
+            # there is, because the failure leaves personal data in a delivered
+            # artifact and shows nowhere.
+            #
+            # Union, so the ensemble can only ADD an authorisation and never
+            # remove one, and any refusal (no model, no references, fewer than
+            # five voters) leaves the cue list's verdict standing.
+            if _ensemble_authorises(shape, str(r.get("rule", ""))):
                 auth[shape] = (r.get("id"), r.get("category") or "confidentiality")
                 break
     return auth
+
+
+# One ensemble decision per shape. The values are decision keys in
+# config/semantic_references.json; a shape with no reference block has no
+# ensemble opinion and is decided by its cue list alone.
+_SHAPE_DECISIONS = {"identifier": "shape_identifier",
+                    "figure": "shape_figure",
+                    "name": "shape_name"}
+
+
+def _ensemble_authorises(shape, rule_text):
+    """Does the five-voter ensemble read this rule as authorising this shape?
+
+    Returns False on any refusal, which is correct HERE and only here because
+    this is a UNION: the cue list has already had its say, so a refusal leaves
+    the pre-existing verdict standing rather than narrowing it. The import is
+    local so the sensitivity layer keeps its no-editorial-imports property."""
+    decision = _SHAPE_DECISIONS.get(shape)
+    if not decision or not str(rule_text or "").strip():
+        return False
+    try:
+        import semantic_ensemble as _se
+        return bool(_se.decide(rule_text, decision)["result"])
+    except Exception:
+        return False
 
 
 # ------------------------------------------------------------------- shape detect
