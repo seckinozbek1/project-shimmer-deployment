@@ -14,33 +14,31 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-SEVEN, the commit containing this checkpoint,
-`SEVEN: score unit suspensions and actual judging exposure separately`.
+FOUR scope follow-up, the commit containing this checkpoint,
+`FOUR follow-up: prove and document the board budget effect`.
 Resolve its exact hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until
-another item updates this file. Earlier completed items: SIX in
+another item updates this file. Earlier completed items: SEVEN in
+3e1fc361f294b225b9d92fdc629fa8ba0b709b09, SIX in
 f772a84d7a9c6a9eb0d381a79821a83c2571bd77, FIVE in
 2ff8e23762ade7958a3e2a236e6fe425f362db13, FOUR in
 f928fa92eb8263fcc0ced334059a777e72bcd58c, ZERO-C in
 963cae235d1ef2f2e949f72133259a05a1647fe1.
 
-The scorer separates never_assigned, no_consumer, suspended, asked,
-assigned_not_asked and unknown using saved assignments, exact unit suspensions
-and exposure to assigned consumers. Assignment alone and production-only calls
-do not prove judgment. The numeric document-position format in saved paired
-calls works only after unique unit resolution. Raw recall includes every entry;
-suspended rows remain visible and are excluded from asked recall and false-negative
-mechanism diagnosis. A recorded call does not prove response success or reasoning.
-Check 218 executes the real scorer over declared temporary artifacts. Five
-independently observable mutations FAIL and restore PASS. Current-shape replay
-without a gold key confirms 36/39 exposed combinations among 152 in each saved
-run. README and shimmer:seven are current; all 121 shipped files match. Image
-checks 174 and 218 PASS offline with no mounts. Full final host gate: 244/246,
-known failures 01 and 145 only. Adversarial read complete. Details in LEDGER.
+FOUR's shared cap also raised the local editorial board's actual limit from
+4096 to its already configured 8192. The old all-other-budgets-unchanged claim
+was false. Retain the existing operator-declared board request and correct the
+claim; an initial uncommitted attempt to restore the old suppression was reversed.
+Final product behavior is unchanged from FOUR. Check 245 now traverses the real
+_dispatch_rank caller with a complete valid observation and observes its actual
+8192 dispatch. Five independent mutations FAIL and restore PASS. Ordinary phase
+and cloud budgets stay unchanged. README/CLAUDE now state the scope accurately.
+shimmer:four-scope passed check 245 offline with no mounts; all 121 shipped files
+match. Full host gate 244/246, known failures 01 and 145 only. Adversarial read done.
 
 ## Current item
 
-None open. Continue with EIGHT after SEVEN is committed: verify the current
-typed scorer's date_window visibility, repair only if an actual gap remains.
+None open. Continue EIGHT after this correction is committed. Verify date_window
+visibility in the current typed scorer before proposing a change.
 
 ## Ordered remaining work
 
@@ -91,6 +89,8 @@ typed scorer's date_window visibility, repair only if an actual gap remains.
     withdrawn rule is not an ordinary false-negative mechanism failure.
 15. Accept recorded numeric document positions only with unique unit identity:
     the saved logging format must work without spreading evidence across documents.
+16. Honor the editorial board's existing 8192 request and correct FOUR's scope
+    claim: the earlier 4096 local cap had suppressed an explicit configuration.
 
 ## Decisions made in the operator's place
 
@@ -134,25 +134,26 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final SEVEN host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
+Final FOUR scope follow-up host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
 Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
 offline probe steps PASS, 163 seconds combined. Tests used --network none,
 --gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
 (missing ignored contamination fixture). Image source-only failures: 01, 28,
 31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/seven_final_host_gate.log, output/four_container_validation.log and
-output/seven_mutation_proof.log. Focused changes prove independently observable
+Logs: output/four_scope_host_gate.log, output/four_container_validation.log and
+output/four_cap_mutation_proof.log. Focused changes prove independently observable
 mutation effects before fail/restore/pass. No proof mutates real source files.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:seven carries the current source and README.
-All 121 shipped files match (output/seven_source_audit.json); checks 174 and 218
-passed in the image with network disabled and no mounts. The full image gate
-above was run on shimmer:four; the model loader, pins and weights are unchanged.
-All older tags remain intact. Source refreshes reused model/conversion layers.
+GPU model workload at a time. shimmer:four-scope carries the current source and
+README. All 121 shipped files match (output/four_scope_source_audit.json); check
+245 passed offline with no mounts. SEVEN's checks 174 and 218 passed in its image.
+The full image gate above was run on shimmer:four; the model loader, pins and
+weights remain unchanged. All older tags remain intact. Source refreshes reused
+model/conversion layers.
 Build cache: output/shimmer_build_cache, about 14.41 GB, ignored and local only.
 Reuse it with the --cache-from/--cache-to commands in README; no global Docker
 configuration change or registry upload was made.

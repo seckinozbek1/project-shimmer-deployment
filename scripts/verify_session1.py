@@ -23287,6 +23287,12 @@ def _processor_extraction_flow_fixture():
                      len(encoded))
     doc = {"id": "fixture_doc", "name": "declared_fixture.md",
            "text": "\n\n".join(i["draft_text"] for i in target["items"])}
+    board_item = {"ref": "document-level", "kind": "editorial_observation",
+                  "confidence": "CONFIDENT", "verdict": "sound",
+                  "rationale": "Declared budget fixture observation"}
+    _require_fixture(json.loads(json.dumps(board_item)) == board_item
+                     and all(k in board_item for k in contracts["EDITOR_CLERK"]["required"]),
+                     "board budget fixture must contain a complete valid observation")
     budgets, audits = [], {"whole": [], "failed": [], "partial": []}
     mode = "whole"
     original_run_task = aw.AgentWrapper.run_task
@@ -23301,7 +23307,8 @@ def _processor_extraction_flow_fixture():
         budgets.append((self.name, self.backend, budget))
         local_processor = self.name == "PROCESSOR" and self.backend == "local_producer"
         raw = (tokenizer.decode(encoded[:budget]) if local_processor else
-               json.dumps({"agent": self.name, "doc_id": "fixture_doc", "items": []}))
+               json.dumps({"agent": self.name, "doc_id": "fixture_doc",
+                           "items": [board_item] if self.name == "EDITOR_CLERK" else []}))
         return aw.CallResult(backend=self.backend, model=self.model, raw_text=raw,
                              usage={"truncated": local_processor and budget < len(encoded)})
 
@@ -23334,8 +23341,13 @@ def _processor_extraction_flow_fixture():
                                 keys={}, run_context=ctx)
         cloud.run_task(work_payload={"document_id": doc["id"]},
                        max_tokens=pl.PRODUCTION_MAX_TOKENS)
+        board_requested = pl._resolve_editorial_board(ROOT)["max_tokens"]
+        board_result = pl._dispatch_rank(
+            orch, {}, "EDITOR_CLERK", doc, {"amendments": []}, [], ctx,
+            {"conventions": []}, board_requested)
     return {"processor": processor, "audits": audits, "budgets": budgets,
-            "expected": target["items"], "tokens": len(encoded)}
+            "expected": target["items"], "tokens": len(encoded),
+            "board_ok": board_result[0], "board_requested": board_requested}
 
 
 def check_245_processor_extraction_reaches_its_auditors():
@@ -23359,8 +23371,12 @@ def check_245_processor_extraction_reaches_its_auditors():
                 return _fail("an unavailable or cut extraction is passed as a complete draft")
     if any(len(rows) != 2 for rows in result["audits"].values()):
         return _fail("the fixture did not reach both phase-5 auditors in every state")
+    board_budgets = [budget for agent, backend, budget in result["budgets"]
+                     if agent == "EDITOR_CLERK" and backend == "local_producer"]
+    if not result["board_ok"] or board_budgets != [min(result["board_requested"], 8192)]:
+        return _fail("the actual local editorial caller lost its configured output allowance")
     for agent, backend, budget in result["budgets"]:
-        if agent != "PROCESSOR" and budget > 4096:
+        if agent not in ("PROCESSOR", "EDITOR_CLERK") and budget > 4096:
             return _fail("the PROCESSOR allowance enlarged another agent's active budget")
         if agent == "PROCESSOR" and backend == "claude_api" and budget != 2048:
             return _fail("the measured local allowance changed the cloud production budget")
@@ -23368,8 +23384,9 @@ def check_245_processor_extraction_reaches_its_auditors():
                "items (%d tokenizer tokens); the old 2048 production limit and 4096 "
                "backstop cannot fit this reply; both auditors receive the last item, "
                "failed best-effort objects are withheld, and valid partial drafts are "
-               "explicitly marked truncated; other agent and cloud budgets stay unchanged"
-               % result["tokens"])
+               "explicitly marked truncated; the real board caller receives %d tokens from its "
+               "configured request, while ordinary production/audit and cloud budgets stay unchanged"
+               % (result["tokens"], board_budgets[0]))
 
 
 CHECKS = [
