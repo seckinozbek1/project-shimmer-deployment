@@ -168,12 +168,30 @@ while true; do
                     if [ -z "$draftq" ]; then
                         echo "No question entered. Returning to the menu."
                     else
-                        echo
-                        echo "Drafting a memo, then reviewing it ..."
-                        echo "(Add --help for all options.)"
-                        python scripts/pipeline.py --task draft --question "$draftq" \
-                            --backend-profile "$BACKEND_PROFILE" \
-                            --sensitivity-layer-inactive-override --no-redaction-override "$@"
+                        # The draft path ASKS the sensitivity question rather than
+                        # answering it. It used to hardcode both override flags,
+                        # declaring every launcher draft non-sensitive with no
+                        # prompt, while the review path asked. A draft memo can
+                        # quote the same grounding corpus, so it is the same
+                        # decision and it belongs to the operator.
+                        DRAFT_FLAGS_FILE="${TMPDIR:-/tmp}/shimmer_draft_flags.$$"
+                        rm -f "$DRAFT_FLAGS_FILE"
+                        if python scripts/intake_wizard.py --mode-only \
+                                --emit-flags "$DRAFT_FLAGS_FILE"; then
+                            DRAFT_FLAGS=""
+                            [ -f "$DRAFT_FLAGS_FILE" ] && DRAFT_FLAGS="$(cat "$DRAFT_FLAGS_FILE")"
+                            rm -f "$DRAFT_FLAGS_FILE"
+                            echo
+                            echo "Drafting a memo, then reviewing it ..."
+                            echo "(Add --help for all options.)"
+                            # DRAFT_FLAGS word-splits into separate simple tokens.
+                            # shellcheck disable=SC2086
+                            python scripts/pipeline.py --task draft --question "$draftq" \
+                                $DRAFT_FLAGS "$@"
+                        else
+                            echo "Draft setup cancelled. Returning to the menu."
+                            rm -f "$DRAFT_FLAGS_FILE"
+                        fi
                     fi
                     ;;
                 *)
