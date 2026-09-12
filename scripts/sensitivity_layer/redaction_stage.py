@@ -437,7 +437,23 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
         # authorized purely by the operator rules (engine never judges sensitivity).
         # UNION with the model's proposals, de-duped by normalized span - the model
         # still proposes; detection guarantees authorized shapes are never missed.
-        det_items = redaction_detect.detect(_PROJECT_ROOT, doc["text"], rr["operator_rules"])
+        # ZERO: collect the operator rules that authorise NO detector at all.
+        # Seven of the reference redaction rules are in this state and it is the
+        # CORRECT answer for them (they name an address, a date of birth, a
+        # location, free text: content no shape detector finds), but a rule that
+        # compiled and can never fire must not be silent. LAW-IV's direction
+        # again: an unapplied redaction rule leaves protected content in the
+        # deliverable and shows nowhere.
+        _unapplied = []
+        det_items = redaction_detect.detect(_PROJECT_ROOT, doc["text"],
+                                            rr["operator_rules"],
+                                            warn_sink=_unapplied)
+        if _unapplied:
+            # Posted to the bus, this module's own reporting idiom, rather than
+            # logged: a log line is not an operator-facing artifact and this has
+            # to reach the same place every other redaction outcome does.
+            _post_redaction(orch, doc["id"], "REDACTION_RULE_UNAPPLIED",
+                            {"count": len(_unapplied), "rules": _unapplied})
         redactions = _merge_redaction_proposals(
             det_items, redactor_reds if outcome == "PROPOSE" else [])
         if not redactions:

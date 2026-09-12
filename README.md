@@ -1006,17 +1006,24 @@ redaction rule and never remove one:
    and a guess must not settle a LAW-IV matter. Only the JSON convention path can declare one;
 4. the **five-voter semantic ensemble** (below) reads the rule as redaction intent.
 
-Trigger 2 has a measured hole that trigger 4 exists to close: the prohibition pattern matches
-only the PASSIVE form, so "the address must not be published" compiles and "the reviewer must
-not publish the client's address" did not. Under LAW-IV a silent non-compile publishes content
-the operator marked for removal, which is the worse direction.
+Trigger 2 matches BOTH VOICES of a prohibition: "the address must not be published" and "the
+reviewer must not publish the client's address" both compile. It once matched only the passive
+form, so an operator writing the active form had written a redaction rule the system silently
+discarded, and under LAW-IV a silent non-compile publishes content the operator marked for
+removal. The active list is deliberately narrow (`publish`, `disclose`, `print`, `reveal`,
+`release`, `transmit`): verbs whose object is document content. `show` and `share` were tried
+and removed, because "we must not show favouritism" compiled as a redaction rule.
 
 A rule about what a REVIEWER may conclude is excluded even when it uses a redaction verb:
 "Findings must withhold judgement about equipment condition" names no removable content, and is
 a review convention, not a redaction rule.
 
 The local redactor applies the rules that compile, and redaction intent that fails to compile is
-warned about, never dropped silently. There is no engine-side default: with no compiled
+warned about, never dropped silently. A rule that compiles but authorises **no shape detector**
+is also reported, as `REDACTION_RULE_UNAPPLIED` on the bus: there are three detectors
+(identifier, figure, name), and a rule naming an address, a date of birth, a location or free
+text matches none of them. Authorising nothing is the correct answer for such a rule, but it
+must not be a silent one, or the operator believes content is being removed when it is not. There is no engine-side default: with no compiled
 redaction rule in force, a run hard-stops for a conscious operator choice (supply a rule, or
 pass `--no-redaction-override`).
 
@@ -2712,7 +2719,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**243** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**244** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2727,8 +2734,8 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 242 have since raised the total to 243. The host gate at the
-time of writing is `PASS=241 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=243`, the two failures being
+table below; checks 210 to 243 have since raised the total to 244. The host gate at the
+time of writing is `PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244`, the two failures being
 the known environment ones: check 01 (`prompts/` and `snapshots/` absent in this working
 tree) and check 145 (the contamination-probe fixture is gitignored and absent).
 
