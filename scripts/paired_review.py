@@ -1166,6 +1166,71 @@ def _absence_check(label):
             "stated_field": " ".join(label)}
 
 
+def refuses_judged_absence(item, rule, fields_present):
+    """True when a judged item claims a field is MISSING from a unit that
+    Python has already parsed as carrying it.
+
+    Where Python can settle it, Python settles it: the same discipline that
+    already makes the arithmetic outrank the model, applied to the one claim a
+    judged-absence call can make that Python can disprove outright.
+
+    A judged-absence call asks the model whether a scoped rule's requirement
+    applies to one unit and is met, because the rule declares no required field
+    and the condition has to be read from its text. The unit is in scope
+    BECAUSE it carries the field the scope declares. So a missing_field verdict
+    on such a unit contradicts the very fact that put it in scope: the unit
+    could not have been paired at all if the field were absent.
+
+    TWO refusals, and the first is about FORM, not truth.
+
+    1. A missing_field claim that names NO field is refused as malformed. Not
+       because Python disproves it, but because it is not checkable: nothing
+       can confirm it, cite it, or score it, and the operator's own D07-shaped
+       rule already requires a finding to state the entry and the figures it
+       concerns. This is the discipline the verifiability gate applies when it
+       downgrades an affirmative finding that cites nothing. A model that spots
+       a real absence and does not say which field is refused too: naming the
+       field is the minimum for the claim to exist as a claim.
+
+    2. A claim that DOES name a field is refused when the unit demonstrably
+       carries that field, which Python has already parsed into fields_present.
+
+    Inference about WHICH field an unnamed claim means is deliberately not
+    attempted. Two such heuristics were tried and both suppressed a legitimate
+    answer in gate check 209's fixture, whose rule is scoped on `device` and
+    says "a device entry states a fault only when the fault window in the
+    glossary allows it": a missing_field answer there is about the fault, not
+    the device label. A third heuristic would have been a guess dressed as a
+    rule.
+
+    Measured on the clean twin (2026-09-12, run 479f3219): 9 of the 11 false
+    positives were judged absences and ALL NINE named no field, while seven of
+    them asserted a calibration authority signature missing from entries whose
+    own parsed fields list it. On the flawed twin the same refusal removes the
+    SPRUCE and VETCH items, which the scorer had counted as catches: the model
+    emits a near-identical wrong sentence on both twins (on VETCH, that the
+    document "does not mention the next calibration visit" when the entry
+    states it in plain words), so those were coincidences that scored, not
+    detections. Long-range recall falls 3/3 to 1/3 and the clean twin's false
+    positives fall 11 to 2. Both numbers are reported as they are.
+
+    Structural and domain-free: it knows no field name of its own, reads the
+    rule's own scope declaration and the unit's own parsed labels through the
+    one shared tokeniser, and touches only the missing_field relation."""
+    if not isinstance(item, dict):
+        return False
+    if str(item.get("relation") or "") != "missing_field":
+        return False
+    stated = item.get("stated_field") or item.get("field_label")
+    claimed = pairing_map._norm_label(stated) if stated else ()
+    if not claimed:
+        # Names no field: not checkable, so not a finding.
+        return True
+    # Names a field: refuse only if the unit carries that very field.
+    have = {pairing_map._norm_label(label) for label in (fields_present or [])}
+    return claimed in have
+
+
 def absence_plans(unit, rule_ids, rules_by_id, present, *, required_fields_for=None):
     """D, option 2, Python first: for every rule paired on this unit that declares
     a scope, a plan per declared required field the unit does not carry

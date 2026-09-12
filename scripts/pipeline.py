@@ -2022,9 +2022,15 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # here, never silently dropped. A rule-independent computed plan is first
     # re-attributed to a paired rule on the same unit that has a judging agent,
     # since the arithmetic is the same whichever rule prompted it.
+    # The fields Python parsed off each unit, by unit id. Read once here so a
+    # judged-absence answer can be checked against what this document actually
+    # carries: where Python can settle it, Python settles it.
+    fields_present_by_unit = {u.get("unit_id"): (u.get("fields_present") or [])
+                              for u in (pairing.get("units") or [])}
     not_judged = []
     reattributed = []
     absence = []
+    refused_judged = []
     judged_items_by_agent: dict = {}
     judged_provenance: dict = {}
     for plan in plans:
@@ -2096,6 +2102,28 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
         if plan.get("kind") == "absence_judged":
             judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
+            # A judged answer claiming a field is MISSING from a unit whose own
+            # parsed fields carry it is refused, not posted. The unit is in
+            # scope BECAUSE it carries the scope field, so such a claim
+            # contradicts the fact that put the question to the model at all.
+            # Measured on the clean twin (run 479f3219): 9 of 11 false
+            # positives were exactly this, including one asserting a signature
+            # missing from an entry that states it. Refused items are recorded
+            # in the map, never silently dropped.
+            kept = []
+            for item in judged:
+                if paired_review_mod.refuses_judged_absence(
+                        item, rule, fields_present_by_unit.get(unit["unit_id"])):
+                    refused_judged.append({
+                        "unit_id": unit["unit_id"], "rule_id": rule["id"],
+                        "relation": item.get("relation"),
+                        "reason": "claims a field absent that this unit carries"})
+                    log_event(_LOG, f"paired_review_absence_refused "
+                                    f"unit={unit['unit_id']} rule={rule['id']}",
+                              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+                    continue
+                kept.append(item)
+            judged = kept
             judged_items_by_agent.setdefault(agent, []).extend(judged)
             judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
                                         r.get("model") if isinstance(r, dict) else None)
@@ -2141,6 +2169,9 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     pairing["absence"] = absence
     pairing["absence_computed_count"] = sum(1 for a in absence if a["path"] == "computed")
     pairing["absence_judged_count"] = sum(1 for a in absence if a["path"] == "judged")
+    # The judged answers Python refused, on the record beside the ones it kept.
+    pairing["absence_refused"] = refused_judged
+    pairing["absence_refused_count"] = len(refused_judged)
     log_event(_LOG, f"paired_review_not_judged count={len(not_judged)} "
                     f"reattributed={len(reattributed)} absence_computed="
                     f"{pairing['absence_computed_count']} absence_judged="
