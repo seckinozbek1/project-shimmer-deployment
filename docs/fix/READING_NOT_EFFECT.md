@@ -178,3 +178,48 @@ Named so the next reader has somewhere to start, not asserted as defects:
   So `severity` and `action` are one finding, not two.
 - the subject tags from check 197: they reach the convention assignment, which
   does act on them, so this one is probably sound. Not verified.
+
+
+## THIRTEEN implemented, 2026-09-12
+
+The historical severity/action and unless findings above were subsequently fixed
+by the ratified TWO work; they remain evidence here, not newly reopened decisions.
+The cheap structural answer is scripts/effect_proof.py, replayed by gate check 248.
+It takes four explicit boundaries plus a name: input validation, an independent
+consumer observation, the check, and a reversible mutation context. Execution order
+is fixed: valid inputs, clean observation/check, mutation, independent observation,
+mutated check, restoration, clean observation/check. A mutation with no observed
+effect never reaches the mutated check. Mutable observations are snapshotted as
+JSON; non-finite and non-JSON values refuse. A probe exception is not a killed test.
+Restoration is verified even after a refused proof.
+
+This separates NO_OBSERVED_EFFECT from SURVIVED. The former is inconclusive: a safe
+fallthrough may preserve behavior, or the observation may omit the changed outcome.
+It must not automatically accuse either the check or the mutation of being wrong.
+The latter establishes a changed declared outcome with a green check, which is the
+reading-not-effect failure when that check claims to cover this consumer.
+
+The pilot is a real consumer: remove RunCompletion.reached_end. A separate disk
+observer sees completed become stopped and final counts disappear. Existing check
+246 fails, then passes after restoration. A deliberately reading-only check over
+the same declared input survives and is refused. Synthetic protocol cases establish
+ordering, invalid-input rejection, no-effect refusal, surviving-check rejection,
+probe-error rejection and restoration. Five guard mutations first change the
+protocol's independent classification/order, then fail check 248, then restore PASS.
+They never edit real source files or start a pipeline.
+
+Scope is explicit: this does not certify all prior checks, infer the right consumer,
+or decide whether an observer is complete. It prevents accepting these proof shapes
+for callers using the helper and replays the completion pilot on every gate. Adopt it for
+new effect claims when a cheap deterministic consumer fixture is available. Each
+claim still needs a reviewed outcome projection: dates and random paths cannot be
+used as evidence that work completion changed. Revisit the projection when behavior
+moves to another branch; check 197's fallback and the narrow fingerprint incident
+are precisely why an unchanged projection is not a finding by itself.
+
+The expensive general version needs a maintained claim-to-consumer mutation map,
+independent artifact observations, isolated mutations of every relevant branch,
+and a baseline/mutated/restored suite run per mutation. It must also resolve
+surviving mutants and distinguish equivalence from missing coverage. There is no
+cheap syntax scan that supplies those semantic decisions. The two failed scans
+above are retained; neither was repeated or shipped.

@@ -2916,8 +2916,22 @@ the change that matters, and in the governed files it would trip the constitutio
 
 New text, no em dashes. Existing text, left alone.
 
+`scripts/effect_proof.py` provides an executable mutation-proof protocol (check 248).
+A caller declares valid inputs, an independent stable observation of the consumer, the
+check, and a reversible mutation. It measures the consumer before consulting the mutated
+check. No observed effect refuses the proof; a changed outcome with a green check is a
+surviving check. Broken probes do not count as successful failures. Restoration must recover
+both the original outcome and a passing check. The gate replays this against the real
+completion writer and scorer, plus a deliberately reading-only check that it rejects.
+
+This is bounded coverage, not automatic certification of every check. The author must name
+the right consumer and observable outcome. If a mutation has no observed effect, inspect
+both alternate branches and missing observation fields before blaming the check. Broader
+coverage needs explicit claim-to-consumer mappings and more executable mutations; keyword
+scans cannot infer them reliably.
+
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**248** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**249** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
