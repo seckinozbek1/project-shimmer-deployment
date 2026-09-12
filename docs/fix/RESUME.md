@@ -1,206 +1,286 @@
-# RESUME
+# RESUME: session closed, 2026-09-13
 
-**Read this file first and continue without asking.**
+**Read this file first in a cold session. Do not resume the old technical backlog.**
+ZERO through TWENTY-ONE and baseline normalization are complete. The next approved
+product task is **Make Project Shimmer human-clickable / human-startable**.
+This closure session did not begin that task or run a real document review.
 
-## Recovery
+## Repository checkpoint
 
-Recovered main at 64b83e0ff6925c374c6618b4ffa90aed4645dbfd, 31 commits ahead of
-origin/main (2c88112). No staged or tracked edits existed at takeover. Preserved
-SHIMMER_HANDOFF.md and all untracked durable state. At takeover, the untracked
-tools/container_offline_probe.py belonged to the unfinished image item; it is now
-completed and tracked.
-The older handoff, LEDGER and WORDS_TODO lag the code. ZERO-A and ZERO-B are
-closed by 64b83e0. The previous RESUME called the image item ONE; its canonical
-name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
+- Windows workspace: `C:\Users\secki\local\shimmer-deployment`.
+- Sole intended origin: `https://github.com/seckinozbek1/project-shimmer-deployment`.
+- At closure entry, both `main` and `origin/main` were
+  `b733188cb038dbcc482e68aecf69cbefb04587e4`. The operator had pushed all prior work.
+- Final HEAD is the focused local documentation commit titled
+  `Close the session and preserve the locked product handoff`, directly after
+  `b733188`. Resolve its exact SHA with
+  `git log -1 --format=%H -- docs/fix/RESUME.md`; this avoids embedding a commit's
+  own unknowable hash in its content.
+- After that commit: tracked working tree clean, one unpushed documentation commit,
+  `origin/main` still at `b733188`, one commit behind local `main`. No agent push.
+- Intentional untracked state: `SHIMMER_HANDOFF.md` and `durable/`. Preserve both;
+  neither belongs in the closure commit. `output/` contains ignored local evidence
+  and tools, including the large build cache; these are not fresh-clone assets.
+- Reestablish state with the four commands below after the required staged-secret
+  scan. No remote fetch or push is needed to read these local tracking refs.
 
-## Item just completed
+```powershell
+git status --short --branch
+git branch -vv
+git log --oneline -15
+git log --oneline origin/main..HEAD
+```
 
-BASELINE NORMALIZATION, the commit containing this checkpoint:
-`Normalize unavailable baseline coverage without hiding regressions`.
-Previous checkpoint 2562578. Resolve this commit with
-`git log -1 --format=%H -- docs/fix/RESUME.md` until a later item updates this file.
+The recovery started at `64b83e0`, then 31 commits ahead of `2c88112`.
+Those counts and the later 52/53-unpushed counts are historical, not current.
+[PROTOTYPE_CHECKPOINT.md](PROTOTYPE_CHECKPOINT.md) records the TWENTY-ONE snapshot
+at `2562578`; [LEDGER.md](LEDGER.md) preserves the dated implementation evidence.
+The old handoff, historical open-work lists and older TODO material do not reopen
+completed items. ZERO-C was formerly misnamed ONE; the actual learning item ONE
+was already closed.
 
-Checks 01/145 distinguish unavailable local coverage from malformed or incomplete
-present inputs. Required source directories and present local-tree structure still
-fail when invalid. Nonempty digest schema, complete scan and actual contamination
-assertions remain active. Fixed grouped numeric extraction, silent read/traversal
-omissions, unsupported directory links and disappearing text entries.
-New 254 exercises valid, absent and invalid fixtures; nine mutations change real
-outcomes before 254 FAIL, then restoration recovers both outcomes and PASS.
+## Verified milestone and coverage limits
 
-Full host gate: PASS=253  WARN=0  SKIP=2  FAIL/ERROR=0  TOTAL=255, native exit 0.
-output/baseline_host_gate.log and baseline_host_exit.json. Exactly 01/145 SKIP:
-optional local directories and an absent local contamination hash fixture.
-No known baseline FAIL remains. No SKIP claims successful contamination coverage.
-Full image gate: PASS=243  WARN=0  SKIP=10  FAIL/ERROR=2  TOTAL=255; only unchanged 28/31 FAIL,
-because the unmounted image has no intake tree. 01/145 SKIP and new 254 PASS.
-output/baseline_container_gate.log. Image shimmer:baseline:
-sha256:4a3321795ee3c01a91d2fe151517cce07da87b7c1818ec8beedd415cd8272a34, 14408312142 bytes. All 126 intended files match
-(output/baseline_source_audit.json); all model/conversion layers reused.
-Seven monitored live files unchanged (output/baseline_preservation.log).
-Independent adversarial review complete; nine restoring mutation proofs PASS.
-README/image debt paid. No production policy/dependency change, model generation,
-pipeline run or push. This is a gate normalization, not a new review acceptance run.
+Baseline normalization is `b733188`, with assertions retained and nine restoring
+mutation proofs. The final measured host gate is **253 PASS, 0 WARN, 2 SKIP,
+0 FAIL/ERROR, TOTAL 255**, native exit **0**. No known host baseline FAIL remains.
+Evidence: `output/baseline_host_gate.log`, `output/baseline_host_exit.json`.
 
-## Current item
+- On this host, check 01 skips only because optional `prompts/` and `snapshots/`
+  are intentionally absent. Under the unmounted-image contract, wholly absent
+  `input/`, `output/` and `durable/` roots can also be SKIP with their declared
+  provisioning reasons. `config/` and `scripts/` remain required. Wrong types,
+  broken links and missing declared children under a present root still FAIL
+  before optional absence is considered.
+- Check 145 skips only when optional
+  `tests/fixtures/planted_figure_hashes.json` is unavailable. It explicitly says
+  contamination cannot be ruled out. Its absence is not evidence of cleanliness.
+  Malformed, empty, unreadable or wrongly typed available fixtures, invalid
+  digests, missing required source roots, incomplete scans and contamination FAIL.
+- Check 254 exercises real checks 01/145 with valid, absent and invalid fixtures.
+  Nine neutralizations changed an independently observed result before check FAIL;
+  restoration recovered both the result and PASS. Grouped numeric token scanning,
+  traversal/read errors, nested links and disappearing text entries are covered.
+  Evidence: `output/baseline_proof.py`, `output/baseline_proof.log`.
 
-None open. The operator's requested host-baseline normalization is complete.
-The first real document review remains unrun under the standing no-pipeline rule.
-The ordered takeover report remains in PROTOTYPE_CHECKPOINT.md as a historical
-record of 2562578; this follow-up adds one local commit, leaving 53 unpushed.
+Latest relevant image: **shimmer:baseline**,
+`sha256:4a3321795ee3c01a91d2fe151517cce07da87b7c1818ec8beedd415cd8272a34`,
+14,408,312,142 bytes. All 126 intended shipped paths matched at `b733188`
+using SHA256 with CRLF normalized to LF: `output/baseline_source_audit.json`.
+All model/conversion layers reused: `output/baseline_build.log`.
+This closure changes repository documentation and README prose only. The existing
+image retains the earlier README; runtime code, gate implementation/fixtures, models and configuration
+are unchanged. No image rebuild or expensive gate repeat was needed for closeout.
 
-## Ordered remaining work
+The full unmounted image gate is **243 PASS, 0 WARN, 10 SKIP, 2 FAIL/ERROR,
+TOTAL 255**: `output/baseline_container_gate.log`. Only checks 28/31 FAIL because
+the image has no intake tree. Check 01 and 145 SKIP; check 254 PASS. Other SKIPs are
+15/38 (network), 222 (host launchers), and 215/217/224/227/230 (unshipped corpora).
+Do not describe this full image gate as green.
 
-None. The takeover backlog and its baseline-normalization follow-up are complete.
+The latest separate model/ensemble probe remains the **TWENTY-ONE** probe,
+`output/twentyone_offline_probe.log`: six steps PASS in 29.6 seconds, zero guarded
+HTTP/socket/DNS attempts, `--network none --gpus all`, no host mounts. It loads
+real bge-m3 and executes declared five-voter decisions. It was not rerun or
+relabelled as a baseline probe. Check 193 separately proves a real cached Phi
+load; check 139 exercises the CUDA construction branch with construction stubbed.
+These are loading and fixture proofs, not proof of generation by every model.
 
-## Current-session decisions
+Seven monitored live files remained byte-identical through normalization:
+`output/baseline_state_before.json`, `output/baseline_preservation.log`.
+The first real end-to-end review of this prototype remains intentionally unrun
+under the previous no-pipeline-run development rule. Real provider output quality,
+general domain independence, broader corpus performance and candidate-finder gain
+remain unverified. Historical runs were not backfilled.
 
-1. Keep Python 3.9 and the runtime pins: installed host dependencies were hidden
-   by the sandbox, so migration would disguise an access problem.
-2. Prepare safetensors with a temporary patched CPU reader: the same weights
-   become directly loadable without unsafe runtime pickle conversion.
-3. Export and import a local BuildKit cache: preserve expensive layers outside
-   builder GC without changing global Docker configuration or uploading images.
-4. Ship the three existing synthetic gate fixtures: their behavioral proofs must
-   execute in the image without shipping corpora or held-out answer keys.
-5. Keep rule-derived convention authority and mount-supplied runtime directories
-   as declared by the existing shipping contract; preserve local operator state.
-6. Name unavailable corpus coverage while running check 239's synthetic proofs:
-   a shipping decision must not abort unrelated behavioral checks.
-7. Resolve cached generation snapshots before loading and refuse custom-code
-   overrides: preserve offline loading without granting new execution permission.
-8. Count HTTP attempts as well as socket events: a pooled connection must not
-   hide access from the verification proof.
-9. Give local PROCESSOR 8192 output tokens: measured complete replies exceed
-   4096; retain cloud budgets until evidence from that backend exists.
-10. Withhold failed-contract drafts and label cuts for auditors: missing
-    extraction is not evidence of missing source content.
-11. Preserve existing envelope recovery and payload rejection: saved failures
-    are incomplete or absent JSON, not valid work lost to packaging.
-12. Preserve the four policies explaining eight uncalled agents: saved artifacts
-    and executed predicates account for every absence without a routing change.
-13. Require actual exposure to an assigned consumer for asked recall: eligibility
-    and unrelated production calls cannot establish a judging opportunity.
-14. Keep raw recall complete and show suspended rows separately: a deliberately
-    withdrawn rule is not an ordinary false-negative mechanism failure.
-15. Accept recorded numeric document positions only with unique unit identity:
-    the saved logging format must work without spreading evidence across documents.
-16. Honor the editorial board's existing 8192 request and correct FOUR's scope
-    claim: the earlier 4096 local cap had suppressed an explicit configuration.
-17. Keep ROWAN's explanation request while documenting arithmetic independence:
-    the measured finding is reliable without changing the current review policy.
-18. Record pipeline work completion separately from server process status: the
-    two writers own different facts, and exit code 0 alone can mean an early stop.
-19. Leave historical completion unknown without evidence: a new marker cannot
-    retroactively establish how an older run ended.
-20. Supply explicit reviewer summaries and name missing descriptions: technical
-    prose is not a translation, and routing tests do not prove each agent's quality.
-21. Preserve identity independently of folder labels: one UUID generator avoids
-    split identities while recorded legacy IDs preserve existing artifact meaning.
-22. Sort the recovered queue by submission time: random UUID spelling cannot
-    encode the user's submission order.
-23. Add an explicit consumer-proof protocol with bounded coverage: enforce
-    execution order and reject ineffective evidence without pretending a syntax
-    scan can infer every check's claim or the completeness of an observation.
-24. Read every document master in the selected run: match the existing run-wide
-    bus scope and avoid silently dropping amendments from later documents.
-25. Report all-untyped located evidence as unverifiable: missing evidence is
-    different from a key that never asked the question.
-26. Retire uncalibrated fallback promotion: its adapter used registry order and
-    had no WORDS-A applicability evidence; keep uncertainty visible instead.
-27. Refuse unmatched-unit absence while applicability remains undecided: retiring
-    fallback must not create new unsupported missing-field findings.
-28. Keep the measured cache import/export remedy and existing layer order: repeat
-    downloads are solved without claiming an unobserved historical GC event.
-29. Describe advisory withholding and external-conflict authority as they execute:
-    preserve policy, expose missing historical fields as unknown and repair misleading reports.
-30. Classify document-date conclusions as usage-derived and omit them from shipping:
-    operator-specific filenames strengthen the empty-shipping rule; keep local data intact.
-31. Keep candidate finding subject to measured incremental value over the deterministic baseline:
-    no general independent truth source is demonstrated; fixture verdicts supply no human labels.
-32. Record old plan counts as a forecast and check actual emitted claims:
-    changed cohorts, empty answers and failed judging cannot confirm fourteen compliant claims.
-33. Preserve refusal policy while making its reason accurate:
-    missing quotes must not be described as a field already present.
-34. Treat only declared absent local coverage as SKIP, per the operator's request:
-    invalid present inputs and incomplete scans cannot establish a clean result.
+## Locked operator-owned product roadmap
 
-## Decisions made in the operator's place
+**Do not reorder, add, remove, merge or skip items without asking the operator.**
+A suggested change requires an operator decision before changing this list.
 
-Gathered so they can be read together. Each is one line plus its reason.
+1. Human-clickable / human-startable product flow.
+2. Local performance diagnostic.
+3. Local speed-optimization audit.
+4. README + upstream/downstream routing + UI audit.
+5. FinOps + VM/GPU feasibility analysis.
+6. VM run/debugging only if the FinOps result shows that repeated debugging runs are acceptably cheap.
+7. Fresh-clone smoke test.
+8. Prototype release-readiness pass.
 
-**Inherited ZERO-A/B decisions (completed before takeover):**
+Item 6 is conditional, not guaranteed. Python packaging is parked and is not a
+roadmap item. The older assumption that development should immediately move to a
+GPU VM is superseded by this order and its FinOps condition.
 
-1. **Closed the 7 unauthorising rules by making the silence visible, not by
-   adding detectors.** They name content no shape detector finds, so authorising
-   nothing is correct; building address/date/location detectors is a reach
-   change the item did not ask for.
-2. **Posted the unapplied-rule warning to the bus rather than the log.** A log
-   line is not an operator-facing artifact, and this has to reach the same place
-   every other redaction outcome does.
+When the next session begins item 1, inspect `shimmer.bat` first after this file
+and the operating contract. Trace the existing launcher/menu, server and console
+startup, token creation/handling without revealing values, backend and sensitivity
+selection, preflight/dependency errors, presented URLs, Windows behavior,
+stopping/restarting, paths requiring manual CLI knowledge, and implementation
+details exposed to a nontechnical user. The objective is understandable, clickable
+normal startup while preserving governance and visible failures. This is an
+inspection handoff only; no item 1 implementation occurred during closure.
 
-**Earlier sessions (still standing):**
+Existing entry files for that trace are `scripts/intake_wizard.py`,
+`scripts/preflight.py`, `scripts/server.py`, `scripts/ui/console.html` and
+`tools/entrypoint.sh`. Their existence was checked; their startup behavior was
+not newly audited during closeout.
 
-3. Expanded the redaction reference set (15 to 40 positives) rather than
-   dropping voters; writing reference text is work, not a ruling.
-4. Rejected the minimum-margin threshold criterion; it is a worst-case measure
-   one pathological case sets.
-5. Made the lexical voters score CONTENT tokens, not whole sentences; both
-   classes share the prohibition grammar.
-6. Added style and formatting rules as negatives, after check 41 exposed their
-   absence ("use formal register" scored 5 of 5).
-7. Balanced the cost function once the safety veto owned the false-negative
-   side.
-8. Gave SBERT a veto on the NO side only (0 misses in 40 against the ensemble's
-   4); a veto can only ADD redaction.
-9. Set that veto at 0.09, above every style rule, accepting two unrescued weak
-   true cases. **Conservative: declines to widen redaction reach.**
-10. Unioned the ensemble with the regexes rather than replacing them, in TWO-K
-    and E3; a missing model costs the improvement, never the baseline.
-11. Deleted `_CATEGORY_KEYWORDS` rather than converting it; it fired on 0 of 44,
-    was order-dependent, and still carried the "value" defect.
-12. Kept `claim_classifier` and marked it unconsumed rather than deleting a
-    module with a live gate check.
-13. Narrowed WORDS-F to alternating-word regexes; 135 hits was useless, 21 is
-    exact.
+## Machine and repeatable commands
 
-## Gate and environment
+Pinned host interpreter: `py -3.9`, resolving to
+`C:\Program Files (x86)\Microsoft Visual Studio\Shared\Python39_64\python.exe`.
+It works with the installed project dependencies when given proper host access.
+The repository virtual environment did not contain the heavy dependencies.
+Sandbox visibility can hide installed dependencies and Docker. Do not install
+replacements or migrate Python to disguise an access problem. Only one heavy
+GPU/model workload may run at a time on this laptop.
 
-Full host gate: PASS=253  WARN=0  SKIP=2  FAIL/ERROR=0  TOTAL=255, native exit 0.
-output/baseline_host_gate.log and baseline_host_exit.json. Exactly 01/145 SKIP:
-optional local directories and an absent local contamination hash fixture.
-No known baseline FAIL remains. No SKIP claims successful contamination coverage.
-Full image gate: PASS=243  WARN=0  SKIP=10  FAIL/ERROR=2  TOTAL=255; only unchanged 28/31 FAIL,
-because the unmounted image has no intake tree. 01/145 SKIP and new 254 PASS.
-output/baseline_container_gate.log. Image shimmer:baseline:
-sha256:4a3321795ee3c01a91d2fe151517cce07da87b7c1818ec8beedd415cd8272a34, 14408312142 bytes. All 126 intended files match
-(output/baseline_source_audit.json); all model/conversion layers reused.
-Seven monitored live files unchanged (output/baseline_preservation.log).
-Independent adversarial review complete; nine restoring mutation proofs PASS.
-README/image debt paid. No production policy/dependency change, model generation,
-pipeline run or push. This is a gate normalization, not a new review acceptance run.
+Docker is installed at
+`C:\Users\secki\AppData\Local\Programs\DockerDesktop\resources\bin\docker.exe`.
+Do not assume the Program Files location or a working PATH. Use host access for
+Docker and dependency-heavy Python when the sandbox cannot see them.
 
-The latest separate offline model/ensemble probe remains the TWENTY-ONE probe
-(output/twentyone_offline_probe.log). Production source and model layers did not
-change in this follow-up, so that probe was not repeated or relabelled.
-Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
-Host py -3.9 has the installed pinned dependencies when run with host access.
-Only one GPU workload at a time. Build cache stays in output/shimmer_build_cache.
-Use direct process capture when redirecting the host gate: the initial PowerShell
-redirection emitted native stderr as an error record despite the zero-failure table.
-The preserved first log is output/baseline_powershell_gate.log; the final direct
-capture confirms native exit 0. No check or status filter changed between runs.
+Proven host gate:
 
-## Standing terms
+```powershell
+py -3.9 -X utf8 scripts/verify_session1.py
+```
 
-No pipeline run, provider/cloud model call, paid operation, or push. The operator
-pushes. Preserve local history and durable state; do not reset, clean, rebase,
-amend or stash it. No new dependency without a written ledger reason. Work one
-item at a time and commit it before opening the next. Pay README/image debt in
-its item. Every changed check needs neutralise/fail/restore/pass and an independent
-changed-outcome proof; fixtures must establish their own validity. Adversarial
-read before each commit. Rewrite RESUME after each completed item. No em dashes
-in newly written text. Keep the ratified five-voter semantics and REFUSES cases.
-Choose conservative reversible details, record reasons, and continue autonomously.
+For reliable native exit capture, reuse
+`py -3.9 -X utf8 output/run_baseline_host_gate.py`. This writes the baseline log
+and exit JSON. The initial PowerShell stderr-redirection wrapper reported an error
+despite a zero-failure table; `output/baseline_powershell_gate.log` is retained.
+The direct subprocess rerun proved native exit 0 without any assertion/filter change.
 
-**Read this file first and continue without asking.**
+Proven local cache is `output/shimmer_build_cache`. The helper
+`py -3.9 -X utf8 output/build_checkpoint.py baseline` wraps this pattern and writes
+build log/metadata. Use a new alphabetic checkpoint slug for a future image.
+
+```powershell
+$shimmerDocker = 'C:\Users\secki\AppData\Local\Programs\DockerDesktop\resources\bin\docker.exe'
+& $shimmerDocker buildx build `
+  --build-arg BAKE_WEIGHTS=true `
+  --cache-from type=local,src=output/shimmer_build_cache `
+  --cache-to type=local,dest=output/shimmer_build_cache,mode=max `
+  -t shimmer:baseline .
+```
+
+Export/import solved repeated weight downloads without global Docker changes or
+registry upload. Historical BuildKit GC was plausible, not a proven eviction
+event. Keep the measured cache remedy; do not repeat that investigation.
+
+Proven source-parity helper:
+
+```powershell
+py -3.9 -X utf8 output/audit_image_source.py shimmer:baseline output/baseline_source_audit.json
+```
+
+It compares image files to host bytes after CRLF normalization and records image
+identity. Also compare the intended path inventory; matching only discovered
+paths cannot prove no intended file was omitted. The saved baseline inventory
+contains 126 paths. A rerun against the closure tree will report the deliberate
+README difference until a future product image includes it.
+
+Proven full image gate wrapper:
+`py -3.9 -X utf8 output/run_baseline_container.py gate`.
+It runs Python with `--offline`, `--network none --gpus all` and no mounts against
+`shimmer:baseline`. Its exit 1 represents the documented checks 28/31.
+The separate probe's proven direct invocation shape is:
+
+```powershell
+& $shimmerDocker run --rm --pull never --network none --gpus all --entrypoint python shimmer:twentyone tools/container_offline_probe.py
+```
+
+Expose the GPU only where needed; source audit needs none. Do not mount host caches
+or data when proving baked-image independence. Existing wrappers overwrite their
+named logs, so preserve historical evidence or use a new checkpoint before reruns.
+Do not rerun these expensive commands merely to reconstruct this closure.
+
+## Engineering methods to preserve
+
+**Offline models.** Baked bge-m3 needs safely prepared safetensors. The established
+build converts weights using a temporary patched CPU reader with weights-only
+loading and removes that dependency in the same layer; runtime pins stay intact.
+Do not reintroduce runtime pickle conversion. Resolve cached generation models to
+their local snapshot directory before Transformers loading. Repository-ID loading
+can attempt hidden custom-generation network checks despite local-only settings.
+Refuse custom generation overrides in snapshots. Count HTTP, socket and DNS
+attempts, including attempts caught internally; eventual success is not proof of
+offline behavior. The real offline model/ensemble probe is stronger than cache
+presence.
+
+**Behavioral verification.** Reading a value does not prove an effect. Changed
+behavioral checks require neutralise/fail/restore/pass, with an independently
+observable behavior change before check failure counts as evidence. A second
+safe branch can make a neutralization a no-op. Validate fixtures parsed as
+intended before behavioral assertions. Prefer real consumer paths to source-text
+assertions. Assignment is not a call; a call is not a successful response.
+Missing evidence stays unknown. Intentionally unavailable coverage is SKIP;
+malformed/incomplete available fixtures, incomplete scans and regressions FAIL.
+An unavailable contamination fixture cannot establish a clean scan. Reuse
+`scripts/effect_proof.py`; its protocol is bounded, not a universal test-quality
+detector.
+
+**Saved runs and scoring.** Planned questions are not emitted findings. Exposure
+must reach an assigned consumer; suspension is scoped to an exact unit/rule pair.
+Keep computed and judged absence separate. Preserve completed-empty versus
+interrupted outcomes and historical unknowns; exit 0 alone does not prove the
+pipeline reached its end. Typed relation scoring is generic, including
+`date_window`, and reads every document master in the run. Numeric document
+positions require unique unit identity. Run identity survives folder renames;
+submission time orders recovered work. PROCESSOR truncation must reach downstream
+auditors explicitly, and failed-contract best-effort drafts are not complete
+extraction. The local PROCESSOR and existing board request use 8192 output tokens;
+cloud budgets were not generalized from local evidence. Complete valid
+prose/fence-wrapped envelopes already recover; never invent closing syntax for an
+unfinished envelope. The 14-judged/7-computed forecast is a question checked by
+actual runs, not a promise of emitted compliant claims.
+
+**GNN and ontology.** Retain the candidate finder and measure it against the
+deterministic relation baseline at a fixed review budget. Its current structural
+reconstruction objective does not establish learned relevance or review
+correctness. Arithmetic/structural mechanisms offer narrow labels, not general
+semantic ground truth. The 78 apparent historical operator-verdict rows were
+test-fixture writes, not valid human supervision; isolation was fixed and the
+append-only historical rows preserved. Building a new learning component remains
+an operator decision. Read [TWENTY_LEARNING_SIGNAL.md](TWENTY_LEARNING_SIGNAL.md)
+for the assessment and measurement design.
+
+**Standing boundaries.** No pipeline run on this laptop, provider/cloud generation,
+paid operation or push under the standing development authorization. The locked
+roadmap does not authorize a VM run before its condition is met. Preserve local
+history and operator data; no reset, clean, rebase, amend or stash. No new dependency
+without a written ledger reason. Preserve ratified five-voter semantics and REFUSES
+cases, and never weaken governance to simplify startup. Read `CLAUDE.md` and
+`genesis.md` before product changes. Scan staged files before Git operations,
+never expose credentials, and stop on a real exposed key. No new em dashes.
+For later product work, close one item before opening the next, pay its README/image
+debt, run appropriate behavioral evidence and adversarial review, then update RESUME.
+
+## Existing assets to reuse
+
+All paths below were checked during closure. `output/` assets are local and ignored;
+tracked tools and reports survive a fresh clone. Do not copy helper contents here.
+
+| Existing asset | Purpose |
+|---|---|
+| `output/build_checkpoint.py`, `output/shimmer_build_cache` | Baked build and reusable exported cache. |
+| `output/baseline_build.log`, `output/baseline_build_metadata.json` | Latest model-layer reuse and image build evidence. |
+| `output/audit_image_source.py`, `output/baseline_source_audit.json` | Image identity and 126-path source parity at b733188. |
+| `tools/container_offline_probe.py`, `output/twentyone_offline_probe.log` | Tracked behavioral probe and latest measured separate result. |
+| `output/run_baseline_host_gate.py`, `output/baseline_host_gate.log`, `output/baseline_host_exit.json` | Native host gate capture and verified exit. |
+| `output/run_baseline_container.py`, `output/baseline_container_gate.log` | Offline full-image gate, pinned to baseline. No baseline separate-probe log exists. |
+| `scripts/effect_proof.py`, `output/baseline_proof.py`, `output/baseline_proof.log` | Consumer-effect protocol and nine restoring baseline mutations. |
+| `output/twentyone_proof.py`, `output/twentyone_proof.log` | Five quote-forecast/consumer mutations. |
+| `output/eighteen_ui_proof.py`, `output/fifteen_ui_proof.py` | Existing API-to-console JavaScript fixture proofs; reuse as patterns. |
+| `output/baseline_state_before.json`, `output/baseline_preservation.log` | Seven-file operator-state preservation evidence. |
+| `docs/fix/PROTOTYPE_CHECKPOINT.md`, `docs/fix/LEDGER.md` | Historical takeover inventory and dated evidence, including inherited decisions. |
+| `docs/fix/READING_NOT_EFFECT.md` | Historical worked example behind the now-completed THIRTEEN method. |
+| `docs/fix/TWENTY_LEARNING_SIGNAL.md` | GNN conclusion and bounded evaluation proposal. |
+
+`output/run_image_checks.py` exists for checks expected to PASS; do not use it to
+reinterpret expected SKIPs 01/145. Old checkpoint finalizers are historical
+automation and can overwrite current handover text; do not rerun them for closure.
+
+**Session closed. Next session reads this file, then begins only roadmap item 1
+when product work resumes.**

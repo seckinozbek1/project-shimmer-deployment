@@ -1,5 +1,116 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## SESSION CLOSED, 2026-09-13
+
+The operator pushed main through `b733188cb038dbcc482e68aecf69cbefb04587e4`.
+Guarded status, branch and log reads confirmed local main and origin/main equal,
+with no tracked edits and only intentional untracked `SHIMMER_HANDOFF.md` and
+`durable/`. This focused documentation closure adds one local commit above that
+push; the operator's remote remains one commit behind. No agent push occurred.
+
+ZERO through TWENTY-ONE and baseline normalization are complete.
+[RESUME.md](RESUME.md) is the canonical cold-start handoff and contains the locked,
+operator-owned eight-item roadmap. Its first item is human-clickable /
+human-startable product flow. It was not started. Do not reorder, add, remove,
+merge or skip roadmap items without asking the operator. VM execution is
+conditional on FinOps showing repeated debugging acceptably cheap; Python
+packaging is parked. The first real review remains intentionally unrun.
+
+Measured host gate remains **253 PASS, 0 WARN, 2 SKIP, 0 FAIL/ERROR, TOTAL 255**,
+native exit 0. Host 01 skips the intentionally absent optional prompts/snapshots;
+145 skips the unavailable contamination fixture and cannot rule out contamination.
+The image contract also permits wholly absent local intake/output/durable roots
+in 01. Present invalid/partial trees, malformed or incomplete fixtures, incomplete
+scans and actual contamination still FAIL. Nine independent restoring mutation
+proofs established the boundary. See the normalization entry below for evidence.
+
+Current image remains `shimmer:baseline`,
+`sha256:4a3321795ee3c01a91d2fe151517cce07da87b7c1818ec8beedd415cd8272a34`.
+Its full unmounted gate is 243 PASS, 10 SKIP, 2 FAIL (28/31, absent intake tree).
+The latest separate six-step offline probe is the TWENTY-ONE result, zero guarded
+network attempts, no mounts. It was not relabelled as a fresh baseline probe.
+The 126-path parity report was measured at b733188. Closure changes README prose
+and repository reports only; the image retains the earlier README. No runtime code,
+model, configuration, gate implementation or gate fixture changed. Expensive gates/builds/probes were not
+repeated for this documentation-only closure. RESUME names the existing tools,
+logs and their overwrite behavior instead of duplicating helper code.
+
+### Operational lessons retained at closure
+
+- Windows host: `C:\Users\secki\local\shimmer-deployment`; pinned `py -3.9`
+  works with host access. Docker lives at
+  `C:\Users\secki\AppData\Local\Programs\DockerDesktop\resources\bin\docker.exe`.
+  Sandbox invisibility is not a missing installation. Do not reinstall/migrate
+  dependencies for that symptom. Run only one heavy GPU/model workload at a time.
+- `output/shimmer_build_cache` plus local BuildKit import/export solved repeated
+  downloads without global Docker changes or registry upload. Historical GC was
+  plausible, not proven. Reuse `output/build_checkpoint.py`.
+- Build-time safetensors conversion for bge-m3 is established. Keep runtime pins;
+  resolve generation snapshots to local paths, refuse custom generation overrides,
+  and measure HTTP/socket/DNS attempts rather than inferring offline operation from
+  eventual success. The real model/ensemble probe is stronger than cached files.
+- Reading is not effect. Neutralise/fail/restore/pass counts only after an
+  independent consumer observation changes; another safe branch may make a
+  mutation a no-op. Validate parsed fixtures first. Real consumers beat source
+  assertions. Assigned, called and succeeded are separate facts; missing is unknown.
+  Unavailable optional coverage SKIPs, but invalid coverage and regressions FAIL.
+- Plans are not findings; exposure reaches an assigned consumer, suspension belongs
+  to an exact unit/rule pair, and computed/judged absence remain separate.
+  Completed-empty differs from interrupted; typed relations include date_window.
+  Explicitly surface PROCESSOR truncation and withhold failed-contract drafts.
+  Recover complete wrapped envelopes, never invent closing syntax for incomplete
+  ones. Preserve historical evidence rather than backfilling success.
+- Retain GNN candidate finding and measure incremental value against the
+  deterministic relation baseline. Narrow structural/arithmetic labels do not
+  establish semantic ground truth or learned review correctness. Historical
+  operator-verdict rows were test-fixture contamination, not human supervision.
+  A new learning component remains an operator decision.
+
+Older checkpoint entries below are historical measurements, not current
+unpushed counts or newly open work. The old SESSION_HANDOFF, WORDS_TODO and
+READING_NOT_EFFECT openings now explicitly defer to RESUME.
+
+### Inherited decisions preserved from the prior RESUME
+
+Gathered so they can be read together. Each is one line plus its reason.
+
+**Inherited ZERO-A/B decisions (completed before takeover):**
+
+1. **Closed the 7 unauthorising rules by making the silence visible, not by
+   adding detectors.** They name content no shape detector finds, so authorising
+   nothing is correct; building address/date/location detectors is a reach
+   change the item did not ask for.
+2. **Posted the unapplied-rule warning to the bus rather than the log.** A log
+   line is not an operator-facing artifact, and this has to reach the same place
+   every other redaction outcome does.
+
+**Earlier sessions (still standing):**
+
+3. Expanded the redaction reference set (15 to 40 positives) rather than
+   dropping voters; writing reference text is work, not a ruling.
+4. Rejected the minimum-margin threshold criterion; it is a worst-case measure
+   one pathological case sets.
+5. Made the lexical voters score CONTENT tokens, not whole sentences; both
+   classes share the prohibition grammar.
+6. Added style and formatting rules as negatives, after check 41 exposed their
+   absence ("use formal register" scored 5 of 5).
+7. Balanced the cost function once the safety veto owned the false-negative
+   side.
+8. Gave SBERT a veto on the NO side only (0 misses in 40 against the ensemble's
+   4); a veto can only ADD redaction.
+9. Set that veto at 0.09, above every style rule, accepting two unrescued weak
+   true cases. **Conservative: declines to widen redaction reach.**
+10. Unioned the ensemble with the regexes rather than replacing them, in TWO-K
+    and E3; a missing model costs the improvement, never the baseline.
+11. Deleted `_CATEGORY_KEYWORDS` rather than converting it; it fired on 0 of 44,
+    was order-dependent, and still carried the "value" defect.
+12. Kept `claim_classifier` and marked it unconsumed rather than deleting a
+    module with a live gate check.
+13. Narrowed WORDS-F to alternating-word regexes; 135 hits was useless, 21 is
+    exact.
+
+---
+
 ## BASELINE NORMALIZATION CLOSED, 2026-09-13
 
 User explicitly requested normalization of documented baseline checks 01/145,
