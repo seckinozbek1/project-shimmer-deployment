@@ -1955,6 +1955,23 @@ count above describes bus findings; amendment-only matches appear in the entry t
 score. EIGHT's declared fixture computes 48 hours against a 24-hour bound and confirms the reason
 through each artifact path independently.
 
+The scorer reads `logs/agent_bus.jsonl` and every
+`deliverables/<document>/review_data.json` in the selected run. It previously read only
+the first document's master; both scorer routes now combine the per-document record
+collections. The Markdown and Word renders are for readers and are not scorer input.
+Check 249 executes real synthesis, amendment validation and all three file writers with
+an empty first document and a typed amendment in the second. With no bus fallback, its
+48-hour finding against a 24-hour bound reaches the scorer and confirms the reason.
+Advisory board annotation preserves the JSON master. The privacy scrub preserves the
+record's structure but may mask string values under the run's redaction policy.
+
+Historical masters are not upgraded: the seven inspected saved masters contain 26
+amendments and no typed relations, including both saved VETCH amendments. Their coarse
+`finding_type` cannot establish a reason. Even when every located amendment is untyped,
+the scorer now reports reason-unverifiable evidence instead of incorrectly saying the
+key contains no typed claim. These are forward-path fixture proofs; they do not establish
+that a new full pipeline run has completed.
+
 **One run keeps one identity across artifacts** (check 247). New CLI and server runs use
 32 lowercase hexadecimal UUID characters from the same generator. Folder names are labels:
 the CLI can rename a folder for readability without changing its run id. The identity is
@@ -2931,7 +2948,7 @@ coverage needs explicit claim-to-consumer mappings and more executable mutations
 scans cannot infer them reliably.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**249** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**250** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:

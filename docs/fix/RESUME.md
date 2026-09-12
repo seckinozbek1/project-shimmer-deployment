@@ -14,37 +14,37 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-THIRTEEN, the commit containing this checkpoint,
-`THIRTEEN: require consumer effects and restoration in mutation proofs`.
+FOURTEEN, the commit containing this checkpoint,
+`FOURTEEN: retain every document in typed amendment scoring`.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. TWELVE is df27b83; earlier hashes are in LEDGER.
+next item updates this file. THIRTEEN is 08c0095; earlier hashes are in LEDGER.
 
-scripts/effect_proof.py provides the explicit mutation protocol, replayed by new
-check 248 against the real completion writer/scorer and a reading-only check.
-It validates inputs, observes consumer changes before consulting the mutated
-check, distinguishes no observed effect from survival, rejects broken probes,
-and verifies restoration. Five guard mutations have independent observed effects,
-FAIL and restored PASS. This does not certify every existing check; explicit
-consumer mappings and adequate observations remain necessary. README and
-READING_NOT_EFFECT state the boundary and expensive general alternative.
-Full host gate 247/249, known 01/145 only. Check 248 passes offline in the image;
+Both scorer readers now include all document masters. When a key has a typed
+claim but all located amendments lack reason fields, the scorer reports them
+as unverifiable instead of claiming the key lacks a question. New check 249
+executes real synthesis, validation, all three writers and both scorer routes,
+with an empty first document and one typed amendment in the second. All six
+reason fields survive; wrong figures fail; old untyped artifacts stay unknown.
+Five independent mutations use effect_proof, including each reader separately.
+Saved audit found seven masters, 26 amendments, no typed relations; both VETCH
+rows stay untyped without backfill. This proves the forward path, not a new full
+pipeline run. Host 248/250, known 01/145 only. Image check 249 passes offline;
 all 123 shipped files match. Adversarial read and README/image debt paid.
 
 ## Current item
 
-None open. Continue FOURTEEN: trace typed records through actual amendment
-artifacts and name the scorer's read paths; historical runs stay qualified.
+None open. Continue FIFTEEN: measure the pairing fallback's incremental value
+and check its visible votes, configured thresholds and measured margins.
 
 ## Ordered remaining work
 
-1. FOURTEEN: trace typed records through real amendment artifacts.
-2. FIFTEEN: pairing fallback value and WORDS-A compliance.
-3. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-4. SEVENTEEN: close the cache diagnosis with measured build reuse.
-5. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-6. NINETEEN: classify document_dates.json in the manifest.
-7. TWENTY: answer the learning-signal question, no GNN build.
-8. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. FIFTEEN: pairing fallback value and WORDS-A compliance.
+2. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+3. SEVENTEEN: close the cache diagnosis with measured build reuse.
+4. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+5. NINETEEN: classify document_dates.json in the manifest.
+6. TWENTY: answer the learning-signal question, no GNN build.
+7. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -95,6 +95,10 @@ artifacts and name the scorer's read paths; historical runs stay qualified.
 23. Add an explicit consumer-proof protocol with bounded coverage: enforce
     execution order and reject ineffective evidence without pretending a syntax
     scan can infer every check's claim or the completeness of an observation.
+24. Read every document master in the selected run: match the existing run-wide
+    bus scope and avoid silently dropping amendments from later documents.
+25. Report all-untyped located evidence as unverifiable: missing evidence is
+    different from a key that never asked the question.
 
 ## Decisions made in the operator's place
 
@@ -138,23 +142,24 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final THIRTEEN host: PASS=247 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=249.
+Final FOURTEEN host: PASS=248 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=250.
 Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
 offline probe steps PASS, 163 seconds combined. Tests used --network none,
 --gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
 (missing ignored contamination fixture). Image source-only failures: 01, 28,
 31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/thirteen_host_gate.log, output/four_container_validation.log and
-output/thirteen_mutation_proof.log. Focused changes prove independently observable
+Logs: output/fourteen_host_gate.log, output/four_container_validation.log and
+output/fourteen_mutation_proof.log. Focused changes prove independently observable
 mutation effects before fail/restore/pass. No proof mutates real source files.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:thirteen carries the current source and
-README. All 123 shipped files match (output/thirteen_source_audit.json); check
-248 passes offline with no mounts, including the real completion/scorer mutation.
+GPU model workload at a time. shimmer:fourteen carries the current source and
+README. All 123 shipped files match (output/fourteen_source_audit.json); check
+249 passes offline with no mounts, including real synthesis and all file writers.
+Check 248 passed in shimmer:thirteen offline.
 Checks 246 and 247 passed in shimmer:twelve offline. ELEVEN's exact UI/data also passed the
 rendering proof in host Node. EIGHT's
 computed date-window proof passed in shimmer:eight offline with no mounts.

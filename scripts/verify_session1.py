@@ -23770,6 +23770,126 @@ def check_248_mutation_protocol_requires_effect_and_restoration():
                "real completion mutation kills check 246 while a reading-only check is refused")
 
 
+def _typed_amendment_artifact_fixture():
+    """Real synthesis and renders, with the only finding in the second document."""
+    import asyncio
+    import copy
+    import paired_review as pr
+    import pipeline as pl
+    import reference_builder as rb
+    import finding_record
+    from harness.run_agent import build_orchestrator
+    from unittest.mock import patch
+    sys.path.insert(0, str(ROOT / "tools"))
+    import score_corpus as scorer
+    text = "## Trace entry\n\nFault logged: 2026-01-01 09:00\nFault acknowledged: 2026-01-03 09:00"
+    doc = {"id": "b_trace", "name": "b_trace.md", "text": text}
+    empty = {"id": "a_empty", "name": "a_empty.md", "text": "## Empty review\n\nNo finding supplied."}
+    rule = {"id": "CONV-001", "category": "conv-q01", "severity": "required",
+            "rule": "A logged fault must be acknowledged within the standard fault window. State the two timestamps and the gap between them."}
+    registry = {"conventions": [rule]}
+    units = pr.unit_texts_for(text, doc["id"])
+    candidates = [u for u in units.values() if "Fault logged:" in u["text"]]
+    _require_fixture(len(candidates) == 1, "one declared fault unit parsed before synthesis")
+    unit = candidates[0]
+    fields = pr.extract_fields(unit["text"])
+    checks = pr.compute_checks(*fields[:2], row_counts=fields[2], rule_text=rule["rule"],
+                               unit_text=unit["text"], duration_bound=(24.0, "hours", "REF-0001"))
+    durations = [c for c in checks if c["relation"] == "date_window"]
+    _require_fixture(len(durations) == 1 and durations[0]["computed"] == 48
+                     and durations[0]["stated"] == 24, "declared duration input is 48 hours versus 24")
+    finding = pr.finding_from_check(unit_id=unit["unit_id"], rule=rule,
+                                    check=durations[0], source_rule_id="CONV-Q01", refs=["REF-0001"])
+    _require_fixture(finding_record.is_finding(finding), "injected synthesis input is a typed Finding")
+    envelope = [{"scope": "doc", "doc_id": doc["id"], "agent": "PRACTICE_AUDITOR",
+                 "ok": True, "error": None, "item_count": 1, "backend": "paired", "model": "python",
+                 "parsed": {"agent": "PRACTICE_AUDITOR", "doc_id": doc["id"], "items": [finding]}}]
+    key = {"fixture": True, "planted": [{"unit": unit["unit_id"], "rule": "CONV-Q01",
+           "relation": "date_window", "claim": {"relation": "date_window", "value_a": 48, "value_b": 24}}], "clean": []}
+    _require_fixture(json.loads(json.dumps(key))["planted"][0]["claim"]["value_a"] == 48,
+                     "declared key round-trips before scoring")
+    with _tempfile.TemporaryDirectory(prefix="shimmer_typed_path_") as td:
+        root = Path(td)
+        orch = build_orchestrator(root=ROOT, out_root=root / "synthesis")
+        index = rb.ReferenceIndex.open(ROOT, index_path=root / "refs.json")
+        index.add(input_type="context", document_id="reference", document_name="reference.md",
+                  location={"page": 1}, text_excerpt="The fault window is 24 hours.")
+        with patch.object(pl, "_build_wrapper", side_effect=AssertionError("no model wrapper in this proof")):
+            deliverables = asyncio.run(pl.phase_6_synthesis(
+                orch, {}, [empty, doc], [], [], envelope, "declared proof", registry, index,
+                embed_store=None, max_concurrent_docs=1))
+        info = deliverables[doc["id"]]
+        master_path = Path(info["amendments_json"])
+        master = json.loads(master_path.read_text(encoding="utf-8"))
+        amendments = master.get("amendments") or []
+        result = {"written_count": len(amendments), "validator_errors": info["validator_errors"],
+                  "md_written": Path(info["amendments_md"]).is_file(),
+                  "docx_written": bool(info["amendments_docx"] and Path(info["amendments_docx"]).is_file())}
+        result["typed"] = {key: (amendments[0].get("finding_" + key) if amendments else None)
+                           for key in ("relation", "field_label", "value_a", "unit_a", "value_b", "unit_b")}
+        result["expected_typed"] = {key: finding.get(key) for key in result["typed"]}
+        # Later advisory annotation only touches the reviewed-document Markdown.
+        before = master_path.read_bytes()
+        pl._append_board_to_deliverable(info, [])
+        result["board_preserves_master"] = master_path.read_bytes() == before
+        from sensitivity_layer.scrub import scrub_master_and_body
+        scrubbed, body, located, counts = scrub_master_and_body(master, [], text)
+        result["no_span_scrub_preserves_master"] = scrubbed == master
+        # No finding was posted on this bus: the scorer must use the actual master.
+        result["bus_findings"] = len(scorer._load_bus_findings(orch.run_context.run_dir))
+        result["loaded_amendments"] = len(scorer._load_amendments(orch.run_context.run_dir))
+        result["loaded_round_amendments"] = len(scorer._load_review_data(orch.run_context.run_dir).get("amendments", []))
+        corpus = root / "corpora" / "declared"
+        corpus.mkdir(parents=True)
+        key_path = corpus / "answer_key.json"
+
+        def score(payload, declared_key=key):
+            master_path.write_text(json.dumps(payload), encoding="utf-8")
+            key_path.write_text(json.dumps(declared_key), encoding="utf-8")
+            out = io.StringIO()
+            with patch.object(scorer, "CORPORA", root / "corpora"), contextlib.redirect_stdout(out):
+                scorer.main(["--corpus", "declared", "--run", str(orch.run_context.run_dir)])
+            return out.getvalue()
+
+        result["scored"] = score(master)
+        result["rounds_scored"] = score(master, {"fixture": True, "prior_records": [], "band_irregularities": []})
+        legacy = copy.deepcopy(master)
+        for amendment in legacy.get("amendments", []):
+            for field in ("relation", "field_label", "value_a", "unit_a", "value_b", "unit_b"):
+                amendment.pop("finding_" + field, None)
+        result["legacy_scored"] = score(legacy)
+        wrong = copy.deepcopy(master)
+        for amendment in wrong.get("amendments", []):
+            amendment["finding_value_a"] = 49
+        result["wrong_scored"] = score(wrong)
+    return result
+
+
+def check_249_typed_amendment_survives_real_artifact_path():
+    result = _typed_amendment_artifact_fixture()
+    if result["written_count"] != 1 or result["validator_errors"]:
+        return _fail("real synthesis did not write one valid amendment")
+    typed = result["typed"]
+    if typed != result["expected_typed"] or typed["relation"] != "date_window" or typed["value_a"] != 48 or typed["value_b"] != 24:
+        return _fail("synthesis or the real master writer dropped the typed relation/figures")
+    if not all(result[name] for name in ("md_written", "docx_written", "board_preserves_master",
+                                        "no_span_scrub_preserves_master")):
+        return _fail("renders or later annotation/scrub lost the declared master")
+    if result["bus_findings"] != 0:
+        return _fail("the amendment-only proof unexpectedly has a bus finding fallback")
+    if result["loaded_amendments"] != 1 or result["loaded_round_amendments"] != 1:
+        return _fail("a scorer reader dropped the second document's amendment")
+    if "recall, reason confirmed  : 1/1" not in result["scored"] or "1 amendments" not in result["rounds_scored"]:
+        return _fail("the real written amendment did not reach both scorer routes")
+    if "located via amendment only; amendments carry no typed reason" not in result["legacy_scored"]:
+        return _fail("a historical amendment with no typed fields was not left unverifiable")
+    if "recall, reason confirmed  : 1/1" in result["wrong_scored"]:
+        return _fail("a changed typed figure was accepted as the declared reason")
+    return _ok("real synthesis, validation and JSON/Markdown/docx writers retain the typed record; "
+               "both scorer readers include the second document; amendment-only reason confirms, "
+               "wrong figures do not, and old untyped amendments remain unverifiable")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24078,6 +24198,8 @@ CHECKS = [
      check_247_one_run_identity_survives_every_entry_point),
     ("248 mutation proofs require consumer effect before checking and verified restoration",
      check_248_mutation_protocol_requires_effect_and_restoration),
+    ("249 typed amendments survive synthesis, real artifacts and both scorer readers",
+     check_249_typed_amendment_survives_real_artifact_path),
 ]
 
 

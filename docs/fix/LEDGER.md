@@ -1,5 +1,55 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## FOURTEEN CLOSED, 2026-09-12
+
+THIRTEEN committed 08c0095. The current typed minting/writing path already retains
+relation, field label, both figures and units. The audit uncovered two actual
+scorer gaps: _load_amendments and _load_review_data each read hits[0], dropping all
+later document masters; and an all-untyped located result was reported as a key
+with no typed claim because the report branched on checkable results. Both fixed.
+The shared reader combines the four consumed record collections across sorted
+masters, preserves a single-document payload, and invents/deduplicates nothing.
+Reason reporting branches on actual key claims. Decision: read all masters to
+match the existing run-wide bus scope and report absent evidence separately from
+absent questions. No dependency or permission expansion.
+
+New check 249 executes real phase_6_synthesis with a real orchestrator, reference
+index, validator and JSON/Markdown/docx writers. No wrapper/model is allowed. A
+parsed declared date-window input computes 48 hours versus 24. The first document
+is empty; only the second holds the Finding. The actual master preserves all six
+typed reason fields, then confirms 1/1 through the real scorer without a bus
+Finding fallback. Both readers and both CLI scorer routes execute. Real board
+annotation leaves the master byte-identical; no-span scrub preserves it. Privacy
+scrubbing can intentionally mask string values, so this is not a claim that
+redacted fields retain their original values. Historical untyped copies stay
+unverifiable, changed figures fail confirmation. The first pre-fix proof failed
+on the dropped second document. The next exposed the wholly-unverifiable reporting
+bug; it was fixed rather than weakening the assertion.
+
+Five mutations use THIRTEEN's actual effect_proof helper: drop typed fields at
+minting, drop the relation at the real writer, regress each reader independently,
+and hide wholly unverifiable evidence. Each changes a stable consumer/artifact
+observation before check 249 FAIL, then restoration recovers observation and PASS.
+Random IDs, timestamps and temporary paths are excluded from that observation.
+No source file or saved run is mutated. Evidence: output/fourteen_mutation_proof.log,
+fourteen_artifact_trace.json and fourteen_before_fix.log.
+
+Read-only saved audit found seven masters, 26 amendments, zero finding_relation
+fields; both VETCH rows are still only factual labels with no figures. No backfill.
+The scorer reads logs/agent_bus.jsonl and all deliverables/*/review_data.json, not
+the human Markdown or docx. Typed fields now survive the executed forward artifact
+path; no new full pipeline run is claimed. Full host gate: PASS=248 WARN=0
+SKIP=0 FAIL/ERROR=2 TOTAL=250, known 01/145 only (output/fourteen_host_gate.log).
+Check 249 passes in shimmer:fourteen offline, no mounts or GPU, including the
+real docx writer. All 123 shipped files match (output/fourteen_source_audit.json).
+Image sha256:7df24fc0af034f90eddc1e45e14c5553b6054982a254a6aeb7e06b95dd1ee0d2,
+size 14408274008 bytes. Six-second cached refresh reused every model layer.
+Adversarial read checked each reader independently, the actual writer boundary,
+all six typed reason fields, all-unverifiable keys, historical non-rewrite,
+run-wide scope matching the bus and the privacy boundary. README/image debt paid.
+Continue FIFTEEN after this commit.
+
+
 ## THIRTEEN CLOSED, 2026-09-12
 
 TWELVE committed df27b83. Re-read the six recorded failure shapes and both failed
