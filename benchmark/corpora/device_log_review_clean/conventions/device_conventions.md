@@ -15,7 +15,7 @@ units, UNLESS a locally adjusted range for that device's batch or rack has been 
 entry immediately before it or in the same entry. A reading outside the range that actually
 applies is an irregularity. State the reading, its class, and the range it falls outside.
 
-## CONV-D02 , conv-calibration-signature [required] [conformance] [scope: class=Class-A sensor] [requires: calibration authority signature]
+## CONV-D02 , conv-calibration-signature [required] [conformance] [scope: class=Class-A sensor, reading] [requires: calibration authority signature]
 
 Every Class-A sensor entry must state a calibration authority signature. Class-B and Class-C
 sensors are self-calibrating and carry no signature field. A missing signature on a Class-A

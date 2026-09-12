@@ -18992,6 +18992,123 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_227_device_corpus_agrees_with_its_own_rule():
+    """The device corpus contradicted itself, and the contradiction was found by
+    a measurement run rather than by review.
+
+    CONV-D02 requires a calibration authority signature on every Class-A entry.
+    UNIT-TEASEL is a Class-A entry stating a reading and carrying no signature,
+    and the answer key listed it as CLEAN. The 2026-09-12 run flagged it and the
+    key scored that as a false positive. The rule, the entry and the key were
+    all written by one party, which is the self-authored-corpus weakness the key
+    records in its own `limitation` field; this is what that weakness looks like
+    in practice.
+
+    Resolved in favour of the RULE, not the key: weakening CONV-D02 or leaving
+    the key would have marked a correct finding as a false positive and moved
+    the measurement in the direction that flatters the pipeline. So TEASEL is
+    now a planted CONV-D02 flaw in the flawed twin, and the clean twin gained
+    the signature the way PINE's was added.
+
+    Separately, CONV-D02 gained the scope field `reading` (operator-declared,
+    existing syntax, the same shape D03/D04/D05 already use). UNIT-CEDAR is a
+    definitional note carrying no reading, so it leaves the rule's scope by the
+    operator's own words rather than by an inference in code. PINE and TEASEL,
+    which state readings, stay in scope.
+
+    This check pins the corpus against its own rule so the contradiction cannot
+    reappear: every Class-A entry that states a reading must either carry the
+    signature or be listed as a planted CONV-D02 flaw.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import convention_parser as _cp
+    except Exception as exc:
+        return _fail("cannot import convention_parser: %s" % exc)
+
+    corpora = ROOT / "benchmark" / "corpora"
+    if not (corpora / "device_log_review").is_dir():
+        return _skip("the device corpora are not in this tree")
+
+    import re as _re
+
+    def _entries(text):
+        """Each '## Entry NAME' block, as (name, body)."""
+        out = []
+        for m in _re.finditer(r"(?ms)^## (Entry [^\n]+)\n(.*?)(?=^## |\Z)", text):
+            out.append((m.group(1).strip(), m.group(2)))
+        return out
+
+    # The rule's declared scope, read through the real parser.
+    conv = corpora / "device_log_review" / "conventions" / "device_conventions.md"
+    rules = _cp._parse_text_lines(conv.read_text(encoding="utf-8"), conv.name, [1])
+    d02 = next((r for r in rules if r.category == "conv-d02"), None)
+    if d02 is None:
+        return _fail("CONV-D02 not found in the device conventions")
+    labels = {c.get("label") for c in (d02.as_dict().get("scope") or [])}
+    if "reading" not in labels:
+        return _fail("CONV-D02 does not declare `reading` in its scope, so a "
+                     "definitional note with no reading is still in scope: %r" % (labels,))
+    if "class" not in labels:
+        return _fail("CONV-D02 lost its class scope: %r" % (labels,))
+
+    for corpus, doc_name in (("device_log_review", "device_log_flawed.md"),
+                             ("device_log_review_clean", "device_log_clean.md")):
+        doc = corpora / corpus / "context" / doc_name
+        key_path = corpora / corpus / "answer_key.json"
+        if not doc.is_file() or not key_path.is_file():
+            return _skip("%s is not complete in this tree" % corpus)
+        key = json.loads(key_path.read_text(encoding="utf-8"))
+        planted_d02 = {p.get("unit") for p in (key.get("planted") or [])
+                       if str(p.get("rule")) == "CONV-D02"}
+        clean = set(key.get("clean") or [])
+
+        for name, body in _entries(doc.read_text(encoding="utf-8")):
+            unit = name.replace("Entry ", "").strip()
+            if "Class-A sensor" not in body:
+                continue
+            states_reading = bool(_re.search(r"(?mi)^Reading:", body))
+            has_sig = bool(_re.search(r"(?mi)^Calibration authority signature:", body))
+            if not states_reading:
+                # Out of CONV-D02's declared scope: must not be a planted D02 flaw.
+                if unit in planted_d02:
+                    return _fail("%s: %s states no reading so it is outside CONV-D02's "
+                                 "declared scope, yet it is listed as a planted D02 flaw"
+                                 % (corpus, unit))
+                continue
+            if has_sig:
+                if unit in planted_d02:
+                    return _fail("%s: %s carries the signature yet is listed as a "
+                                 "planted CONV-D02 flaw" % (corpus, unit))
+                continue
+            # States a reading, Class-A, no signature: CONV-D02 says this violates.
+            if unit in clean:
+                return _fail("%s: %s is a Class-A entry stating a reading with no "
+                             "calibration authority signature, which CONV-D02 requires, "
+                             "yet the key lists it as clean. The key disagrees with the "
+                             "rule." % (corpus, unit))
+            if unit not in planted_d02:
+                return _fail("%s: %s violates CONV-D02 and is listed neither as clean "
+                             "nor as a planted D02 flaw" % (corpus, unit))
+
+    # The correction is recorded where a later reader will find it.
+    lim = str(json.loads((corpora / "device_log_review" / "answer_key.json")
+                         .read_text(encoding="utf-8")).get("limitation") or "")
+    for phrase in ("UNIT-TEASEL", "in favour of the RULE"):
+        if phrase not in lim:
+            return _fail("the flawed twin's key limitation does not record the "
+                         "correction (%r missing)" % phrase)
+
+    return _ok("CONV-D02 declares class and reading in its scope, so CEDAR (a note with "
+               "no reading) is out of scope by the operator's own words; every Class-A "
+               "entry stating a reading either carries the signature or is a planted D02 "
+               "flaw, in both twins; TEASEL is a planted flaw in the flawed twin and "
+               "carries the signature in the clean one; the key records that it was the "
+               "KEY that changed, not the rule")
+
+
 def check_226_truncated_reaches_the_cost_row():
     """Job B computed `truncated` and it stopped at the wrapper.
 
@@ -20409,6 +20526,8 @@ CHECKS = [
      check_225_judged_absence_refused_on_form_and_on_fact),
     ("226 a truncated response is recorded as truncated on its own cost row",
      check_226_truncated_reaches_the_cost_row),
+    ("227 the device corpus agrees with its own rule: D02 scope, TEASEL, CEDAR",
+     check_227_device_corpus_agrees_with_its_own_rule),
 ]
 
 
