@@ -23532,6 +23532,139 @@ def check_246_run_completion_reaches_the_scorer():
                "produce distinct disk evidence consumed by both scorer routes; old/absent records stay qualified")
 
 
+def _run_identity_fixture():
+    """Real server/context writers and one mocked-dispatch phase share an identity."""
+    import run_context as rc
+    import run_completion
+    import call_evidence
+    from unittest.mock import patch
+    result = {}
+    with _tempfile.TemporaryDirectory(prefix="shimmer_identity_") as td:
+        root = Path(td)
+        server = _step2_server_module(root / "server_runs")
+        api_id = server._new_run_id()
+        job = {"run_id": api_id, "status": "completed", "exit_code": 0,
+               "submitted_at": "2026-01-01T00:00:00+00:00"}
+        server._write_status(job)
+        api_dir = server.RUNS_DIR / api_id
+        api_ctx = rc.for_run_dir(root, api_dir).ensure()
+        result["server_id"] = api_id
+        result["context_id"] = api_ctx.run_id
+        result["status_id"] = json.loads((api_dir / "status.json").read_text())["run_id"]
+        try:
+            result["api_path"] = server._validated_run_dir(api_id) == api_dir
+        except Exception:
+            result["api_path"] = False
+        # The real phase, wrapper and evidence writer, with only dispatch mocked.
+        # Inject the server's actual context at this fixture harness boundary.
+        with patch.object(rc, "create_run", return_value=api_ctx):
+            ctx, registry, doc, seen = _fne_paired_fixture_run(root / "phase", stub_dispatch=None)
+        calls = call_evidence.load(ctx.run_dir)
+        result["call_ids"] = [c.get("run_id") for c in calls]
+        result["dispatch_count"] = len(seen)
+
+        @run_completion.tracked
+        def completed():
+            lifecycle = run_completion.begin(api_ctx)
+            lifecycle.reached_end(document_count=1, amendment_count=0)
+            return 0
+
+        completed()
+        result["completion_id"] = run_completion.read(api_dir)["run_id"]
+        cli = rc.create_run(root / "cli")
+        result["cli_id"] = cli.run_id
+        pinned = rc.start_run_in(root, root / "chosen_output")
+        result["pinned_id"] = pinned.run_id
+        result["reopened_pinned_id"] = rc.for_run_dir(root, pinned.run_dir).run_id
+        identity_path = cli.audit_dir() / rc.IDENTITY_FILENAME
+        identity = json.loads(identity_path.read_text()) if identity_path.exists() else {}
+        result["identity_id"] = identity.get("run_id")
+        declared_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        target = rc.runs_root(cli.project_root) / rc.date_run_dirname(declared_time, "declared")
+        _require_fixture(cli.run_dir.resolve().parent == target.resolve().parent,
+                         "rename fixture source and target share the declared temporary run root")
+        renamed = rc.rename_run(cli, "declared", now=declared_time)
+        result["renamed"] = renamed.run_dir != cli.run_dir
+        result["reopened_cli_id"] = rc.for_run_dir(cli.project_root, renamed.run_dir).run_id
+        result["latest_cli_id"] = rc.latest_run(cli.project_root).run_id
+
+        old_id = "20260101_000000__abc123"
+        old_dir = server.RUNS_DIR / old_id
+        old_dir.mkdir()
+        (old_dir / "status.json").write_text(json.dumps({"run_id": old_id, "status": "completed"}), encoding="utf-8")
+        result["legacy_server_id"] = rc.for_run_dir(root, old_dir).run_id
+        result["legacy_api_path"] = server._validated_run_dir(old_id) == old_dir
+        result["bare_legacy_id"] = rc.for_run_dir(root, root / old_id).run_id
+        historic = root / "2026-01-01__old_label"
+        (historic / "logs").mkdir(parents=True)
+        evidence = historic / "logs" / "call_evidence.jsonl"
+        evidence.write_text(json.dumps({"run_id": "abc12345"}) + "\n", encoding="utf-8")
+        _require_fixture(json.loads(evidence.read_text())["run_id"] == "abc12345",
+                         "legacy renamed fixture records one explicit identity")
+        before = {str(p.relative_to(historic)): p.read_bytes() for p in historic.rglob("*") if p.is_file()}
+        result["legacy_cli_id"] = rc.for_run_dir(root, historic).run_id
+        result["legacy_unchanged"] = before == {str(p.relative_to(historic)): p.read_bytes()
+                                                for p in historic.rglob("*") if p.is_file()}
+        evidence.write_text(evidence.read_text() + json.dumps({"run_id": "def67890"}) + "\n", encoding="utf-8")
+        try:
+            rc.for_run_dir(root, historic)
+            result["conflict_refused"] = False
+        except ValueError:
+            result["conflict_refused"] = True
+        result["bad_api_ids_rejected"] = all(not server._RUN_ID_RE.match(value) for value in (
+            "../..", "abc/def", api_id + "/x", old_id + "\n", "not-a-run"))
+        try:
+            rc.create_run(root / "invalid", run_id="../../outside")
+            result["unsafe_create_refused"] = False
+        except ValueError:
+            result["unsafe_create_refused"] = not (root / "invalid").exists()
+        # Directory spelling must not decide recovered queue order. These are
+        # declared identifiers, not generated UUIDs or authentication material.
+        for rid, when in (("f" * 32, "2026-01-01T00:00:00+00:00"),
+                          ("0" * 32, "2026-01-02T00:00:00+00:00")):
+            server._write_status({"run_id": rid, "status": "queued", "submitted_at": when})
+        with patch.object(server.shutil, "rmtree", side_effect=AssertionError("fixture must not delete staging")):
+            server._rebuild_jobs_from_disk()
+        result["queue_order"] = [j["run_id"] for j in server.JOBS if j["status"] == "queued"]
+    return result
+
+
+def check_247_one_run_identity_survives_every_entry_point():
+    result = _run_identity_fixture()
+    for field in ("cli_id", "server_id", "pinned_id"):
+        if not re.fullmatch(r"[0-9a-f]{32}", result[field]):
+            return _fail("new %s is not the common UUID format" % field)
+    if result["pinned_id"] != result["reopened_pinned_id"]:
+        return _fail("the caller-pinned folder did not preserve its generated run id")
+    server_id = result["server_id"]
+    if any(result[field] != server_id for field in ("context_id", "status_id", "completion_id")):
+        return _fail("server, pipeline context, status and completion identify different runs")
+    if result["call_ids"] != [server_id] or result["dispatch_count"] != 1:
+        return _fail("the real mocked-dispatch phase did not record the published server run id")
+    if not result["api_path"] or not result["legacy_api_path"]:
+        return _fail("a new or legacy run id cannot reach its real API path")
+    cli_id = result["cli_id"]
+    if not result["renamed"] or any(result[field] != cli_id for field in (
+            "identity_id", "reopened_cli_id", "latest_cli_id")):
+        return _fail("renaming or reopening changed the CLI run's recorded identity")
+    if result["legacy_server_id"] != "20260101_000000__abc123" or result["bare_legacy_id"] != result["legacy_server_id"]:
+        return _fail("a legacy server id was reduced to its suffix")
+    if result["legacy_cli_id"] != "abc12345" or not result["legacy_unchanged"]:
+        return _fail("legacy call identity was lost or historical artifacts were rewritten")
+    if not all(result[field] for field in ("conflict_refused", "bad_api_ids_rejected", "unsafe_create_refused")):
+        return _fail("identity validation guessed through conflicting or unsafe input")
+    if result["queue_order"] != ["f" * 32, "0" * 32]:
+        return _fail("recovered queue order follows UUID spelling instead of submission time")
+    main = next(node for node in ast.parse((SCRIPTS / "pipeline.py").read_text(encoding="utf-8")).body
+                if isinstance(node, ast.FunctionDef) and node.name == "main")
+    if not any(isinstance(node, ast.Call) and ast.unparse(node.func) == "run_context_mod.start_run_in"
+               for node in ast.walk(main)):
+        return _fail("pipeline output-dir startup bypasses the executed identity writer")
+    return _ok("one UUID format reaches real API paths, contexts, call evidence and completion; "
+               "identity survives rename/latest lookup, legacy identities remain readable without rewriting, "
+               "unsafe/conflicting ids are refused and queue order follows submission time")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -23836,6 +23969,8 @@ CHECKS = [
      check_245_processor_extraction_reaches_its_auditors),
     ("246 pipeline completion distinguishes completed empty work from an incomplete run",
      check_246_run_completion_reaches_the_scorer),
+    ("247 one run identity survives entry points, artifacts and folder renaming",
+     check_247_one_run_identity_survives_every_entry_point),
 ]
 
 

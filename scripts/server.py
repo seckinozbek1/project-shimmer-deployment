@@ -137,7 +137,6 @@ import zipfile      # packages the run's deliverables into one downloadable .zip
 from datetime import datetime, timedelta, timezone   # timestamps for jobs and run ids.
 from pathlib import Path                   # tidy, OS-independent file paths.
 from typing import List, Optional          # 3.9-safe type hints for FastAPI.
-import uuid                                # a short random suffix for run ids.
 
 # FastAPI is the web framework. uvicorn is the program that actually serves it.
 # BackgroundTasks/Depends/Header/HTTPException/UploadFile/File are FastAPI helpers
@@ -276,11 +275,9 @@ MAX_UPLOAD_MB = _env_int("SHIMMER_MAX_UPLOAD_MB", 25)       # per-file cap
 MAX_UPLOAD_TOTAL_MB = _env_int("SHIMMER_MAX_UPLOAD_TOTAL_MB", 200)  # whole-submission cap
 MAX_UPLOAD_FILES = _env_int("SHIMMER_MAX_UPLOAD_FILES", 50) # file-count cap per submission
 
-# The server's own run_id mint format ("%Y%m%d_%H%M%S__<6 hex>", see _new_run_id):
-# every run-scoped route validates against this before building any path from a
-# caller-supplied run_id, so a value like "../.." is rejected with 404 before it
-# is ever used in a path expression.
-_RUN_ID_RE = re.compile(r"^\d{8}_\d{6}__[0-9a-f]{6}$")
+# New runs share the CLI's UUID format; old timestamped URLs remain valid.
+# Every run route validates this bounded syntax before constructing a path.
+from run_context import SERVER_RUN_ID_RE as _RUN_ID_RE
 
 # productization STEP 6: exit-code -> status mapping. Replaces the old blanket
 # "any non-zero exit is failed" collapse. "blocked" and the three "stopped_*"
@@ -422,11 +419,9 @@ def _now_iso():
 
 
 def _new_run_id():
-    """A run id: a readable timestamp plus a short random suffix, e.g.
-    20260625_143022__a8f3b2. The timestamp makes runs sort chronologically; the
-    random suffix guarantees two runs in the same second never collide."""
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    return f"{stamp}__{uuid.uuid4().hex[:6]}"
+    """Use the same immutable identifier as every other run entry point."""
+    from run_context import new_run_id
+    return new_run_id()
 
 
 def _find_job(run_id):
@@ -503,6 +498,8 @@ def _rebuild_jobs_from_disk():
                 interrupted_any = True
             jobs.append(job)
 
+    # UUIDs are opaque. Queue order belongs to submitted_at, not folder spelling.
+    jobs.sort(key=lambda job: (job.get("submitted_at") or "", job.get("run_id") or ""))
     with JOBS_LOCK:
         JOBS.clear()
         JOBS.extend(jobs)

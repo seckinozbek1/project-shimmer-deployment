@@ -1955,6 +1955,15 @@ count above describes bus findings; amendment-only matches appear in the entry t
 score. EIGHT's declared fixture computes 48 hours against a 24-hour bound and confirms the reason
 through each artifact path independently.
 
+**One run keeps one identity across artifacts** (check 247). New CLI and server runs use
+32 lowercase hexadecimal UUID characters from the same generator. Folder names are labels:
+the CLI can rename a folder for readability without changing its run id. The identity is
+persisted in `audit/run_identity.json` and reused by call evidence and completion records.
+A fresh caller-pinned output folder also receives a generated identity. Reopening an older
+run reads its recorded identity, including a unique id in saved call evidence, without
+rewriting historical files. Conflicting call identities are refused. Older timestamped
+server IDs remain valid in API paths; restart queue order follows submission time.
+
 **Run completeness is saved for both launch paths** (check 246). The pipeline writes
 `audit/run_completion.json` when work starts and when its entry point returns or raises. It
 records the stable run id, UTC start/finish times, exit code, whether final work was reached,
@@ -2127,7 +2136,7 @@ curl -s -X POST "$BASE/submit" \
   -H "Authorization: Bearer $TOKEN" \
   -F "task=review" -F "review_mode=paired" \
   -F "files=@./declarations.md" -F "files=@./_corpus_ingest.json"
-# -> 202 {"run_id":"20260907_161514__41cebd", "status":"queued",
+# -> 202 {"run_id":"73b4674496704dad9617241b7884a6cc", "status":"queued",
 #         "task":"review", "sensitive":false, "review_mode":"paired", "files":[...]}
 ```
 
@@ -2233,8 +2242,8 @@ the whole picture. Run state is written to disk on every transition, so a server
 the run history: the in-flight run comes back as `interrupted` internally (`state: "stopped"`,
 `outcome: "crashed"` on `GET /runs/<run_id>`), and a run still `queued` at restart keeps its
 record but loses its staged uploads, so resubmit both. Every route taking
-a `run_id` validates it against the server's own mint format and answers 404 for anything
-else, so a malformed or guessed id can never reach a path expression.
+a `run_id` accepts the shared UUID format or a legacy timestamped server ID and answers
+404 for any other syntax before constructing a path. An unknown valid ID also returns 404.
 
 ### Server quickstart (two terminals)
 
@@ -2388,8 +2397,8 @@ rejects a path-traversal-shaped `run_id` with 404, and every HTTP client normali
 as a plain request for `/`; a route registered at bare `/` would turn that check's 404 into a
 false 200.
 
-Every route taking a `run_id` rejects any value not matching the server's own mint format with
-404 before building a path, and `/runs/{run_id}/findings` and `/runs/{run_id}/pairs` return the
+Every route taking a `run_id` accepts the shared UUID format and legacy timestamped server
+IDs, rejects other syntax with 404 before building a path, and `/runs/{run_id}/findings` and `/runs/{run_id}/pairs` return the
 same 404 for a well-formed id with no run folder. Jobs run one at a time; each job's state is
 also written to `<run>/status.json` on every transition (queued, running, then one of the
 statuses below), so a restart does not lose run history; the in-flight run is rewritten
@@ -2908,7 +2917,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**247** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**248** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:

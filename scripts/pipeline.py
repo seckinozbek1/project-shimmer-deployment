@@ -3781,7 +3781,7 @@ def main(argv=None):
     # land (the server passes output/runs/<run_id>/ and serves from it). When the
     # flag is absent the behavior is exactly as before (auto-created run folder).
     if args.output_dir:
-        run_ctx = run_context_mod.for_run_dir(ROOT, args.output_dir).ensure()
+        run_ctx = run_context_mod.start_run_in(ROOT, args.output_dir)
     else:
         run_ctx = run_context_mod.create_run(ROOT)
     completion = run_completion_mod.begin(run_ctx)

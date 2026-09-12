@@ -1,5 +1,42 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## TWELVE CLOSED, 2026-09-12
+
+ELEVEN committed 046ba2a. The saved renamed reviews reopened as folder labels
+1doc_review and 1doc_review__479f3219 although their calls recorded 2f174664 and
+479f3219. The server minted a timestamp plus six hex characters while its pipeline
+context used only the suffix. CLI ids were eight hex characters. Baseline evidence
+is output/twelve_identity_audit.log and twelve_identity_baseline.json. The first
+post-edit audit overwrote the JSON destination; restored its exact original contents
+from the untouched baseline log and changed the script to write a separate current
+report. No product source reversal and no historical artifact rewrite occurred.
+
+Decision: one shared full UUID generator for new CLI/server/pinned runs, persisted
+in audit/run_identity.json so readable folder renames do not change identity.
+Keep legacy API IDs accepted whole. Read older completion/status or unique saved
+call IDs before a path-only fallback, without backfilling. Conflicting legacy call
+IDs or invalid immutable records refuse. Validate explicit create IDs before mkdir;
+resolve rename source/target under the intended run root before moving. Queue
+recovery now sorts by submitted_at because UUID spelling has no time meaning.
+No dependency or permission expansion. Seven independent observable mutations
+FAIL then restore PASS; details in output/twelve_mutation_proof.log. The real
+server/context writers and mocked-dispatch phase produce matching call/completion
+IDs. Check 247 is new; check 246 also passes. Full host gate: PASS=246 WARN=0
+SKIP=0 FAIL/ERROR=2 TOTAL=248, known 01/145 only (output/twelve_host_gate.log).
+Both checks pass inside shimmer:twelve with --network none, no mounts and no GPU.
+All 122 shipped files match (output/twelve_source_audit.json). Image
+sha256:ea5fa8ad85b34e2a17c883d11c0e4a11c35d519499d8879ab1e4453d7372543e,
+size 14408259484 bytes. Source refresh took about six seconds; all weight and
+conversion layers were cached. PowerShell's redirected native stderr reported
+exit 1 although BuildKit completed and wrote metadata; the image digest, exact
+source audit and successful container process independently establish the build.
+No costly retry was needed. README documents the common format, immutable record,
+legacy links and queue order; gate count is current. Adversarial read checked
+caller-pinned output, rename boundaries, historical reads, path validation,
+real dispatch evidence and restart order. README/image debt is paid. Continue
+THIRTEEN after this commit.
+
+
 ## ELEVEN CLOSED, 2026-09-12
 
 TEN committed 6ddea2a. Baseline execution of the actual console JavaScript found
