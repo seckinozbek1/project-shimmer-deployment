@@ -1,0 +1,51 @@
+{
+  "_what_this_is": "Measured thresholds for the five-voter semantic ensemble (WORDS-A constraint 3). Every value here is the midpoint of a measured gap between the closest true case and the closest false one, recorded with that margin. A voter with no entry has NO MEASURABLE THRESHOLD on that decision and does not vote; the ensemble then refuses, by constraint 4, rather than proceeding with fewer than five.",
+  "_measurement": "docs/fix/ENSEMBLE_THRESHOLDS.md carries the full method and result. Leave-one-out over the operator's reference set plus all 44 shipped convention rules as true negatives.",
+  "_do_not_round": "These are not round numbers and must not be rounded. Each sits at the midpoint of a measured gap. A number chosen so that a voter can participate is exactly what constraint 3 forbids.",
+
+  "redaction_intent": {
+    "_measured_on": "15 positive references, 12 negative references, 44 shipped convention rules as additional true negatives",
+    "_result": "ONE voter of five separates the classes. Four overlap: their closest true case scores BELOW their closest false case, so no threshold separates them and none is invented here.",
+    "_consequence": "The ensemble REFUSES this decision under constraint 4 and names the four voters lacking a measured threshold. That is the designed behaviour of a rule that cannot be satisfied on the data available, and it is the operator's to resolve, not mine. See ENSEMBLE_THRESHOLDS.md for what would make five voters possible; the short answer is a larger and lexically varied reference set, which is operator-written text.",
+
+    "sbert": 0.0559,
+    "_sbert_margin": {
+      "closest_true": 0.0787,
+      "closest_false": 0.033,
+      "margin": 0.0457,
+      "note": "separates cleanly; threshold is the midpoint of the gap"
+    },
+
+    "_keybert_unmeasurable": {
+      "closest_true": -0.0563,
+      "closest_false": 0.0552,
+      "margin": -0.1115,
+      "worst_true": "Do not disclose the finding's subject name.",
+      "worst_false": "The GPP minimum annual payout must sit inside 4% to 6%.",
+      "note": "no threshold separates these; no value is set"
+    },
+    "_tfidf_unmeasurable": {
+      "closest_true": -0.0596,
+      "closest_false": 0.119,
+      "margin": -0.1786,
+      "worst_true": "Conceal the date of birth in every deliverable.",
+      "worst_false": "Diagnosis is the fleet engineer's task, not the reviewer's.",
+      "note": "ranks a reviewer-restraint rule above every true case, because 'reviewer' is distinctive in the reference set"
+    },
+    "_bow_unmeasurable": {
+      "closest_true": -0.1389,
+      "closest_false": 0.15,
+      "margin": -0.2889,
+      "worst_true": "Conceal the date of birth in every deliverable.",
+      "worst_false": "Every entry must state a calibration date.",
+      "note": "ranks a calibration rule above every true case for sharing the words 'date' and 'state', which is the keyword-table defect the ensemble exists to fix"
+    },
+    "_word_overlap_unmeasurable": {
+      "closest_true": -0.3333,
+      "closest_false": 0.0,
+      "margin": -0.3333,
+      "worst_true": "Conceal the date of birth in every deliverable.",
+      "note": "a lexically isolated true case has no discriminating token in common with any other positive reference"
+    }
+  }
+}
