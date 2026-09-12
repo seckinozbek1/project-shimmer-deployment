@@ -24069,6 +24069,68 @@ def check_251_advisory_withholding_remains_visible():
                "the API preserves the reason, severity, finding_stands and explanation without a model call")
 
 
+def _document_dates_shipping_fixture():
+    import document_dating as dating
+    import durable_paths as dp
+    import ship_gate
+    declared = json.loads('{"filename":"declared-2026-01-02.md","date":"2026-01-02",'
+                          '"date_source":"filename","date_confidence":"high"}')
+    _require_fixture(declared["filename"] == "declared-2026-01-02.md"
+                     and declared["date"] == "2026-01-02", "declared date fixture parses before writing")
+    with _tempfile.TemporaryDirectory(prefix="shimmer_date_shipping_") as td:
+        root = Path(td)
+        operator = root / "operator"
+        clean = root / "clean"
+        candidate = root / "candidate"
+        clean.mkdir()
+        candidate.mkdir()
+        local = dating.write_dates(operator, [declared])
+        before = local.read_bytes()
+        copied = dp.document_dates_path(candidate)
+        copied.parent.mkdir(parents=True)
+        copied.write_bytes(before)
+        governance = clean / "durable" / "governance" / "declared.json"
+        governance.parent.mkdir(parents=True)
+        governance.write_text('{"decision":"ACCEPTED"}', encoding="utf-8")
+
+        def inspect(root):
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                code = ship_gate.main(["--root", str(root)])
+            return code, json.loads(output.getvalue())
+
+        clean_code, clean_report = inspect(clean)
+        candidate_code, candidate_report = inspect(candidate)
+        missing_code, _ = inspect(root / "missing")
+        return {"local_read": dating.read_dates(operator) == [declared],
+                "local_unchanged": local.read_bytes() == before,
+                "candidate_unchanged": copied.read_bytes() == before,
+                "authority_preserved": governance.is_file(),
+                "shipped_dates": dating.read_dates(clean),
+                "clean_code": clean_code, "candidate_code": candidate_code,
+                "missing_code": missing_code,
+                "policy": clean_report["document_dates"],
+                "candidate_violations": candidate_report["violations"]}
+
+
+def check_252_document_dates_have_an_executed_shipping_ruling():
+    result = _document_dates_shipping_fixture()
+    if not all(result[key] for key in ("local_read", "local_unchanged", "candidate_unchanged", "authority_preserved")):
+        return _fail("shipping inspection must preserve the operator, candidate and authority data")
+    if result["clean_code"] != 0 or result["shipped_dates"]:
+        return _fail("a clean shipping tree must pass and read as an empty date store")
+    if result["candidate_code"] != 1 or not result["candidate_violations"] or result["missing_code"] != 1:
+        return _fail("the actual shipping CLI accepted populated dates or a nonexistent shipping root")
+    if result["policy"].get("category") != "usage-derived" or result["policy"].get("shipping") != "omit":
+        return _fail("document_dates has no explicit usage-derived, omit-on-shipping ruling")
+    dockerfile = ROOT / "Dockerfile"
+    if dockerfile.is_file() and "RUN python scripts/ship_gate.py" not in dockerfile.read_text(encoding="utf-8").splitlines():
+        return _fail("the product image build does not execute the shipping gate")
+    return _ok("real date writer/reader and shipping CLI prove explicit usage-derived omission, "
+               "empty shipped reads, populated-tree refusal and unchanged local data; "
+               "build invocation checked where Dockerfile is present")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24349,7 +24411,7 @@ CHECKS = [
      check_233_absence_claim_requires_a_quote),
     ("234 an operator verdict is joined to its subject and reaches the graph",
      check_234_operator_decision_carries_its_subject),
-    ("235 usage-derived knowledge is declared, reset, and ships empty",
+    ("235 usage-derived knowledge is declared and reset",
      check_235_usage_derived_knowledge_is_categorised),
     ("236 a rule condition points at a field or a rule, and an unknown declaration is refused",
      check_236_rule_condition_field_and_rule),
@@ -24383,6 +24445,8 @@ CHECKS = [
      check_250_semantic_pairing_refuses_uncalibrated_promotion),
     ("251 advisory amendment withholding stays visible through synthesis and API",
      check_251_advisory_withholding_remains_visible),
+    ("252 document dates ship empty under an explicit manifest ruling",
+     check_252_document_dates_have_an_executed_shipping_ruling),
 ]
 
 

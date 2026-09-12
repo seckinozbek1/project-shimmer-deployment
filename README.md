@@ -1178,6 +1178,20 @@ longer lets a previous operator's provisions, graph or GNN state survive unnotic
 Governance and the declared global caches remain protected. Shipping does not
 require erasing the operator's local working data.
 
+`document_dates.json` has an explicit usage-derived ruling in
+`durable_paths.ARTIFACT_POLICIES`. It contains conclusions about this installation's
+documents, including their filenames, so it is omitted from a shipped tree. The
+normal date reader returns an empty list when the file is absent. Its path still
+serves the existing local writer; classification does not erase that local store.
+The Dockerfile executes `scripts/ship_gate.py` after copying source. This read-only
+check rejects missing or inconsistent rulings and populated usage-derived paths,
+and accepts empty directory placeholders. It reports storage categories without
+reading or printing document contents or operator filenames. For an exported
+candidate tree, run `python scripts/ship_gate.py --root <candidate-root>`; inspecting
+a populated development tree can fail correctly and never clears it. Check 252
+exercises the real writer, reader and CLI. An isolated build with synthetic date
+data also proves the Docker invocation blocks the payload.
+
 The file approval channel records a decision with its topic and allowed subject
 identifiers in `durable/governance/operator_decisions.jsonl`. The graph reads
 OperatorDecision nodes and links known convention subjects with DECIDED_ON;
@@ -3082,7 +3096,7 @@ coverage needs explicit claim-to-consumer mappings and more executable mutations
 scans cannot infer them reliably.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**252** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**253** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:

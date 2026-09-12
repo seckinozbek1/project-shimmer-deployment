@@ -1,5 +1,54 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## NINETEEN CLOSED, 2026-09-13
+
+EIGHTEEN committed 0a6a0fe. Ruling: document_dates.json is usage-derived, because
+it records conclusions about documents rather than an operator instruction or a
+ratified law. Its operator-specific filenames make empty shipping more necessary.
+ARTIFACT_POLICIES now names its path, category, shipping omission and reason;
+the existing date writer/reader use that path. An omitted file reads as [].
+The directory manifest already covered durable/learnings, Git ignored the file,
+and the Dockerfile excluded durable/. No previous image leak is alleged.
+
+Found while tracing the promised ship consumer: check 235 exercised reset and
+manifest membership, but no shipping command consumed the ruling. Added the
+read-only scripts/ship_gate.py CLI and a Dockerfile RUN after source COPY. It
+checks category coverage/disjointness, the explicit date ruling and populated
+usage-derived paths. Empty .gitkeep placeholders pass; data/links and missing
+shipping roots fail. It never clears data, reads payload values or prints an
+operator's filenames. Governance/rule/constitution policy is unchanged. Check
+235's title is narrowed to its actual classification/reset proof; its behavior
+and existing neutralisation are unchanged. No new dependency.
+
+New 252 uses the real date writer, reader and shipping CLI against declared
+operator, clean and populated candidate trees. It proves local bytes unchanged,
+candidate bytes unchanged, retained authority, empty shipped reads and refusal
+of populated/missing trees. Changing the date category makes a clean tree fail;
+accepting all inspections lets the populated candidate pass. Both effects are
+observed BEFORE check 252 fails; restore passes. output/nineteen_proof.log.
+
+Build wiring has its own effect proof: an isolated image derived from the existing
+shimmer:eighteen, with the exact product RUN and declared synthetic date payload,
+is rejected for document_dates. Removing that product RUN in memory allows the
+same populated image to build BEFORE 252 fails; restoring it rejects the payload
+and the check passes. No real Dockerfile mutation, host store copy or weight
+download. The uniquely named temporary mutant image is removed; existing tags
+are untouched. output/nineteen_build_proof.log and numbered build logs.
+
+The real local date store existed at 452 bytes before this item; its SHA256 is
+recorded privately in output/nineteen_local_dates_before.json. It remains byte-
+identical after focused proofs. No reset of the operator tree occurred. README
+and KNOWLEDGE_CATEGORIES now carry the final ruling and exact shipping semantics.
+Full host gate: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
+(output/nineteen_host_gate.log), known 01/145 only. shimmer:nineteen:
+sha256:fb7ca8752c0292518fb8d3426714ad2541ada06864a6f71315c77d6e5edaeec3, 14408288450 bytes.
+All 124 shipped files match;
+output/nineteen_source_audit.json. All weight/conversion layers reused.
+Image checks 235/252 and the real shipping CLI pass offline. The image date
+reader returns []; the local date store remains byte-identical to its pre-item hash.
+Adversarial read complete. README/image debt paid. No push.
+
+
 ## EIGHTEEN CLOSED, 2026-09-13
 
 SEVENTEEN committed d2b22ba. Audited all 47 local commits at that point against

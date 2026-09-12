@@ -73,6 +73,17 @@ AUTHORITY_PATHS = (
     "config/convention_registry.json",
 )
 
+# Named rulings supplement directory membership. The build gate reads this
+# record, and the date writer uses its path. Omission reads as an empty store.
+ARTIFACT_POLICIES = {
+    "document_dates": {
+        "path": "durable/learnings/document_dates.json",
+        "category": "usage-derived",
+        "shipping": "omit",
+        "reason": "Document-date conclusions name this operator's files; they are not instructions or ratified laws.",
+    },
+}
+
 
 def usage_derived_dirs(project_root):
     """Every usage-derived location that exists, as Paths.
@@ -116,7 +127,7 @@ def speech_acts_taxonomy_path(pr): return learnings_dir(pr) / "speech_acts_taxon
 def search_strategy_learnings_path(pr): return learnings_dir(pr) / "search_strategy_learnings.json"
 def spawn_log_path(pr): return learnings_dir(pr) / "spawn_log.jsonl"
 def discovered_apis_path(pr): return learnings_dir(pr) / "discovered_apis.json"
-def document_dates_path(pr): return learnings_dir(pr) / "document_dates.json"
+def document_dates_path(pr): return Path(pr) / ARTIFACT_POLICIES["document_dates"]["path"]
 
 # --- reference (resettable) ---
 def linguistic_identity_path(pr): return reference_dir(pr) / "LINGUISTIC_IDENTITY.md"

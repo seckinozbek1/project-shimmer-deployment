@@ -1,5 +1,21 @@
 # Knowledge categories: what counts, where the boundary is enforced, and what it does to the arithmetic
 
+## NINETEEN ruling, 2026-09-13
+
+The document-date store is usage-derived. It records conclusions about documents,
+including an operator's filenames; this strengthens the reason to ship it empty.
+The ruling is explicit in `durable_paths.ARTIFACT_POLICIES["document_dates"]`, with
+shipping `omit`, and the existing writer reads that declared path. The normal
+reader treats an absent file as an empty list. Keep the operator's local file.
+
+The directory manifest already excluded this file through `durable/learnings`.
+This item does not claim an old image leaked it. It adds an explicit individual
+ruling and an executable, read-only shipping check used by the Dockerfile. Missing
+or inconsistent rulings and populated usage paths fail the build. Check 252 and
+a real isolated build prove the refusal without clearing source or candidate data.
+Check 235's title now says what it proves: classification and reset. The original
+proposal and evidence below remain the historical record, not open decisions.
+
 Written 2026-09-12, in answer to the operator's three questions, BEFORE building.
 Proposals are marked as proposals. Where an existing mechanism already does the
 work it is named rather than replaced, because the cheapest boundary is one that

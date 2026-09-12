@@ -14,40 +14,38 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-EIGHTEEN, the commit containing this checkpoint,
-`EIGHTEEN: pay inherited documentation debt and expose withholding accurately`.
+NINETEEN, the commit containing this checkpoint,
+`NINETEEN: classify document dates and enforce empty shipping`.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. Previous item: SEVENTEEN d2b22ba. Full trail in LEDGER.
+next item updates this file. Previous item: EIGHTEEN 0a6a0fe. Full trail in LEDGER.
 
-Audited 47 prior local commits, including eleven source commits without a
-same-commit README update. Current descriptions now cover inherited conditions,
-severity, authority, feedback and semantic boundaries. Advisory refusal API
-retains severity/finding_stands and the console labels withholding accurately.
-New 251 proves real synthesis/bus/API and three consumer mutations; actual Node
-rendering proves both views. Corrected the external-conflict summary's false
-NEITHER claim to retained operator authority; changed 239 and its independent
-writer mutation pass. No amendment policy or authority expansion. Image inventory
-is complete in both directions, including the ratified generated rule registry.
+document_dates is explicitly usage-derived with shipping omission in the
+manifest; its existing writer/reader use that path. Parent-directory exclusion
+already covered it, so no prior leak is claimed. Added the read-only shipping
+CLI and a Dockerfile build invocation. New 252 proves real writer/reader/CLI
+behavior and local preservation; category and acceptance mutations fail after
+observed effects. An actual isolated build rejects synthetic date data; removing
+the product RUN accepts it before 252 fails. Restored rejection and check PASS.
+Existing reset check 235's title now states its actual scope.
 
-Full host gate: PASS=250  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=252
-(output/eighteen_host_gate.log), known 01/145 only. shimmer:eighteen:
-sha256:678e1657a61271398839cfb7356c3ef3af96e35ac25f8c0b0b506d4b436c6bf1, 14408284165 bytes.
-All 123 shipped files match;
-output/eighteen_source_audit.json. All weight/conversion layers reused.
-Focused checks 239/251 pass offline in the image. Exact image UI/API data
-pass the host Node renderer proof. No model, dependency or authority-policy change.
+Full host gate: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
+(output/nineteen_host_gate.log), known 01/145 only. shimmer:nineteen:
+sha256:fb7ca8752c0292518fb8d3426714ad2541ada06864a6f71315c77d6e5edaeec3, 14408288450 bytes.
+All 124 shipped files match;
+output/nineteen_source_audit.json. All weight/conversion layers reused.
+Image checks 235/252 and the real shipping CLI pass offline. The image date
+reader returns []; the local date store remains byte-identical to its pre-item hash.
 Adversarial read complete. README/image debt paid. No push.
 
 ## Current item
 
-None open. Continue NINETEEN: explicitly classify document_dates.json in the
-usage-derived manifest and prove it ships empty while local data is preserved.
+None open. Continue TWENTY: answer the learning-signal question fully, naming
+third-source candidates and their limits. Recommend a direction; do not build a GNN.
 
 ## Ordered remaining work
 
-1. NINETEEN: classify document_dates.json in the manifest.
-2. TWENTY: answer the learning-signal question, no GNN build.
-3. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. TWENTY: answer the learning-signal question, no GNN build.
+2. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -110,6 +108,8 @@ usage-derived manifest and prove it ships empty while local data is preserved.
     downloads are solved without claiming an unobserved historical GC event.
 29. Describe advisory withholding and external-conflict authority as they execute:
     preserve policy, expose missing historical fields as unknown and repair misleading reports.
+30. Classify document-date conclusions as usage-derived and omit them from shipping:
+    operator-specific filenames strengthen the empty-shipping rule; keep local data intact.
 
 ## Decisions made in the operator's place
 
@@ -153,9 +153,9 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final EIGHTEEN host: PASS=250  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=252
+Final NINETEEN host: PASS=251  WARN=0  SKIP=0  FAIL/ERROR=2  TOTAL=253
 Known failures: 01 (prompts/snapshots absent), 145 (ignored contamination fixture).
-Log: output/eighteen_host_gate.log. No new unexplained failure remains.
+Log: output/nineteen_host_gate.log. No new unexplained failure remains.
 
 Latest complete product GPU/offline gate: shimmer:fifteen, PASS=239 WARN=0 SKIP=8
 FAIL/ERROR=4 TOTAL=251. Separate six-step offline probe PASS, both with network
@@ -163,11 +163,11 @@ none, GPU exposed and no mounts. Logs: output/sixteen_container_gate.log and
 sixteen_offline_probe.log. This is loading/decision evidence, not a completed review.
 Image failures 01/28/31/145; skips 15/38 network, 222 host launchers,
 215/217/224/227/230 unshipped corpora. Mixed checks name absent corpus coverage.
-Current image shimmer:eighteen matches 123 shipped files;
-output/eighteen_source_audit.json. Later focused evidence is in the current ledger
+Current image shimmer:nineteen matches 124 shipped files;
+output/nineteen_source_audit.json. Later focused evidence is in the current ledger
 entry; the complete image suite is not claimed rerun for every source refresh.
-Earlier tags and evidence remain intact. Focused checks 239/251 pass offline in the image. Exact image UI/API data
-pass the host Node renderer proof. No model, dependency or authority-policy change.
+Earlier tags and evidence remain intact. Image checks 235/252 and the real shipping CLI pass offline. The image date
+reader returns []; the local date store remains byte-identical to its pre-item hash.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox

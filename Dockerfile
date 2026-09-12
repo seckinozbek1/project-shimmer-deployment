@@ -147,6 +147,9 @@ COPY README.md CLAUDE.md genesis.md ./
 # the repo root, same as it would on a real checkout.
 COPY requirements.txt ./
 
+# Refuse populated usage-derived stores in the image; never clear host state.
+RUN python scripts/ship_gate.py
+
 # pipeline.py and server.py each insert scripts/ and the repo root onto
 # sys.path THEMSELVES once they are running (ROOT = parent.parent of their own
 # file), but that self-bootstrap only takes effect after Python has already
