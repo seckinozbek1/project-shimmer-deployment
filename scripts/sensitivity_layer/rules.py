@@ -66,12 +66,83 @@ def _is_redaction_category(category, conv_id) -> bool:
     return any(k in blob for k in _REDACTION_KEYWORDS)
 
 
+# TWO-I. What a redaction verb acts ON, and why that decides the question.
+#
+# A redaction rule instructs the redactors to do something TO A SPAN OF THE
+# DOCUMENT: redact the client name, withhold the turnover figure, do not publish
+# the address. The verb's OBJECT is document content.
+#
+# A review convention can use the same verbs about something else entirely: what
+# a REVIEWER may conclude, record, or assert. "Findings must withhold judgement
+# about equipment condition" uses `withhold`, and its object is the reviewer's
+# own judgement, not a span. Nothing in that rule asks for anything to be removed
+# from the output.
+#
+# The verb alone cannot tell these apart, and that is the whole of the defect: a
+# rule about reviewer restraint compiled into a live redaction rule. So the
+# object is read as well. These are the words a review convention uses when it is
+# restraining the REVIEWER rather than marking content, taken from the corpus's
+# own vocabulary for reviewer-facing rules.
+_REVIEWER_OBJECT_RE = re.compile(
+    r"\b(?:judgement|judgment|opinion|speculation|conclusion|inference|assessment|"
+    r"appraisal|comment|finding|findings|recommendation|diagnosis)\b",
+    re.IGNORECASE)
+
+# The subject of a reviewer-restraint rule: the rule is about what the REVIEW
+# produces, not about the document under review.
+_REVIEWER_SUBJECT_RE = re.compile(
+    r"\b(?:finding|findings|reviewer|reviewers|review|comment|comments)\b",
+    re.IGNORECASE)
+
+
+# A redaction rule names CONTENT to remove: a name, a figure, an address, an
+# identifier. A reviewer-restraint rule names a CONCLUSION the reviewer may not
+# reach. When a rule names content, it is a redaction rule whatever else it
+# mentions, because the operator has pointed at something removable.
+_REDACTABLE_OBJECT_RE = re.compile(
+    r"\b(?:name|names|address|addresses|identifier|identifiers|figure|figures|"
+    r"number|numbers|turnover|revenue|salary|date\s+of\s+birth|individual|"
+    r"individual's|person|persons|client|client's|supplier|supplier's|account)\b",
+    re.IGNORECASE)
+
+
+def _is_reviewer_restraint(text) -> bool:
+    """True when a redaction VERB is being used about what a reviewer may
+    CONCLUDE, rather than about content to remove from a document.
+
+    Three conditions, and the third was added after measuring rather than
+    reasoning. Requiring only a reviewer-facing subject AND object wrongly
+    suppressed genuine redaction rules that merely MENTION the review:
+        "Do not disclose the finding's subject name."
+        "Redact any comment that names an individual."
+    Both name removable CONTENT, and both were being read as restraint.
+
+    So: a rule is reviewer restraint only when it has a reviewer-facing subject
+    AND a reviewer-facing object AND names NO redactable content. The moment it
+    points at a name, a figure or an address, the operator has pointed at
+    something to remove and it is a redaction rule.
+
+    Built to say NO when unsure, deliberately. A false positive here means a
+    redaction rule SILENTLY DOES NOT COMPILE, which is the more dangerous
+    direction by far: an over-eager redaction is visible in the output, a
+    missing one is not."""
+    t = text or ""
+    if _REDACTABLE_OBJECT_RE.search(t):
+        return False
+    return bool(_REVIEWER_SUBJECT_RE.search(t)) and bool(_REVIEWER_OBJECT_RE.search(t))
+
+
 def _has_redaction_phrasing(text) -> bool:
     """True if the rule text expresses redaction INTENT: an explicit redact verb
     (the redact-verb regex) OR prohibition phrasing ('must not contain', 'shall not
-    include', 'may not appear', …)."""
+    include', 'may not appear', …).
+
+    TWO-I: a redaction verb whose object is the REVIEWER'S OWN OUTPUT is not
+    redaction intent. See _is_reviewer_restraint."""
     t = text or ""
-    return bool(_REDACT_VERB_RE.search(t)) or bool(_PROHIBITION_RE.search(t))
+    if not (bool(_REDACT_VERB_RE.search(t)) or bool(_PROHIBITION_RE.search(t))):
+        return False
+    return not _is_reviewer_restraint(t)
 
 
 def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
