@@ -2485,15 +2485,16 @@ Stated honestly, from operator testing:
   asked for where it can actually check something, on absence claims. Cost, measured on the
   corpus: a field line is a median of 21 characters, about 6 tokens, 25 at the longest,
   against 461 tokens of unused paired-judging budget.
-- **What it would cost to make `quote` required, measured before deciding.** On the two
-  saved runs, requiring a quote on EVERY finding would turn all **62 of 62** into contract
-  violations at once; requiring it only where the relation is an absence claim would turn
-  **14 of 62 (23%)** into violations. Optional, as it stands today, turns **none** into
-  violations and refuses only a quote that is present and provably absent from the unit.
-  Required-on-absence-claims-only is the right middle and is where this should go, but not
-  yet: it is a real migration, every one of those 14 is a finding a past run already
-  published, and it should be taken deliberately rather than folded into a fix. The
-  operator decides; nothing has been made required.
+- **A quote is REQUIRED on an absence claim, from commit 9b4f027 forward.** An absence claim
+  is the one claim the document itself can refute and the one the model invents most, so a
+  missing_field answer with no quote is refused. The requirement lives at the point a reply is
+  judged, deliberately NOT in the contract's required-field list: putting it there would mark
+  every finding of every past run a violation, including the 62 published on 2026-09-11, of
+  which 14 are absence claims. A contract applies from the commit that introduces it. Measured
+  cost in the next run, from the saved pairing maps: 14 judged absences (5 flawed, 9 clean)
+  are the claims now asked to carry a quote; the 7 computed absences are Python's own
+  arithmetic and need none. A claim the model does not quote for is refused and recorded under
+  `absence_refused`, not silently dropped.
 - **The scorer reports a claim worded identically in both twins.** The twins differ exactly
   where the defects are, so a sentence the model produces against both was not read off
   either. This is the signal that exposed UNIT-VETCH, found by a person reading two logs side
@@ -2651,7 +2652,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**233** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**234** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2666,7 +2667,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 232 have since raised the total to 233.
+table below; checks 210 to 233 have since raised the total to 234.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

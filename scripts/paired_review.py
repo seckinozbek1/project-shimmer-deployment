@@ -1181,7 +1181,15 @@ def refuses_judged_absence(item, rule, fields_present):
     on such a unit contradicts the very fact that put it in scope: the unit
     could not have been paired at all if the field were absent.
 
-    TWO refusals, and the first is about FORM, not truth.
+    THREE refusals, and the first two are about FORM, not truth.
+
+    0. A missing_field claim with NO QUOTE is refused. An absence claim is the
+       one claim the document itself can refute, and the one the model invents
+       most; a quote is what makes it checkable at all. Required here, at the
+       point of judging, and deliberately NOT in the contract's "required" list:
+       putting it there would mark every finding of every past run a violation,
+       including the 62 published on 2026-09-11. A contract applies from the
+       commit that introduces it.
 
     1. A missing_field claim that names NO field is refused as malformed. Not
        because Python disproves it, but because it is not checkable: nothing
@@ -1221,6 +1229,19 @@ def refuses_judged_absence(item, rule, fields_present):
         return False
     if str(item.get("relation") or "") != "missing_field":
         return False
+    if not str(item.get("quote") or "").strip():
+        # An ABSENCE claim must show the words it rests on. This is the one
+        # relation where the model invents most, and the one a quote can
+        # actually check: the document itself refutes a false absence. A claim
+        # with no quote cannot be checked against the text at all, so it is
+        # refused for the same reason a claim naming no field is.
+        #
+        # FORWARD ONLY, and deliberately so: the requirement lives here, at the
+        # point a reply is judged, and not in the contract's `required` list.
+        # Putting it in `required` would mark every finding of every past run a
+        # contract violation, including 62 already published on 2026-09-11.
+        # A contract applies from the commit that introduces it.
+        return True
     stated = item.get("stated_field") or item.get("field_label")
     claimed = pairing_map._norm_label(stated) if stated else ()
     if not claimed:

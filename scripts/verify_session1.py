@@ -16781,6 +16781,9 @@ def _d2_scope_body():
                     {"ref": "REF-0001", "kind": "finding", "confidence": "CONFIDENT",
                      "relation": "missing_field", "record_verdict": "irregular",
                      "stated_field": "fault",
+                     # An absence claim must quote the unit (check 233). The
+                     # fixture units carry this line, so the stub quotes it.
+                     "quote": "Class:",
                      "value_a": 0, "unit_a": "values", "value_b": 1, "unit_b": "required",
                      "source_refs": ["REF-0001"], "explanation": "stubbed judged answer"}]}}
     doc = {"id": "d", "name": "d.md", "text": text}
@@ -18992,6 +18995,105 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_233_absence_claim_requires_a_quote():
+    """An absence claim must show the words it rests on. FORWARD ONLY.
+
+    An absence claim is the one claim the document itself can refute, and the
+    one the model invents most: on 2026-09-11 it asserted that a document "does
+    not mention the next calibration visit" about an entry that states it in
+    plain words, and said nearly the same about both twins. A quote is what
+    makes such a claim checkable at all, so a missing_field answer with no
+    quote is now refused.
+
+    The requirement lives at the point a reply is JUDGED, not in the contract's
+    required-field list, and that placement is the whole point. Putting `quote`
+    in `required` would mark every finding of every past run a contract
+    violation, including the 62 published on 2026-09-11, of which 14 are
+    absence claims. A contract applies from the commit that introduces it, so
+    this refuses a claim made from here on and rewrites nothing already
+    recorded.
+
+    Cost in the next run, computed from the saved pairing maps: 5 judged
+    absences on the flawed twin and 9 on the clean, 14 in total, are the claims
+    the model is now asked to quote for. The computed absences (5 and 2) are
+    Python's own arithmetic and need no quote.
+
+    NEUTRALISE AND RESTORE on the requirement itself.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import paired_review as _pr
+        import finding_record as _fr
+    except Exception as exc:
+        return _fail("cannot import paired_review/finding_record: %s" % exc)
+
+    # The contract must NOT require it: that is what keeps this forward only.
+    if "quote" in (_fr.schema().get("required") or []):
+        return _fail("`quote` is in the contract's required list, which marks every "
+                     "finding of every past run a violation; the requirement belongs "
+                     "at the point of judging, not in the contract")
+    if "quote" not in (_fr.schema().get("fields") or []):
+        return _fail("the contract has no `quote` field at all")
+
+    rule = {"id": "CONV-001", "rule": "Every Class-A entry states a signature."}
+    present = ["class", "device", "reading"]
+    cases = [
+        ("absence claim with NO quote",
+         {"relation": "missing_field", "stated_field": "calibration authority signature"},
+         True),
+        ("absence claim with an empty quote",
+         {"relation": "missing_field", "stated_field": "calibration authority signature",
+          "quote": "   "}, True),
+        ("absence claim with a quote, naming a field the unit lacks",
+         {"relation": "missing_field", "stated_field": "calibration authority signature",
+          "quote": "Reading: 50 units"}, False),
+        ("absence claim naming a field the unit HAS is still refused",
+         {"relation": "missing_field", "stated_field": "reading",
+          "quote": "Reading: 50 units"}, True),
+        ("a relation that is not an absence claim is untouched",
+         {"relation": "above_band"}, False),
+        ("a non-absence relation with no quote is untouched",
+         {"relation": "date_window", "value_a": 48, "value_b": 24}, False),
+    ]
+    for label, item, want in cases:
+        got = _pr.refuses_judged_absence(item, rule, present)
+        if bool(got) != want:
+            return _fail("%s: refused=%r, expected %r" % (label, got, want))
+
+    # The model is TOLD it is required, not left to guess.
+    psrc = (ROOT / "scripts" / "pipeline.py").read_text(encoding="utf-8", errors="replace")
+    if "MUST set" not in psrc:
+        return _fail("the absence question does not tell the model the quote is required")
+
+    # NEUTRALISE on the real file.
+    pr_path = ROOT / "scripts" / "paired_review.py"
+    original = pr_path.read_text(encoding="utf-8")
+    neutralised = original.replace(
+        '    if not str(item.get("quote") or "").strip():\n',
+        '    if False:\n', 1)
+    if neutralised == original:
+        return _fail("could not neutralise: the quote requirement was not found")
+    try:
+        pr_path.write_text(neutralised, encoding="utf-8")
+        gone = '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
+            encoding="utf-8")
+    finally:
+        pr_path.write_text(original, encoding="utf-8")
+    if not gone:
+        return _fail("neutralise did not take effect on the real file")
+    if '    if not str(item.get("quote") or "").strip():' not in pr_path.read_text(
+            encoding="utf-8"):
+        return _fail("restore failed: the quote requirement is gone")
+
+    return _ok("an absence claim with no quote, or an empty one, is refused; one with a "
+               "quote naming a field the unit lacks passes; a non-absence relation is "
+               "untouched; the contract does NOT require the field, so no past run "
+               "becomes a violation and the requirement applies from this commit "
+               "forward; the model is told it is required; neutralise/restore proved")
+
+
 def check_232_typed_amendment_and_bounded_deepening():
     """Two fixes from the 2026-09-12 measurement, both about a record.
 
@@ -19811,8 +19913,11 @@ def check_225_judged_absence_refused_on_form_and_on_fact():
         ("names no field", {"relation": "missing_field"}, ["class", "device"], True),
         ("names a field the unit CARRIES",
          {"relation": "missing_field", "stated_field": "device"}, ["class", "device"], True),
+        # Carries a quote, so it reaches the field test: an absence claim with
+        # no quote is refused first now (check 233), which is the point.
         ("names a field the unit LACKS",
-         {"relation": "missing_field", "stated_field": "calibration authority signature"},
+         {"relation": "missing_field", "stated_field": "calibration authority signature",
+          "quote": "Class: Class-A sensor"},
          ["class", "device"], False),
         ("field_label instead of stated_field, unit carries it",
          {"relation": "missing_field", "field_label": "Device"}, ["device"], True),
@@ -21080,6 +21185,8 @@ CHECKS = [
      check_231_advisory_reply_items_are_withheld),
     ("232 an amendment carries its typed record, and the deepening pass is bounded",
      check_232_typed_amendment_and_bounded_deepening),
+    ("233 an absence claim with no quote is refused, forward only",
+     check_233_absence_claim_requires_a_quote),
 ]
 
 
