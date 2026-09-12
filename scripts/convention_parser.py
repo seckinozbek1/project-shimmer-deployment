@@ -187,27 +187,51 @@ SEVERITY_WHEN_UNDECLARED = "required"
 
 
 def resolve_severity(declared, rule_text):
-    """The severity a rule actually carries, and whether anything disagreed.
+    """The severity a rule carries. The operator's declaration, or the fallback.
 
-    Returns (severity, note). `note` is None when the operator declared one, or
-    when the guess agrees with the fallback; otherwise it records what the prose
-    said and what was used instead, so a guess that decides something is never
-    invisible."""
+    TWO-J: THE PROSE GUESS NO LONGER DECIDES ANYTHING. It is computed only to be
+    REPORTED, so an operator can see what the wording suggested and judge whether
+    to declare something; nothing downstream reads it.
+
+    Measured across all 44 shipped convention rules before deciding:
+      - 28 declare a severity. ALL 28 DECLARE `required`. The classifier has
+        therefore never once been tested against a declaration it could get
+        wrong, so its apparent 22-of-28 accuracy is the accuracy of guessing the
+        only value present in the sample. It has no demonstrated ability to
+        distinguish anything.
+      - the 6 it gets "wrong" are not misfires. NO PATTERN MATCHES AT ALL, and
+        the value comes from `_classify_severity`'s trailing `return "advisory"`.
+        Both families are declarative rules with no modal verb: a validity
+        condition ("is only valid when ... is not calibration-complete") and a
+        prohibition stated as a plain declarative ("Findings record ... never a
+        guess about cause of fault").
+      - flipping that default to `required` would score 28 of 28 and still prove
+        nothing, because it would be right BY CONSTANT rather than by reading.
+
+    So the guess is retired from the decision rather than repaired. A severity
+    now comes from the operator or from the fallback, and a run never withholds
+    an amendment because a regex found no modal verb in a sentence.
+
+    Returns (severity, note). `note` is None when the operator declared one, and
+    otherwise records what the prose suggested and that it was NOT used, so the
+    fact that a rule is running on the fallback stays visible."""
     if declared:
         return str(declared).strip().lower(), None
     guess = _classify_severity(rule_text or "")
-    if guess == SEVERITY_WHEN_UNDECLARED:
-        return SEVERITY_WHEN_UNDECLARED, None
     return SEVERITY_WHEN_UNDECLARED, {
         "declared": None,
-        "prose_classification": guess,
+        "prose_suggestion": guess,
         "used": SEVERITY_WHEN_UNDECLARED,
-        "reason": ("no severity was declared on the heading; the prose classifier "
-                   "read %r, which would withhold this rule's amendment. Severity "
-                   "now decides whether an amendment is produced, so an undeclared "
-                   "one falls back to %r rather than being guessed into silence. "
-                   "Declare a severity on the heading to settle it."
-                   % (guess, SEVERITY_WHEN_UNDECLARED)),
+        "prose_suggestion_consumed": False,
+        "reason": ("no severity was declared on this heading, so it runs on the "
+                   "fallback (%r). The wording suggests %r, which is REPORTED and "
+                   "NOT USED: prose severity guessing was retired (TWO-J) because "
+                   "across the shipped corpora every declared severity is "
+                   "`required`, so the classifier was never tested against a value "
+                   "it could get wrong, and its six errors all came from matching "
+                   "no pattern at all rather than from reading. Declare a severity "
+                   "on the heading if this rule should behave differently."
+                   % (SEVERITY_WHEN_UNDECLARED, guess)),
     }
 
 

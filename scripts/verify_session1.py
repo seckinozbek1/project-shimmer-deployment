@@ -14890,12 +14890,15 @@ def check_197_convention_heading_brackets_read_subject_and_severity():
                      f"{_cp.SEVERITY_WHEN_UNDECLARED!r} (the undeclared fallback, "
                      f"TWO-H) subjects=[], got severity={r3.severity!r} "
                      f"subjects={r3.subjects!r}")
-    if not r3.severity_note or r3.severity_note.get("prose_classification") != "advisory":
+    if not r3.severity_note or r3.severity_note.get("prose_suggestion") != "advisory":
         return _fail("CONV-D03 has no severity bracket and the prose classifier "
-                     "reads it as advisory, which disagrees with the fallback; that "
-                     "disagreement must be RECORDED on the rule, or a guess that "
-                     "would have withheld an amendment stays invisible. Got: "
-                     f"{r3.severity_note!r}")
+                     "reads it as advisory; what the prose suggested must be "
+                     "RECORDED on the rule, or the fact that this rule is running "
+                     f"on the fallback stays invisible. Got: {r3.severity_note!r}")
+    if r3.severity_note.get("prose_suggestion_consumed") is not False:
+        return _fail("CONV-D03's prose suggestion is not marked unconsumed; TWO-J "
+                     "retired the guess from the decision, and a note that does not "
+                     "say so reads as though the guess still decides")
 
     # Site 2: a conventions file that opens DIRECTLY on a real, id-less rule
     # section (no title, no prose preamble at all) must parse exactly as
@@ -19327,16 +19330,43 @@ def check_239_severity_decides_and_evidence_survives():
     if _sev != _cp.SEVERITY_WHEN_UNDECLARED:
         return _fail("an undeclared severity was guessed to %r; a prose guess that "
                      "withholds an amendment must not be silently load-bearing" % _sev)
-    if not _note or _note.get("prose_classification") != "advisory":
-        return _fail("the disagreement between the prose guess and the fallback was "
-                     "not recorded, so the classifier's error rate stays invisible")
+    # TWO-J: the prose guess is REPORTED and NOT CONSUMED. Retired from the
+    # decision rather than repaired, because across the 44 shipped rules every
+    # one of the 28 declared severities is `required`: the classifier was never
+    # tested against a value it could get wrong, and its 6 errors all came from
+    # matching NO pattern at all (falling to the trailing `return "advisory"`)
+    # rather than from reading anything.
+    if not _note or _note.get("prose_suggestion") != "advisory":
+        return _fail("what the prose suggested is not reported, so an operator "
+                     "cannot see that a rule is running on the fallback")
+    if _note.get("prose_suggestion_consumed") is not False:
+        return _fail("the prose suggestion is not marked unconsumed; a guess that "
+                     "reads like a decision is the defect this item closed")
+    if _note.get("used") != _cp.SEVERITY_WHEN_UNDECLARED:
+        return _fail("the fallback was not the value actually used")
+    # The guess must not reach the severity under ANY wording, including the
+    # no-match default that produced all six real errors.
+    for _probe_text in ("A reading may be noted where relevant.",
+                        "Findings record what conflicts, never a guess about cause.",
+                        "A signature is only valid when the role holds a certificate."):
+        _s, _n = _cp.resolve_severity(None, _probe_text)
+        if _s != _cp.SEVERITY_WHEN_UNDECLARED:
+            return _fail("prose still decides an undeclared severity for %r -> %r"
+                         % (_probe_text[:40], _s))
     _sev2, _note2 = _cp.resolve_severity("advisory", "The reading must fall in band.")
     if _sev2 != "advisory" or _note2:
         return _fail("a DECLARED severity was overridden or spuriously annotated; "
                      "the operator's declaration always wins")
+    # TWO-J: a note is now emitted for EVERY undeclared rule, not only where the
+    # guess disagreed. The point is no longer "flag a disagreement" but "say this
+    # rule is running on the fallback", which is true whatever the prose says.
     _sev3, _note3 = _cp.resolve_severity(None, "The reading must fall inside the band.")
-    if _sev3 != "required" or _note3:
-        return _fail("a prose guess AGREEING with the fallback should need no note")
+    if _sev3 != "required":
+        return _fail("an undeclared severity did not take the fallback")
+    if not _note3 or _note3.get("prose_suggestion") != "required":
+        return _fail("an undeclared rule whose prose AGREES with the fallback still "
+                     "needs a note: the operator must be able to see that nothing "
+                     "was declared, not only that nothing disagreed")
     # Every shipped corpus still parses and none of its rules became advisory,
     # which is what makes this change safe to ship today.
     _corpora = sorted((ROOT / "benchmark" / "corpora").glob("*/conventions/*.md"))
@@ -19391,6 +19421,80 @@ def check_239_severity_decides_and_evidence_survives():
     if "not consumed" not in str(_d.get("action_status", "")).lower():
         return _fail("a registry entry writes an `action` without saying it is not "
                      "consumed, so it reads as an instruction that does nothing")
+
+    # --- TWO-I: the PHRASING route is closed too ---------------------------
+    # After the action route was closed, a review convention could still become
+    # a redaction rule through the redact-verb regex, because a rule about what
+    # a REVIEWER may conclude uses the same verbs as a rule about what to remove
+    # from a document. "Findings must withhold judgement about equipment
+    # condition" is about the reviewer's own output; nothing in it asks for a
+    # span to be removed. The verb's OBJECT decides it.
+    #
+    # BOTH HALVES are proved, because the dangerous failure here is the second:
+    # a redaction rule that silently stops compiling is worse than one that
+    # compiles when it should not.
+    _restraint = [
+        "Findings must withhold judgement about equipment condition.",
+        "Findings record what conflicts with a stated rule, never a guess about "
+        "cause of fault, or maintenance priority. Diagnosis is not the reviewer's.",
+        "A reviewer must not state an opinion about maintenance priority.",
+    ]
+    for _t in _restraint:
+        _reg = {"conventions": [{"id": "CONV-R", "category": "conformance",
+                                 "action": "flag", "action_declared": False,
+                                 "rule": _t, "severity": "required"}]}
+        if _rr(_reg)["operator_in_force"]:
+            return _fail("a review convention about REVIEWER RESTRAINT compiled into "
+                         "a live redaction rule through the verb regex: %r" % _t[:60])
+    # The restraint test needs BOTH a reviewer subject and a reviewer object.
+    # Requiring only one wrongly suppresses a rule like this, which carries a
+    # redaction verb and no reviewer SUBJECT at all, so it is not restraint.
+    # Without this case the and-vs-or distinction is unobservable and any proof
+    # over it would be a THIRTEEN-B no-op.
+    _one_signal = {"conventions": [{"id": "CONV-S", "category": "conv-client-data",
+                                    "action": "flag", "action_declared": False,
+                                    "rule": "Speculation must not be published.",
+                                    "severity": "required"}]}
+    if not _rr(_one_signal)["operator_in_force"]:
+        return _fail("a rule with a redaction verb and only ONE reviewer-facing "
+                     "signal was treated as reviewer restraint; the restraint test "
+                     "must require both, or genuine redaction rules stop compiling")
+
+    # A genuine redaction rule must still compile, by every route it used to.
+    _genuine = [
+        ("Redact the client name wherever it appears.", "conv-client-data", "phrasing"),
+        ("Withhold the supplier turnover figure from the output.", "conv-client-data", "phrasing"),
+        ("Do not publish the individual's address.", "conv-client-data", "phrasing"),
+        ("Mask the account number.", "conv-account", "phrasing"),
+        ("Personal identifiers may not appear in any artifact.", "conv-client-data", "phrasing"),
+        # These two MENTION the review and still name removable content. An
+        # earlier version of the restraint test suppressed both, which is the
+        # dangerous direction: a redaction rule that silently does not compile.
+        ("Do not disclose the finding's subject name.", "conv-client-data", "phrasing"),
+        ("Redact any comment that names an individual.", "conv-client-data", "phrasing"),
+        ("The deliverable must not contain confidential business figures.",
+         "conv-confidentiality", "category"),
+    ]
+    for _t, _cat, _want in _genuine:
+        _reg = {"conventions": [{"id": "CONV-G", "category": _cat, "action": "flag",
+                                 "action_declared": False, "rule": _t,
+                                 "severity": "required"}]}
+        _res = _rr(_reg)
+        if not _res["operator_in_force"]:
+            return _fail("a GENUINE redaction rule stopped compiling: %r. A redaction "
+                         "rule that silently does not apply is the more dangerous "
+                         "direction of this change." % _t[:60])
+        if [r["matched_by"] for r in _res["operator_rules"]] != [_want]:
+            return _fail("a genuine redaction rule compiled by the wrong route: %r "
+                         "matched %r, expected %r"
+                         % (_t[:40], [r["matched_by"] for r in _res["operator_rules"]], _want))
+    # And no shipped rule triggers redaction on any route, before or after.
+    from sensitivity_layer.rules import _has_redaction_phrasing as _hrp
+    for _cp_path in _corpora:
+        for _r in _cp._parse_text(_cp_path, [0]):
+            if _hrp(_r.rule or ""):
+                return _fail("%s/%s now reads as redaction intent; no shipped review "
+                             "convention should" % (_cp_path.parent.parent.name, _r.category))
 
     # --- NEUTRALISE the severity branch, the part that was inert -----------
     pr_path = ROOT / "scripts" / "paired_review.py"
