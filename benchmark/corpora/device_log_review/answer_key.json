@@ -4,7 +4,7 @@
   "written": "2026-09-11 local, BEFORE any deliverable from a run of this corpus was opened",
   "held_out": "The pipeline never reads benchmark/. This key is consulted only by tools/score_corpus.py after a run, and the scorer matches mechanically on unit id and rule id.",
   "task_given_to_the_pipeline": "Review device_log_flawed.md against the eight rules in device_conventions.md, grounded in device_class_reference.md. The document's own glossary section states the standard fault window, service interval and calibration authority definitions used by several rules. For every rule, find every entry it applies to, check it against the rule, the reference material, the glossary, and the entries immediately beside it, and report each violation with the figures that conflict, the rule it breaks (by the operator's own id), and the reference passage it rests on.",
-  "limitation": "This corpus and its answer key were both authored by the same process that built the pipeline fixes being measured against it. A score against a self-authored key is weaker evidence than a score against a corpus and key written independently: the author of a test cannot be fully blind to what the test is designed to catch. It is included because, before this corpus, there was no measurement corpus for adjacent-context or long-range flaws in this benchmark set at all, and a self-authored measurement is worth more than no measurement, held to that lower standard explicitly rather than presented as independent verification.",
+  "limitation": "This corpus and its answer key were both authored by the same process that built the pipeline fixes being measured against it. A score against a self-authored key is weaker evidence than a score against a corpus and key written independently: the author of a test cannot be fully blind to what the test is designed to catch. It is included because, before this corpus, there was no measurement corpus for adjacent-context or long-range flaws in this benchmark set at all, and a self-authored measurement is worth more than no measurement, held to that lower standard explicitly rather than presented as independent verification. CORRECTION 2026-09-12, recorded so a later reader knows the KEY was changed and not the rule: UNIT-TEASEL was listed as clean while CONV-D02 requires a calibration authority signature on every Class-A entry stating a reading, which TEASEL does not carry. The rule, the entry that violates it, and the key that called it clean were all written by one party, and the contradiction was found by a measurement run flagging TEASEL rather than by review. It was resolved in favour of the RULE: CONV-D02 is unchanged, TEASEL is now listed as a planted CONV-D02 flaw in the flawed twin, and the clean twin gained the signature the way PINE gained it. The opposite resolution, weakening the rule or leaving the key, would have marked a correct finding as a false positive and moved the measurement in the direction that flatters the pipeline. Separately, CONV-D02 gained the scope field \"reading\", so it applies to entries that state a reading: UNIT-CEDAR is a definitional note carrying no reading and is out of scope by the operator declaration rather than by an inference in code.",
   "corpus_size": {
     "units": 19,
     "note": "18 device entries plus 1 glossary unit, per pairing_map.split_units() on device_log_flawed.md, u01 through u19.",
@@ -77,6 +77,14 @@
       "relation": "missing_field"
     },
     {
+      "unit": "UNIT-TEASEL",
+      "rule": "CONV-D02",
+      "kind": "self-contained, visible in one unit alone",
+      "relation": "missing_field",
+      "depends_on": null,
+      "what": "TEASEL is a Class-A sensor entry stating a reading of 46 units with no calibration authority signature field at all. CONV-D02 requires the field for every Class-A entry that states a reading. Visible from TEASEL own text against the rule, without reading any other entry. TEASEL also carries a separate CONV-D04 flaw on its fault window; the two are independent and are listed separately. ADDED 2026-09-12: this entry was originally listed as clean and the pipeline flagged it. The rule, the entry and the key were written by one party, and the contradiction was found by the measurement rather than by review. It was resolved in favour of the RULE: CONV-D02 is unchanged and the key was corrected, because marking a correct finding as a false positive would corrupt the measurement in the direction that flatters the pipeline."
+    },
+    {
       "unit": "UNIT-ROWAN",
       "depends_on": null,
       "kind": "self-contained, visible in one unit alone",
@@ -109,7 +117,12 @@
     }
   ],
   "clean": [
-    "UNIT-ALDER", "UNIT-CEDAR", "UNIT-GORSE", "UNIT-FIRTH", "UNIT-JUNIPER", "UNIT-MAPLE"
+    "UNIT-ALDER",
+    "UNIT-CEDAR",
+    "UNIT-FIRTH",
+    "UNIT-GORSE",
+    "UNIT-JUNIPER",
+    "UNIT-MAPLE"
   ],
   "notes": "9 planted defects (real recall test, the pipeline should flag these) plus 3 precision_test entries (the pipeline should flag NOTHING there; an amendment against one is a false positive by the same mechanism as the clean list) across 18 device entries plus the glossary unit. Six units listed as clean are the NEIGHBOURS a planted or precision_test entry depends on, not defects themselves: ALDER, CEDAR and GORSE correctly state real local exceptions that clear their dependent neighbour (BIRCH, DAMSON, HOLLY, in precision_test), and FIRTH, JUNIPER and MAPLE correctly report a real correction that makes their dependent neighbour (ELDER, IVY, LARCH, in planted) unsound; an amendment filed directly against any of these six units, rather than against the unit whose defect or clearance they explain, is a false positive. Several planted relation values are null rather than a finding_record relation: several of these flaws (a decommissioned-device contradiction, an invalid calibration signature, an internal figure contradiction) are logical, not arithmetic, and do not map onto the closed finding_record relation set (sum_mismatch, above_band, etc.); a real wide-mode agent is expected to state one of these as a free-text relation value of its own choosing, same as PRACTICE_AUDITOR's real output tonight used 'type_mismatch', a value outside the declared set. Scoring for these entries goes through the scorer's via_rule path (unit + operator rule id on a real amendment), not via_bus (which requires an exact relation-string match); this is documented, not hidden: recall for a null-relation entry can only be proven by an amendment actually being built, not by a bus-only finding with no amendment. device_log_clean.md is the clean twin: every planted and precision_test defect repaired, every other detail unchanged, scored separately as its own corpus run with an empty planted list and a clean list naming all 18 device entries, to measure false positives on a genuinely clean input."
 }

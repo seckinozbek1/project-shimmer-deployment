@@ -171,6 +171,7 @@ Calibration authority signature: T. Okoye, certificate current
 Device: UNIT-TEASEL
 Class: Class-A sensor
 Reading: 46 units
+Calibration authority signature: T. Okoye, certificate current
 Fault logged: 2026-06-01 09:00
 Fault acknowledged: 2026-06-01 18:00
 

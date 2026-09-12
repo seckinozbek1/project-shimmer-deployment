@@ -4,7 +4,7 @@
   "written": "2026-09-11 local, BEFORE any deliverable from a run of this corpus was opened",
   "held_out": "The pipeline never reads benchmark/. This key is consulted only by tools/score_corpus.py after a run, and the scorer matches mechanically on unit id and rule id.",
   "task_given_to_the_pipeline": "Review device_log_clean.md against the eight rules in device_conventions.md, grounded in device_class_reference.md, the same task given for device_log_review's flawed document. This is the clean twin: every defect planted in device_log_flawed.md is repaired here, every other detail unchanged, so a run against this document measures false positives on a genuinely clean input rather than on a document that has no violations mixed in with ones that do.",
-  "limitation": "This corpus and its answer key were both authored by the same process that built the pipeline fixes being measured against it, the same limitation stated on device_log_review's own key. See that key for the full statement; it applies identically here.",
+  "limitation": "This corpus and its answer key were both authored by the same process that built the pipeline fixes being measured against it, the same limitation stated on device_log_review's own key. See that key for the full statement; it applies identically here. CORRECTION 2026-09-12, recorded so a later reader knows the KEY was changed and not the rule: UNIT-TEASEL was listed as clean while CONV-D02 requires a calibration authority signature on every Class-A entry stating a reading, which TEASEL does not carry. The rule, the entry that violates it, and the key that called it clean were all written by one party, and the contradiction was found by a measurement run flagging TEASEL rather than by review. It was resolved in favour of the RULE: CONV-D02 is unchanged, TEASEL is now listed as a planted CONV-D02 flaw in the flawed twin, and the clean twin gained the signature the way PINE gained it. The opposite resolution, weakening the rule or leaving the key, would have marked a correct finding as a false positive and moved the measurement in the direction that flatters the pipeline. Separately, CONV-D02 gained the scope field \"reading\", so it applies to entries that state a reading: UNIT-CEDAR is a definitional note carrying no reading and is out of scope by the operator declaration rather than by an inference in code.",
   "corpus_size": {
     "units": 19,
     "note": "18 device entries plus 1 glossary unit, per pairing_map.split_units() on device_log_clean.md, the same unit count as the flawed twin since only field values changed, not document structure.",
@@ -12,9 +12,24 @@
   },
   "planted": [],
   "clean": [
-    "UNIT-ALDER", "UNIT-BIRCH", "UNIT-CEDAR", "UNIT-DAMSON", "UNIT-GORSE", "UNIT-HOLLY",
-    "UNIT-ELDER", "UNIT-FIRTH", "UNIT-IVY", "UNIT-JUNIPER", "UNIT-LARCH", "UNIT-MAPLE",
-    "UNIT-OAK", "UNIT-PINE", "UNIT-ROWAN", "UNIT-SPRUCE", "UNIT-TEASEL", "UNIT-VETCH"
+    "UNIT-ALDER",
+    "UNIT-BIRCH",
+    "UNIT-CEDAR",
+    "UNIT-DAMSON",
+    "UNIT-GORSE",
+    "UNIT-HOLLY",
+    "UNIT-ELDER",
+    "UNIT-FIRTH",
+    "UNIT-IVY",
+    "UNIT-JUNIPER",
+    "UNIT-LARCH",
+    "UNIT-MAPLE",
+    "UNIT-OAK",
+    "UNIT-PINE",
+    "UNIT-ROWAN",
+    "UNIT-SPRUCE",
+    "UNIT-TEASEL",
+    "UNIT-VETCH"
   ],
   "notes": "Zero planted defects, by design: this is the clean twin. Every one of the 18 device entries is listed as clean. Any amendment produced by a run against this document is a false positive; recall is meaningless here (0/0) and is expected to print that way. The number that matters from this corpus is false positives and distractor hits, both expected to be zero on a correctly working pipeline."
 }
