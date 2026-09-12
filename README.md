@@ -1386,11 +1386,13 @@ CUDA specific.
 A container path was built on 10 and 11 September 2026 and, like everything else from those
 two days, has had its gate run but no review scored. The image (`Dockerfile`) is
 `nvidia/cuda:12.1.1-base-ubuntu22.04` with Python 3.9 from deadsnakes, torch 2.5.1 from the
-cu121 index, then `requirements.txt`. It copies **source only**: `scripts/`, `config/`,
-`tools/`, `corpus_ingest/`, the three root markdown files and `requirements.txt`; no
-`input/`, `benchmark/`, `durable/`, `output/` or `.git`. `.dockerignore` excludes `.git`,
+cu121 index, then `requirements.txt`. It copies framework source: `scripts/`, `config/`,
+`tools/`, `corpus_ingest/`, the three root markdown files and `requirements.txt`,
+plus the three declared synthetic files in `benchmark/fixtures/` needed by the
+condition, severity and external-rule checks. No operational input, benchmark
+corpora or answer keys, durable state, output, or Git history is copied. `.dockerignore` excludes `.git`,
 `input/`, `durable/`, `output/` and `benchmark/keys/`; the corpora under `benchmark/` stay
-out of the image only because the `COPY` list never names them. It sets
+out of the image because the `COPY` list names only the three fixtures. It sets
 `PYTHONPATH=/app/scripts:/app` and
 `HF_HOME=/root/.cache/huggingface`, so a mounted host cache and baked weights land at the
 same path.
@@ -1401,6 +1403,41 @@ Two build modes behind one build argument:
 docker build -t shimmer:local .                              # unbaked: small, expects a mounted model cache
 docker build --build-arg BAKE_WEIGHTS=true -t shimmer:baked . # baked: the three checkpoints downloaded into the image
 ```
+
+The baked build also prepares bge-m3 as `model.safetensors`. A cached `.bin` file
+alone cannot load with the pinned torch 2.5.1 runtime. Conversion uses a temporary
+torch 2.6.0 CPU installation with its restricted `weights_only=True` reader; that
+build dependency is removed in the same layer. Runtime model ids and package pins
+stay the same. `scripts/model_weights.py --model <cached-model-id>` can prepare a
+local cache under torch >= 2.6; an older runtime refuses to convert pickle weights.
+Already prepared weights need no conversion and load with torch 2.5.1.
+
+Check the baked image itself, with no mounts:
+
+```
+docker run --rm --network none --gpus all --entrypoint python shimmer:baked tools/container_offline_probe.py
+```
+
+The probe executes redaction intent, shape authorisation and rule compilation,
+checks all five votes with scores and references, and fails on attempted network
+access as well as failed decisions. It makes no generation or provider call.
+
+For builders whose cache cannot retain all weight layers, keep a local cache
+outside the build context (this repository excludes `output/`):
+
+```
+docker buildx build --build-arg BAKE_WEIGHTS=true --cache-to type=local,dest=output/shimmer_build_cache,mode=max -t shimmer:baked .
+docker buildx build --build-arg BAKE_WEIGHTS=true --cache-from type=local,src=output/shimmer_build_cache --cache-to type=local,dest=output/shimmer_build_cache,mode=max -t shimmer:baked .
+```
+
+The measured local cache occupies 14.41 GB. A subsequent source rebuild reused all
+three weight downloads and the conversion layer, with no weight download repeated.
+The producer cache record had disappeared while its image layer remained; the
+builder reports a 20 GiB garbage-collection policy. Automatic collection explains
+that possibility, but the historical eviction event was not recovered. The local
+cache is the verified remedy and needs no global Docker configuration change.
+It is local build state, never source to commit, and retained blobs can grow across
+builds. No registry upload is involved.
 
 `compose.yaml` names `image: shimmer:local` and declares no `build:` key, so it runs the
 image the first line builds and builds nothing itself.
@@ -1448,7 +1485,31 @@ Six failures, and all six are the environment rather than the code, unchanged ac
 rebuilds. Four are the source-only ones section L lists (01, 28, 31, 145). The other two are
 the machine: **139** needs a CUDA branch and the container has no GPU, and **193** loads a
 cached local model with the network blocked, which the mounted host cache does not satisfy
-inside the container. Neither is a regression, and neither can pass there.
+inside the container. Those observations describe that image and invocation.
+ZERO-C retested both with `--gpus all` on 12 September: checks **139 and 193 PASS**.
+The local loader resolves a cached snapshot directory before calling Transformers.
+Version 4.52.3 probes custom generation code by repository id despite the
+local-files-only flag; a local directory keeps that lookup local too. Cached
+custom generation overrides are refused so resolving a directory grants no new
+code-execution permission. The configured checkpoints use standard generation. Check 193
+counts attempted access, including errors the library catches, and its real
+neutralisation removes snapshot resolution. The cached Phi checkpoint loads with
+network access blocked, and the current Docker
+runtime exposes one CUDA device. The six-step ensemble probe also PASSes with no
+mounts and no attempted network access. This proves local loading and semantic
+decisions, not a completed review; no pipeline run was performed.
+
+The completed ZERO-C host gate is **243 PASS, 0 WARN, 0 SKIP, 2 FAIL, 245 total**.
+The image gate is **233 PASS, 0 WARN, 8 SKIP, 4 FAIL, 245 total**, with network
+disabled, GPU enabled and no mounts. The six-step ensemble probe passes.
+
+The ZERO-C image carries all three synthetic fixtures used by checks 236, 238 and
+239. Check 239 runs its severity, suspension, conflict-summary and restraint proofs
+there; its result explicitly says the corpus regression assertions were not run. A
+nonempty corpus set must still provide the regression set; an empty directory
+left by another gate check does not constitute a corpus. The deliberately
+absent runtime directories account for checks 01, 28 and 31, and the absent ignored
+contamination fixture accounts for 145. These source-only limits remain visible.
 
 Seven skips: the two network checks `--offline` always skips, plus five that need files the
 image does not ship. The image copies `scripts/`, `config/`, `tools/` and `corpus_ingest/`
@@ -2719,7 +2780,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**244** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**245** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2735,7 +2796,7 @@ verify`, section G). The first offline gate inside the rebuilt image, with the n
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
 table below; checks 210 to 243 have since raised the total to 244. The host gate at the
-time of writing is `PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244`, the two failures being
+recovery baseline at `64b83e0` is `PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244`, the two failures being
 the known environment ones: check 01 (`prompts/` and `snapshots/` absent in this working
 tree) and check 145 (the contamination-probe fixture is gitignored and absent).
 

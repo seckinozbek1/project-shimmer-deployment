@@ -2,49 +2,83 @@
 
 **Read this file first and continue without asking.**
 
-Single handover file. Rewritten in full at the close of every item, never
-appended to. If it disagrees with any older note in `docs/fix/`, this file wins.
+## Recovery
 
----
+Recovered main at 64b83e0ff6925c374c6618b4ffa90aed4645dbfd, 31 commits ahead of
+origin/main (2c88112). No staged or tracked edits existed at takeover. Preserved
+SHIMMER_HANDOFF.md and all untracked durable state. The untracked
+tools/container_offline_probe.py belongs to the unfinished image item.
+The older handoff, LEDGER and WORDS_TODO lag the code. ZERO-A and ZERO-B are
+closed by 64b83e0. The previous RESUME called the image item ONE; its canonical
+name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
-## Item just finished
+## Item just completed
 
-**ZERO**, both halves. Commit: pending at the time of writing (see `git log -1`;
-the commit message begins "ZERO:").
+ZERO-C, the commit containing this checkpoint, subject
+`ZERO-C: bake safely loadable weights and prove offline decisions`.
+Resolve its hash with `git log -1 --format=%H -- scripts/model_weights.py`.
+The code parent at recovery was 64b83e0; ZERO-A and ZERO-B were already closed.
 
-- **ZERO part 2, the active prohibition.** `_PROHIBITION_RE` matched only the
-  passive form, so "the address must not BE PUBLISHED" compiled and "the
-  reviewer must not PUBLISH the client's address" did not. Widened to the active
-  and passive forms of the SAME prohibition: same verbs, same modal frame, the
-  participle dropped. No new verb and no new frame. **0 of 44 shipped rules
-  change behaviour.** TWO-I's restraint exclusion survives in both voices,
-  including active `disclose` and `reveal` forms.
-- **ZERO part 1, the seven unauthorising rules.** Measured, and the remainder is
-  NOT a threshold problem: all seven name a home address, a date of birth, a
-  location or a medical history, content for which **no shape detector exists**
-  (there are three: identifier, figure, name). Authorising nothing is therefore
-  the CORRECT answer, and adding detectors would be a reach change far beyond
-  the item. What was wrong was the silence: `unauthorising_rules` now names them
-  with a reason and `redaction_stage` posts `REDACTION_RULE_UNAPPLIED` to the
-  bus, where every other redaction outcome goes.
-- Gate check 243 added, neutralise/fail/restore/pass with THIRTEEN-B's test.
+The inherited image carried a raw bge-m3 checkpoint. Its old probe passed only
+after network retries and unsafe runtime conversion. The image now prepares
+safetensors with an isolated torch 2.6.0 CPU reader using weights_only=True,
+then removes the converter installation. Runtime pins and model ids stay fixed.
+The probe refuses attempted network access and requires five votes with scores
+and references. Check 244 proves safe conversion through the real loader.
+Check 239 now finishes its synthetic proofs without unshipped corpora and names
+that missing coverage; a nonempty but incomplete corpus still fails. Its mutation
+executes the actual consumer rather than merely rewriting source text.
 
-## Item in progress
+## Current item
 
-**None.** ZERO is closed. The next item is ONE.
+ZERO-C is complete. Commit this checkpoint if still uncommitted, then open FOUR:
+establish whether paired review depends on PROCESSOR extraction, then fix its
+truncation loss. No other backlog implementation was opened in this session.
+The loader now resolves a local snapshot and refuses custom generation overrides;
+check 193 observes HTTP attempts as well as new connections, so a reused pool
+cannot hide a request. Its actual resolver mutation fails and restoration passes.
+SIXTEEN already has positive evidence. SEVENTEEN has a measured cache remedy,
+with the historical GC event unproven.
 
-## What remains, in order
+## Ordered remaining work
 
-1. **ONE: the image carries the weights.** Decided by the operator, not a
-   question. Pay the 2.3 GB for `BAAI/bge-m3`. State beforehand what the rebuild
-   should change; rebuild; afterwards prove the offline claim INSIDE the
-   container with the network blocked and nothing mounted. Then answer SIXTEEN
-   properly rather than in the ledger: whether checks 139 and 193 can now pass
-   there, and if not, what remains impossible and why.
-2. **FOUR through TWENTY-ONE**, the main list, in order, as already written.
-   Every sub-item that surfaces inside one is solved inside it.
-   **TWENTY stays an ANSWER and not a build** (whether the GNN learns is the
-   operator's decision). Answer it fully and keep moving.
+1. FOUR: PROCESSOR extraction dependency and loss.
+2. FIVE: parse valid envelopes through packaging, retain the payload contract.
+3. SIX: explain each of the eight agents that never called a model.
+4. SEVEN: scorer distinguishes never assigned, suspended, asked with no finding.
+5. EIGHT: verify date_window visibility in the current scorer.
+6. NINE: compute whether Python now settles ROWAN.
+7. TEN: distinguish incomplete runs from completed empty runs.
+8. ELEVEN: plain-language harness facts or explicit absence.
+9. TWELVE: one run-id format.
+10. THIRTEEN: structural proof against reading-only and no-op neutralisations.
+11. FOURTEEN: trace typed records through real amendment artifacts.
+12. FIFTEEN: pairing fallback value and WORDS-A compliance.
+13. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+14. SEVENTEEN: close the cache diagnosis with measured build reuse.
+15. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+16. NINETEEN: classify document_dates.json in the manifest.
+17. TWENTY: answer the learning-signal question, no GNN build.
+18. TWENTY-ONE: put the quote prediction where the next run checks it.
+
+## Current-session decisions
+
+1. Keep Python 3.9 and the runtime pins: installed host dependencies were hidden
+   by the sandbox, so migration would disguise an access problem.
+2. Prepare safetensors with a temporary patched CPU reader: the same weights
+   become directly loadable without unsafe runtime pickle conversion.
+3. Export and import a local BuildKit cache: preserve expensive layers outside
+   builder GC without changing global Docker configuration or uploading images.
+4. Ship the three existing synthetic gate fixtures: their behavioral proofs must
+   execute in the image without shipping corpora or held-out answer keys.
+5. Keep rule-derived convention authority and mount-supplied runtime directories
+   as declared by the existing shipping contract; preserve local operator state.
+6. Name unavailable corpus coverage while running check 239's synthetic proofs:
+   a shipping decision must not abort unrelated behavioral checks.
+7. Resolve cached generation snapshots before loading and refuse custom-code
+   overrides: preserve offline loading without granting new execution permission.
+8. Count HTTP attempts as well as socket events: a pooled connection must not
+   hide access from the verification proof.
 
 ## Decisions made in the operator's place
 
@@ -85,38 +119,45 @@ Gathered so they can be read together. Each is one line plus its reason.
 13. Narrowed WORDS-F to alternating-word regexes; 135 hits was useless, 21 is
     exact.
 
-## Gate
+## Gate and environment
 
-**Bar: 241 of 243** before this item. With check 243 added the bar becomes
-**242 of 244**. Two failures are permanent environment ones and are excepted:
+Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
+Final host: PASS=243 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=245.
+Final image: PASS=233 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=245, plus all six offline
+probe steps PASS, 122.8 seconds combined on the final image. Tests used --network none, --gpus all,
+and no mounts. Checks 139, 193, 239 and 244 PASS. The two host failures are 01
+(prompts/snapshots absent) and 145 (missing ignored contamination fixture).
+The image's four source-only failures are 01, 28, 31 and 145; skips explicitly
+name the coverage not run. No new unexplained failure remains.
 
-- check 01, `prompts/` and `snapshots/` absent in this working tree;
-- check 145, the contamination-probe fixture is gitignored and absent.
+Final logs: output/zero_c_resolved_host_gate.log and
+output/zero_c_release_container_validation.log (the final image repeated the
+233/245 result after the README refresh). Focused proofs are in
+output/zero_c_loader_proof.log, output/zero_c_custom_code_proof.log,
+output/zero_c_239_proof.log and output/zero_c_focused_proof.log. Each changed
+check has an independent observable mutation effect and fail/restore/pass.
+No neutralisation modified a real source file for the new proofs.
 
-A new red is fixed before the next item, never carried.
+Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
+Host-access py -3.9 sees installed dependencies and cached models; the sandbox
+may hide them. Do not install replacements for sandbox-only failures. Only one
+GPU model workload at a time. shimmer:zero-c carries the fixed runtime; old image
+tags remain intact. All 121 copied files matched the tree. The final README
+refresh carries the measured totals; the final image itself was verified again. Latest image identity and source audit: output/zero_c_source_audit.json.
+Build cache: output/shimmer_build_cache, about 14.41 GB, ignored and local only.
+Reuse it with the --cache-from/--cache-to commands in README; no global Docker
+configuration change or registry upload was made.
 
-## Terms in force
+## Standing terms
 
-- Local model load allowed; ensemble packages and weights are installed. **No
-  other new dependency without a written reason in the ledger.**
-- **No pipeline run, no provider or cloud call, no money.**
-- **Nothing pushed.** The operator pushes. Commit freely.
-- README and image updates allowed and expected; pay the debt down in the commit
-  that creates it.
-- **Neutralise, fail, restore, pass** on every check added or changed, with
-  THIRTEEN-B's test so a no-op neutralise is caught rather than counted.
-- Adversarial read before each commit.
-- Driver fault kills roughly one local GPU load in three or four: fall back to
-  CPU, record it, carry on.
-- **No em dashes.**
-- **Autonomy:** run to the end of the list without returning to the operator.
-  Solve every sub-problem in the pass that found it. Where you would ask,
-  choose, write the choice and its reason in one or two lines, and carry on.
-  Recording is not closing.
-- **Context discipline:** one item at a time, committed before the next. Rewrite
-  this file in full at each item close. When near the limit, stop opening items
-  and spend what is left committing and bringing this file current.
-
----
+No pipeline run, provider/cloud model call, paid operation, or push. The operator
+pushes. Preserve local history and durable state; do not reset, clean, rebase,
+amend or stash it. No new dependency without a written ledger reason. Work one
+item at a time and commit it before opening the next. Pay README/image debt in
+its item. Every changed check needs neutralise/fail/restore/pass and an independent
+changed-outcome proof; fixtures must establish their own validity. Adversarial
+read before each commit. Rewrite RESUME after each completed item. No em dashes
+in newly written text. Keep the ratified five-voter semantics and REFUSES cases.
+Choose conservative reversible details, record reasons, and continue autonomously.
 
 **Read this file first and continue without asking.**
