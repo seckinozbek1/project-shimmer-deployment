@@ -1,5 +1,42 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## FOUR scope follow-up CLOSED, 2026-09-12
+
+SEVEN closed in 3e1fc361f294b225b9d92fdc629fa8ba0b709b09. Before opening EIGHT,
+a caller audit found FOUR's scope statement was too broad: the editorial board
+also calls AgentWrapper.run_task and requests 8192 from config/editorial_board.json.
+The previous 4096 local backstop suppressed that request. Raising the shared cap
+to 8192 therefore increased the board's effective limit too. A valid declared
+observation through the real _dispatch_rank measured requested=8192, dispatched
+8192 with FOUR, and 4096 with the old cap (output/four_cap_scope_baseline.json).
+
+Decision: retain the board's already configured 8192 allowance and correct the
+scope claim. Its budget was an existing operator declaration; suppressing it
+again would restore the earlier mismatch. An initial uncommitted experiment
+restored the shared 4096 cap and extended only PROCESSOR's contract allowance.
+That experiment was reversed before commit after checking the board's explicit
+configuration. The final runtime behavior remains the behavior shipped in FOUR;
+no policy, model id, cloud budget or ordinary phase default changes here.
+
+The original check 245 only traversed production/audit callers and could not
+support its all-other-agents claim. It now includes the real editorial caller,
+a complete valid board observation, and the actual dispatched budget. Five
+observable mutations cover the local allowance, shared cap, board request,
+failed-draft guard and audit-state forwarding; each independently changed the
+observable outcome, made check 245 FAIL, then restored PASS
+(output/four_cap_mutation_proof.log).
+README and CLAUDE now state the board's effective change explicitly. No new
+dependency, model generation, provider call or pipeline run. Adversarial read
+confirmed that the final product diff is comments only, the board keeps its
+operator-declared allowance, and the proof reaches the real caller and dispatcher.
+shimmer:four-scope is sha256:c28277e4f3320dc250d25e16e0818a9e964cd3615a12ce66f7e115f01e248413,
+14,408,240,148 bytes. All 121 shipped files match after CRLF normalization
+(output/four_scope_source_audit.json); check 245 PASS in that image with network
+disabled and no mounts (output/four_scope_container_check.log). Model layers were
+reused and no model probe was repeated. Full host gate: PASS=244 WARN=0 SKIP=0
+FAIL/ERROR=2 TOTAL=246, known failures 01 and 145 only
+(output/four_scope_host_gate.log). The correction is ready to commit.
+
 ## SEVEN CLOSED, 2026-09-12
 
 SIX closed in f772a84d7a9c6a9eb0d381a79821a83c2571bd77.
@@ -52,8 +89,9 @@ changes 2/4 asked recall to 0/1 before the check FAILS. A fresh saved-artifact
 replay finds 36 and 39 exposed combinations, with 116 and 113 uncalled; this is
 an exposure census, not a gold-key score (output/seven_saved_shape_audit.json).
 No saved run contains a suspension, so that new-state proof remains synthetic.
-README now explains every state and denominator. No new dependency, pipeline run,
-model generation or real answer-key read. The intermediate host gate returned
+README now explains every state and denominator. No new dependency, pipeline run
+or model generation. The added fixtures and saved-shape replay read no real
+answer key; the standard gate retains its existing scorer regressions. The intermediate host gate returned
 242 PASS and four failures: known 01/145, the old in-flight fixture missing the
 new consumer metadata, and check 174 flagging an incidental domain-reserved word
 in the new docstring. The word was replaced without relaxing the guard. Checks

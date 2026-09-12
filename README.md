@@ -346,10 +346,10 @@ the old 1024 with headroom above the largest real, uncapped call observed), and
 `AUDIT_MAX_TOKENS`/`PRODUCTION_MAX_TOKENS`/`DEEPEN_MAX_TOKENS`/`WIDE_REVIEW_MAX_TOKENS` (2048,
 raised rather than left at 1024 for every call type with direct evidence of losing output
 there; wide-mode review was not exercised on the measured run, so its number is carried forward
-unchanged rather than guessed). `agent_wrapper.LOCAL_MAX_OUTPUT_TOKENS` (8192) replaces the old
-1024 as an outer backstop only, well above every named budget, so a caller that forgets to size
-one cannot run the wall clock away unboundedly; both local models' own context windows (Qwen
-32768, Phi 131072 positions) are far larger than any of these figures.
+unchanged rather than guessed). `agent_wrapper.LOCAL_MAX_OUTPUT_TOKENS` (8192) is the outer
+ceiling. The five phase defaults above remain below it; larger requests are bounded by it.
+Both local models' own context windows (Qwen 32768, Phi 131072 positions) are far
+larger than any of these figures.
 
 Local PROCESSOR calls have a separate `local_max_output_tokens: 8192` allowance
 in `config/agent_contracts.json` (check 245). Both saved 12 September replies hit
@@ -357,8 +357,13 @@ in `config/agent_contracts.json` (check 245). Both saved 12 September replies hi
 measure 6288 and 6081 tokens with the cached producer tokenizer, or 4588 and 4381
 with compact JSON. The largest item is 157 tokens. 8192 is the next doubling of
 the former 4096 backstop that fits the measured full reply plus that reserve.
-The local backstop rises to 8192 so it actually permits the allowance; other
-agents keep their active budgets, and cloud calls ignore this local declaration.
+The local backstop permits this allowance. It also permits the editorial board's
+existing `config/editorial_board.json` request of 8192, previously clamped to
+4096 on local calls. FOUR therefore raised the board's effective ceiling too;
+check 245 now exercises `_dispatch_rank` and verifies the actual dispatched
+budget. The board's operator configuration remains authoritative within the
+local ceiling. Ordinary production and audit defaults, and cloud budgets, stay
+unchanged. Cloud calls ignore PROCESSOR's local declaration.
 This gives the measured extraction room to finish; longer output can still hit
 the limit and remains explicitly marked as truncated.
 

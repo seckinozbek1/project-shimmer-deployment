@@ -1532,8 +1532,8 @@ class AgentWrapper:
                 # exactly, several producing zero usable items). The caller
                 # now sets a budget sized to what that call type is shown to
                 # need (pipeline.py's call sites); LOCAL_MAX_OUTPUT_TOKENS is
-                # an outer backstop for the largest declared local budget, so a
-                # caller error cannot runaway the wall clock unboundedly.
+                # the backstop. It permits PROCESSOR's measured allowance and
+                # the editorial board's configured 8192-token request.
                 result = self.dispatch(stable_prefix, dynamic_suffix,
                                        max_new_tokens=min(max_tokens, LOCAL_MAX_OUTPUT_TOKENS))
             else:

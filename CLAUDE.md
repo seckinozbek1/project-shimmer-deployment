@@ -355,9 +355,11 @@ processing swarm governed by an append-only constitution.
   regardless. A container gate loads models on the GPU: never overlap it with the host gate
   or a run.
 - Local PROCESSOR extraction has an 8192-token contract allowance, measured from
-  complete source envelopes; the local backstop permits it. Other active budgets
-  and cloud budgets stay unchanged. Phase-5 auditors receive draft availability
-  and truncation explicitly; failed-contract best-effort objects are withheld.
+  complete source envelopes; the local backstop permits it. Ordinary phase budgets
+  and cloud budgets stay unchanged. The local editorial board now reaches its
+  existing configured 8192 allowance, formerly clamped to 4096. Phase-5 auditors
+  receive draft availability and truncation explicitly; failed-contract
+  best-effort objects are withheld.
 - `scripts/pipeline.py`: the pipeline driver (the flags above).
 
 ## Key paths
