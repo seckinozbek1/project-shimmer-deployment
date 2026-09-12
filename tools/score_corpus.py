@@ -39,14 +39,14 @@ never reads. Matching is MECHANICAL and prose-free, on typed fields only:
                 kind: a corpus may plant several kinds of flaw on purpose, to
                 separate what a mechanism catches from what it does not. A key
                 with no `kind` field prints the overall figure alone, as before.
-  not asked     a planted entry whose rule NO agent could act on is reported
-                apart from one that was asked and answered nothing. Read from
-                audit/convention_assignment.json: a rule whose status is
-                `unassigned` (it carries subject tags, none matched an agent)
-                or `assigned_no_consumer` (an agent declared its tag, but that
-                agent consumes no rule in this mode) was never put to anything.
-                Scoring those as ordinary misses says the mechanism failed
-                when nothing ran, which is the opposite of what happened.
+  review state  assignment, unit suspension and recorded call exposure are
+                separate facts. A rule may be unassigned, lack a consumer, be
+                suspended for this unit, or have been shown with the unit in a
+                recorded call to an assigned consumer. Assignment alone does not prove a call. Missing
+                or ambiguous evidence remains unknown. Raw recall retains every
+                planted entry; asked recall includes only recorded exposure and
+                excludes suspended units. A recorded call does not prove a
+                successful response or correct reasoning.
 
 Relations are read from finding_record, never listed here: a relation appended
 to the record (date_window, the duration comparison, was the most recent) is
@@ -120,16 +120,8 @@ def _lower(*parts):
     return " ".join(str(p or "") for p in parts).lower()
 
 
-# A rule with one of these statuses reached no agent that could act on it, so
-# nothing was ever asked about it. Read from the assignment the run itself
-# wrote; the two names are convention_assignment's own vocabulary, not a set
-# invented here (untagged is deliberately NOT in this set: an untagged rule
-# keeps the pre-assignment routing and IS put to every review agent).
-NOT_ASKED_STATUSES = ("unassigned", "assigned_no_consumer")
-
-
 def _load_assignment(run_dir):
-    """audit/convention_assignment.json's by_rule map, or {} when the run
+    """audit/convention_assignment.json's by_rule map, or None when the run
     predates the assignment (every run before 2026-09-11) or never wrote one.
     An absent file is not an error: it means the question this reader answers
     cannot be answered for that run, and the caller says so rather than
@@ -349,23 +341,74 @@ def _reason_matches(claim, bus_hits):
     return False, "; ".join(misses[:2]) or "no finding states the key's reason"
 
 
-def _not_asked_rules(assignment):
-    """{operator-or-registry rule id (upper): status} for every rule no agent
-    could act on. Keyed by BOTH the registry id and the operator's own id when
-    the assignment carries one, since a key names the operator's id and the
-    assignment is keyed by the registry's."""
-    out = {}
-    for rid, row in (assignment or {}).items():
-        if not isinstance(row, dict):
+def _suspension_for(entry, unit_id, rule_id, source_rule_id):
+    """Read the planner's persisted withdrawal; never re-evaluate a condition."""
+    for row in entry.get("suspended") or []:
+        if not isinstance(row, dict) or row.get("unit_id") != unit_id:
             continue
-        status = str(row.get("status") or "")
-        if status not in NOT_ASKED_STATUSES:
-            continue
-        out[str(rid).upper()] = status
-        own = row.get("source_rule_id")
-        if own:
-            out[str(own).upper()] = status
-    return out
+        if (str(row.get("rule_id") or "").upper() == rule_id.upper()
+                or (source_rule_id and str(row.get("source_rule_id") or "").upper()
+                    == source_rule_id.upper())):
+            return row
+    return None
+
+
+def _review_state(expected, assignment, artifacts):
+    """State of one expected (unit, rule), from saved artifacts only.
+
+    Suspension describes the paired review's withdrawal even if an earlier
+    broad prompt exposed the rule. It does not erase any finding from raw recall.
+    A shorthand matching several units/documents is ambiguous, never a reason
+    to extend one unit's suspension to another.
+    """
+    import call_evidence
+
+    if assignment is None:
+        return "unknown"
+    wanted = str(expected.get("rule") or "").upper()
+    rows = [(rid, row) for rid, row in assignment.items() if isinstance(row, dict)
+            and (str(rid).upper() == wanted
+                 or str(row.get("source_rule_id") or "").upper() == wanted)]
+    if len(rows) != 1:
+        return "unknown"
+    rid, row = rows[0]
+    status = row.get("status")
+    if status == "unassigned":
+        return "never_assigned"
+    if status == "assigned_no_consumer":
+        return "no_consumer"
+    if status not in ("assigned", "untagged"):
+        return "unknown"
+    needle = str(expected.get("unit") or "").lower()
+    matches = [(doc_id, entry, u.get("unit_id"))
+               for doc_id, entry in (artifacts.get("pairing") or {}).items()
+               if isinstance(entry, dict)
+               for u in entry.get("units") or [] if isinstance(u, dict)
+               and needle and needle in str(u.get("unit_id") or "").lower()]
+    if len(matches) != 1:
+        return "unknown"
+    doc_id, entry, uid = matches[0]
+    if _suspension_for(entry, uid, rid, str(row.get("source_rule_id") or "")):
+        return "suspended"
+    evidence = artifacts.get("evidence")
+    if evidence is None:
+        return "unknown"
+    consumers = row.get("consumer_agents")
+    if not isinstance(consumers, list) or not consumers:
+        # Older/untagged assignments may not record their fallback consumers.
+        # Do not infer a judging role from an unrelated production call.
+        return "unknown"
+    # Paired-call logging historically writes the numeric document position,
+    # not its name. The unique unit match above supplies the identity in that
+    # case. A numeric value that is an actual document key keeps that identity.
+    scoped = [r for r in evidence if isinstance(r, dict)
+              and (r.get("doc_id") in (None, "", doc_id)
+                   or (str(r.get("doc_id")).isdecimal()
+                       and str(r.get("doc_id")) not in artifacts["pairing"]))
+              and r.get("agent") in consumers]
+    if call_evidence.calls_exposing(scoped, rule_id=rid, unit_id=uid):
+        return "asked"
+    return "assigned_not_asked"
 
 
 def _load_review_data(run_dir):
@@ -512,9 +555,11 @@ def score(corpus, run_dir):
     clean = [str(u).lower() for u in key.get("clean") or []]
 
     assignment = _load_assignment(run_dir)
-    not_asked = _not_asked_rules(assignment)
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import fn_evidence
+    artifacts = fn_evidence.load_run_artifacts(run_dir)
 
-    found, attributed, how, asked = [], [], [], []
+    found, attributed, how, review_states = [], [], [], []
     reason_ok, reason_why = [], []
     for p in planted:
         unit, rule = str(p["unit"]).lower(), str(p["rule"]).upper()
@@ -558,11 +603,7 @@ def score(corpus, run_dir):
             why = "located via amendment only; amendments carry no typed reason"
         reason_ok.append(ok if is_found else None)
         reason_why.append(why)
-        # Was this entry's rule put to anything at all? None when the run wrote
-        # no assignment (the question is unanswerable for that run, never a
-        # confident "yes"), True when the rule reached an agent that consumes
-        # rules, False when the assignment says no agent could act on it.
-        asked.append(None if assignment is None else rule not in not_asked)
+        review_states.append(_review_state(p, assignment, artifacts))
 
     planted_units = {str(p["unit"]).lower() for p in planted}
     false_pos = [a for a in amendments
@@ -584,13 +625,11 @@ def score(corpus, run_dir):
         if k not in kinds:
             kinds.append(k)
 
-    # A missed entry whose rule nothing could act on is NOT evidence the
-    # mechanism failed: nothing ran. Reported apart from the misses that were
-    # genuinely asked and answered nothing, and excluded from the denominator
-    # of the "asked" recall figure below, which is the figure that says
-    # anything about the mechanism.
-    missed_not_asked = [i for i, f in enumerate(found) if not f and asked[i] is False]
-    asked_idx = [i for i in range(len(planted)) if asked[i] is not False]
+    # Raw recall remains over all entries. The separate asked denominator counts
+    # only recorded exposure to an assigned consumer, never mere eligibility.
+    missed_not_asked = [i for i, f in enumerate(found) if not f
+                        and review_states[i] in ("never_assigned", "no_consumer")]
+    asked_idx = [i for i, state in enumerate(review_states) if state == "asked"]
     asked_found = sum(found[i] for i in asked_idx)
 
     print("corpus          : %s" % corpus)
@@ -634,8 +673,17 @@ def score(corpus, run_dir):
     else:
         print("  not asked     : %d   (planted entries whose rule no agent could act on: "
               "unassigned or assigned_no_consumer)" % len(missed_not_asked))
-        print("  recall, asked : %d/%d   (excluding the not-asked entries; THIS is the "
-              "figure about the mechanism)" % (asked_found, len(asked_idx)))
+    if review_states:
+        print("  suspended     : %d   (rule withdrawn for this unit in audit/pairing_map.json)"
+              % review_states.count("suspended"))
+        print("  assigned, no call : %d   (no assigned consumer has recorded rule-and-unit exposure)"
+              % review_states.count("assigned_not_asked"))
+        print("  asked, no matched finding : %d   (recorded exposure; response success is not inferred)"
+              % sum(not found[i] for i in asked_idx))
+        print("  review unknown: %d   (missing or ambiguous evidence)" % review_states.count("unknown"))
+    if asked_idx:
+        print("  recall, asked : %d/%d   (recorded assigned-consumer exposure only; suspended, "
+              "uncalled and unknown entries excluded; LOCATION ONLY)" % (asked_found, len(asked_idx)))
     if kinds != ["unspecified"]:
         for k in kinds:
             idx = [i for i, p in enumerate(planted) if str(p.get("kind") or "unspecified") == k]
@@ -646,15 +694,14 @@ def score(corpus, run_dir):
     _print_relation_breakdown(findings)
     _print_twin_check(corpus, key, findings)
     print()
-    print("  planted      rule      kind                  found  reason  attributed  asked  matched via")
+    print("  planted      rule      kind                  found  reason  attributed  review state        matched via")
     for i, (p, f, a, h) in enumerate(zip(planted, found, attributed, how)):
-        asked_cell = "?" if asked[i] is None else ("yes" if asked[i] else "NO")
         rcell = "-" if reason_ok[i] is None else ("yes" if reason_ok[i] else "WRONG")
-        print("  %-12s %-9s %-21s %-6s %-7s %-11s %-6s %s" % (p["unit"], p["rule"],
+        print("  %-12s %-9s %-21s %-6s %-7s %-11s %-19s %s" % (p["unit"], p["rule"],
                                                          str(p.get("kind") or "unspecified"),
                                                          "yes" if f else "no", rcell,
                                                          "yes" if a else "no",
-                                                         asked_cell, h))
+                                                         review_states[i], h))
     if false_pos:
         print()
         print("  false positives:")
@@ -668,10 +715,8 @@ def score(corpus, run_dir):
     # never asked and a rule it failed to answer stop landing in one number. The
     # scorer is the only reader of the key; the classifier receives the planted
     # entry as a dict and never opens the key itself.
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import fn_evidence  # noqa: E402
-
-    missed = [p for p, f in zip(planted, found) if not f]
+    missed = [p for p, f, state in zip(planted, found, review_states)
+              if not f and state != "suspended"]
     if missed:
         rows = fn_evidence.classify_missed(missed, run_dir)
         counts = fn_evidence.summary(rows)

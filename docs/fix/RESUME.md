@@ -14,46 +14,50 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-SIX, the commit containing this checkpoint,
-`SIX: account for every agent without a saved model call`.
+SEVEN, the commit containing this checkpoint,
+`SEVEN: score unit suspensions and actual judging exposure separately`.
 Resolve its exact hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until
-another item updates this file. Earlier completed items: FIVE in
+another item updates this file. Earlier completed items: SIX in
+f772a84d7a9c6a9eb0d381a79821a83c2571bd77, FIVE in
 2ff8e23762ade7958a3e2a236e6fe425f362db13, FOUR in
 f928fa92eb8263fcc0ced334059a777e72bcd58c, ZERO-C in
 963cae235d1ef2f2e949f72133259a05a1647fe1.
 
-Both saved runs account for all eight uncalled agents: STYLE_GUARDIAN has no
-assigned rule; AMENDMENT_DRAFTER used template synthesis; REDACTOR was waived in
-non-sensitive mode; five senior editors were never summoned. Both boards stopped
-at the clerk after confident concern observations without out_of_mandate. The
-real escalation predicate returns false, an uncertain variant returns true.
-README and LEDGER name all eight and why that is correct under existing policy.
-No code or check changed. All 121 shipped files in shimmer:six match the tree.
-Full host gate 244/246 with only known failures 01 and 145. Adversarial read done.
+The scorer separates never_assigned, no_consumer, suspended, asked,
+assigned_not_asked and unknown using saved assignments, exact unit suspensions
+and exposure to assigned consumers. Assignment alone and production-only calls
+do not prove judgment. The numeric document-position format in saved paired
+calls works only after unique unit resolution. Raw recall includes every entry;
+suspended rows remain visible and are excluded from asked recall and false-negative
+mechanism diagnosis. A recorded call does not prove response success or reasoning.
+Check 218 executes the real scorer over declared temporary artifacts. Five
+independently observable mutations FAIL and restore PASS. Current-shape replay
+without a gold key confirms 36/39 exposed combinations among 152 in each saved
+run. README and shimmer:seven are current; all 121 shipped files match. Image
+checks 174 and 218 PASS offline with no mounts. Full final host gate: 244/246,
+known failures 01 and 145 only. Adversarial read complete. Details in LEDGER.
 
 ## Current item
 
-None open. Continue with SEVEN after SIX is committed. The scorer must consume
-existing unit suspension evidence and distinguish it from never assigned and
-asked with no finding. Do not infer an actual model call from assignment alone.
+None open. Continue with EIGHT after SEVEN is committed: verify the current
+typed scorer's date_window visibility, repair only if an actual gap remains.
 
 ## Ordered remaining work
 
-1. SEVEN: scorer distinguishes never assigned, suspended, asked with no finding.
-2. EIGHT: verify date_window visibility in the current scorer.
-3. NINE: compute whether Python now settles ROWAN.
-4. TEN: distinguish incomplete runs from completed empty runs.
-5. ELEVEN: plain-language harness facts or explicit absence.
-6. TWELVE: one run-id format.
-7. THIRTEEN: structural proof against reading-only and no-op neutralisations.
-8. FOURTEEN: trace typed records through real amendment artifacts.
-9. FIFTEEN: pairing fallback value and WORDS-A compliance.
-10. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-11. SEVENTEEN: close the cache diagnosis with measured build reuse.
-12. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-13. NINETEEN: classify document_dates.json in the manifest.
-14. TWENTY: answer the learning-signal question, no GNN build.
-15. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. EIGHT: verify date_window visibility in the current scorer.
+2. NINE: compute whether Python now settles ROWAN.
+3. TEN: distinguish incomplete runs from completed empty runs.
+4. ELEVEN: plain-language harness facts or explicit absence.
+5. TWELVE: one run-id format.
+6. THIRTEEN: structural proof against reading-only and no-op neutralisations.
+7. FOURTEEN: trace typed records through real amendment artifacts.
+8. FIFTEEN: pairing fallback value and WORDS-A compliance.
+9. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+10. SEVENTEEN: close the cache diagnosis with measured build reuse.
+11. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+12. NINETEEN: classify document_dates.json in the manifest.
+13. TWENTY: answer the learning-signal question, no GNN build.
+14. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -81,6 +85,12 @@ asked with no finding. Do not infer an actual model call from assignment alone.
     are incomplete or absent JSON, not valid work lost to packaging.
 12. Preserve the four policies explaining eight uncalled agents: saved artifacts
     and executed predicates account for every absence without a routing change.
+13. Require actual exposure to an assigned consumer for asked recall: eligibility
+    and unrelated production calls cannot establish a judging opportunity.
+14. Keep raw recall complete and show suspended rows separately: a deliberately
+    withdrawn rule is not an ordinary false-negative mechanism failure.
+15. Accept recorded numeric document positions only with unique unit identity:
+    the saved logging format must work without spreading evidence across documents.
 
 ## Decisions made in the operator's place
 
@@ -124,26 +134,25 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final SIX host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
+Final SEVEN host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
 Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
 offline probe steps PASS, 163 seconds combined. Tests used --network none,
 --gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
 (missing ignored contamination fixture). Image source-only failures: 01, 28,
 31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/six_host_gate.log, output/four_container_validation.log and
-output/four_mutation_proof.log. Focused changes prove independently observable
+Logs: output/seven_final_host_gate.log, output/four_container_validation.log and
+output/seven_mutation_proof.log. Focused changes prove independently observable
 mutation effects before fail/restore/pass. No proof mutates real source files.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:six carries the current source and README.
-SIX changes only documentation; its source audit matched all 121 shipped files.
-FIVE's changed parser check passed offline without mounts. The full image gate
-above was run on shimmer:four; its runtime and model layers remain unchanged.
-All older tags remain intact. Current image identity and per-file source hashes:
-output/six_source_audit.json. All source refreshes reused model/conversion layers.
+GPU model workload at a time. shimmer:seven carries the current source and README.
+All 121 shipped files match (output/seven_source_audit.json); checks 174 and 218
+passed in the image with network disabled and no mounts. The full image gate
+above was run on shimmer:four; the model loader, pins and weights are unchanged.
+All older tags remain intact. Source refreshes reused model/conversion layers.
 Build cache: output/shimmer_build_cache, about 14.41 GB, ignored and local only.
 Reuse it with the --cache-from/--cache-to commands in README; no global Docker
 configuration change or registry upload was made.
