@@ -125,6 +125,84 @@ previously proceeded with that instruction silently reinterpreted.
 
 ---
 
+### a499bfa  TWO-A, TWO-B, TWO-C: a usable refusal, a visible loss, a suspension that suspends
+
+**README will have to say:** that the refusal introduced by `f1f09cd` now names
+the offending declaration and LISTS the recognised ones, derived from the
+parser's own regex rather than restated, and explains that `priority`,
+`immutable` and `outranked_by` belong to the constitution and not to a
+conventions file. An operator stopped without being told what IS allowed cannot
+fix the file.
+
+**Found while checking, and the most serious thing in this commit:** `unless`
+was parsed, carried into the payload and drawn as a graph edge, and NEVER
+EVALUATED. It suspended nothing at all. It now applies per unit in
+`plan_calls`, so the same rule can be suspended on one entry and in force on the
+next, which is what the declaration actually says. Anything that reported on the
+`f1f09cd` feature before this commit was describing something inert.
+
+**Two edges settled by registry membership rather than by shape:** a document
+field literally named `conv-status` parsed as a rule condition, and is now
+re-read as a field when it names no rule the registry holds; and a rule
+condition naming a rule that does not exist resolves `unresolved` and NEVER
+suspends, because a suspension that cannot be checked must not switch a rule off
+silently.
+
+**TWO-B:** excluding a qualified rule as a reattribution target can lose a
+computed plan. That loss was counted under the generic not-judged reason, which
+does not distinguish it from a rule nothing could act on. It is now named
+(which rules blocked it), logged as `paired_review_reattribution_blocked`, and
+carried on the not-judged entry.
+
+**Image affected: YES.** `scripts/convention_parser.py`,
+`scripts/paired_review.py`, the pipeline driver, `scripts/verify_session1.py`.
+Gate total moves 236 to 237.
+
+---
+
+### 1721eb5  Item THREE: two rule sets, authority and information kept apart
+
+**README will have to say:** that a second, separate rule set exists. The
+operator's conventions carry AUTHORITY; a rule found outside carries only
+INFORMATION. Where they do not conflict both apply; where they conflict the run
+REFUSES that pair, names it and puts it to the operator, and the answer is
+stored against a stable id so the same disagreement is never raised twice. An
+external rule is a PROPOSAL until accepted, and acceptance records an OWNER and
+is refused without one.
+
+**This is what gives the conflict record its rows.** Item ONE joined an operator
+verdict to its subject and the record had zero rows, because nothing in the
+system raised a conflict. This raises them. The two were built to meet: the
+answer vocabulary, the id shape and the unrecognised-answer rule are
+`ontology_conflicts`' own, so one reader serves both.
+
+**No discovery and no search, by decision.** Nothing reaches outside the
+machine and no code path fetches an external rule. The only external rules in
+existence are four hand-written entries in
+`benchmark/fixtures/external_rules_fixture.json`, which declares itself a
+fixture in its own first field and states that no real one exists. Check 238
+pins that declaration, so a real rule cannot be slipped in under it.
+
+**What counts as a conflict, deliberately narrow:** a shared declared subject
+(scope plus requires, compared with the project's ONE tokeniser, so overlap is
+whole-label and "Reading date" does not meet "Reading") AND a real disagreement
+on severity, action, or a conditional suspension one side declares and the other
+does not. Overlap plus agreement is not a conflict. Refusing more than this
+would make the operator arbitrate questions nobody is asking.
+
+**Image affected: YES.** `scripts/external_rules.py` (new),
+`scripts/verify_session1.py`. Gate total moves 237 to 238.
+(`benchmark/fixtures/` is not shipped in the image.)
+
+**NOT wired into the pipeline.** The module and its gate are complete and
+executed, but no pipeline phase calls `detect_external_conflicts` yet, because
+there is no external rule for a real run to load. Wiring a loader that can only
+ever find a fixture would be a zero-caller scaffold of the kind the gate's own
+rules forbid. The decision and its reasoning are recorded here rather than left
+implicit.
+
+---
+
 ## Items still open at the end of this session
 
 Recorded here because the working TODO does not survive the session.
