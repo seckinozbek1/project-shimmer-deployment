@@ -26,6 +26,35 @@ only `README.md` or `benchmark/` does not affect it.
 | `9b4f027` | advisory items withheld; typed amendments; deepening cap | **yes**: `scripts/agent_wrapper.py`, `scripts/paired_review.py`, `scripts/pipeline.py`, `tools/score_corpus.py`, `scripts/verify_session1.py` |
 | `b17c4be` | discipline boundary named | no |
 | `44e3168` | quote required on absence claims, forward only | **yes**: `scripts/paired_review.py`, `scripts/pipeline.py`, `scripts/verify_session1.py` |
+| `1721eb5` | two rule sets: operator conventions vs external rules | **yes**: `scripts/external_rules.py` (new), `scripts/verify_session1.py` |
+| `9b7b25c` | external answers persist; `input/external_rules/` entry point; conflict-list limit notice | **yes**: `scripts/external_rules.py`, `scripts/verify_session1.py` |
+| `3753314` | severity decides; suspensions reach the pairing map; the two rule sets meet a run | **yes**: `scripts/pipeline.py`, `scripts/paired_review.py`, `scripts/verify_session1.py` |
+
+### DEBT-A, operator-facing and stated as such
+
+**A convention that used to produce an amendment no longer does, and the
+operator finds out by its absence.** That is the wording, and it is the one
+change in this batch an operator meets without being told.
+
+Specifically: a convention whose heading declares `[advisory]` now produces its
+FINDING and NO AMENDMENT (`3753314`, the operator's own ruling). Before that
+commit every convention produced an amendment regardless of its declared
+severity, because the severity was parsed and consumed by nothing.
+
+Why it is not merely a silent removal, and what a reader must still be told:
+- the withheld amendment IS recorded, on the bus, through the existing amendment
+  refusal path, carrying `finding_stands: True` and the reason.
+- but the operator reading `review_findings.md` or the amendments docx sees one
+  fewer amendment and no explanation there.
+- **no shipped corpus is affected**: all 44 convention headings across the six
+  corpora resolve to `required`, so nothing changes for any corpus today. The
+  change bites the first operator who writes `[advisory]` and expects an
+  amendment.
+
+**README must say:** that `[advisory]` on a convention heading now means "report
+it, propose nothing", that `[required]` and `[recommended]` are unchanged, that
+an UNDECLARED severity falls back to `required` rather than being guessed
+(`TWO-H`), and that an unrecognised severity is refused rather than defaulted.
 
 **Four of the seven affect the image.** The gate total moved 228 to 234 across
 them, so the container figure recorded in the README (`PASS=215 SKIP=7 FAIL=6

@@ -113,7 +113,32 @@ def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
         rule_text = str(c.get("rule", "")).strip()
         is_cat = _is_redaction_category(cat, cid)
         is_phrase = _has_redaction_phrasing(rule_text)
-        if not (is_cat or is_phrase or act == "redact"):
+        # TWO-G. `action` is INFERRED FROM PROSE by convention_parser's keyword
+        # table, never declared: a heading bracket reads severity and subjects
+        # only. So `act == "redact"` was not the operator saying "redact this",
+        # it was a regex finding a word. Established by running it: an ordinary
+        # review convention reading "Findings must withhold judgement about
+        # equipment condition" classifies as `redact` and compiled here into a
+        # LIVE redaction rule, matched_by="action".
+        #
+        # That is not a cosmetic misclassification. With no operator redaction
+        # rule in force a run HARD-STOPS for a conscious operator choice
+        # (operator-sovereignty, 1c above). One spurious rule flips
+        # operator_in_force to True, so the run proceeds instead of stopping AND
+        # hands the redactor a nonsense rule to apply to real spans.
+        #
+        # An inferred value must not decide a LAW-IV matter. Redaction intent is
+        # taken from what the operator DECLARED (the category or id, which they
+        # wrote) or from the rule's own explicit phrasing, never from a keyword
+        # table's guess about a verb. The shipped corpora are unaffected: none of
+        # the 8 device rules triggers on any path, before or after.
+        #
+        # NOTE the phrasing trigger fires independently, so dropping this one
+        # does not close everything: "withhold" is in the redact-verb regex too.
+        # What it does close is the path where a REVIEW convention's inferred
+        # action field decides a redaction question, which is what was asked.
+        declared_redact = act == "redact" and bool(c.get("action_declared"))
+        if not (is_cat or is_phrase or declared_redact):
             continue  # not redaction-intent — leave it as an ordinary convention
         if not rule_text:
             warnings.append({"id": cid, "category": cat,
@@ -122,7 +147,9 @@ def redaction_rules(registry, *, opt_in_default_ruleset=False) -> dict:
         operator.append({"id": cid, "category": cat or "confidentiality",
                          "rule": rule_text, "severity": c.get("severity", "required"),
                          "action": "redact",
-                         "matched_by": ("category" if is_cat else "action" if act == "redact" else "phrasing")})
+                         "matched_by": ("category" if is_cat
+                                        else "declared_action" if declared_redact
+                                        else "phrasing")})
     operator_in_force = bool(operator)
     # 1c: NO automatic default floor. Defaults are included ONLY on conscious opt-in.
     rules = list(operator)
