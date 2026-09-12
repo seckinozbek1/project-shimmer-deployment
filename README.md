@@ -1374,24 +1374,25 @@ corpus file the image does not ship (its corpus assertions now run where the fil
 are named absent otherwise, and its proof runs on a synthetic heading every tree has).
 
 **Measured inside the unbaked image rebuilt at the current HEAD**, network blocked
-(`--network none`) and the host model cache mounted: `PASS=213 WARN=0 SKIP=5 FAIL/ERROR=6
-TOTAL=224` in about 390 s.
+(`--network none`) and the host model cache mounted: `PASS=215 WARN=0 SKIP=7 FAIL/ERROR=6
+TOTAL=228` in about 390 s.
 
-Six failures, and all six are the environment rather than the code. Four are the source-only
-ones section L lists (01, 28, 31, 145). The other two are the machine: **139** needs a CUDA
-branch and the container has no GPU, and **193** loads a cached local model with the network
-blocked, which the mounted host cache does not satisfy inside the container. Neither is a
-regression, and neither can pass there.
+Six failures, and all six are the environment rather than the code, unchanged across
+rebuilds. Four are the source-only ones section L lists (01, 28, 31, 145). The other two are
+the machine: **139** needs a CUDA branch and the container has no GPU, and **193** loads a
+cached local model with the network blocked, which the mounted host cache does not satisfy
+inside the container. Neither is a regression, and neither can pass there.
 
-Five skips: the two network checks `--offline` always skips, plus three that need files the
+Seven skips: the two network checks `--offline` always skips, plus five that need files the
 image does not ship. The image copies `scripts/`, `config/`, `tools/` and `corpus_ingest/`
-only, so the launchers and `benchmark/corpora/` are absent **by design**. Checks 215, 217 and
-222 used to FAIL there, reporting a deliberate shipping decision as a broken one; they now
-SKIP and name the absent file and why. Check 220 passes with its launcher half narrowed and
-says so in its own result line, rather than claiming a proof it did not run.
+only, so the launchers and `benchmark/corpora/` are absent **by design**. Checks 215, 217,
+222, 224 and 227 name the absent file and why rather than failing, which is the difference
+between a deliberate shipping decision and a broken check. Checks 220 and 225 pass with the
+half they cannot verify there narrowed, and each says so in its own result line rather than
+claiming a proof it did not run.
 
-The host offline gate at the current HEAD is `PASS=220 WARN=0 SKIP=2 FAIL/ERROR=2 TOTAL=224`,
-and the full host gate is `PASS=222 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=224`.
+The host offline gate at the current HEAD is `PASS=224 WARN=0 SKIP=2 FAIL/ERROR=2 TOTAL=228`,
+and the full host gate is `PASS=226 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=228`.
 
 The figures further down are from an earlier image built at commit `9e3302f`, kept as the
 record of that build.
