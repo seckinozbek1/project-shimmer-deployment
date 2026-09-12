@@ -58,7 +58,8 @@ import sensitivity_layer
 from corpus_validator import extract_distinctive_terms, validate_corpus_entry
 import embedding_store
 from cost_tracker import CostTracker, estimate_cost
-from document_dating import resolve_dates, write_dates
+from document_dating import (resolve_dates, unresolved_documents,
+                             write_dates, write_undated_report)
 from model_registry import enforce_current_models
 from snapshot_manager import (
     list_snapshots, load_snapshot, reset_snapshot, save_snapshot,
@@ -853,12 +854,20 @@ def run_draft_phase0(project_root: Path, question: str, *, retrieve, generate,
 def _populate_operational(project_root: Path, search_router: SearchRouter,
                           *, sensitive: bool = False,
                           mode: str = "standalone",
-                          infer_roles: bool = False) -> tuple[list[dict], list[dict]]:
+                          infer_roles: bool = False,
+                          run_context=None) -> tuple[list[dict], list[dict]]:
     """Returns (context_records, operational_records). Each record:
        {filename, date, date_source, title, abs_path}.
 
-    `sensitive` (INFRA-041 P2, chokepoint 4) suppresses the date cascade's web last-resort:
-    under sensitive mode no document title is sent to the web (the cascade stays local)."""
+    `sensitive` and `search_router` are no longer consulted for dating: the
+    cascade's web last-resort is removed and every tier is local (see
+    document_dating.date_from_web). Both are still accepted and still used
+    elsewhere in the run.
+
+    `run_context`, when given, receives audit/undated_documents.json: the record
+    of which documents could not be dated and which of those therefore went
+    unreviewed. Optional so the existing callers and the gate's fixtures work
+    unchanged."""
     context_dir = project_root / "input" / "context"
     operational_dir = project_root / "input" / "operational"
     operational_dir.mkdir(parents=True, exist_ok=True)
@@ -926,6 +935,30 @@ def _populate_operational(project_root: Path, search_router: SearchRouter,
     operational = [r for r in dated if _is_operational(r)]
     operational_filenames = {r["filename"] for r in operational}
     context_only = [r for r in dated if r["filename"] not in operational_filenames]
+
+    # An undated document fails the date cutoff (apply_cutoff keeps dates at or
+    # after it, and None is never at or after anything), so it leaves the review
+    # set. That used to happen with nothing said anywhere, and the result was
+    # indistinguishable from a document that WAS reviewed and produced nothing.
+    # Say it, per document, and record it for the run. A manifest can still put
+    # an undated document under review, so only the ones actually excluded are
+    # reported as dropped.
+    undated = unresolved_documents(dated)
+    undated_excluded = [u for u in undated
+                        if u["filename"] not in operational_filenames]
+    if undated_excluded:
+        print(f"[pipeline] WARNING: {len(undated_excluded)} document(s) could not be "
+              "dated from the filename, their own text, or container metadata, so "
+              "they are NOT under review:", file=sys.stderr, flush=True)
+        for u in undated_excluded:
+            print(f"[pipeline]   not reviewed (undated): {u['filename']}",
+                  file=sys.stderr, flush=True)
+        print("[pipeline]   Name them in input/context/_review_targets.json, or set "
+              "cutoff_type to 'all' in config/review_scope.json, to review them "
+              "anyway. The date is not guessed from the network.",
+              file=sys.stderr, flush=True)
+    if run_context is not None:
+        write_undated_report(run_context, dated, operational_filenames)
     if forced_targets or forced_grounding:
         print(f"[pipeline] role resolution: {len(forced_targets)} forced under review, "
               f"{len(forced_grounding)} forced grounding; the rest by date cutoff",
@@ -3671,10 +3704,12 @@ def main(argv=None):
     # Date cascade + cutoff -> populate input/operational/
     log_event(_LOG, "phase_start phase=0 step=date_cascade_cutoff", run_id=run_ctx.run_id,
               phase="0")
-    # chokepoint 4 (INFRA-041 P2): suppress the BOOT date-web egress under sensitive mode.
+    # chokepoint 4 (INFRA-041 P2): there is no BOOT date-web egress to suppress any
+    # more, the cascade's web tier is removed and every tier is local. The flag is
+    # still computed and passed (it is read elsewhere in the run).
     context_records, operational_records = _populate_operational(
         ROOT, search_router, sensitive=sensitivity_layer.is_active() and redaction_enabled,
-        mode=args.mode, infer_roles=args.infer_roles)
+        mode=args.mode, infer_roles=args.infer_roles, run_context=run_ctx)
 
     # Load text for context + operational
     ctx_docs = _load_corpus(ROOT / "input" / "context")

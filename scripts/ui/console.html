@@ -2859,11 +2859,36 @@ function idleAgentsHtml(idleAgents, human, untaggedCount) {
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
 }
 
+function undatedDocumentsHtml(excluded, human) {
+  /* A document nothing local could date fails the review cutoff and is never
+     reviewed. Before GET /runs/{run_id}/undated-documents there was no way to
+     tell that from a document that WAS reviewed and produced no findings:
+     both looked like an absence of findings. Same discipline as
+     conventionAssignmentHtml and amendmentRefusalsHtml, shown only when it is
+     genuinely true of at least one document. Only the EXCLUDED ones are shown:
+     an undated document a manifest still put under review is not a drop. */
+  if (!excluded || excluded.length === 0) return "";
+  var items = excluded.map(function (d) {
+    return human
+      ? '<li>' + escapeHtml(d.filename) + ' was not reviewed (no date could be resolved)</li>'
+      : '<li class="mono">' + escapeHtml(d.filename) + ': date_source=' + escapeHtml(d.date_source || "unresolved") + '</li>';
+  }).join("");
+  var heading = human
+    ? "Documents not reviewed, no date (" + excluded.length + ")"
+    : "document_dating.unresolved_documents, excluded (" + excluded.length + ")";
+  var note = human
+    ? "No date could be read from the filename, the document's own text, or its metadata, so each fell outside the review cutoff and was NOT reviewed. This is not the same as being reviewed and found clean. Name them in input/context/_review_targets.json, or set cutoff_type to all in config/review_scope.json."
+    : "date=None fails review_scope.apply_cutoff; see GET /runs/{run_id}/undated-documents. The date is never guessed from the network.";
+  return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
+}
+
 function loadFindings(runId, isPartial) {
   var holder = document.createElement("div");
   holder.id = "findings-holder";
   var refusalHolder = document.createElement("div");
   refusalHolder.id = "amendment-refusals-holder";
+  var undatedHolder = document.createElement("div");
+  undatedHolder.id = "undated-documents-holder";
   var violationHolder = document.createElement("div");
   violationHolder.id = "contract-violations-holder";
   var distributionHolder = document.createElement("div");
@@ -2881,6 +2906,10 @@ function loadFindings(runId, isPartial) {
   app.appendChild(unassignedHolder);
   app.appendChild(notFiringHolder);
   app.appendChild(idleAgentsHolder);
+  app.appendChild(undatedHolder);
+  apiJson("/runs/" + encodeURIComponent(runId) + "/undated-documents").then(function (udRes) {
+    undatedHolder.innerHTML = udRes.ok ? undatedDocumentsHtml(udRes.body.excluded, isHumanView()) : "";
+  });
   apiJson("/runs/" + encodeURIComponent(runId) + "/amendment-refusals").then(function (refRes) {
     refusalHolder.innerHTML = refRes.ok ? amendmentRefusalsHtml(refRes.body.refusals, isHumanView()) : "";
   });

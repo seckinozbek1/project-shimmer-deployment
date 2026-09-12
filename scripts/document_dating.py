@@ -1,19 +1,28 @@
 """Document dating cascade (genesis Part XXIV).
 
-Resolves a publication date for each document via the cascade. Order is
-content-first, container-last, per Part XXIV's metadata hierarchy:
+Resolves a publication date for each document via the cascade. Operator signal
+first, then what the document says about itself, then the container. Every tier
+is LOCAL: nothing about a document leaves the machine to date it.
 
-  1. Filename date pattern (operator-provided signal — authoritative).
-  2. First-page numeric year extraction (content-derived — what the document
-     says about itself). Supports both Western Arabic numerals (0-9) and
-     Eastern Arabic numerals (٠-٩, U+0660-U+0669).
-  3. PDF metadata creation/modification date (container-derived — low
+  1. Filename date (operator-provided signal, authoritative). The FULL date is
+     read first (YYYY-MM-DD, then YYYY-MM), then a bare year.
+  2. Content: the full date the document states, then a numeric year scan.
+     Supports both Western Arabic numerals (0-9) and Eastern Arabic numerals
+     (٠-٩, U+0660-U+0669). Not truncated.
+  3. PDF metadata creation/modification date (container-derived, low
      confidence because metadata is often a re-export artifact).
-  4. Web search for "[document title] publication date" (last resort).
+
+There is no web tier. It was removed, not made conditional: it decided which
+documents got reviewed from a network result that can differ between runs over
+the same bytes, and it sent the document's title off the machine.
+
+An unresolved date is LOUD. It costs the document its place in the review set,
+so it is named in the run record, served by a route, and shown in the console,
+rather than being a silent disappearance.
 
 Each record carries:
   date              : ISO date string or None
-  date_source       : "filename" | "content" | "metadata" | "web" | "unresolved"
+  date_source       : "filename" | "content" | "metadata" | "unresolved"
   date_confidence   : "high" (filename/content) | "low" (metadata/web) |
                       "uncertain" (multiple conflicting candidates)
   date_candidates   : list of all years found across all sources, populated
@@ -107,7 +116,12 @@ def date_from_pdf_metadata(path: Path) -> tuple[str | None, str | None]:
 
 
 def date_from_text(text: str) -> str | None:
-    text = text[:3000] if text else ""
+    """First full date the text states, in any of the supported shapes.
+
+    Not truncated: the 3000-character cut this used to apply is what hid the
+    device log's own dates (character 4179) from the cascade.
+    """
+    text = text or ""
     for i, pat in enumerate(_TEXT_DATE_PATTERNS):
         m = pat.search(text)
         if not m:
@@ -128,29 +142,29 @@ def date_from_text(text: str) -> str | None:
 
 
 def date_from_web(title_hint: str | None, *, search_router=None, sensitive=False) -> str | None:
-    """Last-resort: a web search for the document title's publication date.
+    """REMOVED as a cascade tier. Always returns None, and never searches.
 
-    Caller passes a SearchRouter instance to keep this module decoupled.
-    Returns None when no plausible year is recovered.
+    This was the last-resort tier: a network search for the document title's
+    publication date. It was removed rather than made conditional, for two
+    reasons that are independent of each other.
 
-    LAW-IV outbound masking (INFRA-041 P2, chokepoint 4): under sensitive mode the web call
-    is SUPPRESSED entirely (a masked title is meaningless for a date search, so the safe
-    action is to withhold the egress, not mask it). The caller computes `sensitive` from the
-    layer-active + run-sensitivity decision; the dating cascade then falls back to the local
-    filename/metadata/content sources. `sensitive` defaults False so non-sensitive runs and
-    unmodified callers are unchanged.
+    First, it decided REVIEW MEMBERSHIP from a network result. A document with
+    no resolvable date falls out of the operational set (review_scope.apply_cutoff
+    keeps only dates at or after the cutoff, and an unresolved date is not one),
+    so whether a document was reviewed at all could differ between two runs over
+    the same bytes, depending on what a search engine returned. A measurement
+    whose population is decided off-machine is not a measurement.
+
+    Second, the title IS document content. Sending it to a search engine is the
+    document leaving the machine, which LAW-IV does not permit. Suppressing the
+    call under sensitive mode (the old INFRA-041 P2 chokepoint-4 behaviour) left
+    the egress in place for every other run.
+
+    The function is kept as a hard None so that any caller still reaching for it
+    gets the safe answer rather than an AttributeError, and so the gate can prove
+    no search happens under any mode. Nothing in the cascade calls it.
     """
-    if not title_hint or search_router is None:
-        return None
-    if sensitive:
-        return None  # suppress the BOOT web egress under sensitive mode (no title to the web)
-    try:
-        result = search_router.search(f"{title_hint} publication date",
-                                       claim_type="date_event")
-    except Exception:
-        return None
-    snippets = " ".join((h.title + " " + h.snippet) for h in result.hits[:5])
-    return date_from_text(snippets)
+    return None
 
 
 def read_first_page(path: Path) -> str:
@@ -197,11 +211,20 @@ def _year_from_filename(filename: str) -> str | None:
 def _years_from_first_page(text: str) -> list[int]:
     """Genesis Part XXIV: years are numeric, not linguistic. Extract every
     four-digit sequence (Western or Eastern Arabic) in the valid range from
-    the first-page text. Returns the candidate list in document order with
-    duplicates preserved so the caller can pick the most recent / vote."""
+    the extracted text. Returns the candidate list in document order with
+    duplicates preserved so the caller can pick the most recent / vote.
+
+    The scan used to stop at 3000 characters, which silently defeated it on
+    real documents: the device log states its own dates at character 4179 and
+    its clean twin at 3701, both past the cut, so a document that names its
+    dates in a format this module already parses resolved as UNDATED and fell
+    out of the review set. The same dates are read by the duration arithmetic
+    elsewhere in the pipeline. The caller decides how much text to hand over
+    (read_first_page still reads page 1 of a PDF); this function reads what it
+    is given."""
     if not text:
         return []
-    head = text[:3000].translate(_EASTERN_ARABIC_DIGITS)
+    head = text.translate(_EASTERN_ARABIC_DIGITS)
     out = []
     for m in _YEAR_PATTERN.finditer(head):
         y = int(m.group(1))
@@ -211,26 +234,32 @@ def _years_from_first_page(text: str) -> list[int]:
 
 
 def resolve_dates(documents: list[Path], *, search_router=None, sensitive=False) -> list[dict]:
-    """Run the full cascade for each document path per Part XXIV.
+    """Run the cascade for each document path per Part XXIV.
 
-    `sensitive` (INFRA-041 P2, chokepoint 4) is threaded to the web last-resort: under
-    sensitive mode the web egress is suppressed (the cascade stays local).
+    The cascade is now ENTIRELY LOCAL. `search_router` and `sensitive` are
+    accepted and ignored: they fed the removed network last-resort tier (see
+    this module's docstring). They are kept in the signature so existing
+    callers, including pipeline.main, keep working unchanged.
 
     Returns records with: filename, date, date_source, date_confidence,
     date_candidates (only on uncertain), title.
 
-    Cascade order (Part XXIV):
-      1. filename (operator signal — high confidence)
-      2. content (first-page numeric year scan — high confidence,
-         unless multiple conflicting candidates and no filename year)
-      3. metadata (container signal — low confidence)
-      4. web (last resort — low confidence)
+    Cascade order:
+      1. filename, full date first (YYYY-MM-DD, then YYYY-MM), then year only
+      2. content, the full date the document states, then a bare-year scan
+      3. metadata (container signal, low confidence)
 
-    Uncertain rule: when the first-page scan finds multiple candidate
-    years that conflict (e.g., a 2019 document referencing 2024 events),
-    the cascade prefers the filename year if available; otherwise records
-    all candidates, picks the most recent, and marks confidence="uncertain"
-    so downstream consumers know to be skeptical.
+    There is no fourth tier. A document nothing local can date is recorded
+    date=None, date_source="unresolved", and that is a REPORTED outcome, not a
+    silent one: an unresolved date makes the document fail the review cutoff
+    (review_scope.apply_cutoff keeps dates at or after the cutoff, and None is
+    not one), so it would otherwise drop out of the review set with nothing
+    said. unresolved_documents() names them and the pipeline warns.
+
+    Uncertain rule: when the scan finds multiple candidate years that conflict
+    (e.g. a 2019 document referencing 2024 events), the cascade prefers the
+    filename; otherwise it records all candidates, picks the most recent, and
+    marks confidence="uncertain" so downstream consumers know to be skeptical.
     """
     out: list[dict] = []
     for path in documents:
@@ -238,14 +267,31 @@ def resolve_dates(documents: list[Path], *, search_router=None, sensitive=False)
         # and as fallback — but no longer trusted for the date).
         _meta_date, title = date_from_pdf_metadata(path)
 
-        # Source 1: filename year (operator-provided, highest priority).
+        # Source 1: the filename date. The FULL date pattern is tried first
+        # (YYYY-MM-DD, then YYYY-MM), and only then the year-only reader. The
+        # cascade used to call the year-only reader alone, so four negotiation
+        # documents whose names state September and October 2024 were all dated
+        # 2024-01-01: the month and day the operator wrote were discarded, and
+        # no downstream consumer could recover them (_sort_by_date could not
+        # even order the four). date_from_filename was already correct and was
+        # simply never called from here.
+        filename_full_iso = date_from_filename(path.name)
         filename_year_iso = _year_from_filename(path.name)
-        filename_year = (
-            int(filename_year_iso[:4]) if filename_year_iso else None
-        )
+        if filename_full_iso and filename_year_iso and \
+                filename_full_iso[:4] == filename_year_iso[:4]:
+            # Same year, but the full parse carries month and day: prefer it.
+            filename_iso = filename_full_iso
+        else:
+            # _year_from_filename prefers the MOST RECENT year in a slug that
+            # carries several; date_from_filename takes the first match. When
+            # they disagree on the year, the year-only reader's choice stands.
+            filename_iso = filename_year_iso or filename_full_iso
+        filename_year = int(filename_iso[:4]) if filename_iso else None
 
-        # Source 2: first-page numeric scan (content-derived).
+        # Source 2: content. The full date the document STATES is tried first,
+        # then the bare-year scan. Neither is truncated any more.
         first_page_text = read_first_page(path)
+        content_full_iso = date_from_text(first_page_text)
         content_years = _years_from_first_page(first_page_text)
         content_unique = sorted(set(content_years), reverse=True)
 
@@ -254,17 +300,25 @@ def resolve_dates(documents: list[Path], *, search_router=None, sensitive=False)
         confidence: str | None = None
         candidates: list[int] = []
 
-        if filename_year_iso:
-            date = filename_year_iso
+        if filename_iso:
+            date = filename_iso
             source = "filename"
             confidence = "high"
-            # Verify the filename year against content — if content has years
+            # Verify the filename year against content: if content has years
             # but none match the filename, flag as uncertain.
             if content_unique and filename_year not in content_unique:
                 confidence = "uncertain"
                 candidates = sorted(
                     set([filename_year] + content_unique), reverse=True
                 )
+        elif content_full_iso and int(content_full_iso[:4]) in _YEAR_RANGE:
+            # The document states a full date. Trust it over a bare-year scan
+            # of the same text: it is the same source, read more precisely.
+            date = content_full_iso
+            source = "content"
+            confidence = "high" if len(content_unique) <= 1 else "uncertain"
+            if len(content_unique) > 1:
+                candidates = content_unique
         elif content_unique:
             if len(content_unique) == 1:
                 date = _iso(content_unique[0])
@@ -275,21 +329,16 @@ def resolve_dates(documents: list[Path], *, search_router=None, sensitive=False)
                 source = "content"
                 confidence = "uncertain"
                 candidates = content_unique
-        else:
+        elif _meta_date:
             # Source 3: container metadata (low confidence per Part XXIV).
-            if _meta_date:
-                date = _meta_date
-                source = "metadata"
-                confidence = "low"
-            else:
-                # Source 4: web search (last resort).
-                web_date = date_from_web(
-                    title or path.stem, search_router=search_router, sensitive=sensitive
-                )
-                if web_date:
-                    date = web_date
-                    source = "web"
-                    confidence = "low"
+            date = _meta_date
+            source = "metadata"
+            confidence = "low"
+        # There is no fourth tier. The network search that used to sit here
+        # decided review membership from a result that can differ between runs,
+        # and sent the document's title off the machine (see this module's
+        # docstring). A document nothing local can date stays UNRESOLVED, and
+        # says so loudly rather than vanishing from the review set.
 
         record: dict = {
             "filename": path.name,
@@ -311,6 +360,57 @@ def resolve_dates(documents: list[Path], *, search_router=None, sensitive=False)
 # carries (abs_path stays in memory for the run's file-copy step; it just never persists).
 _DATE_STORE_SAFE_FIELDS = ("filename", "date", "date_source", "date_confidence",
                            "date_candidates", "content_validated")
+
+
+def unresolved_documents(dated_documents) -> list:
+    """The documents nothing local could date, as {filename, date_source}.
+
+    This is the surface that makes a silent drop loud. An unresolved date is
+    not a cosmetic gap: review_scope.apply_cutoff keeps only documents dated at
+    or after the cutoff, and a None date is never at or after anything, so an
+    undated document leaves the review set entirely. Before this, that happened
+    with nothing written anywhere, and the run's output was indistinguishable
+    from a run where the document was reviewed and produced no findings.
+
+    Structural only (a filename and a source label), so it is safe to persist,
+    serve and render next to the payload-free date store."""
+    out = []
+    for rec in dated_documents or []:
+        if not rec.get("date"):
+            out.append({"filename": rec.get("filename"),
+                        "date_source": rec.get("date_source") or "unresolved"})
+    return out
+
+
+def write_undated_report(run_context, dated_documents, operational_filenames) -> Path:
+    """Write <run>/audit/undated_documents.json, the run's record of documents
+    that could not be dated and what that cost them.
+
+    Same directory and write idiom as convention_assignment.write_assignment
+    and pairing_map.write_pairing_map: once per run, at BOOT, never rewritten.
+
+    `excluded` is the load-bearing list: an undated document that a manifest
+    still put under review is not a silent drop, while one that is undated AND
+    absent from the operational set was never reviewed at all. That is the
+    distinction a reader cannot otherwise make, because a document that was
+    never reviewed and a document that was reviewed and produced nothing look
+    identical in the deliverables."""
+    audit_dir = Path(run_context.audit_dir())
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    undated = unresolved_documents(dated_documents)
+    op = set(operational_filenames or ())
+    report = {
+        "undated": undated,
+        "excluded": [u for u in undated if u["filename"] not in op],
+        "reviewed_anyway": [u for u in undated if u["filename"] in op],
+        "note": ("A document with no resolvable date fails the review cutoff and is "
+                 "not reviewed. Name it in input/context/_review_targets.json, or set "
+                 "cutoff_type to 'all' in config/review_scope.json. The date is never "
+                 "guessed from the network."),
+    }
+    path = audit_dir / "undated_documents.json"
+    path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    return path
 
 
 def _safe_date_record(rec: dict) -> dict:
