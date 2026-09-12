@@ -14,8 +14,10 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-TWENTY, the commit containing this checkpoint,
-`TWENTY: recommend measured candidate finding and isolate fixture verdicts`.
+TWENTY: implementation and README committed 2b863d2. The commit containing this
+checkpoint explicitly tracks the detailed answer excluded by the existing docs
+ignore rule: `TWENTY: retain the detailed learning-signal assessment`.
+No executable or shipped source changed in the follow-up.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
 next item updates this file. Previous item: NINETEEN 5af01db. Full trail in LEDGER.
 

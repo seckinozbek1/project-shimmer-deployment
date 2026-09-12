@@ -2,6 +2,11 @@
 
 ## TWENTY CLOSED, 2026-09-13
 
+Implementation/docs checkpoint 2b863d2. The existing docs ignore rule excluded the
+new detailed answer from that commit. A documentation-only follow-up explicitly
+tracks it; runtime, gate inputs, README and the verified image are unchanged.
+The same completed full gate and image evidence therefore cover the final source.
+
 NINETEEN committed 5af01db. Full answer in TWENTY_LEARNING_SIGNAL.md and concise
 answer in README. Recommendation: retain the candidate finder, measure against
 the deterministic baseline at a fixed reviewer budget, and leave any learned
