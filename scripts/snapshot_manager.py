@@ -254,6 +254,24 @@ def reset_snapshot(project_root: Path) -> dict:
                 if f.is_file(): f.unlink()
                 elif f.is_dir(): shutil.rmtree(f)
             summary["deleted"].append(f"durable/{sub}/*")
+    # (b2) The usage-derived stores that are NOT under durable/. The Tier-1
+    #      graph, the captured provisions and the GNN state are things this
+    #      installation concluded by reading documents, so they are usage-derived
+    #      by the same test as durable/learnings, and they SURVIVED a reset
+    #      because the loop above walks RESETTABLE_SUBDIRS and ontology/ is not
+    #      one of them. Read from the one declared manifest, so this path and the
+    #      ship path cannot drift apart (docs/fix/KNOWLEDGE_CATEGORIES.md).
+    _durable_root = durable_paths.durable_root(project_root)
+    for d in durable_paths.usage_derived_dirs(project_root):
+        if d == _durable_root or _durable_root in d.parents:
+            continue  # already stripped by the loop above
+        if d.is_dir():
+            for f in d.glob("*"):
+                if f.is_file():
+                    f.unlink()
+                elif f.is_dir():
+                    shutil.rmtree(f)
+            summary["deleted"].append(f"{d.relative_to(project_root).as_posix()}/*")
     for sub in durable_paths.PRESERVED_SUBDIRS:
         summary["preserved"].append(f"durable/{sub}/* (protected; never touched by reset)")
     summary["preserved"].append("config/constitution.json (governance history)")

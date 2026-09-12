@@ -18995,6 +18995,130 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_235_usage_derived_knowledge_is_categorised():
+    """Three kinds of knowledge, separated, and only one of them ships empty.
+
+    Constitution-derived (ratified laws, already carrying priority/immutable/
+    outranked_by), rule-derived (the operator's compiled conventions) and
+    usage-derived (everything this installation concluded by reading documents)
+    used to sit in one flat pile where a usage-derived fact and an operator rule
+    looked alike. The categories are declared in durable_paths so precedence
+    between them can be stated, and so the shipping rule reads one list rather
+    than each caller knowing the layout.
+
+    THE HOLE THIS CLOSES. `ontology/stores` is usage-derived by the same test as
+    durable/learnings (nobody wrote it; it exists because documents were
+    processed) and is NOT under durable/, so `--reset-snapshot` walked
+    RESETTABLE_SUBDIRS and left the captured provisions, the Tier-1 graph and the
+    GNN state in place. A user would have started with the previous user's
+    accumulated reading. Reset now reads the manifest.
+
+    THE BOUNDARY A CALLER CANNOT FORGET. The two lists are asserted to be
+    disjoint and to cover every durable subdir, so a store added without being
+    categorised fails here rather than shipping someone's usage data.
+
+    NEUTRALISE AND RESTORE on the manifest entry that closes the hole.
+    """
+    import tempfile as _tf
+
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import durable_paths
+        import snapshot_manager
+    except Exception as exc:
+        return _fail("cannot import durable_paths/snapshot_manager: %s" % exc)
+
+    for name in ("USAGE_DERIVED_PATHS", "AUTHORITY_PATHS", "usage_derived_dirs"):
+        if not hasattr(durable_paths, name):
+            return _fail("durable_paths.%s is missing" % name)
+
+    usage = set(durable_paths.USAGE_DERIVED_PATHS)
+    authority = set(durable_paths.AUTHORITY_PATHS)
+
+    # The ontology stores must be declared usage-derived: that is the hole.
+    if "ontology/stores" not in usage:
+        return _fail("ontology/stores is not declared usage-derived, so the captured "
+                     "provisions, the Tier-1 graph and the GNN state would survive a "
+                     "reset and ship with someone else's reading in them")
+
+    # The two lists must be disjoint: a location cannot be both.
+    overlap = usage & authority
+    if overlap:
+        return _fail("a location is declared both usage-derived and authority: %s"
+                     % sorted(overlap))
+
+    # Every durable subdir must be in exactly one list. A new store added without
+    # a category fails HERE rather than silently shipping.
+    for sub in durable_paths.ALL_SUBDIRS:
+        rel = "durable/%s" % sub
+        if rel not in usage and rel not in authority:
+            return _fail("durable/%s is in neither category; add it to "
+                         "USAGE_DERIVED_PATHS or AUTHORITY_PATHS rather than leaving "
+                         "it uncategorised" % sub)
+
+    # Governance must be authority: an operator verdict is not usage-derived.
+    if "durable/governance" not in authority:
+        return _fail("durable/governance is not declared authority; an operator "
+                     "verdict would be stripped as usage knowledge")
+
+    # EXECUTED: a reset clears every usage-derived location and preserves authority.
+    with _tf.TemporaryDirectory(prefix="shimmer_cat_") as tmp:
+        root = Path(tmp)
+        for rel in list(usage) + list(authority):
+            p = root / rel
+            if p.suffix:
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text("{}", encoding="utf-8")
+            else:
+                p.mkdir(parents=True, exist_ok=True)
+                (p / "carried_over.json").write_text("{}", encoding="utf-8")
+        summary = snapshot_manager.reset_snapshot(root)
+        for rel in usage:
+            p = root / rel
+            if p.is_dir() and list(p.glob("*")):
+                return _fail("reset left %s populated; a user would start with the "
+                             "previous user's reading" % rel)
+        gov = root / "durable" / "governance"
+        if not (gov.is_dir() and list(gov.glob("*"))):
+            return _fail("reset stripped durable/governance, which is authority and "
+                         "must never be touched")
+        if not any("ontology" in d for d in (summary.get("deleted") or [])):
+            return _fail("the reset summary does not report clearing the ontology "
+                         "stores, so a reader cannot tell it happened")
+
+    # NEUTRALISE: drop ontology/stores from the manifest, the state before this fix.
+    original = durable_paths.USAGE_DERIVED_PATHS
+    durable_paths.USAGE_DERIVED_PATHS = tuple(
+        p for p in original if p != "ontology/stores")
+    try:
+        with _tf.TemporaryDirectory(prefix="shimmer_cat_n_") as tmp:
+            root = Path(tmp)
+            store = root / "ontology" / "stores"
+            store.mkdir(parents=True, exist_ok=True)
+            (store / "graph.json").write_text("{}", encoding="utf-8")
+            (root / "durable" / "learnings").mkdir(parents=True, exist_ok=True)
+            snapshot_manager.reset_snapshot(root)
+            if not list(store.glob("*")):
+                return _fail("neutralise did not take effect: the stores were cleared "
+                             "without the manifest entry")
+    finally:
+        durable_paths.USAGE_DERIVED_PATHS = original
+
+    # RESTORE.
+    if "ontology/stores" not in durable_paths.USAGE_DERIVED_PATHS:
+        return _fail("restore failed: the manifest no longer declares ontology/stores")
+
+    return _ok("usage-derived, rule-derived and constitution-derived are declared "
+               "categories; ontology/stores is usage-derived and a reset now clears it "
+               "(it survived before, so a user inherited the previous user's captured "
+               "provisions, graph and GNN state); the two lists are disjoint and cover "
+               "every durable subdir, so an uncategorised store fails here rather than "
+               "shipping; governance is authority and is preserved; neutralise/restore "
+               "proved")
+
+
 def check_234_operator_decision_carries_its_subject():
     """A verdict with no identifier teaches nothing. Item ONE of the C1 round.
 
@@ -21363,6 +21487,8 @@ CHECKS = [
      check_233_absence_claim_requires_a_quote),
     ("234 an operator verdict is joined to its subject and reaches the graph",
      check_234_operator_decision_carries_its_subject),
+    ("235 usage-derived knowledge is declared, reset, and ships empty",
+     check_235_usage_derived_knowledge_is_categorised),
 ]
 
 

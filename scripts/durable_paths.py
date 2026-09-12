@@ -32,6 +32,60 @@ RESETTABLE_SUBDIRS = (CACHE, LEARNINGS, REFERENCE)
 PRESERVED_SUBDIRS = (GLOBAL, GOVERNANCE)
 ALL_SUBDIRS = (CACHE, GLOBAL, LEARNINGS, REFERENCE, GOVERNANCE)
 
+# --- knowledge categories (docs/fix/KNOWLEDGE_CATEGORIES.md) ---
+#
+# Three kinds of thing used to sit in one flat pile, where a fact this
+# installation concluded by reading documents and a rule the operator wrote
+# looked alike. They are separated here so precedence between them can be stated
+# at all, and so the shipping rule has one list to read instead of each caller
+# knowing its own.
+#
+#   CONSTITUTION-derived  config/constitution.json. Ratified, and already
+#                         carrying its own precedence (priority, immutable,
+#                         outranked_by). Ships AS IS.
+#   RULE-derived          config/convention_registry.json, compiled from the
+#                         operator's input/conventions/. Ships AS IS.
+#   USAGE-derived         everything this installation concluded by processing
+#                         documents. SHIPS EMPTY.
+#
+# The membership test for usage-derived, applied rather than assumed: no
+# operator wrote it and no law ratified it, and it exists only because this
+# installation processed some documents.
+#
+# Paths are relative to the project root. `ontology/stores` is in this list and
+# is NOT under durable/, which is the hole this manifest closes: the provisions,
+# the Tier-1 graph and the GNN state are usage-derived and survived a reset,
+# because the reset walks RESETTABLE_SUBDIRS and nothing else.
+USAGE_DERIVED_PATHS = (
+    "durable/cache",
+    "durable/learnings",
+    "durable/reference",
+    "ontology/stores",
+)
+
+# Never usage-derived: an operator verdict, a ratified law, a compiled rule.
+# Listed so the boundary is declared from both sides and a gate check can prove
+# nothing sits outside either list.
+AUTHORITY_PATHS = (
+    "durable/governance",
+    "durable/global",
+    "config/constitution.json",
+    "config/convention_registry.json",
+)
+
+
+def usage_derived_dirs(project_root):
+    """Every usage-derived location that exists, as Paths.
+
+    One list, read by the reset and by the ship path, so neither has to know the
+    layout itself. A location that does not exist is simply absent."""
+    out = []
+    for rel in USAGE_DERIVED_PATHS:
+        p = Path(project_root) / rel
+        if p.exists():
+            out.append(p)
+    return out
+
 
 def durable_root(project_root) -> Path:
     return Path(project_root) / DURABLE_DIRNAME
