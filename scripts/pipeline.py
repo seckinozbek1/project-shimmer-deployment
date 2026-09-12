@@ -53,6 +53,7 @@ import ontology_gnn
 import ontology_store
 from convention_parser import parse_conventions, write_registry
 import convention_assignment
+import external_rules
 from sensitivity_layer import redaction_rules
 import sensitivity_layer
 from corpus_validator import extract_distinctive_terms, validate_corpus_entry
@@ -2053,11 +2054,19 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         log_event(_LOG, f"pairing_map_rewrite_error error_type={type(e).__name__}",
                   run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
 
+    # SEVEN-A: collect the (unit, rule) pairs a conditional suspension withdrew,
+    # so the evidence exists in a saved artifact when SEVEN is worked. Without
+    # it a scorer reads a suspended rule as NOT ASKED, when it was deliberately
+    # not asked, and those are different facts.
+    _suspensions = []
     plans = paired_review_mod.plan_calls(
         unit_text, pairs, rules_by_id, vocabulary,
         needed_fields_for=lambda text: pairing_map_mod.needed_fields(text, vocabulary),
         reference_bands_for=_bands_for, known_units=known_units,
-        duration_bound_for=_duration_bound_for)
+        duration_bound_for=_duration_bound_for, suspension_sink=_suspensions)
+    if _suspensions:
+        log_event(_LOG, f"paired_review_suspended count={len(_suspensions)}",
+                  run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
 
     # This line is emitted BEFORE the loop below runs, so the only honest thing
     # it can report is how many calls were PLANNED. It used to say `calls=`,
@@ -2311,6 +2320,20 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # neighbour rule's 13 dropped plans looked like a model failure rather than
     # a question never asked. planned = made + not_judged + absence_computed.
     pairing["calls_made"] = len(results)
+    # SEVEN-A: the suspension evidence lands in the pairing map, which is the
+    # artifact that already carries per-unit evidence (band_conditions,
+    # prior_comparisons) and which a scorer already reads. A third fact beside
+    # planned and not_judged: a rule that WAS paired to this unit and was
+    # withdrawn by its own conditional suspension. Not the same as never
+    # assigned, and not a miss.
+    if _suspensions:
+        pairing["suspended"] = [
+            {"unit_id": s["unit_id"], "rule_id": s["rule_id"],
+             "source_rule_id": finding_record.source_rule_id_for(
+                 s["rule_id"], convention_registry),
+             "detail": s["detail"]}
+            for s in _suspensions]
+        pairing["suspended_count"] = len(_suspensions)
     log_event(_LOG, f"paired_review_calls planned={len(plans)} made={len(results)} "
                     f"not_judged={len(not_judged)} "
                     f"absence_computed={pairing['absence_computed_count']}",
@@ -2570,11 +2593,19 @@ def _mint_web_references(results, reference_index) -> int:
 
 
 def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
-                                   total_cost_usd, task, question=""):
+                                   total_cost_usd, task, question="",
+                                   external_conflict_report=None):
     """BP-16: write the top-level deliverables/_run_summary.md index. Lists what was
     reviewed, the amendment count per document, the total cost, and a markdown link to
     each per-document subfolder. Pure function of its inputs (testable). Returns the path.
-    `question` (R6): the operator's framing question, echoed when given."""
+    `question` (R6): the operator's framing question, echoed when given.
+
+    `external_conflict_report` (THREE-D): the pairs this run REFUSED because an
+    operator convention and an external rule disagree. They land HERE, on the
+    run summary the operator already reads, rather than on a surface of their
+    own: two places to look means one of them goes unread. Omitted entirely when
+    there are no external rules, which is every installation today, so the
+    ordinary run summary is byte-for-byte what it was."""
     deliv_dir = Path(deliv_dir)
     deliv_dir.mkdir(parents=True, exist_ok=True)
     total_amendments = sum((deliverables.get(d["id"]) or {}).get("amendment_count", 0)
@@ -2608,6 +2639,36 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
             if absent:
                 suffix += f", {absent} absent since it"
         lines.append(f"- [{doc['name']}]({doc['id']}/): {n} amendment(s){suffix}")
+
+    # THREE-D: the refused pairs, on the surface the operator already reads.
+    # Nothing is emitted when no external rules were supplied, so a run without
+    # them is unchanged.
+    rep = external_conflict_report or {}
+    if rep.get("external_rules_compared"):
+        lines += ["", "## Rule conflicts put to you", ""]
+        if not rep.get("count"):
+            lines.append(
+                f"None. {rep['external_rules_compared']} external rule(s) were "
+                f"compared against your conventions and none disagreed.")
+        else:
+            lines.append(
+                f"{rep['count']} pair(s) REFUSED. Your conventions and an "
+                f"external rule disagree, so this run applied NEITHER rule to "
+                f"that subject rather than choosing between them. Each needs "
+                f"your answer; once answered it is never raised again.")
+            lines.append("")
+            for c in rep.get("conflicts", []):
+                diffs = ", ".join(
+                    f"{d['field']}: yours says {d['convention']}, the external "
+                    f"rule says {d['external']}" for d in c.get("differences", []))
+                lines.append(
+                    f"- **{c['subject']}**: your {c['convention_rule_id']} vs "
+                    f"external {c['external_rule_id']} ({diffs})  \n"
+                    f"  conflict id `{c['conflict_id']}`")
+        # The limit travels WITH the list, never separately (THREE-C).
+        if rep.get("limit_notice"):
+            lines += ["", f"> {rep['limit_notice']}"]
+
     path = deliv_dir / run_context_mod.RUN_SUMMARY_NAME
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
@@ -2809,9 +2870,15 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # writing valid JSON. The first scored run had AMENDMENT_DRAFTER fail
             # its contract and four certain arithmetic findings were discarded.
             _amendment_refusals = []
+            # TWO-F: the registry is passed so a rule's DECLARED severity can
+            # decide whether its finding becomes an amendment. Without it the
+            # severity is parsed, gated and inert, which is what it was.
+            _rules_by_id = {str(r.get("id")): r
+                            for r in (convention_registry or {}).get("conventions", [])
+                            if isinstance(r, dict) and r.get("id")}
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
                 raw_amendments, all_upstream, unit_texts=_unit_texts,
-                refusal_sink=_amendment_refusals)
+                refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id)
             # Never silently drop a finding this function could not turn into
             # an amendment: a real, irregular finding a model wrote under a
             # field name this pipeline did not yet recognise is not an error
@@ -4013,6 +4080,67 @@ def main(argv=None):
     log_event(_LOG, f"convention_registry rules={len(conv_registry_dict.get('conventions', []))} "
                     f"review_enabled={convention_review_enabled}", run_id=run_ctx.run_id, phase="0")
 
+    # THREE-D: the second rule set, and the conflicts between it and the
+    # operator's own conventions.
+    #
+    # WHY HERE, phase 0, after the registry is parsed and BEFORE convention
+    # assignment:
+    #   - the conflict is between two RULE SETS, not between a rule and a
+    #     document, so nothing about it depends on a document being read.
+    #     Anywhere later would do this work per document instead of once.
+    #   - convention_assignment runs next and decides which agents consume which
+    #     rules. A withheld external rule has to be withheld BEFORE that, or the
+    #     run would build an assignment for a rule it then refuses to apply.
+    #   - phase 0 is already where a run reports what stopped before it started,
+    #     which is where an operator looks for a refusal.
+    #
+    # THE ORDINARY CASE IS UNCHANGED. With no input/external_rules/ directory
+    # (which is every installation today) this loads nothing, detects nothing,
+    # writes nothing and logs one line saying so. No new failure mode: a
+    # malformed rules file raises only for an operator who wrote one, and that
+    # is deliberate, since a file you wrote producing no rules silently is worse
+    # than one that stops the run.
+    external_conflicts, external_report = [], None
+    try:
+        _ext_rules, _ext_sources = external_rules.load_external_rules_dir(ROOT)
+    except ValueError as exc:
+        # The operator supplied a file and it is unusable. Stop: proceeding
+        # would silently apply the operator's conventions alone while they
+        # believe a second rule set is in force.
+        log_event(_LOG, f"external_rules_refused error={type(exc).__name__}",
+                  run_id=run_ctx.run_id, phase="0")
+        raise SystemExit("external rules: %s" % exc)
+    if _ext_rules:
+        external_conflicts = external_rules.detect_external_conflicts(
+            conv_registry_dict.get("conventions", []), _ext_rules)
+        _store = external_rules.open_store()
+        _answered, external_conflicts = external_rules.unanswered(
+            external_conflicts, _store)
+        external_report = external_rules.conflict_report(
+            external_conflicts, external_rules=_ext_rules)
+        _applicable = external_rules.applicable(
+            conv_registry_dict.get("conventions", []), _ext_rules,
+            external_conflicts)
+        log_event(_LOG,
+                  f"external_rules files={len(_ext_sources)} rules={len(_ext_rules)} "
+                  f"conflicts_open={len(external_conflicts)} "
+                  f"answered={len(_answered)} "
+                  f"withheld={len(_applicable['withheld'])}",
+                  run_id=run_ctx.run_id, phase="0")
+        for _c in external_conflicts:
+            # The subject is a normalised label and can carry whitespace, which
+            # the event grammar forbids in a value (check 112). Underscored, so
+            # the line stays one parseable record.
+            _subj = "_".join(str(_c["subject"]).split())
+            log_event(_LOG,
+                      f"external_rule_conflict id={_c['conflict_id']} "
+                      f"convention={_c['convention_rule_id']} "
+                      f"external={_c['external_rule_id']} subject={_subj}",
+                      run_id=run_ctx.run_id, phase="0")
+    else:
+        log_event(_LOG, "external_rules files=0 rules=0 conflicts_open=0",
+                  run_id=run_ctx.run_id, phase="0")
+
     # Convention assignment (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md): the one-way
     # subject comparison, computed ONCE here at BOOT, never per call, never per
     # document. `resolved_agents` may still be None (cloud backend with
@@ -4452,7 +4580,8 @@ def main(argv=None):
     # the run. A no-op-safe pure write keyed on the deliverables already produced this run.
     write_deliverables_run_summary(
         run_ctx.deliverables_dir(), op_docs, deliverables,
-        total_cost_usd=final["total_cost_usd"], task=args.task, question=args.question)
+        total_cost_usd=final["total_cost_usd"], task=args.task, question=args.question,
+        external_conflict_report=external_report)
 
     # Rename the run folder from its provisional timestamp name to a human-readable
     # <date>__<slug>, but ONLY when this run created its own folder (auto-created). A
