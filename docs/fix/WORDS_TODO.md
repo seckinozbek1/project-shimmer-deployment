@@ -1,6 +1,9 @@
-# WORDS chain and main list: working TODO
+# WORDS chain and main list: historical TODO
 
-Durable because the session can end without warning. Updated as each item lands.
+**HISTORICAL, superseded by [RESUME.md](RESUME.md).** The unchecked entries below
+preserve an earlier work list; they do not reopen completed work or authorize new
+work. ZERO through TWENTY-ONE and baseline normalization are complete. The next
+product task and its operator-owned order are recorded only in RESUME.
 
 ## Status
 

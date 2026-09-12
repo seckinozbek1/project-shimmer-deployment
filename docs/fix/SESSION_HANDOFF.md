@@ -1,7 +1,11 @@
 # SESSION HANDOFF
 
-Written 11 September 2026, at the close of a three-day session. A fresh session should be
-able to act on this file alone.
+**HISTORICAL, superseded by [RESUME.md](RESUME.md).** Read RESUME first for current
+state, gate semantics and the locked roadmap. The old commit counts, expected
+failures and cleanup instructions below are historical evidence, not current
+authority to clear operator stores or begin work. Preserve local durable state.
+
+Written 11 September 2026, at the close of a three-day session.
 
 ---
 

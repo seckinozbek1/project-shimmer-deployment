@@ -1,5 +1,9 @@
 # Checks that prove a reading rather than an effect
 
+**Historical worked cases.** THIRTEEN is complete; see "THIRTEEN implemented,
+2026-09-12" below and [RESUME.md](RESUME.md) for the current consumer-effect
+protocol. The pending-work language in the original analysis is historical.
+
 TWO-E. Carried here as the worked case for item THIRTEEN, which has to propose a
 cheap structural check that catches this shape.
 

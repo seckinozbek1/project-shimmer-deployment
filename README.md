@@ -3167,9 +3167,12 @@ checks the gate held at that commit, the four failures being the source-only one
 table below; checks 210 to 243 have since raised the total to 244. The host gate at the
 recovery baseline at `64b83e0` is `PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244`, the two failures being
 the known environment ones: check 01 (`prompts/` and `snapshots/` absent in this working
-tree) and check 145 (the contamination-probe fixture is gitignored and absent).
+tree) and check 145 (the contamination-probe fixture is absent from this source snapshot).
 
 **Checks 01 and 145 now distinguish unavailable local coverage from failure.**
+The measured host gate at `b733188` is **253 PASS, 0 WARN, 2 SKIP, 0 FAIL, TOTAL 255**,
+with native exit 0. Current handover, image limits and the locked next-task order
+are in [docs/fix/RESUME.md](docs/fix/RESUME.md).
 The old two-failure host baseline above is historical. Neither absence is a PASS:
 the gate records an explicit SKIP with the missing path and the coverage it could
 not establish. It does not create empty directories or a dummy hash file to make

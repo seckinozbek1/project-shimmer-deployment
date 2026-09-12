@@ -1,8 +1,12 @@
 # Shimmer prototype checkpoint, 2026-09-13
 
-This records commit 2562578. The later operator-requested normalization of baseline
-checks 01/145 is recorded in LEDGER.md and RESUME.md; the measured counts below
-remain the historical checkpoint results.
+This is the historical report for commit `2562578`, not the current resume point.
+The operator subsequently pushed main through `b733188`, which normalized baseline
+checks 01/145: host 253 PASS, 2 SKIP, 0 FAIL, native exit 0. The closure documentation
+commit remains local. Read [RESUME.md](RESUME.md) for current state, image/probe
+limits and the locked product roadmap. All old gate counts, local-only inventories
+and remaining-work statements below describe the earlier checkpoint. They do not
+authorize bypassing the new roadmap or its conditional VM step.
 
 The ordered takeover backlog is complete through TWENTY-ONE. This is a source,
 fixture and container checkpoint. A new end-to-end document review has not been
@@ -46,7 +50,7 @@ Python migration. Documentation and image claims lagged the local-only commits.
 | EIGHTEEN | Audited inherited documentation/image debt. Exposed advisory withholding through actual synthesis, bus, API and both console views. Corrected a false conflict-summary claim: conflicting external additions are refused while operator conventions remain in force. | 0a6a0fe8 |
 | NINETEEN | Explicitly classified document dates as usage-derived and omitted from shipping. A real build-stage shipping gate rejects populated stores; an isolated bad-image build fails while local data stays unchanged. | 5af01dba |
 | TWENTY | Recommended measured candidate finding against the deterministic baseline. Narrow executable oracles are a third signal source, not general relevance truth. All 78 apparent operator verdicts were fixtures; check 107 now isolates its ledger and joins its writer. Historical rows preserved and excluded from the assessment. The ignored detailed report was explicitly tracked in a documentation follow-up. | 2b863d22, ffd8c9c1 |
-| TWENTY-ONE | Recorded the 14-judged/7-computed forecast in configuration read by actual runs. Per-question audit and the real summary distinguish quotes, refusals, empty/failed/missing-consumer/partial outcomes and changed counts. Corrected misleading missing-quote refusal reasons. | Commit containing this report |
+| TWENTY-ONE | Recorded the 14-judged/7-computed forecast in configuration read by actual runs. Per-question audit and the real summary distinguish quotes, refusals, empty/failed/missing-consumer/partial outcomes and changed counts. Corrected misleading missing-quote refusal reasons. | 2562578 |
 
 Each implementation checkpoint has a full host gate, focused consumer evidence,
 an adversarial read and refreshed image evidence where it changes shipped files.
@@ -71,14 +75,14 @@ The final image includes all 126 intended source/config/fixture files. This incl
 the pre-existing generated convention registry under the declared shipping contract;
 operator usage stores and unshipped corpora remain omitted.
 
-## Final verification
+## Historical verification at 2562578
 
 - Host gate: **252 PASS, 0 WARN, 0 SKIP, 2 known FAIL, TOTAL 254**.
   `output/twentyone_host_gate.log`. Failures: 01, missing prompts/snapshots;
-  145, missing ignored contamination fixture. No new failure.
+  145, contamination fixture absent from the source snapshot. No new failure.
 - Full final-image gate: **242 PASS, 0 WARN, 8 SKIP, 4 known FAIL, TOTAL 254**,
   134.6 seconds. `output/twentyone_container_gate.log`. Failures: 01/28/31,
-  declared runtime/layout inputs absent from the unmounted image; 145, the ignored
+  declared runtime/layout inputs absent from the unmounted image; 145, the absent
   fixture. Skips: 15/38 network, 222 host launchers, 215/217/224/227/230 unshipped
   corpora. Mixed checks name missing corpus coverage while exercising shipped proofs.
 - The final image is **shimmer:twentyone**, `sha256:103f29f6f3f1c4edbfd74156edca037e2b2c9753669a1e1696ba0e41ede868cf`,
@@ -103,12 +107,13 @@ operator usage stores and unshipped corpora remain omitted.
   these final verification runs; subsequent edits only closed repository reports.
 
 
-## Remaining work and limits
+## Historical remaining-work assessment and limits
 
 No ordered development item remains open. The first real review of the final
 prototype, real provider output quality, broader corpus measurements and measured
 candidate-finder gain remain unverified because no pipeline run is permitted here.
-Move development to the authorised GPU environment before that acceptance work.
+At that checkpoint, the standing rule required a GPU environment for acceptance
+work. The later locked roadmap in RESUME now controls when and whether VM work occurs.
 No cloud/provider model generation, paid operation, push or new learning component was performed.
 The operator still decides whether a learned relevance component should be built.
 The seven unapplied shape rules remain visibly unapplied under the existing ruling;
@@ -189,12 +194,13 @@ operator-decision rows remain append-only history, not a human training corpus.
 33. Preserve existing refusal policy while correcting its reason:
     a missing quote must not be reported as a field already present.
 
-## Local-only commits for the operator
+## Historical local-only inventory at 2562578
 
-The final checkpoint leaves 52 commits ahead of origin/main: the 31 inherited
+At the historical 2562578 checkpoint, main was 52 commits ahead of origin/main: the 31 inherited
 commits below, 20 completed takeover commits already listed, and the commit
-containing this report. Nothing was pushed. The original handoff and durable
-state remain untracked. Full hashes and subjects are recorded below so the
+containing the original report. Nothing had been pushed at that point; the operator
+later pushed all of this inventory plus b733188. The original handoff and durable
+state remain intentionally untracked. Full hashes and subjects are recorded below so the
 starting local work is distinguishable from the takeover work.
 
 ### Inherited local-only commits
