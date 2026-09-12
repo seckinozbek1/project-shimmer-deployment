@@ -84,6 +84,87 @@ and an advisory rule by its name is not asking for one. That is one branch at
 the amendment-minting site, and it makes the declared severity mean something
 for the first time.
 
+---
+
+# THIRTEEN-B: the neutralise that was never at risk
+
+A second shape, distinct from reading-not-effect, and worse in one respect: it
+defeats the discipline that is supposed to catch the first.
+
+## What happened
+
+TWO-F added a refusal for an unrecognised severity. To prove it, I neutralised
+the branch that refuses:
+
+```python
+if _amends is None:     ->    if False:
+```
+
+The check stayed GREEN. Not because the check was weak, but because `None` is
+falsy and the NEXT branch (`if not _amends:`) caught the same case and withheld
+the amendment anyway. Two independent paths produced the same outcome, so
+disabling one changed nothing.
+
+I read the green as a gap in the check and started to strengthen the check. That
+was the wrong diagnosis: the check was fine, the NEUTRALISE was a no-op.
+
+## Why it is worse than reading-not-effect
+
+Reading-not-effect produces a check that proves too little. This produces a
+check that **reports a pass that was never at risk**. Neutralise, fail, restore,
+pass is the discipline the whole gate rests on, and here it ran to completion
+and certified nothing. A green from an ineffective neutralise is
+indistinguishable, in the log, from a green that was genuinely earned.
+
+## The operational test
+
+**A neutralise proves nothing unless the neutralised code is the ONLY thing
+producing the behaviour under test.**
+
+Stated as a procedure, since that is what THIRTEEN has to automate:
+
+1. neutralise the code
+2. the check must go RED
+3. **if it stays green, do not conclude the check is weak.** First establish
+   whether a second path produces the same behaviour. Until that question is
+   answered, neither the check nor the code has been shown to be wrong.
+4. a neutralise that leaves the behaviour intact is not evidence of anything and
+   must not be recorded as a proof
+
+The trap in step 3 is the expensive part. The natural reading of an unexpected
+green is "my check is too weak", and acting on that reading means editing a
+check that was already correct, to catch a defect that was never there.
+
+## What a safe fallthrough is, and why it is not a bug
+
+The two-path structure above is DESIRABLE: an unknown severity is withheld by
+two independent branches, so removing either one leaves the safe behaviour
+standing. Defence in depth is not a defect. What it is, is **unprovable by
+single-point neutralisation**, and a check over such code has to neutralise the
+thing that genuinely changes the outcome. Here that was the predicate's return
+value:
+
+```python
+return None, (...)    ->    return True, (...)
+```
+
+which does turn check 239 red, and was used instead.
+
+## What THIRTEEN has to catch
+
+Both shapes, and they need different tests:
+
+| shape | symptom | test |
+|---|---|---|
+| reading-not-effect | check passes with the consumer deleted | delete the consumer; check must go red |
+| neutralise-not-at-risk | check passes with the neutralise applied | neutralise must change observable behaviour BEFORE the check is consulted |
+
+The second is the cheaper of the two to automate: a neutralise step can assert
+that the neutralised build actually behaves differently, independently of what
+any check says about it.
+
+---
+
 ## Other places worth the same question, not yet checked
 
 Named so the next reader has somewhere to start, not asserted as defects:

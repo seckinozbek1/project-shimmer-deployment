@@ -120,6 +120,38 @@ _VERIFY_RUN = _run_context_mod.RunContext(
 
 def _ok(detail="ok"): return ("PASS", detail)
 def _fail(detail): return ("FAIL", detail)
+
+
+class FixtureNotAsIntended(AssertionError):
+    """A check's own input did not parse into what the check assumed.
+
+    CHECKS-A. Twice in one session a check built its input inline, an escape was
+    mangled (a literal backslash-n instead of a newline), the input parsed into
+    nothing, and the FIRST READING was that the code under test was broken. Both
+    times the code was fine.
+
+    The dangerous version is not the one that was hit. A mangled fixture that
+    produces no findings makes a check ASSERTING ABSENCE pass for entirely the
+    wrong reason, and that check then stays green forever while proving nothing.
+    It is the same family as THIRTEEN-B's neutralise-that-was-never-at-risk: a
+    green earned by an accident rather than by the behaviour under test.
+
+    So: a check that builds its own input asserts the INPUT PARSED AS INTENDED
+    before asserting anything about what the code did with it."""
+
+
+def _require_fixture(condition, what, got=None):
+    """Assert a check's own input is what the check thinks it is.
+
+    Raises FixtureNotAsIntended rather than returning a FAIL tuple, so a fixture
+    problem is never mistaken for a finding about the code under test. The
+    message says what was expected and what was actually built."""
+    if not condition:
+        raise FixtureNotAsIntended(
+            "the check's own input is not as intended: %s%s. This is a defect in "
+            "the CHECK, not a finding about the code under test: nothing was "
+            "proved either way." % (what, "" if got is None else " (got %r)" % (got,)))
+    return True
 def _skip(detail): return ("SKIP", detail)
 
 
@@ -14846,9 +14878,24 @@ def check_197_convention_heading_brackets_read_subject_and_severity():
     if r2.severity != "required" or r2.subjects != ["conformance", "basis"]:
         return _fail(f"CONV-D02: expected severity=required subjects=['conformance', "
                      f"'basis'], got severity={r2.severity!r} subjects={r2.subjects!r}")
-    if r3.severity != "advisory" or r3.subjects != []:
-        return _fail(f"CONV-D03 (no bracket): expected severity=advisory subjects=[], "
-                     f"got severity={r3.severity!r} subjects={r3.subjects!r}")
+    # TWO-H changed this deliberately. This assertion used to require that a
+    # BRACKETLESS heading inherit whatever the prose classifier guessed, which
+    # for this probe is `advisory`. That was harmless while nothing consumed a
+    # severity; now an advisory severity WITHHOLDS THE AMENDMENT, so a guess
+    # would silently suppress a rule's output. An undeclared severity therefore
+    # falls back to `required` (the safe direction: it produces the amendment)
+    # and the disagreement with the prose is RECORDED rather than lost.
+    if r3.severity != _cp.SEVERITY_WHEN_UNDECLARED or r3.subjects != []:
+        return _fail(f"CONV-D03 (no bracket): expected severity="
+                     f"{_cp.SEVERITY_WHEN_UNDECLARED!r} (the undeclared fallback, "
+                     f"TWO-H) subjects=[], got severity={r3.severity!r} "
+                     f"subjects={r3.subjects!r}")
+    if not r3.severity_note or r3.severity_note.get("prose_classification") != "advisory":
+        return _fail("CONV-D03 has no severity bracket and the prose classifier "
+                     "reads it as advisory, which disagrees with the fallback; that "
+                     "disagreement must be RECORDED on the rule, or a guess that "
+                     "would have withheld an amendment stays invisible. Got: "
+                     f"{r3.severity_note!r}")
 
     # Site 2: a conventions file that opens DIRECTLY on a real, id-less rule
     # section (no title, no prose preamble at all) must parse exactly as
@@ -14899,11 +14946,19 @@ def check_197_convention_heading_brackets_read_subject_and_severity():
         corpus_note = "the shipped corpus file's 8 rules, CONV-D03 required, no title-prose leak"
 
     # NEUTRALISE AND RESTORE: strip the bracket regex's ability to see a
-    # closing bracket, re-run a heading whose bracket says [required] over a
-    # paragraph with NO severity word (so the text fallback says advisory), and
-    # confirm the severity read and the subject read both disappear; restore
-    # and confirm both return. Synthetic, so every tree can run the proof.
-    proof_text = ("## CONV-D09 , conv-bracket-proof [required] [conformance]\n\n"
+    # closing bracket, re-run a heading whose bracket carries a severity, and
+    # confirm the severity read and the subject read both disappear; restore and
+    # confirm both return. Synthetic, so every tree can run the proof.
+    #
+    # THIRTEEN-B applies here, and this proof had to be rebuilt because of it.
+    # It used to declare [required] over a paragraph with no severity word, on
+    # the reasoning that the prose fallback would then say `advisory` and the
+    # two values would differ. TWO-H made `required` the UNDECLARED FALLBACK, so
+    # both paths began producing `required` and neutralising the bracket changed
+    # nothing observable: a neutralise that proves nothing, reported as a pass.
+    # The proof now declares [advisory], which the fallback can NEVER produce,
+    # so the bracket read is the only thing that can yield it.
+    proof_text = ("## CONV-D09 , conv-bracket-proof [advisory] [conformance]\n\n"
                   "This paragraph carries no severity word at all.\n")
     _orig_bracket = _cp._HEADING_BRACKET
     _cp._HEADING_BRACKET = re.compile(r"(?!)")  # matches nothing, ever
@@ -14911,18 +14966,18 @@ def check_197_convention_heading_brackets_read_subject_and_severity():
         seq_n = [0]
         neutralised = _cp._parse_text_lines(proof_text, "zqproof.md", seq_n)
         n1 = neutralised[0] if neutralised else None
-        if n1 is None or n1.severity == "required" or n1.subjects:
+        if n1 is None or n1.severity == "advisory" or n1.subjects:
             return _fail("neutralising _HEADING_BRACKET did not stop the proof heading from "
-                         "reading required with a subject: the check is not exercising "
+                         "reading advisory with a subject: the check is not exercising "
                          f"the bracket read (got {getattr(n1, 'severity', None)!r}, "
                          f"{getattr(n1, 'subjects', None)!r})")
     finally:
         _cp._HEADING_BRACKET = _orig_bracket
     seq_r = [0]
     restored = _cp._parse_text_lines(proof_text, "zqproof.md", seq_r)
-    if not restored or restored[0].severity != "required" or restored[0].subjects != ["conformance"]:
+    if not restored or restored[0].severity != "advisory" or restored[0].subjects != ["conformance"]:
         return _fail("restoring _HEADING_BRACKET did not bring back the proof heading's "
-                     "required severity and its subject")
+                     "advisory severity and its subject")
 
     # TWO-E/TWO-F: this check PROVED THE READING AND NOT THE EFFECT, and that is
     # how a parsed severity stayed inert. It asserted that [advisory] comes out
@@ -19096,12 +19151,22 @@ def check_239_severity_decides_and_evidence_survives():
     if "DECLARED FIXTURE" not in head:
         return _fail("the severity fixture does not declare itself one")
     rules = _cp._parse_text(fix, [0])
+    # CHECKS-A: the fixture must have PARSED into the three distinct severities
+    # this check is about. A fixture that parsed into nothing, or into three
+    # rules that all came out `required`, would make the advisory assertion
+    # below pass for entirely the wrong reason: no amendment, because no
+    # advisory rule, rather than no amendment because advisory withholds one.
+    _require_fixture(len(rules) == 3,
+                     "the severity fixture must parse into exactly 3 rules", len(rules))
     by_sev = {r.severity: r for r in rules}
-    for want in ("required", "advisory", "recommended"):
-        if want not in by_sev:
-            return _fail("the fixture does not carry a %r rule; without one the "
-                         "effect cannot be proved, since every shipped rule is "
-                         "required" % want)
+    _require_fixture(set(by_sev) == {"required", "advisory", "recommended"},
+                     "the fixture must yield one rule at each of the three "
+                     "severities, or the effect cannot be told from an accident",
+                     sorted(by_sev))
+    for r in rules:
+        _require_fixture(bool((r.rule or "").strip()),
+                         "fixture rule %s parsed with no rule text, so no finding "
+                         "could be built from it" % r.id)
     rules_by_id = {r.id: r.as_dict() for r in rules}
 
     def _finding(rule_id):
@@ -19169,6 +19234,19 @@ def check_239_severity_decides_and_evidence_survives():
              "u02": {"unit_id": "u02", "text": "Device: Y\nReading: 61 units"}}
     srules = {"CONV-001": {"id": "CONV-001", "rule": "reading in band",
                            "unless": [{"kind": "field", "target": "adj range"}]}}
+    # CHECKS-A: prove the INPUT before asserting the behaviour. This exact
+    # fixture was mangled once already (a literal backslash-n for a newline),
+    # the unit parsed into a single field-less line, and the first reading was
+    # that the suspension was broken. It was not.
+    import pairing_map as _pm239
+    _u1 = {_pm239._norm_label(f) for f in _pm239.unit_fields(units["u01"]["text"])}
+    _u2 = {_pm239._norm_label(f) for f in _pm239.unit_fields(units["u02"]["text"])}
+    _require_fixture(_pm239._norm_label("adj range") in _u1,
+                     "u01 must carry the 'adj range' field the suspension keys on, "
+                     "or nothing can suspend and the test proves nothing", sorted(_u1))
+    _require_fixture(_pm239._norm_label("adj range") not in _u2,
+                     "u02 must NOT carry 'adj range', or both units suspend and the "
+                     "per-unit claim is untested", sorted(_u2))
     sink = []
     plans = _pr.plan_calls(units, [("u01", "CONV-001"), ("u02", "CONV-001")],
                            srules, {}, needed_fields_for=lambda t: set(),
@@ -19240,6 +19318,79 @@ def check_239_severity_decides_and_evidence_survives():
         if rep["limit_notice"][:40] not in withconf:
             return _fail("the limit of the overlap test did not travel with the "
                          "list to the operator's surface")
+
+    # --- TWO-H: an undeclared severity is not silently guessed -------------
+    # It decides something now, so a guess that withholds an amendment must not
+    # be invisible. Falls back to required (the safe direction: it PRODUCES the
+    # amendment) and records the disagreement.
+    _sev, _note = _cp.resolve_severity(None, "A reading may be noted where relevant.")
+    if _sev != _cp.SEVERITY_WHEN_UNDECLARED:
+        return _fail("an undeclared severity was guessed to %r; a prose guess that "
+                     "withholds an amendment must not be silently load-bearing" % _sev)
+    if not _note or _note.get("prose_classification") != "advisory":
+        return _fail("the disagreement between the prose guess and the fallback was "
+                     "not recorded, so the classifier's error rate stays invisible")
+    _sev2, _note2 = _cp.resolve_severity("advisory", "The reading must fall in band.")
+    if _sev2 != "advisory" or _note2:
+        return _fail("a DECLARED severity was overridden or spuriously annotated; "
+                     "the operator's declaration always wins")
+    _sev3, _note3 = _cp.resolve_severity(None, "The reading must fall inside the band.")
+    if _sev3 != "required" or _note3:
+        return _fail("a prose guess AGREEING with the fallback should need no note")
+    # Every shipped corpus still parses and none of its rules became advisory,
+    # which is what makes this change safe to ship today.
+    _corpora = sorted((ROOT / "benchmark" / "corpora").glob("*/conventions/*.md"))
+    _require_fixture(len(_corpora) >= 4,
+                     "expected the shipped corpora to be present to test against",
+                     len(_corpora))
+    for _cp_path in _corpora:
+        for _r in _cp._parse_text(_cp_path, [0]):
+            if _r.severity == "advisory":
+                return _fail("%s/%s resolved to ADVISORY, so its amendment would now "
+                             "be withheld; no shipped rule should change behaviour"
+                             % (_cp_path.parent.parent.name, _r.category))
+
+    # --- TWO-G: an INFERRED action cannot decide a LAW-IV matter -----------
+    # `action` is never declared on the review path: a heading bracket reads
+    # severity and subjects only, so the value is a keyword table's guess about
+    # a verb. It reached the redaction compiler, where `act == "redact"` was one
+    # of three independent triggers. Established by running it: an ordinary
+    # review convention reading "Findings must withhold judgement about equipment
+    # condition" classifies as redact. That is not cosmetic: with no operator
+    # redaction rule in force a run HARD-STOPS for a conscious operator choice,
+    # and one spurious rule flips that to "proceed" AND hands the redactor a
+    # nonsense rule to apply to real spans.
+    from sensitivity_layer.rules import redaction_rules as _rr
+    _probe = "Findings must withhold judgement about equipment condition."
+    if _cp._classify_action(_probe) != "redact":
+        return _fail("the probe no longer classifies as redact, so this check no "
+                     "longer tests what it claims to test")
+    _inferred = {"conventions": [{"id": "CONV-900", "category": "conformance",
+                                  "action": "redact", "action_declared": False,
+                                  "rule": _probe, "severity": "required"}]}
+    _matched = [r["matched_by"] for r in _rr(_inferred)["operator_rules"]]
+    if "action" in _matched or "declared_action" in _matched:
+        return _fail("an INFERRED action still decides a redaction question; a "
+                     "keyword table's guess about a verb must never settle a "
+                     "LAW-IV matter")
+    # A DECLARED action still works: this closes a guess, not the feature.
+    _declared = {"conventions": [{"id": "CONV-901", "category": "conformance",
+                                  "action": "redact", "action_declared": True,
+                                  "rule": "Withhold the supplier name.",
+                                  "severity": "required"}]}
+    if [r["matched_by"] for r in _rr(_declared)["operator_rules"]] != ["declared_action"]:
+        return _fail("an operator's DECLARED redact action stopped working")
+    # No markdown convention can ever declare one, which is why this is safe.
+    for _r in _cp._parse_text(fix, [0]):
+        if _r.as_dict().get("action_declared"):
+            return _fail("a markdown convention reported a DECLARED action; only the "
+                         "JSON path can declare one, and that is what keeps an "
+                         "inferred value out of the redaction decision")
+    # And every action written to an artifact says it is not consumed.
+    _d = _cp._parse_text(fix, [0])[0].as_dict()
+    if "not consumed" not in str(_d.get("action_status", "")).lower():
+        return _fail("a registry entry writes an `action` without saying it is not "
+                     "consumed, so it reads as an instruction that does nothing")
 
     # --- NEUTRALISE the severity branch, the part that was inert -----------
     pr_path = ROOT / "scripts" / "paired_review.py"
@@ -19334,6 +19485,24 @@ def check_238_two_rule_sets():
     ext = _xr.load_external_rules(fixture)
     if len(ext) != 4:
         return _fail("expected 4 fixture rules, got %d" % len(ext))
+    # CHECKS-A: prove the fixture carries the four DISTINCT cases this check
+    # rests on before asserting which of them conflict. A fixture whose rules
+    # all lost their scope would raise no conflict at all, and the
+    # "EXT-002 and EXT-003 do not conflict" assertion would pass for the wrong
+    # reason: nothing conflicts, rather than those two agreeing.
+    _by_id = {r.get("id"): r for r in ext}
+    _require_fixture(set(_by_id) == {"EXT-001", "EXT-002", "EXT-003", "EXT-004"},
+                     "the fixture must carry exactly the four declared cases",
+                     sorted(_by_id))
+    for _rid in ("EXT-001", "EXT-002", "EXT-004"):
+        _require_fixture(bool(_xr._subject_of(_by_id[_rid])),
+                         "%s must declare a subject, or it cannot overlap anything "
+                         "and every conflict assertion below is vacuous" % _rid)
+    _require_fixture(
+        _xr._subject_of(_by_id["EXT-003"]) and
+        not (_xr._subject_of(_by_id["EXT-003"]) & _xr._subject_of(_by_id["EXT-001"])),
+        "EXT-003 must declare a subject that does NOT overlap EXT-001's, since it "
+        "is the non-overlapping case")
 
     conventions = [
         {"id": "CONV-001", "category": "conv-d01", "scope": [{"label": "Reading"}],
@@ -19720,6 +19889,16 @@ def check_237_suspension_edges_and_visible_loss():
     units = {"u01": {"unit_id": "u01",
                      "text": "Device: X\nReading: 61 units\nAdj range: 20 to 80"},
              "u02": {"unit_id": "u02", "text": "Device: Y\nReading: 61 units"}}
+    # CHECKS-A: the input is proved before the behaviour. A mangled escape here
+    # makes u01 field-less, nothing suspends, and the failure reads as a broken
+    # suspension rather than a broken fixture. That happened.
+    import pairing_map as _pmA
+    _f1 = {_pmA._norm_label(f) for f in _pmA.unit_fields(units["u01"]["text"])}
+    _f2 = {_pmA._norm_label(f) for f in _pmA.unit_fields(units["u02"]["text"])}
+    _require_fixture(_pmA._norm_label("adj range") in _f1,
+                     "u01 must carry 'adj range' for the suspension to fire", sorted(_f1))
+    _require_fixture(_pmA._norm_label("adj range") not in _f2,
+                     "u02 must not carry 'adj range'", sorted(_f2))
     srules = {"CONV-001": {"id": "CONV-001", "rule": "reading in band",
                            "unless": [{"kind": "field", "target": "adj range"}]}}
     plans = _pr.plan_calls(units, [("u01", "CONV-001"), ("u02", "CONV-001")],
@@ -22453,6 +22632,13 @@ def main(argv=None):
     for title, fn in CHECKS:
         try:
             status, detail = fn()
+        except FixtureNotAsIntended as e:
+            # CHECKS-A: a check's own input was not what the check assumed. This
+            # is a defect in the CHECK, and it is reported as its own status so
+            # it is never read as a finding about the code under test. It still
+            # counts as non-PASS: a check that cannot set up its input has
+            # proved nothing, and must not be mistaken for a green.
+            status, detail = "BADFIXTURE", str(e)
         except Exception as e:
             status, detail = "ERROR", f"{type(e).__name__}: {e}\n{traceback.format_exc().splitlines()[-2]}"
         results.append((title, status, detail))
@@ -22465,8 +22651,16 @@ def main(argv=None):
     passed = sum(1 for _, s, _ in results if s == "PASS")
     warned = sum(1 for _, s, _ in results if s == "WARN")
     skipped = sum(1 for _, s, _ in results if s == "SKIP")
-    failed = sum(1 for _, s, _ in results if s in ("FAIL", "ERROR"))
-    print(f"PASS={passed}  WARN={warned}  SKIP={skipped}  FAIL/ERROR={failed}  TOTAL={len(results)}")
+    # CHECKS-A: BADFIXTURE counts as a failure. A check whose own input was not
+    # what it assumed has proved nothing, and a gate that let it pass would be
+    # reporting a green it never earned.
+    badfix = sum(1 for _, s, _ in results if s == "BADFIXTURE")
+    failed = sum(1 for _, s, _ in results if s in ("FAIL", "ERROR", "BADFIXTURE"))
+    line = f"PASS={passed}  WARN={warned}  SKIP={skipped}  FAIL/ERROR={failed}"
+    if badfix:
+        line += f"  (of which BADFIXTURE={badfix}: the check's own input was wrong, " \
+                f"not the code under test)"
+    print(f"{line}  TOTAL={len(results)}")
     return 0 if failed == 0 else 1
 
 

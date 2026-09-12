@@ -71,13 +71,30 @@ class ConventionRule:
     # together, since a model asked about an exception in isolation from the
     # rule it qualifies gives the wrong answer however well it reads.
     unless: list = field(default_factory=list)
+    # TWO-H: set when no severity was declared AND the prose classifier disagreed
+    # with the fallback. None otherwise. A guess that decides something is never
+    # invisible.
+    severity_note: dict = None
+    # TWO-G: True only when the operator DECLARED this action (the JSON path).
+    # False when it was inferred from prose by the keyword table, which is every
+    # markdown convention. The sensitivity layer reads this to refuse deciding a
+    # LAW-IV matter on a guess.
+    action_declared: bool = False
 
     def as_dict(self):
-        return {"id": self.id, "category": self.category, "rule": self.rule,
-                "source_file": self.source_file, "source_location": self.source_location,
-                "severity": self.severity, "action": self.action,
-                "subjects": self.subjects, "scope": self.scope, "requires": self.requires,
-                "unless": self.unless}
+        out = {"id": self.id, "category": self.category, "rule": self.rule,
+               "source_file": self.source_file, "source_location": self.source_location,
+               "severity": self.severity, "action": self.action,
+               "action_declared": self.action_declared,
+               # TWO-G: the action is written here, so here is where it says it
+               # is not consumed. A value that reads like an instruction and
+               # changes no outcome is the `unless` defect in another form.
+               "action_status": ACTION_NOT_CONSUMED,
+               "subjects": self.subjects, "scope": self.scope, "requires": self.requires,
+               "unless": self.unless}
+        if self.severity_note:
+            out["severity_note"] = self.severity_note
+        return out
 
 
 @dataclass
@@ -139,6 +156,78 @@ def _classify_severity(text):
     return "advisory"
 
 
+# TWO-H. An UNDECLARED severity must not be silently guessed, now that severity
+# decides something (TWO-F: an advisory rule produces its finding and withholds
+# its amendment).
+#
+# Until today the guess was harmless: a heading bracket overrode it wherever one
+# existed, and where none existed nothing consumed the value. It is not harmless
+# now. A rule with no bracket inherits a GUESSED severity, and an advisory guess
+# withholds the amendment silently, which is the one failure an operator cannot
+# see.
+#
+# Measured before choosing, not assumed:
+#   - 16 of 44 convention headings across the shipped corpora carry NO severity
+#     bracket, so refusing an undeclared severity would break files that were
+#     legal yesterday, in two of six corpora.
+#   - on the device corpus the prose classifier DISAGREES with the operator's own
+#     declaration on 2 of 8 rules (conv-d03, conv-d08), both times guessing
+#     advisory for a rule declared required. Both are genuinely required: a
+#     validity rule and a prohibition on reviewer speculation.
+#   - all 16 bracketless rules happen to guess `required` today, because each
+#     contains "must". That is luck, not safety: one worded with "should" or
+#     "may" would be downgraded and its amendment withheld with no error.
+#
+# So: FALL BACK TO REQUIRED, and RECORD THE DISAGREEMENT. Required is the safe
+# direction (it produces the amendment rather than withholding it), a bracketless
+# file keeps working, and the classifier's error rate becomes visible instead of
+# silently load-bearing. Refusing the rule is the other defensible answer, and was
+# rejected only because of those 16.
+SEVERITY_WHEN_UNDECLARED = "required"
+
+
+def resolve_severity(declared, rule_text):
+    """The severity a rule actually carries, and whether anything disagreed.
+
+    Returns (severity, note). `note` is None when the operator declared one, or
+    when the guess agrees with the fallback; otherwise it records what the prose
+    said and what was used instead, so a guess that decides something is never
+    invisible."""
+    if declared:
+        return str(declared).strip().lower(), None
+    guess = _classify_severity(rule_text or "")
+    if guess == SEVERITY_WHEN_UNDECLARED:
+        return SEVERITY_WHEN_UNDECLARED, None
+    return SEVERITY_WHEN_UNDECLARED, {
+        "declared": None,
+        "prose_classification": guess,
+        "used": SEVERITY_WHEN_UNDECLARED,
+        "reason": ("no severity was declared on the heading; the prose classifier "
+                   "read %r, which would withhold this rule's amendment. Severity "
+                   "now decides whether an amendment is produced, so an undeclared "
+                   "one falls back to %r rather than being guessed into silence. "
+                   "Declare a severity on the heading to settle it."
+                   % (guess, SEVERITY_WHEN_UNDECLARED)),
+    }
+
+
+# TWO-G. `action` is COMPUTED ON THE REVIEW PATH AND CONSUMED BY NOTHING.
+#
+# The operator's ruling stands that it has no defensible meaning for a review
+# convention: of its five values only `flag` is unambiguous, `redact` belongs to
+# the sensitivity layer, `reject` names an outcome a review run does not have,
+# and `rephrase` is proposed_text, which is per finding and not a property of a
+# rule. This constant is the artifact-facing half of that ruling: every place an
+# action is written says plainly that it is not consumed, so it cannot be read as
+# an instruction that quietly does nothing, which is the `unless` defect in
+# another form.
+ACTION_NOT_CONSUMED = (
+    "not consumed on the review path: inferred from the rule's wording and "
+    "recorded for the reader only. No review behaviour depends on it. The "
+    "sensitivity layer is the one consumer of an action value, and it never "
+    "reads this field (see redaction_intent below).")
+
+
 def _classify_action(text):
     for label, rx in _ACTION_PATTERNS:
         if rx.search(text):
@@ -165,13 +254,19 @@ def _parse_json(path, seq):
         if not rule:
             continue
         subjects = item.get("subjects")
+        _sev, _sev_note = resolve_severity(item.get("severity"), rule)
         out.append(ConventionRule(
             id=item.get("id") or _next_id(seq),
             category=str(item.get("category") or _DEFAULT_CATEGORY).strip().lower(),
             rule=rule, source_file=path.name,
             source_location=str(item.get("source_location") or f"item {i+1}"),
-            severity=str(item.get("severity") or _classify_severity(rule)).lower(),
+            severity=_sev, severity_note=_sev_note,
             action=str(item.get("action") or _classify_action(rule)).lower(),
+            # TWO-G: a JSON convention is the ONE path that can DECLARE an
+            # action. Everything else infers it from prose. The sensitivity
+            # layer must be able to tell the two apart, because an inferred
+            # value must never decide a LAW-IV matter.
+            action_declared=bool(str(item.get("action") or "").strip()),
             subjects=[str(s).strip().lower() for s in subjects] if isinstance(subjects, list) else [],
             scope=_scope_entries(item.get("scope")),
             requires=[str(s).strip().lower() for s in (item.get("requires") or [])
@@ -249,10 +344,11 @@ def _parse_text_lines(text, source_name, seq):
         joined = " ".join(b.strip() for b in buffer).strip()
         if not joined:
             return []
+        _sev, _sev_note = resolve_severity(severity, joined)
         return [ConventionRule(
             id=_next_id(seq), category=current_category, rule=joined,
             source_file=source_name, source_location=location,
-            severity=severity or _classify_severity(joined),
+            severity=_sev, severity_note=_sev_note,
             action=_classify_action(joined), subjects=list(subjects),
             scope=[dict(s) for s in current_scope], requires=list(current_requires),
             unless=[dict(u) for u in current_unless],
@@ -280,10 +376,11 @@ def _parse_text_lines(text, source_name, seq):
             para_buffer = []
             stripped = _strip_list_marker(line)
             if stripped:
+                _sev, _sev_note = resolve_severity(current_severity, stripped)
                 out.append(ConventionRule(
                     id=_next_id(seq), category=current_category, rule=stripped,
                     source_file=source_name, source_location=f"line {line_num}",
-                    severity=current_severity or _classify_severity(stripped),
+                    severity=_sev, severity_note=_sev_note,
                     action=_classify_action(stripped), subjects=list(current_subjects),
                     scope=[dict(s) for s in current_scope], requires=list(current_requires),
                     unless=[dict(u) for u in current_unless],
