@@ -1,0 +1,42 @@
+{
+  "_what_this_is": "Operator-visible reference text for the five-voter semantic ensemble (WORDS-A). Every decision that rests on what words MEAN is decided against these examples, by five independent voters, never by a keyword table in code and never by one method alone. A reference set living inside code is the same mistake in a new place, so it lives here, beside the band tables and the domain vocabulary, where an operator can read and change it.",
+  "_how_a_decision_is_made": "Each voter scores the candidate text against the positive and negative references for a decision and returns yes or no with a score and the reference it matched. The decision is YES at three of five or above. All five votes are recorded, with scores and matched reference, never only the outcome. If fewer than five voters can run, the decision REFUSES and names the missing ones: three of three is a different rule from three of five and the difference must not be invisible.",
+  "_thresholds": "Each voter's threshold is justified by measurement against the shipped corpora and by the margin between the closest true case and the closest false one. The measured margin is recorded beside each threshold. A round number is not a justification.",
+
+  "redaction_intent": {
+    "_decides": "Whether an operator convention is a REDACTION RULE: an instruction the redactors apply to spans of a document, rather than an ordinary review convention.",
+    "_why_it_matters": "Under LAW-IV a silent non-compile is the worse error: a genuine redaction rule that does not compile means content the operator marked for removal is published. The regex this replaces matched only the PASSIVE prohibition form, so 'the reviewer must not publish the client's address' silently did not compile while 'the address must not be published' did.",
+    "_direction_of_a_wrong_answer": "A false NO publishes content the operator marked for removal, and is silent. A false YES redacts content that should have stayed, and is visible in the output. The thresholds are set to prefer a false YES.",
+    "positive": [
+      "Redact the client name wherever it appears.",
+      "Withhold the supplier turnover figure from the output.",
+      "Do not publish the individual's address.",
+      "Mask the account number.",
+      "Personal identifiers may not appear in any artifact.",
+      "The deliverable must not contain confidential business figures.",
+      "Do not disclose the finding's subject name.",
+      "Redact any comment that names an individual.",
+      "The reviewer must not publish the client's address.",
+      "Conceal the date of birth in every deliverable.",
+      "Remove the identity number from output.",
+      "A named natural person's contact details are withheld.",
+      "Confidential commercial terms are masked before delivery.",
+      "The turnover figure must not be disclosed.",
+      "Do not reveal the individual's salary."
+    ],
+    "negative": [
+      "Findings must withhold judgement about equipment condition.",
+      "Findings record what conflicts with a stated rule or a neighbouring entry, never a guess about equipment condition, cause of fault, or maintenance priority.",
+      "A reviewer must not state an opinion about maintenance priority.",
+      "Comments must withhold any recommendation about replacement.",
+      "The reading stated for a device must fall inside the adjacent range.",
+      "Every entry must state a calibration date.",
+      "Every finding must cite one convention and at least one reference.",
+      "A finding about one entry must take into account the neighbouring entry.",
+      "The gap between two logged readings must fall inside the stated window.",
+      "A device's own logged fault must be acknowledged in the entry.",
+      "Findings record what is missing or inconsistent in the record, never an appraisal of its value.",
+      "Diagnosis is the fleet engineer's task, not the reviewer's."
+    ]
+  }
+}
