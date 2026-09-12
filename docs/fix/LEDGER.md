@@ -1,5 +1,48 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## SIX CLOSED, 2026-09-12
+
+FIVE closed in 2ff8e23762ade7958a3e2a236e6fe425f362db13.
+The two saved runs agree between cost_tracker.jsonl and call_evidence.jsonl:
+29/39 calls, ten distinct called agents, the same eight uncalled agents. The
+machine-readable accounting is output/six_agent_accounting.json. No answer key
+was consulted. The evidence is under output/runs/2026-09-12__1doc_review and
+output/runs/2026-09-12__1doc_review__479f3219, with the original terminal traces
+in output/run_flawed.log and output/run_clean.log.
+
+| Uncalled agent | Saved evidence and actual control-flow explanation | Assessment |
+|---|---|---|
+| STYLE_GUARDIAN | by_agent is empty; all rules tagged conformance or editorial. firing_convention_review_agents returns only PRACTICE_AUDITOR. | Correct. All rules being assigned does not mean all agents have assignments; the handoff's claim that the firing gate excluded nobody is wrong. |
+| AMENDMENT_DRAFTER | Both traces say amendment_drafter_skipped reason=template_path. phase_6_synthesis defaults amendment_polish=False and renders typed findings. | Correct. Amendment work still ran deterministically. Existing check 175 exercises this consumer and writes real artifacts with no model available. |
+| REDACTOR | Both traces say redaction_screening waived=1 and phase_skipped phase=9 reason=non_sensitive_mode. | Correct for these declared non-sensitive runs; not evidence of a completed privacy examination. |
+| EDITOR_HEAD_OF_UNIT | The clerk's valid observations trigger neither low confidence nor out_of_mandate. The actual board loop breaks before rank_idx advances. | Correct under the ratified parsimony policy. |
+| EDITOR_HEAD_OF_SECTION | The same stopped escalation chain never reaches the second senior rank. | Correct under that policy. |
+| EDITOR_HEAD_OF_DEPARTMENT | The same stopped chain never reaches the first upper-family rank. | Correct under that policy. |
+| EDITOR_DEPUTY_DG | The same stopped chain never reaches this rank. | Correct under that policy. |
+| EDITOR_DG | The same stopped chain never reaches the final rank. | Correct under that policy. |
+
+Both audit/editorial/BOARD_*.json files say REVIEWED, ranks_run=[EDITOR_CLERK],
+rounds=0. The clerk returned four/three valid concern observations, all CONFIDENT
+and without out_of_mandate. The actual _observation_triggers_escalation returns
+(False, '') for both; changing only confidence to UNCERTAIN returns True.
+The configured threshold is 0.7; CONFIDENT maps to 1.0 and UNCERTAIN to 0.4.
+A concern verdict alone is not a summon trigger. This is a call-accounting answer,
+not a finding-quality endorsement. No new policy or routing change is justified.
+
+Decision: preserve the existing firing, synthesis, privacy and escalation policies;
+the saved evidence explains all eight absences without treating them as empty
+model responses. README now names each agent, cause and assessment. No code or
+check changed, so there is no new neutralisation claim. Adversarial read compared
+all-eight-rules-assigned with each agent's actual assignment, checked both board
+states against the predicate, and distinguished privacy waiver from successful
+scrubbing. The README-only image refresh reused the existing source/model layers.
+Final shimmer:six: sha256:ccbb94d3e8cdbf332e8795016a7e44e29e116aa27995a6bb896eb2a54caa6111,
+14,408,236,153 bytes. All 121 shipped files match the tree after CRLF normalization
+(output/six_source_audit.json). The final refresh preserves the README's existing
+heading hierarchy. Runtime is unchanged from FIVE/FOUR, so no model probe was
+repeated for this documentation-only item. Full host gate: PASS=244 WARN=0 SKIP=0
+FAIL/ERROR=2 TOTAL=246, known failures 01 and 145 only (output/six_host_gate.log).
+
 ## FIVE CLOSED, 2026-09-12
 
 FOUR closed in f928fa92eb8263fcc0ced334059a777e72bcd58c.

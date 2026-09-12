@@ -228,6 +228,34 @@ why: PROCESSOR, ARCHIVIST, SPEECH_ACT_TAGGER and AMENDMENT_DRAFTER are reached b
 convention-review path, and INST_FINDER and CITATION_RESOLVER post output that no
 deliverable reads today.
 
+#### Why eight agents made no model call in the saved reviews
+
+The two 12 September device reviews each called ten of the eighteen agents,
+with 29 and 39 calls respectively. `cost_tracker.jsonl` and `call_evidence.jsonl`
+agree agent by agent. All eight rules had consumers; that does not require all
+eighteen agents to run. The same eight had no call in both runs:
+
+| Agent | Why no model call | Correct under the current policy? |
+|---|---|---|
+| STYLE_GUARDIAN | No rule was assigned to its `wording` subject, and no rule was untagged. | Yes. The convention-review firing gate excludes it. |
+| AMENDMENT_DRAFTER | Phase 6 selected `template_path`; typed findings produced amendments without optional model polishing. | Yes. This is the default synthesis route. |
+| REDACTOR | Redaction was explicitly waived and the privacy stage logged `non_sensitive_mode`. | Yes for those declared non-sensitive runs; this is not a completed privacy check. |
+| EDITOR_HEAD_OF_UNIT | The clerk did not trigger escalation, so the next rank was not summoned. | Yes under the configured escalation policy. |
+| EDITOR_HEAD_OF_SECTION | No escalation chain reached this rank. | Yes under the same policy. |
+| EDITOR_HEAD_OF_DEPARTMENT | No escalation chain reached this rank. | Yes under the same policy. |
+| EDITOR_DEPUTY_DG | No escalation chain reached this rank. | Yes under the same policy. |
+| EDITOR_DG | No escalation chain reached this rank. | Yes under the same policy. |
+
+Both saved board records say `REVIEWED`, `ranks_run: [EDITOR_CLERK]`, `rounds: 0`.
+The clerk returned four and three `concern` observations, all `CONFIDENT`, with
+no `out_of_mandate` flag. The actual escalation predicate returns false for both:
+`CONFIDENT` maps to 1.0, above the configured 0.7 threshold. A concern verdict
+alone does not summon a senior rank. Replaying an otherwise identical uncertain
+observation does trigger escalation. This explains who was called; it does not
+validate the clerk's claims or count the five uncalled ranks as finding nothing.
+The saved logs, board artifacts and executed predicate results are recorded in
+`docs/fix/LEDGER.md` under SIX.
+
 #### The local profile (`--backend-profile local`)
 
 `--backend-profile local` remaps **17 of the 18 agents** to two local models and makes no

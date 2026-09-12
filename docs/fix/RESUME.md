@@ -14,46 +14,46 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-FIVE, the commit containing this checkpoint,
-`FIVE: prove reply packaging recovery without loosening contracts`.
+SIX, the commit containing this checkpoint,
+`SIX: account for every agent without a saved model call`.
 Resolve its exact hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until
-another item updates this file. Earlier completed items: FOUR in
-f928fa92eb8263fcc0ced334059a777e72bcd58c and ZERO-C in
+another item updates this file. Earlier completed items: FIVE in
+2ff8e23762ade7958a3e2a236e6fe425f362db13, FOUR in
+f928fa92eb8263fcc0ced334059a777e72bcd58c, ZERO-C in
 963cae235d1ef2f2e949f72133259a05a1647fe1.
 
-Replaying all three alleged packaging failures found cuts at 2048 tokens:
-PROCESSOR and SPEECH_ACT_TAGGER have unfinished envelopes; LEGAL_ANALYST has
-no JSON. The current parser already recovers complete prose/fence-wrapped replies.
-Check 148 now proves packaging and retained contract rejection through real
-run_task with mocked dispatch. Three independently observable mutations FAIL,
-restoration PASS. No parser change, fabricated payload, generation or pipeline run.
-README and shimmer:five refreshed; all 121 shipped files match the tree. Its
-focused check 148 PASS offline with no mounts. Full host gate 244/246 with only
-known failures 01 and 145. Adversarial read complete; details in LEDGER.
+Both saved runs account for all eight uncalled agents: STYLE_GUARDIAN has no
+assigned rule; AMENDMENT_DRAFTER used template synthesis; REDACTOR was waived in
+non-sensitive mode; five senior editors were never summoned. Both boards stopped
+at the clerk after confident concern observations without out_of_mandate. The
+real escalation predicate returns false, an uncertain variant returns true.
+README and LEDGER name all eight and why that is correct under existing policy.
+No code or check changed. All 121 shipped files in shimmer:six match the tree.
+Full host gate 244/246 with only known failures 01 and 145. Adversarial read done.
 
 ## Current item
 
-None open. Continue with SIX after FIVE is committed: account for every agent
-that made no model call from the saved run evidence and actual control flow.
+None open. Continue with SEVEN after SIX is committed. The scorer must consume
+existing unit suspension evidence and distinguish it from never assigned and
+asked with no finding. Do not infer an actual model call from assignment alone.
 
 ## Ordered remaining work
 
-1. SIX: explain each of the eight agents that never called a model.
-2. SEVEN: scorer distinguishes never assigned, suspended, asked with no finding.
-3. EIGHT: verify date_window visibility in the current scorer.
-4. NINE: compute whether Python now settles ROWAN.
-5. TEN: distinguish incomplete runs from completed empty runs.
-6. ELEVEN: plain-language harness facts or explicit absence.
-7. TWELVE: one run-id format.
-8. THIRTEEN: structural proof against reading-only and no-op neutralisations.
-9. FOURTEEN: trace typed records through real amendment artifacts.
-10. FIFTEEN: pairing fallback value and WORDS-A compliance.
-11. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-12. SEVENTEEN: close the cache diagnosis with measured build reuse.
-13. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-14. NINETEEN: classify document_dates.json in the manifest.
-15. TWENTY: answer the learning-signal question, no GNN build.
-16. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. SEVEN: scorer distinguishes never assigned, suspended, asked with no finding.
+2. EIGHT: verify date_window visibility in the current scorer.
+3. NINE: compute whether Python now settles ROWAN.
+4. TEN: distinguish incomplete runs from completed empty runs.
+5. ELEVEN: plain-language harness facts or explicit absence.
+6. TWELVE: one run-id format.
+7. THIRTEEN: structural proof against reading-only and no-op neutralisations.
+8. FOURTEEN: trace typed records through real amendment artifacts.
+9. FIFTEEN: pairing fallback value and WORDS-A compliance.
+10. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+11. SEVENTEEN: close the cache diagnosis with measured build reuse.
+12. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+13. NINETEEN: classify document_dates.json in the manifest.
+14. TWENTY: answer the learning-signal question, no GNN build.
+15. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -79,6 +79,8 @@ that made no model call from the saved run evidence and actual control flow.
     extraction is not evidence of missing source content.
 11. Preserve existing envelope recovery and payload rejection: saved failures
     are incomplete or absent JSON, not valid work lost to packaging.
+12. Preserve the four policies explaining eight uncalled agents: saved artifacts
+    and executed predicates account for every absence without a routing change.
 
 ## Decisions made in the operator's place
 
@@ -122,13 +124,13 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final FIVE host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
+Final SIX host: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246.
 Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
 offline probe steps PASS, 163 seconds combined. Tests used --network none,
 --gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
 (missing ignored contamination fixture). Image source-only failures: 01, 28,
 31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/five_host_gate.log, output/four_container_validation.log and
+Logs: output/six_host_gate.log, output/four_container_validation.log and
 output/four_mutation_proof.log. Focused changes prove independently observable
 mutation effects before fail/restore/pass. No proof mutates real source files.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
@@ -136,14 +138,12 @@ ZERO-C's earlier logs and image remain preserved; see LEDGER.
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:five carries the current source and README;
-its changed check 148 passed offline without mounts. This documentation/check-only
-refresh preserves FOUR's validated runtime and model layers. The full image gate
-above was run on shimmer:four; it was not repeated for FIVE.
-shimmer:four,
-shimmer:zero-c and the older tags remain intact. All 121 copied files matched
-the tree. Image identity and per-file source hashes: output/five_source_audit.json.
-Both source refreshes reused model and conversion layers.
+GPU model workload at a time. shimmer:six carries the current source and README.
+SIX changes only documentation; its source audit matched all 121 shipped files.
+FIVE's changed parser check passed offline without mounts. The full image gate
+above was run on shimmer:four; its runtime and model layers remain unchanged.
+All older tags remain intact. Current image identity and per-file source hashes:
+output/six_source_audit.json. All source refreshes reused model/conversion layers.
 Build cache: output/shimmer_build_cache, about 14.41 GB, ignored and local only.
 Reuse it with the --cache-from/--cache-to commands in README; no global Docker
 configuration change or registry upload was made.
