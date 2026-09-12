@@ -14,8 +14,10 @@ never reads. Matching is MECHANICAL and prose-free, on typed fields only:
                 in the Finding record's own vocabulary) the located finding is
                 asked whether it states the SAME REASON. Three outcomes, never
                 two: reason confirmed, RIGHT PLACE WRONG REASON, and unverifiable
-                (located only through an amendment, which carries no typed
-                reason). Only the first counts as a detection.
+                (located through an older amendment without typed reason fields).
+                Current computed amendments retain those fields and can confirm
+                the reason without a bus finding. Only confirmed reasons count
+                as detections.
 
                 This exists because location alone inflated every recall figure
                 this project reported. Measured 2026-09-11: the model emitted a
@@ -594,10 +596,9 @@ def score(corpus, run_dir):
                        and a.get("finding_relation")]
         ok, why = _reason_matches(p.get("claim"), bus_hits + amend_typed)
         if is_found and ok is None and via_rule and not via_bus and p.get("claim"):
-            # Located through an AMENDMENT only. Amendments carry no typed
-            # relation or figures (finding_type is a coarse label such as
-            # "factual", not the Finding record's relation), so the reason
-            # cannot be checked from this artifact. Reported as unknown, never
+            # Located through an older AMENDMENT without typed reason fields.
+            # Its coarse finding_type alone cannot establish the reason.
+            # Reported as unknown, never
             # as confirmed: an unverifiable catch must not count as a verified
             # one, which is the whole point of this change.
             why = "located via amendment only; amendments carry no typed reason"

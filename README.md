@@ -1935,11 +1935,11 @@ that the amendment-based figures are therefore 0 and mean nothing, rather than r
 own `audit/convention_assignment.json` and reports, apart from recall, how many planted entries
 name a rule whose status is `unassigned` (it carries subject tags and none matched an agent) or
 `assigned_no_consumer` (an agent declared its tag but consumes no rule in this mode). Both mean
-the rule was never put to anything. Scoring those as ordinary misses reports a mechanism failure
-where no mechanism ran, so a second figure, `recall, asked`, is given over the entries that were
-actually asked, and that is the figure that says something about the mechanism. A run that wrote
-no assignment (every run on disk today predates it) reports the question as `unknown` and marks
-each entry `?`, never a confident "asked".
+the rule had no assigned consumer. Eligibility alone does not establish a call: `recall, asked`
+requires the rule and unit to appear in a recorded call to an assigned consumer. Unit-specific
+suspensions are reported separately and excluded from that denominator. An eligible entry with
+no such call is `assigned_not_asked`; missing assignment or call evidence is `unknown`. Raw recall
+retains every planted entry. Recorded exposure does not prove a successful response or reasoning.
 
 **The relation breakdown is built from the run, not from a list.** Every relation the run's typed
 findings actually carry is named and counted. This exists because `date_window`, the duration
@@ -1947,6 +1947,13 @@ comparison, was computed, posted and counted toward recall while every relation-
 the scorer partitioned on the prior-version and band relations alone, so the newest mechanism was
 invisible in the only view a reader sees. A relation appended to the Finding record now appears
 the first run that produces one, with no edit here.
+
+Computed amendments retain the finding's typed relation and figures, so a scorer can also
+confirm a `date_window` reason from `deliverables/<document>/review_data.json` when the bus record
+is unavailable. Older amendments without those fields remain reason-unverifiable. The relation
+count above describes bus findings; amendment-only matches appear in the entry table and reason
+score. EIGHT's declared fixture computes 48 hours against a 24-hour bound and confirms the reason
+through each artifact path independently.
 
 **Run completeness is stated, not guessed.** A run directory carries no completion marker: the bus
 has a `BOOT` event and no closing one, and nothing else on disk records an exit. So a run stopped

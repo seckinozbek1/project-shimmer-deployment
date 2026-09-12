@@ -1,5 +1,35 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## EIGHT CLOSED, 2026-09-12
+
+FOUR scope follow-up committed c07c0b44bc40d13ce885e9c16507df5aa8a353ab.
+The suspected runtime gap was already closed by generic typed-relation scoring.
+Proof output/eight_date_proof.py uses declared source timestamps, real extraction
+and duration arithmetic (48 hours versus 24), real Finding and amendment builders,
+and the real scorer CLI over temporary artifacts and a declared key. The fixture
+first proves parsed comparison values, Finding validity and copied amendment fields.
+Bus-only and amendment-only paths each confirm the typed reason 1/1. The bus view
+names date_window=1; amendment-only evidence appears in the entry and reason tables.
+No real answer key, model call or pipeline invocation is used by this focused proof.
+
+Decision: retain the working generic scorer; add no relation whitelist or duplicate
+check. Existing checks 218 and 232 cover typed relations and amendment reason fields.
+No check or runtime behavior changed, so no new neutralisation claim is made.
+Corrected stale scorer documentation saying all amendments lack typed reasons,
+and the older README paragraph equating assignment with a call. README now names
+both artifacts and qualifies the bus-only relation count. This also pays a stale
+paragraph missed when SEVEN updated the main scoring description.
+
+Host gate: PASS=244 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=246, known 01/145 only
+(output/eight_host_gate.log). Focused proof PASS on host and in shimmer:eight
+with --network none, no mounts, no GPU and no model call. All 121 shipped files
+match (output/eight_source_audit.json). Image sha256:cb8a20d5202df99abea32748337f9665585de9457793b5ce140b6a47c7a43e74, size 14408240229 bytes.
+The cached refresh took about 8 seconds and reused all model layers. Last full
+GPU image gate remains FOUR's 234 PASS, 8 SKIP, 4 known FAIL plus six probe steps.
+Adversarial read confirmed each path's reason and its display scope separately;
+README and image debt are paid. Continue NINE after this commit.
+
+
 ## FOUR scope follow-up CLOSED, 2026-09-12
 
 SEVEN closed in 3e1fc361f294b225b9d92fdc629fa8ba0b709b09. Before opening EIGHT,
