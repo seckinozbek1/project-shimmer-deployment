@@ -2123,10 +2123,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 "text alone, decide whether the rule's requirement applies to it and, "
                 "if it applies, whether it is met. Answer as a finding on this unit "
                 "under this rule; state which condition in the rule decided it. "
-                "If you claim something is ABSENT, set `quote` to the exact words "
-                "from the unit text above that you are relying on, copied verbatim. "
-                "The quote is checked against the unit, so a claim resting on text "
-                "the unit does not contain is refused.")
+                "If you claim something is ABSENT you MUST set `quote` to the exact "
+                "words from the unit text above that you are relying on, copied "
+                "verbatim. The quote is checked against the unit: an absence claim "
+                "with no quote is refused, and so is one quoting text the unit does "
+                "not contain. If you cannot quote the unit, do not make the claim.")
         # A judged-absence reply IS the record (its items are stamped with the
         # unit and rule Python asked about, by _stamped_judged_items below). Any
         # other paired reply is an OPINION: Python mints the typed finding from
