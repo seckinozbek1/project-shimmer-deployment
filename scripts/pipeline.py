@@ -1998,9 +1998,16 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         reference_bands_for=_bands_for, known_units=known_units,
         duration_bound_for=_duration_bound_for)
 
+    # This line is emitted BEFORE the loop below runs, so the only honest thing
+    # it can report is how many calls were PLANNED. It used to say `calls=`,
+    # which was read as a call count for three days and never was one: the plan
+    # announced 75 on the device corpus and 19 calls were made, the difference
+    # being the plans the loop drops for want of a judging agent (not_judged)
+    # and the absence plans Python settles with no call at all. The actual call
+    # count is logged after the loop, where it is known.
     log_event(_LOG,
               f"paired_review pairs={len(pairs)} dropped_by_cap={len(dropped)} "
-              f"calls={len(plans)} saved={len(pairs) - len(plans)}",
+              f"planned={len(plans)} saved={len(pairs) - len(plans)}",
               run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
 
     # night chain W3, answer 7: the judging agent is chosen PER PLAN by its
@@ -2138,6 +2145,16 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                     f"reattributed={len(reattributed)} absence_computed="
                     f"{pairing['absence_computed_count']} absence_judged="
                     f"{pairing['absence_judged_count']}",
+              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+    # The calls actually MADE, and the arithmetic that reconciles them with the
+    # plan, on one line. Without this a reader had to subtract three separately
+    # logged numbers to discover that a plan of 75 produced 19 calls, and the
+    # neighbour rule's 13 dropped plans looked like a model failure rather than
+    # a question never asked. planned = made + not_judged + absence_computed.
+    pairing["calls_made"] = len(results)
+    log_event(_LOG, f"paired_review_calls planned={len(plans)} made={len(results)} "
+                    f"not_judged={len(not_judged)} "
+                    f"absence_computed={pairing['absence_computed_count']}",
               run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
     try:
         pairing_map_mod.write_pairing_map(orch.run_context, doc["id"], pairing)

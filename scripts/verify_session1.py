@@ -18984,6 +18984,107 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_224_review_rule_reaches_a_judging_agent():
+    """Fix one from the 2026-09-12 overnight measurement.
+
+    The plan announced 75 calls on the flawed twin and 19 were made; 81 and 25
+    on the clean twin. The difference is plans the loop drops for want of a
+    judging agent (not_judged) plus absence plans Python settles with no call.
+    CONV-D06, the neighbouring-entry rule, carried the operator's [editorial]
+    tag, which routes to the six editorial agents, none of which consumes rules
+    in paired mode. So all 13 (flawed) and 16 (clean) neighbour pairs were
+    planned, correctly, on the right fields, and never asked. That is why the
+    neighbour mechanism read as a failure.
+
+    The operator retagged D06 [conformance] (it is a rule about the document,
+    unlike D07 and D08 which are genuinely about how a finding is written and
+    stay editorial). This check pins BOTH halves so neither silently regresses:
+
+      - a rule tagged conformance reaches a convention-review judging agent
+      - a rule tagged editorial still does NOT (the fallback stays removed, so
+        D07 and D08 keep costing no calls)
+      - the shipped device corpora tag D06 conformance and D07/D08 editorial
+      - the phase 5.5 log says `planned=` where it once said `calls=`, and a
+        second line reports the calls actually made
+
+    NEUTRALISE AND RESTORE: with D06's subject forced back to editorial, it
+    loses its judging agent again.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import pipeline
+    except Exception as exc:
+        return _fail("cannot import pipeline: %s" % exc)
+
+    assignment = {"by_rule": {
+        "CONV-006": {"subjects": ["conformance"], "agents": ["PRACTICE_AUDITOR"],
+                     "consumer_agents": ["PRACTICE_AUDITOR"], "status": "assigned"},
+        "CONV-007": {"subjects": ["editorial"],
+                     "agents": ["EDITOR_CLERK"], "consumer_agents": ["EDITOR_CLERK"],
+                     "status": "assigned"},
+    }, "by_agent": {}}
+
+    conformance_rule = {"id": "CONV-006", "rule": "neighbouring entry rule"}
+    editorial_rule = {"id": "CONV-007", "rule": "grounding rule"}
+
+    agent = pipeline._paired_judging_agent(conformance_rule, assignment)
+    if agent != "PRACTICE_AUDITOR":
+        return _fail("a conformance-tagged review rule got judging agent %r, expected "
+                     "PRACTICE_AUDITOR; its pairs would be planned and never asked"
+                     % (agent,))
+    if pipeline._paired_judging_agent(editorial_rule, assignment) is not None:
+        return _fail("an editorial-tagged rule got a judging agent; the removed "
+                     "fallback is back and D07/D08 would cost calls again")
+
+    # The shipped corpora carry the corrected tags.
+    for corpus in ("device_log_review", "device_log_review_clean"):
+        conv = (ROOT / "benchmark" / "corpora" / corpus / "conventions" /
+                "device_conventions.md")
+        if not conv.is_file():
+            return _skip("%s conventions not in this tree" % corpus)
+        body = conv.read_text(encoding="utf-8", errors="replace")
+        for line in body.splitlines():
+            if line.startswith("## CONV-D06"):
+                if "[conformance]" not in line:
+                    return _fail("%s: CONV-D06 is not tagged [conformance]; its "
+                                 "neighbour pairs would be planned and never asked"
+                                 % corpus)
+            for rid in ("## CONV-D07", "## CONV-D08"):
+                if line.startswith(rid) and "[editorial]" not in line:
+                    return _fail("%s: %s lost its [editorial] tag; it would start "
+                                 "costing calls it should not" % (corpus, rid))
+
+    # The log line says what it means.
+    src = (ROOT / "scripts" / "pipeline.py").read_text(encoding="utf-8", errors="replace")
+    if "paired_review pairs={len(pairs)}" in src and "calls={len(plans)}" in src:
+        return _fail("the phase 5.5 log still reports plans as `calls=`; it was read "
+                     "as a call count for three days and never was one")
+    if "planned={len(plans)}" not in src:
+        return _fail("the phase 5.5 log does not report `planned=`")
+    if "paired_review_calls planned=" not in src:
+        return _fail("no line reports the calls actually MADE after the loop")
+
+    # NEUTRALISE: D06 back to editorial-only consumers.
+    neutral = {"by_rule": {
+        "CONV-006": {"subjects": ["editorial"], "agents": ["EDITOR_CLERK"],
+                     "consumer_agents": ["EDITOR_CLERK"], "status": "assigned"},
+    }, "by_agent": {}}
+    if pipeline._paired_judging_agent(conformance_rule, neutral) is not None:
+        return _fail("neutralise failed: an editorial-only rule still got a judging "
+                     "agent, so this check is not proving the routing")
+    # RESTORE.
+    if pipeline._paired_judging_agent(conformance_rule, assignment) != "PRACTICE_AUDITOR":
+        return _fail("restore failed")
+
+    return _ok("a conformance-tagged review rule reaches PRACTICE_AUDITOR while an "
+               "editorial-tagged rule still reaches none (D07/D08 keep costing no "
+               "calls); both shipped device corpora tag D06 conformance and D07/D08 "
+               "editorial; the phase 5.5 log says planned= and a second line reports "
+               "calls made; neutralise/restore proved")
+
+
 def check_223_draft_path_asks_the_sensitivity_question():
     """The draft path declared every launcher draft NON-SENSITIVE with no
     prompt. It hardcoded --sensitivity-layer-inactive-override and
@@ -20065,6 +20166,8 @@ CHECKS = [
      check_222_launcher_server_url_and_token_handshake),
     ("223 the draft path asks the sensitivity question instead of answering it",
      check_223_draft_path_asks_the_sensitivity_question),
+    ("224 a review rule reaches a judging agent, and the plan log says plans not calls",
+     check_224_review_rule_reaches_a_judging_agent),
 ]
 
 

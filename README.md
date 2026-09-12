@@ -461,6 +461,24 @@ as `paired_review_no_firing_agent`. `GET /runs/{run_id}/pairs` serves `not_judge
 the `prior_*` counts only and nothing of `absence` or `band_conditions` (an open gap,
 recorded in section I).
 
+**A rule's subject tag decides whether it is ever asked, and that is easy to get wrong.**
+Measured on the 2026-09-12 overnight runs: the phase 5.5 log announced 75 calls on the device
+corpus and 19 were made, 81 and 25 on its clean twin. The gap was `not_judged`, 51 and 54
+plans, and 13 of them (16 on the clean twin) were CONV-D06, the neighbouring-entry rule. It
+carried the operator's `[editorial]` tag, which routes to the six editorial agents, none of
+which consumes rules in paired mode, so every neighbour pair was planned on the right fields
+and never asked. The three neighbour-dependent planted flaws read as a mechanism failure when
+the mechanism had paired them correctly and the question was never put. D06 is now tagged
+`[conformance]`: it is a rule about the document, unlike D07 and D08, which are about how a
+finding must be written and stay `[editorial]` and deliberately cost no calls. The fallback
+that once sent every rule to PRACTICE_AUDITOR is NOT restored; restoring it would drag D07
+and D08 back in and buy 38 calls per run to ask device entries about citation style.
+
+The phase 5.5 log line now says `planned=` where it said `calls=`, because it is emitted
+before the loop that makes the calls and can only know intentions. A second line,
+`paired_review_calls`, reports `planned`, `made`, `not_judged` and `absence_computed` after
+the loop, where all four are known and reconcile.
+
 ### Normalisation: one tokeniser, shared
 
 Every comparison between a rule's wording and a document's own labels runs through one
@@ -2523,7 +2541,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**224** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**225** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2538,7 +2556,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 223 have since raised the total to 224.
+table below; checks 210 to 224 have since raised the total to 225.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

@@ -40,7 +40,7 @@ The gap between a device's two most recently logged calibration visits must not 
 standard service interval stated in the glossary. An entry recording a longer gap is an
 irregularity. State the two dates and the gap between them.
 
-## CONV-D06 , conv-neighbouring-entry [required] [editorial]
+## CONV-D06 , conv-neighbouring-entry [required] [conformance]
 
 A finding about one entry must take into account anything the entry immediately before or
 immediately after it states about the same device or the same reading. An entry that corrects,
