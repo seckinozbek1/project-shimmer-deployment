@@ -20,7 +20,8 @@
       "field_label",
       "delta",
       "band_distance_change",
-      "provenance"
+      "provenance",
+      "quote"
     ],
     "required": [
       "rule_id",
@@ -62,7 +63,8 @@
       "field_label": "optional: the document's own label for the field value_a was read from, as words",
       "delta": "optional: value_a minus value_b, only when both carry the same unit",
       "band_distance_change": "optional: how far the field moved relative to the band the rule states, now minus the earlier version; negative is toward the band, positive away, zero unchanged; omit when no single band applies",
-      "provenance": "optional: computed when the pipeline minted this record from figures it read itself; leave it unset when you write the record"
+      "provenance": "optional: computed when the pipeline minted this record from figures it read itself; leave it unset when you write the record",
+      "quote": "the exact words you are relying on, copied verbatim from the unit text you were shown. Required when you claim something is ABSENT: quote the line that should have carried it, or the line that shows it is missing. Python checks the quote appears in the unit, so a claim about text the unit does not contain is refused rather than published. Leave it out when the relation is not an absence claim."
     }
   },
   "contracts": {

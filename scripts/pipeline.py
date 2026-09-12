@@ -2093,7 +2093,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 "This unit is inside the rule's declared scope. From this unit's own "
                 "text alone, decide whether the rule's requirement applies to it and, "
                 "if it applies, whether it is met. Answer as a finding on this unit "
-                "under this rule; state which condition in the rule decided it.")
+                "under this rule; state which condition in the rule decided it. "
+                "If you claim something is ABSENT, set `quote` to the exact words "
+                "from the unit text above that you are relying on, copied verbatim. "
+                "The quote is checked against the unit, so a claim resting on text "
+                "the unit does not contain is refused.")
         r = await _run_one(
             wrapper, payload,
             f"{run_objectives}\nOne unit, one rule. Do not perform arithmetic.",
@@ -2112,12 +2116,20 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             # in the map, never silently dropped.
             kept = []
             for item in judged:
+                refusal = None
                 if paired_review_mod.refuses_judged_absence(
                         item, rule, fields_present_by_unit.get(unit["unit_id"])):
+                    refusal = "claims a field absent that this unit carries"
+                elif paired_review_mod.quote_not_in_unit(item, unit.get("text")):
+                    # The finding quotes words the unit does not contain, so the
+                    # claim rests on text that is not there. Checked against the
+                    # same unit text the model was shown as document_text.
+                    refusal = "quotes text that does not appear in this unit"
+                if refusal:
                     refused_judged.append({
                         "unit_id": unit["unit_id"], "rule_id": rule["id"],
                         "relation": item.get("relation"),
-                        "reason": "claims a field absent that this unit carries"})
+                        "reason": refusal})
                     log_event(_LOG, f"paired_review_absence_refused "
                                     f"unit={unit['unit_id']} rule={rule['id']}",
                               run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])

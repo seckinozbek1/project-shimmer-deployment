@@ -188,6 +188,83 @@ def _completeness_note(run_dir, amendments):
             "amendment-derived figure below is 0 by absence, not by measurement")
 
 
+def _claim_signature(finding):
+    """What a finding CLAIMS, as a comparable tuple, with the unit stripped out.
+
+    Unit id is deliberately excluded: the same hallucinated sentence lands on
+    the same unit in both twins, so including it would make every pair match
+    and prove nothing. What is compared is the claim itself, and the model's
+    own sentence, whitespace-folded and lowercased."""
+    expl = " ".join(str(finding.get("explanation") or "").split()).lower()
+    return (str(finding.get("relation") or ""),
+            str(finding.get("field_label") or finding.get("stated_field") or "").lower(),
+            expl)
+
+
+def twin_findings(corpus, key):
+    """Typed findings from the most recent scored run of this corpus's TWIN, or
+    None when the key declares no twin or no run of it exists on disk.
+
+    Returns None rather than an empty list when the comparison cannot be made,
+    so the caller says "not available" instead of "nothing matched"."""
+    twin = key.get("twin_of")
+    if not twin:
+        return None, None
+    runs = sorted(glob.glob(str(ROOT / "output" / "runs" / "*")), reverse=True)
+    for run in runs:
+        bus = Path(run) / "logs" / "agent_bus.jsonl"
+        if not bus.is_file():
+            continue
+        # The run must be OF the twin: its deliverable folder is named after the
+        # twin's document, which the twin's own key states.
+        names = [Path(p).name for p in glob.glob(str(Path(run) / "deliverables" / "*"))]
+        twin_key_path = CORPORA / twin / "answer_key.json"
+        if not twin_key_path.is_file():
+            return None, None
+        twin_doc = str(json.loads(twin_key_path.read_text(encoding="utf-8"))
+                       .get("document") or "")
+        stem = twin_doc.rsplit(".", 1)[0]
+        if stem and any(stem == n for n in names):
+            return _load_bus_findings(run), run
+    return None, None
+
+
+def _print_twin_check(corpus, key, findings):
+    """Claims this run made that a run of the twin made IDENTICALLY.
+
+    The twins differ exactly where the defects are, so a claim worded the same
+    against both did not come from the document. This is the signal that
+    exposed UNIT-VETCH on 2026-09-11, where the model said the document "does
+    not mention the next calibration visit" about the flawed twin AND about the
+    clean twin, whose entry states it in plain words. It was found by a person
+    reading two logs side by side; this makes it something the scorer runs."""
+    twin_hits, twin_run = twin_findings(corpus, key)
+    if twin_hits is None:
+        if key.get("twin_of"):
+            print("twin check      : unavailable (no scored run of %s on disk)"
+                  % key.get("twin_of"))
+        return
+    mine = {}
+    for f in findings:
+        sig = _claim_signature(f)
+        if sig[2]:
+            mine.setdefault(sig, []).append(f)
+    theirs = {}
+    for f in twin_hits:
+        sig = _claim_signature(f)
+        if sig[2]:
+            theirs.setdefault(sig, []).append(f)
+    shared = [s for s in mine if s in theirs]
+    print("twin check      : %d claim(s) worded identically in both twins (%s)"
+          % (len(shared), Path(twin_run).name))
+    if shared:
+        print("                  a claim identical across both twins did not come from "
+              "the document: the twins differ exactly where the defects are")
+    for sig in shared[:6]:
+        units = sorted({str(f.get("unit_id") or "?") for f in mine[sig]})
+        print("    %-14s %-16s %s" % (sig[0], ",".join(units)[:16], sig[2][:78]))
+
+
 def p_claim(entry):
     """The typed claim on a planted entry, or None."""
     c = entry.get("claim") if isinstance(entry, dict) else None
@@ -555,6 +632,7 @@ def score(corpus, run_dir):
     print("distractor hits : %d" % len(distractor))
     print("attribution     : %d of %d" % (sum(attributed), sum(found)))
     _print_relation_breakdown(findings)
+    _print_twin_check(corpus, key, findings)
     print()
     print("  planted      rule      kind                  found  reason  attributed  asked  matched via")
     for i, (p, f, a, h) in enumerate(zip(planted, found, attributed, how)):

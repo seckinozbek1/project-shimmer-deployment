@@ -2475,6 +2475,24 @@ Stated honestly, from operator testing:
   device_log_review still have untyped keys, so their figures carry the same doubt and the
   scorer says so rather than passing silently.
 
+- **A finding can be asked to show the words it rests on.** The Finding record contract now
+  carries an OPTIONAL `quote` field: the exact words from the unit the finding relies on,
+  copied verbatim. Python checks the quote appears in that unit (whitespace and case folded),
+  and a finding quoting text the unit does not contain is refused the way an unnamed field is.
+  Optional by measurement, not by preference: making it required would have turned all 62
+  findings of the two saved runs into contract violations at once, which is a migration and
+  not a measurement, and most relations are settled by arithmetic that needs no quote. It is
+  asked for where it can actually check something, on absence claims. Cost, measured on the
+  corpus: a field line is a median of 21 characters, about 6 tokens, 25 at the longest,
+  against 461 tokens of unused paired-judging budget.
+- **The scorer reports a claim worded identically in both twins.** The twins differ exactly
+  where the defects are, so a sentence the model produces against both was not read off
+  either. This is the signal that exposed UNIT-VETCH, found by a person reading two logs side
+  by side; the scorer now runs it. The twin is declared by the answer key (`twin_of`), never
+  guessed from a filename, and a key with no twin or a twin with no scored run says
+  unavailable rather than reporting a confident zero. The unit id is deliberately excluded
+  from the comparison: the same hallucination lands on the same unit in both twins, so
+  including it would make every pair match and prove nothing.
   The evidence that forced this: the model produced a `missing_field` claim on UNIT-SPRUCE
   and UNIT-VETCH in BOTH twins with near-identical wording, and on VETCH the claim is false
   in both, saying the document "does not mention the next calibration visit" when the entry
@@ -2482,6 +2500,19 @@ Stated honestly, from operator testing:
   were counted as catches. A coincidence that scores is worse than a miss, because it
   inflates the one number the project is judged on.
 
+- **The D6 deepening pass is uncapped.** In the local profile, phase 3 makes ONE extra
+  LEGAL_ANALYST call per finding that agent returned in pass one, with no ceiling
+  (`pipeline.py`, `_deepen_legal_analyst_findings_local`). Measured 2026-09-11: the flawed
+  twin returned 1 pass-one finding and made 1 deepening call (173 s); the clean twin returned
+  5 and made 5 (709 s, **27.7% of that run's whole wall clock**). At about 145 s per finding
+  on that machine, a document yielding ten pass-one findings would add roughly 24 minutes,
+  and nothing in the code path stops it. Recorded, not fixed.
+- **The clean twin produced five pass-one findings where the flawed twin produced one**, which
+  is backwards: the document with its defects repaired yielded MORE observations than the one
+  with defects in it. The two documents differ only in the repairs. Not explained by the
+  corpus, and not explained here. Two candidates, neither verified: local model
+  non-determinism between runs, or pass one responding to repaired text with more
+  observations. Distinguishing them needs a repeat run. Recorded, not fixed.
 - **Everything built on 10 and 11 September 2026 is unmeasured.** The last scored run
   predates all of it (section J opening); every mechanism from those two days is proved on
   gate fixtures only, the device-corpus measurement was stopped twice, and it is owed.
@@ -2592,7 +2623,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**229** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**231** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2607,7 +2638,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 228 have since raised the total to 229.
+table below; checks 210 to 230 have since raised the total to 231.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each
