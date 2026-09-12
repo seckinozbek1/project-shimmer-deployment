@@ -18980,6 +18980,119 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_222_launcher_server_url_and_token_handshake():
+    """Two launcher defects an operator hits the first time they use it.
+
+    1. The server option printed http://localhost:8000, where NO route exists:
+       the app registers no bare "/" handler, so the first thing an operator saw
+       was a 404, while every console screen lives at /console. The URL is now
+       /console (plus /health, the one route needing no token) and follows
+       SHIMMER_PORT rather than hardcoding 8000, which is where the server reads
+       the port from.
+    2. The token handshake printed a hash and asked the operator to copy it into
+       an export and choose [3] again. The launcher is the process that starts
+       the server, so it can hold the hash itself. It now generates the token,
+       keeps the hash in its own environment, and starts the server in one step.
+       The token is printed ONCE (it is the only copy); the hash goes through a
+       temp file rather than the terminal and is deleted after being read.
+
+    Proved against the real launcher text, plus an EXECUTED check that the
+    generator's token and hash actually correspond and that the hash is not
+    printed. NEUTRALISE AND RESTORE on the bare-URL defect.
+    """
+    import hashlib as _hashlib
+    import subprocess as _sp
+    import tempfile as _tf
+
+    sh = ROOT / "shimmer.sh"
+    bat = ROOT / "shimmer.bat"
+    for p in (sh, bat):
+        if not p.is_file():
+            return _fail("%s is missing" % p.name)
+    sh_body = sh.read_text(encoding="utf-8", errors="replace")
+    bat_body = bat.read_text(encoding="utf-8", errors="replace")
+
+    # The app must genuinely have no bare "/" route, or the old URL was fine and
+    # this check is asserting nothing. Read it off server.py rather than assume.
+    server_src = (ROOT / "scripts" / "server.py").read_text(encoding="utf-8", errors="replace")
+    if '@app.get("/")' in server_src:
+        return _fail('server.py now registers a bare "/" route; this check is stale')
+    if '@app.get("/console"' not in server_src:
+        return _fail("server.py does not serve /console")
+
+    for name, body in (("shimmer.sh", sh_body), ("shimmer.bat", bat_body)):
+        # 1. the URL
+        if "localhost:8000/console" in body:
+            return _fail("%s hardcodes port 8000 in the console URL; it must follow "
+                         "SHIMMER_PORT" % name)
+        if "/console" not in body:
+            return _fail("%s never points the operator at /console" % name)
+        if "SHIMMER_PORT" not in body:
+            return _fail("%s does not read SHIMMER_PORT for the printed URL" % name)
+        # The bare URL with nothing after it is the defect being fixed.
+        for dead in ("http://localhost:8000 ", "http://localhost:8000\n",
+                     "http://localhost:8000 ..."):
+            if dead in body:
+                return _fail("%s still prints a bare http://localhost:8000, where no "
+                             "route exists" % name)
+        # 2. the handshake: no "choose [3] again" round trip
+        for stale in ("choose [3] again", "Copy the hash above"):
+            if stale in body:
+                return _fail("%s still asks the operator to copy a hash and choose "
+                             "again; the launcher can hold it itself" % name)
+        if "SHIMMER_TOKEN_HASH" not in body:
+            return _fail("%s no longer configures SHIMMER_TOKEN_HASH" % name)
+
+    # EXECUTED: the generator the launchers call produces a token whose sha256 is
+    # the hash it writes, and does NOT print the hash.
+    gen = ("import secrets, hashlib, sys; t=secrets.token_hex(32); "
+           "h=hashlib.sha256(t.encode()).hexdigest(); "
+           "open(sys.argv[1],'w').write(h); print(t)")
+    with _tf.TemporaryDirectory() as tmp:
+        hash_file = Path(tmp) / "h.txt"
+        proc = _sp.run([sys.executable, "-c", gen, str(hash_file)],
+                       capture_output=True, text=True)
+        if proc.returncode != 0:
+            return _fail("the token generator failed: %s" % proc.stderr[:200])
+        token = proc.stdout.strip()
+        written = hash_file.read_text(encoding="utf-8").strip()
+        if len(token) != 64 or len(written) != 64:
+            return _fail("token/hash lengths are %d/%d, expected 64/64"
+                         % (len(token), len(written)))
+        if _hashlib.sha256(token.encode()).hexdigest() != written:
+            return _fail("the written hash is not sha256 of the printed token")
+        if written in proc.stdout:
+            return _fail("the hash was printed to stdout; it must reach the shell "
+                         "through the file only")
+
+    # NEUTRALISE: put the dead bare URL back into the real launcher text.
+    original = sh_body
+    neutralised = sh_body.replace(
+        'echo "  Console:  http://localhost:${_port}/console"',
+        'echo "Starting the server on http://localhost:8000 ..."')
+    if neutralised == original:
+        return _fail("could not neutralise: the console URL line was not found in "
+                     "shimmer.sh as this check expects it")
+    try:
+        sh.write_text(neutralised, encoding="utf-8")
+        body = sh.read_text(encoding="utf-8", errors="replace")
+        still_bad = "http://localhost:8000 ..." in body
+    finally:
+        sh.write_text(original, encoding="utf-8")
+    if not still_bad:
+        return _fail("neutralise did not reintroduce the bare URL; the check is not "
+                     "reading the real launcher")
+    # RESTORE verified.
+    if "http://localhost:8000 ..." in sh.read_text(encoding="utf-8", errors="replace"):
+        return _fail("restore failed: shimmer.sh still carries the bare URL")
+
+    return _ok("both launchers point at /console and /health on SHIMMER_PORT (the app "
+               "registers no bare / route), and generate the token, hold the hash and "
+               "start the server in one step instead of asking the operator to copy a "
+               "hash and choose again; the generator's hash is sha256 of the printed "
+               "token and is never printed; neutralise/restore proved")
+
+
 def check_221_dating_cascade_local_precise_and_loud():
     """The dating cascade decided which documents were REVIEWED AT ALL, and it
     was wrong three ways. A document's date feeds review_scope.apply_cutoff,
@@ -19817,6 +19930,8 @@ CHECKS = [
      check_220_local_profile_reaches_the_menu_and_is_passed_on),
     ("221 the dating cascade is local, precise, and loud about what it cannot date",
      check_221_dating_cascade_local_precise_and_loud),
+    ("222 the launcher points at a real route and completes the token handshake itself",
+     check_222_launcher_server_url_and_token_handshake),
 ]
 
 

@@ -196,21 +196,43 @@ goto :menu
 
 :opt_server
 echo.
+REM The launcher generates the token AND holds the hash, then starts the server
+REM in the same step. It used to print the hash and send the operator away to set
+REM it by hand before returning to this menu: a handshake the launcher can
+REM complete itself, since it is the process that will start the server. The
+REM token is printed once (it is the only copy; the server stores only its hash).
 if "%SHIMMER_TOKEN_HASH%"=="" (
     echo No server access token is configured ^(SHIMMER_TOKEN_HASH is not set^).
     echo An open server would let anyone in, so one is required.
     set "gen="
-    set /p gen="Generate a token now? [Y/n]: "
-    if /i not "!gen!"=="n" (
-        echo.
-        python -c "import secrets, hashlib; t=secrets.token_hex(32); print('Token (share once, keep private):', t); print('Hash (set as SHIMMER_TOKEN_HASH):', hashlib.sha256(t.encode()).hexdigest())"
-        echo.
-        echo Copy the hash above and set it, then choose [3] again:
-        echo     set SHIMMER_TOKEN_HASH=^<the hash^>
+    set /p gen="Generate one and start the server now? [Y/n]: "
+    if /i "!gen!"=="n" (
+        echo No token generated. The server was not started.
+        goto :menu
     )
-    goto :menu
+    echo.
+    set "TOKEN_HASH_FILE=%TEMP%\shimmer_token_hash.txt"
+    if exist "!TOKEN_HASH_FILE!" del "!TOKEN_HASH_FILE!"
+    python -c "import secrets, hashlib, sys; t=secrets.token_hex(32); h=hashlib.sha256(t.encode()).hexdigest(); open(sys.argv[1],'w').write(h); print('Access token (shown ONCE, keep it private):'); print(); print('   ', t); print(); print('Send this token in the Authorization header: Bearer <token>')" "!TOKEN_HASH_FILE!"
+    if errorlevel 1 (
+        if exist "!TOKEN_HASH_FILE!" del "!TOKEN_HASH_FILE!"
+        echo Could not generate a token. The server was not started.
+        goto :menu
+    )
+    set /p SHIMMER_TOKEN_HASH=<"!TOKEN_HASH_FILE!"
+    del "!TOKEN_HASH_FILE!"
+    echo.
+    echo Token configured for this session. The server stores only its hash.
 )
-echo Starting the server on http://localhost:8000 ...
+REM A URL that actually serves something: the app registers no bare "/" handler,
+REM so the host root with no path was a 404. Every console screen is at /console.
+REM The port follows SHIMMER_PORT, which is where the server reads it from.
+set "SHIMMER_UI_PORT=%SHIMMER_PORT%"
+if "!SHIMMER_UI_PORT!"=="" set "SHIMMER_UI_PORT=8000"
+echo Starting the server ...
+echo   Console:  http://localhost:!SHIMMER_UI_PORT!/console
+echo   Health:   http://localhost:!SHIMMER_UI_PORT!/health   ^(the only route with no token^)
+echo   There is no page at / , the console is the entry point.
 echo Press Ctrl+C to stop it and return here.
 python scripts\server.py
 goto :menu

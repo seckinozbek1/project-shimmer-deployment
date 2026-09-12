@@ -122,6 +122,22 @@ elif [ "$PREFLIGHT_RC" -ne 0 ]; then
     esac
 fi
 
+# --- Server start, with a URL that actually serves something ---------------
+# The launcher used to print the host root with no path, where NO route exists:
+# the app registers no bare "/" handler, so the first thing an operator saw was
+# a 404. Every console screen lives at /console, and /health is the one route
+# that needs no token. The port follows SHIMMER_PORT rather than being
+# hardcoded, since the server reads it from there.
+_shimmer_start_server() {
+    _port="${SHIMMER_PORT:-8000}"
+    echo "Starting the server ..."
+    echo "  Console:  http://localhost:${_port}/console"
+    echo "  Health:   http://localhost:${_port}/health   (the only route with no token)"
+    echo "  There is no page at / , the console is the entry point."
+    echo "Press Ctrl+C to stop it and return here."
+    python scripts/server.py
+}
+
 # --- 6. Menu ---------------------------------------------------------------
 while true; do
     echo
@@ -194,25 +210,44 @@ while true; do
             ;;
         3)
             echo
+            # The launcher generates the token AND holds the hash, then starts the
+            # server in the same step. It used to print the hash and send the
+            # operator away to set it by hand before returning to this menu: a
+            # handshake the launcher can complete itself, since it is the process
+            # that will start the server. The token is printed once (it is the only
+            # copy; the server stores only its hash) and the hash never needs to
+            # pass through the terminal at all.
             if [ -z "${SHIMMER_TOKEN_HASH:-}" ]; then
                 echo "No server access token is configured (SHIMMER_TOKEN_HASH is not set)."
                 echo "An open server would let anyone in, so one is required."
-                printf "Generate a token now? [Y/n]: "
+                printf "Generate one and start the server now? [Y/n]: "
                 read -r gen
                 case "$gen" in
-                    n|N) ;;
+                    n|N)
+                        echo "No token generated. The server was not started."
+                        ;;
                     *)
                         echo
-                        python -c "import secrets, hashlib; t=secrets.token_hex(32); print('Token (share once, keep private):', t); print('Hash (set as SHIMMER_TOKEN_HASH):', hashlib.sha256(t.encode()).hexdigest())"
-                        echo
-                        echo "Copy the hash above and set it, then choose [3] again:"
-                        echo "    export SHIMMER_TOKEN_HASH=<the hash>"
+                        # Token to stdout for the operator, hash to a file the shell
+                        # reads: the hash never goes through the terminal, and the
+                        # token is shown once and never stored.
+                        TOKEN_HASH_FILE="${TMPDIR:-/tmp}/shimmer_token_hash.$$"
+                        rm -f "$TOKEN_HASH_FILE"
+                        if python -c "import secrets, hashlib, sys; t=secrets.token_hex(32); h=hashlib.sha256(t.encode()).hexdigest(); open(sys.argv[1],'w').write(h); print('Access token (shown ONCE, keep it private):'); print(); print('   ', t); print(); print('Send this token in the Authorization header: Bearer <token>')" "$TOKEN_HASH_FILE"; then
+                            SHIMMER_TOKEN_HASH="$(cat "$TOKEN_HASH_FILE")"
+                            export SHIMMER_TOKEN_HASH
+                            rm -f "$TOKEN_HASH_FILE"
+                            echo
+                            echo "Token configured for this session. The server stores only its hash."
+                            _shimmer_start_server
+                        else
+                            rm -f "$TOKEN_HASH_FILE"
+                            echo "Could not generate a token. The server was not started."
+                        fi
                         ;;
                 esac
             else
-                echo "Starting the server on http://localhost:8000 ..."
-                echo "Press Ctrl+C to stop it and return here."
-                python scripts/server.py
+                _shimmer_start_server
             fi
             ;;
         4)

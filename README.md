@@ -1334,6 +1334,13 @@ trailing CR before setting the executable bit); no local model could load becaus
 corpus file the image does not ship (its corpus assertions now run where the file exists and
 are named absent otherwise, and its proof runs on a synthetic heading every tree has).
 
+**The container figures below are from an image built at commit `9e3302f` and have not been
+remeasured since.** Commits have landed after it, including the dating cascade and the
+launcher changes, and the gate has grown from 210 checks to 223. Nothing here is known to be
+wrong in the image, but no one has rebuilt it and rerun the gate inside it, so treat these as
+the record of that build rather than a claim about the current tree. The host offline gate at
+the current HEAD is `PASS=219 WARN=0 SKIP=2 FAIL/ERROR=2 TOTAL=223`.
+
 Measured inside the rebuilt unbaked image, network blocked, host cache mounted, against the
 210-check gate as it stood that afternoon: `PASS=204 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=210`
 in 873 s. The four failures are the source-only ones section L lists (01, 28, 31, 145); the
@@ -1380,12 +1387,25 @@ both get it from one place.
                                directly with --task draft (plus the two override flags, so a
                                launcher draft is declared non-sensitive)
 [2] Open the chat interface -> scripts/chat.py
-[3] Start the server        -> scripts/server.py
+[3] Start the server        -> scripts/server.py, after generating an access token if
+                               SHIMMER_TOKEN_HASH is not already set
 [4] Run the verify gate     -> scripts/verify_session1.py
 [5] Import documents         -> the intake wizard only: place files, set the cutoff, and write
                                the tier-1 review-targets manifest (no run)
 [Q] Quit
 ```
+
+**Option [3] completes the token handshake itself.** If `SHIMMER_TOKEN_HASH` is not set it
+offers to generate an access token, prints the token **once** (it is the only copy, and the
+server stores only its hash), keeps the hash in its own environment, and starts the server in
+the same step. It used to print the hash and send you away to set it by hand before returning
+to the menu, which the launcher can do for itself since it is the process that starts the
+server. Send the token as `Authorization: Bearer <token>`.
+
+It then prints the URLs that actually serve something: `/console` for the operator console
+and `/health`, the one route that needs no token, both on `SHIMMER_PORT` (default 8000).
+There is **no page at `/`**: the app registers no bare root handler, so the old
+`http://localhost:8000` the launcher printed was a 404 on arrival.
 
 The intake wizard scans a folder, classifies each file (conventions, config, sidecar, or
 document; anything else is skipped), prints and optionally edits the date cutoff, lets you
@@ -2476,7 +2496,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**222** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**223** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2491,7 +2511,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 221 have since raised the total to 222.
+table below; checks 210 to 222 have since raised the total to 223.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each
