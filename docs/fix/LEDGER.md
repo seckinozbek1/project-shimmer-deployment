@@ -77,3 +77,28 @@ point at rather than restate. Its headline for the README: the rows this
 produces are not a training set (order of one DeltaProposal and zero conflicts
 per run), and they are worth creating for audit and for conflict memory, not on
 the argument that the GNN will learn from them.
+
+### b146d82  Knowledge categories, and the reset hole they expose
+
+**README will have to say:** three declared knowledge categories
+(constitution-derived, rule-derived, usage-derived) with the membership test;
+that `USAGE_DERIVED_PATHS` and `AUTHORITY_PATHS` in `durable_paths` are the
+declared manifest and are asserted disjoint and covering; and, most importantly
+for a reader, that **`--reset-snapshot` now clears `ontology/stores` as well**,
+which it did not before, so the captured provisions, the Tier-1 graph and the
+GNN state no longer survive a reset. That last point is a behaviour change to an
+operator-facing command and belongs in the command's own documentation, not only
+in a limitations note. Gate total moves 235 to 236.
+
+**Image affected: YES.** `scripts/durable_paths.py`, `scripts/snapshot_manager.py`,
+`scripts/verify_session1.py`.
+
+**Reasoning recorded at** `docs/fix/KNOWLEDGE_CATEGORIES.md`. Its headlines for
+the README: the isolation rule in concrete form (a user starts with the rules and
+the constitution represented and nothing carried over from anyone's use), and the
+corrected volume finding (usage-derived has the volume and lacks ground truth;
+operator decisions have ground truth and lack volume; neither alone is a training
+signal).
+
+**Also records the reshaped item TWO proposal** (one relation, `[unless: <field>]`)
+which is NOT yet built.
