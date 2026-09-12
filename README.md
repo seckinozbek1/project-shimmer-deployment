@@ -479,6 +479,27 @@ before the loop that makes the calls and can only know intentions. A second line
 `paired_review_calls`, reports `planned`, `made`, `not_judged` and `absence_computed` after
 the loop, where all four are known and reconcile.
 
+**A judged absence is checked before it is posted.** A scoped rule that declares no required
+field asks the model whether its requirement applies to one unit and is met. The model may
+answer that a field is missing, and on the 2026-09-12 clean twin nine such answers were
+false: seven asserted a calibration authority signature missing from entries whose own parsed
+fields list it. All nine named no field at all, so nothing could check, cite or score them.
+
+Two refusals now apply, and the first is about FORM rather than truth. A `missing_field`
+answer that names no field is refused as malformed: the operator's own grounding rule already
+requires a finding to state the entry and the figures it concerns, and this is the same
+discipline the verifiability gate applies when it downgrades an affirmative finding that
+cites nothing. A model that spots a real absence and forgets to name the field is refused
+too; naming it is the minimum for the claim to exist as a claim. Second, an answer that does
+name a field is refused when the unit demonstrably carries that field, which Python has
+already parsed into `fields_present`. Every other relation, and a named field the unit really
+lacks, are left untouched. Refused answers are recorded under `absence_refused` in the
+pairing map, never silently dropped.
+
+No inference is made about which field an unnamed claim means. Two heuristics for that were
+tried against the real artifacts and both suppressed a legitimate answer on a rule scoped on
+one field whose requirement is about another.
+
 ### Normalisation: one tokeniser, shared
 
 Every comparison between a rule's wording and a document's own labels runs through one
@@ -2541,7 +2562,7 @@ the change that matters, and in the governed files it would trip the constitutio
 New text, no em dashes. Existing text, left alone.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**225** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**226** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:
@@ -2556,7 +2577,7 @@ container image runs the gate this way by default (`docker run --rm --gpus all s
 verify`, section G). The first offline gate inside the rebuilt image, with the network
 blocked and the host model cache mounted, gave `PASS=204 SKIP=2 FAIL/ERROR=4` of the 210
 checks the gate held at that commit, the four failures being the source-only ones in the
-table below; checks 210 to 224 have since raised the total to 225.
+table below; checks 210 to 225 have since raised the total to 226.
 
 **On a fresh clone of this snapshot, four checks fail, by design, before you have run
 anything.** All four fail for the same reason: this repository ships source only, and each

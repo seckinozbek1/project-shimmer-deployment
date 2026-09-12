@@ -16771,8 +16771,16 @@ def _d2_scope_body():
         calls.append((payload.get("unit_id"), payload.get("rule_id"), "absence_question" in payload))
         return {"ok": True, "backend": "stub_backend", "model": "stub-model", "call_id": "c-" + str(len(calls)),
                 "parsed": {"agent": wrapper.name, "doc_id": "d", "items": [
+                    # stated_field is required for a missing_field claim to be a
+                    # claim at all (check 225): an answer naming no field cannot
+                    # be checked, cited or scored and is refused as malformed.
+                    # This rule is scoped on `device` but its requirement is
+                    # about a FAULT, which these units do not carry, so naming
+                    # it is both the realistic answer and a legitimately kept
+                    # one: the refusal never fires on a field the unit lacks.
                     {"ref": "REF-0001", "kind": "finding", "confidence": "CONFIDENT",
                      "relation": "missing_field", "record_verdict": "irregular",
+                     "stated_field": "fault",
                      "value_a": 0, "unit_a": "values", "value_b": 1, "unit_b": "required",
                      "source_refs": ["REF-0001"], "explanation": "stubbed judged answer"}]}}
     doc = {"id": "d", "name": "d.md", "text": text}
@@ -18984,6 +18992,124 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_225_judged_absence_refused_on_form_and_on_fact():
+    """Fix two from the 2026-09-12 overnight measurement.
+
+    The clean twin produced 11 false positives on a document with nothing wrong
+    in it. Nine were judged absences: a scoped rule that declares no required
+    field asks the model whether its requirement applies to one unit and is
+    met, and the model answered that a field was missing. Seven of those nine
+    asserted a calibration authority signature missing from entries whose own
+    parsed fields list it, and ALL NINE named no field at all.
+
+    Two refusals, the first about FORM:
+
+      - relation missing_field naming NO field is refused as malformed. Nothing
+        can check, cite or score such a claim, and the operator's own grounding
+        rule requires a finding to state the entry and figures it concerns.
+        Same discipline as the verifiability gate downgrading an affirmative
+        that cites nothing. A model that spots a real absence and forgets to
+        name the field is refused too: naming it is the minimum for the claim
+        to exist as a claim.
+      - a claim that DOES name a field is refused when the unit demonstrably
+        carries that field (Python already parsed it into fields_present).
+
+    No inference is made about which field an unnamed claim means. Two such
+    heuristics were tried against the real artifacts and both suppressed the
+    legitimate answer in check 209's fixture (scoped on `device`, requirement
+    about a fault).
+
+    Proved on the shapes, then on the REAL saved artifacts of both overnight
+    runs. NEUTRALISE AND RESTORE on the refusal itself.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        import paired_review as _pr
+        import finding_record as _fr
+    except Exception as exc:
+        return _fail("cannot import paired_review/finding_record: %s" % exc)
+    if not hasattr(_pr, "refuses_judged_absence"):
+        return _fail("paired_review.refuses_judged_absence is missing")
+
+    rule = {"id": "CONV-002", "rule": "A device entry states a fault only when "
+                                      "the fault window allows it.",
+            "scope": [{"label": "device", "value": None}]}
+
+    cases = [
+        ("names no field", {"relation": "missing_field"}, ["class", "device"], True),
+        ("names a field the unit CARRIES",
+         {"relation": "missing_field", "stated_field": "device"}, ["class", "device"], True),
+        ("names a field the unit LACKS",
+         {"relation": "missing_field", "stated_field": "calibration authority signature"},
+         ["class", "device"], False),
+        ("field_label instead of stated_field, unit carries it",
+         {"relation": "missing_field", "field_label": "Device"}, ["device"], True),
+        ("a different relation is never refused",
+         {"relation": "above_band"}, ["class", "device"], False),
+        ("not a dict", "nonsense", ["device"], False),
+    ]
+    for label, item, present, want in cases:
+        got = _pr.refuses_judged_absence(item, rule, present)
+        if bool(got) != want:
+            return _fail("%s: refused=%r, expected %r" % (label, got, want))
+
+    # The REAL artifacts of both overnight runs, when they are in this tree.
+    runs = [("clean", ROOT / "output" / "runs" / "2026-09-12__1doc_review__479f3219", 9),
+            ("flawed", ROOT / "output" / "runs" / "2026-09-12__1doc_review", 5)]
+    measured = []
+    for name, run_dir, expect in runs:
+        bus = run_dir / "logs" / "agent_bus.jsonl"
+        pmap = run_dir / "audit" / "pairing_map.json"
+        if not bus.is_file() or not pmap.is_file():
+            continue
+        try:
+            doc = list(json.loads(pmap.read_text(encoding="utf-8")).values())[0]
+        except (ValueError, IndexError, OSError):
+            continue
+        fields = {u.get("unit_id"): (u.get("fields_present") or [])
+                  for u in (doc.get("units") or [])}
+        refused = 0
+        for line in bus.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line.strip():
+                continue
+            try:
+                msg = json.loads(line)
+            except ValueError:
+                continue
+            payload = (msg.get("body") or {}).get("payload") or {}
+            for item in (payload.get("items") or []):
+                if not _fr.is_finding(item) or item.get("absence_path") != "judged":
+                    continue
+                parts = str(item.get("item_id") or "").split(":")
+                unit = parts[2] if len(parts) > 3 else None
+                if _pr.refuses_judged_absence(item, rule, fields.get(unit)):
+                    refused += 1
+        if refused != expect:
+            return _fail("the %s overnight run: refused %d judged absences, expected %d"
+                         % (name, refused, expect))
+        measured.append("%s=%d" % (name, refused))
+
+    # NEUTRALISE: accept anything, the behaviour before this fix.
+    original = _pr.refuses_judged_absence
+    _pr.refuses_judged_absence = lambda _i, _r, _f: False
+    try:
+        if _pr.refuses_judged_absence({"relation": "missing_field"}, rule, ["device"]):
+            return _fail("neutralise did not take effect")
+    finally:
+        _pr.refuses_judged_absence = original
+    if not _pr.refuses_judged_absence({"relation": "missing_field"}, rule, ["device"]):
+        return _fail("restore failed: an unnamed missing_field claim is accepted again")
+
+    return _ok("a missing_field claim naming no field is refused as malformed and one "
+               "naming a field the unit carries is refused as contradicted, while a "
+               "claim naming a field the unit LACKS and every other relation are kept; "
+               "on the real overnight artifacts %s judged absences are refused; "
+               "neutralise/restore proved"
+               % (", ".join(measured) if measured else "(runs not in this tree)"))
+
+
 def check_224_review_rule_reaches_a_judging_agent():
     """Fix one from the 2026-09-12 overnight measurement.
 
@@ -20168,6 +20294,8 @@ CHECKS = [
      check_223_draft_path_asks_the_sensitivity_question),
     ("224 a review rule reaches a judging agent, and the plan log says plans not calls",
      check_224_review_rule_reaches_a_judging_agent),
+    ("225 a missing_field claim that names no field, or names a field the unit carries, is refused",
+     check_225_judged_absence_refused_on_form_and_on_fact),
 ]
 
 
