@@ -1347,7 +1347,8 @@ in 873 s. The four failures are the source-only ones section L lists (01, 28, 31
 two skips are the network checks (15, 38) that `--offline` skips. Check 193 loaded a cached
 model with the network genuinely blocked.
 
-Measured inside the **baked image rebuilt on the current tree**, network blocked and
+Measured inside the **baked image as rebuilt at commit `9e3302f`** (the "current tree" when
+this was written, not the current HEAD), network blocked and
 **nothing mounted**: `PASS=209 WARN=0 SKIP=2 FAIL/ERROR=4 TOTAL=215` in about 370 s, the
 three checkpoints resolving from the image's own layers
 (`docs/fix/STEP_BAKED_REBUILD_2_REPORT.md`). The failure and skip sets are identical to every
@@ -2525,7 +2526,7 @@ something this repository carries.
 | 31, `input/` has `context/`, `operational/`, `conventions/` | same root cause as check 28: no `input/` yet |
 | 145, no planted benchmark figure in `config/`, `scripts/` or `tests/` | `tests/` is not shipped (see "Benchmarking" above); the contamination probe has nothing to scan, so it fails rather than passing silently |
 
-A gate that passed all 215 checks on an empty checkout would be proving nothing about those
+A gate that passed every check on an empty checkout would be proving nothing about those
 four; failing loudly is correct here; there is nothing to test, not something broken. Two
 more checks depend on the machine rather than the tree: check 193 loads one of the
 local-profile models with the network blocked at the socket and fails until the weights are
