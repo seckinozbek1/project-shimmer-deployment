@@ -23665,6 +23665,111 @@ def check_247_one_run_identity_survives_every_entry_point():
                "unsafe/conflicting ids are refused and queue order follows submission time")
 
 
+def _effect_protocol_fixture():
+    """Declared protocol inputs, including intentionally ineffective mutations."""
+    import effect_proof as ep
+    result = {}
+    for mode in ("pass", "no_op", "survived", "broken_probe", "bad_restore", "bad_fixture"):
+        state = {"value": 2, "mutated": False}
+        events = []
+
+        def observe():
+            events.append("observe_mutated" if state["mutated"] else "observe_clean")
+            if mode == "broken_probe" and state["mutated"]:
+                raise ValueError("declared probe exception")
+            return {"consumer_count": state["value"]}
+
+        def check():
+            events.append("check_mutated" if state["mutated"] else "check_clean")
+            return ("PASS" if mode == "survived" or state["value"] == 2 else "FAIL", "declared")
+
+        @contextlib.contextmanager
+        def neutralise():
+            state.update(value=2 if mode == "no_op" else 1, mutated=True)
+            try:
+                yield
+            finally:
+                state.update(value=1 if mode == "bad_restore" else 2, mutated=False)
+
+        try:
+            proof = ep.prove_effect(name=mode, validate=lambda: mode != "bad_fixture",
+                                    observe=observe, check=check, neutralise=neutralise)
+            category = proof["status"]
+        except ep.ProofFailure as exc:
+            category = exc.category
+        result[mode] = {"category": category, "events": events}
+    return result
+
+
+def _completion_effect_case(*, weak_check=False):
+    """Observe actual terminal disk evidence separately from check 246's scorer fixture."""
+    import effect_proof as ep
+    import run_completion as completion
+    import run_context as rc
+    from unittest.mock import patch
+    # Inputs are parsed and validated before invoking any production consumer.
+    declared = json.loads('{"document_count": 2, "amendment_count": 0, "exit_code": 0}')
+
+    def observe():
+        with _tempfile.TemporaryDirectory(prefix="shimmer_effect_completion_") as td:
+            ctx = rc.create_run(Path(td), run_id="effect_fixture")
+            record = completion.RunCompletion(ctx)
+            record.reached_end(document_count=declared["document_count"],
+                               amendment_count=declared["amendment_count"])
+            record.finish(declared["exit_code"])
+            path = ctx.audit_dir() / completion.COMPLETION_NAME
+            disk = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+            # Outcome fields only. Timestamps and random temporary paths cannot
+            # establish that completion changed; counts and terminal state can.
+            return {key: disk.get(key) for key in (
+                "state", "reached_end", "exit_code", "document_count", "amendment_count")}
+
+    def reading_only_check():
+        return (_ok("declared counts parsed") if declared["document_count"] == 2
+                else _fail("declared input changed"))
+
+    return ep.prove_effect(
+        name="completion final mark reaches the scorer",
+        validate=lambda: declared == {"document_count": 2, "amendment_count": 0, "exit_code": 0},
+        observe=observe,
+        check=reading_only_check if weak_check else check_246_run_completion_reaches_the_scorer,
+        neutralise=lambda: patch.object(completion.RunCompletion, "reached_end", lambda *a, **k: None))
+
+
+def check_248_mutation_protocol_requires_effect_and_restoration():
+    import effect_proof as ep
+    results = _effect_protocol_fixture()
+    expected = {"pass": "PASS", "no_op": "NO_OBSERVED_EFFECT", "survived": "SURVIVED",
+                "broken_probe": "OBSERVATION_ERROR", "bad_restore": "RESTORATION_FAILED",
+                "bad_fixture": "BAD_FIXTURE"}
+    for name, category in expected.items():
+        if results[name]["category"] != category:
+            return _fail("mutation protocol misclassified %s: %s" % (name, results[name]["category"]))
+    if "check_mutated" in results["no_op"]["events"]:
+        return _fail("a no-effect mutation consulted the check before refusing its proof")
+    if results["bad_fixture"]["events"]:
+        return _fail("an invalid input fixture reached observation or check execution")
+    if results["pass"]["events"] != ["observe_clean", "check_clean", "observe_mutated",
+                                         "check_mutated", "observe_clean", "check_clean"]:
+        return _fail("effect, check and restoration execution order drifted")
+    try:
+        proof = _completion_effect_case()
+    except ep.ProofFailure as exc:
+        return _fail("the real consumer proof failed: " + exc.category)
+    try:
+        _completion_effect_case(weak_check=True)
+    except ep.ProofFailure as exc:
+        if exc.category != "SURVIVED":
+            return _fail("the reading-only proof was misclassified: " + exc.category)
+    else:
+        return _fail("a reading-only check passed with the real completion consumer neutralised")
+    if proof["before"]["state"] != "completed" or proof["mutated"]["state"] != "stopped":
+        return _fail("the independent completion observation did not measure the declared state change")
+    return _ok("mutation protocol validates inputs, requires an observed consumer effect before checking, "
+               "separates no observed effect from a surviving check, rejects broken probes and verifies restoration; "
+               "real completion mutation kills check 246 while a reading-only check is refused")
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -23971,6 +24076,8 @@ CHECKS = [
      check_246_run_completion_reaches_the_scorer),
     ("247 one run identity survives entry points, artifacts and folder renaming",
      check_247_one_run_identity_survives_every_entry_point),
+    ("248 mutation proofs require consumer effect before checking and verified restoration",
+     check_248_mutation_protocol_requires_effect_and_restoration),
 ]
 
 

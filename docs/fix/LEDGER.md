@@ -1,5 +1,42 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## THIRTEEN CLOSED, 2026-09-12
+
+TWELVE committed df27b83. Re-read the six recorded failure shapes and both failed
+coarse scans. No repeat keyword scan. The bounded structural solution is the new
+scripts/effect_proof.py protocol, replayed by check 248 on every gate. Its caller
+must supply valid parsed INPUTS, an independent stable consumer observation, the
+check and a restoring mutation context. It snapshots outcomes, measures the
+mutation before consulting the check, refuses NO_OBSERVED_EFFECT separately from
+SURVIVED, rejects probe exceptions as proof, and verifies both outcome and check
+after restoration. No dependency added.
+
+Decision: ship explicit consumer probes, not a classifier claiming to discover
+check meaning. No observed effect is inconclusive, including safe fallthrough
+and a too-narrow fingerprint; both require investigation. The expensive general
+solution is a maintained claim/consumer map with isolated branch mutations and
+independent artifact observations. This pilot does not certify all existing checks.
+README and READING_NOT_EFFECT state these limits and adoption guidance.
+
+The pilot removes the real RunCompletion.reached_end consumer. An independent
+writer/disk probe sees completed become stopped and final counts disappear before
+check 246 is consulted. That scorer check fails then restores PASS. A reading-only
+check of the same parsed inputs stays green and the protocol refuses it. Declared
+protocol fixtures cover validity, execution order, ineffective mutation, surviving
+check, broken observation and failed restoration. Five independent guard mutations
+change classification/order before check 248 FAIL, then restore PASS; no source
+file mutation (output/thirteen_mutation_proof.py/log). Full host gate: PASS=247
+WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=249, known 01/145 only. Check 248 passes in
+shimmer:thirteen with --network none and no mounts/GPU. All 123 shipped files
+match (output/thirteen_source_audit.json), image
+sha256:3015a6aed45ec343cd16d79722d996309453da31c3a3264047f5464229bd18b4,
+size 14408267501 bytes. Cached refresh took about six seconds, all model layers
+reused. Adversarial read covered independent outcome observation, mutation/check
+ordering, error classification, restored outcomes, explicit mapping limits and
+the distinction between safe fallthrough and an incomplete observer. README/image
+debt paid. Continue FOURTEEN after this commit.
+
+
 ## TWELVE CLOSED, 2026-09-12
 
 ELEVEN committed 046ba2a. The saved renamed reviews reopened as folder labels

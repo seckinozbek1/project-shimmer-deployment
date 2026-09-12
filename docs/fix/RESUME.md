@@ -14,38 +14,37 @@ name in SHIMMER_HANDOFF is ZERO-C, distinct from the closed learning item ONE.
 
 ## Item just completed
 
-TWELVE, the commit containing this checkpoint,
-`TWELVE: preserve one run identity across entry points and artifacts`.
+THIRTEEN, the commit containing this checkpoint,
+`THIRTEEN: require consumer effects and restoration in mutation proofs`.
 Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` until the
-next item updates this file. ELEVEN is 046ba2a; earlier local hashes are in LEDGER.
+next item updates this file. TWELVE is df27b83; earlier hashes are in LEDGER.
 
-New CLI/server/pinned runs share a full UUID generator and immutable identity
-record. Legacy server IDs remain whole, renamed saved CLI runs recover their
-recorded call ID without backfill, and restart queue order uses submission time.
-Check 247 and seven independent observable mutations prove the behavior. Completion
-check 246 also passes. Full host gate 246/248, known 01/145 only. Both checks pass
-offline in shimmer:twelve; all 122 shipped files match. Adversarial read complete,
-README/image debt paid, no new dependency. No saved runs or source files were
-mutated by the proofs. The saved baseline audit was restored from its untouched
-log after the script initially reused its destination; current audits now write
-a distinct file. See LEDGER and output/twelve_* for evidence.
+scripts/effect_proof.py provides the explicit mutation protocol, replayed by new
+check 248 against the real completion writer/scorer and a reading-only check.
+It validates inputs, observes consumer changes before consulting the mutated
+check, distinguishes no observed effect from survival, rejects broken probes,
+and verifies restoration. Five guard mutations have independent observed effects,
+FAIL and restored PASS. This does not certify every existing check; explicit
+consumer mappings and adequate observations remain necessary. README and
+READING_NOT_EFFECT state the boundary and expensive general alternative.
+Full host gate 247/249, known 01/145 only. Check 248 passes offline in the image;
+all 123 shipped files match. Adversarial read and README/image debt paid.
 
 ## Current item
 
-None open. Continue THIRTEEN after this commit: cheap structural protection
-against reading-only checks and no-op neutralisations. Read READING_NOT_EFFECT.
+None open. Continue FOURTEEN: trace typed records through actual amendment
+artifacts and name the scorer's read paths; historical runs stay qualified.
 
 ## Ordered remaining work
 
-1. THIRTEEN: structural proof against reading-only and no-op neutralisations.
-2. FOURTEEN: trace typed records through real amendment artifacts.
-3. FIFTEEN: pairing fallback value and WORDS-A compliance.
-4. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
-5. SEVENTEEN: close the cache diagnosis with measured build reuse.
-6. EIGHTEEN: prove README and image debt paid, including inherited omissions.
-7. NINETEEN: classify document_dates.json in the manifest.
-8. TWENTY: answer the learning-signal question, no GNN build.
-9. TWENTY-ONE: put the quote prediction where the next run checks it.
+1. FOURTEEN: trace typed records through real amendment artifacts.
+2. FIFTEEN: pairing fallback value and WORDS-A compliance.
+3. SIXTEEN: carry the ZERO-C container evidence into a complete answer.
+4. SEVENTEEN: close the cache diagnosis with measured build reuse.
+5. EIGHTEEN: prove README and image debt paid, including inherited omissions.
+6. NINETEEN: classify document_dates.json in the manifest.
+7. TWENTY: answer the learning-signal question, no GNN build.
+8. TWENTY-ONE: put the quote prediction where the next run checks it.
 
 ## Current-session decisions
 
@@ -93,6 +92,9 @@ against reading-only checks and no-op neutralisations. Read READING_NOT_EFFECT.
     split identities while recorded legacy IDs preserve existing artifact meaning.
 22. Sort the recovered queue by submission time: random UUID spelling cannot
     encode the user's submission order.
+23. Add an explicit consumer-proof protocol with bounded coverage: enforce
+    execution order and reject ineffective evidence without pretending a syntax
+    scan can infer every check's claim or the completeness of an observation.
 
 ## Decisions made in the operator's place
 
@@ -136,23 +138,24 @@ Gathered so they can be read together. Each is one line plus its reason.
 ## Gate and environment
 
 Recovered baseline: PASS=242 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=244, at 64b83e0.
-Final TWELVE host: PASS=246 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=248.
+Final THIRTEEN host: PASS=247 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=249.
 Final FOUR image: PASS=234 WARN=0 SKIP=8 FAIL/ERROR=4 TOTAL=246, plus all six
 offline probe steps PASS, 163 seconds combined. Tests used --network none,
 --gpus all and no mounts. Host failures: 01 (prompts/snapshots absent) and 145
 (missing ignored contamination fixture). Image source-only failures: 01, 28,
 31 and 145. Skips name unavailable coverage. No new unexplained failure remains.
-Logs: output/twelve_host_gate.log, output/four_container_validation.log and
-output/twelve_mutation_proof.log. Focused changes prove independently observable
+Logs: output/thirteen_host_gate.log, output/four_container_validation.log and
+output/thirteen_mutation_proof.log. Focused changes prove independently observable
 mutation effects before fail/restore/pass. No proof mutates real source files.
 ZERO-C's earlier logs and image remain preserved; see LEDGER.
 
 Docker: C:/Users/secki/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe.
 Host-access py -3.9 sees installed dependencies and cached models; the sandbox
 may hide them. Do not install replacements for sandbox-only failures. Only one
-GPU model workload at a time. shimmer:twelve carries the current source and
-README. All 122 shipped files match (output/twelve_source_audit.json); checks
-246 and 247 pass offline with no mounts. ELEVEN's exact UI/data also passed the
+GPU model workload at a time. shimmer:thirteen carries the current source and
+README. All 123 shipped files match (output/thirteen_source_audit.json); check
+248 passes offline with no mounts, including the real completion/scorer mutation.
+Checks 246 and 247 passed in shimmer:twelve offline. ELEVEN's exact UI/data also passed the
 rendering proof in host Node. EIGHT's
 computed date-window proof passed in shimmer:eight offline with no mounts.
 SEVEN's checks 174 and 218 passed in its image.
