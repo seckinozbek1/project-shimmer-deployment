@@ -1397,7 +1397,7 @@ DURATION_RELATIONS = ("date_window",)
 
 def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for=None,
                reference_bands_for=None, known_units=None, required_fields_for=None,
-               duration_bound_for=None):
+               duration_bound_for=None, suspension_sink=None):
     """One judging call per DISTINCT computed disagreement, not per pair.
 
     Found by measuring the plan at H7 rather than by reading the code. A sum or a
@@ -1569,6 +1569,24 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
                                       present_labels=present):
                     plans.append({"unit": unit, "rule": rule, "checks": [],
                                   "kind": "uncomputable"})
+    # SEVEN-A: the suspension evidence leaves this function.
+    #
+    # It was accumulated here and discarded, which is the same reading-not-effect
+    # shape TWO-E documents: the suspension CHANGED the plan (the important half,
+    # and gated by check 237) but its RECORD reached nobody, so a scorer reading
+    # the run could not tell a rule that was never assigned from one deliberately
+    # withdrawn for this unit. Those are different facts and only one of them is
+    # a coverage gap.
+    #
+    # Carried by an additive SINK rather than a changed return shape, the idiom
+    # ensure_amendments_for_findings already uses for the same reason: a dozen
+    # callers unpack this return, most of them in the gate, and changing its
+    # shape to fix a reporting gap would be a worse trade. None (every caller
+    # before today) means no tracking and byte-identical behaviour.
+    #
+    # This is EVIDENCE ONLY. SEVEN's three-state scoring is not built here.
+    if suspension_sink is not None:
+        suspension_sink.extend(suspensions)
     return [pl for pl in plans if pl["rule"] is not None]
 
 
@@ -2212,8 +2230,60 @@ def _computed_sentence(item):
             % (a, unit_a, b, unit_b))
 
 
+# TWO-F. The operator's ruling on what a declared severity DOES.
+#
+# Before this, a convention's severity was parsed, gated by check 197, carried
+# into the registry, rendered in summaries, and DECIDED NOTHING: every computed
+# amendment hardcoded "required". An operator writing [advisory] got a correctly
+# parsed advisory severity, an amendment marked required, and no error.
+#
+# The ruling, deliberately narrow and not a wider taxonomy:
+#   advisory     produces its FINDING and does NOT produce an amendment. An
+#                amendment is a proposed change to the document, and a rule
+#                whose own words are "may" or "consider" is not asking for one.
+#   required     behaves exactly as it did.
+#   recommended  behaves as required. Not separately ruled by the operator;
+#                treated this way because "should" is still asking for a change
+#                where "may" is not. Recorded rather than asked.
+#
+# An UNKNOWN severity is refused rather than guessed: see _severity_makes_amendment.
+AMENDING_SEVERITIES = ("required", "recommended")
+NON_AMENDING_SEVERITIES = ("advisory",)
+
+
+def _severity_makes_amendment(severity):
+    """Does a rule at this severity produce an amendment? (bool, reason).
+
+    An unrecognised severity is REFUSED, not defaulted. Defaulting it either way
+    is the failure this whole item exists to fix: a value nobody can act on,
+    acted on silently. The refusal names the value and what is recognised."""
+    s = str(severity or "").strip().lower()
+    if not s:
+        # No severity at all is the pre-TWO-F state and the parser's own
+        # default path; it amends, which is the behaviour every existing
+        # caller and corpus already has.
+        return True, "no severity declared; amends, as before this rule existed"
+    if s in AMENDING_SEVERITIES:
+        return True, "%s: asks for a change, so it proposes one" % s
+    if s in NON_AMENDING_SEVERITIES:
+        return False, ("%s: the finding stands and is reported, but an amendment "
+                       "is a proposed change to the document and an advisory rule "
+                       "is not asking for one" % s)
+    return None, ("unrecognised severity %r; recognised: %s. Refused rather than "
+                  "guessed, because a severity nobody can act on must not be acted "
+                  "on silently." % (s, ", ".join(AMENDING_SEVERITIES +
+                                                 NON_AMENDING_SEVERITIES)))
+
+
+def severity_of_rule(rule_id, rules_by_id):
+    """The declared severity for a registry rule id, or "" when unknown."""
+    rule = (rules_by_id or {}).get(rule_id) or {}
+    return str(rule.get("severity") or "").strip().lower()
+
+
 def ensure_amendments_for_findings(amendments, findings, *, document_level="document-level",
-                                   unit_texts=None, refusal_sink=None):
+                                   unit_texts=None, refusal_sink=None,
+                                   rules_by_id=None):
     """Add an amendment for every irregular Finding not already represented.
 
     unit_texts: passed straight through to amendment_from_finding (see its own
@@ -2257,6 +2327,28 @@ def ensure_amendments_for_findings(amendments, findings, *, document_level="docu
         key = (str(item.get("unit_id") or ""), str(resolved_rule or ""))
         if key in covered:
             continue
+        # TWO-F: the declared severity decides whether this finding becomes an
+        # amendment. The FINDING is untouched either way: it was already made,
+        # it is already on the bus, and an advisory rule's finding is still
+        # reported. Only the amendment is withheld, and visibly.
+        if rules_by_id is not None:
+            _sev = severity_of_rule(resolved_rule, rules_by_id)
+            _amends, _why = _severity_makes_amendment(_sev)
+            if _amends is None:
+                if refusal_sink is not None:
+                    refusal_sink.append({"item": item, "reason": _why,
+                                         "unit_id": item.get("unit_id"),
+                                         "rule_id": resolved_rule,
+                                         "severity": _sev})
+                continue
+            if not _amends:
+                if refusal_sink is not None:
+                    refusal_sink.append({"item": item, "reason": _why,
+                                         "unit_id": item.get("unit_id"),
+                                         "rule_id": resolved_rule,
+                                         "severity": _sev,
+                                         "finding_stands": True})
+                continue
         built = amendment_from_finding(item, document_level=document_level, unit_texts=unit_texts)
         if built is None:
             if refusal_sink is not None:

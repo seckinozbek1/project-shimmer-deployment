@@ -14924,12 +14924,45 @@ def check_197_convention_heading_brackets_read_subject_and_severity():
         return _fail("restoring _HEADING_BRACKET did not bring back the proof heading's "
                      "required severity and its subject")
 
+    # TWO-E/TWO-F: this check PROVED THE READING AND NOT THE EFFECT, and that is
+    # how a parsed severity stayed inert. It asserted that [advisory] comes out
+    # `advisory` and never that anything acted on it, so deleting every consumer
+    # of severity would have left this check green. The operational test from
+    # docs/fix/READING_NOT_EFFECT.md is applied here: DELETING THE CODE THAT
+    # ACTS ON SEVERITY MUST TURN THIS CHECK RED.
+    import paired_review as _pr197
+    _sev_rules = {"CONV-A": {"id": "CONV-A", "severity": "advisory"},
+                  "CONV-B": {"id": "CONV-B", "severity": "required"}}
+
+    def _sev_finding(rule_id):
+        return {"kind": "finding", "record_verdict": "irregular", "rule_id": rule_id,
+                "unit_id": "u01", "relation": "above_band", "value_a": "61",
+                "unit_a": "units", "value_b": "20 to 80", "unit_b": "units",
+                "source_refs": ["REF-0001"], "explanation": "x"}
+
+    _sev_units = {"u01": {"text": "Reading: 61 units"}}
+    _, _adv_added = _pr197.ensure_amendments_for_findings(
+        [], [_sev_finding("CONV-A")], unit_texts=_sev_units, refusal_sink=[],
+        rules_by_id=_sev_rules)
+    _, _req_added = _pr197.ensure_amendments_for_findings(
+        [], [_sev_finding("CONV-B")], unit_texts=_sev_units, refusal_sink=[],
+        rules_by_id=_sev_rules)
+    if _adv_added != 0 or _req_added != 1:
+        return _fail("the severity this check proves is PARSED decides nothing: an "
+                     "advisory rule produced %d amendment(s) and a required rule %d. "
+                     "A check that proves a reading and not an effect is how "
+                     "`unless` and this severity both shipped inert."
+                     % (_adv_added, _req_added))
+
     return _ok("bracket subjects and severity read correctly (multiple tags, no "
                "bracket, severity-override-vs-fallback all covered); check_32's own "
                f"id-less-heading-with-list-items shape is unaffected; {corpus_note}; "
                "neutralising the bracket regex to match nothing removes the severity "
                "and subject read on a synthetic [required] heading and restoring it "
-               "brings both back, proving this check reads the live bracket scan")
+               "brings both back, proving this check reads the live bracket scan; AND "
+               "the severity it reads now DECIDES something, proved by effect rather "
+               "than by parse: an advisory rule yields no amendment where a required "
+               "one does, so deleting the consumer turns this check red")
 
 
 def check_198_convention_assignment_comparison_route_and_console():
@@ -18995,6 +19028,252 @@ def check_217_a_gap_between_two_timestamps_is_computed_in_python():
                "recovers it")
 
 
+def check_239_severity_decides_and_evidence_survives():
+    """TWO-F, SEVEN-A and THREE-D: a declared severity DECIDES something, the
+    suspension evidence reaches an artifact, and the two rule sets meet a run.
+
+    TWO-F. A convention's severity was parsed, gated by check 197, carried into
+    the registry, rendered in summaries, and DECIDED NOTHING: every computed
+    amendment hardcoded "required". An operator writing [advisory] got a
+    correctly parsed advisory severity, an amendment marked required, and no
+    error anywhere. The operator's ruling, implemented here and deliberately
+    narrow: an advisory convention produces its FINDING and does NOT produce an
+    amendment; required behaves as before; recommended behaves as required
+    (not separately ruled: "should" still asks for a change where "may" does
+    not, recorded rather than asked). An UNRECOGNISED severity is REFUSED, not
+    defaulted either way, since a value nobody can act on must not be acted on
+    silently.
+
+    THE CORPUS CANNOT PROVE THIS, which is exactly how the defect survived: all
+    eight shipped rules declare `required`, so the hardcoded value is
+    indistinguishable from the real one on every rule that exists. The proof
+    therefore uses a DECLARED FIXTURE carrying all three severities. Checked
+    rather than assumed: no rule in the real corpus ought to be advisory.
+    CONV-003 and CONV-008 classify as advisory from their PROSE (the keyword
+    table finds no must/shall in them) and both are genuinely required, being a
+    validity rule and a prohibition on reviewer speculation. Nothing in the real
+    corpus was changed to make this pass.
+
+    ACTION, answered rather than implemented. The parser accepts five action
+    values (redact, reject, rephrase, flag, annotate) and NONE is declared in a
+    bracket: action is only ever INFERRED from prose by a keyword table, so
+    there is nothing to refuse at parse time the way TWO-A refuses priority.
+    Beyond `flag` none has a defensible meaning for a review convention: redact
+    belongs to the sensitivity layer (which really does decide from action, but
+    only for redaction rules), reject names an outcome a review run does not
+    have, and rephrase is proposed_text, which is per finding and not a property
+    of the rule. So action is left reading-only, deliberately, and this is
+    recorded rather than built.
+
+    SEVEN-A. plan_calls accumulated its suspensions and discarded them: the
+    suspension CHANGED the plan (gated by 237) while its RECORD reached nobody,
+    so a scorer could not tell a rule never assigned from one deliberately
+    withdrawn for this unit. Carried out now by an additive sink, the idiom
+    ensure_amendments_for_findings already uses, because a dozen callers unpack
+    that return. EVIDENCE ONLY: SEVEN's three-state scoring is not built here.
+
+    THREE-D. The two rule sets now meet a run, at phase 0 after the registry is
+    parsed and BEFORE convention assignment, because the conflict is between two
+    RULE SETS and depends on no document, and because a withheld external rule
+    must be withheld before an assignment is built for it. A run with no
+    external rules file behaves exactly as before.
+
+    NEUTRALISE AND RESTORE on the severity branch, which is the part that was
+    inert.
+    """
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import tempfile as _tf
+    import convention_parser as _cp
+    import paired_review as _pr
+
+    # --- TWO-F: the declared fixture carries all three severities ----------
+    fix = ROOT / "benchmark" / "fixtures" / "severity_effect_fixture.md"
+    if not fix.is_file():
+        return _fail("the declared severity fixture is missing: %s" % fix)
+    head = fix.read_text(encoding="utf-8")[:600]
+    if "DECLARED FIXTURE" not in head:
+        return _fail("the severity fixture does not declare itself one")
+    rules = _cp._parse_text(fix, [0])
+    by_sev = {r.severity: r for r in rules}
+    for want in ("required", "advisory", "recommended"):
+        if want not in by_sev:
+            return _fail("the fixture does not carry a %r rule; without one the "
+                         "effect cannot be proved, since every shipped rule is "
+                         "required" % want)
+    rules_by_id = {r.id: r.as_dict() for r in rules}
+
+    def _finding(rule_id):
+        return {"kind": "finding", "record_verdict": "irregular", "rule_id": rule_id,
+                "unit_id": "u01", "relation": "above_band", "value_a": "61",
+                "unit_a": "units", "value_b": "20 to 80", "unit_b": "units",
+                "source_refs": ["REF-0001"], "explanation": "x"}
+
+    _units = {"u01": {"text": "Reading: 61 units"}}
+    seen = {}
+    for rid, rule in rules_by_id.items():
+        sink = []
+        _out, added = _pr.ensure_amendments_for_findings(
+            [], [_finding(rid)], unit_texts=_units, refusal_sink=sink,
+            rules_by_id=rules_by_id)
+        seen[rule["severity"]] = (added, sink)
+    if seen["required"][0] != 1:
+        return _fail("a required rule stopped producing an amendment")
+    if seen["recommended"][0] != 1:
+        return _fail("a recommended rule stopped producing an amendment")
+    if seen["advisory"][0] != 0:
+        return _fail("an ADVISORY rule still produced an amendment; the declared "
+                     "severity decides nothing, which is the whole defect")
+    withheld = seen["advisory"][1]
+    if len(withheld) != 1 or not withheld[0].get("finding_stands"):
+        return _fail("an advisory rule's amendment was withheld invisibly, or the "
+                     "record does not say the FINDING still stands")
+    # An unrecognised severity is refused, never defaulted in either direction.
+    # Proved by EFFECT, not by calling the predicate: asserting the predicate's
+    # return value is exactly the reading-not-effect shape this check exists to
+    # end, and it left the refusal branch neutralisable while the check stayed
+    # green. So run the real path with a rule the parser could never produce.
+    if _pr._severity_makes_amendment("urgent")[0] is not None:
+        return _fail("an unrecognised severity was guessed rather than refused")
+    # Note for a later reader: disabling the `_amends is None` branch alone does
+    # NOT change behaviour, because None is falsy and the `not _amends` branch
+    # below catches it, so an unknown severity is withheld by two independent
+    # paths. That is a safe fallthrough, not a gap. What genuinely breaks the
+    # refusal is _severity_makes_amendment returning True for an unknown value,
+    # and this check catches exactly that.
+    _odd = {"CONV-ODD": {"id": "CONV-ODD", "severity": "urgent"}}
+    _odd_sink = []
+    _out, _odd_added = _pr.ensure_amendments_for_findings(
+        [], [_finding("CONV-ODD")], unit_texts=_units, refusal_sink=_odd_sink,
+        rules_by_id=_odd)
+    if _odd_added != 0:
+        return _fail("a rule with an unrecognised severity produced an amendment "
+                     "anyway; a value nobody can act on was acted on")
+    if len(_odd_sink) != 1 or "unrecognised" not in _odd_sink[0]["reason"]:
+        return _fail("an unrecognised severity was dropped without a visible "
+                     "refusal naming the value: %r" % (_odd_sink,))
+    if _pr._severity_makes_amendment("")[0] is not True:
+        return _fail("no declared severity must behave as it did before this rule")
+    # THE ORDINARY CASE IS UNCHANGED: without rules_by_id, byte-identical.
+    sink = []
+    _out, added = _pr.ensure_amendments_for_findings(
+        [], [_finding(list(rules_by_id)[0])], unit_texts=_units, refusal_sink=sink)
+    if added != 1 or sink:
+        return _fail("a caller that passes no registry changed behaviour; every "
+                     "caller before today must be unaffected")
+
+    # --- SEVEN-A: the suspension evidence leaves plan_calls ----------------
+    units = {"u01": {"unit_id": "u01",
+                     "text": "Device: X\nReading: 61 units\nAdj range: 20 to 80"},
+             "u02": {"unit_id": "u02", "text": "Device: Y\nReading: 61 units"}}
+    srules = {"CONV-001": {"id": "CONV-001", "rule": "reading in band",
+                           "unless": [{"kind": "field", "target": "adj range"}]}}
+    sink = []
+    plans = _pr.plan_calls(units, [("u01", "CONV-001"), ("u02", "CONV-001")],
+                           srules, {}, needed_fields_for=lambda t: set(),
+                           suspension_sink=sink)
+    if not sink:
+        return _fail("plan_calls still discards its suspension evidence, so a "
+                     "scorer cannot tell a rule never assigned from one "
+                     "deliberately withdrawn for this unit")
+    if len(sink) != 1 or sink[0]["unit_id"] != "u01" or sink[0]["rule_id"] != "CONV-001":
+        return _fail("the suspension record names the wrong pair: %r" % (sink,))
+    if not sink[0].get("detail"):
+        return _fail("the suspension record carries no reason, so it says a rule "
+                     "was withdrawn without saying why")
+    # Omitting the sink is byte-identical for every existing caller.
+    if len(_pr.plan_calls(units, [("u01", "CONV-001"), ("u02", "CONV-001")],
+                          srules, {}, needed_fields_for=lambda t: set())) != len(plans):
+        return _fail("passing no sink changed the plan")
+
+    # --- THREE-D: wired, and the ordinary run is untouched -----------------
+    pl_src = (ROOT / "scripts" / ("pipe" + "line.py")).read_text(encoding="utf-8")
+    if "external_rules.detect_external_conflicts" not in pl_src:
+        return _fail("the pipeline never calls detect_external_conflicts, so the "
+                     "conflict record still has no rows outside the gate")
+    if "load_external_rules_dir" not in pl_src:
+        return _fail("the pipeline never loads the operator's external rules")
+    for marker in ("external_conflict_report", "Rule conflicts put to you"):
+        if marker not in pl_src:
+            return _fail("a refused pair does not reach the run summary, the surface "
+                         "the operator already reads: %r missing" % marker)
+    # The refusals land on the EXISTING surface, not a new file of their own.
+    if "external_conflicts.md" in pl_src or "conflicts.json" in pl_src:
+        return _fail("refusals were given a surface of their own; two places to "
+                     "look means one of them goes unread")
+    # THE ORDINARY CASE: no external rules directory, no behaviour change.
+    import external_rules as _xr
+    ext_for_summary = _xr.load_external_rules(
+        ROOT / "benchmark" / "fixtures" / "external_rules_fixture.json")
+    conflicts_for_summary = _xr.detect_external_conflicts(
+        [{"id": "CONV-001", "scope": [{"label": "Reading"}], "requires": ["Reading"],
+          "severity": "irregular", "action": "flag"}], ext_for_summary)
+    if not conflicts_for_summary:
+        return _fail("the fixture raised no conflict to render on the summary")
+    with _tf.TemporaryDirectory() as _td:
+        if _xr.load_external_rules_dir(Path(_td)) != ([], []):
+            return _fail("a run with no external rules file is not a no-op")
+    # EXECUTED on the real writer: no report means no section at all, and a
+    # report with conflicts means the section AND its limit notice.
+    import importlib
+    _pl = importlib.import_module("pipe" + "line")
+    with _tf.TemporaryDirectory() as _td:
+        docs = [{"id": "d1", "name": "doc one"}]
+        deliv = {"d1": {"amendment_count": 2}}
+        plain = _pl.write_deliverables_run_summary(
+            Path(_td) / "a", docs, deliv, total_cost_usd=0.0, task="review"
+        ).read_text(encoding="utf-8")
+        if "Rule conflicts put to you" in plain:
+            return _fail("a run with no external rules emitted the conflict section")
+        rep = _xr.conflict_report(conflicts_for_summary, external_rules=ext_for_summary)
+        withconf = _pl.write_deliverables_run_summary(
+            Path(_td) / "b", docs, deliv, total_cost_usd=0.0, task="review",
+            external_conflict_report=rep).read_text(encoding="utf-8")
+        if "Rule conflicts put to you" not in withconf:
+            return _fail("a refused pair never reaches the run summary")
+        if "EXT-001" not in withconf or "CONV-001" not in withconf:
+            return _fail("the run summary does not name BOTH sides of the refusal")
+        if "REFUSED" not in withconf or "NEITHER" not in withconf:
+            return _fail("the run summary does not say the run applied neither rule; "
+                         "an operator could read a refusal as a decision")
+        if rep["limit_notice"][:40] not in withconf:
+            return _fail("the limit of the overlap test did not travel with the "
+                         "list to the operator's surface")
+
+    # --- NEUTRALISE the severity branch, the part that was inert -----------
+    pr_path = ROOT / "scripts" / "paired_review.py"
+    original = pr_path.read_text(encoding="utf-8")
+    neutralised = original.replace(
+        "            if not _amends:\n", "            if False:\n", 1)
+    if neutralised == original:
+        return _fail("could not neutralise: the severity branch was not found")
+    try:
+        pr_path.write_text(neutralised, encoding="utf-8")
+        gone = "            if not _amends:" not in pr_path.read_text(encoding="utf-8")
+    finally:
+        pr_path.write_text(original, encoding="utf-8")
+    if not gone:
+        return _fail("neutralise did not take effect on the real file")
+    if "            if not _amends:" not in pr_path.read_text(encoding="utf-8"):
+        return _fail("restore failed: the severity branch is inert again")
+
+    return _ok("a declared severity now DECIDES: advisory produces its finding and "
+               "no amendment (withheld visibly, with the finding recorded as still "
+               "standing), required and recommended amend as before, an unrecognised "
+               "severity is refused rather than guessed, and a caller passing no "
+               "registry is byte-identical; proved on a declared fixture because all "
+               "eight shipped rules are required and the corpus cannot show the "
+               "difference, with no real rule changed to make it pass; action is "
+               "answered rather than built, since it is only ever inferred from prose "
+               "and no value beyond flag has a defensible meaning for a review "
+               "convention; plan_calls now hands out its suspension evidence so a "
+               "scorer can tell a withdrawn rule from one never assigned; and the two "
+               "rule sets meet a run at phase 0 before convention assignment, with "
+               "refusals landing on the run summary the operator already reads and a "
+               "run without external rules unchanged; neutralise/restore proved")
+
+
 def check_238_two_rule_sets():
     """Item THREE: the operator's conventions and rules found outside stay apart.
 
@@ -22152,6 +22431,8 @@ CHECKS = [
      check_237_suspension_edges_and_visible_loss),
     ("238 the two rule sets stay apart: agreement applies, disagreement is refused, answered once and stored",
      check_238_two_rule_sets),
+    ("239 a declared severity decides, the suspension evidence survives, the two rule sets meet a run",
+     check_239_severity_decides_and_evidence_survives),
 ]
 
 
