@@ -1858,6 +1858,28 @@ def _not_judged_reason(rule, convention_assignment):
             "(status %s)" % status), consumers, status
 
 
+def _reattribution_blocked_by(plan, pairing, rules_by_id, convention_assignment):
+    """The rule ids that could have taken this computed plan but were excluded
+    for carrying a conditional suspension.
+
+    Returns [] when the plan was lost for any other reason (no paired rule on
+    the unit, none with a judging agent), so the caller only reports a
+    suspension-caused loss when that is actually what happened."""
+    unit_id = plan["unit"]["unit_id"]
+    entry = next((u for u in (pairing or {}).get("units", [])
+                  if u.get("unit_id") == unit_id), None)
+    out = []
+    for paired in (entry or {}).get("paired", []):
+        rule = rules_by_id.get(paired.get("rule_id"))
+        if not rule or rule.get("id") == plan["rule"].get("id"):
+            continue
+        if _paired_judging_agent(rule, convention_assignment) is None:
+            continue
+        if rule.get("unless"):
+            out.append(str(rule.get("id")))
+    return out
+
+
 def _reattribute_computed_plan(plan, pairing, rules_by_id, convention_assignment):
     """A rule-INDEPENDENT computed plan (a sum, a product, a missing field: the
     comparison is the same whichever rule prompted it, paired_review.plan_calls)
@@ -2075,8 +2097,27 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     for plan in plans:
         unit, rule, checks = plan["unit"], plan["rule"], plan["checks"]
         agent = _paired_judging_agent(rule, convention_assignment)
+        reattribution_blocked = None
         if agent is None and plan.get("kind") == "computed":
             alt = _reattribute_computed_plan(plan, pairing, rules_by_id, convention_assignment)
+            if alt is None:
+                # The plan is about to be lost. Say WHY rather than letting it
+                # fall through to the generic not-judged reason: since a rule
+                # carrying a conditional suspension is excluded as a
+                # reattribution target (an exception and its parent are not
+                # interchangeable), a unit whose only other paired rules are
+                # qualified has nowhere to send the arithmetic. That is a
+                # different fact from a rule nothing could act on, and a reader
+                # who cannot tell them apart cannot act on either.
+                blocked = _reattribution_blocked_by(plan, pairing, rules_by_id,
+                                                    convention_assignment)
+                if blocked:
+                    reattribution_blocked = blocked
+                    log_event(_LOG,
+                              f"paired_review_reattribution_blocked "
+                              f"unit={unit['unit_id']} rule={rule['id']} "
+                              f"blocked_by={','.join(blocked)}",
+                              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
             if alt is not None:
                 log_event(_LOG, f"paired_review_reattributed unit={unit['unit_id']} "
                                 f"from={rule['id']} to={alt['id']}",
@@ -2087,9 +2128,18 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 agent = _paired_judging_agent(rule, convention_assignment)
         if agent is None:
             reason, consumers, status = _not_judged_reason(rule, convention_assignment)
-            not_judged.append({"unit_id": unit["unit_id"], "rule_id": rule["id"],
-                               "kind": plan.get("kind"), "reason": reason,
-                               "consumer_agents": consumers, "status": status})
+            entry = {"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                     "kind": plan.get("kind"), "reason": reason,
+                     "consumer_agents": consumers, "status": status}
+            if reattribution_blocked:
+                # Name the rules that could have taken this plan but carry a
+                # suspension, so the loss is attributable and not merely counted.
+                entry["reattribution_blocked_by"] = reattribution_blocked
+                entry["reason"] = (
+                    "%s; reattribution found no ordinary target: %s carry a "
+                    "conditional suspension and are not interchangeable with it"
+                    % (reason, ", ".join(reattribution_blocked)))
+            not_judged.append(entry)
             continue
         source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]

@@ -935,6 +935,70 @@ def adjacent_units(unit, unit_texts):
     return prev_unit, next_unit
 
 
+def resolve_unless(rule, rules_by_id, fields_present):
+    """Resolve a rule's conditional suspensions against the registry and the unit.
+
+    Returns (suspended, detail). `suspended` is True when a condition holds, so
+    the rule does not fire on this unit. `detail` lists every condition with what
+    it resolved to, so a reader can see why a rule did or did not apply.
+
+    TWO EDGES, both settled here rather than left to shape alone:
+
+    1. A FIELD NAMED LIKE A RULE. The parser decides kind by shape, so a document
+       field literally called "conv-status" parses as a rule condition. Registry
+       MEMBERSHIP settles it: a rule-shaped target naming no rule the registry
+       holds is re-read as a field condition, which is the correct reading for
+       such a field and costs nothing when the target really was a typo.
+
+    2. A RULE CONDITION NAMING A RULE THAT DOES NOT EXIST. After edge 1 that can
+       only be a target matching nothing at all. It resolves to UNRESOLVED, and
+       an unresolved condition NEVER suspends: a suspension that cannot be
+       checked must not silently switch the rule off. The detail says so, so the
+       operator can see a dangling reference rather than a rule quietly not
+       firing.
+    """
+    detail = []
+    suspended = False
+    have = {pairing_map._norm_label(label) for label in (fields_present or [])}
+    for cond in (rule.get("unless") or []):
+        target = str(cond.get("target") or "").strip().lower()
+        kind = cond.get("kind")
+        if kind == "rule":
+            known = any(target in (str(r.get("id") or "").lower(),
+                                   str(r.get("category") or "").lower())
+                        for r in (rules_by_id or {}).values())
+            if not known:
+                # Edge 1: re-read as a field before calling it unresolved.
+                if pairing_map._norm_label(target) in have:
+                    detail.append({"target": target, "kind": "field",
+                                   "resolved": "present", "suspends": True,
+                                   "note": "rule-shaped target names no rule; "
+                                           "read as a field the unit carries"})
+                    suspended = True
+                    continue
+                detail.append({"target": target, "kind": "rule",
+                               "resolved": "unresolved", "suspends": False,
+                               "note": "names no rule in the registry and no "
+                                       "field on this unit; an unresolved "
+                                       "condition never suspends"})
+                continue
+            # A known rule: the suspension depends on that rule, which this
+            # function does not evaluate. Reported, never assumed either way.
+            detail.append({"target": target, "kind": "rule",
+                           "resolved": "known", "suspends": False,
+                           "note": "resolved to a rule in the registry; the "
+                                   "qualifying rule travels in the payload and "
+                                   "the judgement is the model's, not Python's"})
+            continue
+        present = pairing_map._norm_label(target) in have
+        detail.append({"target": target, "kind": "field",
+                       "resolved": "present" if present else "absent",
+                       "suspends": present})
+        if present:
+            suspended = True
+    return suspended, detail
+
+
 def build_pair_payload(*, unit, rule, checks, refs=None, source_rule_id="",
                        unit_texts=None, document_units=None, qualifying_rules=None):
     """The work payload for one (unit, rule) pair.
@@ -1357,12 +1421,31 @@ def plan_calls(units_by_id, pairs, rules_by_id, vocabulary, *, needed_fields_for
         by_unit.setdefault(unit_id, []).append(rule_id)
 
     plans = []
+    suspensions = []  # (unit, rule) pairs a conditional suspension took out
     for unit_id, rule_ids in by_unit.items():
         unit = units_by_id.get(unit_id)
         if unit is None:
             continue
         scalars, columns, row_counts = extract_fields(unit.get("text", ""), known_units)
         present = pairing_map.unit_fields(unit.get("text", ""))
+        # A rule whose conditional suspension holds on THIS unit does not fire
+        # here. Without this the declaration parsed, travelled and drew a graph
+        # edge while suspending nothing, which looks built and is not. The
+        # suspension is per unit, so the same rule can be suspended on one entry
+        # and in force on the next, which is what CONV-D01 actually says.
+        suspended_here = []
+        for rule_id in list(rule_ids):
+            rule = rules_by_id.get(rule_id)
+            if not rule or not rule.get("unless"):
+                continue
+            is_suspended, detail = resolve_unless(rule, rules_by_id, present)
+            if is_suspended:
+                suspended_here.append({"unit_id": unit_id, "rule_id": rule_id,
+                                       "detail": detail})
+        if suspended_here:
+            rule_ids = [r for r in rule_ids
+                        if r not in {s["rule_id"] for s in suspended_here}]
+            suspensions.extend(suspended_here)
         # D, option 2: declared absences first (Python decides, or the model is
         # asked on this unit alone); a scoped rule contributes nothing to the
         # text-derived needed set, so a glossary label its text mentions is never
