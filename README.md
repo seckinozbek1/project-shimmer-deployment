@@ -2461,6 +2461,22 @@ gate is unchanged.
 
 Stated honestly, from operator testing:
 
+- **The scorer credits a finding on unit and rule without checking whether its stated reason
+  is true, so EVERY recall figure this project has reported carries that doubt, including the
+  6 of 9 below.** Found on 2026-09-12 by comparing the two device twins. The model produced a
+  `missing_field` claim on UNIT-SPRUCE and UNIT-VETCH in BOTH twins, with near-identical
+  wording; on VETCH it said the document "does not mention the next calibration visit" when
+  the entry states it in plain words. One of those wrong sentences landed on a unit the
+  answer key calls flawed, and the scorer counted it as a catch because the unit and the rule
+  matched. It was a coincidence that scored, not a detection. Removing those two took the
+  flawed twin's long-range recall from 3/3 to 1/3, which is the honest figure.
+  **What it would take to check a reason rather than a location:** the scorer would have to
+  compare the finding's own typed fields against what the key says is wrong, not merely
+  against where. That needs the key to state the defect in the same typed vocabulary a
+  Finding record uses (the relation, the field, the two figures), which today it states only
+  as prose in `what`. Until the key carries a machine-checkable claim, a matched unit and
+  rule is the strongest evidence available, and it is weaker than it looks. Nothing has been
+  changed in the scorer: the figures above and below are as measured.
 - **Everything built on 10 and 11 September 2026 is unmeasured.** The last scored run
   predates all of it (section J opening); every mechanism from those two days is proved on
   gate fixtures only, the device-corpus measurement was stopped twice, and it is owed.
