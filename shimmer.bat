@@ -180,7 +180,26 @@ if "!DRAFTQ!"=="" (
 echo.
 echo Drafting a memo, then reviewing it ...
 echo (Add --help for all options.)
-python scripts\pipeline.py --task draft --question "!DRAFTQ!" --backend-profile !BACKEND_PROFILE! --sensitivity-layer-inactive-override --no-redaction-override %*
+REM The draft path ASKS the sensitivity question rather than answering it. It
+REM used to hardcode both override flags, declaring every launcher draft
+REM non-sensitive with no prompt, while the review path asked. A draft memo can
+REM quote the same grounding corpus, so it is the same decision and it belongs
+REM to the operator.
+set "DRAFT_FLAGS_FILE=%TEMP%\shimmer_draft_flags.txt"
+if exist "!DRAFT_FLAGS_FILE!" del "!DRAFT_FLAGS_FILE!"
+python scripts\intake_wizard.py --mode-only --emit-flags "!DRAFT_FLAGS_FILE!"
+if errorlevel 1 (
+    echo Draft setup cancelled. Returning to the menu.
+    if exist "!DRAFT_FLAGS_FILE!" del "!DRAFT_FLAGS_FILE!"
+    goto :menu
+)
+set "DRAFT_FLAGS="
+if exist "!DRAFT_FLAGS_FILE!" set /p DRAFT_FLAGS=<"!DRAFT_FLAGS_FILE!"
+if exist "!DRAFT_FLAGS_FILE!" del "!DRAFT_FLAGS_FILE!"
+echo.
+echo Drafting a memo, then reviewing it ...
+echo (Add --help for all options.)
+python scripts\pipeline.py --task draft --question "!DRAFTQ!" !DRAFT_FLAGS! %*
 goto :menu
 
 :opt_import

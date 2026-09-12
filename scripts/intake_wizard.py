@@ -537,14 +537,53 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
     return 0
 
 
+def run_mode_only(emit_flags_path: "Optional[str]") -> int:
+    """Ask ONLY the sensitivity question (and the backend profile), and emit the
+    flags. For the draft path, which places no files and sets no cutoff, so the
+    full wizard has nothing to do there.
+
+    Draft mode used to hardcode --sensitivity-layer-inactive-override and
+    --no-redaction-override in the launcher, declaring every launcher draft
+    non-sensitive without ever asking. The review path asks; a draft memo can
+    quote the same grounding corpus, so it is the same decision and it is the
+    operator's to make. This reuses _choose_mode rather than restating the
+    question, so the two paths cannot drift apart."""
+    profile_label, profile_flags = _choose_backend_profile()
+    mode_label, mode_flags = _choose_mode()
+    if mode_flags is None:
+        print("Cancelled. No run started.")
+        return 1
+    print()
+    print("Draft plan:")
+    print(f"  Backend:  {profile_label}")
+    print(f"  Mode:     {mode_label}")
+    # An explicit yes is required. _ask returns "" on EOF, so a closed or
+    # exhausted stdin would otherwise read as consent to a run whose
+    # sensitivity the operator never confirmed. This path exists precisely to
+    # stop that decision being made for them, so the empty answer declines.
+    confirm = _ask("Proceed? [y/N]: ").lower()
+    if not confirm.startswith("y"):
+        print("Cancelled. No run started.")
+        return 1
+    if emit_flags_path:
+        Path(emit_flags_path).write_text(
+            " ".join(profile_flags + mode_flags), encoding="utf-8")
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Project Shimmer document intake wizard")
     parser.add_argument("--emit-flags", metavar="PATH", default=None,
                         help="write the collected pipeline flags (space-separated) to this file")
     parser.add_argument("--import-only", action="store_true",
                         help="place documents and set the cutoff only; collect no run flags")
+    parser.add_argument("--mode-only", action="store_true",
+                        help="ask only the backend profile and sensitivity mode, then emit "
+                             "those flags; for the draft path, which places no files")
     args = parser.parse_args(argv)
     try:
+        if args.mode_only:
+            return run_mode_only(args.emit_flags)
         return run(args.emit_flags, args.import_only)
     except KeyboardInterrupt:
         print()
