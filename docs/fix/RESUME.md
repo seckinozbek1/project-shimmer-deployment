@@ -1,4 +1,4 @@
-# RESUME: local performance diagnostic complete, 2026-09-13
+# RESUME: dense quality-baseline addendum complete, 2026-09-13
 
 **Read this file first in a cold session. Next locked item: Local speed-optimization audit.**
 ZERO through TWENTY-ONE, baseline normalization and roadmap items 1 and 2 are complete.
@@ -13,7 +13,10 @@ document review and fresh-clone testing remain unrun.
 - The operator pushed the human-startable work. At diagnostic entry, both main
   and local origin/main were `5b72b16c67b02890ffc8be39096b5bad10e1c05c`, above
   preserved `83866c9` and `b733188cb038dbcc482e68aecf69cbefb04587e4`.
-- This item is the local commit titled `Record local performance diagnostic baseline`.
+- Diagnostic closure `0d2d152a1eb6d6dae0ccbe206253d7d465c543c2` was subsequently
+  pushed by the operator. At quality-addendum entry, main and origin/main both
+  pointed to it, with no tracked changes.
+- This addendum is the local commit titled `Record dense quality baseline from saved diagnostic run`.
   Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` after a
   staged-secret scan. Main is one commit ahead of the unchanged local origin/main
   tracking ref. No fetch or push occurred. The operator pushes.
@@ -34,7 +37,61 @@ Read [HUMAN_STARTUP_AUDIT.md](HUMAN_STARTUP_AUDIT.md) for the pre-change trace a
 decisions, changed files, adversarial findings, proofs and remaining limits.
 README and RUNBOOK use the new primary flow. CLI/API/local-demo/Docker remain.
 
-## Current diagnostic baseline
+## Current dense quality baseline
+
+Read the [quality addendum](LOCAL_PERFORMANCE_DIAGNOSTIC.md#dense-quality-baseline-addendum-2026-09-13)
+before proposing speed acceptance criteria. The operator authorized scoring the
+already-saved diagnostic run against the unchanged committed clinical key. This
+was measurement only: no pipeline rerun, model load/generation, corpus staging,
+scorer change, runtime fix or optimization. The speed audit has still not started.
+
+- Current scorer: **3/5 (60%) LOCATION recall**, 0 amendment false positives,
+  0 clean-item amendments on CEDAR/DAMSON, operator attribution **3/3 found**.
+  ALDER, BIRCH and ELDER are found through both typed bus records and amendments;
+  FIRTH missing sample identifier and sheet count mismatch are missed.
+- The key contains no typed claims. Reason-confirmed, RIGHT PLACE WRONG REASON
+  and reason-unverifiable scoring are unavailable, not established zeros.
+- All five review states are **unknown**: assignment rows are untagged with empty
+  consumer-agent lists; the sheet also has no matching pairing-map unit. Asked
+  recall is unavailable, not 0%. Saved exposure still exists independently.
+- FIRTH miss class is `EVIDENCE_PRESENT_IN_MODEL_PAYLOAD`, from its appearance
+  as ELDER's neighbor in a completeness call; its own completeness pair is
+  rejected for lacking the sample identifier. No dedicated FIRTH judgment is proved.
+- Sheet miss class is `EVIDENCE_ABSENT_FROM_CORPUS`, because no parsed unit ID
+  contains sheet. This does not mean absent source evidence: 4 + 3 versus 6 is
+  in the source, REF-0018, PROCESSOR extraction and rejected VERIFIER prose.
+  Preserve the original score/classification; no scorer correction was made.
+- Manual inspection: all three typed comparisons, units, operator IDs and
+  supporting range references are correct. DOCX comments anchor correctly.
+  BIRCH's prose wrongly calls 5.0 the lower bound, despite typed/computed 3.5;
+  this contradiction survives in the Markdown/master and DOCX comment. Only
+  ALDER and ELDER have complete justifications free of this observed error.
+- Two capped contract violations include potentially useful lost verifier work
+  on the sheet, alongside false assertions about clean results. All 24 accepted
+  model responses used recovery; 12/26 calls were capped. The three scored
+  findings have Python provenance, with advisory model prose. Recovered/capped
+  legal and editorial items are not evidence of substantive correctness.
+- Coverage granularity: 11 selected pairs and 11 calls do not mean one call per
+  distinct pair; those calls cover 8 distinct focal unit/rule combinations.
+- All 54 closure-manifest artifacts still match. The new complete before/after
+  inventory covers 275 files, unchanged. Earlier unmanifested artifacts cannot
+  have their entire pre-addendum history independently proved by that manifest.
+
+Scoring command: `py -3.9 -B -X utf8 tools/score_corpus.py --corpus clinical_reference
+--run output/local_performance/baseline/run`. Evidence is under ignored
+`output/quality_addendum/`, including original scorer output, exact reproduced
+output, `quality_results.json`, before/after hashes and read-only inspection tools.
+No original diagnostic artifact, key or operator file changed. No gate/image
+rebuild is owed for these three documentation-only changes.
+
+**Quality invariant:** an optimized-dense system must not sacrifice any established
+dimension for speed: named recall, factual comparisons, false-positive performance,
+operator attribution, grounded citations, semantic/review coverage, contract validity
+or amendment quality. Do not accept an aggregate score that hides loss of one of
+the three current hits. Known defects are not required behavior; unmeasured
+dimensions must not be called preserved. Read the addendum's acceptance table.
+
+## Original performance diagnostic baseline
 
 Read [LOCAL_PERFORMANCE_DIAGNOSTIC.md](LOCAL_PERFORMANCE_DIAGNOSTIC.md) for the
 pre-instrumentation timing map, complete measurements, proofs and ranked candidates.
@@ -43,7 +100,8 @@ The scope was diagnosis only. No optimization or shipped/runtime change was made
 - Unchanged shipped `clinical_reference`: 3 input files / 5,265 bytes, one target
   `result_sheet.md`, 6 units, all 5 conventions. Standalone Normal paired Review,
   explicit existing role manifest, unchanged local models and budgets. No answer
-  key opened/scored, no private document reviewed, no provider or paid call.
+  key opened/scored during performance measurement; the later quality addendum
+  above is separately authorized. No private document reviewed or paid/provider call.
 - Native wall **5,054.4 s / 84 min 14.4 s**, 08:50:49.611 to 10:15:03.996 UTC,
   exit 0. `run_completion.json`: completed, reached_end true, 1 document,
   3 amendments. All 26 dispatch/generation/cost/evidence rows joined, no open spans.
