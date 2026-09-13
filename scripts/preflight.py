@@ -1,5 +1,9 @@
 """Operator preflight / setup bootstrap for Project Shimmer.
 
+Desktop mode (--check-startup) uses the non-mutating startup_report API and
+bypasses every setup step below. It never installs, downloads, contacts a
+provider, creates a key template, or records a privacy waiver.
+
 Double-clicked via setup.bat (or a future setup.sh / setup.command — each a thin
 wrapper that only launches this module). ALL real logic lives here so the OS
 launchers stay trivial and cross-platform.
@@ -28,8 +32,10 @@ health that separates what is ready now from what stays UNPROVEN until a paid ru
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 import importlib
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -37,12 +43,222 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from run_choices import resolve_backend_profile
+
 # scripts/ is sys.path[0] when launched as `python scripts/preflight.py`, so the
 # sibling framework modules import by bare name (same convention as pipeline.py).
-import agent_wrapper
-import model_registry
-import redaction_gate
-import sensitivity_layer
+# Optional application dependencies load inside the operation that needs them.
+# In particular the desktop JSON check must survive a partially installed Python.
+
+
+class _QuietStream(io.StringIO):
+    def reconfigure(self, **kwargs):
+        pass
+
+
+@contextmanager
+def _quiet_readiness():
+    """Keep imported diagnostics and external-config output out of the report.
+
+    No exception text from a key file is safe to print. Disabling bytecode also
+    prevents the key resolver's Python import from writing beside operator keys.
+    """
+    previous = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        with redirect_stdout(_QuietStream()), redirect_stderr(_QuietStream()):
+            yield
+    finally:
+        sys.dont_write_bytecode = previous
+
+
+def _package_problems(names):
+    problems = []
+    with _quiet_readiness():
+        for name in names:
+            try:
+                __import__(name)
+            except Exception:
+                problems.append(name)
+    return problems
+
+
+def _local_model_ids():
+    # This is the real resolved profile, including operator local_models.json.
+    # Importing the server here would create its queue and runtime directories.
+    with _quiet_readiness():
+        from pipeline import _LOCAL_PROFILE
+    return sorted(set(model for _, model in _LOCAL_PROFILE.values()))
+
+
+def check_local_model_availability():
+    """Keep the direct server's original package/tokenizer availability contract."""
+    if os.environ.get("SHIMMER_BACKEND_PROFILE") != "local":
+        return True, "not in local mode"
+    missing = _package_problems(("torch", "transformers"))
+    if missing:
+        return False, "; ".join(name + " is not installed or cannot import" for name in missing)
+    try:
+        model_ids = _local_model_ids()
+    except Exception:
+        return False, "The configured local model profile could not be read. Repair the Python environment."
+    problems = []
+    with _quiet_readiness():
+        transformers = importlib.import_module("transformers")
+        for model_id in model_ids:
+            try:
+                transformers.AutoTokenizer.from_pretrained(model_id, local_files_only=True)
+            except Exception:
+                problems.append("model %s not found in local cache" % model_id)
+    if problems:
+        return False, "; ".join(problems)
+    return True, "packages ok, models cached: %s" % model_ids
+
+
+def _checkpoint_files_ready(model_id):
+    """Read the real loader's offline snapshot, tokenizer and weight-file set.
+
+    This is presence checking, never a model load, conversion or integrity claim.
+    An index that references absent/empty shards is not an available checkpoint.
+    """
+    try:
+        with _quiet_readiness():
+            import agent_wrapper
+            snapshot = Path(agent_wrapper._local_checkpoint_path(model_id))
+            config = json.loads((snapshot / "config.json").read_text(encoding="utf-8"))
+            if not isinstance(config, dict):
+                return False
+            index = next((snapshot / name for name in
+                          ("model.safetensors.index.json", "pytorch_model.bin.index.json")
+                          if (snapshot / name).is_file()), None)
+            if index:
+                weight_map = json.loads(index.read_text(encoding="utf-8")).get("weight_map")
+                if not isinstance(weight_map, dict) or not weight_map:
+                    return False
+                files = set(weight_map.values())
+            else:
+                files = {name for name in ("model.safetensors", "pytorch_model.bin")
+                         if (snapshot / name).is_file()}
+            if not files:
+                return False
+            for name in files:
+                # Hub snapshots link to blobs outside snapshots/. Validate the
+                # declared relative filename, then follow the cache's own link.
+                if (not isinstance(name, str) or Path(name).is_absolute()
+                        or Path(name).drive or ".." in Path(name).parts):
+                    return False
+                candidate = snapshot / name
+                if not candidate.is_file() or candidate.stat().st_size == 0:
+                    return False
+            transformers = importlib.import_module("transformers")
+            transformers.AutoTokenizer.from_pretrained(str(snapshot), local_files_only=True)
+        return True
+    except Exception:
+        return False
+
+
+def sensitive_readiness(project_root=None):
+    """Report the existing Sensitive gates without activating or waiving them.
+
+    The inactive-layer fast path is safe for a server health request. Full
+    redaction rule compilation and model execution remain pipeline checks.
+    """
+    root = Path(project_root) if project_root is not None else Path(__file__).resolve().parent.parent
+    try:
+        with _quiet_readiness():
+            import sensitivity_layer
+            if not sensitivity_layer.is_active():
+                return False, ("Sensitive cannot start because the required LAW-IV privacy layer is inactive. "
+                               "It requires operator activation; do not submit sensitive documents.")
+            import redaction_gate
+            status = redaction_gate.qwen_backend_status(root)
+        if not status.get("configured"):
+            return False, "Sensitive cannot start because the local redaction backend is unavailable. Complete its setup first."
+        if _package_problems(("accelerate", "bitsandbytes")):
+            return False, "Sensitive cannot start because local model-loading packages are missing or broken. Complete its setup first."
+        if not _checkpoint_files_ready(status.get("model_id")):
+            return False, "Sensitive cannot start because the configured local redaction model is not fully cached. Complete its setup first."
+    except Exception:
+        return False, "Sensitive readiness could not be checked. Repair the Python environment before submitting sensitive documents."
+    return True, ("Privacy layer active and local redaction files present. The pipeline still checks operator redaction "
+                  "rules and actual model execution before accepting a Sensitive run.")
+
+
+def startup_report(profile):
+    """Non-mutating readiness for an explicitly selected desktop backend.
+
+    No install, template creation, download, provider call, waiver or run starts
+    here. A ready console is not evidence of a successful review or model load.
+    """
+    checks = []
+
+    def add(identifier, status, message, detail=""):
+        checks.append({"id": identifier, "status": status, "message": message, "detail": detail})
+
+    try:
+        profile = resolve_backend_profile(profile)
+    except ValueError:
+        add("backend", "FAIL", "Choose Local or Cloud before starting Shimmer.")
+        return {"ready": False, "backend_profile": profile, "checks": checks,
+                "sensitive_ready": False, "sensitive_detail": "Choose a backend first."}
+    missing = _package_problems(("fastapi", "uvicorn", "python_multipart"))
+    add("server", "FAIL" if missing else "PASS",
+        "The console needs missing or broken Python packages. Complete the prerequisite setup, then try again."
+        if missing else "Python environment ready for the operator console.",
+        ", ".join(missing) if missing else "fastapi, uvicorn, python-multipart imported")
+    if profile == "local":
+        missing = _package_problems(("torch", "transformers", "accelerate", "bitsandbytes"))
+        add("local_packages", "FAIL" if missing else "PASS",
+            "Local model packages are missing or broken. Complete the local prerequisite setup, then try again."
+            if missing else "Local model packages are available.", ", ".join(missing))
+        if not missing:
+            try:
+                model_ids = _local_model_ids()
+            except Exception:
+                add("local_models", "FAIL", "Local model settings could not be loaded. Repair the Python environment and local model configuration.")
+            else:
+                available = bool(model_ids) and all(_checkpoint_files_ready(model_id) for model_id in model_ids)
+                add("local_models", "PASS" if available else "FAIL",
+                    "Required local model files and tokenizers are cached." if available else
+                    "A required local model is missing or incomplete. Complete model setup before starting.",
+                    ", ".join(model_ids) + "; actual model loading and available memory remain unverified")
+        add("credentials", "PASS", "Local was selected. Cloud credentials are not required or checked.")
+    else:
+        missing = _package_problems(("anthropic", "openai"))
+        add("cloud_packages", "FAIL" if missing else "PASS",
+            "Cloud provider packages are missing or broken. Complete the prerequisite setup, then try again."
+            if missing else "Cloud provider packages are available.", ", ".join(missing))
+        presence = {}
+        try:
+            with _quiet_readiness():
+                import agent_wrapper
+                loaded = agent_wrapper.load_api_keys()
+                presence = {name: bool(loaded.get(name)) and loaded.get(name) != placeholder
+                            for name, placeholder in zip(_REQUIRED_KEYS,
+                                ("PUT_YOUR_ANTHROPIC_KEY_HERE", "PUT_YOUR_OPENAI_KEY_HERE"))}
+                del loaded
+        except Exception:
+            pass
+        available = all(presence.get(name, False) for name in _REQUIRED_KEYS)
+        add("credentials", "PASS" if available else "FAIL",
+            "Required Cloud credentials are present." if available else
+            "Cloud needs readable Anthropic and OpenAI credentials in the external key configuration. Complete setup, then try again.",
+            "; ".join(name + ": " + ("present" if presence.get(name) else "absent") for name in _REQUIRED_KEYS))
+        add("cloud_models", "WARN", "Live cloud model availability and operator approval are checked when you start a task. No provider was contacted.")
+    try:
+        with _quiet_readiness():
+            import redaction_gate
+            gpu = redaction_gate.qwen_backend_status(Path(__file__).resolve().parent.parent).get("gpu", False)
+    except Exception:
+        gpu = False
+    add("gpu", "PASS" if gpu else "WARN",
+        "CUDA GPU available." if gpu else "A CUDA GPU is unavailable or could not be checked. Local work can be very slow on CPU; this warning does not block startup.")
+    sensitive_ok, sensitive_detail = sensitive_readiness()
+    add("sensitive", "PASS" if sensitive_ok else "WARN", sensitive_detail)
+    add("scope", "WARN", "Startup checks do not run a review, load generation models, or verify all document-specific dependencies. Task and privacy decisions remain in the console.")
+    return {"ready": not any(check["status"] == "FAIL" for check in checks),
+            "backend_profile": profile, "checks": checks,
+            "sensitive_ready": sensitive_ok, "sensitive_detail": sensitive_detail}
 
 
 # --- tiny report helpers -------------------------------------------------------
@@ -98,6 +314,7 @@ def step_config() -> dict:
     """Locate + load the external config. Scaffold a template and FAIL cleanly if
     none is found. Returns the loaded keys dict (empty only on the FAIL path,
     where main() stops)."""
+    import agent_wrapper
     _section("(a) Config + API keys")
     for src, path in agent_wrapper.candidate_config_paths():
         marker = "<- FOUND" if path.exists() else "(absent)"
@@ -184,6 +401,9 @@ def step_qwen() -> dict:
     pull attempt; if still unreachable, require a logged per-run override rather
     than silently bypassing. Returns the final status dict (carries gpu flag for
     step d)."""
+    import agent_wrapper
+    import redaction_gate
+    import sensitivity_layer
     _section("(c) Qwen redaction backend (reuses INFRA-035 gate)")
     root = agent_wrapper.project_root()
     qstat = redaction_gate.qwen_backend_status(root)
@@ -282,6 +502,8 @@ def step_models(keys: dict) -> None:
     configured FAMILY KEY to the concrete live id (exactly-one match -> bind), and
     reports the firewall outcome (zero / ambiguous -> operator approval). Confirms
     gpt-4o present, lists stronger reasoning-grade auditor candidates. NEVER swaps."""
+    import agent_wrapper
+    import model_registry
     _section("(e) Live model resolution (reuses model_registry; binds family keys, never swaps)")
     root = agent_wrapper.project_root()
     registry = json.loads((root / "config" / "agent_registry.json").read_text(encoding="utf-8"))
@@ -322,6 +544,7 @@ def step_models(keys: dict) -> None:
 
 def _resolve_backend(label: str, family_keys, live) -> None:
     """Report self-resolution of each configured family key against the live list."""
+    import model_registry
     if live is None:
         _warn(f"{label}: resolution UNVERIFIED (live list unavailable — no key / SDK / network). "
               f"Configured: {', '.join(family_keys)}")
@@ -368,13 +591,29 @@ def bill_of_health() -> None:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Project Shimmer operator preflight (no paid run, no key value printed)")
-    parser.add_argument("--backend-profile", choices=["cloud", "local"], default="cloud",
+    parser.add_argument("--backend-profile", choices=["cloud", "local"], default=None,
                         help="which backend the operator intends to run under. cloud "
                              "(default) requires the API keys and checks live model ids. "
                              "local runs on the machine's own models and never calls a "
                              "provider, so missing cloud keys are reported and are not a "
                              "stop: the local readiness checks below are what matter.")
+    parser.add_argument("--check-startup", action="store_true",
+                        help="read-only desktop readiness; no installation, downloads, provider calls or state writes")
+    parser.add_argument("--json", action="store_true", help="return the startup report as JSON")
     args = parser.parse_args(argv)
+    if args.json and not args.check_startup:
+        parser.error("--json requires --check-startup")
+    if args.check_startup:
+        report = startup_report(args.backend_profile)
+        if args.json:
+            print(json.dumps(report))
+        else:
+            for row in report["checks"]:
+                print("[%s] %s" % (row["status"], row["message"]))
+                if row["detail"]:
+                    print("  " + row["detail"])
+        return 0 if report["ready"] else 1
+    args.backend_profile = args.backend_profile or "cloud"
     local = args.backend_profile == "local"
 
     print("Project Shimmer -- operator preflight")

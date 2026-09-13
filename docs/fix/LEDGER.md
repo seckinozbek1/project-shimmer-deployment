@@ -1,5 +1,93 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## HUMAN-STARTABLE ITEM COMPLETE, 2026-09-13
+
+Locked roadmap item 1 is complete. Preserved local closure `83866c9` above pushed
+`b733188`; the new focused local commit is titled
+`Make Shimmer human-clickable and human-startable`. No push or history rewrite.
+Main is two commits ahead of the unchanged origin/main tracking ref. Intentional
+untracked handoff/durable state remains untracked.
+
+[HUMAN_STARTUP_AUDIT.md](HUMAN_STARTUP_AUDIT.md) was written before implementation
+selection. [HUMAN_STARTUP_REPORT.md](HUMAN_STARTUP_REPORT.md) answers the exact
+acceptance question and records files, decisions, limitations and adversarial read.
+Double-click `start_shimmer.bat`: explicit backend, non-mutating readiness,
+confirmation, owned loopback server and automatic `/console` opening. Copy a usable
+session token into the console; no hash/command needed. The console owns task,
+file roles, explicit privacy and confirmation. Stop/restart is owned and tested.
+
+Used stdlib Tk, with no new dependency/framework. Reused actual profile, privacy
+flags, parser/role resolver, bearer hash comparison and server settings. Kept
+legacy API validation and all developer entry points. Ordinary intake is explicitly
+standalone; it does not fabricate metadata. Sensitive no longer acquires a wizard
+waiver; blank/EOF cannot authorize import or silently choose Cloud. Runtime
+governance and model/agent routing remain unchanged. Draft preserves grounding
+roles and refuses memo filename collisions; recovered queued uploads require
+resubmission instead of silently dispatching without input.
+
+Final host gate: **256 PASS, 0 WARN, 2 SKIP, 0 FAIL/ERROR, TOTAL 258**, native exit **0**.
+Evidence: `output/startup_host_gate.log`, `output/startup_host_exit.json`.
+Host SKIPs remain 01 (optional prompts/snapshots) and 145 (unavailable contamination
+fixture; contamination cannot be ruled out). No host failure remains.
+
+Final unmounted image: **shimmer:startup**, `sha256:90ce701581520e4ec763d5d36d22d59f1120668200a76a820af156de0aca6356`,
+14,408,409,659 bytes. All **136 intended shipped paths** match
+the frozen source after CRLF normalization, with no missing or extra paths.
+Evidence: `output/startup_build.log`, `output/startup_build_metadata.json`,
+`output/startup_source_audit.json`, `output/startup_inventory.json`.
+Model download and conversion layers were cache hits; no model configuration changed.
+
+Full image gate: **246 PASS, 0 WARN, 10 SKIP, 2 FAIL/ERROR, TOTAL 258**, native exit **1**.
+Only checks 28/31 fail because an unmounted image has no intake tree. This is the
+same two-failure baseline boundary, not a green full image gate. SKIPs are
+01/145, 15/38 (network), 222 (host launchers), and 215/217/224/227/230 (unshipped
+corpora). Check 255 runs its portable lifecycle/GUI fixture portions in the image;
+the Windows batch dispatch is proven on the host only. The browser JavaScript
+harness runs on host Node, which is not shipped in the image.
+Evidence: `output/startup_container_gate.log`. The command used `--network none
+--gpus all`, no host mounts, and `scripts/verify_session1.py --offline`.
+
+All **20 startup restoring mutations across platforms** pass: readiness 3, wizard 4, desktop 6,
+submission targets 1, Draft grounding/collision 2, recovery 2, browser JavaScript 2.
+Windows executes 19; the additional POSIX socket-lifetime proof executes in the
+image, preserves live-listener refusal and proves immediate TIME_WAIT reuse.
+The adversarial read resolved crash callbacks, partial-environment selection,
+hidden readiness detail, lost queued uploads, missing native staging, Draft
+reference promotion and memo collision. No confirmed startup blocker remains.
+`output/startup_console_proof.log` records the browser fixture result.
+
+All **16 monitored operator-state files** remain byte-identical,
+with no added/missing files in the monitored input/durable/ontology inventory:
+`output/startup_state_before.json`, `output/startup_preservation.json`.
+Fixtures used isolated roots; no real review or provider generation ran.
+The earlier in-flight diagnostic gate is retained separately as
+`output/startup_diagnostic_host_gate.log` and `output/startup_diagnostic_host_exit.json`;
+its transient failures are superseded by the frozen-source full gate above.
+The first frozen-runtime full gate had 255 PASS, 2 SKIP and one failure: check247
+still selected recovered records by their obsolete queued state. Its exact
+submission-order assertion was retained and explicit interruption was added;
+the focused check passed before the final full rerun. Evidence is retained in
+`output/startup_recovery_contract_host_gate.log` and its exit JSON.
+The first image gate had two additional failures, retained in
+`output/startup_first_container_gate.log`: POSIX TIME_WAIT falsely blocked an
+immediate restart, and a synthetic citation triggered an existing Linux date
+parser edge, violating the fixture's undated-memo premise. The port probe now matches Uvicorn's reusable listener on POSIX while
+retaining Windows exclusive binding. The Draft fixture uses the existing valid
+five-digit reference form and verifies its undated premise. All original role and
+collision assertions remain; production date parsing is unchanged. Focused image
+proofs passed before rebuilding and repeating the full gates. The Linux year-1
+date parsing edge is still an explicitly recorded limitation in the startup report.
+
+
+README and runbook debt paid, image rebuilt from final source. The latest separate
+offline model probe remains the older TWENTY-ONE result, not rerun or relabelled.
+Clean installation, native visual certification, browser/clipboard policies and
+fresh-clone smoke testing remain later work. Existing local Draft generation and
+inactive privacy-layer limits remain visible. No real review, paid provider call,
+performance/optimization, broad UI/routing audit, FinOps, VM, fresh-clone or release
+work was started. RESUME preserves the locked eight-item order and names **Local
+performance diagnostic** as next. Stop after this local commit.
+
 ## SESSION CLOSED, 2026-09-13
 
 The operator pushed main through `b733188cb038dbcc482e68aecf69cbefb04587e4`.

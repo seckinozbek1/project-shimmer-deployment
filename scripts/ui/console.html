@@ -1603,7 +1603,7 @@ function renderNeedsToken() {
     '<div class="empty-state" style="text-align:left">' +
       (already
         ? '<p>Replace the saved access token, or continue with the one already set.</p>'
-        : '<p>Enter the access token to continue.</p>') +
+        : '<p>In the Shimmer startup window, click <strong>Copy access token</strong>, paste it below, then choose <strong>Use this token</strong>.</p><p>If someone else operates this server, ask them for your access token.</p>') +
       '<p class="muted" style="font-size:0.85rem">The token is kept only for this browser tab, for this session. It is never stored beyond that, and never appears in a URL.</p>' +
       '<label for="needs-token-input">Access token</label>' +
       '<input type="password" id="needs-token-input" placeholder="access token" autocomplete="off" style="max-width:20rem">' +
@@ -1614,6 +1614,7 @@ function renderNeedsToken() {
     '</div>';
   var input = document.getElementById("needs-token-input");
   var save = document.getElementById("needs-token-save");
+  input.focus();
   save.addEventListener("click", function () {
     var v = input.value.trim();
     if (!v) return;
@@ -1795,60 +1796,134 @@ function applyListFilter() {
 function renderSubmit() {
   app.innerHTML =
     '<h1>Submit a run</h1>' +
+    '<p id="startup-backend" class="notice">Checking this server...</p>' +
+    '<p>Select your files, choose what to review, then check the plan before starting. Existing reference files and review rules remain available.</p>' +
     '<form id="submit-form">' +
       '<label for="s-task">Task</label>' +
       '<select id="s-task" class="form-control">' +
+        '<option value="">Choose Review or Draft</option>' +
         '<option value="review">Review: upload documents</option>' +
         '<option value="draft">Draft: generate a memo from a question</option>' +
       '</select>' +
-
-      '<label for="s-files">Files (case files plus the ingestion sidecar)</label>' +
+      '<label for="s-files">Documents and review rules</label>' +
       '<input type="file" id="s-files" multiple>' +
-      '<p class="field-hint">Required for a review. Optional for a draft.</p>' +
-
+      '<p class="field-hint">Choose PDF, Word (.docx), Markdown or text files. A review needs a document to review. A draft can use reference files or start with a question alone.</p>' +
+      '<div id="s-file-roles"></div>' +
       '<label for="s-question">Question</label>' +
       '<textarea id="s-question" rows="3" placeholder="the memo question/brief"></textarea>' +
       '<p class="field-hint">Required for a draft. Optional framing for a review.</p>' +
-
+      '<label for="s-sensitive">Privacy</label>' +
+      '<select id="s-sensitive" class="form-control">' +
+        '<option value="">Choose Normal or Sensitive</option>' +
+        '<option value="false">Normal: I declare these documents non-sensitive</option>' +
+        '<option value="true">Sensitive: privacy protection and redaction are required</option>' +
+      '</select>' +
+      '<p class="field-hint">Normal keeps full text and waives redaction for this run. Cloud processing can send that text to providers. Sensitive cannot start until the operator has activated the required privacy layer.</p>' +
+      '<details><summary>Advanced intake and review options</summary>' +
+      '<label for="s-intake">Files supplied as</label>' +
+      '<select id="s-intake" class="form-control">' +
+        '<option value="standalone">Ordinary documents (recommended)</option>' +
+        '<option value="integrated">Prepared external ingestion bundle</option>' +
+      '</select>' +
+      '<p class="field-hint">A prepared bundle must include its original ingestion sidecar and satisfy the existing ingestion contract.</p>' +
       '<label for="s-mode">Review mode</label>' +
       '<select id="s-mode" class="form-control">' +
         '<option value="">Default for this server</option>' +
         '<option value="paired">Paired</option>' +
         '<option value="wide">Wide</option>' +
       '</select>' +
-
-      '<div class="checkbox-row">' +
-        '<input type="checkbox" id="s-sensitive">' +
-        '<label for="s-sensitive">This run is sensitive</label>' +
-      '</div>' +
-      '<p class="field-hint">Unchecked (the default): document text goes to cloud providers, redaction is waived for this run. ' +
-      'Checked: redaction stays on. This server refuses to start a sensitive run unless the privacy layer has been separately activated by the operator.</p>' +
-
+      '</details>' +
       '<div style="margin-top:1.25rem">' +
-        '<button type="submit" class="button">Submit</button>' +
+        '<button type="submit" class="button">Review the plan</button>' +
       '</div>' +
     '</form>' +
     '<div id="submit-result"></div>';
-
+  var serverHealth = null;
+  apiJson('/health').then(function (res) {
+    if (!document.getElementById('startup-backend')) return;
+    if (!res.ok) throw new Error('health');
+    serverHealth = res.body;
+    document.getElementById('startup-backend').textContent =
+      'Backend: ' + (res.body.backend_profile === 'local' ? 'Local, models on this machine.' : 'Cloud, provider processing can incur charges.') +
+      ' To change backend, stop Shimmer in the startup window and start it again.';
+  }).catch(function () {
+    var el = document.getElementById('startup-backend');
+    if (el) el.textContent = 'The server could not be reached. Check the Shimmer startup window before continuing.';
+  });
+  function fileRoles() {
+    var box = document.getElementById('s-file-roles');
+    box.innerHTML = '';
+    if (document.getElementById('s-intake').value !== 'standalone') return;
+    var files = document.getElementById('s-files').files;
+    var draft = document.getElementById('s-task').value === 'draft';
+    for (var i = 0; i < files.length; i++) {
+      box.innerHTML += '<label for="s-role-' + i + '">' + escapeHtml(files[i].name) + '</label>' +
+        '<select id="s-role-' + i + '" class="form-control">' +
+        (draft ? '' : '<option value="">Choose this file\'s role</option><option value="target">Document to review</option>') +
+        '<option value="grounding">Reference material or review rules</option>' +
+        (draft ? '' : '<option value="prior">Earlier version for comparison</option>') + '</select>';
+    }
+    if (files.length) box.innerHTML += '<p class="field-hint">Review rules are recognised by the existing rule parser. All other reference files stay grounding; an earlier version is never reviewed as a new document.</p>';
+  }
+  ['s-task', 's-files', 's-intake'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', fileRoles);
+  });
+  document.getElementById('submit-form').addEventListener('input', function () {
+    document.getElementById('submit-result').innerHTML = '';
+  });
+  document.getElementById('submit-form').addEventListener('change', function () {
+    document.getElementById('submit-result').innerHTML = '';
+  });
   document.getElementById("submit-form").addEventListener("submit", function (e) {
     e.preventDefault();
     var task = document.getElementById("s-task").value;
     var question = document.getElementById("s-question").value.trim();
     var mode = document.getElementById("s-mode").value;
-    var sensitive = document.getElementById("s-sensitive").checked;
+    var sensitive = document.getElementById("s-sensitive").value;
     var files = document.getElementById("s-files").files;
-
+    var intake = document.getElementById('s-intake').value;
+    var targets = [], prior = [], plan = [];
+    var resultBox = document.getElementById('submit-result');
+    function fail(message) { resultBox.innerHTML = '<div class="notice error">' + escapeHtml(message) + '</div>'; }
+    if (!serverHealth) { fail('Wait for the server check, or restart Shimmer if it cannot connect.'); return; }
+    if (!task || !sensitive) { fail('Choose both a task and a privacy posture.'); return; }
+    if (task === 'draft' && !question) { fail('Enter the question you want the draft to answer.'); return; }
+    if (task === 'review' && !files.length) { fail('Select the documents for this review.'); return; }
+    if (sensitive === 'true' && serverHealth.sensitive_layer_active === false) {
+      fail('Sensitive work cannot start: the required privacy layer is inactive. Ask the operator to activate it before submitting sensitive documents.'); return;
+    }
+    for (var n = 0; n < files.length; n++) {
+      var role = intake === 'standalone' ? document.getElementById('s-role-' + n).value : 'bundle';
+      if (!role) { fail('Choose a role for every selected file.'); return; }
+      if (role === 'target') targets.push(files[n].name);
+      if (role === 'prior') prior.push(files[n].name);
+      plan.push('<li>' + escapeHtml(files[n].name) + ': ' + escapeHtml({target:'review', grounding:'reference material or rules', prior:'earlier version', bundle:'prepared bundle'}[role]) + '</li>');
+    }
+    if (intake === 'standalone' && task === 'review' && !targets.length) { fail('Mark at least one selected file as the document to review.'); return; }
     var fd = new FormData();
     fd.append("task", task);
     if (question) fd.append("question", question);
     if (mode) fd.append("review_mode", mode);
-    fd.append("sensitive", sensitive ? "true" : "false");
+    fd.append("sensitive", sensitive);
+    fd.append('intake_mode', intake);
+    fd.append('review_targets', JSON.stringify(targets));
+    fd.append('prior_files', JSON.stringify(prior));
+    fd.append('confirmed', 'true');
     for (var i = 0; i < files.length; i++) fd.append("files", files[i]);
 
-    var resultBox = document.getElementById("submit-result");
-    resultBox.innerHTML = '<div class="notice">Submitting…</div>';
-
-    api("/submit", { method: "POST", body: fd }).then(function (r) {
+    resultBox.innerHTML = '<section class="notice"><h2>Ready to start?</h2><p>' + escapeHtml(task === 'draft' ? 'Draft a memo' : 'Review the selected documents') +
+      ' using ' + escapeHtml(serverHealth.backend_profile) + ' processing. Privacy: ' + (sensitive === 'true' ? 'Sensitive.' : 'Normal, non-sensitive documents and no redaction.') +
+      '</p>' + (question ? '<p>Question: ' + escapeHtml(question) + '</p>' : '') + '<ul>' + plan.join('') + '</ul>' +
+      '<p>Files are checked before a review is queued. Starting can use models and, with Cloud, incur provider charges.</p>' +
+      '<button type="button" class="button" id="s-confirm">Confirm and start</button> ' +
+      '<button type="button" class="button secondary" id="s-cancel">Cancel</button></section>';
+    document.getElementById('s-cancel').addEventListener('click', function () {
+      resultBox.innerHTML = '<div class="notice">Cancelled. No files were uploaded and no review was started.</div>';
+    });
+    document.getElementById('s-confirm').addEventListener('click', function () {
+      this.disabled = true;
+      resultBox.innerHTML = '<div class="notice">Checking files and submitting...</div>';
+      api("/submit", { method: "POST", body: fd }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (body) {
         return { ok: r.ok, status: r.status, body: body };
       });
@@ -1856,10 +1931,11 @@ function renderSubmit() {
       if (res.ok) {
         location.hash = "#/runs/" + encodeURIComponent(res.body.run_id);
       } else {
-        resultBox.innerHTML = '<div class="notice error">' + escapeHtml(detailText(res.body)) + '. Nothing was changed.</div>';
+        resultBox.innerHTML = '<div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>';
       }
     }).catch(function () {
-      resultBox.innerHTML = '<div class="notice error">The request did not reach the server. Nothing was changed.</div>';
+      resultBox.innerHTML = '<div class="notice error">The server did not confirm this submission. Check Runs before trying again, and inspect the Shimmer startup window if it has stopped.</div>';
+    });
     });
   });
 }

@@ -842,6 +842,13 @@ def run_draft_phase0(project_root: Path, question: str, *, retrieve, generate,
 
     `retrieve(question) -> list[passage]` and `generate(stable, dynamic) -> str` are
     injected, so this is testable without an embedding store or a paid model call."""
+    context_dir = project_root / "input" / "context"
+    memo_path = context_dir / _draft_memo_filename(question)
+    if memo_path.exists() or memo_path.is_symlink():
+        print(f"[pipeline] Draft cannot start: {memo_path.name} already exists. "
+              "Rename that existing file or change the draft brief, then try again.",
+              file=sys.stderr, flush=True)
+        return None
     passages = retrieve(question) or []
     stable, dynamic = build_draft_prompt(question, passages)
     memo_text = generate(stable, dynamic) or ""
@@ -849,13 +856,27 @@ def run_draft_phase0(project_root: Path, question: str, *, retrieve, generate,
         print("[pipeline] draft generation returned no text; aborting the draft.",
               file=sys.stderr, flush=True)
         return None
-    context_dir = project_root / "input" / "context"
     context_dir.mkdir(parents=True, exist_ok=True)
-    memo_path = context_dir / _draft_memo_filename(question)
-    memo_path.write_text(memo_text, encoding="utf-8")
+    try:
+        # A file appearing during generation is protected too; never overwrite
+        # operator input even when the initial filename check was clear.
+        with memo_path.open("x", encoding="utf-8") as handle:
+            handle.write(memo_text)
+    except FileExistsError:
+        print("[pipeline] Draft stopped because its output filename became occupied. "
+              "The existing file was preserved. Change the draft brief and try again.",
+              file=sys.stderr, flush=True)
+        return None
+    # Native Draft intake declares its uploaded references as run-scoped
+    # grounding. Keep that explicit role when phase 0 names the generated memo,
+    # or a recent reference would fall through to the date cutoff and be reviewed.
+    # Other manifest sources retain the pre-existing phase-0 behavior.
+    existing = role_resolution.read_manifest(context_dir)
+    grounding = (role_resolution.manifest_grounding(existing) - {memo_path.name}
+                 if existing and existing.get("source") == "system_draft" else set())
     # Tier 1 (system as operator): the generated memo is the document under review.
     role_resolution.write_manifest(context_dir, [memo_path.name], "system_draft",
-                                   now_iso=now_iso)
+                                   grounding=sorted(grounding), now_iso=now_iso)
     words = len(memo_text.split())
     cited = len(set(re.findall(r"REF-[A-Za-z0-9-]+", memo_text)))
     print(f"[pipeline] Draft memo generated ({words} words, {cited} grounding passages "

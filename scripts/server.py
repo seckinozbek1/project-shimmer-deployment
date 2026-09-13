@@ -111,7 +111,7 @@ single vanilla-JavaScript page, no framework, no build step, no CDN dependency. 
 bare root collides with an existing gate check (94) that every HTTP client's own URL
 normalization makes unavoidable (see the console() function's docstring for the full
 explanation). The token is entered
-once in the page (kept in page memory only, never a URL, never persisted) and sent as the
+once in the page (kept in this tab's sessionStorage, never a URL) and sent as the
 Authorization: Bearer header on every call the page makes. GET /health is the one route that
 is NOT token-gated (by design, for external uptime checks); its body carries no SHIMMER_ value,
 no path, no hash. Every non-zero pipeline exit is now mapped to a distinct status (see
@@ -134,6 +134,7 @@ import sys          # sys.executable = the exact Python running this server.
 import threading    # a Lock (to guard the queue) and a background run thread.
 import time         # api STEP B2: bounded polling in POST /runs/{run_id}/cancel.
 import zipfile      # packages the run's deliverables into one downloadable .zip.
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone   # timestamps for jobs and run ids.
 from pathlib import Path                   # tidy, OS-independent file paths.
 from typing import List, Optional          # 3.9-safe type hints for FastAPI.
@@ -196,8 +197,8 @@ MODE = os.environ.get("SHIMMER_MODE", "integrated")        # standalone | integr
 TASK_DEFAULT = os.environ.get("SHIMMER_TASK", "review")    # review | draft (per /submit)
 SENSITIVE = _env_bool("SHIMMER_SENSITIVE", False)          # redaction on/off for the run
 MAX_DOCS = _env_int("SHIMMER_MAX_DOCS", 4)                 # --max-concurrent-docs
-PORT = _env_int("SHIMMER_PORT", 8000)                      # uvicorn listen port
-HOST = os.environ.get("SHIMMER_HOST", "0.0.0.0")           # uvicorn bind interface
+from startup_settings import server_endpoint
+HOST, PORT, CONSOLE_URL = server_endpoint()
 AUTO_CLEAR = _env_bool("SHIMMER_AUTO_CLEAR", True)         # clear ingested files after a run
 LOG_LEVEL = os.environ.get("SHIMMER_LOG_LEVEL", "info")    # uvicorn log level
 # Per-run output root: a custom SHIMMER_OUTPUT_DIR, else the default output/runs/.
@@ -220,7 +221,8 @@ def _backend_profile() -> str:
     knob would be a way for the two to disagree. Anything that is not exactly
     "local" is the cloud profile, matching those two readers.
     """
-    return "local" if os.environ.get("SHIMMER_BACKEND_PROFILE") == "local" else "cloud"
+    from run_choices import resolve_backend_profile
+    return resolve_backend_profile(os.environ.get("SHIMMER_BACKEND_PROFILE"), legacy_default=True)
 
 
 def _default_review_mode() -> str:
@@ -247,28 +249,8 @@ def check_local_model_availability():
     """When SHIMMER_BACKEND_PROFILE=local, verify that the required packages
     (torch, transformers) are importable and that both model IDs resolve to
     a local cache entry. Returns (ok: bool, detail: str)."""
-    if os.environ.get("SHIMMER_BACKEND_PROFILE") != "local":
-        return True, "not in local mode"
-    problems = []
-    for pkg in ("torch", "transformers"):
-        try:
-            __import__(pkg)
-        except ImportError:
-            problems.append(f"{pkg} is not installed")
-    if problems:
-        return False, "; ".join(problems)
-    from pipeline import _LOCAL_PROFILE
-    model_ids = sorted(set(m for _, m in _LOCAL_PROFILE.values()))
-    import importlib
-    transformers = importlib.import_module("transformers")
-    for mid in model_ids:
-        try:
-            transformers.AutoTokenizer.from_pretrained(mid, local_files_only=True)
-        except Exception:
-            problems.append(f"model {mid} not found in local cache")
-    if problems:
-        return False, "; ".join(problems)
-    return True, f"packages ok, models cached: {model_ids}"
+    from preflight import check_local_model_availability as check
+    return check()
 
 
 MAX_UPLOAD_MB = _env_int("SHIMMER_MAX_UPLOAD_MB", 25)       # per-file cap
@@ -331,7 +313,17 @@ def _config_summary() -> str:
 # ---------------------------------------------------------------------------
 # FastAPI() builds the web application object. Routes (the URLs the server answers)
 # are attached to it with decorators like @app.post("/submit") below.
-app = FastAPI(title="Project Shimmer front door", version="1.0")
+@asynccontextmanager
+async def _lifespan(app):
+    _STOPPING.clear()
+    try:
+        yield
+    finally:
+        if not shutdown_jobs():
+            raise RuntimeError("Shimmer could not stop every review worker; inspect the server log.")
+
+
+app = FastAPI(title="Project Shimmer front door", version="1.0", lifespan=_lifespan)
 
 
 # ---------------------------------------------------------------------------
@@ -411,6 +403,8 @@ _PROCS = {}
 # mechanics (terminate/kill), so the DISTINCTION has to be recorded
 # separately, not inferred from the exit code. Removed alongside _PROCS.
 _CANCELLED = {}
+_THREADS = {}
+_STOPPING = threading.Event()
 
 
 def _now_iso():
@@ -437,7 +431,8 @@ def _find_job(run_id):
 # ---------------------------------------------------------------------------
 _STATUS_FIELDS = ("run_id", "status", "task", "submitted_at", "started_at",
                    "completed_at", "exit_code", "error", "progress", "files",
-                   "sensitive", "review_mode", "question")
+                   "sensitive", "review_mode", "question", "intake_mode",
+                   "review_targets", "prior_files", "native_intake")
 
 
 def _status_path(run_id):
@@ -466,10 +461,10 @@ def _write_status(job):
 
 def _rebuild_jobs_from_disk():
     """Scan RUNS_DIR for status.json files and rebuild JOBS from them (called once
-    at import). A job found in "running" state has no live process behind it (the
-    server that ran it is gone, this is a fresh process start), so it is rewritten
-    as "interrupted", a new terminal status, both in memory and back to its
-    status.json. Also removes orphaned staging dirs (the ingest_<run_id>_ prefix in
+    at import). Running jobs have no owned process and queued jobs have no
+    restored staging map after restart. Both become terminal "interrupted"
+    records that require resubmission, in memory and in status.json.
+    Also removes orphaned staging dirs (the ingest_<run_id>_ prefix in
     the system temp dir) for any run that is not running, and applies the existing
     _auto_clear / _clear_system_draft cleanup for whatever an interrupted run left
     behind in input/context/."""
@@ -496,6 +491,11 @@ def _rebuild_jobs_from_disk():
                 job["completed_at"] = job.get("completed_at") or _now_iso()
                 _write_status(job)
                 interrupted_any = True
+            elif job.get("status") == "queued":
+                job["status"] = "interrupted"
+                job["error"] = "server restarted before this review began; submit the plan and its files again"
+                job["completed_at"] = _now_iso()
+                _write_status(job)
             jobs.append(job)
 
     # UUIDs are opaque. Queue order belongs to submitted_at, not folder spelling.
@@ -506,11 +506,9 @@ def _rebuild_jobs_from_disk():
         running_ids = {j["run_id"] for j in JOBS if j["status"] == "running"}
 
     # Orphaned staging dirs: any ingest_<run_id>_* temp dir whose run is not
-    # currently running (there is no currently-running job right after a fresh
-    # import, but a run_id could still legitimately be "queued" with staged
-    # uploads awaiting the worker thread -- those are NOT orphans and are left
-    # alone; only dirs whose run_id is absent from JOBS entirely, or terminal,
-    # are removed).
+    # currently running. Recovered queued jobs are now terminal too: uploads
+    # cannot be safely attached to a fresh process without a restored staging map.
+    # Unknown staging directories remain untouched.
     tmp_root = Path(_tempfile.gettempdir())
     try:
         entries = list(tmp_root.iterdir())
@@ -553,6 +551,8 @@ def _start_next_job():
     work runs in a separate background thread so the HTTP request that triggered this
     returns immediately."""
     with JOBS_LOCK:
+        if _STOPPING.is_set():
+            return
         if any(j["status"] == "running" for j in JOBS):
             return  # one at a time: a job is already running, leave the rest queued.
         nxt = next((j for j in JOBS if j["status"] == "queued"), None)
@@ -562,8 +562,167 @@ def _start_next_job():
         nxt["started_at"] = _now_iso()
         run_id = nxt["run_id"]
         _write_status(nxt)
-    # daemon=True so this thread never blocks the server from shutting down.
-    threading.Thread(target=_run_job, args=(run_id,), daemon=True).start()
+        def work():
+            try:
+                _run_job(run_id)
+            finally:
+                with JOBS_LOCK:
+                    _THREADS.pop(run_id, None)
+        worker = threading.Thread(target=work, daemon=True)
+        _THREADS[run_id] = worker
+        worker.start()
+
+
+def _stop_process(proc, timeout_s=10):
+    """Wait for an owned child, escalating a bounded graceful stop to kill."""
+    if proc.poll() is None:
+        proc.terminate()
+    try:
+        proc.wait(timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait(timeout=timeout_s)
+
+
+def shutdown_jobs(timeout_s=10):
+    """Stop accepting work, cancel owned jobs, stop children and join workers.
+
+    The desktop server wrapper calls this on Stop/EOF as well as the ASGI
+    lifespan. False means cleanup did not finish, never successful shutdown.
+    """
+    _STOPPING.set()
+    with JOBS_LOCK:
+        for event in _CANCELLED.values():
+            event.set()
+        queued_staging = []
+        for job in JOBS:
+            if job.get("status") == "queued":
+                job.update(status="cancelled", error="server stopped before this review started",
+                           completed_at=_now_iso())
+                _write_status(job)
+                staged = _STAGING.pop(job["run_id"], None)
+                if staged:
+                    queued_staging.append(staged)
+        processes = list(_PROCS.values())
+        workers = list(_THREADS.values())
+    ok = True
+    for proc in processes:
+        try:
+            _stop_process(proc, timeout_s)
+        except (OSError, subprocess.TimeoutExpired):
+            ok = False
+    for worker in workers:
+        if worker is not threading.current_thread():
+            worker.join(timeout_s)
+            ok = not worker.is_alive() and ok
+    for staged in queued_staging:
+        shutil.rmtree(staged, ignore_errors=True)
+    return ok
+
+
+def _upload_name(value):
+    """Reject ambiguous filenames on either platform before constructing a path."""
+    name = str(value or "")
+    if (not name or name in {".", ".."} or name[-1:] in {".", " "}
+            or any(ch in name for ch in '/\\:<>"|?*')
+            or any(ord(ch) < 32 for ch in name)
+            or re.fullmatch(r"(?i)(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?", name)):
+        raise HTTPException(400, "A filename is not safe to import. Rename the file and select it again.")
+    return name
+
+
+def _filename_list(value, field):
+    try:
+        names = json.loads(value or "[]")
+        if not isinstance(names, list) or any(not isinstance(n, str) for n in names):
+            raise ValueError()
+        names = [_upload_name(n) for n in names]
+        if len({n.casefold() for n in names}) != len(names):
+            raise ValueError()
+        return names
+    except (ValueError, TypeError):
+        raise HTTPException(400, f"{field} must list distinct selected filenames.")
+
+
+def _standalone_plan(staging, task, targets, prior):
+    """Validate native intake with the existing classifier and document parser.
+
+    This only reads staged uploads and operator state. A reviewed document,
+    grounding file or prior is an explicit operator choice, never a fabricated
+    external-ingestion sidecar. Config and metadata uploads are refused.
+    """
+    import intake_wizard
+    import role_resolution
+    import text_extract
+    entries, documents, conventions = [], [], []
+    for path in sorted(Path(staging).iterdir()):
+        kind, _, relative = intake_wizard.classify(path)
+        if kind not in {"DOCUMENT", "CONVENTIONS"} or path.name.startswith("_"):
+            raise HTTPException(400, f"{path.name}: choose a document or a review rules file. Settings and metadata cannot be uploaded here.")
+        if kind == "DOCUMENT":
+            if not text_extract.extract_text(path).strip():
+                raise HTTPException(400, f"{path.name}: no readable document text was found. Check the file or export it as text.")
+            documents.append(path.name)
+        else:
+            conventions.append(path)
+        destination = ROOT / relative / path.name
+        # Test harnesses and custom context roots must use the same authority.
+        if kind == "DOCUMENT":
+            destination = CONTEXT_DIR / path.name
+        if destination.exists() and (not destination.is_file() or destination.read_bytes() != path.read_bytes()):
+            raise HTTPException(409, f"{path.name} already exists with different content. Rename the uploaded file or resolve the existing file first.")
+        entries.append((path, destination))
+    summary = intake_wizard.summarize_conventions(conventions)
+    if summary["unreadable"]:
+        raise HTTPException(400, "A review rules file could not be read. Save it as UTF-8 text and select it again.")
+    if (not set(targets) <= set(documents) or not set(prior) <= set(documents)
+            or set(targets) & set(prior)):
+        raise HTTPException(400, "Choose review targets and earlier versions from the uploaded documents, with a different role for each file.")
+    if task == "review" and not targets:
+        raise HTTPException(400, "Select at least one uploaded document to review.")
+    if task == "draft" and (targets or prior):
+        raise HTTPException(400, "Drafting uses uploaded documents as grounding. Choose Review to compare an earlier version.")
+    existing_documents = {p.name for p in CONTEXT_DIR.iterdir()
+                          if p.is_file() and text_extract.is_corpus_file(p)} if CONTEXT_DIR.is_dir() else set()
+    grounding = sorted((set(documents) | existing_documents) - set(targets))
+    manifest = role_resolution.read_manifest(CONTEXT_DIR)
+    manifest_file = role_resolution.manifest_path(CONTEXT_DIR)
+    if manifest_file.exists():
+        if (task == "draft" or manifest is None
+                or role_resolution.manifest_targets(manifest) != set(targets)
+                or role_resolution.manifest_prior(manifest) != set(prior)
+                or not set(grounding) <= role_resolution.manifest_grounding(manifest)):
+            raise HTTPException(409, "Existing review instructions conflict with this plan. Resolve the current document selection before submitting; it has been preserved.")
+    return entries, grounding
+
+
+def _place_standalone(staging, task, targets, prior, created):
+    import role_resolution
+    entries, grounding = _standalone_plan(staging, task, targets, prior)
+    for source, destination in entries:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if not destination.exists():
+            data = source.read_bytes()
+            with destination.open("xb") as handle:
+                handle.write(data)
+            created.append((destination, hashlib.sha256(data).digest()))
+    if not role_resolution.manifest_path(CONTEXT_DIR).exists():
+        # Draft phase 0 replaces the temporary draft target list with its memo,
+        # retaining this explicit grounding through the canonical role reader.
+        path = role_resolution.write_manifest(CONTEXT_DIR, targets if task == "review" else [],
+                                              "operator" if task == "review" else "system_draft",
+                                              grounding=grounding, prior=prior, now_iso=_now_iso())
+        created.append((path, hashlib.sha256(path.read_bytes()).digest()))
+
+
+def _clear_standalone(created):
+    """Remove only unchanged files this submission created, never operator edits."""
+    for path, fingerprint in reversed(created):
+        try:
+            if path.is_file() and hashlib.sha256(path.read_bytes()).digest() == fingerprint:
+                path.unlink()
+        except OSError:
+            pass
 
 
 def _auto_clear():
@@ -617,12 +776,18 @@ def _run_job(run_id):
     out_dir = RUNS_DIR / run_id
     error = None
     exit_code = None
+    proc = None
+    created = []
     cancel_event = threading.Event()
     with JOBS_LOCK:
         _CANCELLED[run_id] = cancel_event
         job = _find_job(run_id)
         task = (job or {}).get("task") or "review"
         question = (job or {}).get("question") or ""
+        intake_mode = (job or {}).get("intake_mode") or MODE
+        native_intake = bool((job or {}).get("native_intake"))
+        targets = (job or {}).get("review_targets") or []
+        prior = (job or {}).get("prior_files") or []
         job_sensitive = (job or {}).get("sensitive")
         if job_sensitive is None:
             job_sensitive = SENSITIVE
@@ -639,7 +804,14 @@ def _run_job(run_id):
         # and staged at submit time; here we just copy them in.
         with JOBS_LOCK:
             staging = _STAGING.get(run_id)
-        if staging and Path(staging).is_dir():
+        if _STOPPING.is_set():
+            cancel_event.set()
+            raise RuntimeError("server stopped before this review started")
+        if native_intake:
+            if not staging or not Path(staging).is_dir():
+                raise RuntimeError("The uploaded files are unavailable. Submit the plan and its files again; no review was started.")
+            _place_standalone(staging, task, targets, prior, created)
+        elif staging and Path(staging).is_dir():
             for p in sorted(Path(staging).iterdir()):
                 if p.is_file():
                     shutil.copy2(p, CONTEXT_DIR / p.name)
@@ -668,7 +840,7 @@ def _run_job(run_id):
         # runs; that path requires the operator to have activated the LAW-IV layer.
         argv = [sys.executable, "-X", "utf8", str(PIPELINE),
                 "--output-dir", str(out_dir),
-                "--mode", MODE,
+                "--mode", intake_mode,
                 "--task", task,
                 "--max-concurrent-docs", str(MAX_DOCS),
                 "--non-interactive", "--skip-confirmation",
@@ -687,21 +859,24 @@ def _run_job(run_id):
         _bp = os.environ.get("SHIMMER_BACKEND_PROFILE")
         if _bp:
             argv += ["--backend-profile", _bp]
-        if not job_sensitive:
-            argv += ["--sensitivity-layer-inactive-override", "--no-redaction-override"]
+        from run_choices import privacy_flags
+        argv += privacy_flags(bool(job_sensitive))
         # Stream the merged output so the latest [progress] line can be stored on the job
         # (returned by GET /runs/{run_id}) while the run is in flight. We keep a bounded tail for
         # the failure message, AND (productization STEP 6 item 5) write the complete
         # merged stream to <run>/logs/pipeline_stdout.log as it arrives, so the operator
         # can inspect the full run, not just a 2000-character tail.
-        proc = subprocess.Popen(
-            argv, cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, encoding="utf-8", errors="replace", bufsize=1,
-        )
         # api STEP B2: the moment the child exists, register its handle where a
         # concurrent HTTP request can find it. Guarded by JOBS_LOCK, matching
         # every other write to run-scoped shared state in this function.
         with JOBS_LOCK:
+            if _STOPPING.is_set():
+                cancel_event.set()
+                raise RuntimeError("server stopped before this review started")
+            proc = subprocess.Popen(
+                argv, cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, encoding="utf-8", errors="replace", bufsize=1,
+            )
             _PROCS[run_id] = proc
         log_dir = out_dir / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -777,6 +952,13 @@ def _run_job(run_id):
                 error = f"pipeline exited {proc.returncode}: {''.join(tail).strip()[-2000:]}"
     except Exception as e:
         error = f"{type(e).__name__}: {e}"
+        if proc is not None:
+            try:
+                _stop_process(proc)
+            except (OSError, subprocess.TimeoutExpired):
+                error += "; review process could not be stopped"
+        with JOBS_LOCK:
+            _PROCS.pop(run_id, None)
 
     # Record the outcome under the lock. productization STEP 6: a governance
     # outcome (blocked, stopped_model_approval, stopped_redaction_gate,
@@ -808,8 +990,13 @@ def _run_job(run_id):
     # Auto-clear the placed ingested files (success OR failure), then drop the staging.
     # SHIMMER_AUTO_CLEAR=false leaves the placed files in input/context/ for inspection.
     if AUTO_CLEAR:
-        _auto_clear()
-        _clear_system_draft()
+        if native_intake:
+            _clear_standalone(created)
+            if task == "draft" and proc is not None:
+                _clear_system_draft()
+        else:
+            _auto_clear()
+            _clear_system_draft()
     with JOBS_LOCK:
         staging = _STAGING.pop(run_id, None)
     if staging:
@@ -1662,7 +1849,11 @@ async def submit(files: List[UploadFile] = File(default=None),
                  task: Optional[str] = Form(default=None),
                  question: Optional[str] = Form(default=None),
                  sensitive: Optional[str] = Form(default=None),
-                 review_mode: Optional[str] = Form(default=None)):
+                 review_mode: Optional[str] = Form(default=None),
+                 intake_mode: Optional[str] = Form(default=None),
+                 review_targets: Optional[str] = Form(default=None),
+                 prior_files: Optional[str] = Form(default=None),
+                 confirmed: Optional[str] = Form(default=None)):
     """Accept a review or draft job.
 
     Multipart fields:
@@ -1691,17 +1882,50 @@ async def submit(files: List[UploadFile] = File(default=None),
                    magnitude in model calls, so quietly turning a typo'd "pared"
                    into a wide cloud run would spend the operator's money on a
                    mode they did not ask for.
+      - intake_mode: explicitly "standalone" for ordinary operator documents,
+                   or "integrated" for a prepared external bundle. Omitted,
+                   retains the existing ingestion validator and SHIMMER_MODE.
+      - review_targets / prior_files: JSON arrays of uploaded document filenames
+                   for standalone intake. All other documents are grounding;
+                   the wizard's parser detects review rules. Existing operator
+                   instructions and differing files are preserved by refusal.
+      - confirmed: exactly "true" for standalone intake. Its sensitive choice
+                   must also be explicitly "true" or "false". The console only
+                   sends uploads after the operator confirms the displayed plan.
 
     We write any uploads to a private temp dir, validate them against the corpus
     ingestion contract (when present), then queue the job. Files move into
     input/context/ only when the job starts (see _run_job)."""
     import tempfile  # local import: only /submit needs it.
 
+    if _STOPPING.is_set():
+        raise HTTPException(503, "Shimmer is stopping. Start it again before submitting a review.")
+    job_intake_mode = (intake_mode or MODE).strip().lower()
+    native_intake = intake_mode is not None and job_intake_mode == "standalone"
+    if job_intake_mode not in {"standalone", "integrated"}:
+        raise HTTPException(400, "Choose ordinary documents or a prepared ingestion bundle.")
+    targets = _filename_list(review_targets, "review_targets")
+    prior = _filename_list(prior_files, "prior_files")
+    if native_intake:
+        if confirmed != "true":
+            raise HTTPException(400, "Review the plan and confirm before starting. Nothing was submitted.")
+        if sensitive not in {"true", "false"}:
+            raise HTTPException(400, "Choose Normal or Sensitive before starting.")
+    elif targets or prior:
+        raise HTTPException(400, "Prepared bundles use their ingestion metadata. Choose ordinary documents to select review targets.")
+
     job_sensitive = SENSITIVE if sensitive is None else (
         sensitive.strip().lower() in {"1", "true", "yes", "y", "on"})
+    if job_sensitive:
+        from preflight import sensitive_readiness
+        ready, detail = sensitive_readiness(ROOT)
+        if not ready:
+            raise HTTPException(409, detail)
 
     task = (task or TASK_DEFAULT).strip().lower()
     if task not in ("review", "draft"):
+        if native_intake:
+            raise HTTPException(400, "Choose Review or Draft before starting.")
         task = "review"
 
     if review_mode is None or not review_mode.strip():
@@ -1731,10 +1955,15 @@ async def submit(files: List[UploadFile] = File(default=None),
     staging = Path(tempfile.mkdtemp(prefix=f"ingest_{run_id}_"))
     try:
         names = []
+        seen_names = set()
         total_bytes = 0
         max_file_bytes = MAX_UPLOAD_MB * 1024 * 1024
         max_total_bytes = MAX_UPLOAD_TOTAL_MB * 1024 * 1024
         for uf in uploads:
+            name = _upload_name(uf.filename)
+            if name.casefold() in seen_names:
+                raise HTTPException(400, "Two selected files have the same name. Rename one and select them again.")
+            seen_names.add(name.casefold())
             data = await uf.read()
             if len(data) > max_file_bytes:
                 shutil.rmtree(staging, ignore_errors=True)
@@ -1751,13 +1980,15 @@ async def submit(files: List[UploadFile] = File(default=None),
                            f"({MAX_UPLOAD_TOTAL_MB} MB)")
             # Path(...).name strips any directory part from the client filename, so a
             # malicious name like "../../x" cannot escape the staging directory.
-            dest = staging / Path(uf.filename).name
+            dest = staging / name
             dest.write_bytes(data)
             names.append(dest.name)
 
         # Validate the staged bundle ONLY when files were uploaded (a draft with no
         # files has nothing to validate; its grounding already sits in input/context/).
-        if names:
+        if native_intake:
+            _standalone_plan(staging, task, targets, prior)
+        elif names:
             proc = subprocess.run(
                 [sys.executable, "-X", "utf8", str(VALIDATOR), "--target", str(staging)],
                 capture_output=True, text=True, encoding="utf-8", errors="replace",
@@ -1771,6 +2002,7 @@ async def submit(files: List[UploadFile] = File(default=None),
                             "report": (proc.stdout or "") + (proc.stderr or "")},
                 )
     except HTTPException:
+        shutil.rmtree(staging, ignore_errors=True)
         raise  # already a clean 400, re-raise as-is.
     except Exception as e:
         shutil.rmtree(staging, ignore_errors=True)
@@ -1778,6 +2010,9 @@ async def submit(files: List[UploadFile] = File(default=None),
 
     # Validation passed: register the staging dir and queue the job.
     with JOBS_LOCK:
+        if _STOPPING.is_set():
+            shutil.rmtree(staging, ignore_errors=True)
+            raise HTTPException(503, "Shimmer stopped while checking the files. Start it again and submit the plan.")
         _STAGING[run_id] = staging
         new_job = {
             "run_id": run_id,
@@ -1786,6 +2021,10 @@ async def submit(files: List[UploadFile] = File(default=None),
             "question": question,
             "sensitive": job_sensitive,
             "review_mode": job_review_mode,
+            "intake_mode": job_intake_mode,
+            "review_targets": targets,
+            "prior_files": prior,
+            "native_intake": native_intake,
             "progress": None,
             "submitted_at": _now_iso(),
             "started_at": None,
@@ -1798,7 +2037,7 @@ async def submit(files: List[UploadFile] = File(default=None),
         _write_status(new_job)
     _start_next_job()
     return {"run_id": run_id, "status": "queued", "task": task, "sensitive": job_sensitive,
-            "review_mode": job_review_mode, "files": names}
+            "review_mode": job_review_mode, "files": names, "intake_mode": job_intake_mode}
 
 
 @app.get("/runs/{run_id}", dependencies=[Depends(verify_token)])
@@ -2882,16 +3121,20 @@ async def console():
 async def health():
     """Unauthenticated liveness probe. Returns a status, this server's declared
     API version (app.version, a plain string constant), and, since api STEP A1,
-    the two facts a caller needs BEFORE it can submit anything: which backend
+    the two review facts a caller needs BEFORE it can submit anything: which backend
     profile this server is running ("local" or "cloud") and which review mode a
     submission gets when it names none. Both are short enumerated words, not
     environment values: no SHIMMER_ name or value, no path, no hash, no token,
-    no upload limit, no output directory, nothing else about configuration.
+    no upload limit, no output directory. Startup also exposes the boolean
+    privacy-layer switch so the console can explain an inactive layer before
+    uploading sensitive files. This is not a complete sensitive-readiness claim.
     Deliberately the one ungated route other than the console shell, for an
     external uptime check that has no token."""
+    import sensitivity_layer
     return JSONResponse({"status": "ok", "version": app.version,
                          "backend_profile": _backend_profile(),
-                         "default_review_mode": _default_review_mode()})
+                         "default_review_mode": _default_review_mode(),
+                         "sensitive_layer_active": sensitivity_layer.is_active()})
 
 
 @app.get("/runs", dependencies=[Depends(verify_token)])
@@ -2986,7 +3229,7 @@ if __name__ == "__main__":
 
     # Echo the resolved configuration so the operator can confirm every knob at a glance.
     print(_config_summary(), file=sys.stderr)
-    print(f"Shimmer front door starting on http://{HOST}:{PORT}", file=sys.stderr)
+    print(f"Shimmer operator console: {CONSOLE_URL}", file=sys.stderr)
     print(f"Expose it publicly with:  cloudflared tunnel --url http://localhost:{PORT}",
           file=sys.stderr)
     # HOST 0.0.0.0 means listen on all network interfaces, not just localhost. A public

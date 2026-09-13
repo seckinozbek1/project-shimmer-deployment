@@ -241,7 +241,7 @@ def check_01_directory():
         "genesis.md", "CLAUDE.md", "README.md", "requirements.txt",
         ".gitignore", "project_shimmer_cover.png", ".env_path",
         "setup.bat", "FRONT_DOOR.md",
-        "shimmer.bat", "shimmer.sh",
+        "shimmer.bat", "shimmer.sh", "start_shimmer.bat",
     }
     extras = [p.name for p in ROOT.iterdir()
               if p.is_file() and p.name not in allowed_root_files]
@@ -5538,6 +5538,9 @@ def check_116_readme_env_table_matches_server():
                      f"row(s); the table was not found or was gutted")
 
     server_reads = _shimmer_env_names_in_code(SCRIPTS / "server.py")
+    # Server and desktop now delegate host/port resolution to the same module.
+    # Its executable reads belong to the server process, not a second env table.
+    server_reads |= _shimmer_env_names_in_code(SCRIPTS / "startup_settings.py")
     # A row is exempt from "the server process reads it" ONLY if it says so in
     # these words. Matching the bare word "subprocess" would wrongly exempt
     # SHIMMER_RUN_TIMEOUT_S, whose row mentions the subprocess it terminates but
@@ -10211,9 +10214,21 @@ def check_166_status_counters_and_health_expose_the_review_shape():
             if hb.get("default_review_mode") != server._default_review_mode():
                 return _fail("/health advertises a default review mode the server does "
                              "not actually apply")
-            if set(hb) != {"status", "version", "backend_profile", "default_review_mode"}:
-                return _fail(f"/health grew a field beyond the two this step adds: "
+            if set(hb) != {"status", "version", "backend_profile", "default_review_mode",
+                           "sensitive_layer_active"}:
+                return _fail(f"/health grew a field beyond its startup readiness contract: "
                              f"{sorted(hb)}")
+            import sensitivity_layer as _health_privacy
+            from unittest.mock import patch as _health_patch
+            if hb.get("sensitive_layer_active") is not _health_privacy.is_active():
+                return _fail("/health does not report the actual privacy-layer switch as a boolean")
+            for activated in (False, True):
+                with _health_patch.object(_health_privacy, "LAYER_ACTIVE", activated):
+                    observed = client.get("/health").json().get("sensitive_layer_active")
+                    if observed is not activated:
+                        return _fail("/health did not follow the fixture privacy-layer activation")
+            if client.get("/health").json().get("sensitive_layer_active") is not hb["sensitive_layer_active"]:
+                return _fail("/health privacy state did not restore after the fixture")
             if "SHIMMER_" in raw:
                 return _fail(f"/health leaks a SHIMMER_ env var name: {raw!r}")
             if _re.search(r"[A-Za-z]:[\\/]|/[A-Za-z0-9_./-]+/[A-Za-z0-9_./-]+", raw):
@@ -10231,7 +10246,8 @@ def check_166_status_counters_and_health_expose_the_review_shape():
                "ledger, reports pairs_arithmetic_only as null in wide mode where the "
                "subtraction would be meaningless, and follows the ledger when it is "
                "emptied and restored; GET /health adds backend_profile and "
-               "default_review_mode, exactly those two fields, and still leaks no "
+               "default_review_mode and a boolean privacy-layer switch that follows "
+               "activation/restoration; it still leaks no "
                "SHIMMER_ name, path or long hex string")
 
 
@@ -22540,19 +22556,17 @@ def check_223_draft_path_asks_the_sensitivity_question():
         if needed not in flags:
             return _fail("normal mode did not emit %s; got %r" % (needed, flags))
 
-    # Sensitive mode asks an extra switch/continue question ONLY when the local
-    # Qwen backend is unreachable, which depends on the machine, so both
-    # sequences are accepted rather than pinning one environment's prompt count.
-    rc_s, flags_s = _drive(["2", "y"])
-    if rc_s != 0:
-        rc_s, flags_s = _drive(["2", "c", "y"])
-    if rc_s != 0:
-        return _fail("sensitive-mode draft setup exited %d under both the "
-                     "reachable and unreachable Qwen prompt sequences" % rc_s)
-    if "--no-redaction-override" in flags_s:
-        return _fail("sensitive mode emitted --no-redaction-override, so redaction "
-                     "would be off in a run the operator declared sensitive: %r"
-                     % flags_s)
+    # Readiness is a fixture, not the current machine's privacy activation or
+    # GPU. The former check accepted an inactive-layer waiver for Sensitive;
+    # that contradicted the server/pipeline boundary. Now unready Sensitive
+    # refuses and ready Sensitive emits neither waiver through the real writer.
+    import intake_choice_checks as _choices
+    sensitive = _choices.mode_outcome(["2", "y"], profile="cloud", sensitive_ready=True)
+    if sensitive["exit_code"] != 0 or sensitive["flags"] != ["--backend-profile", "cloud"]:
+        return _fail("ready Sensitive did not emit the backend alone, without privacy waivers")
+    unavailable = _choices.mode_outcome(["2", "y"], profile="cloud", sensitive_ready=False)
+    if unavailable["exit_code"] == 0 or unavailable["flags_written"]:
+        return _fail("unready Sensitive did not stop without emitting run flags")
 
     rc_n, flags_n = _drive(["1", "n"])
     if rc_n == 0:
@@ -22573,34 +22587,17 @@ def check_223_draft_path_asks_the_sensitivity_question():
                 return _fail("%s still hardcodes --no-redaction-override on the draft "
                              "command line" % path.name)
 
-    # NEUTRALISE: make the mode question answer itself with Normal, the old
-    # behaviour, and confirm sensitive mode can no longer keep redaction on.
-    scripts_dir = ROOT / "scripts"
-    if str(scripts_dir) not in sys.path:
-        sys.path.insert(0, str(scripts_dir))
-    try:
-        import intake_wizard as _iw
-    except Exception as exc:
-        return _fail("cannot import intake_wizard: %s" % exc)
-    original = _iw._choose_mode
-    _iw._choose_mode = lambda: ("Normal (no redaction)", list(_iw._NORMAL_FLAGS))
-    try:
-        # The in-process neutralise proves the seam is the mode question itself:
-        # with it answered for the operator, the sensitive branch is unreachable.
-        label, neutral_flags = _iw._choose_mode()
-        if "--no-redaction-override" not in neutral_flags:
-            return _fail("the neutralised mode question did not reproduce the old "
-                         "hardcoded flags; the check is not proving this seam")
-    finally:
-        _iw._choose_mode = original
-    if _iw._choose_mode is not original:
-        return _fail("restore failed: _choose_mode was not put back")
+    # Observe actual emitted flags and import files under neutralisation. These
+    # proofs refuse a reading-only/no-effect mutation and verify restoration.
+    status, detail = _choices.check()
+    if status != "PASS":
+        return _fail(detail)
 
     return _ok("the draft path asks: normal mode emits both overrides by the "
-               "operator's own choice, sensitive mode keeps redaction ON (no "
-               "--no-redaction-override), declining emits nothing and exits non-zero; "
+               "operator's own choice, ready Sensitive waives nothing and unready "
+               "Sensitive refuses, blank choices/decline emit nothing and exit non-zero; "
                "%s call the wizard with --mode-only and carry no inline overrides; "
-               "neutralise/restore proved"
+               "four consumer-effect mutations restore, including confirm-before-write"
                % (", ".join(p.name for p in launchers) if launchers
                   else "no launcher in this tree, so the launcher half was not proved"))
 
@@ -22949,14 +22946,13 @@ def check_220_local_profile_reaches_the_menu_and_is_passed_on():
                 return _fail("preset %s emitted %r" % (preset, flags))
             if preset not in label:
                 return _fail("preset %s produced label %r" % (preset, label))
-        # With no preset the wizard ASKS; _ask reads stdin, which is closed in
-        # the gate, so it returns "" and must fall back to cloud rather than
-        # emitting nothing at all.
+        # With no preset the wizard ASKS. Blank/EOF is cancellation, never a
+        # silent Cloud selection. The selected profile still reaches the writer
+        # in check 223's executable review and draft fixtures.
         _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
         _label, flags = _iw._choose_backend_profile()
-        if flags != ["--backend-profile", "cloud"]:
-            return _fail("with no preset and no answer, expected the cloud "
-                         "default, got %r" % (flags,))
+        if flags is not None:
+            return _fail("with no preset and no answer, expected cancellation, got %r" % (flags,))
     finally:
         if saved_env is None:
             _os.environ.pop("SHIMMER_BACKEND_PROFILE", None)
@@ -23732,14 +23728,19 @@ def _run_identity_fixture():
             result["unsafe_create_refused"] = False
         except ValueError:
             result["unsafe_create_refused"] = not (root / "invalid").exists()
-        # Directory spelling must not decide recovered queue order. These are
+        # Directory spelling must not decide recovered submission order. These are
         # declared identifiers, not generated UUIDs or authentication material.
         for rid, when in (("f" * 32, "2026-01-01T00:00:00+00:00"),
                           ("0" * 32, "2026-01-02T00:00:00+00:00")):
             server._write_status({"run_id": rid, "status": "queued", "submitted_at": when})
         with patch.object(server.shutil, "rmtree", side_effect=AssertionError("fixture must not delete staging")):
             server._rebuild_jobs_from_disk()
-        result["queue_order"] = [j["run_id"] for j in server.JOBS if j["status"] == "queued"]
+        recovered = [j for j in server.JOBS if j["run_id"] in {"f" * 32, "0" * 32}]
+        result["queue_order"] = [j["run_id"] for j in recovered]
+        result["recovered_interrupted"] = all(
+            j["status"] == "interrupted" and "submit" in j["error"]
+            and json.loads(server._status_path(j["run_id"]).read_text(encoding="utf-8"))["status"] == "interrupted"
+            for j in recovered)
     return result
 
 
@@ -23769,6 +23770,8 @@ def check_247_one_run_identity_survives_every_entry_point():
         return _fail("identity validation guessed through conflicting or unsafe input")
     if result["queue_order"] != ["f" * 32, "0" * 32]:
         return _fail("recovered queue order follows UUID spelling instead of submission time")
+    if not result["recovered_interrupted"]:
+        return _fail("recovered uploads were not interrupted with a resubmit reason in memory and on disk")
     main = next(node for node in ast.parse((SCRIPTS / "pipeline.py").read_text(encoding="utf-8")).body
                 if isinstance(node, ast.FunctionDef) and node.name == "main")
     if not any(isinstance(node, ast.Call) and ast.unparse(node.func) == "run_context_mod.start_run_in"
@@ -23776,7 +23779,7 @@ def check_247_one_run_identity_survives_every_entry_point():
         return _fail("pipeline output-dir startup bypasses the executed identity writer")
     return _ok("one UUID format reaches real API paths, contexts, call evidence and completion; "
                "identity survives rename/latest lookup, legacy identities remain readable without rewriting, "
-               "unsafe/conflicting ids are refused and queue order follows submission time")
+               "unsafe/conflicting ids are refused and recovered submission order is retained with explicit interruption")
 
 
 def _effect_protocol_fixture():
@@ -24500,6 +24503,21 @@ def check_254_baseline_skips_preserve_invalid_fixture_failures():
                "contamination; valid fixtures still scan and complete layouts retain loose-file WARN")
 
 
+def check_255_desktop_startup():
+    from startup_launcher_checks import check
+    return check()
+
+
+def check_256_startup_readiness():
+    from startup_readiness_checks import check
+    return check()
+
+
+def check_257_console_startup_submission():
+    from startup_submit_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24819,6 +24837,9 @@ CHECKS = [
     ("253 quote prediction is checked against actual run outcomes", check_253_quote_prediction_is_checked_by_the_run),
     ("254 unavailable baseline coverage skips while invalid fixtures and regressions fail",
      check_254_baseline_skips_preserve_invalid_fixture_failures),
+    ("255 clickable desktop owns authenticated console startup and shutdown", check_255_desktop_startup),
+    ("256 startup readiness is explicit and non-mutating", check_256_startup_readiness),
+    ("257 console intake choices reach the real submission consumer", check_257_console_startup_submission),
 ]
 
 
