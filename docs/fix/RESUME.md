@@ -1,5 +1,41 @@
 # RESUME: Routing/UI audit complete, 2026-09-13
 
+## Session close: operator correction and current status
+
+The completed audit commit is `47c63aca09603ab5c7ad662753d647397a623ce8`.
+This documentation-only closeout follows that commit; its own hash is reported
+in the final handback and git log. No agent push occurred; the operator owns pushes.
+At closeout entry, main matched the locally recorded origin/main ref (0 ahead,
+0 behind); no fetch, pull, merge, rebase or push was performed.
+
+The operator's execution-policy correction arrived after the audit was committed.
+For this item, no further model generation, Shimmer Review/Draft pipeline execution,
+benchmark review, inference probe or GPU model workload is permitted under any
+circumstances. Do not rerun the historical cached-model/GPU gates. Their results
+remain unchanged historical evidence: host 257 PASS / 4 SKIP / 0 FAIL; image
+142/142 source paths, 249 PASS / 10 SKIP / 2 known missing-input FAIL (input/ and
+input/context/). Source parity describes the audit image at the audit commit,
+not fresh-clone readiness or parity with later documentation-only edits.
+Remaining verification uses source/saved artifacts, fixtures, deterministic tests
+and no-generation gates only; anything requiring model execution is UNVERIFIED.
+No model/generation/GPU workload was run during this session close.
+
+Operator-confirmed roadmap status, transcribed without changing the roadmap:
+
+1. Local performance diagnostic: COMPLETE.
+2. Local speed-optimization audit: COMPLETE.
+3. Conditional agent activation & sparse routing audit: COMPLETE.
+4. README + upstream/downstream routing + UI audit: COMPLETE.
+5. FinOps + VM/GPU feasibility analysis: NEXT / UNSTARTED.
+6. Controlled VM run/debugging: conditional.
+7. Fresh-clone smoke test.
+8. Prototype release-readiness pass.
+9. Multi-round positioning / decision-support mode.
+10. Python package / installable distribution.
+
+The older roadmap block in the historical handovers below is preserved as history;
+it does not supersede this operator-confirmed status. FinOps was not started.
+
 **README + upstream/downstream routing + UI audit** is complete, entered at
 `13144755a7493713060c76256352657c3f5cc1d1`. Entry tracked tree was clean; local
 origin/main...HEAD was 0 0. No fetch or push was performed. This instruction

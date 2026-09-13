@@ -1,5 +1,17 @@
 # Ledger: current routing/UI closure
 
+## Documentation-only session close
+
+Audit closure commit: `47c63aca09603ab5c7ad662753d647397a623ce8`. This subsequent
+local documentation-only closeout records the operator's post-commit execution
+restriction and current roadmap status in [RESUME.md](RESUME.md#session-close-operator-correction-and-current-status);
+its hash is in the final handback/git log. No model generation, Review/Draft,
+benchmark review, inference probe or GPU workload was run during closeout.
+Historical gate results were neither rerun nor relabeled. Read-only hashes confirm
+all 275 snapshot files and 54/8/46/243/43 diagnostic/quality/speed/activation/routing
+manifest entries remain intact. No implementation or roadmap change. FinOps remains
+unstarted; no agent push. Entry main matched local origin/main; no remote operation.
+
 ## README + UPSTREAM/DOWNSTREAM ROUTING + UI AUDIT COMPLETE, 2026-09-13
 
 Entered at 1314475 with a clean tracked tree and local origin/main...HEAD 0 0;

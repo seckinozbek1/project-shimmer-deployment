@@ -3,6 +3,13 @@
 Audit date: 2026-09-13. Entry commit:
 `13144755a7493713060c76256352657c3f5cc1d1`.
 
+Completed audit commit: `47c63aca09603ab5c7ad662753d647397a623ce8`.
+The subsequent documentation-only [session close](RESUME.md#session-close-operator-correction-and-current-status)
+preserves the operator's post-commit prohibition on further model/pipeline/inference/
+GPU workloads. No such workload was run during closeout. Gate and image-parity
+results below remain historical evidence of the audit revision, unchanged and
+not rerun. The agent did not push; FinOps remains the next locked, unstarted item.
+
 ## Decision and scope
 
 Current documentation now describes the implemented path from intake to evidence
