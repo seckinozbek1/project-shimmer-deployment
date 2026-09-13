@@ -2,6 +2,36 @@
 
 # Project Shimmer
 
+**On Windows, double-click `start_shimmer.bat`.** A **Start Shimmer** window
+opens. Choose **Local** or **Cloud**, click **Check and start**, read the readiness
+report and confirm. Shimmer opens the browser at its actual `/console` address.
+Click **Copy access token** in the starter, paste into the browser's **Access
+token** field, then click **Use this token**. No command or token hashing is needed.
+
+In the console, click **Submit**. Choose **Review** or **Draft**, select your files
+and their review/reference roles, explicitly choose **Normal** or **Sensitive**,
+and review the confirmation before starting work. Opening the console alone runs
+no review. Sensitive submissions are refused while the required privacy layer is
+inactive; Normal explicitly waives redaction for that run. Cloud work can incur
+provider charges. Local keeps the existing local model profile.
+
+Keep the starter open. **Stop Shimmer** stops its server and unfinished work;
+**Check and start** starts a new session. Closing the browser leaves Shimmer
+running. The desktop server listens only on this computer. The starter keeps the
+access token in memory and copies it only when requested. The browser keeps it in
+this tab's session storage and sends it in authenticated request headers, never a URL or log.
+Each restarted session gets a new token.
+
+This path requires installed prerequisites (section G). Missing dependencies,
+models, credentials or an unavailable port are reported visibly and block startup.
+It installs nothing. Clean-machine installation and a fresh-clone smoke test remain
+later roadmap work. Developer, command-line and Docker methods remain below.
+
+The starter checks the project environment and the Python that opened it, chooses
+the one with the selected backend's packages, and displays its path. A partial
+`.venv` cannot hide an equipped host Python. **View startup log** shows package
+and model details as well as the server log when one exists.
+
 An agentic framework that verifies the claims written in a document and detects changes
 between versions of a document across negotiation rounds. It targets political, legal, and
 diplomatic documents, but the mechanism is domain-agnostic by construction: no domain
@@ -69,7 +99,8 @@ shimmer-deployment/
 ├── README.md, CLAUDE.md, genesis.md      the guide, the agent operating contract, the spec
 ├── LICENSE, CITATION.cff                 MIT license, citation metadata
 ├── requirements.txt                      pinned Python dependencies
-├── shimmer.bat, shimmer.sh               the launcher: builds .venv, installs deps, menu
+├── start_shimmer.bat                     Windows desktop starter (primary path)
+├── shimmer.bat, shimmer.sh               advanced setup and CLI menus
 ├── Dockerfile, compose.yaml,             the container image (CUDA base, Python 3.9, the
 │   .dockerignore, .gitattributes         pinned requirements, optionally the model weights),
 │                                          the run flags recorded as two compose profiles,
@@ -1302,7 +1333,7 @@ therefore decided by triggers 1 to 3 alone, exactly as it was before this change
 
 ## F. The sensitivity model (LAW-IV in practice)
 
-- **Normal mode (default):** the pipeline reviews, flags defects, and proposes amendments.
+- **Normal mode (explicit choice in the human startup paths):** the pipeline reviews, flags defects, and proposes amendments.
   Personal data and confidential figures are not scrubbed from the deliverables, and nothing
   scans for them: they surface only if one of your own `confidentiality` / `redaction` CONV-*
   rules makes the review agents flag them. You receive the full output. Use this when the
@@ -1312,9 +1343,9 @@ therefore decided by triggers 1 to 3 alone, exactly as it was before this change
   before deliverables are finalized. "Applied" means verified absent by a post-apply grep
   gate: a span that survives or cannot be located BLOCKS the deliverable rather than shipping
   it. The whole scrub is gated on `LAYER_ACTIVE` (`scripts/sensitivity_layer/__init__.py`),
-  which ships False, so today nothing is scrubbed on any path: a sensitive run submitted to
-  the server refuses to start (exit 6), and a sensitive run started from the launcher or the
-  intake wizard starts with the layer-inactive override and then skips phase 9.
+  which ships False. The console and intake wizard now refuse Sensitive before
+  starting work while that layer is inactive. They never add its inactive-layer
+  override to a Sensitive run. The pipeline's own exit-6 refusal remains intact.
 
 Sensitive spans are defined by operator conventions, never judged by a model. The full
 LAW-IV outbound masking layer (holding spans local and replacing them with typed
@@ -1323,10 +1354,10 @@ placeholders before any network or API call, with every masking appended to
 `LAYER_ACTIVE` defaults to False, and that one switch gates three things, not just the network
 boundary: outbound masking, the phase-9 deliverable scrub, and the learning engine's
 masked-write gate. While inactive, a run hard-gates and refuses to start unless the operator
-passes `--sensitivity-layer-inactive-override` (logged). Every launcher path passes it: the
-normal run and the server pass it alongside `--no-redaction-override`, and the intake wizard's
-Sensitive mode passes it too, withholding only `--no-redaction-override` so the redaction policy
-stays on.
+passes `--sensitivity-layer-inactive-override` (logged). Human startup and server
+paths share `run_choices.privacy_flags`: an explicit Normal choice passes both
+that flag and `--no-redaction-override`; Sensitive passes neither. The former
+wizard behavior that silently added the inactive-layer override has been removed.
 
 The learning engine's masked-write gate is keyed on the same activation switch, not on the
 run's sensitivity: with the LAW-IV layer active it stores ids, counts, categories and typed
@@ -1338,25 +1369,31 @@ placeholders and never raw spans (`ontology_capture.mask_field`). While the laye
 
 ## G. Prerequisites and setup
 
-**Prerequisites:** Python 3.9 (invoked as `py -3.9`), git, API keys (outside the repo),
-and, for redaction, the local Qwen model with a GPU strongly recommended.
+**Prerequisites:** Python 3.9 with Tcl/Tk enabled for the desktop window, git,
+and the installed project dependencies. Cloud needs API keys outside the repo;
+Local needs its configured model caches. Sensitive also requires the active
+privacy layer and configured local redaction model, with a GPU strongly recommended.
 
-### Quick start on a fresh clone
+### Prerequisite setup and fresh-clone limits
 
 1. Clone the repository.
-2. Run the launcher, which does steps 3 to 5 below for you:
+2. After prerequisites are installed, double-click **`start_shimmer.bat`** for
+   the normal Windows path described at the top of this README. For an advanced
+   terminal-based setup/menu, the older entry points remain available:
 
    ```
    shimmer.bat        (Windows)
    shimmer.sh          (macOS/Linux)
    ```
 
-   It finds Python, creates and activates a local `.venv` (not shipped; built here, on your
-   machine, every time), installs the dependencies from `requirements.txt` into it, runs the
-   readiness preflight (`scripts/preflight.py`: keys, Qwen, GPU, live model ids), and shows the
-   menu described in section H. This is the one command a fresh clone needs to reach a working
-   menu; steps 3 to 5 below are what the launcher is doing, spelled out for anyone scripting
-   the same setup by hand or debugging why it failed.
+   The older scripts create/activate `.venv`, install pinned dependencies and run
+   the setup preflight before showing a terminal menu. That preflight may install
+   packages and query provider model lists. The new desktop path instead uses
+   read-only readiness: it creates no key templates, installs or downloads nothing,
+   and contacts no provider. It shows the selected Python environment and reports
+   missing prerequisites with a next action. A fresh clone has not yet been tested
+   as an installed Windows product; the steps below are prerequisite reference,
+   not a claim that clean-machine setup has passed.
 3. **API keys, which you must supply; none are shipped.** Place them in an external
    `config.py` OUTSIDE the repository. Shimmer locates it via `$SHIMMER_CONFIG_PATH`, then a
    sibling `../api_keys/config.py`, then the repo-root `.env_path` pointer. ANTHROPIC and
@@ -1365,7 +1402,10 @@ and, for redaction, the local Qwen model with a GPU strongly recommended.
    readiness means. Under the local profile the preflight reports absent keys and carries on
    to the checks a local run actually depends on (Qwen reachability, the GPU), so a
    local-only operator reaches the menu with no key file at all. Under the cloud profile it
-   still stops before the menu when no key file is found. It used to run the cloud checks
+   still stops before the menu when no key file is found. The desktop starter's
+   read-only Local check does not read cloud keys at all. The older setup preflight
+   can still include missing-key FAIL rows for Local; it is not the recommended
+   daily startup path. It used to run the cloud checks
    unconditionally and exit on that same code, so a local-only operator could not reach the
    menu and never learned whether their local stack was ready. Model selection is owned by
    `config/agent_registry.json`, never by the key file.
@@ -1388,13 +1428,14 @@ and, for redaction, the local Qwen model with a GPU strongly recommended.
    RAM at the 4-bit size. All three need torch and transformers; the two 4-bit checkpoints
    additionally need bitsandbytes (the quantised weights) and accelerate (the `device_map`
    load path), both pinned in `requirements.txt` since 10 and 11 September 2026. All run
-   offline once cached. This step needs no action by hand, since local checkpoints are
-   fetched automatically at first use (next paragraph).
+   offline once cached. Install/cache the configured generation checkpoints before
+   using Local: the actual generation loader is cache-only and the desktop starter
+   refuses missing or incomplete checkpoints. It does not download them.
 
-Setup itself downloads no model weights unless you set `SHIMMER_QWEN_PULL=1`, though it may
-fetch the large CUDA torch wheel. The multi-gigabyte local checkpoints and the multilingual
-embedding model are fetched at first use, so the first run is slow. Do not interrupt it; later
-runs reuse the cached weights, genuinely offline: `agent_wrapper.py`'s real loader
+The legacy setup downloads no model weights unless you set `SHIMMER_QWEN_PULL=1`, though it may
+fetch the large CUDA torch wheel. The multilingual embedding model can be fetched on
+a cache miss; configured local generation checkpoints must already be cached.
+Runs reuse the cached generation weights offline: `agent_wrapper.py`'s real loader
 (`_load_qwen`, the function every local-profile agent call actually goes through) now passes
 `local_files_only=True` on every `from_pretrained` call, matching `server.py`'s own pre-run
 check, which already resolves the same model ids the same way and refuses to start a run if
@@ -1841,12 +1882,13 @@ gate does, and the weights are there".
 
 ---
 
-## H. Running Shimmer (four entry points)
+## H. Advanced and developer entry points
 
-### 1. The launcher (recommended starting point)
+### 1. The legacy terminal launcher
 
-`shimmer.bat` (Windows) or `shimmer.sh` (macOS/Linux) takes you from a fresh clone to a
-running review: it finds Python, builds and activates a local `.venv`, installs
+The recommended Windows startup is **`start_shimmer.bat`**, described at the top.
+The older `shimmer.bat` (Windows) and `shimmer.sh` (macOS/Linux) remain available:
+they find Python, build and activate a local `.venv`, install
 dependencies, asks which backend you will run on, runs the readiness preflight for that
 backend, then shows a menu.
 
@@ -2313,6 +2355,21 @@ Fixture and saved-artifact measurements above do not replace a new end-to-end qu
 
 ## I. The server and the corpus ingestion contract
 
+The Windows starter manages this same server locally. Its console offers ordinary
+document intake through `POST /submit` with `intake_mode=standalone`, explicit
+`confirmed=true`, privacy, and filename arrays `review_targets` and `prior_files`.
+The real wizard classifier recognises review rules; the role manifest preserves
+the selected review/reference/earlier-version split. Invalid documents, unsupported
+metadata/config uploads, duplicate or unsafe filenames, conflicting existing files
+and conflicting operator role instructions are rejected before queueing. Existing
+operator input is preserved. No external-ingestion metadata is fabricated.
+
+API callers omitting the new intake field keep the existing validation contract.
+`intake_mode=integrated` explicitly selects it. The console's advanced prepared-bundle
+option also uses that contract. Sensitive work is rejected before queueing when its
+required privacy layer or local redaction prerequisites are unavailable. The
+pipeline's governance, model approval and actual redaction gates still run.
+
 `scripts/server.py` is a thin, token-gated FastAPI dock: one collaborator hands grounding
 cases to Shimmer, starts a run, watches the queue, and pulls results, all over the network,
 without touching the code or terminal. It is a connecting dock for one collaborator, not a
@@ -2339,12 +2396,14 @@ below, and gate check 167 fails if that table and the app disagree.
 
 ```
 curl -s "$BASE/health"
-# -> {"status":"ok","version":"1.0","backend_profile":"local","default_review_mode":"paired"}
+# -> {"status":"ok","version":"1.0","backend_profile":"local","default_review_mode":"paired","sensitive_layer_active":false}
 ```
 
 `/health` needs no token. It tells you the two things you must know before submitting:
 which backend the server runs on (`local` = no provider API calls, `cloud` = paid), and
-which review mode a submission gets if you do not name one. Everything after this except
+which review mode a submission gets if you do not name one. It also reports whether
+the required sensitivity layer is active; liveness does not prove model execution.
+Everything after this except
 `/console` needs `Authorization: Bearer <token>`; without it every gated route returns 401.
 
 **Step 1, submit the work.**
@@ -2457,13 +2516,17 @@ pipeline actually did with it.
 **Notes a caller needs.** One job runs at a time and the queue drains in submission order, so
 `GET /runs/<run_id>` may report `state: "queued"` behind someone else's run; `GET /runs` shows
 the whole picture. Run state is written to disk on every transition, so a server restart keeps
-the run history: the in-flight run comes back as `interrupted` internally (`state: "stopped"`,
-`outcome: "crashed"` on `GET /runs/<run_id>`), and a run still `queued` at restart keeps its
-record but loses its staged uploads, so resubmit both. Every route taking
+the run history: both running and queued work comes back as `interrupted` internally
+(`state: "stopped"`, `outcome: "crashed"` on `GET /runs/<run_id>`). Queued uploads
+cannot be recovered, so the recorded reason asks for resubmission. Neither resumes
+automatically. Every route taking
 a `run_id` accepts the shared UUID format or a legacy timestamped server ID and answers
 404 for any other syntax before constructing a path. An unknown valid ID also returns 404.
 
-### Server quickstart (two terminals)
+### Advanced server/API quickstart (two terminals)
+
+For the Windows browser console, use **`start_shimmer.bat`** instead. The manual
+commands below serve developer integrations and remote deployments.
 
 **Terminal 1, the server (stays running).**
 
@@ -2573,7 +2636,7 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 
 | Method | Route | Auth | Returns |
 |---|---|---|---|
-| `POST` | `/submit` | token | 202 and a run id. Multipart `files` + `task` + optional `question`, `sensitive`, `review_mode`. Draft requires a question, review requires files. Rejects an over-count submission with 400 before any file is written, and an oversized one before it is queued (its staging directory is deleted), per the upload caps above. |
+| `POST` | `/submit` | token | 202 and a run id. Multipart `files`, `task`, optional `question`, `sensitive`, `review_mode`; explicit ordinary intake adds `intake_mode=standalone`, `confirmed=true`, JSON filename arrays `review_targets` and `prior_files`. Omitted intake mode retains the existing validator. Draft requires a question, review requires files. Invalid intake, unavailable sensitivity protection and missing explicit native confirmation/privacy fail before queueing. Upload caps remain enforced. |
 | `GET` | `/runs` | token | Every run as the complete run resource (see `/runs/{run_id}` below), oldest submission first. |
 | `GET` | `/runs/{run_id}` | token | api STEP B1/B2/B3/B4/B5: one run's complete record in a single call: `state` (`queued` / `running` / `awaiting_approval` / `stopped` / `cancelled`), `outcome` (populated once `state` is `stopped` or `cancelled`: `succeeded` / `governance_stop` / `crashed` / `timed_out` / `cancelled`), `stop_reason`, `pending_approval` (populated once `state` is `awaiting_approval`: `topic`, `message`, `payload`, `asked_at`, `default_on_timeout`, `timeout_at`), `documents` (per-document `status` and `deliverables_url`, a REAL fetchable route once that document is done, not a display string), `log_url`, `has_log` (whether `<run>/logs/pipeline_stdout.log` exists yet, checked on disk on every call, so a caller can say plainly whether there is a log to read before ever calling `log_url`, rather than discovering a 404 only after asking), plus `task`/`submitted_at`/`started_at`/`completed_at`/`exit_code`/`error`/`progress`/`files`/`sensitive`/`review_mode`/`question`. Does **not** carry the raw internal `status` string (dropped in api STEP B5: `state`/`outcome`/`stop_reason` is the sole vocabulary here, so a caller never has to reconcile two descriptions of the same run). |
 | `GET` | `/runs/{run_id}/findings` | token | The run's typed **Finding records** as JSON (section B), including the ok-verdict prior-version records with `field_label`, `delta`, `band_distance_change` and `provenance`; filter on `relation` in `moved_toward` / `moved_away` / `changed_from_prior` / `unchanged_from_prior` / `absent_since_prior` to answer the round question by program. |
@@ -2601,7 +2664,7 @@ There is no back-compat alias for any of the retired names; nothing else calls t
 | `GET` | `/runs/{run_id}/log` | token | api STEP B4: the run's complete merged stdout/stderr as `text/plain`, streamed from `<run>/logs/pipeline_stdout.log`, what `log_url` on `GET /runs/{run_id}` has pointed at since api STEP B1. `404` for a malformed/unknown `run_id` or one with no log written yet. |
 | `GET` | `/approvals` | token | Every run currently awaiting a governed decision, each entry carrying the same shape as `GET /runs/{run_id}`'s `pending_approval` field (api STEP B5: previously a thinner, independently-computed shape with no `message`/`default_on_timeout`/`timeout_at`). |
 | `GET` | `/console` | **none** | The operator console HTML. |
-| `GET` | `/health` | **none** | `{"status", "version", "backend_profile", "default_review_mode"}` and nothing else. |
+| `GET` | `/health` | **none** | `{"status", "version", "backend_profile", "default_review_mode", "sensitive_layer_active"}`. Liveness and declared posture, not proof of model execution. |
 
 The two ungated routes are ungated by design. A browser has no token on first load of
 `/console`, and the console itself asks for one before calling anything else. `/health` is an
@@ -2619,9 +2682,10 @@ Every route taking a `run_id` accepts the shared UUID format and legacy timestam
 IDs, rejects other syntax with 404 before building a path, and `/runs/{run_id}/findings` and `/runs/{run_id}/pairs` return the
 same 404 for a well-formed id with no run folder. Jobs run one at a time; each job's state is
 also written to `<run>/status.json` on every transition (queued, running, then one of the
-statuses below), so a restart does not lose run history; the in-flight run is rewritten
-`interrupted`, and a run still `queued` at restart keeps its record but loses its staged
-uploads, so the submitter resubmits both. The child pipeline's complete merged stdout/stderr
+statuses below), so a restart does not lose run history. Running and queued work
+is rewritten `interrupted`; the submitter must resubmit because staged uploads
+do not survive a restart. Missing staged standalone inputs also fail before a
+pipeline process starts. The child pipeline's complete merged stdout/stderr
 streams to `<run>/logs/pipeline_stdout.log` as the run proceeds (not just the 2000-character
 failure tail kept on the job record), and is fetchable directly via `GET /runs/{run_id}/log`.
 
@@ -2654,17 +2718,14 @@ recorded that the envelope was malformed and not that it had been cut, and the r
 be reconstructed by hand from the preserved raw text. A response that hit its ceiling and one
 that came back short looked identical on disk.
 
-**The `sensitive` field and the console's privacy choice.** `/submit` accepts a `sensitive`
-form field (`"true"`/`"false"`, default `SHIMMER_SENSITIVE`) so privacy posture is a visible,
-per-run choice rather than only a server-wide default. The console renders it as an explicit
-checkbox with two sentences of plain explanation: a non-sensitive run (unchecked, the default)
-sends document text to cloud providers and waives redaction; a sensitive run (checked) keeps
-redaction on, but a sensitive run submitted HERE refuses to start (exit 6), because this server
-withholds the layer-inactive override for a sensitive job while the full LAW-IV masking layer
-ships inactive. (The launcher and the intake wizard pass that override even in sensitive mode,
-so a sensitive run started there starts and skips the scrub instead; section F.) The two override flags
-(`--sensitivity-layer-inactive-override`, `--no-redaction-override`) are appended only when the
-resolved value is non-sensitive, exactly as the old server-wide `SHIMMER_SENSITIVE` check did.
+**The `sensitive` field and the console's privacy choice.** Existing API callers
+may omit it and retain `SHIMMER_SENSITIVE`. The console requires an explicit
+Normal or Sensitive choice and final plan confirmation. Native API submissions
+also require the explicit boolean spelling and `confirmed=true`. Normal waives
+redaction for the run; the displayed backend says whether processing uses Local
+models or Cloud providers. Sensitive submissions are rejected before queueing
+when required privacy protection is unavailable, and receive neither override.
+The pipeline retains its own governance stops and redaction checks.
 
 **Status vocabulary.** A job is `queued` from `/submit` until the single worker picks it up,
 then `running`, then exactly one terminal status. The server always passes
@@ -2757,8 +2818,10 @@ sent as the `Authorization: Bearer` header on every call the page makes. `tools/
 is a throwaway local harness (explicitly marked as not part of the product) that starts a real
 server with the pipeline subprocess stubbed out, no model call, and seeds one run in each
 reachable state, for looking at the console without spending a real run: `py -3.9 -X utf8
-tools/console_preview.py`, then open the URL and use the token it prints; Ctrl+C throws away
-all of it. A governed decision that would otherwise stop a `--non-interactive` run
+tools/console_preview.py`, then open the URL and use the token it prints. This legacy
+harness also seeds the live ontology store, so use an isolated workspace: Ctrl+C
+removes temporary runs, not every seeded artifact. Startup verification instead
+uses the isolated Python fixtures and `tools/startup_console_proof.js`. A governed decision that would otherwise stop a `--non-interactive` run
 unconditionally (e.g. a deprecated-model swap `enforce_current_models` cannot auto-resolve) is
 instead parked by `pipeline.py`'s file-backed operator channel (`--operator-channel file`,
 `scripts/pipeline.py::_make_file_operator_handler`) as `<run>/audit/pending_approval.json`; the
@@ -2768,8 +2831,9 @@ relays verbatim into an `OperatorDecision`. The handler and this server route ne
 the decision themselves: that stays entirely in `model_registry.enforce_current_models` and
 `constitution_guard._is_approved` (both repaired in productization STEP 1a/1b).
 
-**The ingestion contract** (`corpus_ingest/CONTRACT.md`) governs the handoff. Each submission
-carries a sidecar `_corpus_ingest.json` with `ingest_run_id`, `generated_at`, and a `cases[]`
+**The ingestion contract** (`corpus_ingest/CONTRACT.md`) governs prepared external
+bundles and legacy API submissions, not explicit standalone operator documents.
+Each integrated submission carries a sidecar `_corpus_ingest.json` with `ingest_run_id`, `generated_at`, and a `cases[]`
 list; each case has `file`, `case_id`, `title`, `citation`, `jurisdiction`, `date`,
 `language`, `source_verification` (status + url), and `role`. Each listed `file` must be an
 ASCII-safe `.md` name carrying a delimited 4-digit year (`case_alpha-2021.md`) whose year
@@ -3149,7 +3213,7 @@ coverage needs explicit claim-to-consumer mappings and more executable mutations
 scans cannot infer them reliably.
 
 `scripts/verify_session1.py` is the standard health check. Its total is the length of its
-CHECKS list (**255** at the time of writing), not a hardcoded number, so adding a check
+CHECKS list (**258** at the time of writing), not a hardcoded number, so adding a check
 raises the total by itself. Each check proves behavior with executed coverage on fixtures and
 is non-mutating (it uses tempdirs and never writes the real durable, ontology, or config
 stores). Run it every session and before every commit:

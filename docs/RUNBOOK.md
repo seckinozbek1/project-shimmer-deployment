@@ -5,9 +5,9 @@ watch, approve, diagnose, back up, restore. Written for the operator at the
 keyboard, not for a reader learning the architecture (that is `README.md`) and
 not for an agent changing the code (that is `CLAUDE.md`).
 
-Every command below is written for Windows PowerShell or `cmd`, which is where
-this deployment runs. On macOS or Linux use the `.sh` launcher and forward
-slashes; nothing else changes.
+For daily Windows use, double-click **`start_shimmer.bat`**. No terminal is
+needed. Commands below are advanced setup and operational reference. The
+macOS/Linux terminal launcher remains available; the desktop path targets Windows.
 
 Contents:
 
@@ -28,8 +28,9 @@ Contents:
 
 ## 1. Install
 
-**Prerequisites.** Python 3.9 (the whole codebase targets it; `py -3.9` must
-work), git, and roughly 8 GB of disk for the model caches. A CUDA GPU is
+**Prerequisites.** Python 3.9 with Tcl/Tk enabled for the desktop window (the
+codebase targets it; `py -3.9` must work), git, and space for the configured model
+caches. Cloud needs external API credentials; Local needs its model caches. A CUDA GPU is
 optional: the local Qwen redactor and the embedding store both run on CPU, just
 slowly, and the OGE GNN warns rather than fails without one.
 
@@ -38,9 +39,9 @@ slowly, and the OGE GNN warns rather than fails without one.
 ```
 git clone <repo> shimmer
 cd shimmer
-setup.bat                          # or: py -3.9 -m venv .venv
+py -3.9 -m venv .venv
 .venv\Scripts\activate
-py -3.9 -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 `requirements.txt` pins every dependency to an exact version, including the
@@ -61,15 +62,39 @@ every cloud agent degrades to "cannot verify / no key" and generation returns
 nothing; the run does not silently produce empty deliverables, it reports the
 failure per call in the cost log.
 
-**Confirm the install** with the verify gate (section 12). A fresh clone should
-reach `FAIL/ERROR=0`.
+**Confirm the install** with the verify gate (section 12). Clean-machine setup
+and fresh-clone acceptance remain deferred roadmap work. Unavailable fixture or
+runtime-tree coverage must be reported, not described as a passing check.
 
 ---
 
 ## 2. Launch
 
-`shimmer.bat` is the master launcher: it bootstraps the venv, runs preflight,
-and offers a menu.
+Double-click **`start_shimmer.bat`**. In **Start Shimmer**, choose **Local** or
+**Cloud**, then **Check and start**. Read the report and confirm startup. The
+browser opens at the displayed `/console` address. Click **Copy access token**
+in the starter, paste into the browser's **Access token** field, and click
+**Use this token**. The usable token is never a URL parameter or a log entry;
+only its SHA256 hash is handed to the server. No review starts at this step.
+
+The read-only check installs/downloads nothing and calls no provider. Local
+requires installed model packages and cached checkpoints. Cloud requires the
+existing external credentials; live model availability/approval remains checked
+by the pipeline when a task starts. File presence is not proof that a model will
+load. GPU absence remains a visible warning. Missing prerequisites block startup.
+
+Keep this window open. **Stop Shimmer** stops the server and unfinished reviews,
+waits for processes to exit, and lets you restart with **Check and start**.
+Closing the starter confirms stopping; closing only the browser does not stop
+Shimmer. A restart creates a new access token. An occupied port is a failure:
+stop the other starter or choose another port in the window. Technical startup
+details are available in the starter and its local `output/startup/` logs.
+
+The desktop binds to loopback even if a remote server host was inherited. Use
+the direct server/Docker methods for intentional remote deployments.
+
+**Advanced terminal menu.** `shimmer.bat` still bootstraps the venv, runs the
+legacy setup preflight and offers its existing menu:
 
 ```
 shimmer.bat
@@ -115,8 +140,18 @@ immediately.
 
 ## 3. Submit a run
 
-**From the console** (`GET /console` in a browser): paste the token once, choose
-Review or Draft, attach files, tick or untick the sensitive checkbox, submit.
+**From the console:** click **Submit**, choose Review or Draft, select documents,
+declare their roles and explicitly select Normal or Sensitive. Review the plan
+and confirm before any submission. Normal declares the run non-sensitive and
+waives redaction; Cloud can send document text to the configured providers.
+Sensitive is refused before queueing while the required privacy layer is inactive.
+
+Ordinary documents use standalone intake and need no generated metadata file.
+Prepared external bundles retain the existing ingestion-contract validator;
+choose that intake type and include its real sidecar. Nothing invents provenance.
+Conflicting existing filenames or review-target instructions are refused so an
+upload cannot silently replace the operator's material. Validation errors remain
+visible with their technical detail; no failed intake is queued as a success.
 
 **From the command line.** On PowerShell use `curl.exe`, not the `curl` alias:
 
@@ -136,11 +171,13 @@ curl.exe -X POST http://localhost:8000/submit ^
   -F "task=draft" -F "question=your question here"
 ```
 
-`/submit` returns `202` and a `run_id`. Rejections are `400` and say why:
+`/submit` returns `202` and a `run_id`. Invalid submissions return `400` and say why:
 too many files (`SHIMMER_MAX_UPLOAD_FILES`), a file or submission over the size
 caps (`SHIMMER_MAX_UPLOAD_MB`, `SHIMMER_MAX_UPLOAD_TOTAL_MB`), a draft with no
 question, a review with no files, or a bundle the ingestion-contract validator
-refused (the 400 body carries the violation report). Jobs run one at a time.
+refused (the 400 body carries the violation report). Conflicting inputs or an
+unavailable Sensitive posture return `409`; a stopping server returns `503`.
+Jobs run one at a time.
 
 ---
 
@@ -148,8 +185,8 @@ refused (the 400 body carries the violation report). Jobs run one at a time.
 
 | Where | What it shows |
 |---|---|
-| `GET /status/{run_id}` | one job: status, timestamps, progress, error, exit code |
-| `GET /queue` and `GET /runs` | the whole job list, rebuilt from disk at server start |
+| `GET /runs/{run_id}` | one job: state, outcome, timestamps, progress, error, exit code |
+| `GET /runs` | the whole job list, rebuilt from disk at server start |
 | `<run>/status.json` | the same record on disk, rewritten at every transition |
 | `<run>/logs/pipeline_stdout.log` | the child pipeline's complete merged stdout and stderr, appended live |
 | `py -3.9 scripts\bus_viewer.py --follow` | the live inter-agent bus and the per-call cost stream |
@@ -236,7 +273,7 @@ build downloads a model. Check, in order:
 1. `<run>/logs/pipeline_stdout.log`: is the tail moving? Is the last line a
    `phase_start` with no matching `phase_done`?
 2. the `[COST]` stream (`bus_viewer.py --follow`): are calls still landing?
-3. `GET /status/{run_id}`: is `progress` advancing?
+3. `GET /runs/{run_id}`: is `progress` advancing?
 
 **Bound it in advance.** Two timeouts exist and both are off or generous by
 default:

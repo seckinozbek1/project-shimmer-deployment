@@ -315,6 +315,12 @@ processing swarm governed by an append-only constitution.
 
 ## Entry points
 
+- `start_shimmer.bat` -> `scripts/desktop_launcher.py`: primary Windows desktop
+  starter. Uses read-only `preflight.startup_report`, explicit backend selection,
+  shared `startup_settings`, an in-memory bearer token and an owned server.
+  `scripts/desktop_server.py` stops on parent-pipe EOF or Stop and joins workers.
+  The browser opens at `/console`; task, roles and privacy belong to the console.
+  No automatic installation, provider call or review on desktop startup.
 - `shimmer.bat` / `shimmer.sh`: the master launcher (venv bootstrap, preflight, menu).
   Option [1] offers Review or Draft; [2] chat; [3] server; [4] gate; [5] import wizard.
 - `scripts/intake_wizard.py`: scan, classify, place, set the cutoff, choose mode, write the

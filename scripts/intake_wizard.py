@@ -37,8 +37,8 @@ import role_resolution
 # scripts/ is sys.path[0] when launched as `python scripts/intake_wizard.py`, so
 # the sibling framework modules import by bare name (same convention as pipeline).
 import convention_parser
-import redaction_gate
-import sensitivity_layer
+import preflight
+from run_choices import privacy_flags, resolve_backend_profile
 
 ROOT = Path(__file__).resolve().parent.parent
 SCOPE_PATH = ROOT / "config" / "review_scope.json"
@@ -132,10 +132,11 @@ def _write_cutoff(value: str) -> None:
 
 
 def _explain_and_maybe_update_cutoff() -> "Optional[str]":
-    """Print the current cutoff and let the operator change it. Returns the new
-    cutoff if the operator set one, else None (kept). The caller re-asserts a set
-    value after file placement so an imported review_scope.json cannot clobber the
-    operator's explicit override."""
+    """Collect a pending cutoff without writing until the import is confirmed.
+
+    Return the proposed cutoff or None (kept). The caller writes it after file
+    placement so imported settings cannot clobber the explicit operator choice.
+    """
     scope = _read_scope()
     cur = scope.get("cutoff_date")
     print()
@@ -152,17 +153,13 @@ def _explain_and_maybe_update_cutoff() -> "Optional[str]":
     except ValueError:
         print(f"'{new}' is not a valid YYYY-MM-DD date. Keeping the current cutoff.")
         return None
-    _write_cutoff(new)
-    print(f"Cutoff updated to {new}.")
+    print(f"Proposed cutoff: {new}. It will be saved only if you confirm the import.")
     return new
 
 
 # --- run mode (maps to the pipeline override flags) ----------------------------
 
-_NORMAL_FLAGS = ["--sensitivity-layer-inactive-override", "--no-redaction-override"]
-
-
-def _choose_backend_profile() -> "tuple[str, list[str]]":
+def _choose_backend_profile() -> "tuple[str, Optional[list[str]]]":
     """Ask which backend the run uses, and emit --backend-profile for it.
 
     The wizard collected every other run flag and never this one, so a review
@@ -175,17 +172,26 @@ def _choose_backend_profile() -> "tuple[str, list[str]]":
     since the profile decides what readiness means) SHIMMER_BACKEND_PROFILE
     carries that answer and the operator is not asked the same question twice.
     """
-    preset = (os.environ.get("SHIMMER_BACKEND_PROFILE") or "").strip().lower()
-    if preset in ("cloud", "local"):
-        return (preset + " (chosen at startup)", ["--backend-profile", preset])
+    preset = os.environ.get("SHIMMER_BACKEND_PROFILE")
+    if preset is not None:
+        try:
+            profile = resolve_backend_profile(preset.strip().lower())
+        except ValueError:
+            print("The startup backend choice is invalid. Cancelled; choose Local or Cloud at startup.")
+            return ("(cancelled)", None)
+        return (profile + " (chosen at startup)", ["--backend-profile", profile])
     print()
     print("Which backend will this run use?")
     print()
     print("  [1] Cloud (Claude / GPT through your API keys; costs money per run)")
     print("  [2] Local (models on this machine; no provider is called, no API cost)")
     print()
-    choice = _ask("Choose [1/2, Enter for Cloud]: ")
-    profile = "local" if choice == "2" else "cloud"
+    choice = _ask("Choose [1/2; Enter cancels]: ")
+    try:
+        profile = resolve_backend_profile({"1": "cloud", "2": "local"}.get(choice))
+    except ValueError:
+        print("No valid backend selected. Cancelled.")
+        return ("(cancelled)", None)
     return (profile, ["--backend-profile", profile])
 
 
@@ -193,50 +199,32 @@ def _choose_mode() -> "tuple[str, Optional[list[str]]]":
     print()
     print("Select run mode:")
     print()
-    print("  [1] Normal mode (recommended for most reviews)")
-    print("      Reviews your documents, flags defects, and proposes amendments. Any")
-    print("      personal data or confidential figures found are FLAGGED in the findings")
-    print("      but NOT scrubbed from the deliverables. You receive the full output.")
-    print("      Use this when the documents are not sensitive.")
+    print("  [1] Normal mode")
+    print("      Reviews your documents and proposes amendments with full, unredacted")
+    print("      output. Choose this only when you declare the documents non-sensitive.")
     print()
     print("  [2] Sensitive mode")
-    print("      Everything in normal mode, plus a local model (Qwen, on your machine,")
-    print("      nothing leaves) scans for personal data and confidential figures and")
-    print("      scrubs them from the output before deliverables are finalized. If a")
-    print("      scrub cannot be confirmed clean, the deliverable is held. Use this when")
-    print("      the documents contain real personal, client, or commercial data.")
+    print("      Requires the active LAW-IV privacy layer and local redaction model.")
+    print("      Sensitive content stays on this machine; the privacy layer masks")
+    print("      outbound content, and local redaction applies your rules to output.")
+    print("      If the required privacy layers are unavailable, setup stops.")
     print()
-    choice = _ask("Choose [1/2]: ")
+    choice = _ask("Choose [1/2; Enter cancels]: ")
     if choice == "2":
         return _sensitive_flags()
-    # Blank or "1" -> Normal. Both overrides are required for the run to actually
-    # start and produce full, unredacted output (see the pipeline startup gates).
-    return ("Normal (no redaction)", list(_NORMAL_FLAGS))
+    if choice == "1":
+        return ("Normal (no redaction)", privacy_flags(False))
+    print("No valid privacy mode selected. Cancelled.")
+    return ("(cancelled)", None)
 
 
 def _sensitive_flags() -> "tuple[str, Optional[list[str]]]":
-    """Sensitive mode keeps redaction ON (no --no-redaction-override). Check Qwen
-    reachability first and let the operator confirm or switch."""
-    qstat = redaction_gate.qwen_backend_status(ROOT)
-    if not qstat.get("configured"):
-        print()
-        print(f"The local Qwen redaction backend is not reachable: {qstat.get('detail')}")
-        ans = _ask("Sensitive mode needs it. [s]witch to Normal, [c]ontinue anyway, or [q]uit? ").lower()
-        if ans.startswith("q"):
-            return ("(cancelled)", None)
-        if ans.startswith("c"):
-            print("Continuing in Sensitive mode. The pipeline will stop at its redaction")
-            print("gate if Qwen truly cannot run; set it up or switch to Normal if so.")
-        else:
-            return ("Normal (no redaction)", list(_NORMAL_FLAGS))
-    flags: "list[str]" = []
-    if not sensitivity_layer.is_active():
-        print()
-        print("Note: the full LAW-IV outbound masking layer is operator-activated and is")
-        print("currently inactive. Deliverable redaction still runs locally; outbound")
-        print("masking to the network is deferred until the layer is activated.")
-        flags.append("--sensitivity-layer-inactive-override")
-    return ("Sensitive (redaction on)", flags)
+    """Read the same Sensitive prerequisites as the console, without a waiver."""
+    ready, detail = preflight.sensitive_readiness(ROOT)
+    print(detail)
+    if not ready:
+        return ("(cancelled)", None)
+    return ("Sensitive (redaction on)", privacy_flags(True))
 
 
 # --- parallelism + document cap ------------------------------------------------
@@ -461,6 +449,9 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
     mode_label = parallel_label = maxdocs_label = profile_label = ""
     if not import_only:
         profile_label, profile_flags = _choose_backend_profile()
+        if profile_flags is None:
+            print("Cancelled. No files placed.")
+            return 1
         run_flags += profile_flags
         mode_label, mode_flags = _choose_mode()
         if mode_flags is None:
@@ -483,7 +474,7 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
         print()
         ans = _ask("No review conventions found. The pipeline will run with default rules "
                    "only. [P]roceed with defaults or [Q]uit? ").lower()
-        if ans.startswith("q"):
+        if ans not in ("p", "proceed"):
             print("Quit. No files placed.")
             return 1
 
@@ -494,7 +485,7 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
     print(f"  Conventions: {counts['CONVENTIONS']} -> input/conventions/")
     print(f"  Config:      {counts['CONFIG']} -> config/")
     print(f"  Sidecars:    {counts['SIDECAR']} -> input/context/")
-    print(f"  Date cutoff: {_current_cutoff_str()}")
+    print(f"  Date cutoff: {chosen_cutoff or _current_cutoff_str()}")
     if not import_only:
         print(f"  Backend:       {profile_label}")
         print(f"  Mode:          {mode_label}")
@@ -502,8 +493,8 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
         print(f"  Max docs:      {maxdocs_label}")
     _print_convention_summary(summarize_conventions(
         [p for p, kind, _t in classified if kind == "CONVENTIONS"]))
-    confirm = _ask("Proceed? [Y/n]: ").lower()
-    if confirm.startswith("n"):
+    confirm = _ask("Proceed? [y/N]: ").lower()
+    if confirm not in ("y", "yes"):
         print("Cancelled. No files placed.")
         return 1
 
@@ -514,8 +505,8 @@ def run(emit_flags_path: "Optional[str]", import_only: bool) -> int:
         shutil.copy2(p, dest_dir / p.name)
         print(f"  Placed {p.name} -> {target.as_posix()}/")
 
-    # The operator's interactive cutoff override is the final word: re-assert it
-    # so an imported review_scope.json placed above cannot overwrite it.
+    # Save the pending cutoff only after confirmation and file placement, so an
+    # imported review_scope.json cannot overwrite the operator's explicit choice.
     if chosen_cutoff:
         _write_cutoff(chosen_cutoff)
 
@@ -549,6 +540,9 @@ def run_mode_only(emit_flags_path: "Optional[str]") -> int:
     operator's to make. This reuses _choose_mode rather than restating the
     question, so the two paths cannot drift apart."""
     profile_label, profile_flags = _choose_backend_profile()
+    if profile_flags is None:
+        print("Cancelled. No run started.")
+        return 1
     mode_label, mode_flags = _choose_mode()
     if mode_flags is None:
         print("Cancelled. No run started.")
@@ -562,7 +556,7 @@ def run_mode_only(emit_flags_path: "Optional[str]") -> int:
     # sensitivity the operator never confirmed. This path exists precisely to
     # stop that decision being made for them, so the empty answer declines.
     confirm = _ask("Proceed? [y/N]: ").lower()
-    if not confirm.startswith("y"):
+    if confirm not in ("y", "yes"):
         print("Cancelled. No run started.")
         return 1
     if emit_flags_path:
