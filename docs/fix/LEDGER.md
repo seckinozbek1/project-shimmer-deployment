@@ -1,5 +1,44 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## CONDITIONAL AGENT ACTIVATION AUDIT COMPLETE, NO NEW SUPPRESSION, 2026-09-13
+
+Entered at `8ca92cd` with clean tracked state and two local commits ahead of the
+unchanged origin/main ref. Existing untracked handoff/durable state is preserved.
+No fetch or push. The all-18-agent source/consumer inventory is in
+[AGENT_ACTIVATION_AUDIT.md](AGENT_ACTIVATION_AUDIT.md). Corpus indexing, institution
+mapping, citation chains, speech acts and legal work remain conservative: no
+positive evidence currently authorizes removal of that expertise.
+
+The new common run artifact records request, actual dispatch attempt, outcome and
+explicit non-call states. Existing phase gates retain control. Dense is the CLI
+default; sparse currently names the same conservative policy and has no accepted
+new call reduction. README documents that limitation. The harness was regenerated
+through its builder, including corrections to per-finding polish and the separate
+Draft AMENDMENT_DRAFTER path. No agent, model, contract, budget or constitution
+change. The controlled comparison completed with native exit 0: 20 calls,
+5,805.940 seconds versus the baseline's 26 calls and 5,054.385 seconds. Six fewer
+legal follow-ups reflect an empty/capped sampled initial response under an
+existing gate, not new routing savings. All 20 calls reconcile across artifacts.
+The same 3/5 locations, zero amendment false positives/clean flags and 3/3
+attribution are retained; amendment arrays and focal coverage exactly match.
+The BIRCH prose defect remains, reason scoring stays unavailable, and PROCESSOR
+grounding regresses. No broad quality-preservation or sparse-promotion claim.
+
+Initial host gate passed 255/0/4/0 of 259. The first final gate found one stale
+source-order assertion (68) after dispatch moved behind its transparent audit
+helper. The corrected assertion and executed masking/refusal/NFR checks pass;
+the restored full gate passes 255 PASS / 0 WARN / 4 SKIP / 0 FAIL of 259, native 0.
+Later accounting-only changes and test updates are explicitly compared with the
+frozen run. `shimmer:activation` builds successfully and all 138 expected source
+files match. Its unmounted offline GPU gate finishes 247 PASS / 0 WARN / 10 SKIP /
+2 FAIL of 259, native exit 1. Checks 28/31 remain failures for the omitted input
+tree, as in the prior unmounted image; check 258 passes. Image ID is
+`sha256:6083e8409c2b80f906ddb9c2253571d77410ac4008d762775417a61e293aebf1`.
+The original baseline/operator files and earlier manifests remain intact. The
+local closure commit includes the consolidated report and current handover;
+nothing was pushed. Canonical roadmap unchanged; **README + upstream/downstream
+routing + UI audit** remains unstarted.
+
 ## LOCAL SPEED-OPTIMIZATION AUDIT COMPLETE, NO OPTIMIZATION ACCEPTED, 2026-09-13
 
 Entered at quality baseline `1293041`, with diagnostic `0d2d152` present and

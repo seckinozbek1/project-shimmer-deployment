@@ -2332,7 +2332,7 @@ def check_68_chokepoint_prompt_masked():
     import sensitivity_layer as S
     import agent_wrapper
     src = inspect.getsource(agent_wrapper.AgentWrapper.run_task)
-    i_mask, i_disp = src.find("outbound_masker("), src.find("self.dispatch(")
+    i_mask, i_disp = src.find("outbound_masker("), src.find("agent_activation.call_dispatch(")
     if not (0 <= i_mask < i_disp):
         return _fail("run_task must call outbound_masker BEFORE dispatch")
     d = Path(tempfile.mkdtemp(prefix="shimmer_p2_68_"))
@@ -24518,6 +24518,11 @@ def check_257_console_startup_submission():
     return check()
 
 
+def check_258_agent_activation():
+    from activation_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24840,6 +24845,7 @@ CHECKS = [
     ("255 clickable desktop owns authenticated console startup and shutdown", check_255_desktop_startup),
     ("256 startup readiness is explicit and non-mutating", check_256_startup_readiness),
     ("257 console intake choices reach the real submission consumer", check_257_console_startup_submission),
+    ("258 activation evidence joins actual dispatch and bounded phase gates", check_258_agent_activation),
 ]
 
 

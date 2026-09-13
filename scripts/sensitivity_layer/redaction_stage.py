@@ -35,6 +35,7 @@ from pathlib import Path
 # agent_wrapper imports nothing editorial, so this is not a privacy->editorial edge
 # (same shape as scrub.py importing text_extract).
 from agent_wrapper import decode_items, is_envelope
+import agent_activation
 
 from . import redaction_detect
 from .rules import redaction_rules
@@ -291,6 +292,9 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
     summary = {}
     if not redaction_enabled:
         for doc in op_docs:
+            agent_activation.not_called(run_ctx, "REDACTOR", eligible=False,
+                reason="operator_waived_redaction", source_phase="9", doc_id=doc["id"],
+                consumer="privacy_scrub")
             _post_redaction(orch, doc["id"], "REDACTION_SKIPPED", {"reason": "operator_waived"})
             summary[doc["id"]] = {"redacted": False, "state": "SKIPPED", "reason": "operator_waived"}
         return summary
@@ -308,6 +312,9 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
     # doc - never silently default, never silently ship unredacted.
     if not rr["operator_in_force"]:
         for doc in op_docs:
+            agent_activation.not_called(run_ctx, "REDACTOR", eligible=False,
+                reason="no_operator_redaction_rule", source_phase="9", doc_id=doc["id"],
+                consumer="privacy_scrub")
             esc = build_redaction_escalation(
                 doc_id=doc["id"], document_name=doc["name"], stage="REDACT_RULES",
                 failure_kind="no_operator_rule", raw_output_path=None,
@@ -331,10 +338,14 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
         info = deliverables.get(doc["id"]) or {}
         master_path = info.get("amendments_json")
         if not master_path:
+            agent_activation.not_called(run_ctx, "REDACTOR", reason="no_readable_master",
+                source_phase="9", doc_id=doc["id"], state="no_execution_path")
             continue
         try:
             master = json.loads(Path(master_path).read_text(encoding="utf-8"))
         except Exception:
+            agent_activation.not_called(run_ctx, "REDACTOR", reason="unreadable_master",
+                source_phase="9", doc_id=doc["id"], state="no_execution_path")
             continue
         amendments = master.get("amendments", [])
 
@@ -363,7 +374,10 @@ def run_redaction_phase(orch, op_docs, deliverables, run_ctx, convention_registr
             convention_registry=convention_registry,
             # productization STEP 4: cost dimensions. Redaction is a per-document
             # phase; doc["id"] matches _persist_redactor_output's own doc_id below.
-            phase="redaction", doc_id=str(doc["id"]))
+            phase="redaction", doc_id=str(doc["id"]),
+            activation={"reason": "operator_redaction_rules_in_force", "source_phase": "9",
+                        "consumer": "privacy_scrub", "trigger_source": "privacy_stage",
+                        "evidence": {"operator_in_force": True, "redaction_enabled": True}})
         # Persist the redactor's raw + parsed output on EVERY path (INFRA-038 gap
         # close): diagnosable from disk, not only the bus.
         redactor_raw_path = _persist_redactor_output(run_ctx, "REDACTOR", doc["id"], redactor_r)
