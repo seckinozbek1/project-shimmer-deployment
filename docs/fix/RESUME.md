@@ -1,10 +1,69 @@
-# RESUME: dense quality-baseline addendum complete, 2026-09-13
+# RESUME: Local speed-optimization audit complete, 2026-09-13
 
-**Read this file first in a cold session. Next locked item: Local speed-optimization audit.**
+**Read this file first in a cold session. Speed audit decision: no optimization accepted.**
 ZERO through TWENTY-ONE, baseline normalization and roadmap items 1 and 2 are complete.
 Do not resume old technical backlogs or begin a later roadmap item out of order.
 The authorized synthetic native baseline reached the pipeline end. Private/operator
 document review and fresh-clone testing remain unrun.
+
+## Optimization audit outcome
+
+The operator authorized local synthetic component probes and, only after candidate
+validation, a controlled optimized-dense comparison. This supersedes the older
+laptop-run prohibition for this audit. Dense roster, policy, semantic tasks,
+models, budgets, governance and review responsibilities remain fixed. No sparse
+routing or hardware/power changes. No push. Do not modify the canonical roadmap.
+
+Entry HEAD was `1293041b5c5f59e388003a7a41321303cafd798e`, with diagnostic
+`0d2d152a1eb6d6dae0ccbe206253d7d465c543c2` present and local origin/main at that
+diagnostic commit. Tracked tree was clean, main ahead one; no remote operation.
+New ignored evidence root: `output/dense_optimization/`. Its `preserve.py` verified
+the 54 diagnostic and 8 quality-manifest artifacts and all 275 baseline/operator
+snapshot files, then recorded a 399-file source/state inventory.
+
+Read [LOCAL_SPEED_OPTIMIZATION.md](LOCAL_SPEED_OPTIMIZATION.md) for the consolidated
+report. The audit did not achieve a proven materially faster dense build. The
+operator allowed rejection of unsafe, unjustified and too-weak candidates; no
+speculative runtime change is retained and no full comparison was justified.
+Original wall remains 5,054.4 seconds; there is no new dense wall or quality score.
+
+- First-envelope stopping loses four of five distinct saved reviewer items,
+  despite equivalent selected parsing. Preservation guard neutralizes/fails/
+  restores/passes; parser-only proof is refused as NO_OBSERVED_EFFECT. Empty and
+  invalid candidate skipping are preserved. No termination or budget change.
+- Inference mode, one CPU thread and their combination preserve matched
+  192-token outputs/scores in both local models but do not establish a reliable
+  material gain amid 27.7%/46.9% baseline timing drift and observed thermal flags.
+- Exact scale reuse eliminates repeated work and passes real consumer, all-layer
+  weight-equality and no-op proofs. Later Qwen wall improves only 4.28% in a
+  component quartet at a 389 MiB VRAM cost. Phi adds 216 MiB and reaches 7.873 GiB
+  reserved VRAM. That memory tradeoff and weak/uncertain gain are rejected.
+- Legal context, batching, KV/prefix reuse, embeddings, loads and deterministic
+  overhead were reviewed without changing tasks, dependency ordering, models,
+  arithmetic, five-voter semantics or policy. No hardware settings changed.
+
+Evidence remains in ignored `output/dense_optimization/`, including original
+failed/inadequate probe setups labeled and excluded, representative A/Bs,
+all-layer equality/effect proofs, resource records and installed-source profile.
+Runtime and operator-state hashes still match the 399-file audit inventory.
+Fresh offline host gate: **254 PASS, 0 WARN, 4 SKIP, 0 FAIL/ERROR, TOTAL 258**,
+native exit **0**. Skips: optional local directories (01), live DDG (15), cold
+embedding download (38), unavailable contamination fixture (145). No clean
+contamination claim follows from that skip. All probe and gate processes exited.
+No runtime/README/image change or rebuild debt. Image retains the prior recorded
+unmounted result below; no new image execution is claimed.
+
+Closure is the local documentation commit titled `Record local speed optimization audit and rejected candidates`.
+Resolve its hash from `git log -1 --format=%H -- docs/fix/LOCAL_SPEED_OPTIMIZATION.md`
+after the staged credential scan. Main is two commits ahead of the unchanged
+local origin/main tracking ref. No fetch or push. Evidence manifest and final
+validation: `output/dense_optimization/evidence_manifest.json` and
+`validation_results.json`, with 36 representative 192-token trials.
+
+The operator-directed next handoff is **Conditional agent activation & sparse
+routing audit**. It has not begun. The canonical roadmap block below is preserved
+verbatim at the operator's instruction; its historic Next/not-begun labels are
+not the current audit status. Do not rewrite that list or start its other items.
 
 ## Repository checkpoint and normal startup
 
@@ -16,10 +75,11 @@ document review and fresh-clone testing remain unrun.
 - Diagnostic closure `0d2d152a1eb6d6dae0ccbe206253d7d465c543c2` was subsequently
   pushed by the operator. At quality-addendum entry, main and origin/main both
   pointed to it, with no tracked changes.
-- This addendum is the local commit titled `Record dense quality baseline from saved diagnostic run`.
-  Resolve its hash with `git log -1 --format=%H -- docs/fix/RESUME.md` after a
-  staged-secret scan. Main is one commit ahead of the unchanged local origin/main
-  tracking ref. No fetch or push occurred. The operator pushes.
+- Quality addendum `1293041b5c5f59e388003a7a41321303cafd798e` is titled
+  `Record dense quality baseline from saved diagnostic run`. At speed-audit entry,
+  main was one commit ahead of the unchanged local origin/main tracking ref.
+  Audit closure is the subsequent local documentation commit described above.
+  No fetch or push occurred. The operator pushes.
 - Preserve intentional untracked `SHIMMER_HANDOFF.md` and `durable/`, and all
   ignored operator input/output/ontology state. None is part of this commit.
   Do not reset, clean, rebase, stash or amend history.
@@ -43,7 +103,7 @@ Read the [quality addendum](LOCAL_PERFORMANCE_DIAGNOSTIC.md#dense-quality-baseli
 before proposing speed acceptance criteria. The operator authorized scoring the
 already-saved diagnostic run against the unchanged committed clinical key. This
 was measurement only: no pipeline rerun, model load/generation, corpus staging,
-scorer change, runtime fix or optimization. The speed audit has still not started.
+scorer change, runtime fix or optimization. The later speed audit outcome is above.
 
 - Current scorer: **3/5 (60%) LOCATION recall**, 0 amendment false positives,
   0 clean-item amendments on CEDAR/DAMSON, operator attribution **3/3 found**.
@@ -137,12 +197,11 @@ These helpers are local evidence, not fresh-clone assets. Never rerun the harnes
 over the existing baseline root or invoke its preparation path over operator state.
 All benchmark and probe processes have exited; no heavy workload remains running.
 
-This documentation-only item owes no new full gate or image rebuild under the
+That documentation-only diagnostic owed no new full gate or image rebuild under the
 operator's explicit diagnostic exception. The startup gate/image below are prior
-results, not new executions. No README behavior debt was introduced. The next item
-must evaluate output consumption, host variability and legal-follow-up value before
-assuming repeated loads or deterministic arithmetic dominate. No candidate has
-been implemented. No later roadmap item has begun.
+results, not new executions. No README behavior debt was introduced. The speed
+audit above subsequently evaluated output consumption, host variability and
+legal execution while preserving responsibilities. No candidate is shipped.
 
 ## Previous shipped startup gate and image
 
@@ -310,8 +369,8 @@ an operator decision. Read [TWENTY_LEARNING_SIGNAL.md](TWENTY_LEARNING_SIGNAL.md
 for the assessment and measurement design.
 
 **Standing boundaries.** The operator explicitly authorized the controlled local
-synthetic benchmark for the now-closed diagnostic item. That exception does not
-grant blanket authorization for future runs. Otherwise no pipeline run on this
+synthetic diagnostic and this speed audit's bounded probes. Those exceptions do
+not grant blanket authorization for future runs. Otherwise no pipeline run on this
 laptop, provider/cloud generation, paid operation or push under the standing
 development authorization. The locked
 roadmap does not authorize a VM run before its condition is met. Preserve local
@@ -324,4 +383,4 @@ For later product work, close one item before opening the next, pay its README/i
 debt, run appropriate behavioral evidence and adversarial review, then update RESUME.
 
 
-**This item is closed. Stop here; the next locked product item is Local speed-optimization audit.**
+**Do not begin the operator-directed next item: Conditional agent activation & sparse routing audit.**
