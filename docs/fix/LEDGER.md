@@ -1,5 +1,76 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## DENSE QUALITY-BASELINE ADDENDUM COMPLETE, 2026-09-13
+
+Scoring addendum to the completed performance diagnostic, not a new roadmap item
+and not the start of Local speed-optimization audit. The operator had pushed
+`0d2d152a1eb6d6dae0ccbe206253d7d465c543c2`; main and origin/main both pointed to it
+at entry. This addendum closes with the local documentation commit
+`Record dense quality baseline from saved diagnostic run`, one ahead of the
+unchanged tracking ref. No fetch, push or history rewrite.
+
+The [quality addendum](LOCAL_PERFORMANCE_DIAGNOSTIC.md#dense-quality-baseline-addendum-2026-09-13)
+records the unchanged current scorer against saved run
+`758b17f33e6344f4902024e53d4b38e1`, original dense wall 5,054.4 s / 26 calls.
+Command: `py -3.9 -B -X utf8 tools/score_corpus.py --corpus clinical_reference
+--run output/local_performance/baseline/run`. Direct path works; no evidence copy,
+corpus staging, pipeline rerun, generation-model load or model generation occurred.
+The operator explicitly authorized post-run key inspection. The committed key
+and scorer were not changed. Original output is preserved separately from manual
+inspection in ignored `output/quality_addendum/`.
+
+Automated result: **3/5 LOCATION recall**, ALDER/BIRCH/ELDER found through both
+the three typed bus findings and the three amendments. **0 amendment false
+positives**, **0 clean-item amendments** on CEDAR/DAMSON, **3/3 operator attribution**
+on found entries, all CONV-L01. The key has no typed claims: reason-confirmed,
+RIGHT PLACE WRONG REASON and reason-unverifiable scoring are unavailable.
+
+All five review states are **unknown** and asked recall is unavailable: every
+assignment row is untagged with empty consumer_agents, and sheet has no parsed
+unit. Recorded exposure remains a separate fact. FIRTH is missed with the scorer
+class `EVIDENCE_PRESENT_IN_MODEL_PAYLOAD`, as ELDER's neighbor in an uncapped
+CONV-002 call; its own completeness pair was rejected for the missing identifier.
+Sheet is missed with `EVIDENCE_ABSENT_FROM_CORPUS`, meaning no matching parsed
+unit on this classifier path. The 4 + 3 versus 6 discrepancy is present in source,
+REF-0018, PROCESSOR extraction and rejected VERIFIER output. This limitation is
+demonstrated without modifying the scorer or changing the original classification.
+
+Manual inspection, separate from the score: all three typed numeric comparisons,
+units, operator-rule IDs and reference-range citations are supported, with correct
+DOCX comment anchors. BIRCH's explanatory prose calls 5.0 the lower bound while
+its correct typed value and computed lead say 3.5. This defect reaches all relevant
+rendered outputs including the DOCX comment; only two complete justifications
+are free of that observed error. It is not an automated wrong-reason result.
+
+All 24 accepted model responses use recovery; two capped contract failures are
+CITATION_RESOLVER and VERIFIER. Twelve of 26 calls were capped. The verifier lost
+potentially useful sheet reasoning but also withheld wrong claims about clean
+CEDAR/DAMSON. Unsupported legal items and the clerk's overconfident sound verdict
+do not appear as additional amendments and are outside the zero false-positive
+metric. The scored findings have Python provenance with model explanatory prose.
+The 11 paired calls cover 8 distinct focal unit/rule combinations, not one call
+for each of the 11 selected pairs. No coverage or quality claim follows from counts alone.
+
+All 54 pre-existing closure-manifest artifacts still match. A new 275-file
+before/after inventory covering the whole baseline, key, scoring modules and
+operator state is unchanged, with no added/missing files. The prior manifest
+did not cover every bus/deliverable file individually, so its guarantee of earlier
+integrity is limited to its 54 entries. The ignored inspection helper reproduces
+the exact original CLI score using the actual scorer, validates all three typed
+records and checks source/citation/DOCX evidence without importing model modules.
+
+The quality invariant is now explicit: no future speed acceptance may reduce
+established factual correctness, named recall, false-positive performance,
+attribution, grounding, semantic/review coverage, contract validity or amendment
+quality. Known errors are not behavior to preserve, and unknown dimensions are
+not established preserved dimensions. No new key claims were added after seeing
+the run. No optimization or scorer/runtime fix was implemented.
+
+Only LOCAL_PERFORMANCE_DIAGNOSTIC, RESUME and this ledger change. No runtime,
+scorer, README behavior or image debt; no new full gate or image rebuild. Previous
+startup gate/image results remain historical and unchanged. The locked roadmap
+is unchanged; **Local speed-optimization audit** remains next and unstarted.
+
 ## LOCAL PERFORMANCE DIAGNOSTIC COMPLETE, 2026-09-13
 
 Locked roadmap item 2 is complete. The operator had pushed the human-startable

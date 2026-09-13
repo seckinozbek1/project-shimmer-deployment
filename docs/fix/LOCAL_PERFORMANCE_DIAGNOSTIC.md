@@ -4,6 +4,11 @@ Status: **complete**, 2026-09-13. Measurement design was recorded before instrum
 Baseline source: `5b72b16c67b02890ffc8be39096b5bad10e1c05c`.
 Scope: diagnosis only. The next locked item is **Local speed-optimization audit**.
 
+The [dense quality-baseline addendum](#dense-quality-baseline-addendum-2026-09-13)
+below scores this same saved run under separate post-run authorization. It records
+3/5 location recall, the manual correctness qualifications and the quality invariant
+for the next item. The original performance measurement did not read the answer key.
+
 ## Result and reproducible baseline
 
 The controlled native run took **5,054.4 seconds (84 min 14.4 s)**. Actual
@@ -483,3 +488,259 @@ The current laptop enters software thermal throttling during sustained producer
 generation, confirmed by NVIDIA's active slowdown flag at 08:56:56 UTC. That is
 an observed condition of this baseline, not a proposed runtime change. No machine
 power, clock, cooling or timeout settings were changed.
+
+## Dense quality-baseline addendum, 2026-09-13
+
+This is a scoring addendum to the completed diagnostic, **not the start of Local
+speed-optimization audit**. It uses the already-saved run
+`758b17f33e6344f4902024e53d4b38e1`, 5,054.4 s and 26 calls. No pipeline rerun,
+generation-model load, model generation, corpus staging or optimization occurred.
+The operator explicitly authorized reading the committed answer key after the run.
+No answer key, scorer, runtime source or historical artifact was changed.
+
+### Provenance, preservation and commands
+
+At addendum entry, main and origin/main both pointed to diagnostic closure
+`0d2d152a1eb6d6dae0ccbe206253d7d465c543c2`; the operator had pushed it. The tracked
+tree was clean; intentional untracked handoff/durable state was preserved.
+All **54 artifacts covered by the existing closure manifest** still matched their
+hashes, with none missing. That manifest did not individually cover every original
+deliverable and bus file, so it cannot prove their entire pre-addendum history.
+A new before/after inventory covers **275 files**, including the entire diagnostic
+baseline tree, the key, scoring modules and operator state. All remain unchanged
+during this addendum, with no additions or missing files in that inventory.
+
+The working key was verified equal to its committed HEAD content after newline
+normalization. Key LF-normalized SHA-256:
+`309d3dba93907f5166da11c687f575c21c168dedab15cc30ec935532c68f2df8`.
+Current `tools/score_corpus.py` SHA-256:
+`00aa5e1a96d4f76f3bed5bf67c9ad3b78103836c1d87b81105dc1a531aedf215`.
+The key has five planted entries, two clean results and **no typed `claim` on any
+entry**. No claim was added after observing the run.
+
+Commands from the repository root:
+
+```powershell
+py -3.9 -X utf8 tools/score_corpus.py --help
+py -3.9 -B -X utf8 tools/score_corpus.py --corpus clinical_reference --run output/local_performance/baseline/run > output/quality_addendum/score_original.txt
+py -3.9 -B -X utf8 output/quality_addendum/inspect_score.py > output/quality_addendum/inspection.txt
+py -3.9 -B -X utf8 output/quality_addendum/snapshot.py --check
+```
+
+The scorer directly accepts the original run location. No relocated copy or path
+patch was necessary. It exited 0, meaning scoring finished, not that quality passed.
+The ignored inspection helper captures the current scorer's own result locals and
+reproduces its original CLI output exactly, then reads saved evidence and applies
+the existing typed-finding validator. It does not implement an alternative score.
+No model-loading or pipeline-execution modules were imported by the helper.
+`-B` prevents bytecode writes.
+
+All artifacts required by this scorer exist and parse: completion, assignment,
+pairing map, bus, call evidence and the document master. The reference index,
+all six document deliverables including DOCX, the run summary, two contract dumps and editorial
+artifacts also exist. Completion remains `completed`, `reached_end=true`, exit 0,
+one document, three amendments. Complete artifact presence does not imply that
+all necessary semantic evidence or assignment metadata was recorded.
+
+### Automated results, unchanged current scorer
+
+| Dimension | Dense baseline |
+|---|---|
+| Planted flaws | 5 |
+| Raw/location recall | **3/5 (60%)**, location only |
+| Bus evidence | 3 typed findings: two `above_band`, one `below_band` |
+| Amendment evidence | 3 amendments; each independently matches a planted unit and operator rule |
+| False positives | **0 amendments** on units unmatched to a planted entry |
+| Clean items flagged | **0** amendments on RES-CEDAR or RES-DAMSON; 0/2 clean units flagged |
+| Operator-rule attribution | **3/3 found entries**, all CONV-L01; 3/5 planted entries have an attributed hit |
+| Asked recall | **Unavailable**, no resolvable `asked` entries; not 0% and not proof of no exposure |
+| Review-state counts | `unknown=5`; `never_assigned=0`, `no_consumer=0`, `suspended=0`, `asked=0`, `assigned_not_asked=0` |
+| Reason-confirmed / RIGHT PLACE WRONG REASON / reason-unverifiable counts | **Unavailable for this key**, not zero established cases |
+| Master validator errors | 0 |
+| Existing typed validator | 3/3 records pass with the saved registry IDs; structural validity only |
+
+The scorer checks location and relation for bus matches; it also accepts an
+amendment on the unit carrying the operator's rule ID. Here all three hits have
+**both** forms of evidence, although the printed `matched via` column gives bus
+precedence. Attribution is specifically the amendment's `source_convention_ref`,
+not merely its generated CONV-001 registry ID. False-positive and clean-item counts
+are amendment-based; they do not certify all generated or untyped bus prose.
+
+| Planted entry | Operator rule / relation | Scorer outcome | Bus / amendment matches | Review state | Miss evidence class |
+|---|---|---|---|---|---|
+| RES-ALDER | CONV-L01 / `above_band` | Found, attributed | 1 / 1 | `unknown` | Not a miss |
+| RES-BIRCH | CONV-L01 / `below_band` | Found, attributed | 1 / 1 | `unknown` | Not a miss |
+| RES-ELDER | CONV-L01 / `above_band` | Found, attributed | 1 / 1 | `unknown` | Not a miss |
+| RES-FIRTH | CONV-L02 / `missing_field` | Missed | 0 / 0 | `unknown` | `EVIDENCE_PRESENT_IN_MODEL_PAYLOAD` |
+| sheet | CONV-L03 / `sum_mismatch` | Missed | 0 / 0 | `unknown` | `EVIDENCE_ABSENT_FROM_CORPUS` |
+
+False-negative class totals: payload **1**, upstream-but-not-payload **0**,
+absent-from-corpus **1**, UNKNOWN **0**. These are the original scorer results;
+the qualifications below do not silently change either miss to a hit.
+
+### Recorded exposure and false-negative mechanisms
+
+All five saved assignment rows are `untagged`, with empty `consumer_agents`.
+The current runtime has fallback routing for untagged rules, but the scorer
+deliberately does not infer assigned consumers from unrelated calls or current
+source. For the four result entries it therefore returns `unknown`; the sheet
+entry additionally has no matching pairing-map unit. The zero counts for the other
+states are counts of resolved labels, not proof of absent routing problems.
+
+Call evidence nevertheless records rule-and-unit exposure, separately from that
+assignment-based state: ALDER and BIRCH each have two focal and two neighboring
+CONV-001 exposures; ELDER has two focal CONV-001 exposures. FIRTH is shown as the
+following neighbor in ELDER's CONV-002 call
+`557b1f5c45844b9abcba09b5151cb3f4`, an uncapped call with the rule rendered and
+no recorded document/reference/convention clipping. That establishes the scorer's
+payload class, **not a dedicated completeness judgment of FIRTH** or a proven
+model reasoning failure. The narrow call's focal unit is ELDER.
+
+FIRTH's saved unit fields omit `sample identifier`; the pairing map rejects its
+CONV-002 pair with `unit lacks sample identifier`, precisely the missing field
+that the planted completeness rule is meant to find. No computed or judged absence
+was emitted. This is a coverage gap at the pairing/planning boundary despite
+neighbor exposure, not evidence that the source lacked the relevant text.
+
+The sheet's class needs an even stronger qualification. `fn_evidence.classify`
+first matches the key's unit name against pairing-map unit IDs. None of the six
+result-unit IDs contains `sheet`, so it returns `EVIDENCE_ABSENT_FROM_CORPUS`
+before consulting other evidence. **The discrepancy is present in the supplied
+source**: laboratory counts 4 + 3 = 7 versus declared total 6. REF-0018 preserves
+those exact header lines, PROCESSOR accepted an extraction of them, and VERIFIER's
+rejected raw output explicitly notices 7 versus 6. Thus this class describes a
+missing parsed review unit on this path, not physical absence from the corpus or
+a demonstrated faulty answer key. The classifier does not inspect source prose
+or contract-failure text. Its original label is retained; no scorer fix or rescore
+under a changed definition was performed.
+
+Teaching the classifier about header/reference or rejected-response evidence would
+change its evidence categories; it would not by itself create an accepted finding
+or raise location recall. Inferring untagged fallback consumers would likewise
+change review-state/asked-denominator semantics. Neither change is smuggled into
+this baseline. The original results and the separate evidence qualification are
+both retained for any later, explicitly scoped scorer work.
+
+Coverage granularity also qualifies the earlier performance shorthand: the map
+has 11 selected unit/rule pairs, 1 rejection and 18 undecided combinations. The
+11 actual paired calls cover **8 distinct focal unit/rule combinations**, with
+two CONV-001 calls each on ALDER, BIRCH and ELDER, and one CONV-002 call on each
+of ALDER through ELDER. They are not 11 distinct pairs each receiving one call.
+Zero `not_judged` and zero absence counts do not establish complete review coverage.
+This addendum records that distinction without changing scheduling or call policy.
+
+### Manual inspection, separate from automated scoring
+
+All three typed findings and all three amendments were compared with the saved
+target, supplied reference table and operator rules. These are source-level
+observations, **not reason-confirmed scorer results**.
+
+| Finding / amendment | Typed comparison and source check | Narrative inspection |
+|---|---|---|
+| ALDER | Sodium 148 mmol/L > upper bound 145 mmol/L; `above_band`, correct result and CONV-L01 | Correct figures and direction; no obvious source contradiction |
+| BIRCH | Potassium 3.1 mmol/L < lower bound 3.5 mmol/L; `below_band`, correct result and CONV-L01 | **Incorrect prose:** calls 5.0 mmol/L the lower bound. The computed lead sentence and typed value_b correctly say 3.5 |
+| ELDER | Total bilirubin 24 umol/L > upper bound 17 umol/L; `above_band`, correct result and CONV-L01 | Correct figures and direction; no obvious source contradiction |
+
+All figures have matching units. All three `source_refs` and amendment `ref_ids`
+resolve to REF-0007, the supplied reference-range table in
+`analyte_reference_ranges.md`, which contains the actual supporting rows. The
+typed unit IDs and original excerpts identify the correct target results.
+DOCX comments 1/2/3 anchor to the corresponding ALDER/BIRCH/ELDER original excerpts.
+The generic `location` field is the grounding REF-0007 for all three, so it is
+not itself a unique target-location citation; target identity comes from the unit,
+original excerpt and comment anchor. No dangling citation was found in these
+three records. No patient diagnosis, prognosis or clinical interpretation is
+asserted by their text; their `required` severity is the operator-rule priority.
+
+The BIRCH contradiction survives into `review_data.json`, `review_findings.md`,
+`reviewed_document.md`, `document_summary.md` and `tracked_changes.docx`'s
+`word/comments.xml`. The source interval is 3.5 to 5.0: 5.0 is its upper bound.
+Thus **3/3 typed comparisons are supported, but only 2/3 complete amendment
+justifications are free of this observed bound error**. This manual finding does
+not relabel BIRCH as automated RIGHT PLACE WRONG REASON; that metric is unavailable.
+
+All scored records are posted with `backend=paired`, `model=python`, and their
+amendments say `derived_from=computed_finding`. Their figures and relations are
+computed; the model supplies explanatory prose. No scored hit exists solely as
+a recovered or capped model finding. All paired model replies used recovery,
+and one BIRCH CONV-001 reply hit its 768-token cap. The saved typed records do not
+retain a one-to-one explanatory call ID, so attribution of the final BIRCH sentence
+to the capped versus uncapped call is not established. Eleven advisory items are
+explicitly withheld from bus findings by the existing projection, while their
+call metadata and `items_withheld` counts remain recorded. Their full original
+prose is not available there for retrospective quality certification.
+
+Other accepted bus items are outside the scorer's typed-Finding definition.
+LEGAL_ANALYST posted six broad findings and six follow-up items, including
+unsupported assertions about conformity assessment, redress, post-market
+monitoring, prohibitions and transparency obligations in this laboratory corpus.
+One uncapped follow-up contains literal placeholder fields rather than analysis.
+These do not appear as additional accepted amendments and are not counted in the
+scorer's zero amendment false positives. FACT_CHECKER retained one capped,
+recovered ALDER item, without a typed relation/figures. The capped recovered clerk
+called the findings `sound` and praised accurate commentary, overlooking the
+BIRCH contradiction. Its one observation is not independent quality certification.
+
+### Contract and truncation qualifications
+
+Of 26 model calls, **24 produced AGENT_OUTPUT through recovery**, not strict JSON
+parsing, and **2 produced CONTRACT_VIOLATION**. ARCHIVIST, INST_FINDER and
+SPEECH_ACT_TAGGER recovered empty envelopes. PROCESSOR recovered 21 extraction
+items without hitting its cap, including the sheet-count header. Agent-contract
+acceptance does not mean a typed Finding, substantive relevance or complete coverage.
+
+CITATION_RESOLVER hit 2,048 tokens and left an incomplete JSON envelope containing
+a growing citation list; no accepted citation-resolution output resulted. VERIFIER
+hit 2,048 tokens and produced prose rather than the required canonical envelope.
+Its dump includes the useful sheet-count discrepancy but also wrong relation
+labels and false out-of-range assertions about clean CEDAR and DAMSON. The
+contract refusal therefore lost potentially useful work **and** withheld erroneous
+work. It is not safe evidence for accepting the raw output wholesale. Neither
+its sheet observation nor its false clean-item assertions is promoted into the score.
+
+| Capped agent | Capped calls | Output cap |
+|---|---:|---:|
+| ARCHIVIST | 1 | 4,096 |
+| INST_FINDER | 1 | 2,048 |
+| CITATION_RESOLVER | 1 | 2,048 |
+| LEGAL_ANALYST | 5 of 7 | 2,048 |
+| VERIFIER | 1 | 2,048 |
+| FACT_CHECKER | 1 | 2,048 |
+| PRACTICE_AUDITOR | 1 of 11 | 768 |
+| EDITOR_CLERK | 1 | 8,192 |
+
+Total capped calls remain **12/26**, with zero generation errors. The original
+editorial state remains REVIEWED, one observation, no failed rank. No cap or
+contract setting was altered during scoring.
+
+### Quality invariant for the next locked item
+
+This is the **dense quality baseline**, including its deficiencies and unknowns.
+Speed alone cannot establish acceptance of an optimized-dense system.
+
+| Dimension | Baseline and acceptance constraint |
+|---|---|
+| Recall / coverage of found defects | Retain the three named hits, not merely an interchangeable 3/5 aggregate; do not lose existing semantic coverage |
+| Factual correctness | Preserve all three correct typed relations, figures and units; no new wrong claims. The BIRCH prose error is a known defect, not a behavior required to be retained |
+| False-positive performance | No regression from zero unmatched/clean-unit amendments; inspect untyped and rejected outputs separately because this metric excludes them |
+| Operator attribution | Preserve CONV-L01 on each existing hit, separately from CONV-001 registry identity |
+| Grounding / citations | Preserve resolvable supporting ranges and correct target association, including rendered comment anchors; a citation count alone is insufficient |
+| Amendment quality | Preserve supported ALDER/ELDER justifications and the correct typed BIRCH comparison; no degradation of action, figures, units, references or rendering |
+| Contract validity | Do not trade accepted, useful consumer outputs for new contract failures or more incomplete output. Existing two violations and 12 caps are limitations, not quality goals |
+| Review coverage | Preserve known rule/unit exposure and deterministic coverage; pair/call totals alone do not prove this. The five unknown assignment states and two misses remain explicit |
+| Reason-level correctness / broader semantic coverage | Not established by this key. Future claims of preservation require adequate independent evidence; unmeasured never means preserved |
+
+No new typed claims, benchmark definitions or runtime fixes were introduced to
+make the baseline look better. The current scorer's unknown-state behavior and
+parsed-unit-only absence classification remain documented limitations. Source-level
+manual checks are bounded to this saved synthetic run; they are not a general
+clinical, language or cross-corpus correctness evaluation.
+
+New machine-readable analysis and logs are under ignored `output/quality_addendum/`:
+`score_original.txt`, `score_verified.txt`, `quality_results.json`, `inspection.txt`,
+`before.json`, `preservation.json` and the local read-only helper scripts. Original
+diagnostic files remain untouched. Only this documentation, RESUME and a new LEDGER
+entry change. No shipped/runtime or scorer change means no new full gate or image
+rebuild; the existing startup image and historical gate results remain unchanged.
+The addendum closes with a local documentation commit, never a push. The next
+locked item is still **Local speed-optimization audit**, and it has not started.
