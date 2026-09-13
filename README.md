@@ -1,5 +1,13 @@
 # Project Shimmer
 
+The README + upstream/downstream routing + UI audit is complete at
+`47c63aca09603ab5c7ad662753d647397a623ce8`. The documentation-only
+[session close](docs/fix/RESUME.md#session-close-operator-correction-and-current-status)
+records the subsequent execution-policy restriction; no further model/pipeline/
+inference/GPU workload is permitted for this item. Recorded gates and image parity
+below describe the audit revision, not newly executed closeout evidence. Nothing
+was pushed by the agent. FinOps remains next and unstarted.
+
 Shimmer is a governed document-review prototype. It combines model reasoning with
 typed findings, deterministic comparisons, citations, proposed amendments and an
 auditable record of what ran. It has 18 registered agents; conditional phases
