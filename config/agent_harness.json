@@ -20,7 +20,7 @@
     "refire_condition_and_limit": {
       "decided": true,
       "summary": "No agent is ever asked again after a failure. A reply that does not meet its contract is recorded and dropped, never retried, so nothing is silently attempted twice.",
-      "where": "None. Confirmed by direct trace: pipeline.py's _run_one calls wrapper.run_task exactly once (no while/for-retry loop around the call); agent_wrapper.py's run_task itself has no retry loop either (confirmed: no genuine while statement in its body, only a rate-limit backoff inside call_claude/call_gpt for a 429/529 transport error, a different thing from a contract violation). A CONTRACT_VIOLATION is posted to the bus and the item is dropped (agent_wrapper.py's _items_for skips any result with ok=False); it is never re-attempted. Re-fire limit: 0. This is a real, decided answer, not an unresolved part: the code decides it by having no retry mechanism at all."
+      "where": "None. Confirmed by direct trace: pipeline.py's _run_one calls wrapper.run_task exactly once (no while/for-retry loop around the call); agent_wrapper.py's run_task itself has no retry loop either (confirmed: no genuine while statement in its body, only a rate-limit backoff inside call_claude/call_gpt for a 429/529 transport error, a different thing from a contract violation). A CONTRACT_VIOLATION is posted to the bus and the item is dropped (pipeline.py's _items_for skips any result with ok=False); it is never re-attempted. Re-fire limit: 0. This is a real, decided answer, not an unresolved part: the code decides it by having no retry mechanism at all."
     }
   },
   "agents": {
@@ -72,6 +72,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Runs whenever its scheduled stage has work to process.",
         "condition": "Always, once per its fixed phase, unconditionally.",
         "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
@@ -134,6 +135,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Runs whenever its scheduled stage has work to process.",
         "condition": "Always, once per its fixed phase, unconditionally.",
         "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
@@ -198,6 +200,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Runs whenever its scheduled stage has work to process.",
         "condition": "Always, once per its fixed phase, unconditionally.",
         "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
@@ -261,6 +264,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "In whole-document review, runs when it receives a matching rule or a rule without a subject label. In passage-by-passage review, a rule goes to the first eligible reviewer for its subject; a rule without a subject goes to PRACTICE_AUDITOR. A rule with no eligible reviewer stays unreviewed, with the reason recorded.",
         "condition": "Wide mode: fires if at least one rule is assigned to it by the convention assignment OR at least one loaded rule is untagged (an untagged rule keeps today's default routing to every convention-review agent); only with zero assigned rules and zero untagged rules does it not run. Paired mode: each plan's judging agent is chosen by its rule's subject, the first convention-review agent among the rule's consumer_agents; an untagged rule keeps PRACTICE_AUDITOR; a rule with no convention-review consumer gets no judging agent at all, its plan recorded in the pairing map as not judged (convention distribution step A, built without measurement).",
         "where": "scripts/pipeline.py: _convention_review_firing_agents (the wide-mode loop of phase_5_5_convention_review, its registry excerpt filtered per agent by _wide_registry_for_agent) and _paired_judging_agent (_paired_convention_review); the assignment is <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions. Gate checks 199 and 206 prove both, executed, neutralised and restored."
@@ -326,6 +330,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Reviews each document once. With local models, it can then receive a limited number of follow-up questions about its findings, one at a time. The other findings retain their first review.",
         "condition": "Once in phase 3 per operational document, unconditionally, as a production agent; under the local backend profile ALSO once per finding up to DEEPEN_MAX_FINDINGS (D6, the two-pass split: a second, narrower question per selected finding, always serial; other findings keep their pass-one form). Not a retry: the re-fire limit on a contract violation stays 0.",
         "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC and _deepen_legal_analyst_findings_local (D6). Observed live on run 3d3142c8 (2026-09-11): 1 phase-3 call producing 5 findings, then 5 pass-two calls, 6 in all."
@@ -388,6 +393,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "In whole-document review, runs when it receives a matching rule or a rule without a subject label. In passage-by-passage review, a rule goes to the first eligible reviewer for its subject; a rule without a subject goes to PRACTICE_AUDITOR. A rule with no eligible reviewer stays unreviewed, with the reason recorded.",
         "condition": "Wide mode: fires if at least one rule is assigned to it by the convention assignment OR at least one loaded rule is untagged (an untagged rule keeps today's default routing to every convention-review agent); only with zero assigned rules and zero untagged rules does it not run. Paired mode: each plan's judging agent is chosen by its rule's subject, the first convention-review agent among the rule's consumer_agents; an untagged rule keeps PRACTICE_AUDITOR; a rule with no convention-review consumer gets no judging agent at all, its plan recorded in the pairing map as not judged (convention distribution step A, built without measurement).",
         "where": "scripts/pipeline.py: _convention_review_firing_agents (the wide-mode loop of phase_5_5_convention_review, its registry excerpt filtered per agent by _wide_registry_for_agent) and _paired_judging_agent (_paired_convention_review); the assignment is <run>/audit/convention_assignment.json, computed once at BOOT by scripts/convention_assignment.assign_conventions. Gate checks 199 and 206 prove both, executed, neutralised and restored."
@@ -452,6 +458,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Runs whenever its scheduled stage has work to process.",
         "condition": "Always, once per its fixed phase, unconditionally.",
         "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
@@ -508,6 +515,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Runs whenever its scheduled stage has work to process.",
         "condition": "Always, once per its fixed phase, unconditionally.",
         "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
@@ -567,6 +575,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Runs whenever its scheduled stage has work to process.",
         "condition": "Always, once per its fixed phase, unconditionally.",
         "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
@@ -625,6 +634,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Runs whenever its scheduled stage has work to process.",
         "condition": "Always, once per its fixed phase, unconditionally.",
         "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
@@ -683,6 +693,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Can be asked only when sensitivity handling and redaction are enabled and a document is ready for redaction. If redaction is waived, that decision is recorded as skipped.",
         "condition": "Phase 9 (redaction) always RUNS, but REDACTOR itself only posts bus messages when the sensitivity layer is active (LAYER_ACTIVE / sensitivity_layer.is_active()). Confirmed live: a completed run with LAYER_ACTIVE False produced zero REDACTOR bus messages, the phase itself still ran (waived, logged) but the agent's own call did not fire.",
         "where": "scripts/pipeline.py line ~3438 (\"Phase 9: redaction (ALWAYS runs...)\") and line ~3536-3543 (the LAYER_ACTIVE confirmation note on a completed run, cb4c557b)."
@@ -745,9 +756,10 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "Amendments are normally built directly from computed findings. This agent is asked to polish the wording only when you enable that option and no fresh amendment reply is already available for the document.",
-        "condition": "Skipped if a fresh AMENDMENT_DRAFTER payload already exists on the bus for that doc_id (existing_amendments); otherwise runs once per operational document. Off by default as a MODEL CALL under refine R2 rules (--amendment-polish gates the wording pass specifically); the deterministic template path still produces the amendment either way.",
-        "where": "scripts/pipeline.py line ~2030 (\"# AMENDMENT_DRAFTER (skip if we have a fresh payload already on the bus)\")."
+        "condition": "A fresh bus amendment payload bypasses polishing. Otherwise --amendment-polish enables one narrow call per typed irregular finding, not one call per document. Empty, untyped and non-irregular findings make no call. Failure retains the original finding. The deterministic template builds amendments either way. Separately, Draft task mode uses this identity for one free-text memo through the direct Claude call path before review.",
+        "where": "scripts/pipeline.py: phase_6_synthesis, _polish_findings, main's Draft branch and _draft_generate_with_evidence."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
@@ -810,6 +822,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "The clerk reviews each deliverable. A higher level is called only if the level below reports confidence below the configured threshold or, when enabled, an issue beyond its authority. Escalation stops at the configured highest level.",
         "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
         "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
@@ -872,6 +885,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "The clerk reviews each deliverable. A higher level is called only if the level below reports confidence below the configured threshold or, when enabled, an issue beyond its authority. Escalation stops at the configured highest level.",
         "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
         "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
@@ -934,6 +948,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "The clerk reviews each deliverable. A higher level is called only if the level below reports confidence below the configured threshold or, when enabled, an issue beyond its authority. Escalation stops at the configured highest level.",
         "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
         "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
@@ -996,6 +1011,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "The clerk reviews each deliverable. A higher level is called only if the level below reports confidence below the configured threshold or, when enabled, an issue beyond its authority. Escalation stops at the configured highest level.",
         "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
         "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
@@ -1058,6 +1074,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "The clerk reviews each deliverable. A higher level is called only if the level below reports confidence below the configured threshold or, when enabled, an issue beyond its authority. Escalation stops at the configured highest level.",
         "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
         "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."
@@ -1120,6 +1137,7 @@
       },
       "fires_at_all": {
         "decided": true,
+        "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
         "summary": "The clerk reviews each deliverable. A higher level is called only if the level below reports confidence below the configured threshold or, when enabled, an issue beyond its authority. Escalation stops at the configured highest level.",
         "condition": "PARSIMONY (INFRA-040): EDITOR_CLERK, the entry rank, always fires once per deliverable. Each higher rank (EDITOR_HEAD_OF_UNIT, then _SECTION, then _DEPARTMENT, _DEPUTY_DG, _DG) fires ONLY when the rank immediately below it triggers escalation: an observation's confidence is below the operator's threshold, or (if enabled) an observation raises out_of_mandate. Bounded by a terminal cap; most runs resolve at EDITOR_CLERK alone.",
         "where": "scripts/pipeline.py, _observation_triggers_escalation() (the two ratified summon triggers) and the rank-to-rank loop around line ~2578 (trig, reason = _observation_triggers_escalation(obs, tunables))."

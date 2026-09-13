@@ -318,6 +318,20 @@ through the real scorer over declared temporary artifacts and a synthetic key.
 
 #### The local profile (`--backend-profile local`)
 
+Activation is configured separately with `--activation-profile dense|sparse`.
+`dense` is the default reference firing policy, including its existing task,
+convention, privacy, finding and editorial gates. `sparse` currently retains that
+same conservative policy: no additional expertise exclusion has been accepted.
+Neither option forces all 18 agents or bypasses governance. It is not a measured
+speedup or a change of models, prompts or review requirements.
+
+Pipeline runs write `audit/agent_activation.json`, recording requests, dispatch
+attempts, outcomes and explicit non-call reasons. Dispatch attempts join the
+existing call evidence by `call_id`; they do not imply successful generation.
+The artifact distinguishes ineligibility, eligible inactivity, unavailable
+execution paths, failures and phases not reached. Legal follow-ups name their
+finding and bound; editorial climbs identify their triggering lower rank.
+
 `--backend-profile local` remaps **17 of the 18 agents** to two local models and makes no
 provider API call in a **review** run. REDACTOR is the exception: it was already local. The
 agent-to-backend map lives in `pipeline._LOCAL_PROFILE` (the LAW-III producer/auditor split is

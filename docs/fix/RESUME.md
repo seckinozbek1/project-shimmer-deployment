@@ -1,4 +1,57 @@
-# RESUME: Local speed-optimization audit complete, 2026-09-13
+# RESUME: Conditional agent activation audit complete, 2026-09-13
+
+## Completed operator-authorized item
+
+**Conditional agent activation & sparse routing audit** is complete, entered at
+`8ca92cd`. This authorization superseded the previous next-item hold below; the
+canonical roadmap block remains unchanged. Next after this item, and not begun:
+**README + upstream/downstream routing + UI audit**.
+
+Read [AGENT_ACTIVATION_AUDIT.md](AGENT_ACTIVATION_AUDIT.md) for the all-18-agent
+inventory and candidate decisions. New evidence belongs only under
+`output/sparse_activation/`. The 54 diagnostic, 8 quality and 46 speed-audit
+manifest entries and all 275 baseline/operator snapshot files were verified.
+
+Implementation adds `audit/agent_activation.json` and explicit dense/sparse CLI
+profiles. Dense remains default. No new expertise exclusion is accepted; existing
+conditional routes remain authoritative. Sparse is not promoted as a proven
+optimization or as broadly quality-preserving.
+
+The controlled comparison is COMPLETE, native exit 0, run
+`35f04de9d00042a6ba9f30e7c683ff33`, under `output/sparse_activation/comparison/run`.
+PID 3952 and tool session 14663 have finished. Twenty calls took 5,805.940 seconds,
+versus 26 and 5,054.385 seconds. Six legal follow-ups disappeared because the
+sampled initial response was empty/capped, under the existing gate. Newly saved
+routing calls are zero; wall increased 14.87%. All dispatch/generation/cost/
+evidence/activation IDs reconcile, with 39 decisions covering all 18 agents.
+
+Scorer remains 3/5 locations, zero amendment false positives/clean flags and 3/3
+attribution. Amendment arrays and focal pair multiplicities exactly match the
+baseline. BIRCH prose still misstates its lower bound. Reason scoring and asked
+recall remain unavailable. PROCESSOR extraction references now point to the wrong
+source document; broader quality is not certified. The report preserves all
+manual, contract, coverage, sampling and thermal qualifications.
+
+Post-freeze accounting refinements fix pre-dispatch argument accounting and add
+specific wide/verification/legal document evidence. Normalized production source
+equality and executed fixtures qualify the five working-tree file differences
+from the frozen run. The first final gate was 254 PASS / 4 SKIP / 1 FAIL: check 68
+still searched for the old direct dispatch spelling. Its assertion is updated,
+and executed masking/refusal plus NFR checks pass. The restored full offline gate
+passes 255 PASS / 0 WARN / 4 SKIP / 0 FAIL, TOTAL 259, native exit 0. The new local
+`shimmer:activation` image builds successfully; all 138 expected source files
+match. Its unmounted offline GPU gate finishes 247 PASS / 0 WARN / 10 SKIP /
+2 FAIL of 259, native exit 1. The two failures remain checks 28/31 for unshipped
+input directories; activation check 258 passes. This is not an all-green image
+gate or a contamination/fresh-clone certificate. Image ID:
+`sha256:6083e8409c2b80f906ddb9c2253571d77410ac4008d762775417a61e293aebf1`.
+All audit processes have finished. Evidence is sealed under the new ignored root;
+the local closure commit contains this handover and the report. Nothing was pushed.
+The authoritative original dense quality baseline remains unchanged. Do not begin
+the next item without its separate operator instruction.
+No provider, private document, VM, machine-setting change or push is authorized.
+
+## Prior speed-audit closure (historical)
 
 **Read this file first in a cold session. Speed audit decision: no optimization accepted.**
 ZERO through TWENTY-ONE, baseline normalization and roadmap items 1 and 2 are complete.

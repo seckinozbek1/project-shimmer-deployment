@@ -81,7 +81,7 @@ SHARED_PARTS = {
                  "call_claude/call_gpt for a 429/529 transport error, a "
                  "different thing from a contract violation). A "
                  "CONTRACT_VIOLATION is posted to the bus and the item is "
-                 "dropped (agent_wrapper.py's _items_for skips any result "
+                 "dropped (pipeline.py's _items_for skips any result "
                  "with ok=False); it is never re-attempted. Re-fire limit: 0. "
                  "This is a real, decided answer, not an unresolved part: "
                  "the code decides it by having no retry mechanism at all.",
@@ -177,15 +177,15 @@ FIRES_AMENDMENT_DRAFTER = {
                "This agent is asked to polish the wording only when you enable "
                "that option and no fresh amendment reply is already available "
                "for the document.",
-    "condition": "Skipped if a fresh AMENDMENT_DRAFTER payload already exists "
-                 "on the bus for that doc_id (existing_amendments); otherwise "
-                 "runs once per operational document. Off by default as a "
-                 "MODEL CALL under refine R2 rules (--amendment-polish gates "
-                 "the wording pass specifically); the deterministic template "
-                 "path still produces the amendment either way.",
-    "where": "scripts/pipeline.py line ~2030 "
-             "(\"# AMENDMENT_DRAFTER (skip if we have a fresh payload "
-             "already on the bus)\").",
+    "condition": "A fresh bus amendment payload bypasses polishing. Otherwise "
+                 "--amendment-polish enables one narrow call per typed irregular "
+                 "finding, not one call per document. Empty, untyped and non-irregular "
+                 "findings make no call. Failure retains the original finding. "
+                 "The deterministic template builds amendments either way. "
+                 "Separately, Draft task mode uses this identity for one free-text "
+                 "memo through the direct Claude call path before review.",
+    "where": "scripts/pipeline.py: phase_6_synthesis, _polish_findings, "
+             "main's Draft branch and _draft_generate_with_evidence.",
 }
 FIRES_EDITORIAL_BOARD = {
     "summary": "The clerk reviews each deliverable. A higher level is called "
@@ -329,7 +329,15 @@ def build():
             "hand_format": {"see": "shared_parts.hand_format"},
             # Part 8: whether it fires at all, given everything above. Traced
             # per-agent group against real code, not assumed uniform.
-            "fires_at_all": dict({"decided": True}, **AGENT_FIRING[name]),
+            "fires_at_all": dict({"decided": True,
+                "activation_audit": "scripts/agent_activation.py records eligibility, activation, "
+                    "actual dispatch and outcome in audit/agent_activation.json. "
+                    "--activation-profile dense retains reference firing; sparse currently "
+                    "retains the same conservative policy and existing phase gates. "
+                    "Neither profile forces prohibited or unavailable paths. "
+                    "A phase not reached has unknown eligibility, not a successful skip. "
+                    "Legal follow-ups and editorial climbs are bounded additional work, "
+                    "distinct from the zero contract-failure retry limit."}, **AGENT_FIRING[name]),
             # Part 9: re-fire condition and limit. Shared, see shared_parts.
             "refire_condition_and_limit": {"see": "shared_parts.refire_condition_and_limit"},
             "contract_item_kind": contract.get("item_kind"),

@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 import call_evidence
+import agent_activation
 from bus_reader import (_estimate_tokens, assemble_context,
                         begin_truncation_capture, end_truncation_capture)
 from constitution import CheckResult, Constitution
@@ -1414,11 +1415,12 @@ class AgentWrapper:
             json.dump(dump, f, indent=2, ensure_ascii=False)
         return out_path
 
+    @agent_activation.observe_task
     def run_task(self, *, work_payload, run_objectives="", channel="main",
                  recipient="ORCHESTRATOR", recent_bus_limit=30, max_tokens=4096,
                  relevant_precedent_ids=None, convention_registry=None,
                  reference_index_excerpt=None, phase="", doc_id="",
-                 items_are_advisory=False):
+                 items_are_advisory=False, activation=None):
         """`items_are_advisory` marks a call whose reply is NOT the record.
 
         In paired mode the model is asked one narrow question about one unit
@@ -1534,10 +1536,11 @@ class AgentWrapper:
                 # need (pipeline.py's call sites); LOCAL_MAX_OUTPUT_TOKENS is
                 # the backstop. It permits PROCESSOR's measured allowance and
                 # the editorial board's configured 8192-token request.
-                result = self.dispatch(stable_prefix, dynamic_suffix,
+                result = agent_activation.call_dispatch(self, call_id, stable_prefix, dynamic_suffix,
                                        max_new_tokens=min(max_tokens, LOCAL_MAX_OUTPUT_TOKENS))
             else:
-                result = self.dispatch(stable_prefix, dynamic_suffix, max_tokens=max_tokens)
+                result = agent_activation.call_dispatch(self, call_id, stable_prefix, dynamic_suffix,
+                                                        max_tokens=max_tokens)
         finally:
             self._cost_phase = ""
             self._cost_doc_id = ""

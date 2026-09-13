@@ -41,6 +41,7 @@ else:
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 import agent_wrapper
+import agent_activation
 from agent_wrapper import (AgentWrapper, load_api_keys, decode_items,
                            current_items, make_envelope, is_envelope)
 import amendment_render
@@ -746,7 +747,9 @@ def _draft_generate_with_evidence(drafter, stable, dynamic, *, passages, run_ctx
     drafter._cost_call_id = call_id
     try:
         # CallResult carries the response text in .raw_text (there is no .text).
-        r = drafter.call_claude(stable, dynamic, max_tokens=4096)
+        r = agent_activation.direct_call(drafter, call_id,
+            lambda: drafter.call_claude(stable, dynamic, max_tokens=4096),
+            reason="draft_task_memo", source_phase="0", evidence={"task": "draft"})
     finally:
         drafter._cost_call_id = ""
     return r.raw_text if getattr(r, "ok", False) else ""
@@ -1124,7 +1127,7 @@ async def _gather_or_serial(tasks):
 
 async def _run_one(wrapper, work_payload, run_objectives, channel="main", max_tokens=2048,
                    convention_registry=None, reference_index_excerpt=None, _progress=None,
-                   items_are_advisory=False):
+                   items_are_advisory=False, activation=None):
     # _progress, when set, is (phase, doc, docs, agent): emit a running/done pair around
     # the agent call so chat.py and server.py can show per-doc-per-agent progress.
     # productization STEP 4: this is also the cost-dimension signal (phase, doc_id),
@@ -1150,6 +1153,7 @@ async def _run_one(wrapper, work_payload, run_objectives, channel="main", max_to
                              phase=(phase_name or "-"), model=(wrapper.model or "-"),
                              resident_before=("|".join(resident) if resident else "-"),
                              swap=("yes" if swap else "no"))
+    activation_args = {"activation": activation} if activation is not None else {}
     r = await asyncio.to_thread(
         wrapper.run_task, work_payload=work_payload, run_objectives=run_objectives,
         channel=channel, max_tokens=max_tokens,
@@ -1157,6 +1161,7 @@ async def _run_one(wrapper, work_payload, run_objectives, channel="main", max_to
         reference_index_excerpt=reference_index_excerpt,
         phase=phase_name, doc_id=doc_id,
         items_are_advisory=items_are_advisory,
+        **activation_args,
     )
     if _progress is not None:
         ph, dc, dcs, ag = _progress
@@ -1234,10 +1239,16 @@ async def _deepen_legal_analyst_findings_local(wrapper, findings, doc, embed_sto
         log_event(_LOG, f"deepen_capped total={total} deepened={DEEPEN_MAX_FINDINGS} "
                         f"undeepened={total - DEEPEN_MAX_FINDINGS}",
                   phase="3")
+    for index, finding in enumerate(findings[DEEPEN_MAX_FINDINGS:], DEEPEN_MAX_FINDINGS):
+        agent_activation.not_called(getattr(wrapper, "run_context", None), wrapper.name,
+            reason="deepening_cap_initial_finding_retained", source_phase="3-4",
+            doc_id=doc["id"],
+            evidence={"finding_index": index, "item_id": finding.get("item_id"),
+                      "limit": DEEPEN_MAX_FINDINGS}, trigger_source="legal_pass_one")
     findings = findings[:DEEPEN_MAX_FINDINGS]
     _local_progress_bump_expected(len(findings))  # this many extra _run_one calls now known
     out = []
-    for finding in findings:
+    for finding_index, finding in enumerate(findings):
         query = " ".join(str(finding.get(k, "")) for k in ("claim_id", "reasoning")).strip()
         hits = embedding_store.query_store(embed_store, query, n=5) if (embed_store and query) else []
         refs_excerpt = [_hit_to_ref_dict(h, {}) for h in hits] or None
@@ -1259,7 +1270,14 @@ async def _deepen_legal_analyst_findings_local(wrapper, findings, doc, embed_sto
             "claim_id as the finding given to you."
         )
         r = await _run_one(wrapper, payload, objectives, max_tokens=DEEPEN_MAX_TOKENS,
-                           reference_index_excerpt=refs_excerpt)
+                           reference_index_excerpt=refs_excerpt,
+                           activation={"reason": "local_finding_deepening", "source_phase": "3-4",
+                               "doc_id": doc["id"],
+                               "trigger_source": "legal_pass_one", "refire_count": finding_index + 1,
+                               "refire_limit": DEEPEN_MAX_FINDINGS,
+                               "consumer": "revised_legal_finding_and_bus",
+                               "evidence": {"finding_index": finding_index,
+                                            "item_id": finding.get("item_id")}})
         parsed = r.get("parsed")
         if is_envelope(parsed) and parsed.get("items"):
             item = parsed["items"][0]
@@ -1357,6 +1375,15 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
                     deepened = await _deepen_legal_analyst_findings_local(
                         la_wrapper, findings, doc, embed_store, run_objectives)
                     results_this_doc.extend(deepened)
+                else:
+                    agent_activation.not_called(orch.run_context, "LEGAL_ANALYST",
+                        reason="no_pass_one_findings", source_phase="3-4", doc_id=doc["id"],
+                        evidence={"initial_call_id": la_result.get("call_id"), "item_count": 0},
+                        trigger_source="legal_pass_one")
+            else:
+                agent_activation.not_called(orch.run_context, "LEGAL_ANALYST",
+                    reason="pass_one_unavailable_no_contract_retry", source_phase="3-4",
+                    doc_id=doc["id"], trigger_source="legal_pass_one")
         return results_this_doc
 
     for sub in await _gather_docs(op_docs, _process_doc, max_concurrent_docs):
@@ -1409,6 +1436,9 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
                                   max_tokens=AUDIT_MAX_TOKENS,
                                   convention_registry=convention_registry,
                                   reference_index_excerpt=_doc_refs_excerpt(reference_index, doc['id']),
+                                  activation={"reason": "source_and_draft_audit", "source_phase": "5",
+                                              "doc_id": doc["id"], "trigger_source": "operational_document",
+                                              "evidence": dict(draft_state)},
                                   _progress=(5, doc_pos[doc["id"]], n_docs, name)))
         audit_results = await _gather_or_serial(tasks)
         return [{"scope": "doc", "doc_id": doc["id"], "agent": name, **r}
@@ -1715,6 +1745,12 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
         # None, a caller that predates W3), every agent fires, exactly as
         # before this gate existed.
         firing_agents = _convention_review_firing_agents(convention_assignment)
+        for name in CONVENTION_REVIEW_AGENTS:
+            if name not in firing_agents:
+                agent_activation.not_called(orch.run_context, name,
+                    reason="no_assigned_or_untagged_rules", source_phase="5.5", doc_id=doc["id"],
+                    evidence={"assignment": "audit/convention_assignment.json"},
+                    trigger_source="convention_assignment", consumer="convention_review")
 
         # Convention distribution, step A: wide mode's registry excerpt is
         # filtered per agent (its assigned rules plus every untagged rule), so a
@@ -1751,6 +1787,13 @@ async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                                   max_tokens=WIDE_REVIEW_MAX_TOKENS,
                                   convention_registry=registry_for_agent,
                                   reference_index_excerpt=refs_excerpt,
+                                  activation={"reason": "conservative_assignment_unavailable"
+                                              if convention_assignment is None else "assigned_or_untagged_rules",
+                                              "source_phase": "5.5", "doc_id": doc["id"],
+                                              "trigger_source": "convention_assignment",
+                                              "consumer": "convention_findings_and_amendments",
+                                              "evidence": {"rule_ids": payload["evaluate_against"],
+                                                           "assignment_available": convention_assignment is not None}},
                                   _progress=(5.5, doc_pos[doc["id"]], n_docs, name)))
         rev_results = await _gather_or_serial(tasks)
         return prior_results + [{"scope": "doc", "doc_id": doc["id"], "agent": name, **r}
@@ -1785,14 +1828,21 @@ async def _polish_findings(orch, keys, doc, findings, rules_by_id, unit_texts,
     (R2c: the run never depends on this agent succeeding).
     """
     if not findings:
+        agent_activation.not_called(orch.run_context, "AMENDMENT_DRAFTER",
+            reason="no_findings_to_polish", source_phase="6", doc_id=doc["id"])
         return findings, 0
     wrapper = _build_wrapper("AMENDMENT_DRAFTER", orch, keys)
     out, polished_count = [], 0
     for item in findings:
         if not finding_record.is_finding(item):
+            agent_activation.not_called(orch.run_context, "AMENDMENT_DRAFTER",
+                reason="not_a_typed_finding", source_phase="6", doc_id=doc["id"])
             out.append(item)
             continue
         if str(item.get("record_verdict") or "").lower() != "irregular":
+            agent_activation.not_called(orch.run_context, "AMENDMENT_DRAFTER",
+                reason="finding_not_irregular", source_phase="6", doc_id=doc["id"],
+                evidence={"item_id": item.get("item_id"), "unit_id": item.get("unit_id")})
             # R6: an ok-verdict record (a comparison with the earlier version) is
             # never an amendment, so it never buys a drafter call.
             out.append(item)
@@ -1825,6 +1875,10 @@ async def _polish_findings(orch, keys, doc, findings, rules_by_id, unit_texts,
                 f"determinable from this unit alone.",
                 channel="main", max_tokens=512,
                 convention_registry={"conventions": [rule]} if rule else convention_registry,
+                activation={"reason": "optional_typed_irregular_polish", "source_phase": "6",
+                            "doc_id": doc["id"], "trigger_source": "typed_finding",
+                            "consumer": "allowed_wording_fields",
+                            "evidence": {"unit_id": item.get("unit_id"), "rule_id": item.get("rule_id")}},
             )
         except Exception as e:
             log_event(_LOG, f"amendment_polish_error error_type={type(e).__name__}",
@@ -2015,6 +2069,10 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     bus message, one result dict per agent that fired, instead of always
     exactly one result for the whole document."""
     if not pairing:
+        for name in CONVENTION_REVIEW_AGENTS:
+            agent_activation.not_called(orch.run_context, name,
+                reason="pairing_unavailable_existing_refusal", source_phase="5.5",
+                doc_id=doc["id"], state="no_execution_path")
         return []
     rules_by_id = {c["id"]: c for c in convention_registry.get("conventions", [])}
     # There used to be a second unit map here (units_by_id, keyed off
@@ -2143,6 +2201,16 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     judged_provenance: dict = {}
     if prediction is not None:
         prediction.planned(doc["id"], plans)
+    if not plans:
+        unresolved = bool(pairing.get("undecided_count") or pairing.get("rejected_count"))
+        for name in CONVENTION_REVIEW_AGENTS:
+            agent_activation.not_called(orch.run_context, name,
+                reason="existing_pairing_refusal" if unresolved else "planner_no_model_work",
+                source_phase="5.5", doc_id=doc["id"], trigger_source="paired_planner",
+                state="no_execution_path" if unresolved else "eligible_inactive",
+                evidence={"pairing_map": "audit/pairing_map.json", "planned_calls": 0,
+                          "undecided_count": pairing.get("undecided_count", 0),
+                          "rejected_count": pairing.get("rejected_count", 0)})
     for plan_index, plan in enumerate(plans):
         unit, rule, checks = plan["unit"], plan["rule"], plan["checks"]
         agent = _paired_judging_agent(rule, convention_assignment)
@@ -2177,6 +2245,12 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 agent = _paired_judging_agent(rule, convention_assignment)
         if agent is None:
             reason, consumers, status = _not_judged_reason(rule, convention_assignment)
+            for name in CONVENTION_REVIEW_AGENTS:
+                agent_activation.not_called(orch.run_context, name,
+                    reason="no_phase_consumer", source_phase="5.5", doc_id=doc["id"],
+                    state="no_execution_path", trigger_source="convention_assignment",
+                    evidence={"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                              "assignment_status": status, "consumer_agents": consumers})
             entry = {"unit_id": unit["unit_id"], "rule_id": rule["id"],
                      "kind": plan.get("kind"), "reason": reason,
                      "consumer_agents": consumers, "status": status}
@@ -2193,10 +2267,22 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 prediction.outcome(doc["id"], plan_index, "no_consumer")
             continue
         source_rule_id = finding_record.source_rule_id_for(rule["id"], convention_registry)
+        for other in CONVENTION_REVIEW_AGENTS:
+            if other != agent:
+                agent_activation.not_called(orch.run_context, other,
+                    reason="different_assigned_plan_consumer", source_phase="5.5",
+                    doc_id=doc["id"], trigger_source="convention_assignment",
+                    evidence={"selected_agent": agent, "rule_id": rule["id"],
+                              "unit_id": unit["unit_id"], "plan_index": plan_index})
         refs = [r.get("ref_id") for r in (refs_excerpt or [])[:3] if r.get("ref_id")]
         # D, option 2, Python first: a declared required field absent from a unit
         # in scope is a finding Python decides, no call made; the record says so.
         if plan.get("kind") == "absence_computed":
+            agent_activation.not_called(orch.run_context, agent,
+                reason="declared_absence_computed", source_phase="5.5", doc_id=doc["id"],
+                trigger_source="paired_plan", consumer="computed_finding",
+                evidence={"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                          "plan_index": plan_index})
             check = checks[0]
             item = paired_review_mod.finding_from_check(
                 unit_id=unit["unit_id"], rule=rule, check=check,
@@ -2272,6 +2358,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             max_tokens=PAIRED_JUDGING_MAX_TOKENS, convention_registry={"conventions": [rule]},
             reference_index_excerpt=refs_excerpt,
             items_are_advisory=advisory,
+            activation={"reason": "selected_paired_plan", "source_phase": "5.5",
+                        "trigger_source": "paired_plan", "doc_id": doc["id"],
+                        "consumer": "convention_finding_and_explanation",
+                        "evidence": {"unit_id": unit["unit_id"], "rule_id": rule["id"],
+                                     "plan_index": plan_index, "plan_kind": plan.get("kind")}},
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
         if plan.get("kind") == "absence_judged":
             judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
@@ -2845,6 +2936,9 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
 
         # AMENDMENT_DRAFTER (skip if we have a fresh payload already on the bus)
         if doc["id"] in existing_amendments:
+            agent_activation.not_called(orch.run_context, "AMENDMENT_DRAFTER",
+                reason="fresh_amendment_payload_reused", source_phase="6", doc_id=doc["id"],
+                trigger_source="run_bus", consumer="amendment_template")
             amendments_payload = dict(existing_amendments[doc["id"]])
             log_event(_LOG,
                       f"amendment_drafter_reused amendments={len(amendments_payload.get('amendments', []))}",
@@ -2909,6 +3003,9 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                 log_event(_LOG, "amendment_drafter_skipped reason=template_path",
                           run_id=_run_id_of(orch), phase="6",
                           agent="AMENDMENT_DRAFTER", doc_id=doc["id"])
+                agent_activation.not_called(orch.run_context, "AMENDMENT_DRAFTER",
+                    reason="polish_option_disabled", source_phase="6", doc_id=doc["id"],
+                    evidence={"amendment_polish": False}, consumer="amendment_template")
             # structure H3: location, convention_ref and ref_ids are COPIED from
             # the Finding record the amendment rests on, never re-derived from
             # prose. Only amendments whose source finding is unambiguous are
@@ -3255,7 +3352,13 @@ def _dispatch_rank(orch, keys, rank, doc, master, prior_passes, run_ctx, convent
         # productization STEP 4: cost dimensions. The editorial board is a
         # per-document phase; doc["id"] is the same id used for _persist_rank_
         # output just below.
-        phase="editorial_board", doc_id=str(doc["id"]))
+        phase="editorial_board", doc_id=str(doc["id"]),
+        activation={"reason": "editorial_escalation" if prior_passes else "editorial_entry",
+                    "source_phase": "6.5", "consumer": "advisory_board_and_deliverable",
+                    "trigger_source": prior_passes[-1]["rank"] if prior_passes else "readable_master",
+                    "decision_kind": "escalation" if prior_passes else "structural",
+                    "evidence": {"round": len(prior_passes),
+                                 "trigger": prior_passes[-1].get("activation_trigger") if prior_passes else None}})
     raw_path = _persist_rank_output(run_ctx, doc["id"], rank, {
         "state": "RAW", "rank": rank, "ok": result.get("ok"), "error": result.get("error"),
         "parsed": result.get("parsed"), "raw_text": result.get("raw_text", "")})
@@ -3358,6 +3461,10 @@ def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
     if not run_is_non_sensitive:
         note = "editorial review skipped: sensitive run, awaiting masking-layer activation"
         for doc in op_docs:
+            for rank in _EDITORIAL_RANKS:
+                agent_activation.not_called(run_ctx, rank, eligible=False,
+                    reason="sensitive_board_refusal", source_phase="6.5", doc_id=doc["id"],
+                    evidence={"run_is_non_sensitive": False}, consumer="advisory_board")
             _post_editorial(orch, doc["id"], "EDITORIAL_SKIPPED",
                             {"reason": "sensitive_run", "note": note})
             raw_path = _persist_rank_output(run_ctx, doc["id"], "BOARD",
@@ -3369,12 +3476,18 @@ def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
         info = deliverables.get(doc["id"]) or {}
         master_path = info.get("amendments_json")
         if not master_path or not Path(master_path).exists():
+            for rank in _EDITORIAL_RANKS:
+                agent_activation.not_called(run_ctx, rank, reason="no_readable_master",
+                    source_phase="6.5", doc_id=doc["id"], state="no_execution_path")
             summary[doc["id"]] = {"state": "NO_DELIVERABLE"}
             continue
         try:
             # The CLEAN, pre-scrub master (phase 9 has not run yet).
             master = json.loads(Path(master_path).read_text(encoding="utf-8"))
         except Exception:
+            for rank in _EDITORIAL_RANKS:
+                agent_activation.not_called(run_ctx, rank, reason="unreadable_master",
+                    source_phase="6.5", doc_id=doc["id"], state="no_execution_path")
             summary[doc["id"]] = {"state": "NO_DELIVERABLE"}
             continue
 
@@ -3412,9 +3525,17 @@ def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
                 break
             if rank_idx >= len(_EDITORIAL_RANKS) - 1:
                 break                          # DG reached; cannot climb further
+            passes[-1]["activation_trigger"] = reason
             rank_idx += 1
             rounds += 1                        # one climb (summon the next rank)
 
+        for inactive_rank in _EDITORIAL_RANKS[rank_idx + 1:]:
+            agent_activation.not_called(run_ctx, inactive_rank,
+                reason="lower_rank_failed_no_retry" if failed else
+                       "editorial_round_cap" if terminal_cap else "no_escalation_trigger",
+                source_phase="6.5", doc_id=doc["id"], trigger_source=_EDITORIAL_RANKS[rank_idx],
+                decision_kind="escalation", consumer="advisory_board",
+                evidence={"rounds": rounds, "max_rounds": max_rounds})
         consolidated = _consolidate_board(passes)
         board_raw = _persist_rank_output(run_ctx, doc["id"], "BOARD", {
             "state": "FAILED" if failed else "REVIEWED",
@@ -3683,6 +3804,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     the end of the list) and nothing caught it, because no gate check built the
     parser. check_115_pipeline_parser_builds_every_flag_once now does."""
     parser = argparse.ArgumentParser(description="Project Shimmer pipeline")
+    parser.add_argument("--activation-profile", choices=agent_activation.PROFILES, default="dense",
+                        help="Dense reference or conservative sparse activation audit; existing governance gates apply to both.")
     parser.add_argument("--non-interactive", action="store_true")
     parser.add_argument("--skip-confirmation", action="store_true")
     parser.add_argument("--max-docs", type=int, default=0)
@@ -3829,6 +3952,9 @@ def main(argv=None):
     else:
         run_ctx = run_context_mod.create_run(ROOT)
     completion = run_completion_mod.begin(run_ctx)
+    activation_agents = json.loads((ROOT / "config" / "agent_registry.json").read_text(
+        encoding="utf-8")).get("agents", {})
+    agent_activation.initialize(run_ctx, activation_agents, args.activation_profile)
     try:
         _run_dir_shown = run_ctx.run_dir.relative_to(ROOT)
     except ValueError:
@@ -4373,6 +4499,9 @@ def main(argv=None):
         else:
             log_event(_LOG, "phase_skipped phase=5.5 reason=no_conventions",
                       run_id=run_ctx.run_id, phase="5.5")
+            for name in CONVENTION_REVIEW_AGENTS:
+                agent_activation.not_called(run_ctx, name, reason="no_conventions",
+                    source_phase="5.5", evidence={"convention_count": 0})
 
         cost_tracker.finalize_line()
         log_event(_LOG, "phase_start phase=6 step=synthesis_deliverables", run_id=run_ctx.run_id,
@@ -4454,6 +4583,12 @@ def main(argv=None):
             for d in decisions:
                 print(f"  -> {d['delta_id']} {d['kind']}: {d['decision']} (approved={d['approved']})",
                       file=sys.stderr)
+    else:
+        for name in activation_agents:
+            if name != "REDACTOR":
+                agent_activation.not_called(run_ctx, name, eligible=False,
+                    reason="no_operational_documents", source_phase="review",
+                    evidence={"operational_document_count": 0})
 
     # Phase 9: redaction (ALWAYS runs, final privacy pass over the deliverables,
     # LAW-IV). The privacy redaction stage now lives in the sensitivity_layer home
@@ -4483,6 +4618,9 @@ def main(argv=None):
     if not sensitivity_layer.is_active():
         log_event(_LOG, "phase_skipped phase=9 reason=non_sensitive_mode",
                   run_id=run_ctx.run_id, phase="9")
+        agent_activation.not_called(run_ctx, "REDACTOR", eligible=False,
+            reason="sensitivity_layer_inactive", source_phase="9",
+            evidence={"layer_active": False}, consumer="privacy_scrub")
         n_blocked = 0
     else:
         _t9 = time.perf_counter()
