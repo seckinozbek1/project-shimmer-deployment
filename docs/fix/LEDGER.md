@@ -1,5 +1,64 @@
 # Ledger: what the README must say, and what the image is behind on
 
+## LOCAL SPEED-OPTIMIZATION AUDIT COMPLETE, NO OPTIMIZATION ACCEPTED, 2026-09-13
+
+Entered at quality baseline `1293041`, with diagnostic `0d2d152` present and
+local origin/main at the diagnostic commit. Tracked tree was clean. No fetch or
+push. Dense behavior remains fixed; the operator explicitly authorized local
+synthetic probes. See [LOCAL_SPEED_OPTIMIZATION.md](LOCAL_SPEED_OPTIMIZATION.md).
+Evidence is isolated under ignored `output/dense_optimization/`; 54 diagnostic,
+8 quality-manifest and all 275 baseline/operator snapshot files were verified.
+
+First-envelope stopping is rejected: 49 saved editorial envelopes contain six
+distinct envelope contents and five distinct items. The first keeps one item.
+The substantive-preservation guard loses four items when neutralized to stop
+early, fails, and restores/pass. The parser-only proof is refused as
+NO_OBSERVED_EFFECT, because its selected result does not reveal that loss.
+An executed late-distinct-after-duplicate fixture also rejects repetition-only
+completion inference. No parser or output-budget change was made.
+
+Scoped inference mode and CPU thread count match 192-token output IDs and
+processed scores in both models, including A+B. Timings show substantial thermal
+drift; closer Qwen ABBA does not establish a reliable material gain. A native
+operator profile identified repeated immutable quantization-scale expansion.
+The in-memory reuse experiment proves identical dequantized weights in all
+196 Qwen / 224 Phi layers, identical sampled outputs/scores, real consumer
+neutralise/fail/restore/pass and explicit no-op refusal. Expansion counts drop
+from 37,632 / 43,008 to zero per 192-token trial. Nevertheless Qwen's later
+quartet shows only 4.28% mean wall gain at 389 MiB extra VRAM; Phi adds 216 MiB
+and reaches 7.873 GiB reserved, sampled 8,009 of 8,192 MiB. No OOM or numerical
+regression occurred, but the weak/uncertain gain and memory tradeoff are rejected.
+
+Legal batching/reordering, prefix/KV reuse, embeddings, model loading and small
+deterministic costs were inspected. No semantic task, firing policy, context,
+budget, model, reviewer responsibility, five-voter mechanism or governance changed.
+No hardware/power setting changed. These are individual candidate decisions;
+no blanket rollback was performed. The report separates causal work elimination
+from deployment acceptance and prefix equality from full substantive quality.
+
+The audit is complete under the operator's explicit rejection/no-forced-speedup
+rule, but **a materially faster optimized-dense build was not achieved**. No
+candidate justified a full comparison. There is no new dense wall, phase delta
+or quality score; authoritative 5,054.4 seconds and 3/5 location recall remain
+saved-baseline measurements with all prior qualifications. No manual observation
+was promoted to an automated hit and no benchmark definition was changed.
+
+Fresh offline host gate: **254 PASS, 0 WARN, 4 SKIP, 0 FAIL/ERROR, TOTAL 258**,
+native exit **0**. Skips are 01 optional local directories, 15 live search,
+38 cold embedding download and 145 missing contamination fixture. Unavailable
+contamination coverage does not prove cleanliness. Previous startup image and
+its unmounted gate result are unchanged; this documentation-only result owes no
+rebuild or README correction. All GPU/gate processes exited.
+
+Final validation rechecks the 399-file source/state inventory, 275-file baseline/
+operator snapshot, both prior manifests and the unchanged canonical roadmap
+block. Thirty-six representative 192-token trials and their zero-attempt network
+logs are frozen in the ignored audit evidence manifest. Final local commit title:
+`Record local speed optimization audit and rejected candidates`. Main is two
+commits ahead of the unchanged local tracking ref after closure. Nothing is pushed.
+Next operator-directed locked handoff, without changing the canonical roadmap:
+**Conditional agent activation & sparse routing audit**. It has not begun.
+
 ## DENSE QUALITY-BASELINE ADDENDUM COMPLETE, 2026-09-13
 
 Scoring addendum to the completed performance diagnostic, not a new roadmap item
