@@ -20,86 +20,36 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Parts 2, 6, 7, 9 are decided ONCE, in code, identically for every agent
-# (confirmed by reading agent_wrapper.py directly, not assumed): the
-# constitution check runs unconditionally at the top of every run_task call
-# (part 2); the receive/hand shapes are the same functions for every agent
-# (parts 6, 7); the re-fire condition is the same, real, and precise answer
-# for every agent (part 9: _run_one calls wrapper.run_task exactly once, no
-# loop, no retry anywhere in the call chain from pipeline.py through
-# agent_wrapper.py, confirmed by direct search finding no while/for-retry
-# construct around any run_task call).
+# Shared descriptions refer to the structured run_task path. The Draft memo
+# has a separate free-text path, documented explicitly rather than implied uniform.
 SHARED_PARTS = {
     "constitution_by_default": {
         "decided": True,
-        # `summary` is the REVIEWER's sentence and `where` the developer's code
-        # location. The console audit found the reviewer view being handed the
-        # code location for every shared part, because these carried only
-        # `where`; a reviewer cannot use a file path and a function name.
-        "summary": "Every agent checks the constitution before it does anything "
-                   "else, on every call, with no exceptions and nothing to "
-                   "configure.",
-        "where": "scripts/agent_wrapper.py, AgentWrapper.run_task: "
-                 "check = self.check_constitution(situation), the first thing "
-                 "run_task does, unconditionally, every call, every agent. "
-                 "Never matched or selected: the same constitution.check() "
-                 "call runs regardless of which agent or which convention is "
-                 "in scope.",
+        "summary": "Every structured agent task checks the constitution before dispatch. Draft memo generation has a separate free-text path after startup governance.",
+        "where": "scripts/agent_wrapper.py: AgentWrapper.run_task calls check_constitution unconditionally. scripts/pipeline.py: _draft_generate_with_evidence calls call_claude directly, bypassing run_task.",
     },
     "receive_format": {
         "decided": True,
-        "summary": "Every agent is handed the same shape of package: the "
-                   "governing rules, what the run is for, the material under "
-                   "review, the conventions in force and the recent history.",
-        "where": "scripts/bus_reader.py, assemble_context(): builds the "
-                 "package an agent receives (governance/constitution text, "
-                 "run objectives, precedents, work_payload, convention "
-                 "registry, reference excerpts, recent bus context), called "
-                 "from AgentWrapper.run_task for every agent identically.",
+        "summary": "Structured tasks receive governing rules, task objectives, work material, conventions and budgeted recent bus context. Each phase supplies its own work payload; Draft uses separate prompts.",
+        "where": "scripts/bus_reader.py: assemble_context, called by AgentWrapper.run_task. scripts/pipeline.py constructs each phase payload; editorial objectives and the free-text Draft prompt are separate.",
     },
     "hand_format": {
         "decided": True,
-        "summary": "Every agent hands work back in one common shape, one flat "
-                   "item per finding, so anything downstream can read any "
-                   "agent's output the same way.",
-        "where": "The canonical envelope (INFRA-037, CLAUDE.md): "
-                 "{agent, doc_id, items[]}, one flat item per finding/output, "
-                 "every value a scalar or array of scalars. Every agent posts "
-                 "this same shape; consumers read by reference off the "
-                 "append-only bus.",
+        "summary": "Accepted structured tasks return a common envelope containing flat output items. Malformed replies are recorded as failures. The initial Draft memo is free text.",
+        "where": "scripts/agent_wrapper.py: run_task validates {agent, doc_id, items[]} against agent_contracts.json and posts accepted items or CONTRACT_VIOLATION. Draft generation bypasses the envelope contract.",
     },
     "refire_condition_and_limit": {
         "decided": True,
-        "summary": "No agent is ever asked again after a failure. A reply that "
-                   "does not meet its contract is recorded and dropped, never "
-                   "retried, so nothing is silently attempted twice.",
-        "where": "None. Confirmed by direct trace: pipeline.py's _run_one "
-                 "calls wrapper.run_task exactly once (no while/for-retry "
-                 "loop around the call); agent_wrapper.py's run_task itself "
-                 "has no retry loop either (confirmed: no genuine while "
-                 "statement in its body, only a rate-limit backoff inside "
-                 "call_claude/call_gpt for a 429/529 transport error, a "
-                 "different thing from a contract violation). A "
-                 "CONTRACT_VIOLATION is posted to the bus and the item is "
-                 "dropped (pipeline.py's _items_for skips any result "
-                 "with ok=False); it is never re-attempted. Re-fire limit: 0. "
-                 "This is a real, decided answer, not an unresolved part: "
-                 "the code decides it by having no retry mechanism at all.",
+        "summary": "A malformed reply is not automatically retried. Separate documents, bounded legal follow-ups, per-finding polish and editorial escalation can ask an agent for additional work. Provider transport backoff is separate.",
+        "where": "scripts/pipeline.py: _run_one has zero contract-failure retries; _deepen_legal_analyst_findings_local, _polish_findings and phase_6_5_editorial_review own their work bounds. agent_wrapper.py call_claude/call_gpt can back off on transport errors. audit/agent_activation.json records actual calls and additional-work triggers.",
     },
 }
 
-# Part 5 (ontology) is declared unresolved for every agent, per this chain's
-# own W4 instruction: the ontology work is W7, so this slot is empty at this
-# stage, declared rather than skipped.
+# No review agent currently retrieves ontology/GNN knowledge into its work payload.
+# End-of-run capture and human/API readers exist; this is not a write-only store.
 ONTOLOGY_PART = {
     "decided": False,
-    "unresolved_because": "Ontology work is W7 in this chain, not yet run "
-                          "when this harness was built. No agent draws "
-                          "ontological knowledge in today (confirmed W7 "
-                          "tonight, if it ran, or by the ontology's own "
-                          "write-only status traced earlier tonight: nothing "
-                          "in the pipeline reads ontology/stores/graph.json "
-                          "or gnn_state.json outside of writing them).",
+    "unresolved_because": "No review agent currently draws knowledge from ontology/stores into its task. End-of-run capture, graph/GNN maintenance and console/API readers exist. GNN candidates rank structure, with no demonstrated learned relevance; an agent review feedback path is not implemented.",
 }
 
 # Part 8 (fires at all): traced per-agent group against scripts/pipeline.py directly,
@@ -159,18 +109,9 @@ FIRES_LEGAL_ANALYST = {
              "then 5 pass-two calls, 6 in all.",
 }
 FIRES_REDACTOR = {
-    "summary": "Can be asked only when sensitivity handling and redaction are "
-               "enabled and a document is ready for redaction. If redaction "
-               "is waived, that decision is recorded as skipped.",
-    "condition": "Phase 9 (redaction) always RUNS, but REDACTOR itself only "
-                 "posts bus messages when the sensitivity layer is active "
-                 "(LAYER_ACTIVE / sensitivity_layer.is_active()). Confirmed "
-                 "live: a completed run with LAYER_ACTIVE False produced zero "
-                 "REDACTOR bus messages, the phase itself still ran (waived, "
-                 "logged) but the agent's own call did not fire.",
-    "where": "scripts/pipeline.py line ~3438 (\"Phase 9: redaction (ALWAYS "
-             "runs...)\") and line ~3536-3543 (the LAYER_ACTIVE confirmation "
-             "note on a completed run, cb4c557b).",
+    "summary": "Runs only with an active sensitivity layer, no redaction waiver, compiled redaction rules and a document master. Skipped, none, applied, blocked and held-warning outcomes remain distinct.",
+    "condition": "Phase 9 is reached after audit synthesis and before phase 8 end-work. The REDACTOR call needs LAYER_ACTIVE, no waiver, compiled rules and review_data.json; phase entry alone does not imply a call. A held format warning does not become a clean-redaction certificate.",
+    "where": "scripts/pipeline.py: main phase 9; scripts/sensitivity_layer/redaction_stage.py: run_redaction_phase; scripts/agent_activation.py records the reached gates and dispatch outcomes.",
 }
 FIRES_AMENDMENT_DRAFTER = {
     "summary": "Amendments are normally built directly from computed findings. "
@@ -202,7 +143,7 @@ FIRES_EDITORIAL_BOARD = {
                  "cap; most runs resolve at EDITOR_CLERK alone.",
     "where": "scripts/pipeline.py, _observation_triggers_escalation() "
              "(the two ratified summon triggers) and the rank-to-rank loop "
-             "around line ~2578 (trig, reason = "
+             "in phase_6_5_editorial_review (trig, reason = "
              "_observation_triggers_escalation(obs, tunables)).",
 }
 

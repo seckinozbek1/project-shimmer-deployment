@@ -1,3 +1,5 @@
+> Historical design/audit record. Current implementation and endpoint names are in the [README](../../README.md#api-and-developer-entry-points) and [routing/UI audit](../fix/ROUTING_UI_AUDIT.md). Old route counts, success wording, write-only ontology claims and success-only findings visibility below are superseded. The console now reads findings/pairs for nonqueued runs, distinguishes process completion from review quality, and shows recorded activation evidence. Rule text is current-registry data, not a historical snapshot.
+
 # Console layout plan: a screen that follows what the run produced
 
 Read only. No code changed to produce this. Written for the two things the operator asked

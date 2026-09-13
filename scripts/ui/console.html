@@ -808,9 +808,9 @@ function nextActionSentence(run) {
          is not asserted here, only that the log explains it, since this
          function cannot rule out a cause other than missing conventions. */
       if (!run.documents || run.documents.length === 0) {
-        return "Finished, but no document reached the point of being checked against a rule. Nothing to read below, nothing to download. See the log for why.";
+        return "Process exited successfully; no documents are listed. Check completion evidence and logs before inferring what was reviewed.";
       }
-      return "Finished. Start with the findings below, or download the full archive.";
+      return "Finished. Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning.";
     }
     if (outcome === "governance_stop") {
       var code = run.stop_reason && run.stop_reason.code;
@@ -884,9 +884,9 @@ function nextActionSentenceHuman(run) {
          be as visible here as it now is in the developer view, not
          smoothed over by the reviewer view's plainer language. */
       if (!run.documents || run.documents.length === 0) {
-        return '<strong>Finished, but nothing was checked.</strong> No document reached the point of being compared against a rule. There is nothing to read below and nothing to download. The log explains why. ' + mutedParen("state: completed, no documents");
+        return '<strong>Process finished; no documents are listed.</strong> This list alone cannot establish what was checked or whether outputs exist. Read the completion evidence and log. ' + mutedParen("state: completed, no documents");
       }
-      return '<strong>Finished. No problems stopped the review.</strong> Start with the findings below, or download the full archive. ' + mutedParen("state: completed");
+      return '<strong>Process finished.</strong> Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning. ' + mutedParen("state: completed");
     }
     if (outcome === "governance_stop") {
       var code = run.stop_reason && run.stop_reason.code;
@@ -1811,7 +1811,7 @@ function renderSubmit() {
       '<div id="s-file-roles"></div>' +
       '<label for="s-question">Question</label>' +
       '<textarea id="s-question" rows="3" placeholder="the memo question/brief"></textarea>' +
-      '<p class="field-hint">Required for a draft. Optional framing for a review.</p>' +
+      '<p class="field-hint">Required for a draft. Optional framing for a review. Draft memo generation currently requires Cloud; Local Draft is unsupported.</p>' +
       '<label for="s-sensitive">Privacy</label>' +
       '<select id="s-sensitive" class="form-control">' +
         '<option value="">Choose Normal or Sensitive</option>' +
@@ -1950,6 +1950,59 @@ function renderDetail(runId) {
   loadDetail(runId, true);
 }
 
+
+/* Routing evidence is a compact operator summary; individual decisions are
+   available only in Developer view. A live snapshot is not a coverage verdict. */
+function activationSummaryHtml(data, human) {
+  var out = '<h2>Agent activity</h2>';
+  var completion = data && data.completion;
+  out += '<p>' + escapeHtml(completion
+    ? 'Pipeline completion record: ' + completion.state + '. This is execution evidence, not a quality certificate.'
+    : 'Pipeline completion is not recorded or could not be validated.') + '</p>';
+  if (!data || data.recorded !== true) {
+    return out + '<p class="notice">Activation evidence is unavailable (' + escapeHtml((data && data.availability) || 'request_failed') + '). No call count or skipped-agent conclusion can be drawn.</p>';
+  }
+  var rows = data.decisions, states = data.agent_states;
+  var calls = rows.filter(function (r) { return r.actual_call === true; }).length;
+  var failures = rows.filter(function (r) { return r.state === 'execution_failure' || r.state === 'pre_dispatch_failure'; }).length;
+  var recovery = rows.filter(function (r) { return r.recovered === true; }).length;
+  var capped = rows.filter(function (r) { return r.truncated === true; }).length;
+  var noncalls = rows.filter(function (r) { return r.activated === false; }).length;
+  var unreached = states.filter(function (s) { return s.state === 'phase_not_reached'; }).length;
+  out += '<p>Routing profile: <strong>' + escapeHtml(data.activation_mode) + '</strong>. ' + calls +
+    ' dispatch attempts; ' + noncalls + ' explicit non-call decisions; ' + unreached + ' agents have no reached-phase decision.</p>' +
+    '<p>' + failures + ' recorded execution or preparation failures; ' + recovery + ' recovered replies; ' + capped + ' capped replies. Attempts are not successful generations, and a non-call is not a clean finding. Counts are the recorded snapshot.</p>';
+  if (human) return out;
+  out += '<details><summary>Per-agent states and activation decisions</summary><ul>';
+  states.forEach(function (s) {
+    out += '<li>' + escapeHtml(s.agent) + ': latest state ' + escapeHtml(s.state) +
+      ', eligibility ' + escapeHtml(s.eligible === null ? 'unknown' : String(s.eligible)) +
+      ', total dispatch attempts ' + s.actual_calls + '</li>';
+  });
+  out += '</ul><ol>';
+  rows.forEach(function (r) {
+    out += '<li>' + escapeHtml(r.agent) + ': ' + escapeHtml(r.reason) + ' (' + escapeHtml(r.state) +
+      '), phase ' + escapeHtml(r.source_phase) + ', re-fire ' + escapeHtml(r.refire_count) + '/' + escapeHtml(r.refire_limit) +
+      ', trigger ' + escapeHtml(r.trigger_source) + '.<pre>' + escapeHtml(JSON.stringify(r, null, 2)) + '</pre></li>';
+  });
+  return out + '</ol></details>';
+}
+
+function loadActivation(runId) {
+  var holder = document.createElement('section');
+  holder.id = 'activation-summary';
+  holder.innerHTML = '<h2>Agent activity</h2><p>Loading recorded activity...</p>';
+  app.appendChild(holder);
+  return apiJson('/runs/' + encodeURIComponent(runId) + '/activation').then(function (res) {
+    if (currentRoute().runId !== runId || document.getElementById('activation-summary') !== holder) return;
+    holder.innerHTML = activationSummaryHtml(res.ok ? res.body : null, isHumanView());
+  }).catch(function () {
+    if (currentRoute().runId === runId && document.getElementById('activation-summary') === holder) {
+      holder.innerHTML = activationSummaryHtml(null, isHumanView());
+    }
+  });
+}
+
 function loadDetail(runId, isFirstLoad) {
   apiJson("/runs/" + encodeURIComponent(runId)).then(function (res) {
     if (currentRoute().runId !== runId) return; // navigated away while in flight
@@ -1985,7 +2038,7 @@ function mastheadHumanLabel(run) {
   if (state === "awaiting_approval") return "Paused: needs your decision";
   if (state === "cancelled") return "Cancelled, at your request";
   if (state === "stopped") {
-    if (outcome === "succeeded") return "Finished, no problems";
+    if (outcome === "succeeded") return "Process finished";
     if (outcome === "governance_stop") return "Stopped on purpose";
     if (outcome === "crashed") return "Stopped by a system fault";
     if (outcome === "timed_out") return "Did not finish in time";
@@ -2124,6 +2177,7 @@ function renderDetailBody(run, allRuns) {
   }
 
   app.innerHTML = html;
+  loadActivation(run.run_id);
 
   /* Findings and the pairing map are fetched whenever they COULD exist, not
      only on a clean succeeded completion. The server writes both the moment
@@ -2470,6 +2524,7 @@ function wireRuleLinks(scope) {
         panel.innerHTML = '<div class="rule-panel-body">' +
           '<div class="rule-panel-head"><span class="mono">' + escapeHtml(shown) + '</span>' +
           (r.severity ? ' <span class="muted">' + escapeHtml(r.severity) + '</span>' : '') + '</div>' +
+          '<p class="muted">Current registry text; it may differ from the rule used by this run.</p>' +
           '<p>' + escapeHtml(r.rule || "") + '</p>' +
           '</div>';
       });
