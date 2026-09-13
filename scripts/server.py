@@ -1,122 +1,19 @@
-"""Project Shimmer M3 front door: a thin, token-gated FastAPI dock.
+"""Project Shimmer: authenticated single-worker HTTP front door.
 
-WHAT THIS IS (read first)
-=========================
-This is a small web server. It lets a known collaborator hand an external corpus
-of grounding cases to Shimmer, start a review run, watch the queue, and pull the
-results, all over the network, without ever touching the code or the terminal.
+Native console intake explicitly selects standalone mode, confirmation, privacy,
+targets and prior files. Omitted intake mode keeps the legacy sidecar validator.
+The worker stages input, runs pipeline.py as a subprocess and exposes saved run
+resources. Native ownership-aware cleanup differs from legacy ingestion cleanup.
 
-It is a connecting DOCK, not a hardened public production service. One collaborator,
-one server, gated by a single secret token. Keep that scope in mind: every design
-choice below favors "simple and visible for one person" over "scales to thousands".
+The desktop starter supplies a loopback server and ephemeral authentication.
+Direct server setup, environment variables and the exact route table live in
+README.md; operator instructions live in docs/RUNBOOK.md. No token value belongs
+in source, URLs or logs. /health and /console are public; data/action routes
+require Bearer authentication. /health is liveness, not readiness or quality.
 
-HOW THE PIECES FIT
-==================
-1. The collaborator POSTs their .md case files plus the _corpus_ingest.json sidecar
-   to /submit.
-2. The server validates them against the corpus ingestion contract (Item 1). Bad
-   data is rejected with 400 and never enters the pipeline.
-3. Good data is queued. One job runs at a time. When a job starts, its files are
-   placed into input/context/ and the existing pipeline (scripts/pipeline.py) is run
-   as a SUBPROCESS, writing into its own per-run folder output/runs/<run_id>/.
-4. When the run finishes, the server AUTO-CLEARS the ingested files it placed
-   (using the sidecar as the manifest), so nothing stale leaks into the next run.
-5. The collaborator polls /runs/<run_id> (or /runs, for the whole list), then
-   downloads /runs/<run_id>/deliverables (the whole run) or
-   /runs/<run_id>/deliverables/<doc_id> (one document alone).
-
-HOW TO GENERATE THE TOKEN AND ITS HASH (the operator runs this ONCE)
-===================================================================
-    python -c "import secrets, hashlib; t=secrets.token_hex(32); print(f'Token (give to the collaborator): {t}'); print(f'Hash (set as SHIMMER_TOKEN_HASH): {hashlib.sha256(t.encode()).hexdigest()}')"
-
-That prints two strings. Give the first (the token) to the collaborator out of band
-(a secure message, once). Set the second (the hash) as the SHIMMER_TOKEN_HASH
-environment variable before starting this server. The plain token is NEVER stored
-anywhere on the server: only its hash is, and a hash cannot be reversed back into
-the token.
-
-HOW TO RUN IT
-=============
-    set SHIMMER_TOKEN_HASH=<the hash from above>        (Windows)
-    export SHIMMER_TOKEN_HASH=<the hash from above>     (macOS/Linux)
-    python scripts/server.py
-
-Then expose it with a temporary public HTTPS URL:
-    cloudflared tunnel --url http://localhost:8000
-
-ENVIRONMENT VARIABLES (operator reference)
-==========================================
-Every knob below is read ONCE at startup; the resolved values are printed to stderr.
-Unset means the default shown in (parentheses). Set them before launching the server:
-`set NAME=value` (Windows) or `export NAME=value` (macOS/Linux).
-
-  SHIMMER_TOKEN_HASH   (required)     sha256 hash of the access token. The server
-                                      refuses to start without it. Never the token value.
-  SHIMMER_MODE         (integrated)   pipeline run intent: "standalone" or "integrated".
-                                      integrated activates the corpus_ingest
-                                      promotion-exclusion hook (grounding cases stay
-                                      out of the operational review).
-  SHIMMER_TASK         (review)       default task for /submit when the caller omits the
-                                      "task" form field: "review" or "draft".
-  SHIMMER_SENSITIVE    (false)        "true" or "false". false declares the run non-sensitive
-                                      and passes --sensitivity-layer-inactive-override and
-                                      --no-redaction-override (no redaction). true keeps
-                                      redaction on; note the full LAW-IV layer ships inactive,
-                                      so true requires the operator to have activated it or the
-                                      pipeline hard-stops at its sensitivity gate, by design.
-  SHIMMER_MAX_DOCS     (4)            integer; passed as --max-concurrent-docs. 4 is safe for a
-                                      single-key Claude rate limit; raise it if your limits allow.
-  SHIMMER_PORT         (8000)         integer; the TCP port uvicorn listens on.
-  SHIMMER_HOST         (0.0.0.0)      interface to bind. 0.0.0.0 = all interfaces (a public
-                                      tunnel needs this); use 127.0.0.1 to stay local-only.
-  SHIMMER_AUTO_CLEAR   (true)         "true" or "false"; remove the ingested grounding files from
-                                      input/context/ after each run (the sidecar is the manifest).
-                                      false leaves the placed files in place for inspection.
-  SHIMMER_OUTPUT_DIR   (output/runs/) custom root folder for the per-run output directories.
-  SHIMMER_CONVENTION_REGISTRY (config/convention_registry.json) custom path to the convention
-                                      registry _pairs_view and GET /rules/{rule_id} read for a
-                                      rule's operator-own id and its own text. Overridable for
-                                      the same reason SHIMMER_OUTPUT_DIR is: a test harness needs
-                                      its own throwaway registry, never the real repository's.
-  SHIMMER_LOG_LEVEL    (info)         uvicorn log level: "debug", "info", or "warning".
-  SHIMMER_RUN_TIMEOUT_S (0)           integer seconds; 0 means unbounded (prior behavior). When
-                                      set, a run's pipeline subprocess is terminated (then killed)
-                                      after this many seconds; the job is marked failed with a
-                                      timeout reason and exit_code null. Cleanup still runs.
-  SHIMMER_LOCAL_RUN_TIMEOUT_S (7200)  integer seconds; overrides RUN_TIMEOUT_S when
-                                      SHIMMER_BACKEND_PROFILE=local. Local inference is far slower
-                                      than cloud API calls, so the default is 2 hours. 0 means
-                                      unbounded. Only read when the backend profile is "local".
-  SHIMMER_PROVIDER_TIMEOUT_S (600)    integer seconds; per-request wall-clock timeout passed to
-                                      the Anthropic and OpenAI clients (agent_wrapper.py). Read by
-                                      the pipeline subprocess, not the server process itself.
-  SHIMMER_MAX_UPLOAD_MB (25)          integer; per-file upload size cap in megabytes for /submit.
-  SHIMMER_MAX_UPLOAD_TOTAL_MB (200)   integer; whole-submission upload size cap in megabytes.
-  SHIMMER_MAX_UPLOAD_FILES (50)       integer; max number of files accepted in one /submit.
-  SHIMMER_APPROVAL_WAIT_S (3600)      integer seconds; read by the pipeline subprocess (not this
-                                      process) when it installs the --operator-channel file
-                                      handler: how long a governed decision waits for a human to
-                                      write approval_decision.json before defaulting to DEFERRED.
-
-STEP 6: THE CONSOLE (GET /console)
-====================================
-The server always passes --operator-channel file to the pipeline subprocess, so a governed
-decision (a deprecated-model swap, a constitution amendment) that would otherwise stop the run
-is instead parked as <run>/audit/pending_approval.json and surfaced at GET /approvals. A human
-decides APPROVE/DENY/DEFER via POST /runs/{run_id}/approval; the server only WRITES that decision
-file, it never itself evaluates a governed decision (that stays in model_registry and
-constitution_guard, unchanged by this server). GET /console serves scripts/ui/console.html: a
-single vanilla-JavaScript page, no framework, no build step, no CDN dependency. NOTE: the STEP
-6 spec's evidence text names this route "GET /"; it is served at /console instead because the
-bare root collides with an existing gate check (94) that every HTTP client's own URL
-normalization makes unavoidable (see the console() function's docstring for the full
-explanation). The token is entered
-once in the page (kept in this tab's sessionStorage, never a URL) and sent as the
-Authorization: Bearer header on every call the page makes. GET /health is the one route that
-is NOT token-gated (by design, for external uptime checks); its body carries no SHIMMER_ value,
-no path, no hash. Every non-zero pipeline exit is now mapped to a distinct status (see
-_EXIT_STATUS_MAP below) rather than collapsed to "failed"; "blocked" and the "stopped_*"
-statuses are governance outcomes, not errors.
+Approval writes a decision; the pipeline evaluates it. A successful process,
+nonempty document folder or downloadable ZIP does not certify coverage or privacy.
+See docs/fix/ROUTING_UI_AUDIT.md for the current artifact/consumer trace.
 """
 
 # ---------------------------------------------------------------------------
@@ -2289,8 +2186,8 @@ async def deliverables(run_id: str):
     (from that call) that some documents are ready is never blocked from
     fetching them just because the run overall is not finished yet.
 
-    Zips whatever exists under deliverables/ at call time -- every "done"
-    document's own subfolder, nothing else -- rather than requiring the
+    Zips every existing file under deliverables/, including the root summary
+    and partial document folders, rather than requiring the
     whole run to be complete first. A run that stopped early (crashed,
     cancelled, timed out) may leave a PARTIAL archive: fewer documents than
     were originally submitted, or a document folder missing files a
@@ -2651,6 +2548,13 @@ async def agent_harness():
             "unresolved_part_count": sum(len(v) for v in unresolved.values())}
 
 
+@app.get("/runs/{run_id}/activation", dependencies=[Depends(verify_token)])
+async def run_activation(run_id: str):
+    """Recorded routing and completion evidence, including unavailable old runs."""
+    from routing_view import read_activation
+    return read_activation(_validated_run_dir(run_id), run_id)
+
+
 @app.get("/runs/{run_id}/references", dependencies=[Depends(verify_token)])
 async def run_references(run_id: str, ref_id: str = None):
     """The passages a run's findings cite (console audit, finding 4).
@@ -2894,9 +2798,9 @@ async def answer_ontology_conflict(conflict_id: str, body: dict):
 
     FIRST: this route WRITES the answer and nothing else. It never re-runs a
     review, never re-decides a refused pair, never evaluates whether the answer
-    was wise. What the answer means is applied by the next run that meets the
-    same conflict, through `ontology_conflicts.apply_resolutions`, exactly as
-    if the answer had been written by any other means.
+    was wise. ontology_conflicts.apply_resolutions can read this state, but
+    the production review pipeline does not currently call that feedback path.
+    A recorded answer is not proof a later review consumed it.
 
     SECOND: the response says the answer was RECORDED, never that anything was
     resolved. A caller that wants the effect reads `GET /ontology/conflicts`
@@ -3029,7 +2933,7 @@ async def rule_text(rule_id: str):
     """console fresh-eyes addition: a rule identifier shown anywhere on the
     console (a finding's citation, the developer findings table, a pairing-map
     chip) should be openable, showing the rule as the operator wrote it, not
-    just its id. Not run-scoped: a rule's text does not vary per run, it is
+    just its id. Not run-scoped: this reads the current registry, which can differ from a past run; it is
     the CURRENT registry's content (config/convention_registry.json,
     regenerated at BOOT from input/conventions/).
 

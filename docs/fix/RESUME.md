@@ -1,3 +1,46 @@
+# RESUME: Routing/UI audit complete, 2026-09-13
+
+**README + upstream/downstream routing + UI audit** is complete, entered at
+`13144755a7493713060c76256352657c3f5cc1d1`. Entry tracked tree was clean; local
+origin/main...HEAD was 0 0. No fetch or push was performed. This instruction
+superseded the old next-item hold below; the canonical roadmap is unchanged.
+
+Read [ROUTING_UI_AUDIT.md](ROUTING_UI_AUDIT.md), the current README and runbook.
+They contain the architecture map, all-18-agent routing, entry/artifact tables,
+contradictions, rejected changes and unresolved/fresh-clone debt. The old README
+and runbook are preserved as clearly labeled historical text.
+
+The console now reads recorded activation/completion through an authenticated
+read-only route, exposes a small ordinary summary and developer decision detail,
+qualifies process success, labels current-registry rules and warns about Local
+Draft. Harness descriptions are regenerated with truthful call/ontology bounds.
+Dense remains default; no suppression, model, prompt, policy, governance or speed
+change. Original 84m14.4/26-call baseline, 3/5 location/0 FP/0 clean flags/3 of 3
+attribution and activation comparison caveats remain authoritative. Six fewer
+legal calls were not sparse savings; broad quality preservation was not established,
+and production grounding regressed in that prior comparison.
+
+Focused API, executable console and documentation checks pass. Full host:
+257 PASS / 0 WARN / 4 SKIP / 0 FAIL of 261, native 0. Image `shimmer:routing-ui`:
+sha256:50502ba700a1d288f113007269bd9e9a620288f39b53e9a091954672a9224c35. Complete source parity 142/142. Final offline unmounted
+image gate: 249 PASS / 0 WARN / 10 SKIP / 2 FAIL of 261, native 1; known checks
+28/31 omitted-input failures remain. No all-green image/contamination/clone or
+private quality claim. Evidence is sealed under `output/routing_ui/`; prior
+275 snapshot files and 54/8/46/243 manifest entries remain intact. All audit
+processes have finished. The authorized local closure commit is reported in
+the handback; nothing was pushed.
+
+Next locked item, **not begun**: **FinOps + VM/GPU feasibility analysis**.
+Stop here pending its separate operator instruction. No VM, fresh clone, later
+roadmap work, provider/private run or machine setting change is authorized here.
+
+## Historical handovers below
+
+The following text is preserved from the preceding closure, including its old
+next-item wording; the current status above supersedes that wording.
+
+---
+
 # RESUME: Conditional agent activation audit complete, 2026-09-13
 
 ## Completed operator-authorized item

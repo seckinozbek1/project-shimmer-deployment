@@ -24523,6 +24523,16 @@ def check_258_agent_activation():
     return check()
 
 
+def check_259_routing_ui():
+    from routing_ui_checks import check
+    return check()
+
+
+def check_260_routing_docs():
+    from routing_doc_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24846,6 +24856,8 @@ CHECKS = [
     ("256 startup readiness is explicit and non-mutating", check_256_startup_readiness),
     ("257 console intake choices reach the real submission consumer", check_257_console_startup_submission),
     ("258 activation evidence joins actual dispatch and bounded phase gates", check_258_agent_activation),
+    ("259 activation artifact reaches authenticated console API", check_259_routing_ui),
+    ("260 current routing documentation and generated harness parity", check_260_routing_docs),
 ]
 
 

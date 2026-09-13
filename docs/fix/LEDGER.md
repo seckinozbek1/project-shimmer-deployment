@@ -1,3 +1,30 @@
+# Ledger: current routing/UI closure
+
+## README + UPSTREAM/DOWNSTREAM ROUTING + UI AUDIT COMPLETE, 2026-09-13
+
+Entered at 1314475 with a clean tracked tree and local origin/main...HEAD 0 0;
+no remote operation. [ROUTING_UI_AUDIT.md](ROUTING_UI_AUDIT.md) contains the
+consolidated trace and decision record. Current README/runbook replace stale
+operator/architecture claims; original text survives in docs/history/. API/UI
+historical designs are labeled. Harness descriptions are regenerated.
+
+Added read-only activation/completion API projection and small console summary,
+developer reasons/states, truthful success wording, current-rule label and Local
+Draft limitation. No routing/model/governance/performance change. Dense default
+and prior quality/activation caveats remain unchanged.
+
+Focused consumer/effect/restoration/no-op and documentation checks pass. Host
+257/0/4/0 of 261, native 0. Local image sha256:50502ba700a1d288f113007269bd9e9a620288f39b53e9a091954672a9224c35 matches all 142 shipped
+source paths; unmounted offline GPU gate 249/0/10/2 of 261, native 1, with only
+known missing-input checks 28/31 failing. No clean-image/contamination/clone claim.
+All prior manifests and operator snapshots verified; output/routing_ui evidence
+sealed. Authorized local commit only; nothing pushed. Next locked item is exactly
+**FinOps + VM/GPU feasibility analysis**, not started. Canonical roadmap unchanged.
+
+## Historical ledger follows unchanged
+
+---
+
 # Ledger: what the README must say, and what the image is behind on
 
 ## CONDITIONAL AGENT ACTIVATION AUDIT COMPLETE, NO NEW SUPPRESSION, 2026-09-13
