@@ -1,12 +1,13 @@
 # Project Shimmer
 
-The README + upstream/downstream routing + UI audit is complete at
-`47c63aca09603ab5c7ad662753d647397a623ce8`. The documentation-only
-[session close](docs/fix/RESUME.md#session-close-operator-correction-and-current-status)
-records the subsequent execution-policy restriction; no further model/pipeline/
-inference/GPU workload is permitted for this item. Recorded gates and image parity
-below describe the audit revision, not newly executed closeout evidence. Nothing
-was pushed by the agent. FinOps remains next and unstarted.
+Multi-round positioning is implemented as an explicit optional case mode, with
+deterministic fixture validation only. It has not been executed with real models,
+benchmarked, or exercised by a cloud workload. Runtime, cost, scaling and substantive
+quality remain **UNMEASURED / UNVERIFIED**. See the
+[implementation report](docs/fix/MULTI_ROUND_IMPLEMENTATION.md).
+Ordinary Review/Draft and dense/sparse defaults retain pre-multi-round behavior.
+The comparison baseline remains `47c63aca09603ab5c7ad662753d647397a623ce8`.
+The next locked item is **Current-version cloud composite experiment**, not begun.
 
 Shimmer is a governed document-review prototype. It combines model reasoning with
 typed findings, deterministic comparisons, citations, proposed amendments and an
@@ -208,6 +209,40 @@ execution failure, completion, recovery and truncation must not be collapsed.
 
 ## Outputs and operator surfaces
 
+### Optional multi-round positioning
+
+Explicit `--multi-round --multi-round-manifest <case.json>` selects case analysis
+for Review. Both existing non-sensitive declarations are required. API callers
+add `multi_round=true` and `multi_round_manifest` JSON to an explicit Normal Review
+submission; the console exposes the same opt-in under Advanced options. Multiple
+uploaded files alone never activate it. A fixture-marked manifest cannot start a
+live case phase. Dense/sparse remains an independent routing choice.
+
+The operator declares rounds/order, actors, issues, and source spans in the case
+manifest. PROCESSOR drafts flat typed observations and interpretations; VERIFIER
+independently checks them through the existing governed wrapper. Deterministic
+code validates identity/evidence links, assembles histories and computes same-unit
+numeric deltas. It does not decide concessions, hardening, reversals or agreement.
+Accepted uncertainty, competing interpretations, refusals and missing evidence
+remain visible. Advice requires `allow_recommendations=true` separately.
+
+The run-local master is `audit/multi_round.json`, with source handles in the
+existing `audit/reference_index.json`, reviewed envelopes on the run bus, and
+ordinary call/activation/completion provenance. The authenticated case route and
+console expose histories, movement, unresolved issues, trajectory, decision
+support and clickable evidence. Current positions come only from the latest
+declared round; missing actors are never silently carried forward. The explicit
+case branch returns before ordinary date-cache, adaptive-learning, amendment and
+ontology/GNN processing. It does not produce conventional review amendments or
+promote negotiation state into durable memory. Existing startup model/privacy
+governance still applies; Sensitive case analysis is unavailable.
+
+Ordinary runs require no case artifact, read no case manifest, use no case contract
+and gain no model call. The first cloud experiment can still measure the pinned
+pre-multi-round behavior. Fixture success establishes contracts, not model quality.
+
+### Existing review artifacts
+
 The [artifact routing table](docs/fix/ROUTING_UI_AUDIT.md#artifact-routing) names
 each writer and reader. `RunContext` defines the run folder and canonical files:
 
@@ -279,6 +314,7 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/runs/{run_id}/convention-assignment` | token | Run assignment plus current registry subject/idle summary; not actual activation history. |
 | `GET` | `/harness` | token | Generated current agent description; not run-scoped or cluster-quality proof. |
 | `GET` | `/runs/{run_id}/activation` | token | Validated run activation and independent completion record; missing/invalid/wrong-run evidence is unavailable. |
+| `GET` | `/runs/{run_id}/multi-round` | token | Validated optional case master, activation, histories, trajectory and evidence; absent ordinary-run artifact is normal. |
 | `GET` | `/runs/{run_id}/references` | token | Run reference excerpts; optional ref_id, unknown ID 404, missing index explicitly absent. |
 | `GET` | `/ontology` | token | Cross-run provision provenance summary; not a review-agent retrieval path. |
 | `GET` | `/ontology/provisions/{provision_id:path}` | token | Revisions/provenance for one provision; unknown ID 404. |

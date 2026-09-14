@@ -349,6 +349,8 @@ def _write_status(job):
         path = _status_path(job["run_id"])
         path.parent.mkdir(parents=True, exist_ok=True)
         record = {k: job.get(k) for k in _STATUS_FIELDS}
+        if job.get("multi_round") is True:
+            record["multi_round"] = True
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
         tmp.replace(path)
@@ -381,6 +383,8 @@ def _rebuild_jobs_from_disk():
             except (OSError, ValueError):
                 continue
             job = {k: record.get(k) for k in _STATUS_FIELDS}
+            if record.get("multi_round") is True:
+                job["multi_round"] = True
             job.setdefault("run_id", run_dir.name)
             if job.get("status") == "running":
                 job["status"] = "interrupted"
@@ -748,6 +752,9 @@ def _run_job(run_id):
                 # to answer via POST /runs/{run_id}/approval (see GET /approvals).
                 "--operator-channel", "file",
                 "--review-mode", job_review_mode]
+        if (job or {}).get("multi_round") is True:
+            argv += ["--multi-round", "--multi-round-manifest",
+                     str(out_dir / "audit" / "multi_round_request.json")]
         if question:
             # R6: a review run may carry an optional framing question too (folded
             # into every agent's run objectives and echoed in the deliverables);
@@ -1719,6 +1726,8 @@ def _run_record(job, run_dir):
     # with nothing here to say which one to trust. state/outcome/stop_reason
     # is the sole vocabulary a caller of this response sees.
     record = {k: job.get(k) for k in _STATUS_FIELDS if k != "status"}
+    if job.get("multi_round") is True:
+        record["multi_round"] = True
     record["state"] = state
     record["outcome"] = outcome
     record["stop_reason"] = stop_reason
@@ -1750,6 +1759,8 @@ async def submit(files: List[UploadFile] = File(default=None),
                  intake_mode: Optional[str] = Form(default=None),
                  review_targets: Optional[str] = Form(default=None),
                  prior_files: Optional[str] = Form(default=None),
+                 multi_round: Optional[str] = Form(default=None),
+                 multi_round_manifest: Optional[str] = Form(default=None),
                  confirmed: Optional[str] = Form(default=None)):
     """Accept a review or draft job.
 
@@ -1794,6 +1805,21 @@ async def submit(files: List[UploadFile] = File(default=None),
     ingestion contract (when present), then queue the job. Files move into
     input/context/ only when the job starts (see _run_job)."""
     import tempfile  # local import: only /submit needs it.
+
+    case_manifest = None
+    if multi_round is not None or multi_round_manifest is not None:
+        from multi_round import normalize_request
+        try:
+            if multi_round not in {"true", "false"}:
+                raise ValueError()
+            if multi_round_manifest is not None and len(multi_round_manifest) > 1000000:
+                raise ValueError()
+            case_manifest = normalize_request(multi_round == "true",
+                json.loads(multi_round_manifest) if multi_round_manifest is not None else None)
+            if case_manifest is not None and (case_manifest["fixture"] or task != "review" or sensitive != "false"):
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise HTTPException(400, "Multi-round needs an explicit Review request, Normal privacy, and a valid non-fixture case manifest.")
 
     if _STOPPING.is_set():
         raise HTTPException(503, "Shimmer is stopping. Start it again before submitting a review.")
@@ -1930,6 +1956,20 @@ async def submit(files: List[UploadFile] = File(default=None),
             "error": None,
             "files": names,
         }
+        if case_manifest is not None:
+            # Kept in this run's audit folder, never ingested as corpus text.
+            from run_context import for_run_dir
+            import multi_round as multi_round_mod
+            case_ctx = for_run_dir(ROOT, RUNS_DIR / run_id)
+            try:
+                multi_round_mod.begin(case_ctx, case_manifest)
+                (case_ctx.audit_dir() / "multi_round_request.json").write_text(
+                    json.dumps(case_manifest, ensure_ascii=False), encoding="utf-8")
+            except OSError:
+                _STAGING.pop(run_id, None)
+                shutil.rmtree(staging, ignore_errors=True)
+                raise HTTPException(500, "Could not save the case request. No model work was queued.")
+            new_job["multi_round"] = True
         JOBS.append(new_job)
         _write_status(new_job)
     _start_next_job()
@@ -2553,6 +2593,12 @@ async def run_activation(run_id: str):
     """Recorded routing and completion evidence, including unavailable old runs."""
     from routing_view import read_activation
     return read_activation(_validated_run_dir(run_id), run_id)
+
+
+@app.get("/runs/{run_id}/multi-round", dependencies=[Depends(verify_token)])
+async def run_multi_round(run_id: str):
+    from multi_round import read_saved
+    return read_saved(_validated_run_dir(run_id), run_id)
 
 
 @app.get("/runs/{run_id}/references", dependencies=[Depends(verify_token)])

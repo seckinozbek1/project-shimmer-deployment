@@ -1,3 +1,56 @@
+# RESUME: Multi-round positioning implementation complete, 2026-09-14
+
+The operator-authorized **Multi-round positioning / decision-support mode,
+implementation only** is complete. Read [MULTI_ROUND_IMPLEMENTATION.md](MULTI_ROUND_IMPLEMENTATION.md).
+No real model generation, model loading for integration, Review/Draft workload,
+GPU model workload, inference probe, cloud/provider workload or remote execution
+occurred. No benchmark was run. Runtime, cost, throughput, GPU requirements,
+scaling and substantive multi-round quality remain UNMEASURED / UNVERIFIED.
+
+Ordinary Review/Draft and dense/sparse defaults preserve the pinned pre-multi-round
+pipeline. The comparison baseline remains `47c63aca09603ab5c7ad662753d647397a623ce8`.
+Case mode requires explicit CLI/API/UI opt-in and a manifest. It uses existing
+PROCESSOR/VERIFIER wrappers and flat bus envelopes, a run-local evidence master,
+source-span/REF checks, histories and grounded trajectory/decision-support views.
+It neither infers semantic movement deterministically nor promotes negotiation
+state into durable memory. Advice requires a separate explicit declaration.
+
+Final no-generation subset: **26 PASS / 2 SKIP / 0 FAIL** (17 dedicated fixture
+passes, one HTTP integration skip; 9 selected legacy passes, one existing optional
+local-directory skip). The full model/GPU gate was NOT RUN. FastAPI is absent in
+all installed Python environments, so HTTP transport/auth integration is UNVERIFIED;
+the actual route handler, auth declaration, intake normalization and worker flags
+were exercised without starting a server. Two Node console proofs pass, covering
+new saved-case rendering/subscription and existing normal submission. Browser
+layout, image rebuild/parity and real model performance/quality remain UNVERIFIED.
+Historical gate failures/skips are preserved below, not converted to current passes.
+
+Baseline AST contracts pin every ordinary pipeline function to the canonical
+commit after excluding only explicit case branches and CLI flags. Evidence
+neutralisation and saved-view/console neutralisation fail then restore/pass;
+no-op mutations are refused as NO_OBSERVED_EFFECT. Tests use authored semantic
+outputs and make no measured-quality claim. Saved evidence is under ignored
+`output/multi_round_implementation/` with an explicitly labeled synthetic fixture.
+
+Entry: main at `68c2c55891b31d15ad155d5c758fc0a17587707c`, tracked tree clean,
+one commit ahead of the local tracking ref. Closure is a new local commit, whose
+hash is reported in the handback. Operator untracked `SHIMMER_HANDOFF.md`, `durable/`
+and existing ignored state were preserved. Nothing was fetched or pushed.
+
+Next locked item, exactly: **Current-version cloud composite experiment**.
+It was NOT begun. The older roadmap/next-item text below is historical and is
+superseded by the current operator request and this handover.
+
+Credential-scan follow-up: the operator authorized investigation of the initial
+flag. Source/AST dataflow proved a test-local credential, not a provider secret.
+Four legacy fixed test credentials now use generated values; an expression and
+comment false positive were corrected. Assignment-only checks pass. No suspected
+value was displayed, no scanner rule/exemption was changed, and all 17 intended
+files pass the full-file credential scan. See the implementation report for proof.
+
+
+---
+
 # RESUME: Routing/UI audit complete, 2026-09-13
 
 ## Session close: operator correction and current status

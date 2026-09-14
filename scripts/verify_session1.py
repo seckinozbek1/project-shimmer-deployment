@@ -16057,7 +16057,8 @@ def _w8_console_body():
 
     saved = {k: _os.environ.get(k) for k in
              ("SHIMMER_TOKEN_HASH", "SHIMMER_OUTPUT_DIR", "SHIMMER_AGENT_REGISTRY", "SHIMMER_AGENT_HARNESS")}
-    token = "w8-console-token"
+    from secrets import token_urlsafe
+    token = token_urlsafe(24)
     _os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(token.encode()).hexdigest()
     _os.environ["SHIMMER_OUTPUT_DIR"] = str(runs)
     _os.environ["SHIMMER_AGENT_REGISTRY"] = str(registry_path)
@@ -17274,7 +17275,8 @@ def _ontology_reader_body():
 
     # the routes, through the real app, reading the fixture store
     saved = {k: _os.environ.get(k) for k in ("SHIMMER_TOKEN_HASH",)}
-    token = "ontology-reader-token"
+    from secrets import token_urlsafe
+    token = token_urlsafe(24)
     _os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(token.encode()).hexdigest()
     original_dir = _reader.OGE_STORES_DIR
     try:
@@ -18041,7 +18043,8 @@ def _candidate_finder_body():
     import os as _os
     from fastapi.testclient import TestClient
     saved = {k: _os.environ.get(k) for k in ("SHIMMER_TOKEN_HASH",)}
-    token = "candidate-finder-token"
+    from secrets import token_urlsafe
+    token = token_urlsafe(24)
     _os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(token.encode()).hexdigest()
     orig_graph, orig_state = _gnn.DEFAULT_GRAPH_PATH, _gnn.DEFAULT_STATE_PATH
     orig_cand_state = _cand.DEFAULT_STATE_PATH
@@ -18239,7 +18242,8 @@ def _console_screens_body():
                      "wherever torch could not load" % (sorted(heavy),))
 
     saved = {k: _os.environ.get(k) for k in ("SHIMMER_TOKEN_HASH", "SHIMMER_OUTPUT_DIR")}
-    token = "console-screens-token"
+    from secrets import token_urlsafe
+    token = token_urlsafe(24)
     _os.environ["SHIMMER_TOKEN_HASH"] = hashlib.sha256(token.encode()).hexdigest()
     _os.environ["SHIMMER_OUTPUT_DIR"] = str(runs)
     original_dir = _reader.OGE_STORES_DIR
@@ -22682,12 +22686,12 @@ def check_222_launcher_server_url_and_token_handshake():
                        capture_output=True, text=True)
         if proc.returncode != 0:
             return _fail("the token generator failed: %s" % proc.stderr[:200])
-        token = proc.stdout.strip()
+        generated_access = proc.stdout.strip()
         written = hash_file.read_text(encoding="utf-8").strip()
-        if len(token) != 64 or len(written) != 64:
+        if len(generated_access) != 64 or len(written) != 64:
             return _fail("token/hash lengths are %d/%d, expected 64/64"
-                         % (len(token), len(written)))
-        if _hashlib.sha256(token.encode()).hexdigest() != written:
+                         % (len(generated_access), len(written)))
+        if _hashlib.sha256(generated_access.encode()).hexdigest() != written:
             return _fail("the written hash is not sha256 of the printed token")
         if written in proc.stdout:
             return _fail("the hash was printed to stdout; it must reach the shell "
@@ -24533,6 +24537,11 @@ def check_260_routing_docs():
     return check()
 
 
+def check_261_multi_round():
+    from multi_round_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24858,6 +24867,7 @@ CHECKS = [
     ("258 activation evidence joins actual dispatch and bounded phase gates", check_258_agent_activation),
     ("259 activation artifact reaches authenticated console API", check_259_routing_ui),
     ("260 current routing documentation and generated harness parity", check_260_routing_docs),
+    ("261 explicit multi-round typed evidence and baseline isolation", check_261_multi_round),
 ]
 
 

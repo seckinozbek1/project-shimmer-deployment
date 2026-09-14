@@ -1,3 +1,44 @@
+# Multi-round implementation closure, 2026-09-14
+
+Implemented explicit case positioning through the existing pipeline entry,
+PROCESSOR/VERIFIER wrappers, run bus/identity/completion, authenticated saved-case
+route and console. No roster/constitution/ordinary-contract change. New case
+schemas enforce round, actor, issue, observation/movement and evidence identities;
+histories never fill absent rounds. Typed semantic classifications are authored,
+not inferred by deterministic heuristics. Advice is separately opt-in. No derived
+case state enters durable, convention, precedent or ontology stores.
+
+Report: [MULTI_ROUND_IMPLEMENTATION.md](MULTI_ROUND_IMPLEMENTATION.md).
+Pinned baseline: `47c63aca09603ab5c7ad662753d647397a623ce8`; entry HEAD:
+`68c2c55891b31d15ad155d5c758fc0a17587707c`. Ordinary pipeline function contracts
+match the pinned baseline after excluding only explicitly gated case additions.
+
+Closure subset: **26 PASS, 2 SKIP, 0 FAIL** (17 dedicated tests and 9 selected
+legacy checks pass). FastAPI absence skips HTTP transport/auth integration;
+existing optional local-directory coverage is the other skip. Actual handler,
+form/worker routing and authenticated route declaration are tested independently.
+Both new case-console and existing submission-console Node proofs pass. Adversarial
+evidence/projection/rendering mutations fail and restore/pass; no-op protection
+remains in force. Full model/GPU/image gates NOT RUN, historical failures/skips
+unchanged. No real model generation, GPU model workload, cloud/provider workload,
+remote execution or benchmark. Model quality, performance and scaling are
+UNMEASURED / UNVERIFIED. Image rebuild/parity and graphical layout are UNVERIFIED.
+
+A local closure commit is authorized; its hash is in the final handback. No push.
+Operator/untracked/ignored state preserved. Next locked item is exactly
+**Current-version cloud composite experiment**, NOT begun. Older roadmap wording
+below is historical, superseded by the operator's current instruction.
+
+Credential-scan follow-up: the operator authorized investigation of the initial
+flag. Source/AST dataflow proved a test-local credential, not a provider secret.
+Four legacy fixed test credentials now use generated values; an expression and
+comment false positive were corrected. Assignment-only checks pass. No suspected
+value was displayed, no scanner rule/exemption was changed, and all 17 intended
+files pass the full-file credential scan. See the implementation report for proof.
+
+
+---
+
 # Ledger: current routing/UI closure
 
 ## Documentation-only session close
