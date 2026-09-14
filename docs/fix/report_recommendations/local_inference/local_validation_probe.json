@@ -1,0 +1,28 @@
+{
+  "classification": "BOUNDED_REAL_MODEL_PROBE_NOT_FULL_RUN",
+  "calls": [],
+  "loads": [],
+  "environment": {
+    "interpreter": "C:\\Users\\secki\\anaconda3\\python.exe",
+    "python": "3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:20:11) [MSC v.1938 64 bit (AMD64)]",
+    "torch_package": "C:\\Users\\secki\\anaconda3\\pkgs\\pytorch-2.5.1-py3.12_cuda11.8_cudnn9_0",
+    "torch_version": "2.5.1",
+    "verified_files": 12500,
+    "repair": "verified_cached_package_process_overlay",
+    "global_environment_modified": false,
+    "unsafe_suppression": false
+  },
+  "runtime": {
+    "torch_path": "C:\\Users\\secki\\anaconda3\\pkgs\\pytorch-2.5.1-py3.12_cuda11.8_cudnn9_0\\Lib\\site-packages\\torch\\__init__.py",
+    "torch_version": "2.5.1",
+    "cuda": "11.8",
+    "openmp_dlls": [
+      "C:\\Users\\secki\\anaconda3\\Library\\bin\\libiomp5md.dll"
+    ],
+    "arithmetic_pass": true
+  },
+  "families": {
+    "active_producer": "qwen2",
+    "active_auditor": "llama"
+  }
+}

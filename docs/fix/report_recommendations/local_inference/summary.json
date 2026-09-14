@@ -1,0 +1,196 @@
+{
+  "root_cause": "Mixed host PyTorch files: Conda 2.5.1 record with pip 2.7.0 dist-info and extra bundled OpenMP DLLs.",
+  "causal_evidence": [
+    "Isolated torch-only import fails; NumPy and sklearn are not required to trigger failure.",
+    "Minimal PATH and -I do not resolve the failure.",
+    "DLL trace loads torch/lib/libiomp5md.dll before failure during torch._C import.",
+    "torch_cpu.dll imports Conda mkl_intel_thread.2.dll and libiomp5md.dll.",
+    "Cached Conda torch package imports the complete stack with exactly one Conda Intel OpenMP DLL.",
+    "All 12500 cached torch files passed their package manifest hashes; CPU/CUDA arithmetic passed."
+  ],
+  "bundled_openmp_sha256": "a9c9ddf4bb1477645120b481a14a9bcb02b8da6eece12032376e33a1ba96d2ea",
+  "conda_openmp_sha256": "0ad71f466d115d353dce94ba32b63e288f48198e89f551d46dcce461fedbd195",
+  "fix": "Process-local verified Conda package-cache overlay selected before torch import.",
+  "default_host_import_repaired": false,
+  "global_files_modified": false,
+  "authoritative_runtime": "Host CPython 3.12.3 plus verified existing Conda PyTorch 2.5.1 CUDA 11.8 package via local_inference_runtime.configure().",
+  "venv_status": "Python 3.9.13; Transformers and tokenizers absent. Not selected.",
+  "downloads": 0,
+  "unsafe_suppression": false,
+  "standalone_integrity_verification_seconds": 49.11795629999688,
+  "package_versions": {
+    "torch": "2.5.1",
+    "transformers": "4.51.3",
+    "numpy": "1.26.4",
+    "sklearn": "1.5.1",
+    "bitsandbytes": "0.49.2",
+    "accelerate": "1.13.0"
+  },
+  "attempts": {
+    "local_validation": {
+      "stop_reason": "available_ram_below_1.25_gib",
+      "exit_code": 1,
+      "phases": {
+        "load_active_producer": {
+          "sampled_seconds": 23.759462594985962,
+          "samples": 23,
+          "min_available_ram_gib": 1.1520576477050781,
+          "max_process_rss_mib": 2805.890625,
+          "max_process_cpu_percent": 89.7,
+          "max_system_cpu_percent": 39.1,
+          "max_gpu_utilization_percent": 78.0,
+          "max_vram_used_mib": 3559.0,
+          "max_gpu_temperature_c": 55.0
+        },
+        "runtime_integrity": {
+          "sampled_seconds": 69.74704313278198,
+          "samples": 43,
+          "min_available_ram_gib": 3.1032066345214844,
+          "max_process_rss_mib": 473.28515625,
+          "max_process_cpu_percent": 91.7,
+          "max_system_cpu_percent": 32.4,
+          "max_gpu_utilization_percent": 0.0,
+          "max_vram_used_mib": 171.0,
+          "max_gpu_temperature_c": 55.0
+        }
+      },
+      "sampling": "approximately_1_second_plus_sensor_latency_not_instantaneous_peaks",
+      "loads": [],
+      "calls_recorded": 0
+    },
+    "local_validation_auditor": {
+      "stop_reason": null,
+      "exit_code": 1,
+      "phases": {
+        "generate_independent_verifier": {
+          "sampled_seconds": 25.943700551986694,
+          "samples": 25,
+          "min_available_ram_gib": 3.617687225341797,
+          "max_process_rss_mib": 963.1953125,
+          "max_process_cpu_percent": 98.6,
+          "max_system_cpu_percent": 32.3,
+          "max_gpu_utilization_percent": 100.0,
+          "max_vram_used_mib": 3629.0,
+          "max_gpu_temperature_c": 59.0
+        },
+        "load_active_auditor": {
+          "sampled_seconds": 27.07916522026062,
+          "samples": 26,
+          "min_available_ram_gib": 1.9765815734863281,
+          "max_process_rss_mib": 2648.890625,
+          "max_process_cpu_percent": 92.8,
+          "max_system_cpu_percent": 28.9,
+          "max_gpu_utilization_percent": 99.0,
+          "max_vram_used_mib": 3613.0,
+          "max_gpu_temperature_c": 58.0
+        },
+        "runtime_integrity": {
+          "sampled_seconds": 58.68413519859314,
+          "samples": 36,
+          "min_available_ram_gib": 3.112152099609375,
+          "max_process_rss_mib": 473.29296875,
+          "max_process_cpu_percent": 89.8,
+          "max_system_cpu_percent": 45.7,
+          "max_gpu_utilization_percent": 0.0,
+          "max_vram_used_mib": 171.0,
+          "max_gpu_temperature_c": 57.0
+        }
+      },
+      "sampling": "approximately_1_second_plus_sensor_latency_not_instantaneous_peaks",
+      "loads": [
+        {
+          "role": "active_auditor",
+          "seconds": 27.797174699997413,
+          "resident_models": [
+            "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+          ],
+          "device": "cuda:0",
+          "vram_allocated_mib": 2167.56884765625
+        }
+      ],
+      "calls_recorded": 0,
+      "instrumentation_failure": "Backend generation returned, but harness used text instead of raw_text. Token counts, output and finish reason were lost. One corrected repeat was authorized within scope."
+    },
+    "local_validation_auditor_retry": {
+      "stop_reason": null,
+      "exit_code": 0,
+      "phases": {
+        "complete": {
+          "sampled_seconds": 0.0,
+          "samples": 1,
+          "min_available_ram_gib": 3.6311416625976562,
+          "max_process_rss_mib": 954.73046875,
+          "max_process_cpu_percent": 84.1,
+          "max_system_cpu_percent": 22.9,
+          "max_gpu_utilization_percent": 0.0,
+          "max_vram_used_mib": 3625.0,
+          "max_gpu_temperature_c": 59.0
+        },
+        "generate_independent_verifier": {
+          "sampled_seconds": 24.04354190826416,
+          "samples": 23,
+          "min_available_ram_gib": 3.5794029235839844,
+          "max_process_rss_mib": 968.85546875,
+          "max_process_cpu_percent": 101.5,
+          "max_system_cpu_percent": 39.1,
+          "max_gpu_utilization_percent": 100.0,
+          "max_vram_used_mib": 3629.0,
+          "max_gpu_temperature_c": 62.0
+        },
+        "load_active_auditor": {
+          "sampled_seconds": 26.089163780212402,
+          "samples": 25,
+          "min_available_ram_gib": 1.9496574401855469,
+          "max_process_rss_mib": 2749.36328125,
+          "max_process_cpu_percent": 94.3,
+          "max_system_cpu_percent": 26.7,
+          "max_gpu_utilization_percent": 26.0,
+          "max_vram_used_mib": 3613.0,
+          "max_gpu_temperature_c": 58.0
+        },
+        "runtime_integrity": {
+          "sampled_seconds": 56.62665605545044,
+          "samples": 35,
+          "min_available_ram_gib": 4.053096771240234,
+          "max_process_rss_mib": 472.8671875,
+          "max_process_cpu_percent": 95.6,
+          "max_system_cpu_percent": 32.9,
+          "max_gpu_utilization_percent": 0.0,
+          "max_vram_used_mib": 171.0,
+          "max_gpu_temperature_c": 58.0
+        }
+      },
+      "sampling": "approximately_1_second_plus_sensor_latency_not_instantaneous_peaks",
+      "loads": [
+        {
+          "role": "active_auditor",
+          "seconds": 26.685312200002954,
+          "resident_models": [
+            "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+          ],
+          "device": "cuda:0",
+          "vram_allocated_mib": 2167.56884765625
+        }
+      ],
+      "calls_recorded": 1
+    }
+  },
+  "comparison_status": {
+    "processor_ab": "blocked_by_producer_load_ram_guard",
+    "native_template_ab": "blocked_by_producer_load_ram_guard",
+    "producer_auditor_path": "not_measured",
+    "concurrency_1": "auditor_only",
+    "concurrency_2": "not_admitted_after_resource_guard",
+    "concurrency_4": "not_admitted",
+    "model_residency": "one model at most; producer initialization incomplete; auditor initialized"
+  },
+  "boundaries": {
+    "cloud": false,
+    "paid_api": false,
+    "downloads": false,
+    "full_pipeline": false,
+    "full_model_run": false,
+    "multi_round": false,
+    "push": false
+  }
+}

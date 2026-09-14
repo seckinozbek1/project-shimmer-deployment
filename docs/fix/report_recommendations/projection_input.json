@@ -313,7 +313,164 @@
   "retry_overhead_seconds": null,
   "assumptions": [
     "Graph replays historical task shape only, not predicted semantic outcomes.",
-    "Partition counts, exact-comparison eligibility and conditional work must be supplied for a concrete input."
+    "Partition counts, exact-comparison eligibility and conditional work must be supplied for a concrete input.",
+    "Bounded inference continuation: OpenMP process-local repair verified; producer load aborted below 1.25 GiB available RAM. Standalone auditor fixture cannot supply latencies for the ordinary task graph. Full-run warm/cold, retry, truncation and quality predictions remain unknown."
   ],
-  "resource_envelope": "Observed laptop GPU: 8 GiB. Real model probe unavailable due OpenMP initialization conflict."
+  "resource_envelope": {
+    "gpu_total_mib": 8192,
+    "attempts": {
+      "local_validation": {
+        "stop_reason": "available_ram_below_1.25_gib",
+        "exit_code": 1,
+        "phases": {
+          "load_active_producer": {
+            "sampled_seconds": 23.759462594985962,
+            "samples": 23,
+            "min_available_ram_gib": 1.1520576477050781,
+            "max_process_rss_mib": 2805.890625,
+            "max_process_cpu_percent": 89.7,
+            "max_system_cpu_percent": 39.1,
+            "max_gpu_utilization_percent": 78.0,
+            "max_vram_used_mib": 3559.0,
+            "max_gpu_temperature_c": 55.0
+          },
+          "runtime_integrity": {
+            "sampled_seconds": 69.74704313278198,
+            "samples": 43,
+            "min_available_ram_gib": 3.1032066345214844,
+            "max_process_rss_mib": 473.28515625,
+            "max_process_cpu_percent": 91.7,
+            "max_system_cpu_percent": 32.4,
+            "max_gpu_utilization_percent": 0.0,
+            "max_vram_used_mib": 171.0,
+            "max_gpu_temperature_c": 55.0
+          }
+        },
+        "sampling": "approximately_1_second_plus_sensor_latency_not_instantaneous_peaks",
+        "loads": [],
+        "calls_recorded": 0
+      },
+      "local_validation_auditor": {
+        "stop_reason": null,
+        "exit_code": 1,
+        "phases": {
+          "generate_independent_verifier": {
+            "sampled_seconds": 25.943700551986694,
+            "samples": 25,
+            "min_available_ram_gib": 3.617687225341797,
+            "max_process_rss_mib": 963.1953125,
+            "max_process_cpu_percent": 98.6,
+            "max_system_cpu_percent": 32.3,
+            "max_gpu_utilization_percent": 100.0,
+            "max_vram_used_mib": 3629.0,
+            "max_gpu_temperature_c": 59.0
+          },
+          "load_active_auditor": {
+            "sampled_seconds": 27.07916522026062,
+            "samples": 26,
+            "min_available_ram_gib": 1.9765815734863281,
+            "max_process_rss_mib": 2648.890625,
+            "max_process_cpu_percent": 92.8,
+            "max_system_cpu_percent": 28.9,
+            "max_gpu_utilization_percent": 99.0,
+            "max_vram_used_mib": 3613.0,
+            "max_gpu_temperature_c": 58.0
+          },
+          "runtime_integrity": {
+            "sampled_seconds": 58.68413519859314,
+            "samples": 36,
+            "min_available_ram_gib": 3.112152099609375,
+            "max_process_rss_mib": 473.29296875,
+            "max_process_cpu_percent": 89.8,
+            "max_system_cpu_percent": 45.7,
+            "max_gpu_utilization_percent": 0.0,
+            "max_vram_used_mib": 171.0,
+            "max_gpu_temperature_c": 57.0
+          }
+        },
+        "sampling": "approximately_1_second_plus_sensor_latency_not_instantaneous_peaks",
+        "loads": [
+          {
+            "role": "active_auditor",
+            "seconds": 27.797174699997413,
+            "resident_models": [
+              "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+            ],
+            "device": "cuda:0",
+            "vram_allocated_mib": 2167.56884765625
+          }
+        ],
+        "calls_recorded": 0,
+        "instrumentation_failure": "Backend generation returned, but harness used text instead of raw_text. Token counts, output and finish reason were lost. One corrected repeat was authorized within scope."
+      },
+      "local_validation_auditor_retry": {
+        "stop_reason": null,
+        "exit_code": 0,
+        "phases": {
+          "complete": {
+            "sampled_seconds": 0.0,
+            "samples": 1,
+            "min_available_ram_gib": 3.6311416625976562,
+            "max_process_rss_mib": 954.73046875,
+            "max_process_cpu_percent": 84.1,
+            "max_system_cpu_percent": 22.9,
+            "max_gpu_utilization_percent": 0.0,
+            "max_vram_used_mib": 3625.0,
+            "max_gpu_temperature_c": 59.0
+          },
+          "generate_independent_verifier": {
+            "sampled_seconds": 24.04354190826416,
+            "samples": 23,
+            "min_available_ram_gib": 3.5794029235839844,
+            "max_process_rss_mib": 968.85546875,
+            "max_process_cpu_percent": 101.5,
+            "max_system_cpu_percent": 39.1,
+            "max_gpu_utilization_percent": 100.0,
+            "max_vram_used_mib": 3629.0,
+            "max_gpu_temperature_c": 62.0
+          },
+          "load_active_auditor": {
+            "sampled_seconds": 26.089163780212402,
+            "samples": 25,
+            "min_available_ram_gib": 1.9496574401855469,
+            "max_process_rss_mib": 2749.36328125,
+            "max_process_cpu_percent": 94.3,
+            "max_system_cpu_percent": 26.7,
+            "max_gpu_utilization_percent": 26.0,
+            "max_vram_used_mib": 3613.0,
+            "max_gpu_temperature_c": 58.0
+          },
+          "runtime_integrity": {
+            "sampled_seconds": 56.62665605545044,
+            "samples": 35,
+            "min_available_ram_gib": 4.053096771240234,
+            "max_process_rss_mib": 472.8671875,
+            "max_process_cpu_percent": 95.6,
+            "max_system_cpu_percent": 32.9,
+            "max_gpu_utilization_percent": 0.0,
+            "max_vram_used_mib": 171.0,
+            "max_gpu_temperature_c": 58.0
+          }
+        },
+        "sampling": "approximately_1_second_plus_sensor_latency_not_instantaneous_peaks",
+        "loads": [
+          {
+            "role": "active_auditor",
+            "seconds": 26.685312200002954,
+            "resident_models": [
+              "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+            ],
+            "device": "cuda:0",
+            "vram_allocated_mib": 2167.56884765625
+          }
+        ],
+        "calls_recorded": 1
+      }
+    },
+    "interpretation": "Sampled load/probe envelope only; producer load stopped for low available RAM."
+  },
+  "resource_gate_passed": false,
+  "quality_gate_passed": null,
+  "measured_truncation_count": null,
+  "measured_contract_refusal_risk": null
 }

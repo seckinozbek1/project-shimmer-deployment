@@ -9,7 +9,7 @@
     "existing_topology_checks": 23,
     "safe_legacy_checks": 9,
     "skip_reason": "Optional prompts and snapshots directories unavailable",
-    "log": "output/report_recommendations/gate.txt"
+    "log": "output/report_recommendations/local_validation_safe_gate.txt"
   },
   "mutations": {
     "explicit_mutation_trials": 15,
@@ -17,12 +17,17 @@
     "all_restored": true
   },
   "real_generation": {
-    "attempted_model_calls": 0,
-    "weights_loaded": false,
-    "readiness_probe": "failed before model loading",
-    "reason": "Duplicate OpenMP runtime initialization (Error 15) in host Python",
-    "alternate_environment": "Python 3.9 virtual environment has no transformers or tokenizers",
-    "unsafe_duplicate_runtime_override_used": false
+    "attempted_model_calls": 2,
+    "recorded_model_calls": 1,
+    "accepted_semantic_outputs": 0,
+    "weights_loaded": true,
+    "producer_initialized": false,
+    "auditor_initialized": true,
+    "readiness_probe": "process-local verified package overlay passed",
+    "producer_blocker": "available RAM below 1.25 GiB during load",
+    "auditor_result": "incomplete JSON at 25 second time bound",
+    "unsafe_duplicate_runtime_override_used": false,
+    "evidence": "local_inference/summary.json"
   },
   "not_executed": [
     "full pipeline",
@@ -33,5 +38,18 @@
     "deployment",
     "push"
   ],
-  "benchmark_key_contents_read": false
+  "benchmark_key_contents_read": false,
+  "source_pass_real_generation": {
+    "attempted_model_calls": 0,
+    "weights_loaded": false,
+    "readiness_probe": "failed before model loading",
+    "reason": "Duplicate OpenMP runtime initialization (Error 15) in host Python",
+    "alternate_environment": "Python 3.9 virtual environment has no transformers or tokenizers",
+    "unsafe_duplicate_runtime_override_used": false
+  },
+  "local_inference_checks": {
+    "passed": 8,
+    "failed": 0,
+    "command": "python -B -X utf8 tools/local_inference_runtime_checks.py"
+  }
 }

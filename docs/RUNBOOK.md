@@ -254,3 +254,28 @@ Use `--previous <manifest.json>` for changed/removed source paths. The manifest
 excludes model/wheel payloads and operator/runtime state. It is not an image or
 a complete deployment bundle. Prebuilt dependency layers and prepositioned pinned
 model caches must be managed separately in a later authorized deployment.
+
+### Guarded local inference environment probe
+
+The 15 September continuation found mixed host PyTorch files. Use the explicit
+process-local cache selection in `tools/local_inference_runtime.py`; it verifies
+the existing Conda PyTorch package and avoids its mixed installed counterpart.
+It does not repair the default host import or change `.venv`. See report section
+14 for the DLL evidence, measured RAM stop and incomplete auditor result.
+
+Only with bounded real-generation authorization and sufficient RAM headroom:
+
+```powershell
+python -I -B -u tools/local_inference_probe.py --output output/report_recommendations/local_probe_new
+```
+
+The default supervised harness caps generation at 25 seconds/384 tokens, blocks
+network connections, and stops for low RAM or GPU temperature. `--auditor-only`
+uses an authored extraction and is not a measured producer/auditor path. Output
+folders must be fresh to preserve prior evidence. Do not bypass the supervisor
+or repeat the producer attempt under the recorded low-memory conditions.
+Offline checks require no model loading:
+
+```powershell
+python -B -X utf8 tools/local_inference_runtime_checks.py
+```

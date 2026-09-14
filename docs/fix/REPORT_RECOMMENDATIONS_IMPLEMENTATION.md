@@ -5,6 +5,12 @@ Starting source: `69dce11`. The current item explicitly supersedes the older
 locked-roadmap handoff. Operator-owned untracked `SHIMMER_HANDOFF.md` and
 `durable/` were preserved.
 
+The bounded inference continuation after `f3e8424` / `ec276cb` is recorded in
+section 14. It supersedes the earlier OpenMP blocker: a verified process-local
+repair works, but producer loading reached the RAM guard and the standalone
+auditor returned incomplete output at its time limit. Status remains
+`LOCAL_TARGET_INDETERMINATE`.
+
 ## 1. Starting evidence
 
 The recovered 14 September run used `15d0721fbc24cd38fdaa6bc4969d7b18ad66387e`,
@@ -319,3 +325,118 @@ explicit projection inputs. Broader output bounding for other call families,
 the remaining cross-phase boundary and serving acceleration require those
 quality/latency observations before default promotion. No final latency, cost or
 near-perfect quality target is claimed by this implementation report.
+
+## 14. Local inference environment and bounded real-model continuation
+
+### Root cause and safe runtime selection
+
+The host is Conda CPython 3.12.3. Its PyTorch directory is mixed: Conda records
+PyTorch 2.5.1 CUDA 11.8, while `torch-2.7.0.dist-info` and bundled Intel OpenMP
+DLLs not owned by the Conda PyTorch package are also present. Torch-only import
+reproduces OpenMP Error 15, including with `-I` and a minimal PATH. NumPy or
+scikit-learn import is therefore not necessary to trigger this failure.
+Tracing finds the bundled `torch/lib/libiomp5md.dll` loaded before failure in
+`torch._C`; PE imports show `torch_cpu.dll` depends on Conda MKL threading and
+Intel OpenMP. The bundled and Conda DLLs have different SHA-256 hashes, retained
+in `report_recommendations/local_inference/summary.json`. The precise installation
+history is unknown; no claim is made about which installer last changed it.
+
+The exact repair is process-local selection of the existing pristine Conda
+PyTorch package cache ahead of host site-packages, before importing torch.
+`tools/local_inference_runtime.py` verifies all 12,500 torch package files against
+the cache manifest, refuses ambiguous records or duplicate-runtime suppression,
+and sets two CPU threads and offline flags. The full inference import stack then
+loads exactly one Intel runtime, `anaconda3/Library/bin/libiomp5md.dll`. CPU and
+CUDA matrix arithmetic checks pass. A standalone integrity check took 49.12 s;
+this is startup verification overhead, not model generation time.
+
+The authoritative runtime for these probes is host Python plus this verified
+Conda PyTorch 2.5.1 overlay. Host Transformers 4.51.3, NumPy 1.26.4,
+scikit-learn 1.5.1, bitsandbytes 0.49.2 and accelerate 1.13.0 remain installed
+unchanged. `.venv` uses Python 3.9.13 and lacks Transformers/tokenizers, so it was
+not selected. Normal unmodified host `import torch` is still broken: this is an
+explicit safe launch path, not a global package repair. Cache removal or an
+integrity mismatch fails closed. No DLL was deleted, replaced or suppressed;
+no dependency, model, wheel or environment was downloaded or rebuilt.
+
+### Executed probes and resource admission
+
+The harness calls the real `agent_wrapper._load_qwen` and `AgentWrapper.call_local`.
+It blocks socket connections, uses only an authored 139-character fixture,
+limits each generation to 384 new tokens and 25 seconds, and supervises its own
+child process. Two consecutive samples below 1.25 GiB available RAM, 85 C GPU
+temperature, or a phase timeout terminate that child. Model generation is greedy
+with seed 7 in this harness; this is not an A/B result for production defaults.
+Resource samples are approximately once per second plus sensor latency, not
+instantaneous peaks. Process CPU percentages use psutil's one-core basis.
+
+| Probe | Measured result | Admission / quality result |
+|---|---|---|
+| Configured Qwen producer initialization | Stopped during load; 23.76 s sampled load interval; 2,805.9 MiB peak sampled process RSS; 3,559 MiB sampled VRAM; 1.152 GiB minimum available RAM | RAM guard; initialization not proved; no producer generation |
+| Configured Phi auditor initialization | Real loader succeeded on CUDA; process-first loads 27.80 s and 26.69 s; model allocation 2,167.6 MiB | At most one resident model; no producer/auditor co-residency |
+| First standalone auditor call | Backend generation returned; output recording then failed on a harness attribute error | Output/tokens/finish reason unavailable; not counted as a successful semantic probe |
+| Corrected standalone native-template auditor | 25.37 s call wall, 25.35 s generation, 1,887 input / 68 output tokens, requested 384 | Incomplete JSON at the 25 s time budget; contract failed; no accepted semantic output |
+| PROCESSOR monolithic vs compact | Not executed | Producer load RAM guard |
+| Raw prompt vs native template | Not executed as an A/B | One native auditor call is not evidence of template improvement |
+| Producer to independent auditor | Not executed | Auditor input was authored, not generated by Qwen |
+| Concurrency | One auditor call at a time only | 2 and 4 not admitted after resource and output-validity failures |
+
+The corrected auditor generation sampled up to 3,629 MiB total GPU memory,
+968.9 MiB process RSS, 100% GPU utilization, 62 C GPU temperature, 39.1% system
+CPU, and 101.5% process CPU (about one core). Available RAM stayed at least
+3.579 GiB during that generation. Loading the auditor was more RAM-intensive:
+2,749.4 MiB sampled RSS and 1.950 GiB minimum available RAM in the repeat.
+These are phase-local samples, not a full-run resource envelope or sustained-load
+certificate. There were no duplicate model copies. The auditor was loaded twice
+only because the first harness recording failed; no producer reload was attempted
+under insufficient headroom. No operator or operating-system process was stopped.
+
+### Output inspection and truncation
+
+The corrected output ends inside the `confidence` string and contains no complete
+item, judgment, reasoning or evidence citation. Contract validation reports
+`no JSON object found in output`. Semantic completeness and acceptance fail;
+typed-claim and reason correctness cannot be assessed from this unfinished item.
+There is no completed refusal to assess. Rule attribution is not applicable to
+this source-fidelity fixture. No location-recall score was used.
+
+The token cap was not contacted. The raw backend telemetry honestly records
+`finish_reason=unknown` and `truncated=null`, since its existing EOS/count logic
+does not label a time stop. Separately, fixture review records observed incomplete
+output at the harness's 25-second bound as time-budget truncation. This must not
+be reported as zero truncation. The first instrumentation-failed output is unknown.
+No real PROCESSOR source reconstruction or semantic extraction result was obtained.
+
+Configured model IDs remain unchanged. Their cached configs identify `qwen2`
+and `llama` respectively (the latter belongs to the configured Phi-named
+checkpoint). This proves distinct configured model types, not an executed
+cross-family producer/auditor verification path or independent lineage audit.
+
+### Projection and next evidence
+
+The existing projection input now carries measured resource evidence and the
+failed resource gate. Full-run wall-clock range, generation time, critical path,
+truncation count, retry overhead and warm/cold totals remain null. An unfinished
+139-character auditor fixture cannot supply latency estimates for all ordinary
+roles. The graph still describes the historical 20-call, five-wave scenario;
+actual call count depends on `19 + P - C`, retries and conditional work, where P
+is the PROCESSOR partition count and C is eligible deterministic comparison work.
+No unspecified input's call count is invented. Projection code now returns a null
+critical path when latency inputs are missing instead of an arbitrary tied path.
+
+Status: **LOCAL_TARGET_INDETERMINATE**. Neither <10 minutes, modest full-run
+resources, zero expected truncation nor semantic equivalence is established.
+The next measured blocker is producer-load RAM headroom; the next observed
+generation problem is incomplete auditor output within the short time budget.
+No broad refactor or speculative serving optimization is justified by these data.
+Next work requires a quiet local memory baseline sufficient for guarded producer
+loading, then a complete bounded semantic fixture before concurrency escalation.
+Do not raise the safety limits merely to obtain a passing result.
+
+Validation: eight new offline checks cover verified runtime selection, tamper and
+ambiguity refusal, suppression refusal, import ordering, real CallResult recording
+and unknown critical-path behavior. The ordinary no-generation gate passes
+49 checks with one optional skip. Raw probe/resource evidence and a separate
+quality review are under `report_recommendations/local_inference/`.
+No cloud, paid API, remote deployment, full pipeline/model run, multi-round run,
+benchmark answer-key access or push occurred.

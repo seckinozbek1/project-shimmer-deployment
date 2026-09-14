@@ -1,0 +1,48 @@
+{
+  "classification": "BOUNDED_REAL_MODEL_PROBE_NOT_FULL_RUN",
+  "calls": [],
+  "loads": [
+    {
+      "role": "active_auditor",
+      "seconds": 27.797174699997413,
+      "resident_models": [
+        "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+      ],
+      "device": "cuda:0",
+      "vram_allocated_mib": 2167.56884765625
+    }
+  ],
+  "environment": {
+    "interpreter": "C:\\Users\\secki\\anaconda3\\python.exe",
+    "python": "3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:20:11) [MSC v.1938 64 bit (AMD64)]",
+    "torch_package": "C:\\Users\\secki\\anaconda3\\pkgs\\pytorch-2.5.1-py3.12_cuda11.8_cudnn9_0",
+    "torch_version": "2.5.1",
+    "verified_files": 12500,
+    "repair": "verified_cached_package_process_overlay",
+    "global_environment_modified": false,
+    "unsafe_suppression": false
+  },
+  "runtime": {
+    "torch_path": "C:\\Users\\secki\\anaconda3\\pkgs\\pytorch-2.5.1-py3.12_cuda11.8_cudnn9_0\\Lib\\site-packages\\torch\\__init__.py",
+    "torch_version": "2.5.1",
+    "cuda": "11.8",
+    "openmp_dlls": [
+      "C:\\Users\\secki\\anaconda3\\Library\\bin\\libiomp5md.dll"
+    ],
+    "arithmetic_pass": true
+  },
+  "families": {
+    "active_producer": "qwen2",
+    "active_auditor": "llama"
+  },
+  "producer_status": "not_loaded_in_this_probe",
+  "producer_auditor_path_measured": false,
+  "auditor_input_provenance": "authored_fixture_not_model_output",
+  "concurrency": {
+    "tested_capacity": 1,
+    "capacity_2_status": "not_admitted",
+    "capacity_4_status": "not_admitted",
+    "reason": "pending_quality_and_resource_admission",
+    "duplicate_model_copies": 0
+  }
+}
