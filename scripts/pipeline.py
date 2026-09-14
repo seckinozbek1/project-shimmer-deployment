@@ -46,6 +46,7 @@ else:
 import agent_wrapper
 import execution_topology
 import run_options
+import semantic_waves
 import agent_activation
 from agent_wrapper import (AgentWrapper, load_api_keys, decode_items,
                            current_items, make_envelope, is_envelope)
@@ -1121,11 +1122,14 @@ def _truncate_doc(text: str, max_chars: int) -> str:
     LOCAL_DOC_CLIP_CHARS; the cloud path keeps its existing limits exactly (W5). The
     corpus-level digest deliberately does NOT use this helper: that clip is applied per
     document across the whole corpus, so raising it would multiply that one prompt."""
+    if semantic_waves.enabled():
+        return text
     if _is_local_profile():
         max_chars = max(max_chars, LOCAL_DOC_CLIP_CHARS)
     return _truncate(text, max_chars)
 
 
+@semantic_waves.gather
 @execution_topology.ordered_calls
 async def _gather_or_serial(tasks):
     """Run tasks concurrently on cloud, sequentially on local (VRAM safety)."""
@@ -1134,6 +1138,7 @@ async def _gather_or_serial(tasks):
     return await asyncio.gather(*tasks)
 
 
+@semantic_waves.planned
 async def _run_one(wrapper, work_payload, run_objectives, channel="main", max_tokens=2048,
                    convention_registry=None, reference_index_excerpt=None, _progress=None,
                    items_are_advisory=False, activation=None):
@@ -1317,17 +1322,26 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     digest = "\n\n=========\n\n".join(
         f"### Document: {d['name']}\n\n{_truncate(d['text'], 1200)}" for d in all_docs
     )
+    corpus_calls = []
     for agent_name in PRODUCTION_AGENTS_CORPUS_LEVEL:
         wrapper = _build_wrapper(agent_name, orch, keys)
         payload = {"task": "corpus_level_analysis",
                    "documents": [d["name"] for d in all_docs],
                    "corpus_text": digest}
-        result = await _run_one(wrapper, payload, run_objectives, channel="main",
+        corpus_call = _run_one(wrapper, payload, run_objectives, channel="main",
                                 max_tokens=PRODUCTION_MAX_TOKENS,
                                 convention_registry=convention_registry,
                                 reference_index_excerpt=ctx_refs_excerpt,
                                 _progress=(3, None, None, agent_name))
-        results.append({"scope": "corpus", "agent": agent_name, **result})
+        if semantic_waves.enabled():
+            corpus_calls.append(corpus_call)
+        else:
+            result = await corpus_call
+            results.append({"scope": "corpus", "agent": agent_name, **result})
+    if corpus_calls:
+        corpus_results = await _gather_or_serial(corpus_calls)
+        results.extend({"scope": "corpus", "agent": name, **r}
+                       for name,r in zip(PRODUCTION_AGENTS_CORPUS_LEVEL,corpus_results))
     # Per-doc only for OPERATIONAL docs (context is reference only).
     # Per Part XXI amendment, LEGAL_ANALYST gets provision-aware context refs.
     # Per Part XXVI, LEGAL_ANALYST also receives the structural inventory
@@ -2224,6 +2238,70 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 evidence={"pairing_map": "audit/pairing_map.json", "planned_calls": 0,
                           "undecided_count": pairing.get("undecided_count", 0),
                           "rejected_count": pairing.get("rejected_count", 0)})
+    pending_judgments = []
+    def consume_judgment(plan_index, plan, unit, rule, checks, agent, source_rule_id, refs, r):
+        if plan.get("kind") == "absence_judged":
+            judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
+            # A judged answer claiming a field is MISSING from a unit whose own
+            # parsed fields carry it is refused, not posted. The unit is in
+            # scope BECAUSE it carries the scope field, so such a claim
+            # contradicts the fact that put the question to the model at all.
+            # Measured on the clean twin (run 479f3219): 9 of 11 false
+            # positives were exactly this, including one asserting a signature
+            # missing from an entry that states it. Refused items are recorded
+            # in the map, never silently dropped.
+            kept = []
+            refusal_start = len(refused_judged)
+            for item in judged:
+                refusal = None
+                if paired_review_mod.refuses_judged_absence(
+                        item, rule, fields_present_by_unit.get(unit["unit_id"])):
+                    if not str(item.get("quote") or "").strip():
+                        refusal = "absence claim supplies no quote"
+                    elif not pairing_map_mod._norm_label(item.get("stated_field") or item.get("field_label") or ""):
+                        refusal = "absence claim names no field"
+                    else:
+                        refusal = "claims a field absent that this unit carries"
+                elif paired_review_mod.quote_not_in_unit(item, unit.get("text")):
+                    # The finding quotes words the unit does not contain, so the
+                    # claim rests on text that is not there. Checked against the
+                    # same unit text the model was shown as document_text.
+                    refusal = "quotes text that does not appear in this unit"
+                if refusal:
+                    refused_judged.append({
+                        "unit_id": unit["unit_id"], "rule_id": rule["id"],
+                        "relation": item.get("relation"),
+                        "reason": refusal})
+                    log_event(_LOG, f"paired_review_absence_refused "
+                                    f"unit={unit['unit_id']} rule={rule['id']}",
+                              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+                    continue
+                kept.append(item)
+            if prediction is not None:
+                prediction.outcome(
+                    doc["id"], plan_index, "returned", raw=judged, kept=kept,
+                    refused=refused_judged[refusal_start:], unit_text=unit.get("text", ""),
+                    response_ok=isinstance(r, dict) and r.get("ok") is True)
+            judged = kept
+            judged_items_by_agent.setdefault(agent, []).extend(judged)
+            judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
+                                        r.get("model") if isinstance(r, dict) else None)
+            absence.append({"unit_id": unit["unit_id"], "rule_id": rule["id"], "field": None,
+                            "path": "judged", "items": len(judged),
+                            "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
+            log_event(_LOG, f"paired_review_absence unit={unit['unit_id']} rule={rule['id']} "
+                            f"path=judged items={len(judged)}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
+            results.append(r)
+            return
+        explanation = _first_explanation(r)
+        for check in paired_review_mod.disagreements(checks):
+            computed_items_by_agent.setdefault(agent, []).append(
+                paired_review_mod.finding_from_check(
+                    unit_id=unit["unit_id"], rule=rule, check=check,
+                    source_rule_id=source_rule_id, refs=refs, explanation=explanation))
+        results.append(r)
+
     for plan_index, plan in enumerate(plans):
         unit, rule, checks = plan["unit"], plan["rule"], plan["checks"]
         agent = _paired_judging_agent(rule, convention_assignment)
@@ -2310,6 +2388,16 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                             f"path=computed",
                       run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
             continue
+        if semantic_waves.enabled() and semantic_waves.exact_comparison_plan(plan):
+            for check in paired_review_mod.disagreements(checks):
+                computed_items_by_agent.setdefault(agent, []).append(
+                    paired_review_mod.finding_from_check(unit_id=unit["unit_id"], rule=rule,
+                        check=check, source_rule_id=source_rule_id, refs=refs))
+            agent_activation.not_called(orch.run_context, agent,
+                reason="exact_comparison_reason_rendered", source_phase="5.5", doc_id=doc["id"],
+                trigger_source="paired_plan", consumer="typed_finding_and_deterministic_reason",
+                evidence={"unit_id":unit["unit_id"],"rule_id":rule["id"],"plan_index":plan_index})
+            continue
         wrapper = _build_wrapper(agent, orch, keys)
         # docs/api/UNIT_CONTEXT_DESIGN.md, option B reached through D's scaffold:
         # unit_text (this document's own units, every one carrying index since
@@ -2365,7 +2453,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         # unit_id on the 2026-09-11 clean run's bus, which nothing could check,
         # cite or score, two of them plainly false.
         advisory = plan.get("kind") != "absence_judged"
-        r = await _run_one(
+        planned_judgment = _run_one(
             wrapper, payload,
             f"{run_objectives}\nOne unit, one rule. Do not perform arithmetic.",
             max_tokens=PAIRED_JUDGING_MAX_TOKENS, convention_registry={"conventions": [rule]},
@@ -2377,67 +2465,17 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                         "evidence": {"unit_id": unit["unit_id"], "rule_id": rule["id"],
                                      "plan_index": plan_index, "plan_kind": plan.get("kind")}},
             _progress=(5.5, doc_pos[doc["id"]], n_docs, agent))
-        if plan.get("kind") == "absence_judged":
-            judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
-            # A judged answer claiming a field is MISSING from a unit whose own
-            # parsed fields carry it is refused, not posted. The unit is in
-            # scope BECAUSE it carries the scope field, so such a claim
-            # contradicts the fact that put the question to the model at all.
-            # Measured on the clean twin (run 479f3219): 9 of 11 false
-            # positives were exactly this, including one asserting a signature
-            # missing from an entry that states it. Refused items are recorded
-            # in the map, never silently dropped.
-            kept = []
-            refusal_start = len(refused_judged)
-            for item in judged:
-                refusal = None
-                if paired_review_mod.refuses_judged_absence(
-                        item, rule, fields_present_by_unit.get(unit["unit_id"])):
-                    if not str(item.get("quote") or "").strip():
-                        refusal = "absence claim supplies no quote"
-                    elif not pairing_map_mod._norm_label(item.get("stated_field") or item.get("field_label") or ""):
-                        refusal = "absence claim names no field"
-                    else:
-                        refusal = "claims a field absent that this unit carries"
-                elif paired_review_mod.quote_not_in_unit(item, unit.get("text")):
-                    # The finding quotes words the unit does not contain, so the
-                    # claim rests on text that is not there. Checked against the
-                    # same unit text the model was shown as document_text.
-                    refusal = "quotes text that does not appear in this unit"
-                if refusal:
-                    refused_judged.append({
-                        "unit_id": unit["unit_id"], "rule_id": rule["id"],
-                        "relation": item.get("relation"),
-                        "reason": refusal})
-                    log_event(_LOG, f"paired_review_absence_refused "
-                                    f"unit={unit['unit_id']} rule={rule['id']}",
-                              run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
-                    continue
-                kept.append(item)
-            if prediction is not None:
-                prediction.outcome(
-                    doc["id"], plan_index, "returned", raw=judged, kept=kept,
-                    refused=refused_judged[refusal_start:], unit_text=unit.get("text", ""),
-                    response_ok=isinstance(r, dict) and r.get("ok") is True)
-            judged = kept
-            judged_items_by_agent.setdefault(agent, []).extend(judged)
-            judged_provenance[agent] = (r.get("backend") if isinstance(r, dict) else None,
-                                        r.get("model") if isinstance(r, dict) else None)
-            absence.append({"unit_id": unit["unit_id"], "rule_id": rule["id"], "field": None,
-                            "path": "judged", "items": len(judged),
-                            "call_id": (r.get("call_id") if isinstance(r, dict) else None)})
-            log_event(_LOG, f"paired_review_absence unit={unit['unit_id']} rule={rule['id']} "
-                            f"path=judged items={len(judged)}",
-                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
-            results.append(r)
-            continue
-        explanation = _first_explanation(r)
-        for check in paired_review_mod.disagreements(checks):
-            computed_items_by_agent.setdefault(agent, []).append(
-                paired_review_mod.finding_from_check(
-                    unit_id=unit["unit_id"], rule=rule, check=check,
-                    source_rule_id=source_rule_id, refs=refs, explanation=explanation))
-        results.append(r)
+        judgment_context = (plan_index, plan, unit, rule, checks, agent, source_rule_id, refs)
+        if semantic_waves.enabled():
+            pending_judgments.append((planned_judgment, judgment_context))
+        else:
+            r = await planned_judgment
+            consume_judgment(*judgment_context, r)
+
+    if pending_judgments:
+        judgment_results = await _gather_or_serial([p for p,c in pending_judgments])
+        for (_, context), result in zip(pending_judgments, judgment_results):
+            consume_judgment(*context, result)
 
     # Every unit the map matched to nothing is still a finding, not a
     # silence, routed by its own nearest-miss rule's subject the same way a
@@ -3818,9 +3856,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input-language", choices=("auto", "en", "tr"), default="auto")
     parser.add_argument("--output-language", choices=("en", "tr"), default="en")
     parser.add_argument("--agent-briefs", choices=("enabled", "disabled"), default="enabled")
-    parser.add_argument("--execution-topology", choices=("reference_serial", "dependency_dag"),
+    parser.add_argument("--execution-topology", choices=("reference_serial", "dependency_dag", "report_optimized"),
                         default="reference_serial", help="Execution scheduling, independent of activation and backend profile.")
-    parser.add_argument("--topology-config", default=None, help="Explicit device/residency lane JSON for dependency_dag.")
+    parser.add_argument("--topology-config", default=None, help="Explicit device/residency lane JSON for DAG execution.")
     parser.add_argument("--multi-round", action="store_true",
                         help="Explicit case positioning mode; ordinary Review/Draft remain the default.")
     parser.add_argument("--multi-round-manifest", default=None,

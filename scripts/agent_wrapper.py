@@ -29,6 +29,7 @@ import call_evidence
 import agent_activation
 import agent_briefs
 import run_options
+import generation_observation
 from bus_reader import (_estimate_tokens, assemble_context,
                         begin_truncation_capture, end_truncation_capture)
 from constitution import CheckResult, Constitution
@@ -590,6 +591,7 @@ class AgentWrapper:
             self.keys = load_api_keys()
 
     def _record_cost(self, r, *, duration_ms=0):
+        self._generation_usage = dict(r.usage or {}, backend_success=r.ok, backend_call_seconds=duration_ms / 1000)
         if self.cost_tracker is None: return
         u = r.usage or {}
         self.cost_tracker.record(
@@ -695,6 +697,9 @@ class AgentWrapper:
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
         # Cache fields (absent on older models / SDKs -> 0, never crash).
         r = CallResult("claude_api", model, text, usage={
+            "requested_max_output_tokens": max_tokens,
+            "finish_reason": getattr(resp, "stop_reason", None),
+            "truncated": None if getattr(resp, "stop_reason", None) is None else resp.stop_reason == "max_tokens",
             "input_tokens": getattr(resp.usage, "input_tokens", None),
             "output_tokens": getattr(resp.usage, "output_tokens", None),
             "cache_creation_input_tokens": getattr(resp.usage, "cache_creation_input_tokens", 0) or 0,
@@ -770,6 +775,9 @@ class AgentWrapper:
         elif details is not None:
             cached = getattr(details, "cached_tokens", 0) or 0
         r = CallResult("openai_api", model, text, usage={
+            "requested_max_output_tokens": max_tokens,
+            "finish_reason": getattr(resp.choices[0], "finish_reason", None),
+            "truncated": None if getattr(resp.choices[0], "finish_reason", None) is None else resp.choices[0].finish_reason == "length",
             "input_tokens": getattr(resp.usage, "prompt_tokens", None),
             "output_tokens": getattr(resp.usage, "completion_tokens", None),
             "cached_input_tokens": cached,
@@ -812,22 +820,35 @@ class AgentWrapper:
         except Exception as e:
             r = CallResult("qwen_local", model_id, "", ok=False, error=f"qwen load failed: {e}")
             _record_cost(r); return r
-        inputs = tok(prompt, return_tensors="pt").to(mdl.device)
+        template_applied = bool(getattr(self, "_optimized_semantics", False))
+        if template_applied:
+            if not getattr(tok, "chat_template", None):
+                raise ValueError("Configured local tokenizer has no chat template")
+            prompt = tok.apply_chat_template([{"role": "user", "content": prompt}],
+                                            tokenize=False, add_generation_prompt=True)
+        inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
+        generation_started = time.perf_counter()
         with torch.no_grad():
             out = mdl.generate(**inputs, max_new_tokens=max_new_tokens)
+        generation_seconds = time.perf_counter() - generation_started
+        generated_count = int(out.shape[-1]) - int(inputs["input_ids"].shape[1])
+        last_token = int(out[0][-1]) if generated_count else None
+        eos_ids = getattr(getattr(mdl, "generation_config", None), "eos_token_id", None)
+        stop_reason, truncated = generation_observation.local_stop(last_token, eos_ids, generated_count, max_new_tokens)
         text = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
         out_tokens = out.shape[-1] - int(inputs["input_ids"].shape[1])
-        # Job B: the structural signal that generation was CUT by the budget
-        # rather than finishing on its own. transformers stops generate() for
-        # one of two reasons: the model emitted its own end-of-sequence token,
-        # which always yields fewer tokens than the cap, or max_new_tokens was
-        # reached, which yields EXACTLY the cap. No heuristic on the text is
-        # needed: the token count against the cap it was given is the whole
-        # test, and it is available here with no extra call.
+        # EOS may occur on the final allowed token. Record cap contact and the
+        # actual terminal token separately; a short response without known EOS
+        # remains unknown rather than being certified complete.
         r = CallResult("qwen_local", model_id, text, usage={
             "input_tokens": int(inputs["input_ids"].shape[1]),
             "output_tokens": out_tokens,
-            "truncated": out_tokens >= max_new_tokens,
+            "truncated": truncated, "finish_reason": stop_reason,
+            "requested_max_output_tokens": max_new_tokens,
+            "generation_seconds": generation_seconds, "time_to_first_token_seconds": None,
+            "chat_template_applied": template_applied,
+            "rendered_prompt_sha256": generation_observation.prompt_identity(prompt),
+            "cap_hit": out_tokens >= max_new_tokens,
         })
         _record_cost(r); return r
 
@@ -855,9 +876,21 @@ class AgentWrapper:
         except Exception as e:
             r = CallResult(self.backend, model_id, "", ok=False, error=f"local model load failed: {e}")
             _record_cost(r); return r
-        inputs = tok(prompt, return_tensors="pt").to(mdl.device)
+        template_applied = bool(getattr(self, "_optimized_semantics", False))
+        if template_applied:
+            if not getattr(tok, "chat_template", None):
+                raise ValueError("Configured local tokenizer has no chat template")
+            prompt = tok.apply_chat_template([{"role": "user", "content": prompt}],
+                                            tokenize=False, add_generation_prompt=True)
+        inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
+        generation_started = time.perf_counter()
         with torch.no_grad():
             out = mdl.generate(**inputs, max_new_tokens=max_new_tokens)
+        generation_seconds = time.perf_counter() - generation_started
+        generated_count = int(out.shape[-1]) - int(inputs["input_ids"].shape[1])
+        last_token = int(out[0][-1]) if generated_count else None
+        eos_ids = getattr(getattr(mdl, "generation_config", None), "eos_token_id", None)
+        stop_reason, truncated = generation_observation.local_stop(last_token, eos_ids, generated_count, max_new_tokens)
         text = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
         in_tokens = int(inputs["input_ids"].shape[1])
         out_tokens = out.shape[-1] - in_tokens
@@ -876,13 +909,16 @@ class AgentWrapper:
                 torch.cuda.empty_cache()
         except Exception:
             pass  # freeing memory must never take the run down
-        # Job B: the same structural truncation signal as call_qwen (see its
-        # comment): out_tokens reaching the cap it was given means generation
-        # was cut, not that it finished.
+        # Use the terminal token and the configured EOS set, not length alone.
         r = CallResult(self.backend, model_id, text, usage={
             "input_tokens": in_tokens,
             "output_tokens": out_tokens,
-            "truncated": out_tokens >= max_new_tokens,
+            "truncated": truncated, "finish_reason": stop_reason,
+            "requested_max_output_tokens": max_new_tokens,
+            "generation_seconds": generation_seconds, "time_to_first_token_seconds": None,
+            "chat_template_applied": template_applied,
+            "rendered_prompt_sha256": generation_observation.prompt_identity(prompt),
+            "cap_hit": out_tokens >= max_new_tokens,
         })
         _record_cost(r); return r
 
@@ -932,6 +968,12 @@ class AgentWrapper:
     def _finalize_envelope(self, obj):
         """Validate obj as the wrapper and (when it is one) stamp the runtime-owned
         item fields. Returns (wrapper-or-obj, missing)."""
+        adapter = getattr(self, "_source_adapter", None)
+        if adapter is not None:
+            try:
+                obj = adapter(obj)
+            except ValueError as exc:
+                return obj, [str(exc)]
         missing = self._contract_missing(obj)
         if is_envelope(obj):
             return make_envelope(obj["agent"], obj["doc_id"], obj["items"]), missing
@@ -1430,6 +1472,7 @@ class AgentWrapper:
             json.dump(dump, f, indent=2, ensure_ascii=False)
         return out_path
 
+    @generation_observation.observe
     @agent_activation.observe_task
     def run_task(self, *, work_payload, run_objectives="", channel="main",
                  recipient="ORCHESTRATOR", recent_bus_limit=30, max_tokens=4096,
@@ -1506,6 +1549,9 @@ class AgentWrapper:
             local_contract_max = self.contract.get("local_max_output_tokens")
             if isinstance(local_contract_max, int) and local_contract_max > 0:
                 max_tokens = max(max_tokens, local_contract_max)
+        bounded_budget = getattr(self, "_bounded_output_budget", None)
+        if bounded_budget is not None:
+            max_tokens = bounded_budget
         # Call evidence (scripts/call_evidence.py): the prompt below is about to be
         # sent and then dropped, so this is the one point that knows everything the
         # call was shown. Record the STRUCTURAL identifiers of it (unit, neighbours,
@@ -1514,6 +1560,9 @@ class AgentWrapper:
         # this call's cost row and on the bus post it produces, so the three saved
         # artifacts join. A write failure is logged and never takes the call down.
         call_id = uuid.uuid4().hex
+        self._generation_call_id = call_id
+        self._requested_output_budget = min(max_tokens, LOCAL_MAX_OUTPUT_TOKENS) if self.backend in (
+            "qwen_local", "local_producer", "local_auditor") else max_tokens
         try:
             run_options.record_prompt(self.run_context, call_id, self.name, stable_prefix, dynamic_suffix)
         except OSError as exc:
@@ -1574,14 +1623,13 @@ class AgentWrapper:
             return {"ok": False, "agent": self.name, "backend": result.backend, "model": result.model,
                     "parsed": None, "raw_text": "", "contract_missing": [], "error": result.error,
                     "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}
-        # Job B: whether generation was CUT by the output budget rather than
-        # finishing on its own (agent_wrapper.call_local/call_qwen, the token
-        # count reaching the cap it was given). False for a cloud call, which
-        # has no such signal today (Claude/GPT report a stop_reason the SDK
-        # does not currently surface here; a cloud truncation is a gap this
-        # job did not close, recorded rather than guessed at).
-        truncated = bool(result.usage.get("truncated"))
+        # Backends preserve true/false/unknown completeness. Transport success
+        # does not establish contract validity or semantic acceptance.
+        truncated = result.usage.get("truncated")
         parsed, missing = self.parse_contract_output(result.raw_text)
+        self._observed_contract_valid = parsed is not None and not missing
+        if getattr(self, "_optimized_semantics", False) and truncated is not False:
+            missing = list(missing) + ["response completeness not established"]
         if parsed is None or missing:
             # Persist the full raw_text to disk so post-mortem analysis can
             # recover what the model actually produced. The bus message keeps

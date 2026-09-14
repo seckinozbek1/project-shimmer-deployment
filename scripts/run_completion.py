@@ -47,6 +47,10 @@ class RunCompletion:
             state = "interrupted" if isinstance(error, (KeyboardInterrupt, SystemExit)) else "failed"
         else:
             state = "completed" if self.record["reached_end"] and exit_code == 0 else "stopped"
+        if getattr(self.run_context, "semantic_incomplete", False):
+            self.record["semantic_complete"] = False
+            if state == "completed":
+                state = "stopped"
         self.record.update(state=state, exit_code=exit_code, finished_at=_now(),
                            error_type=type(error).__name__ if error is not None else None)
         self._write()

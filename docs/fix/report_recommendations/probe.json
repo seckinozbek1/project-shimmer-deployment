@@ -1,0 +1,222 @@
+{
+  "classification": "SHORT_BURST_FIXTURE_NOT_MODEL_BENCHMARK",
+  "directly_measured": {
+    "source_chars": 2218,
+    "source_spans": 4,
+    "partitions": 1,
+    "ledger_merge_seconds": 0.00031429999944521114,
+    "source_reconstructed_exactly": true,
+    "output_item_count": 4
+  },
+  "tokenization": {
+    "status": "measured_tokenization_only",
+    "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+    "monolithic_output_tokens": 620,
+    "compact_output_tokens": 221
+  },
+  "concurrency": [
+    {
+      "concurrency": 1,
+      "wall_seconds": 0.1226094000012381,
+      "calls": [
+        {
+          "latency_seconds": 0.030524699999659788,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.030454500003543217,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.030450500002189074,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.030302800005301833,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        }
+      ],
+      "calls_per_second": 32.62392606080454,
+      "resource_before": {
+        "gpu_utilization_percent": 0.0,
+        "vram_used_mib": 0.0,
+        "cpu_percent": 0.0,
+        "ram_used_gib": 11.79983901977539,
+        "available_ram_gib": 3.911579132080078,
+        "process_rss_mib": 34.6953125
+      },
+      "resource_after": {
+        "gpu_utilization_percent": 0.0,
+        "vram_used_mib": 0.0,
+        "cpu_percent": 8.8,
+        "ram_used_gib": 11.848888397216797,
+        "available_ram_gib": 3.862529754638672,
+        "process_rss_mib": 34.97265625
+      },
+      "model_load_events": 0,
+      "resource_sampling": "boundary_samples_not_peak_guarantee"
+    },
+    {
+      "concurrency": 2,
+      "wall_seconds": 0.062063499994110316,
+      "calls": [
+        {
+          "latency_seconds": 0.03055049999966286,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.030433400002948474,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.030419899994740263,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.030655899994599167,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        }
+      ],
+      "calls_per_second": 64.45011964165074,
+      "resource_before": {
+        "gpu_utilization_percent": 0.0,
+        "vram_used_mib": 0.0,
+        "cpu_percent": 9.1,
+        "ram_used_gib": 11.847465515136719,
+        "available_ram_gib": 3.86395263671875,
+        "process_rss_mib": 34.9765625
+      },
+      "resource_after": {
+        "gpu_utilization_percent": 0.0,
+        "vram_used_mib": 0.0,
+        "cpu_percent": 6.8,
+        "ram_used_gib": 11.84951400756836,
+        "available_ram_gib": 3.8619041442871094,
+        "process_rss_mib": 34.9765625
+      },
+      "model_load_events": 0,
+      "resource_sampling": "boundary_samples_not_peak_guarantee"
+    },
+    {
+      "concurrency": 4,
+      "wall_seconds": 0.03171460000157822,
+      "calls": [
+        {
+          "latency_seconds": 0.030604400002630427,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.03061339999840129,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.030559300001186784,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        },
+        {
+          "latency_seconds": 0.03051979999872856,
+          "ok": true,
+          "contract_valid": true,
+          "truncated": false,
+          "accepted_items": 1,
+          "generation_seconds": null,
+          "measurement_kind": "synthetic_dispatch",
+          "quality_signature": "authored_fixture"
+        }
+      ],
+      "calls_per_second": 126.12487623368881,
+      "resource_before": {
+        "gpu_utilization_percent": 0.0,
+        "vram_used_mib": 0.0,
+        "cpu_percent": 8.2,
+        "ram_used_gib": 11.84375,
+        "available_ram_gib": 3.8676681518554688,
+        "process_rss_mib": 34.9765625
+      },
+      "resource_after": {
+        "gpu_utilization_percent": 0.0,
+        "vram_used_mib": 0.0,
+        "cpu_percent": 4.1,
+        "ram_used_gib": 11.844654083251953,
+        "available_ram_gib": 3.8667640686035156,
+        "process_rss_mib": 34.98046875
+      },
+      "model_load_events": 0,
+      "resource_sampling": "boundary_samples_not_peak_guarantee"
+    }
+  ],
+  "assumptions": [
+    "Synthetic 30 ms service calls demonstrate scheduling only."
+  ],
+  "remaining_uncertainty": [
+    "Real model latency, TTFT, semantic completeness and quality",
+    "GPU concurrency capacity and resident model resource peaks"
+  ],
+  "projected_full_run_effect": null
+}

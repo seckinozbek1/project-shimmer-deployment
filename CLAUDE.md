@@ -458,3 +458,18 @@ py -3.9 scripts/pipeline.py --load-snapshot NAME  # restore a snapshot
 py -3.9 scripts/pipeline.py --reset-snapshot      # strip back to seed defaults
 py -3.9 scripts/bus_viewer.py --follow            # live bus and cost stream
 ```
+
+
+## Report Recommendations comparison path
+
+The operator-authorized local optimization is documented in
+`docs/fix/REPORT_RECOMMENDATIONS_IMPLEMENTATION.md`. `report_optimized` is an
+explicit ordinary local topology; reference defaults stay available. Its
+PROCESSOR wire aliases hydrate into the unchanged canonical source extraction
+contract, with mandatory ownership/coverage and a provisional 1536-token bound.
+A source ledger never silently omits preamble or table-surround text. Do not
+promote this path based on fixture/tokenizer measurements alone. No full model
+run, cloud work or multi-round execution was authorized by this implementation.
+The dedicated ordinary safe gate avoids those workloads. Preserve exact typed
+comparison eligibility, cross-family validation, ordered posts and explicit
+semantic incompleteness when extending it.

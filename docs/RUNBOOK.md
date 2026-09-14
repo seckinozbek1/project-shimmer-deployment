@@ -206,3 +206,51 @@ automatic resume; private-document quality; fresh-clone startup; and a complete
 review inside the unmounted image. The
 [cloud preparation guide](CLOUD_RUN_PREPARATION.md) describes the separate single-GPU
 experiment workflow; it does not certify fresh-clone desktop startup.
+
+
+## Report Recommendations local comparison
+
+`reference_serial` remains the default. For a later explicitly authorized ordinary
+local Review, `--backend-profile local --execution-topology report_optimized`
+selects bounded PROCESSOR extraction and sibling waves. This selection does not
+permit Draft or multi-round, switch model families, or enable a remote backend.
+Do not run the pipeline under the current implementation-only authorization.
+
+The ordinary no-generation gate is:
+
+```powershell
+python -B -X utf8 scripts/report_recommendations_no_generation_gate.py
+python -B -X utf8 tools/report_recommendations_mutations.py
+python -B -X utf8 tools/report_recommendations_probe.py --output output/report_recommendations/probe.json
+python -B -X utf8 tools/report_recommendations_evidence.py --output output/report_recommendations/evidence
+```
+
+These commands use authored fixtures or saved evidence. They do not generate a
+review. The concurrency probe injects synthetic service calls and inspects an
+already cached tokenizer; its scaling is not GPU model scaling. The projection
+engine accepts measured component ranges through `scripts/run_projection.py`.
+Missing inputs remain null. No final local/cloud target has been established.
+
+Inspect `logs/generation_observation.jsonl`, the existing topology events and
+`audit/run_completion.json` together. Backend return, complete response, valid
+contract and accepted semantic output are distinct. A capped or unknown-complete
+optimized result is refused. An unresolved extraction partition leaves the run
+semantically incomplete, even if partial reports were rendered. No automatic
+full-document retry occurs.
+
+The current host inference import probe fails before loading weights with a
+duplicate OpenMP runtime. Do not use the unsupported duplicate-runtime override
+to make a benchmark run. A safe inference environment and bounded semantic A/B
+measurement are prerequisites to promoting this topology. See the
+[implementation report](fix/REPORT_RECOMMENDATIONS_IMPLEMENTATION.md).
+
+Source updates can be compared without packaging runtime data:
+
+```powershell
+python -B -X utf8 tools/prepare_source_layer.py --output output/report_recommendations/source_layer.json
+```
+
+Use `--previous <manifest.json>` for changed/removed source paths. The manifest
+excludes model/wheel payloads and operator/runtime state. It is not an image or
+a complete deployment bundle. Prebuilt dependency layers and prepositioned pinned
+model caches must be managed separately in a later authorized deployment.

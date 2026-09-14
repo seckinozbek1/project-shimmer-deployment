@@ -21,6 +21,61 @@ ROOT = Path(__file__).resolve().parent.parent
 def reference_tree(source):
     """Remove ONLY named additive adapters; keep pinned reference function hashes."""
     tree = ast.parse(source)
+    # Invert the named optimized-only adapters; retain the original pinned hashes.
+    # The paired consumer is moved verbatim into a helper, then invoked in source
+    # order. Reconstruct its original loop body to verify reference equivalence.
+    for node in tree.body:
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        node.decorator_list = [d for d in node.decorator_list if ast.unparse(d) not in
+                               {"semantic_waves.gather", "semantic_waves.planned"}]
+        if node.name == "_truncate_doc":
+            node.body = [x for x in node.body if not (isinstance(x,ast.If) and
+                                                     ast.unparse(x.test)=="semantic_waves.enabled()")]
+        if node.name == "phase_3_4_content_production":
+            node.body = [x for x in node.body if not (
+                isinstance(x,ast.Assign) and ast.unparse(x.targets[0])=="corpus_calls" or
+                isinstance(x,ast.If) and ast.unparse(x.test)=="corpus_calls")]
+            loop = next(x for x in node.body if isinstance(x,ast.For) and
+                        ast.unparse(x.iter)=="PRODUCTION_AGENTS_CORPUS_LEVEL")
+            body=[]
+            for x in loop.body:
+                if isinstance(x,ast.Assign) and ast.unparse(x.targets[0])=="corpus_call":
+                    x.targets=[ast.Name(id="result",ctx=ast.Store())]
+                    x.value=ast.Await(value=x.value)
+                elif isinstance(x,ast.If) and ast.unparse(x.test)=="semantic_waves.enabled()":
+                    assert ast.unparse(x.orelse[0])=="result = await corpus_call"
+                    body.extend(x.orelse[1:])
+                    continue
+                body.append(x)
+            loop.body=body
+        if node.name == "_paired_convention_review":
+            helper=next(x for x in node.body if isinstance(x,ast.FunctionDef) and x.name=="consume_judgment")
+            assert [a.arg for a in helper.args.args]==["plan_index","plan","unit","rule","checks","agent","source_rule_id","refs","r"]
+            class RestoreContinue(ast.NodeTransformer):
+                def visit_Return(self,n):
+                    assert n.value is None
+                    return ast.Continue()
+            consumer=RestoreContinue().visit(copy.deepcopy(helper)).body
+            node.body=[x for x in node.body if x is not helper and not (
+                isinstance(x,ast.Assign) and ast.unparse(x.targets[0])=="pending_judgments" or
+                isinstance(x,ast.If) and ast.unparse(x.test)=="pending_judgments")]
+            loop=next(x for x in node.body if isinstance(x,ast.For) and ast.unparse(x.iter)=="enumerate(plans)")
+            body=[]
+            for x in loop.body:
+                if isinstance(x,ast.If) and ast.unparse(x.test)=="semantic_waves.enabled() and semantic_waves.exact_comparison_plan(plan)":
+                    continue
+                if isinstance(x,ast.Assign) and ast.unparse(x.targets[0])=="planned_judgment":
+                    x.targets=[ast.Name(id="r",ctx=ast.Store())]
+                    x.value=ast.Await(value=x.value)
+                elif isinstance(x,ast.Assign) and ast.unparse(x.targets[0])=="judgment_context":
+                    continue
+                elif isinstance(x,ast.If) and ast.unparse(x.test)=="semantic_waves.enabled()":
+                    assert ast.unparse(x.orelse[-1])=="consume_judgment(*judgment_context, r)"
+                    body.extend(copy.deepcopy(consumer))
+                    continue
+                body.append(x)
+            loop.body=body
     expected = {"_build_wrapper": "wrapper_factory", "_gather_or_serial": "ordered_calls",
                 "_gather_docs": "ordered_documents", "main": "entrypoint"}
     expected.update({n: "phase_boundary" for n in ("phase_3_4_content_production", "phase_5_audit",

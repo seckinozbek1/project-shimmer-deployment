@@ -1,0 +1,319 @@
+{
+  "nodes": [
+    {
+      "id": "task-000000",
+      "agent": "ARCHIVIST",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic",
+      "consumer_fields": "typed inventory",
+      "consumer": "LEGAL_ANALYST and PRACTICE_AUDITOR",
+      "seconds": null,
+      "parents": [],
+      "edge_reason": "boot governance and source ledger"
+    },
+    {
+      "id": "task-000001",
+      "agent": "INST_FINDER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic audit obligation",
+      "consumer_fields": "typed institution records",
+      "consumer": "audit bus only",
+      "seconds": null,
+      "parents": [],
+      "edge_reason": "boot governance and source ledger"
+    },
+    {
+      "id": "task-000002",
+      "agent": "CITATION_RESOLVER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic audit obligation",
+      "consumer_fields": "typed citation records",
+      "consumer": "audit bus only",
+      "seconds": null,
+      "parents": [],
+      "edge_reason": "boot governance and source ledger"
+    },
+    {
+      "id": "task-000003",
+      "agent": "PROCESSOR",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "bounded semantic extraction plus deterministic reconstruction",
+      "consumer_fields": "source spans and semantic fields",
+      "consumer": "VERIFIER and FACT_CHECKER",
+      "seconds": null,
+      "parents": [
+        "task-000000",
+        "task-000001",
+        "task-000002"
+      ],
+      "edge_reason": "accepted corpus inventory"
+    },
+    {
+      "id": "task-000004",
+      "agent": "SPEECH_ACT_TAGGER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic",
+      "consumer_fields": "typed tags",
+      "consumer": "audit bus and per-agent report",
+      "seconds": null,
+      "parents": [
+        "task-000000",
+        "task-000001",
+        "task-000002"
+      ],
+      "edge_reason": "accepted corpus inventory"
+    },
+    {
+      "id": "task-000005",
+      "agent": "LEGAL_ANALYST",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic, conditional deepening",
+      "consumer_fields": "typed findings and human reasoning",
+      "consumer": "deepening, synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000000",
+        "task-000001",
+        "task-000002"
+      ],
+      "edge_reason": "accepted corpus inventory"
+    },
+    {
+      "id": "task-000006",
+      "agent": "VERIFIER",
+      "phase": "5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "independent semantic verification",
+      "consumer_fields": "typed findings",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000003",
+        "task-000004",
+        "task-000005"
+      ],
+      "edge_reason": "source and PROCESSOR extraction"
+    },
+    {
+      "id": "task-000007",
+      "agent": "FACT_CHECKER",
+      "phase": "5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "independent semantic verification",
+      "consumer_fields": "typed findings",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000003",
+        "task-000004",
+        "task-000005"
+      ],
+      "edge_reason": "source and PROCESSOR extraction"
+    },
+    {
+      "id": "task-000008",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000009",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000010",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000011",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000012",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000013",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000014",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000015",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000016",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000017",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000018",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": null,
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000019",
+      "agent": "EDITOR_CLERK",
+      "phase": "editorial_board",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "conditional editorial hierarchy",
+      "consumer_fields": "typed observations",
+      "consumer": "board and operator report",
+      "seconds": null,
+      "parents": [
+        "task-000008",
+        "task-000009",
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014",
+        "task-000015",
+        "task-000016",
+        "task-000017",
+        "task-000018"
+      ],
+      "edge_reason": "complete findings, deterministic synthesis and editorial input"
+    }
+  ],
+  "measured_capacity": null,
+  "cpu_seconds": null,
+  "warm_load_seconds": null,
+  "cold_load_seconds": null,
+  "retry_overhead_seconds": null,
+  "assumptions": [
+    "Graph replays historical task shape only, not predicted semantic outcomes.",
+    "Partition counts, exact-comparison eligibility and conditional work must be supplied for a concrete input."
+  ],
+  "resource_envelope": "Observed laptop GPU: 8 GiB. Real model probe unavailable due OpenMP initialization conflict."
+}

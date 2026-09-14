@@ -107,7 +107,11 @@ scaling remain unverified. See the
 
 `reference_serial` is the default execution topology. `dependency_dag` supports
 bounded scheduling and explicit resident workers for ordinary Review. The
-current rolling-bus dependencies retain semantic ordering. Dense activation is
+earlier DAG adapter retains rolling-bus semantic ordering. The explicit local
+`report_optimized` topology adds bounded source-span extraction, sibling semantic
+waves, exact-comparison reason rendering and completion-aware telemetry. It is
+experimental, with real-model quality and performance still unverified. See the
+[Report Recommendations implementation](docs/fix/REPORT_RECOMMENDATIONS_IMPLEMENTATION.md). Dense activation is
 the default; sparse activation retains the conservative policy. Neither option
 establishes a general speedup. The
 [topology report](docs/fix/EXECUTION_TOPOLOGY_OPTIMIZATION.md) explains the boundary.
@@ -138,6 +142,7 @@ The following checks block model/provider imports and network use, or use mocked
 deployment transports. They do not launch a GPU workload:
 
 ```powershell
+python -B -X utf8 scripts/report_recommendations_no_generation_gate.py
 python -B -X utf8 scripts/brief_language_strategy_no_generation_gate.py
 python -B -X utf8 tools/cloud_run_checks.py --json
 python -B -X utf8 tools/cloud_run_transport_checks.py

@@ -1,0 +1,773 @@
+{
+  "schema_version": 1,
+  "source_commit": "15d0721fbc24cd38fdaa6bc4969d7b18ad66387e",
+  "historical_classification": "DIAGNOSTIC_NON_BENCHMARK",
+  "before": [
+    {
+      "id": "task-000000",
+      "agent": "ARCHIVIST",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic",
+      "consumer_fields": "typed inventory",
+      "consumer": "LEGAL_ANALYST and PRACTICE_AUDITOR",
+      "seconds": {
+        "low": 253.0906490530001,
+        "high": 253.0906490530001
+      },
+      "parents": [],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000001",
+      "agent": "INST_FINDER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic audit obligation",
+      "consumer_fields": "typed institution records",
+      "consumer": "audit bus only",
+      "seconds": {
+        "low": 126.63197607799998,
+        "high": 126.63197607799998
+      },
+      "parents": [
+        "task-000000"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000002",
+      "agent": "CITATION_RESOLVER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic audit obligation",
+      "consumer_fields": "typed citation records",
+      "consumer": "audit bus only",
+      "seconds": {
+        "low": 126.65001414500011,
+        "high": 126.65001414500011
+      },
+      "parents": [
+        "task-000001"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000003",
+      "agent": "PROCESSOR",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "bounded semantic extraction plus deterministic reconstruction",
+      "consumer_fields": "source spans and semantic fields",
+      "consumer": "VERIFIER and FACT_CHECKER",
+      "seconds": {
+        "low": 505.3829123969997,
+        "high": 505.3829123969997
+      },
+      "parents": [
+        "task-000002"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000004",
+      "agent": "SPEECH_ACT_TAGGER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic",
+      "consumer_fields": "typed tags",
+      "consumer": "audit bus and per-agent report",
+      "seconds": {
+        "low": 126.67067785900008,
+        "high": 126.67067785900008
+      },
+      "parents": [
+        "task-000003"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000005",
+      "agent": "LEGAL_ANALYST",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic, conditional deepening",
+      "consumer_fields": "typed findings and human reasoning",
+      "consumer": "deepening, synthesis, amendments",
+      "seconds": {
+        "low": 13.959445884999695,
+        "high": 13.959445884999695
+      },
+      "parents": [
+        "task-000004"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000006",
+      "agent": "VERIFIER",
+      "phase": "5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "independent semantic verification",
+      "consumer_fields": "typed findings",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 40.09126199000002,
+        "high": 40.09126199000002
+      },
+      "parents": [
+        "task-000005"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000007",
+      "agent": "FACT_CHECKER",
+      "phase": "5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "independent semantic verification",
+      "consumer_fields": "typed findings",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 133.13886460899994,
+        "high": 133.13886460899994
+      },
+      "parents": [
+        "task-000006"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000008",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.95957394700008,
+        "high": 49.95957394700008
+      },
+      "parents": [
+        "task-000007"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000009",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.76445323400003,
+        "high": 49.76445323400003
+      },
+      "parents": [
+        "task-000008"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000010",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.69235620800009,
+        "high": 49.69235620800009
+      },
+      "parents": [
+        "task-000009"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000011",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.64057109500027,
+        "high": 49.64057109500027
+      },
+      "parents": [
+        "task-000010"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000012",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.777034893999826,
+        "high": 49.777034893999826
+      },
+      "parents": [
+        "task-000011"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000013",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.762315753000166,
+        "high": 49.762315753000166
+      },
+      "parents": [
+        "task-000012"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000014",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.69939119599985,
+        "high": 49.69939119599985
+      },
+      "parents": [
+        "task-000013"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000015",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.85200270900032,
+        "high": 49.85200270900032
+      },
+      "parents": [
+        "task-000014"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000016",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.90635092399998,
+        "high": 49.90635092399998
+      },
+      "parents": [
+        "task-000015"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000017",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.596938112000316,
+        "high": 49.596938112000316
+      },
+      "parents": [
+        "task-000016"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000018",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.66228869999986,
+        "high": 49.66228869999986
+      },
+      "parents": [
+        "task-000017"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    },
+    {
+      "id": "task-000019",
+      "agent": "EDITOR_CLERK",
+      "phase": "editorial_board",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "conditional editorial hierarchy",
+      "consumer_fields": "typed observations",
+      "consumer": "board and operator report",
+      "seconds": {
+        "low": 505.82060715399984,
+        "high": 505.82060715399984
+      },
+      "parents": [
+        "task-000018"
+      ],
+      "edge_reason": "rolling_bus_visibility_and_governance_order"
+    }
+  ],
+  "after_wave_only_counterfactual": [
+    {
+      "id": "task-000000",
+      "agent": "ARCHIVIST",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic",
+      "consumer_fields": "typed inventory",
+      "consumer": "LEGAL_ANALYST and PRACTICE_AUDITOR",
+      "seconds": {
+        "low": 253.0906490530001,
+        "high": 253.0906490530001
+      },
+      "parents": [],
+      "edge_reason": "boot governance and source ledger"
+    },
+    {
+      "id": "task-000001",
+      "agent": "INST_FINDER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic audit obligation",
+      "consumer_fields": "typed institution records",
+      "consumer": "audit bus only",
+      "seconds": {
+        "low": 126.63197607799998,
+        "high": 126.63197607799998
+      },
+      "parents": [],
+      "edge_reason": "boot governance and source ledger"
+    },
+    {
+      "id": "task-000002",
+      "agent": "CITATION_RESOLVER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic audit obligation",
+      "consumer_fields": "typed citation records",
+      "consumer": "audit bus only",
+      "seconds": {
+        "low": 126.65001414500011,
+        "high": 126.65001414500011
+      },
+      "parents": [],
+      "edge_reason": "boot governance and source ledger"
+    },
+    {
+      "id": "task-000003",
+      "agent": "PROCESSOR",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "bounded semantic extraction plus deterministic reconstruction",
+      "consumer_fields": "source spans and semantic fields",
+      "consumer": "VERIFIER and FACT_CHECKER",
+      "seconds": {
+        "low": 505.3829123969997,
+        "high": 505.3829123969997
+      },
+      "parents": [
+        "task-000000",
+        "task-000001",
+        "task-000002"
+      ],
+      "edge_reason": "accepted corpus inventory"
+    },
+    {
+      "id": "task-000004",
+      "agent": "SPEECH_ACT_TAGGER",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic",
+      "consumer_fields": "typed tags",
+      "consumer": "audit bus and per-agent report",
+      "seconds": {
+        "low": 126.67067785900008,
+        "high": 126.67067785900008
+      },
+      "parents": [
+        "task-000000",
+        "task-000001",
+        "task-000002"
+      ],
+      "edge_reason": "accepted corpus inventory"
+    },
+    {
+      "id": "task-000005",
+      "agent": "LEGAL_ANALYST",
+      "phase": "3",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "semantic, conditional deepening",
+      "consumer_fields": "typed findings and human reasoning",
+      "consumer": "deepening, synthesis, amendments",
+      "seconds": {
+        "low": 13.959445884999695,
+        "high": 13.959445884999695
+      },
+      "parents": [
+        "task-000000",
+        "task-000001",
+        "task-000002"
+      ],
+      "edge_reason": "accepted corpus inventory"
+    },
+    {
+      "id": "task-000006",
+      "agent": "VERIFIER",
+      "phase": "5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "independent semantic verification",
+      "consumer_fields": "typed findings",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 40.09126199000002,
+        "high": 40.09126199000002
+      },
+      "parents": [
+        "task-000003",
+        "task-000004",
+        "task-000005"
+      ],
+      "edge_reason": "source and PROCESSOR extraction"
+    },
+    {
+      "id": "task-000007",
+      "agent": "FACT_CHECKER",
+      "phase": "5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "independent semantic verification",
+      "consumer_fields": "typed findings",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 133.13886460899994,
+        "high": 133.13886460899994
+      },
+      "parents": [
+        "task-000003",
+        "task-000004",
+        "task-000005"
+      ],
+      "edge_reason": "source and PROCESSOR extraction"
+    },
+    {
+      "id": "task-000008",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.95957394700008,
+        "high": 49.95957394700008
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000009",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.76445323400003,
+        "high": 49.76445323400003
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000010",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.69235620800009,
+        "high": 49.69235620800009
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000011",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.64057109500027,
+        "high": 49.64057109500027
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000012",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.777034893999826,
+        "high": 49.777034893999826
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000013",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.762315753000166,
+        "high": 49.762315753000166
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000014",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.69939119599985,
+        "high": 49.69939119599985
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000015",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.85200270900032,
+        "high": 49.85200270900032
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000016",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.90635092399998,
+        "high": 49.90635092399998
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000017",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.596938112000316,
+        "high": 49.596938112000316
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000018",
+      "agent": "PRACTICE_AUDITOR",
+      "phase": "5.5",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "classification": "conditional semantic or exact computed comparison",
+      "consumer_fields": "typed findings and attributed reasons",
+      "consumer": "synthesis, amendments",
+      "seconds": {
+        "low": 49.66228869999986,
+        "high": 49.66228869999986
+      },
+      "parents": [
+        "task-000006",
+        "task-000007"
+      ],
+      "edge_reason": "phase barrier retained for ordered audit evidence"
+    },
+    {
+      "id": "task-000019",
+      "agent": "EDITOR_CLERK",
+      "phase": "editorial_board",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "classification": "conditional editorial hierarchy",
+      "consumer_fields": "typed observations",
+      "consumer": "board and operator report",
+      "seconds": {
+        "low": 505.82060715399984,
+        "high": 505.82060715399984
+      },
+      "parents": [
+        "task-000008",
+        "task-000009",
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014",
+        "task-000015",
+        "task-000016",
+        "task-000017",
+        "task-000018"
+      ],
+      "edge_reason": "complete findings, deterministic synthesis and editorial input"
+    }
+  ],
+  "after_note": "Actual PROCESSOR expands into partitions; exact eligible comparisons disappear. Counts require current source planning. Legal deepening and editorial escalation are conditional additions.",
+  "before_topology": {
+    "semantic_waves": 20,
+    "critical_path": [
+      "task-000000",
+      "task-000001",
+      "task-000002",
+      "task-000003",
+      "task-000004",
+      "task-000005",
+      "task-000006",
+      "task-000007",
+      "task-000008",
+      "task-000009",
+      "task-000010",
+      "task-000011",
+      "task-000012",
+      "task-000013",
+      "task-000014",
+      "task-000015",
+      "task-000016",
+      "task-000017",
+      "task-000018",
+      "task-000019"
+    ],
+    "critical_path_seconds": 2378.7496859420003
+  },
+  "after_wave_only_topology": {
+    "semantic_waves": 5,
+    "critical_path": [
+      "task-000000",
+      "task-000003",
+      "task-000007",
+      "task-000008",
+      "task-000019"
+    ],
+    "critical_path_seconds": 1447.3926071599997
+  },
+  "generation_seconds_preserved": 2378.7496859420003,
+  "same_service_counterfactuals": {
+    "1": 2378.7496859420003,
+    "2": 1696.0980646990006,
+    "4": 1546.7569901259997
+  },
+  "cost_arithmetic": {
+    "marginal_cost_per_accepted_run": 0.06633333333333334,
+    "fully_loaded_cost_per_accepted_run": 0.06633333333333334,
+    "classification": "ARITHMETIC_ASSUMPTION_NOT_OBSERVED_COST"
+  },
+  "cap_cause_assessment": {
+    "proved": [
+      "raw local prompts bypassed native chat templates",
+      "all task submissions serialized by runtime lock and predecessor chain",
+      "PROCESSOR regenerates source text; 8192 tokens did not prevent cap saturation"
+    ],
+    "hypotheses": [
+      "new briefs changed response behavior",
+      "EOS/template mismatch caused repetition"
+    ],
+    "causal_ablation": "not performed; no single cause explains 5 to 18 cap hits conclusively"
+  }
+}

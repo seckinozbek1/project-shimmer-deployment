@@ -1,0 +1,46 @@
+{
+  "classification": "PROJECTION_NOT_BENCHMARK",
+  "call_count": 20,
+  "semantic_waves": 5,
+  "critical_path": [
+    "task-000000"
+  ],
+  "critical_path_seconds": null,
+  "projected_wall_seconds": null,
+  "projected_generation_seconds": null,
+  "projected_truncation_count": null,
+  "contract_refusal_risk": null,
+  "local_resource_envelope": "Observed laptop GPU: 8 GiB. Real model probe unavailable due OpenMP initialization conflict.",
+  "assumptions": [
+    "Graph replays historical task shape only, not predicted semantic outcomes.",
+    "Partition counts, exact-comparison eligibility and conditional work must be supplied for a concrete input."
+  ],
+  "missing_measurements": [
+    "task-000000: representative latency",
+    "task-000001: representative latency",
+    "task-000002: representative latency",
+    "task-000003: representative latency",
+    "task-000004: representative latency",
+    "task-000005: representative latency",
+    "task-000006: representative latency",
+    "task-000007: representative latency",
+    "task-000008: representative latency",
+    "task-000009: representative latency",
+    "task-000010: representative latency",
+    "task-000011: representative latency",
+    "task-000012: representative latency",
+    "task-000013: representative latency",
+    "task-000014: representative latency",
+    "task-000015: representative latency",
+    "task-000016: representative latency",
+    "task-000017: representative latency",
+    "task-000018: representative latency",
+    "task-000019: representative latency",
+    "measured_capacity",
+    "cpu_seconds",
+    "warm_load_seconds",
+    "cold_load_seconds",
+    "retry_overhead_seconds"
+  ],
+  "target_assessment": "LOCAL_TARGET_INDETERMINATE"
+}
