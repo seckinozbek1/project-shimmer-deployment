@@ -1,3 +1,27 @@
+# Report Recommendations, 2026-09-15
+
+Starting source 69dce11. Added an opt-in ordinary local execution path with
+lossless bounded PROCESSOR source-span reconstruction, sibling waves, eligible
+exact-comparison reason rendering, native templates, EOS/completeness telemetry,
+deterministic ledger reuse and incomplete-run propagation. Reference defaults,
+role authority, model configuration and historical evidence remain preserved.
+
+New reproducible source artifacts: report_recommendations checks/safe gate,
+short-burst tokenizer/concurrency probe, per-check mutation proofs, deterministic
+DAG projection and source-layer manifest tools. README, runbook, runtime reference
+and CLAUDE notes updated in this unit. No new dependency and no image rebuild;
+existing COPY layers include the new source. No cloud, provider API, full pipeline,
+multi-round execution or push. Two suspected credential matches were established
+as synthetic tests, with no values printed or credentials modified.
+
+Assessment: LOCAL_TARGET_INDETERMINATE. Model loading was not reached because
+the host import probe failed with duplicate OpenMP initialization; the alternative
+virtual environment lacks Transformers. Source/fixture quality is not real-model
+quality. Detailed measurements, limitations and continuation inputs are in
+[REPORT_RECOMMENDATIONS_IMPLEMENTATION.md](REPORT_RECOMMENDATIONS_IMPLEMENTATION.md).
+
+---
+
 # Localization completion, 2026-09-14
 
 ## Localization completion, 2026-09-14

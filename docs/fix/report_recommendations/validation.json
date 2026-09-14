@@ -1,0 +1,37 @@
+{
+  "classification": "LOCAL_BOUNDED_VALIDATION_NOT_FULL_RUN",
+  "date": "2026-09-15",
+  "safe_gate": {
+    "pass": 49,
+    "fail": 0,
+    "skip": 1,
+    "new_mechanism_checks": 17,
+    "existing_topology_checks": 23,
+    "safe_legacy_checks": 9,
+    "skip_reason": "Optional prompts and snapshots directories unavailable",
+    "log": "output/report_recommendations/gate.txt"
+  },
+  "mutations": {
+    "explicit_mutation_trials": 15,
+    "intrinsic_effect_proofs": 2,
+    "all_restored": true
+  },
+  "real_generation": {
+    "attempted_model_calls": 0,
+    "weights_loaded": false,
+    "readiness_probe": "failed before model loading",
+    "reason": "Duplicate OpenMP runtime initialization (Error 15) in host Python",
+    "alternate_environment": "Python 3.9 virtual environment has no transformers or tokenizers",
+    "unsafe_duplicate_runtime_override_used": false
+  },
+  "not_executed": [
+    "full pipeline",
+    "full model gate",
+    "multi-round execution",
+    "cloud",
+    "paid inference",
+    "deployment",
+    "push"
+  ],
+  "benchmark_key_contents_read": false
+}

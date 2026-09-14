@@ -1,8 +1,8 @@
 """Explicit adapters around the preserved reference pipeline.
 
-Current review calls have rolling-bus and governance dependencies. Their graph
-is intentionally a completion chain. The generic scheduler admits independent
-tasks, but this adapter never invents independence or freezes prompt context.
+Reference review calls retain their rolling-bus completion chain. The explicit
+report_optimized path uses semantic_waves to admit inspected sibling groups with
+shared starting context and ordered publication. Worker ownership is common.
 """
 from __future__ import annotations
 
@@ -65,6 +65,8 @@ class Runtime:
         self.scheduler = Scheduler(lanes)
         self.lock = threading.RLock()
         self.previous = None
+        self.frontier = ()
+        self.optimized = False
         self.run_context = None
         self.written = 0
 
@@ -77,7 +79,7 @@ class Runtime:
             for event in self.scheduler.events[self.written:]:
                 stream.write(json.dumps(event, sort_keys=True) + "\n")
         self.written = len(self.scheduler.events)
-        summary = dict(schema_version=1, execution_topology="dependency_dag",
+        summary = dict(schema_version=1, execution_topology="report_optimized" if self.optimized else "dependency_dag",
                        run_id=self.run_context.run_id, **self.scheduler.summary())
         path = directory / "execution_topology.json"
         temp = path.with_suffix(".json.tmp")
@@ -86,6 +88,8 @@ class Runtime:
 
     def attach(self, wrapper):
         original = wrapper.run_task
+        wrapper._reference_run_task = original
+        wrapper._optimized_semantics = self.optimized
         original_dispatch = wrapper.dispatch
         self.run_context = wrapper.run_context
 
@@ -113,9 +117,13 @@ class Runtime:
                 parent = finding.get("item_id", "") if isinstance(finding, dict) else ""
                 activation = kwargs.get("activation") or {}
                 parent = (activation.get("evidence") or {}).get("item_id", parent)
-                edges = (Edge(self.previous, "rolling_bus_visibility_and_governance_order", False),) if self.previous else ()
+                parents = self.frontier or ((self.previous,) if self.previous else ())
+                edges = tuple(Edge(p, "rolling_bus_visibility_and_governance_order", False) for p in parents)
                 def action(context):
                     WORK.context = context
+                    wrapper._observation_task = context.task.id
+                    wrapper._observation_lane = context.worker.lane.name
+                    wrapper._observation_wave = "serial-" + context.task.id
                     try:
                         return original(*args, **kwargs)
                     finally:
@@ -128,6 +136,7 @@ class Runtime:
                             parent_finding=str(parent))
                 result = self.scheduler.run([task])[task_id]
                 self.previous = task_id
+                self.frontier = (task_id,)
                 self.write()
                 if result.state in {"completed", "refused"}:
                     return result.value
@@ -236,7 +245,17 @@ def entrypoint(function):
         import agent_wrapper
         if agent_wrapper._QWEN_MODELS:
             parser.error("dependency_dag requires a fresh process without a reference model cache")
+        if args.execution_topology == "report_optimized" and getattr(args, "backend_profile", None) != "local":
+            parser.error("report_optimized requires explicit --backend-profile local")
+        if args.execution_topology == "report_optimized":
+            import semantic_waves
+            try:
+                semantic_waves.validate_model_families(target.__globals__["_LOCAL_PROFILE"],
+                                                       agent_wrapper._local_checkpoint_path)
+            except (OSError, ValueError, KeyError):
+                parser.error("Cannot establish independent cached local model families")
         runtime = Runtime(lanes)
+        runtime.optimized = args.execution_topology == "report_optimized"
         token = ACTIVE.set(runtime)
         try:
             return function(argv)

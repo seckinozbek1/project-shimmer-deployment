@@ -64,6 +64,9 @@ nothing and says so in its return value.
 from __future__ import annotations
 
 import json
+import threading
+
+_WRITE_LOCK = threading.RLock()
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -172,7 +175,7 @@ def record(run_context, rec):
         return None
     path = Path(logs_dir()) / EVIDENCE_FILENAME
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as fh:
+    with _WRITE_LOCK, path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
     return path
 

@@ -359,3 +359,38 @@ Historical host and image results are recorded in the
 [routing audit](fix/ROUTING_UI_AUDIT.md#verification-and-closure). They apply to
 that audited revision. An unmounted image lacks operator input directories;
 source parity and deterministic fixtures do not certify end-to-end review quality.
+
+
+## Report Recommendations comparison topology
+
+The explicit `report_optimized` topology is local ordinary Review only; it does
+not change the default or activate multi-round. Corpus siblings, per-document
+producers, VERIFIER/FACT_CHECKER siblings and independent paired questions use
+shared starting context and ordered bus publication. Genuine parent and editorial
+rank dependencies remain. The historical one-document shape maps to five groups,
+not a certified universal five-wave bound.
+
+PROCESSOR uses existing unit IDs/indexes with a complete source-offset ledger.
+Each request owns up to four 1200-character spans. A compact alias is expanded
+into exact source text by Python before the canonical extraction reaches readers.
+Claims/questions and uncertainty remain model judgments. Ownership, coverage,
+duplicate and completeness checks refuse ambiguous results. One failed partition
+may retry once; successful partitions are retained. The provisional 1536-token
+partition budget replaces the monolithic PROCESSOR allowance only on this path.
+Other reference budgets remain intact.
+
+Already-computed, unconditional, cited numeric-comparison plans use the existing
+Python explanation renderer. Other judgments remain semantic. The producer and
+independent auditors retain configured different families, verified from cached
+model configuration at optimized entry. Native chat templates are applied only
+on the comparison path. No model precision change or new serving dependency is
+introduced.
+
+`logs/generation_observation.jsonl` supplements call/cost/activation evidence with
+complete/valid/accepted distinctions, token counts, EOS/cap contact, generation
+wall, task/wave/lane, retries and stable hashes. Unavailable TTFT and useful-token
+attribution stay null. `semantic_complete=false` prevents a completed run status
+when optimized required semantic work remains incomplete. Ledger caching is
+bounded, in-memory and deterministic; there is no cross-round semantic cache.
+See [the report](fix/REPORT_RECOMMENDATIONS_IMPLEMENTATION.md) for measured facts,
+projections, full-gate exclusions and the unverified model-quality boundary.
