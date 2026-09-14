@@ -3384,7 +3384,7 @@ def check_85_model_approval_shape():
 
     fake_registry = {"agents": {"TESTAGENT": {"backend": "claude_api",
                                               "model": "claude-totally-fake-999"}}}
-    keys = {"ANTHROPIC_API_KEY": "gate-check-stub-not-a-real-key"}
+    keys = {"ANTHROPIC_API_KEY": "TEST_CREDENTIAL_PLACEHOLDER"}
 
     orig_list_available = model_registry.list_available_models
     # Force a deterministic 'deprecated' finding (zero live matches for the
@@ -3897,7 +3897,7 @@ def check_92_provider_timeout():
             reg = json.loads((CONFIG / "agent_registry.json").read_text(encoding="utf-8"))["agents"]
             wrapper = agent_wrapper.AgentWrapper(
                 name="PROCESSOR", constitution=con, bus=bus, registry=reg,
-                contracts={}, keys={"ANTHROPIC_API_KEY": "gate-check-stub-not-a-real-key"},
+                contracts={}, keys={"ANTHROPIC_API_KEY": "TEST_CREDENTIAL_PLACEHOLDER"},
                 cost_tracker=tracker)
             result = wrapper.call_claude("stable prefix", "dynamic suffix")
             if result.ok:
@@ -4084,7 +4084,7 @@ def check_95_provider_error_scrubbed():
             reg = json.loads((CONFIG / "agent_registry.json").read_text(encoding="utf-8"))["agents"]
             wrapper = agent_wrapper.AgentWrapper(
                 name="PROCESSOR", constitution=con, bus=bus, registry=reg,
-                contracts={}, keys={"ANTHROPIC_API_KEY": "gate-check-stub-not-a-real-key"},
+                contracts={}, keys={"ANTHROPIC_API_KEY": "TEST_CREDENTIAL_PLACEHOLDER"},
                 cost_tracker=tracker)
             result = wrapper.call_claude("stable prefix", "dynamic suffix")
             if result.ok:
@@ -5077,7 +5077,7 @@ def check_111_converted_log_site_emits_json_line():
             reg = json.loads((CONFIG / "agent_registry.json").read_text(encoding="utf-8"))["agents"]
             wrapper = agent_wrapper.AgentWrapper(
                 name="PROCESSOR", constitution=con, bus=bus, registry=reg,
-                contracts={}, keys={"ANTHROPIC_API_KEY": "gate-check-stub-not-a-real-key"},
+                contracts={}, keys={"ANTHROPIC_API_KEY": "TEST_CREDENTIAL_PLACEHOLDER"},
                 cost_tracker=tracker, run_context=_VERIFY_RUN)
             result = wrapper.call_claude("stable prefix", "dynamic suffix")
     finally:
@@ -5508,15 +5508,15 @@ def _shimmer_env_names_in_code(path: Path) -> set:
 
 
 def check_116_readme_env_table_matches_server():
-    """productization STEP 9: the SHIMMER_* variables documented in README.md's
+    """productization STEP 9: the SHIMMER_* variables documented in docs/RUNTIME_REFERENCE.md's
     environment-variable table are exactly the ones the code actually reads, so
     this class of drift is caught by the gate in future instead of being found
     by an audit.
 
     Two directions, both asserted:
       - no UNDOCUMENTED knob: every SHIMMER_* the server process reads in
-        executable code appears as a row in the README table;
-      - no PHANTOM knob: every README row is read either by the server process
+        executable code appears as a row in the runtime-reference table;
+      - no PHANTOM knob: every runtime-reference row is read either by the server process
         or, for the rows whose text says in so many words that they are "read by
         the pipeline subprocess", somewhere else under scripts/.
 
@@ -5525,16 +5525,16 @@ def check_116_readme_env_table_matches_server():
     block documents two variables the pipeline subprocess reads, not the server
     process: counting those would make the check assert the opposite of what it
     means to."""
-    readme = (ROOT / "README.md")
+    readme = (ROOT / "docs/RUNTIME_REFERENCE.md")
     if not readme.is_file():
-        return _fail("README.md not found")
+        return _fail("docs/RUNTIME_REFERENCE.md not found")
     rows = {}
     for line in readme.read_text(encoding="utf-8").splitlines():
         m = re.match(r"^\|\s*`(SHIMMER_[A-Z0-9_]+)`\s*\|(.*)$", line)
         if m:
             rows[m.group(1)] = m.group(2)
     if len(rows) < 14:
-        return _fail(f"README.md's environment-variable table has only {len(rows)} SHIMMER_* "
+        return _fail(f"docs/RUNTIME_REFERENCE.md's environment-variable table has only {len(rows)} SHIMMER_* "
                      f"row(s); the table was not found or was gutted")
 
     server_reads = _shimmer_env_names_in_code(SCRIPTS / "server.py")
@@ -5551,11 +5551,11 @@ def check_116_readme_env_table_matches_server():
 
     undocumented = server_reads - set(rows)
     if undocumented:
-        return _fail(f"the server reads SHIMMER_* variable(s) with no README table row: "
+        return _fail(f"the server reads SHIMMER_* variable(s) with no runtime-reference table row: "
                      f"{sorted(undocumented)}")
     phantom = documented_for_server - server_reads
     if phantom:
-        return _fail(f"README table row(s) the server process does not read, and which are "
+        return _fail(f"runtime-reference table row(s) the server process does not read, and which are "
                      f"not marked as read by the pipeline subprocess: {sorted(phantom)}")
 
     # The subprocess-marked rows must be read SOMEWHERE, or they are phantom too.
@@ -5564,10 +5564,10 @@ def check_116_readme_env_table_matches_server():
         elsewhere |= _shimmer_env_names_in_code(SCRIPTS / other)
     orphan = subprocess_rows - elsewhere
     if orphan:
-        return _fail(f"README table row(s) marked as read by the pipeline subprocess that no "
+        return _fail(f"runtime-reference table row(s) marked as read by the pipeline subprocess that no "
                      f"module under scripts/ actually reads: {sorted(orphan)}")
 
-    return _ok(f"README.md's env table and the code agree: {len(documented_for_server)} row(s) "
+    return _ok(f"docs/RUNTIME_REFERENCE.md's env table and the code agree: {len(documented_for_server)} row(s) "
                f"are read by the server process (exactly the set server.py reads in executable "
                f"code, docstrings excluded) and {len(subprocess_rows)} row(s) "
                f"{sorted(subprocess_rows)} are marked subprocess-read and are read under "
@@ -10252,9 +10252,9 @@ def check_166_status_counters_and_health_expose_the_review_shape():
 
 
 # ---------------------------------------------------------------------------
-# api STEP A2: the README's route table and the app's routes are one list.
+# api STEP A2: the runtime reference's route table and the app's routes are one list.
 # ---------------------------------------------------------------------------
-# The routes a caller can use are documented in README.md section I as a table.
+# The routes a caller can use are documented in docs/RUNTIME_REFERENCE.md as a table.
 # Check 116 already holds the ENV table to the code; this is the same discipline
 # for routes, which drifted the other way (three routes existed before anyone
 # wrote them down). Rows look like:
@@ -10269,9 +10269,9 @@ _HTTP_METHODS = frozenset({"GET", "POST", "PUT", "PATCH", "DELETE"})
 
 
 def _readme_documented_routes():
-    """{(method, path)} from README.md's route table."""
+    """{(method, path)} from runtime reference's route table."""
     out = set()
-    for line in (ROOT / "README.md").read_text(encoding="utf-8").splitlines():
+    for line in (ROOT / "docs/RUNTIME_REFERENCE.md").read_text(encoding="utf-8").splitlines():
         m = _README_ROUTE_RE.match(line)
         if m:
             out.add((m.group(1), m.group(2)))
@@ -10295,12 +10295,12 @@ def _app_registered_routes(app):
 
 
 def check_167_readme_route_table_matches_the_app():
-    """api STEP A2: the routes listed in README.md equal the routes the app
+    """api STEP A2: the routes listed in docs/RUNTIME_REFERENCE.md equal the routes the app
     registers, in both directions.
 
     A route that exists and is not written down cannot be used by the caller it
     was built for; a route that is written down and does not exist sends that
-    caller into a 404. Check 116 already holds the README's environment table to
+    caller into a 404. Check 116 already holds the runtime reference's environment table to
     the code; this holds its route table to the app, so neither class of drift
     can survive a gate run again.
 
@@ -10320,17 +10320,17 @@ def check_167_readme_route_table_matches_the_app():
 
         documented = _readme_documented_routes()
         if len(documented) < 8:
-            return _fail(f"README.md's route table yielded only {len(documented)} row(s); "
+            return _fail(f"docs/RUNTIME_REFERENCE.md's route table yielded only {len(documented)} row(s); "
                          f"the table was not found or was gutted")
         registered = _app_registered_routes(server.app)
 
         undocumented = registered - documented
         if undocumented:
-            return _fail(f"route(s) the app registers with no README table row: "
+            return _fail(f"route(s) the app registers with no runtime-reference table row: "
                          f"{sorted(undocumented)}")
         phantom = documented - registered
         if phantom:
-            return _fail(f"README table row(s) for route(s) the app does not register: "
+            return _fail(f"runtime-reference table row(s) for route(s) the app does not register: "
                          f"{sorted(phantom)}")
 
         # NEUTRALISE: give the app a route nobody wrote down.
@@ -10347,7 +10347,7 @@ def check_167_readme_route_table_matches_the_app():
         if _app_registered_routes(server.app) - documented:
             return _fail("the probe route survived the restore")
 
-    return _ok(f"README.md's route table and the app agree: {len(documented)} route(s) "
+    return _ok(f"docs/RUNTIME_REFERENCE.md's route table and the app agree: {len(documented)} route(s) "
                f"documented, exactly the set the app registers (FastAPI's own /docs, "
                f"/redoc and /openapi.json aside); an extra route registered on the live "
                f"app is detected as undocumented and disappears again when it is removed")

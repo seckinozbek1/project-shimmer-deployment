@@ -1,8 +1,8 @@
 # Shimmer operator runbook
 
 This guide describes the current desktop/console path. See the
-[README](../README.md) for exact API routes, environment variables, agent routing,
-measured limitations and image status. The [routing audit](fix/ROUTING_UI_AUDIT.md)
+[runtime reference](RUNTIME_REFERENCE.md) for exact API routes, environment
+variables, agent routing and image boundaries. The [routing audit](fix/ROUTING_UI_AUDIT.md)
 records the source trace and verification. Earlier runbook instructions remain in
 the [historical archive](history/RUNBOOK_PRE_ROUTING_AUDIT.md).
 
@@ -184,7 +184,7 @@ snapshot/reset flow before a separately authorized reset.
 
 ## Advanced API, checks and unsupported boundaries
 
-Use the [current route table](../README.md#api-and-developer-entry-points).
+Use the [current route table](RUNTIME_REFERENCE.md#api-and-developer-entry-points).
 Native API requests must explicitly select `intake_mode=standalone`, privacy and
 confirmation. Omitting intake mode keeps the older sidecar ingestion validator;
 setting a standalone server mode alone does not select native intake. Direct
@@ -195,7 +195,7 @@ The offline host gate is `py -3.9 -B -X utf8 scripts/verify_session1.py --offlin
 Read PASS/WARN/SKIP/FAIL counts and named limitations, not just exit status.
 Offline skips and missing corpus/input evidence do not become passes. Some gate
 checks load cached models; do not overlap them with another GPU workload. The
-[current verification record](../README.md#verification-status) distinguishes
+[historical verification record](fix/ROUTING_UI_AUDIT.md#verification-and-closure) distinguishes
 host, unmounted image and focused console checks. No online gate was run for this
 audit. The secret guard and staged review remain required before a commit.
 
@@ -203,5 +203,6 @@ Unsupported/unproven here: Local Draft; usable Sensitive review with the shipped
 inactive layer; complete semantic coverage; historical rule reconstruction through
 the rule endpoint; general sparse speedup; ontology/GNN feedback into agent tasks;
 automatic resume; private-document quality; fresh-clone startup; and a complete
-review inside the unmounted image. Fresh-clone and deployment work belong to later
-locked roadmap items.
+review inside the unmounted image. The
+[cloud preparation guide](CLOUD_RUN_PREPARATION.md) describes the separate single-GPU
+experiment workflow; it does not certify fresh-clone desktop startup.

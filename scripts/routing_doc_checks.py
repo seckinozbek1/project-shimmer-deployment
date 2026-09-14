@@ -13,7 +13,8 @@ def check():
     import build_agent_harness as builder
     import run_context
     root = Path(__file__).resolve().parents[1]
-    readme = (root / 'README.md').read_text(encoding='utf-8')
+    assert 'docs/RUNTIME_REFERENCE.md' in (root / 'README.md').read_text(encoding='utf-8')
+    readme = (root / 'docs/RUNTIME_REFERENCE.md').read_text(encoding='utf-8')
     registry = json.loads((root / 'config/agent_registry.json').read_text(encoding='utf-8'))
     names = set(registry['agents'])
 
@@ -64,4 +65,4 @@ def check():
         assert generated == checked_in, 'generated harness drift'
         changed = dict(checked_in, schema_version='fixture mismatch')
         assert changed != generated
-    return 'PASS', 'all 18 README roster entries and resolved Cloud/Local models, CLI dense default, canonical deliverable names and isolated regenerated harness match; omitted roster and changed harness rejected'
+    return 'PASS', 'all 18 runtime-reference roster entries and resolved Cloud/Local models, CLI dense default, canonical deliverable names and isolated regenerated harness match; omitted roster and changed harness rejected'

@@ -82,7 +82,7 @@ def select_python(profile, *, root=ROOT, current=None, probe=None):
         if missing is not None:
             usable.append((len(missing), len(usable), candidate))
     if not usable:
-        raise StartupFailure("No usable Python environment was found. Repair Python 3.9 or later and the prerequisites in README section G, then retry.")
+        raise StartupFailure("No usable Python environment was found. Repair Python 3.9 or later and the prerequisites in docs/RUNBOOK.md (Start Shimmer), then retry.")
     return min(usable)[2], reports
 
 
@@ -114,7 +114,7 @@ def check_readiness(profile, *, python=None, root=ROOT):
     except (OSError, subprocess.TimeoutExpired):
         raise StartupFailure(
             "The Python environment could not finish its readiness check. "
-            "Check the installed prerequisites in README section G, then retry.") from None
+            "Check the installed prerequisites in docs/RUNBOOK.md (Start Shimmer), then retry.") from None
     try:
         # Libraries may emit incidental informational lines before the report.
         report = json.loads(result.stdout.strip().splitlines()[-1])
@@ -123,7 +123,7 @@ def check_readiness(profile, *, python=None, root=ROOT):
     except (ValueError, KeyError, IndexError, TypeError):
         raise StartupFailure(
             "The Python environment could not load Shimmer's readiness checks. "
-            "Repair the prerequisites in README section G, then retry.") from None
+            "Repair the prerequisites in docs/RUNBOOK.md (Start Shimmer), then retry.") from None
     if result.returncode != 0:
         report["ready"] = False
     return report
@@ -516,7 +516,7 @@ def main(argv=None):
     except Exception:
         # Last resort also works when tkinter itself is missing. Do not expose
         # arbitrary exception contents: imported modules can contain credentials.
-        message = "Shimmer could not open its startup window. Install Python with Tcl/Tk and the prerequisites in README section G, then retry."
+        message = "Shimmer could not open its startup window. Install Python with Tcl/Tk and the prerequisites in docs/RUNBOOK.md (Start Shimmer), then retry."
         if os.name == "nt":
             import ctypes
             ctypes.windll.user32.MessageBoxW(None, message, "Start Shimmer", 0x10)

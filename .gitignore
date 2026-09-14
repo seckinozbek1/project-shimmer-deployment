@@ -170,3 +170,6 @@ docs/DELTA_*.md
 # Never committed. Only the scorer reads the key (S6); the contamination probe
 # scans config/, scripts/, tests/ and the harness fixtures, never this directory.
 benchmark/keys/
+
+# Reviewed experiment summary; bulk evidence remains under ignored output/.
+!docs/fix/A100_OPTIMIZED_RUN.md

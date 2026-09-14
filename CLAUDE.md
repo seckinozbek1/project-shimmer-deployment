@@ -327,14 +327,14 @@ processing swarm governed by an append-only constitution.
   review-targets manifest. Driven by the launcher and by chat (as a subprocess).
 - `scripts/chat.py`: the tkinter chat interface (Qwen NL parsing or command mode).
 - `scripts/server.py`: the token-gated FastAPI dock. Config is env-driven (`SHIMMER_*`,
-  read once at startup, printed to stderr); `SHIMMER_TOKEN_HASH` is required. The README's
-  route table is the complete route list and gate check 167 fails if it and the app disagree
+  read once at startup, printed to stderr); `SHIMMER_TOKEN_HASH` is required. The
+  [runtime reference](docs/RUNTIME_REFERENCE.md) route table is the complete route list and gate check 167 fails if it and the app disagree
   in either direction; check 116 does the same for the `SHIMMER_*` env table.
   `/runs/{run_id}/findings` and `/runs/{run_id}/pairs` serve the STRUCTURED review (typed
   Finding records off the bus, and the pairing map with no document text);
   `/runs/{run_id}/deliverables` stays the human artifact. The pairing map's `absence` record
   and a finding's `absence_path` are on disk and on the bus but not yet in the two routes'
-  projections (recorded in README section I).
+  projections (recorded in docs/RUNTIME_REFERENCE.md).
 - `scripts/harness/`: one agent, one unit, one rule, one backend (`run_agent.py`), plus
   `probe_arithmetic.py` (can the model do the arithmetic with no review framing at all) and
   `score_envelope.py`. The harness never builds its own prompt: it builds the wrapper the

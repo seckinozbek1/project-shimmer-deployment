@@ -142,6 +142,7 @@ COPY corpus_ingest/ ./corpus_ingest/
 # must be executable in the product image as well as the source checkout.
 COPY benchmark/fixtures/rule_condition_fixture.md benchmark/fixtures/severity_effect_fixture.md benchmark/fixtures/external_rules_fixture.json ./benchmark/fixtures/
 COPY README.md CLAUDE.md genesis.md ./
+COPY docs/RUNTIME_REFERENCE.md ./docs/
 # Also at /app/requirements.txt, not only /tmp: gate check 118 (every
 # module-level third-party import under scripts/ is ==pinned) reads it from
 # the repo root, same as it would on a real checkout.
