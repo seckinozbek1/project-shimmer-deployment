@@ -1,0 +1,70 @@
+{
+  "PROCESSOR": {
+    "item_kind": "position",
+    "fields": {
+      "record_id": "Unique case-local identifier",
+      "case_id": "Copy case_id",
+      "actor_id": "Declared actor identifier",
+      "issue_id": "Declared issue identifier",
+      "round_id": "Current round identifier",
+      "previous_round_id": "Earlier round for cross-round records; may be non-adjacent",
+      "kind": "position | movement | unresolved_issue | trajectory | decision_support",
+      "state": "accepted | rejected | refused | unresolved | insufficient_evidence | not_comparable | unknown",
+      "category": "observed_evidence | semantic_interpretation | recommendation",
+      "confidence": "CONFIDENT | UNCERTAIN",
+      "text": "Evidence-grounded observation for operator",
+      "source_ids": "Array of exact supplied source_id values",
+      "position": "For position: typed stance text, no inferred normalization",
+      "previous_position_id": "For movement: earlier position record_id",
+      "current_position_id": "For movement: current position record_id",
+      "movement": "concession | hardening | reversal | stable | ambiguous | unknown",
+      "value": "Optional numeric position",
+      "unit": "Required with value",
+      "ref_ids": "Array of supplied REF identifiers",
+      "actor_ids": "Optional participant actor identifiers for cross-actor trajectory or decision-support claims; evidence from both rounds is required for each participant."
+    },
+    "required": [
+      "record_id",
+      "case_id",
+      "actor_id",
+      "issue_id",
+      "round_id",
+      "kind",
+      "state",
+      "category",
+      "text",
+      "source_ids"
+    ],
+    "directives": [
+      "Return canonical {agent, doc_id, items} with flat items. doc_id is case_id.",
+      "Use only supplied actor, issue, round and source identifiers. Preserve ambiguity and competing interpretations as separate records.",
+      "A missing round or absent actor/issue is not evidence of continuity. Non-adjacent comparisons are allowed when explicitly supported.",
+      "Cross-round statements need evidence from both named rounds, for the named actor and issue. Keep unsupported claims insufficient_evidence, unknown or not_comparable.",
+      "Concession, hardening, reversal, agreement, convergence, divergence and significance are semantic judgments, never conclusions from numeric deltas alone.",
+      "Distinguish observed_evidence from semantic_interpretation and recommendation. Do not generate recommendations unless explicitly requested in run objectives. Movement does not automatically justify advice.",
+      "Include current positions, histories through individual observations, movements, unresolved issues, persistent disagreements, convergence/divergence, trajectory and decision-support observations only where supported.",
+      "For positions include position; for all other kinds include previous_round_id. Movements must link two position records and carry all their source_ids.",
+      "The state accepted is a proposal pending independent review. Never claim measured quality or complete coverage."
+    ]
+  },
+  "VERIFIER": {
+    "item_kind": "finding",
+    "fields": {
+      "target_record_id": "Exact producer record_id",
+      "state": "accepted | rejected | refused | unresolved | insufficient_evidence | not_comparable | unknown",
+      "source_ids": "Copy all source_ids of reviewed proposal",
+      "ref_ids": "Supplied REF identifiers",
+      "confidence": "CONFIDENT | UNCERTAIN"
+    },
+    "required": [
+      "target_record_id",
+      "state",
+      "source_ids"
+    ],
+    "directives": [
+      "Cross-check each proposal against supplied source evidence and round/actor/issue attribution. Do not draft replacement content. Return one flat review item per target_record_id, or withhold judgment explicitly.",
+      "Acceptance does not resolve ambiguity. Preserve UNCERTAIN when evidence admits competing interpretations.",
+      "Reject unsupported claims, unsupported continuity, ungrounded advice and self-certifying evidence. Never infer meaning from numeric equality alone."
+    ]
+  }
+}

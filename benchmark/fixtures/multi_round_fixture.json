@@ -1,0 +1,477 @@
+{
+  "fixture_notice": "SYNTHETIC, PRE-AUTHORED SEMANTIC OUTPUTS. NOT MODEL QUALITY EVIDENCE.",
+  "manifest": {
+    "schema_version": 1,
+    "case_id": "fixture_case",
+    "fixture": true,
+    "rounds": [
+      {
+        "round_id": "r1",
+        "sequence": 1,
+        "document_ids": [
+          "doc1"
+        ]
+      },
+      {
+        "round_id": "r2",
+        "sequence": 2,
+        "document_ids": [
+          "doc2"
+        ]
+      },
+      {
+        "round_id": "r4",
+        "sequence": 4,
+        "document_ids": [
+          "doc4"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "actor_id": "actor_a",
+        "label": "Actor A"
+      },
+      {
+        "actor_id": "actor_b",
+        "label": "Actor B"
+      }
+    ],
+    "issues": [
+      {
+        "issue_id": "issue_a",
+        "label": "Issue A"
+      },
+      {
+        "issue_id": "issue_b",
+        "label": "Issue B"
+      }
+    ],
+    "sources": [
+      {
+        "source_id": "s1_actor_a",
+        "round_id": "r1",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "document_id": "doc1",
+        "unit_id": "unit_s1_actor_a",
+        "char_start": 0,
+        "char_end": 24,
+        "quote": "Initial stated position.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s2_actor_a",
+        "round_id": "r2",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "document_id": "doc2",
+        "unit_id": "unit_s2_actor_a",
+        "char_start": 0,
+        "char_end": 22,
+        "quote": "Later stated position.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s4_actor_a",
+        "round_id": "r4",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "document_id": "doc4",
+        "unit_id": "unit_s4_actor_a",
+        "char_start": 0,
+        "char_end": 24,
+        "quote": "Final recorded position.",
+        "state": "accepted"
+      },
+      {
+        "source_id": "s2_actor_b",
+        "round_id": "r2",
+        "actor_id": "actor_b",
+        "issue_id": "issue_b",
+        "document_id": "doc2",
+        "unit_id": "unit_s2_actor_b",
+        "char_start": 23,
+        "char_end": 50,
+        "quote": "Additional stated position.",
+        "state": "accepted"
+      }
+    ]
+  },
+  "documents": [
+    {
+      "id": "doc1",
+      "name": "doc1.md",
+      "text": "Initial stated position."
+    },
+    {
+      "id": "doc2",
+      "name": "doc2.md",
+      "text": "Later stated position.\nAdditional stated position."
+    },
+    {
+      "id": "doc4",
+      "name": "doc4.md",
+      "text": "Final recorded position."
+    }
+  ],
+  "producer_envelope": {
+    "agent": "PROCESSOR",
+    "doc_id": "fixture_case",
+    "items": [
+      {
+        "record_id": "p_s1_actor_a",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r1",
+        "kind": "position",
+        "state": "accepted",
+        "category": "observed_evidence",
+        "confidence": "CONFIDENT",
+        "text": "Initial stated position.",
+        "source_ids": [
+          "s1_actor_a"
+        ],
+        "position": "typed_a",
+        "value": 1,
+        "unit": "declared_unit"
+      },
+      {
+        "record_id": "p_s2_actor_a",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r2",
+        "kind": "position",
+        "state": "accepted",
+        "category": "observed_evidence",
+        "confidence": "CONFIDENT",
+        "text": "Later stated position.",
+        "source_ids": [
+          "s2_actor_a"
+        ],
+        "position": "typed_a",
+        "value": 2,
+        "unit": "declared_unit"
+      },
+      {
+        "record_id": "p_s4_actor_a",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "kind": "position",
+        "state": "accepted",
+        "category": "observed_evidence",
+        "confidence": "CONFIDENT",
+        "text": "Final recorded position.",
+        "source_ids": [
+          "s4_actor_a"
+        ],
+        "position": "typed_b",
+        "value": 4,
+        "unit": "declared_unit"
+      },
+      {
+        "record_id": "p_s2_actor_b",
+        "case_id": "fixture_case",
+        "actor_id": "actor_b",
+        "issue_id": "issue_b",
+        "round_id": "r2",
+        "kind": "position",
+        "state": "accepted",
+        "category": "observed_evidence",
+        "confidence": "CONFIDENT",
+        "text": "Additional stated position.",
+        "source_ids": [
+          "s2_actor_b"
+        ],
+        "position": "typed_a",
+        "value": 2,
+        "unit": "declared_unit"
+      },
+      {
+        "record_id": "m_concession",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "movement",
+        "state": "accepted",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "Pre-authored competing interpretation: concession",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "previous_position_id": "p_s1_actor_a",
+        "current_position_id": "p_s4_actor_a",
+        "movement": "concession"
+      },
+      {
+        "record_id": "m_hardening",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "movement",
+        "state": "accepted",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "Pre-authored competing interpretation: hardening",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "previous_position_id": "p_s1_actor_a",
+        "current_position_id": "p_s4_actor_a",
+        "movement": "hardening"
+      },
+      {
+        "record_id": "m_reversal",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "movement",
+        "state": "accepted",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "Pre-authored competing interpretation: reversal",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "previous_position_id": "p_s1_actor_a",
+        "current_position_id": "p_s4_actor_a",
+        "movement": "reversal"
+      },
+      {
+        "record_id": "m_stable",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "movement",
+        "state": "accepted",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "Pre-authored competing interpretation: stable",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "previous_position_id": "p_s1_actor_a",
+        "current_position_id": "p_s4_actor_a",
+        "movement": "stable"
+      },
+      {
+        "record_id": "m_ambiguous",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "movement",
+        "state": "accepted",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "Pre-authored competing interpretation: ambiguous",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "previous_position_id": "p_s1_actor_a",
+        "current_position_id": "p_s4_actor_a",
+        "movement": "ambiguous"
+      },
+      {
+        "record_id": "unresolved_issue_1",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "unresolved_issue",
+        "state": "accepted",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "Pre-authored unresolved_issue interpretation.",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "record_id": "trajectory_1",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "trajectory",
+        "state": "accepted",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "Pre-authored trajectory interpretation.",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "record_id": "decision_support_1",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "decision_support",
+        "state": "accepted",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "Pre-authored decision_support interpretation.",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "record_id": "insufficient_1",
+        "case_id": "fixture_case",
+        "actor_id": "actor_a",
+        "issue_id": "issue_a",
+        "round_id": "r4",
+        "previous_round_id": "r1",
+        "kind": "decision_support",
+        "state": "insufficient_evidence",
+        "category": "semantic_interpretation",
+        "confidence": "UNCERTAIN",
+        "text": "No supported conclusion.",
+        "source_ids": []
+      }
+    ]
+  },
+  "reviewer_envelope": {
+    "agent": "VERIFIER",
+    "doc_id": "fixture_case",
+    "items": [
+      {
+        "target_record_id": "p_s1_actor_a",
+        "state": "accepted",
+        "confidence": "CONFIDENT",
+        "source_ids": [
+          "s1_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "p_s2_actor_a",
+        "state": "accepted",
+        "confidence": "CONFIDENT",
+        "source_ids": [
+          "s2_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "p_s4_actor_a",
+        "state": "accepted",
+        "confidence": "CONFIDENT",
+        "source_ids": [
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "p_s2_actor_b",
+        "state": "accepted",
+        "confidence": "CONFIDENT",
+        "source_ids": [
+          "s2_actor_b"
+        ]
+      },
+      {
+        "target_record_id": "m_concession",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "m_hardening",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "m_reversal",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "m_stable",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "m_ambiguous",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "unresolved_issue_1",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "trajectory_1",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "decision_support_1",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ]
+      },
+      {
+        "target_record_id": "insufficient_1",
+        "state": "insufficient_evidence",
+        "confidence": "UNCERTAIN",
+        "source_ids": []
+      }
+    ]
+  }
+}

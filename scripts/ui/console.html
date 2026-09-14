@@ -611,7 +611,7 @@ a.rule-link:hover { text-decoration-style: solid; }
 "use strict";
 
 /* =======================================================================
-   TOKEN: sessionStorage, never localStorage, never a URL.
+   Session credentials use sessionStorage, never localStorage or a URL.
    Survives a same-tab reload (so a reviewer mid-run does not retype it);
    cleared when the tab closes. See CONSOLE_PLAN.md "The waiting page's
    persistence requirement."
@@ -1820,6 +1820,10 @@ function renderSubmit() {
       '</select>' +
       '<p class="field-hint">Normal keeps full text and waives redaction for this run. Cloud processing can send that text to providers. Sensitive cannot start until the operator has activated the required privacy layer.</p>' +
       '<details><summary>Advanced intake and review options</summary>' +
+      '<label><input type="checkbox" id="s-multi-round"> Multi-round positioning (unverified with models)</label>' +
+      '<label for="s-case">Case manifest JSON (multi-round only)</label>' +
+      '<textarea id="s-case" rows="3" placeholder="Paste the case manifest with rounds, actors, issues and source spans"></textarea>' +
+      '<p class="field-hint">Explicit case analysis with independent review. Normal privacy and Review task required. Performance and substantive quality are unmeasured.</p>' +
       '<label for="s-intake">Files supplied as</label>' +
       '<select id="s-intake" class="form-control">' +
         '<option value="standalone">Ordinary documents (recommended)</option>' +
@@ -1901,6 +1905,15 @@ function renderSubmit() {
     }
     if (intake === 'standalone' && task === 'review' && !targets.length) { fail('Mark at least one selected file as the document to review.'); return; }
     var fd = new FormData();
+    var multiRound = document.getElementById('s-multi-round').checked;
+    var caseText = document.getElementById('s-case').value.trim();
+    if (multiRound) {
+      if (task !== 'review' || sensitive !== 'false' || !caseText) { fail('Multi-round needs Review, Normal privacy and a case manifest.'); return; }
+      try { JSON.parse(caseText); } catch (err) { fail('Case manifest must be valid JSON.'); return; }
+      fd.append('multi_round', 'true');
+      fd.append('multi_round_manifest', caseText);
+      plan.push('<li>Multi-round positioning requested; model quality remains unverified.</li>');
+    } else if (caseText) { fail('Select multi-round explicitly to use a case manifest.'); return; }
     fd.append("task", task);
     if (question) fd.append("question", question);
     if (mode) fd.append("review_mode", mode);
@@ -2000,6 +2013,37 @@ function loadActivation(runId) {
     if (currentRoute().runId === runId && document.getElementById('activation-summary') === holder) {
       holder.innerHTML = activationSummaryHtml(null, isHumanView());
     }
+  });
+}
+
+function multiRoundHtml(data) {
+  if (!data || !data.recorded) return '<h2>Multi-round positioning</h2><p>No valid recorded case output.</p>';
+  var out = '<h2>Multi-round positioning</h2><p>' + (data.fixture ? 'SYNTHETIC FIXTURE. ' : '') +
+    escapeHtml(data.activation.state) + '. ' + escapeHtml(data.outcome || '') + ' ' +
+    escapeHtml(data.activation.reason || '') + '. Model quality and performance remain unverified.</p>';
+  if (!data.view) return out;
+  out += '<p>Case: ' + escapeHtml(data.view.case_id) + '</p>';
+  out += citationsHtml(data.view.evidence.map(function (e) { return e.ref_id; }), data.run_id, true);
+  ['rounds', 'actors', 'issues', 'current_positions', 'actor_history', 'issue_history', 'movements',
+   'unresolved', 'trajectory', 'decision_support', 'structural_comparisons', 'missing_sequences', 'evidence', 'records'].forEach(function (key) {
+    out += '<details><summary>' + escapeHtml(key.replace(/_/g, ' ')) + '</summary><pre>' +
+      escapeHtml(JSON.stringify(data.view[key], null, 2)) + '</pre></details>';
+  });
+  return out;
+}
+
+function loadMultiRound(runId) {
+  var holder = document.createElement('section');
+  holder.id = 'multi-round-summary';
+  app.appendChild(holder);
+  return apiJson('/runs/' + encodeURIComponent(runId) + '/multi-round').then(function (res) {
+    if (currentRoute().runId === runId && document.getElementById(holder.id) === holder) {
+      holder.innerHTML = multiRoundHtml(res.ok ? res.body : null);
+      wireCitationLinks(holder);
+    }
+  }).catch(function () {
+    if (currentRoute().runId === runId && document.getElementById(holder.id) === holder)
+      holder.innerHTML = multiRoundHtml(null);
   });
 }
 
@@ -2178,6 +2222,7 @@ function renderDetailBody(run, allRuns) {
 
   app.innerHTML = html;
   loadActivation(run.run_id);
+  if (run.multi_round === true) loadMultiRound(run.run_id);
 
   /* Findings and the pairing map are fetched whenever they COULD exist, not
      only on a clean succeeded completion. The server writes both the moment

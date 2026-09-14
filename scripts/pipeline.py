@@ -3804,6 +3804,10 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     the end of the list) and nothing caught it, because no gate check built the
     parser. check_115_pipeline_parser_builds_every_flag_once now does."""
     parser = argparse.ArgumentParser(description="Project Shimmer pipeline")
+    parser.add_argument("--multi-round", action="store_true",
+                        help="Explicit case positioning mode; ordinary Review/Draft remain the default.")
+    parser.add_argument("--multi-round-manifest", default=None,
+                        help="Case identity/source-span JSON, required only with --multi-round.")
     parser.add_argument("--activation-profile", choices=agent_activation.PROFILES, default="dense",
                         help="Dense reference or conservative sparse activation audit; existing governance gates apply to both.")
     parser.add_argument("--non-interactive", action="store_true")
@@ -3908,6 +3912,19 @@ def main(argv=None):
     parser = _build_arg_parser()
     args = parser.parse_args(argv)
 
+    # Do not read case material or alter prompts on an ordinary invocation.
+    multi_record = None
+    multi_manifest = None
+    if args.multi_round or args.multi_round_manifest:
+        import multi_round
+        try:
+            if args.task != "review":
+                raise multi_round.InvalidState("multi_round_requires_review")
+            value = json.loads(Path(args.multi_round_manifest).read_text(encoding="utf-8")) if args.multi_round_manifest else None
+            multi_manifest = multi_round.normalize_request(args.multi_round, value)
+        except (OSError, ValueError, TypeError):
+            parser.error("Invalid multi-round request. Supply --multi-round and a valid case manifest for Review.")
+
     args.backend_profile = apply_backend_profile(args.backend_profile)
     args.review_mode = resolve_review_mode(args.review_mode, args.backend_profile)
 
@@ -3952,6 +3969,13 @@ def main(argv=None):
     else:
         run_ctx = run_context_mod.create_run(ROOT)
     completion = run_completion_mod.begin(run_ctx)
+    if multi_manifest is not None:
+        multi_record = multi_round.begin(run_ctx, multi_manifest)
+        if not (args.no_redaction_override and args.sensitivity_layer_inactive_override):
+            multi_record["activation"] = multi_round.activation(
+                True, eligible=False, reason="explicit_non_sensitive_declaration_required")
+            multi_round.write_record(run_ctx, multi_record)
+            return 8
     activation_agents = json.loads((ROOT / "config" / "agent_registry.json").read_text(
         encoding="utf-8")).get("agents", {})
     agent_activation.initialize(run_ctx, activation_agents, args.activation_profile)
@@ -4200,6 +4224,38 @@ def main(argv=None):
             return 5
         print(f"[pipeline] draft memo written to {memo_path.relative_to(ROOT).as_posix()}; "
               "it is the review target.", file=sys.stderr, flush=True)
+
+    if multi_record is not None:
+        # Explicit case mode keeps case material out of date caches, adaptive
+        # learning, ordinary review prompts and ontology/GNN capture. All model
+        # and privacy startup gates above remain in force.
+        if redaction_enabled:
+            multi_record["activation"] = multi_round.activation(
+                True, eligible=False, reason="sensitive_multi_round_unavailable")
+            multi_round.write_record(run_ctx, multi_record)
+            return 8
+        if not args.skip_confirmation and not args.non_interactive:
+            try:
+                proceed = input("Proceed with multi-round model calls (unmeasured)? (yes/no): ").strip().lower()
+            except EOFError:
+                proceed = "no"
+            if proceed not in {"yes", "y"}:
+                return 0
+        print("[multi-round] Runtime, cost and quality: UNMEASURED / UNVERIFIED.", file=sys.stderr)
+        orch = TopOrchestrator.boot(ROOT, interactive=not args.non_interactive,
+            operator_handler=_resolve_operator_handler(args, run_ctx), cost_tracker=cost_tracker,
+            run_adaptive_spawn=False, run_context=run_ctx, registry=resolved_agents)
+        orch.sensitive = False
+        case_docs = _load_corpus(ROOT / "input" / "context")
+        from reference_builder import ReferenceIndex
+        from multi_round_phase import execute
+        case_refs = ReferenceIndex.open(ROOT, index_path=run_ctx.reference_index_path())
+        code = execute(run_ctx, multi_record, case_docs, case_refs,
+                       lambda name: _build_wrapper(name, orch, keys), sensitive=False,
+                       run_objectives=_effective_run_objectives(args.run_objectives, args.task, args.question))
+        if code == 0:
+            completion.reached_end(document_count=len(case_docs), amendment_count=0)
+        return code
 
     # Date cascade + cutoff -> populate input/operational/
     log_event(_LOG, "phase_start phase=0 step=date_cascade_cutoff", run_id=run_ctx.run_id,

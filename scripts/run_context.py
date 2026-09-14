@@ -147,6 +147,10 @@ class RunContext:
     def audit_synthesis_path(self) -> Path:
         return self.audit_dir() / "audit_synthesis.md"
 
+    def multi_round_path(self) -> Path:
+        """Conditional case master, absent from ordinary Review/Draft runs."""
+        return self.audit_dir() / "multi_round.json"
+
     def delta_proposals_path(self) -> Path:
         return self.audit_dir() / "delta_proposals.json"
 
