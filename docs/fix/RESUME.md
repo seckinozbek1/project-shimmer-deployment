@@ -2,8 +2,8 @@
 
 Read this file first and continue without asking.
 
-Starting source: 69dce11. Implementation and documentation are complete locally;
-final local commit identification is recorded after validation. Do not push.
+Starting source: 69dce11. Implementation and documentation committed locally as
+f3e8424 after validation. This handoff records that implementation commit. Do not push.
 Operator-owned untracked SHIMMER_HANDOFF.md and durable/ were preserved.
 
 Current result: explicit report_optimized local ordinary Review topology, bounded
