@@ -329,7 +329,8 @@ def _find_job(run_id):
 _STATUS_FIELDS = ("run_id", "status", "task", "submitted_at", "started_at",
                    "completed_at", "exit_code", "error", "progress", "files",
                    "sensitive", "review_mode", "question", "intake_mode",
-                   "review_targets", "prior_files", "native_intake")
+                   "review_targets", "prior_files", "native_intake",
+                   "input_language", "output_language", "agent_briefs")
 
 
 def _status_path(run_id):
@@ -752,6 +753,10 @@ def _run_job(run_id):
                 # to answer via POST /runs/{run_id}/approval (see GET /approvals).
                 "--operator-channel", "file",
                 "--review-mode", job_review_mode]
+        import run_options
+        language = run_options.normalize((job or {}).get("input_language"), (job or {}).get("output_language"), (job or {}).get("agent_briefs"))
+        argv += ["--input-language", language.input_language, "--output-language", language.output_language,
+                 "--agent-briefs", language.agent_briefs]
         if (job or {}).get("multi_round") is True:
             argv += ["--multi-round", "--multi-round-manifest",
                      str(out_dir / "audit" / "multi_round_request.json")]
@@ -1761,6 +1766,9 @@ async def submit(files: List[UploadFile] = File(default=None),
                  prior_files: Optional[str] = Form(default=None),
                  multi_round: Optional[str] = Form(default=None),
                  multi_round_manifest: Optional[str] = Form(default=None),
+                 input_language: Optional[str] = Form(default=None),
+                 output_language: Optional[str] = Form(default=None),
+                 agent_briefs: Optional[str] = Form(default=None),
                  confirmed: Optional[str] = Form(default=None)):
     """Accept a review or draft job.
 
@@ -1807,6 +1815,11 @@ async def submit(files: List[UploadFile] = File(default=None),
     import tempfile  # local import: only /submit needs it.
 
     case_manifest = None
+    import run_options
+    try:
+        language = run_options.normalize(input_language, output_language, agent_briefs)
+    except ValueError:
+        raise HTTPException(400, "Language requires input auto/en/tr and output en/tr; agent briefs require enabled/disabled.")
     if multi_round is not None or multi_round_manifest is not None:
         from multi_round import normalize_request
         try:
@@ -1948,6 +1961,9 @@ async def submit(files: List[UploadFile] = File(default=None),
             "review_targets": targets,
             "prior_files": prior,
             "native_intake": native_intake,
+            "input_language": language.input_language,
+            "output_language": language.output_language,
+            "agent_briefs": language.agent_briefs,
             "progress": None,
             "submitted_at": _now_iso(),
             "started_at": None,

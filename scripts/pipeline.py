@@ -42,6 +42,7 @@ else:
 
 import agent_wrapper
 import execution_topology
+import run_options
 import agent_activation
 from agent_wrapper import (AgentWrapper, load_api_keys, decode_items,
                            current_items, make_envelope, is_envelope)
@@ -732,8 +733,10 @@ def _draft_generate_with_evidence(drafter, stable, dynamic, *, passages, run_ctx
     failed call (as before)."""
     import uuid as _uuid
     import call_evidence as _ce
+    stable = run_options.direct_prefix(drafter, stable, run_ctx)
     call_id = _uuid.uuid4().hex
     try:
+        run_options.record_prompt(run_ctx, call_id, drafter.name, stable, dynamic)
         _ce.record(run_ctx, _ce.extract(
             {"task": "draft_memo"}, call_id=call_id,
             run_id=getattr(run_ctx, "run_id", "") or "", phase="0", doc_id="",
@@ -769,8 +772,8 @@ def build_draft_prompt(question: str, passages: list) -> tuple:
             lines.append(f"[{ref}] {text}")
     else:
         lines.append("(no grounding passages retrieved; cite nothing you cannot support)")
-    stable = DRAFT_SYSTEM_PROMPT + "\n\n" + "\n\n".join(lines)
-    dynamic = f"## Question\n{question.strip()}\n\n## Task\nWrite the memo now."
+    stable = DRAFT_SYSTEM_PROMPT
+    dynamic = "\n\n".join(lines) + "\n\n" + f"## Question\n{question.strip()}\n\n## Task\nWrite the memo now."
     return stable, dynamic
 
 
@@ -3813,6 +3816,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     the end of the list) and nothing caught it, because no gate check built the
     parser. check_115_pipeline_parser_builds_every_flag_once now does."""
     parser = argparse.ArgumentParser(description="Project Shimmer pipeline")
+    parser.add_argument("--input-language", choices=("auto", "en", "tr"), default="auto")
+    parser.add_argument("--output-language", choices=("en", "tr"), default="en")
+    parser.add_argument("--agent-briefs", choices=("enabled", "disabled"), default="enabled")
     parser.add_argument("--execution-topology", choices=("reference_serial", "dependency_dag"),
                         default="reference_serial", help="Execution scheduling, independent of activation and backend profile.")
     parser.add_argument("--topology-config", default=None, help="Explicit device/residency lane JSON for dependency_dag.")
@@ -3982,6 +3988,7 @@ def main(argv=None):
     else:
         run_ctx = run_context_mod.create_run(ROOT)
     completion = run_completion_mod.begin(run_ctx)
+    run_options.configure(run_ctx, args.input_language, args.output_language, args.agent_briefs)
     if multi_manifest is not None:
         multi_record = multi_round.begin(run_ctx, multi_manifest)
         if not (args.no_redaction_override and args.sensitivity_layer_inactive_override):

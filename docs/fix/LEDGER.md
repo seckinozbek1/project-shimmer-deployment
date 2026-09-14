@@ -1,3 +1,47 @@
+# Briefs, languages and strategic support implementation, 2026-09-14
+
+Entry: clean main at `6b92ed3b17c9ae7123a72a474d8267724a11839e`, matching the
+locally recorded tracking ref. See
+[BRIEFS_LANGUAGE_STRATEGY_IMPLEMENTATION.md](BRIEFS_LANGUAGE_STRATEGY_IMPLEMENTATION.md)
+and [API/UI configuration](../api/RUN_LANGUAGE_AND_STRATEGY.md).
+
+All 18 registered agents now have compact interface-aware, conclusion-independent
+briefs derived from registry responsibilities and current contracts. Briefs are
+explicitly disableable for later attribution. Static role/governance/language
+material is separated from current rules, references, bus and work payload.
+Per-call prefix hashes, character counts and settings are recorded without text.
+
+Run options default to input auto and English output; Turkish output is explicit.
+Auto passes multilingual input through, without a keyword detector or a hidden
+output-language guess. CLI, API, saved status and worker arguments agree. The UI
+has a compact English/Turkish output control, localized case labels and Turkish
+amendment Markdown; this is not complete translation of legacy UI/DOCX headings.
+
+The separate strategic layer supports trajectory-only, non-prescriptive decision
+support, strategic options and explicit recommendations. Evidence, interpretation,
+derivation and advice have distinct machine types and localized labels. Advice
+requires source/actor/issue/round/trajectory/option provenance and independent
+review; uncertainty and competing options remain visible. Strategy failures do
+not erase valid trajectory results. No Python rule maps movement to strategy.
+
+Final validation: **73 PASS, 2 SKIP, 0 FAIL**. All 325 prior cloud evidence
+files match their recorded SHA-256 hashes.
+
+Only authored fixtures and no-generation gates ran, including the actual console
+renderer offline. No provider call, credential load, model generation, GPU workload,
+remote execution, cloud provisioning or real multi-round execution occurred.
+Topology workers/scheduler, serial reference selection and DAG selection remain
+available. Multi-round is inactive by default. Prior cloud evidence and operator
+files are preserved; nothing was pushed.
+
+Real quality, output-length/recovery behavior, latency, prefix-cache benefit,
+Turkish semantic quality and multi-round recommendation quality remain UNVERIFIED.
+Next locked item: **Optimized current-version cloud composite experiment**.
+Do not start it during this item. Historical records and the canonical roadmap
+below remain preserved; their earlier next-item wording is superseded here.
+
+---
+
 # Execution topology implementation, 2026-09-14
 
 Baseline `804afa57537a7d80b8df9622fc884fc065b4a4ba` is preserved.

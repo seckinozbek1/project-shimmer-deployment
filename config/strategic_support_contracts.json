@@ -1,0 +1,69 @@
+{
+  "PROCESSOR": {
+    "item_kind": "finding",
+    "fields": {
+      "record_id": "Unique option/recommendation ID, distinct from existing interpretation IDs",
+      "type": "STRATEGIC_OPTION | RECOMMENDATION",
+      "state": "accepted | rejected | refused | unresolved | insufficient_evidence | not_comparable | unknown",
+      "action": "Proposed action as advisory public prose",
+      "upside": "Expected upside with no fabricated certainty",
+      "risk": "Principal risk as public prose",
+      "assumptions": "Array of explicit assumption strings; empty only when no additional assumptions are asserted",
+      "uncertainty": "Public statement of uncertainty or limits, not an internal reasoning trace",
+      "source_ids": "Array of accepted supplied source IDs, including all sources for linked interpretations and trajectories",
+      "interpretation_ids": "Array of accepted supplied interpretation/position record IDs",
+      "trajectory_ids": "Array of accepted supplied movement/trajectory record IDs",
+      "actor_ids": "Array of affected actor IDs covered by the cited source graph",
+      "issue_ids": "Array of affected issue IDs covered by the cited source graph",
+      "round_ids": "Array of all round IDs covered by cited sources",
+      "option_ids": "Empty array for an option; for a recommendation, IDs of supported accepted options from this response"
+    },
+    "required": [
+      "record_id",
+      "type",
+      "state",
+      "action",
+      "upside",
+      "risk",
+      "assumptions",
+      "uncertainty",
+      "source_ids",
+      "interpretation_ids",
+      "trajectory_ids",
+      "actor_ids",
+      "issue_ids",
+      "round_ids",
+      "option_ids"
+    ],
+    "directives": [
+      "Return canonical {agent, doc_id, items}; doc_id is case_id. Every item is flat, with array fields containing strings only.",
+      "Type is STRATEGIC_OPTION or RECOMMENDATION. State and confidence use the existing stable enums. Advice is not observed evidence or a governance decision.",
+      "Offer competing defensible options, or one option when alternatives lack support. Return an empty items list when evidence cannot support advice. Do not fabricate strategic certainty.",
+      "Each option carries action, upside, risk, assumptions, uncertainty, source_ids, interpretation_ids, trajectory_ids, actor_ids, issue_ids and round_ids. Link only accepted supplied evidence and records; include all evidence of linked records.",
+      "Recommendations are permitted only in mode recommendation, must link option_ids and their supporting trajectory, interpretations, evidence and assumptions. Options have empty option_ids. Preserve uncertainty and competing interpretations.",
+      "Never derive a strategy automatically from a movement enum or numeric change. Evaluate source support independently; prior author identity is not proof.",
+      "Write public prose in the configured run output language. Preserve field names, identifiers, enums, numbers and source quotations."
+    ]
+  },
+  "VERIFIER": {
+    "item_kind": "finding",
+    "fields": {
+      "target_record_id": "Exact producer record_id",
+      "state": "accepted | rejected | refused | unresolved | insufficient_evidence | not_comparable | unknown",
+      "source_ids": "Copy all source_ids of reviewed proposal",
+      "ref_ids": "Supplied REF identifiers",
+      "confidence": "CONFIDENT | UNCERTAIN"
+    },
+    "required": [
+      "target_record_id",
+      "state",
+      "source_ids"
+    ],
+    "directives": [
+      "Cross-check each proposal against supplied source evidence and round/actor/issue attribution. Do not draft replacement content. Return one flat review item per target_record_id, or withhold judgment explicitly.",
+      "Acceptance does not resolve ambiguity. Preserve UNCERTAIN when evidence admits competing interpretations.",
+      "Reject unsupported claims, unsupported continuity, ungrounded advice and self-certifying evidence. Never infer meaning from numeric equality alone.",
+      "Review advisory proposals separately from observed evidence. Reject missing source/trajectory/option provenance and unsupported certainty. Do not invent or rewrite advice."
+    ]
+  }
+}

@@ -55,6 +55,8 @@ def validate_manifest(value):
     require(identifier(value.get("case_id")), "case_identity")
     require(type(value.get("fixture")) is bool, "fixture_declaration")
     require(type(value.get("allow_recommendations", False)) is bool, "advice_declaration")
+    import strategic_support
+    strategic_support.mode(value)
     rounds = index(value.get("rounds"), "round_id")
     actors = index(value.get("actors"), "actor_id")
     issues = index(value.get("issues"), "issue_id")
@@ -271,7 +273,14 @@ def read_saved(run_dir, run_id):
                 entry = by_ref.get(s["ref_id"])
                 require(entry is not None and entry["document_id"] == s["document_id"] and
                         all(entry["location"].get(k) == s[k] for k in ["unit_id", "char_start", "char_end"]), "saved_reference_binding")
+        import strategic_support
+        import run_options
+        try:
+            strategic = strategic_support.project(r, run_options.saved(run_dir).output_language) if view is not None else None
+        except (OSError, ValueError, KeyError, TypeError):
+            strategic = {"availability": "invalid", "state": "recommendation_unavailable", "layers": [], "quality": "UNVERIFIED"}
         return {"recorded": True, "run_id": run_id, "activation": a, "fixture": r["fixture"], "view": view,
+                "strategic_support": strategic,
                 "availability": "recorded", "outcome": r.get("outcome", "phase_not_completed"), "baseline_commit": BASELINE}
     except (OSError, ValueError, KeyError, TypeError):
         return {"recorded": False, "availability": "invalid", "activation": activation(True, eligible=False, reason="invalid_saved_state")}

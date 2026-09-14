@@ -130,12 +130,14 @@ class ContextPackage:
         return "\n\n".join(f"=== {h} ===\n{b}" for h, b in self.as_prompt_sections())
 
     # Prompt-caching split (INFRA-036): the context sections that are IDENTICAL
-    # across an agent's calls within a run (constitution + compiled conventions)
+    # across an agent's calls within a run (constitution)
     # vs. the per-call dynamic sections (objectives, precedents, retrieved
     # passages, recent bus, work payload). The stable sections join the agent's
     # stable prompt prefix; the dynamic sections go in the per-call suffix. NO
     # dynamic content (timestamp / run id / per-call text) may be classed stable.
-    _STABLE_HEADERS = ("CONSTITUTION", "CONVENTION_REGISTRY")
+    # A paired call may carry a different rule subset. It belongs with current
+    # evidence, not the reusable organizational prefix.
+    _STABLE_HEADERS = ("CONSTITUTION",)
 
     def stable_sections(self):
         return [(h, b) for h, b in self.as_prompt_sections() if h in self._STABLE_HEADERS]

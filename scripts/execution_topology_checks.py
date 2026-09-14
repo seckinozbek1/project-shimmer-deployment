@@ -34,10 +34,28 @@ def reference_tree(source):
             if node.name == "_build_arg_parser":
                 node.body = [s for s in node.body if not (isinstance(s, ast.Expr) and isinstance(s.value, ast.Call)
                     and s.value.args and isinstance(s.value.args[0], ast.Constant)
-                    and s.value.args[0].value in {"--execution-topology", "--topology-config"})]
+                    and s.value.args[0].value in {"--execution-topology", "--topology-config", "--input-language", "--output-language", "--agent-briefs"})]
+            if node.name == "_draft_generate_with_evidence":
+                node.body = [n for n in node.body if ast.unparse(n) != "stable = run_options.direct_prefix(drafter, stable, run_ctx)"]
+                class DraftEvidence(ast.NodeTransformer):
+                    def visit_Expr(self, n):
+                        return None if ast.unparse(n) == "run_options.record_prompt(run_ctx, call_id, drafter.name, stable, dynamic)" else n
+                node = DraftEvidence().visit(node)
+            if node.name == "build_draft_prompt":
+                # Explicitly invert the authorized prompt-boundary relocation,
+                # not the rest of the reference function or its evidence handling.
+                for statement in node.body:
+                    if isinstance(statement, ast.Assign) and ast.unparse(statement.targets[0]) == "stable":
+                        assert ast.unparse(statement.value) == "DRAFT_SYSTEM_PROMPT"
+                        statement.value = ast.parse('DRAFT_SYSTEM_PROMPT + "\\n\\n" + "\\n\\n".join(lines)', mode="eval").body
+                    elif isinstance(statement, ast.Assign) and ast.unparse(statement.targets[0]) == "dynamic":
+                        assert isinstance(statement.value, ast.BinOp) and isinstance(statement.value.right, ast.JoinedStr)
+                        statement.value = statement.value.right
             if node.name == "main":
                 class Rebind(ast.NodeTransformer):
                     def visit_Expr(self, n):
+                        if ast.unparse(n) == "run_options.configure(run_ctx, args.input_language, args.output_language, args.agent_briefs)":
+                            return None
                         return None if ast.unparse(n) == "execution_topology.rebind_run(run_ctx)" else n
                     def visit_If(self, n):
                         if ast.unparse(n.test) == "redaction_enabled and sensitivity_layer.is_active() and execution_topology.reference_prewarm_enabled()":

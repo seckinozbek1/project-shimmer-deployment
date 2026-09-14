@@ -67,6 +67,10 @@ The case path returns before ordinary ontology/end-work capture.
                                 producer=reply, verifier=reviewed)
         record["records"] = records
         mr.project(record)
+        mr.write_record(ctx, record)
+        import strategic_support
+        record["strategic_layer"] = strategic_support.execute(record, None, wrapper_factory,
+                                                              _call, _items, run_objectives)
         # The canonical accepted/refused records reach the existing run bus.
         producer.post_to_bus(recipient="ORCHESTRATOR", channel="multi_round", msg_type="INFORM",
             body={"event": "MULTI_ROUND_REVIEWED", "payload": {

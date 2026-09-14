@@ -27,6 +27,8 @@ from typing import Any
 
 import call_evidence
 import agent_activation
+import agent_briefs
+import run_options
 from bus_reader import (_estimate_tokens, assemble_context,
                         begin_truncation_capture, end_truncation_capture)
 from constitution import CheckResult, Constitution
@@ -1298,6 +1300,7 @@ class AgentWrapper:
                 f"## You DO\n{does}\n\n"
                 f"## You DO NOT (LAW-II)\n{does_not}\n\n"
                 f"{directives_block}"
+                f"{self._execution_instructions()}\n\n"
                 f"## Context\n{context_text}\n\n"
                 f"{self._output_contract_text()}\n"
                 f"## Work payload\n{work_str}\n")
@@ -1321,10 +1324,15 @@ class AgentWrapper:
                 f"{directives_block}"
                 f"{self._output_contract_text()}")
 
+    def _execution_instructions(self):
+        options = run_options.for_context(self.run_context)
+        brief = agent_briefs.render(self.name, self.spec, self.contract) if options.agent_briefs == "enabled" else ""
+        return (brief + "\n\n" if brief else "") + run_options.instruction(options)
+
     def build_prompt(self, pkg, work):
         """Cache-structured prompt as (stable_prefix, dynamic_suffix), INFRA-036.
 
-        stable_prefix = agent stable block + constitution + conventions — the
+        stable_prefix = agent stable block, execution brief, language and constitution, the
         largest identical-across-calls block, with NO dynamic content. It is the
         explicit cache breakpoint on the Claude path and the auto-cached prefix on
         the GPT path. dynamic_suffix = per-call context (objectives, precedents,
@@ -1335,6 +1343,7 @@ class AgentWrapper:
         of the per-call sections)."""
         work_str = work if isinstance(work, str) else json.dumps(work, ensure_ascii=False, indent=2)
         stable = self._stable_agent_block()
+        stable += "\n\n" + self._execution_instructions()
         st = pkg.stable_text()
         if st:
             stable = stable + "\n## Context\n" + st
@@ -1505,6 +1514,10 @@ class AgentWrapper:
         # this call's cost row and on the bus post it produces, so the three saved
         # artifacts join. A write failure is logged and never takes the call down.
         call_id = uuid.uuid4().hex
+        try:
+            run_options.record_prompt(self.run_context, call_id, self.name, stable_prefix, dynamic_suffix)
+        except OSError as exc:
+            log_event(_LOG, "prompt_structure_write_error error_type=" + type(exc).__name__, level="warning")
         try:
             evidence_written = call_evidence.record(self.run_context, call_evidence.extract(
                 work_payload, call_id=call_id,

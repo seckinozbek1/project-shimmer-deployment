@@ -5,7 +5,8 @@ deterministic fixture validation only. It has not been executed with real models
 benchmarked, or exercised by a cloud workload. Runtime, cost, scaling and substantive
 quality remain **UNMEASURED / UNVERIFIED**. See the
 [implementation report](docs/fix/MULTI_ROUND_IMPLEMENTATION.md).
-Ordinary Review/Draft and dense/sparse defaults retain pre-multi-round behavior.
+Ordinary Review/Draft and dense/sparse activation remain available; the current
+prompt policy is described below.
 The comparison baseline remains `47c63aca09603ab5c7ad662753d647397a623ce8`.
 The **Current-version cloud composite experiment** has completed its first
 [A100 cold smoke](docs/fix/A100_CURRENT_VERSION_SMOKE.md): 32m 38s, 20 calls,
@@ -19,6 +20,17 @@ only independent fixtures have demonstrated overlap. Production speedup and
 multi-GPU/remote-auxiliary execution remain unverified. See the
 [execution-topology report](docs/fix/EXECUTION_TOPOLOGY_OPTIMIZATION.md).
 The next locked item is **Optimized current-version cloud composite experiment**.
+
+Agent Execution Briefs now describe all 18 registered agents' interfaces without
+endorsing upstream conclusions. Run-level `--output-language en|tr` and
+`--input-language auto|en|tr` control public output instructions; machine fields,
+IDs and source quotations remain stable. The console offers English/T?rk?e output.
+An explicit multi-round strategic-support layer separates evidence, interpretation,
+structural derivation, options and recommendations with provenance validation.
+These changes have only deterministic fixture validation: real quality, Turkish
+semantics, recommendation quality and latency impact remain unverified. See the
+[implementation report](docs/fix/BRIEFS_LANGUAGE_STRATEGY_IMPLEMENTATION.md) and
+[API/UI configuration contract](docs/api/RUN_LANGUAGE_AND_STRATEGY.md).
 
 Shimmer is a governed document-review prototype. It combines model reasoning with
 typed findings, deterministic comparisons, citations, proposed amendments and an
