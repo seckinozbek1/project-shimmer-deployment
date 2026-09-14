@@ -1,3 +1,48 @@
+# RESUME: A100 current-version smoke complete, 2026-09-14
+
+Read [A100_CURRENT_VERSION_SMOKE.md](A100_CURRENT_VERSION_SMOKE.md).
+One cold current-version synthetic Review completed on Lambda gpu_1x_a100_sxm4:
+1,958 seconds native wall (one-second timestamp resolution), 20 calls, exit 0,
+three amendments. Source d15b544e02de3b9530d96d5627a37cd754a92201; canonical
+pre-multi-round baseline 47c63aca09603ab5c7ad662753d647397a623ce8.
+No Shimmer source, model, prompt, generation setting or routing change was made.
+
+Remote no-generation gate: 27 PASS / 1 SKIP / 0 FAIL. Actual launch guards were
+all false; postrun source hashes match, zero multi-round artifacts/calls, no case
+mode execution. Lambda guest agent 1.0.0 was installed from the official installer
+and verified active; only that system package was added, with venv pins unchanged.
+Python 3.12.3 is a documented substrate difference; execution used torch 2.5.1+cu121.
+
+Scorer: 3/5 location recall, zero amendment FP/distractor hits, attribution 3/3.
+Broad quality equivalence is NOT established: BIRCH's prose error and PROCESSOR
+source misattribution persist; VERIFIER and FACT_CHECKER failed contracts, changing
+the prior failing-consumer set. Five capped calls; 18 recovered outputs.
+Generation consumed 98.18% of observer wall. Warm latency is UNMEASURED; no warm
+SLO achievement, distributed throughput or local auxiliary benefit is claimed.
+
+A100 price $1.99/hour verified through curl.exe with Bearer authentication. Prior
+urllib/Basic 403 responses were request-path failures, not a confirmed account fault.
+Billing estimated conservatively from operator-confirmed 10:55 UTC. All evidence
+was collected and hash-verified before API termination; absence confirmed at
+12:00:01.922 UTC. Estimated total $2.157 before tax, about $2.19 with minute rounding.
+No billable experiment resource remains. Watchdog disarmed. No A10 was launched.
+
+Evidence: output/a100_smoke_20260914/, including final_evidence.tar.gz and its
+collected/ tree. Prior local evidence and operator files are preserved. Closure
+changes documentation only; no image rebuild or full model/GPU gate is claimed.
+A local stage-record commit is authorized; its hash is reported in the handback.
+Nothing was pushed.
+
+Current locked item remains **Current-version cloud composite experiment**, now
+smoke-tested but INCOMPLETE. Do not launch A10 without a validated use for it:
+current generation is serial on GPU 0 and has no validated second-node worker path.
+Remaining work: quality/contract investigation, warm sampling, validated composite
+execution, local auxiliary measurement and scheduler/transfer instrumentation.
+The later **Multi-round cloud composite experiment** remains unstarted. Do not
+finalize the minimum remote specification. Historical handovers below are preserved.
+
+---
+
 # RESUME: Multi-round positioning implementation complete, 2026-09-14
 
 The operator-authorized **Multi-round positioning / decision-support mode,

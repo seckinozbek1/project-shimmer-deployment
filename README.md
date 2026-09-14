@@ -7,7 +7,10 @@ quality remain **UNMEASURED / UNVERIFIED**. See the
 [implementation report](docs/fix/MULTI_ROUND_IMPLEMENTATION.md).
 Ordinary Review/Draft and dense/sparse defaults retain pre-multi-round behavior.
 The comparison baseline remains `47c63aca09603ab5c7ad662753d647397a623ce8`.
-The next locked item is **Current-version cloud composite experiment**, not begun.
+The **Current-version cloud composite experiment** has completed its first
+[A100 cold smoke](docs/fix/A100_CURRENT_VERSION_SMOKE.md): 32m 38s, 20 calls,
+three amendments. Warm/composite results and broad quality equivalence remain
+unverified; the full experiment is incomplete. The A100 was terminated via API.
 
 Shimmer is a governed document-review prototype. It combines model reasoning with
 typed findings, deterministic comparisons, citations, proposed amendments and an
