@@ -61,6 +61,8 @@ def project(spec):
                 target_assessment="LOCAL_TARGET_INDETERMINATE")
     if missing:
         result["critical_path_seconds"]=None
+        if any(n.get("seconds") is None for n in nodes):
+            result["critical_path"]=None
         return result
     for key in ["cpu_seconds","warm_load_seconds","cold_load_seconds","retry_overhead_seconds"]:
         if not isinstance(spec[key],(int,float)) or not math.isfinite(spec[key]) or spec[key]<0:

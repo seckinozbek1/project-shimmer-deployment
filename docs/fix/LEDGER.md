@@ -1,5 +1,19 @@
 # Report Recommendations, 2026-09-15
 
+Bounded inference continuation after f3e8424/ec276cb: identified mixed host
+PyTorch files and proved a process-local repair using the hash-verified existing
+Conda package cache. No environment mutation or unsafe OpenMP suppression.
+Qwen load reached the RAM stop before completion. Phi loaded through Shimmer,
+but the standalone auditor output was incomplete at the 25 s time limit.
+One harness recording bug was fixed with a real CallResult regression check;
+one bounded repeat captured 1,887 input / 68 output tokens in 25.35 s.
+No processor/template A/B, complete cross-family path or concurrency escalation
+was possible. Updated existing projection resource inputs; unknown timings and
+critical path remain null. Status LOCAL_TARGET_INDETERMINATE. See report section
+14 and report_recommendations/local_inference for raw evidence and quality review.
+Eight offline checks plus the 49-pass/1-skip ordinary safe gate pass. Historical
+evidence, operator files, source architecture and model selection are preserved.
+
 Starting source 69dce11. Added an opt-in ordinary local execution path with
 lossless bounded PROCESSOR source-span reconstruction, sibling waves, eligible
 exact-comparison reason rendering, native templates, EOS/completeness telemetry,

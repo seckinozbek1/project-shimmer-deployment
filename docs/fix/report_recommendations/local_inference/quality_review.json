@@ -1,0 +1,22 @@
+{
+  "authored_source_characters": 139,
+  "reviewed_attempt": "local_validation_auditor_retry",
+  "contract_valid": false,
+  "accepted_semantic_output": false,
+  "observed_output_incomplete": true,
+  "observed_time_budget_truncation": true,
+  "backend_finish_reason": "unknown",
+  "token_cap_contact": false,
+  "harness_max_time_seconds": 25,
+  "harness_max_new_tokens": 384,
+  "interpretation": "Response ends inside a confidence string. No complete item, judgment, reason or evidence citation was returned.",
+  "typed_claim_correctness": "not_assessable",
+  "reason_correctness": "not_assessable",
+  "evidence_correctness": "not_assessable",
+  "rule_attribution": "not_applicable_to_fidelity_fixture",
+  "semantic_completeness": false,
+  "refusal_correctness": "no_complete_refusal_returned",
+  "cross_family_path_integrity": "configured_ids_preserved_but_producer_path_not_executed",
+  "concurrency_escalation": "stopped_after_resource_and_output_validity_failures",
+  "earlier_auditor_attempt_output": "lost_to_instrumentation_error_not_assessable"
+}
