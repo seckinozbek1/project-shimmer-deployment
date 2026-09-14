@@ -166,6 +166,10 @@ def _load_qwen(model_id):
     Before loading a NEW model_id, any OTHER resident model is evicted so that
     at most one generation model occupies the GPU at a time (L2 memory strategy).
     VRAM is measured and logged after every load."""
+    import execution_topology
+    resident = execution_topology.resident_model(model_id)
+    if resident is not None:
+        return resident
     cached = _QWEN_MODELS.get(model_id)
     if cached is not None:
         return cached
@@ -1054,6 +1058,8 @@ class AgentWrapper:
             return None
         try:
             ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+            import execution_topology
+            ts = execution_topology.artifact_stamp(ts)
             if self.run_context is not None:
                 out_dir = self.run_context.contract_violations_dir()
             else:

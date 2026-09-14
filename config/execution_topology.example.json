@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "lanes": [
+    {
+      "name": "primary",
+      "device": "cuda:0",
+      "models": [],
+      "families": ["local_producer"],
+      "memory_gib": 0,
+      "resident_limit": 1
+    },
+    {
+      "name": "secondary",
+      "device": "cuda:1",
+      "models": [],
+      "families": ["local_auditor"],
+      "memory_gib": 0,
+      "resident_limit": 1,
+      "enabled": false
+    },
+    {
+      "name": "optional_auxiliary",
+      "device": "cuda:0",
+      "enabled": false,
+      "auxiliary": true,
+      "transport": "remote_reserved"
+    }
+  ]
+}

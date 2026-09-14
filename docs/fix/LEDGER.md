@@ -1,3 +1,40 @@
+# Execution topology implementation, 2026-09-14
+
+Baseline `804afa57537a7d80b8df9622fc884fc065b4a4ba` is preserved.
+See [EXECUTION_TOPOLOGY_OPTIMIZATION.md](EXECUTION_TOPOLOGY_OPTIMIZATION.md).
+Explicit `dependency_dag` scheduling and device-resident workers are implemented;
+`reference_serial` remains the ordinary default. Backend, dense/sparse activation
+and multi-round opt-in remain separate. Multi-round was not activated.
+
+The dependency audit found rolling-bus context between current local semantic
+calls, including legal follow-ups and paired advisory receipts. The actual Review
+DAG therefore preserves this chain. No semantic sequencing edge was removed.
+Independent fake tasks prove overlap, CPU preparation joins, bounded capacity,
+failure/refusal/cancellation behavior and ordered evidence commits. This is not
+proof of production concurrency or quality equivalence. Remote auxiliary transport
+is reserved and disabled, not a working network inference implementation.
+
+Model workers own explicit devices and residency; load policy, models, prompts,
+budgets, contracts and routing decisions are retained. Scheduler/call/cost IDs
+join; phase barriers and generation/load/idle/wait events are recorded. An isolated
+DAG-only filename fix prevents same-second contract-dump overwrites. Worker
+shutdown precedes completion evidence. Original pipeline function bodies are
+checked against 87 baseline AST hashes; the earlier multi-round contract also passes.
+
+Safe gate: 49 PASS / 2 SKIP / 0 FAIL; 23 topology fixtures.
+Validation is deterministic and no-generation only. No provider/cloud call,
+credential loading, provisioning, model loading or GPU inference occurred.
+Prior smoke evidence, operator files and durable state are preserved. No push.
+Performance, warm latency, multi-GPU scaling, A100+A10/local auxiliary benefit and
+cost/run improvement remain UNMEASURED. Earlier quality defects remain unresolved.
+
+Next locked item: **Optimized current-version cloud composite experiment**.
+Do not start that workload during this implementation item. Historical entries
+below are preserved; their earlier current-item statements are superseded here.
+The canonical historical roadmap itself is unchanged.
+
+---
+
 # Current-version A100 smoke stage, 2026-09-14
 
 Report: [A100_CURRENT_VERSION_SMOKE.md](A100_CURRENT_VERSION_SMOKE.md).
