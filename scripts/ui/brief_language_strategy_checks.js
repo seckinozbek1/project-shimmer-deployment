@@ -14,9 +14,14 @@ function declaration(name) {
 }
 const context = {citationsHtml: () => 'REF-0001'};
 vm.createContext(context);
+for (const file of ['localization_catalog.js', 'localization.js'])
+  vm.runInContext(fs.readFileSync(path.join(__dirname, file), 'utf8'), context);
+context.ui = context.ShimmerLocale.text;
+context.displayValue = context.ShimmerLocale.value;
 for (const name of ['escapeHtml', 'multiRoundHtml']) vm.runInContext(declaration(name), context);
 const fixtures = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 for (const data of fixtures) {
+  context.ShimmerLocale.select(data.strategic_support.output_language);
   const rendered = context.multiRoundHtml(data);
   assert(rendered.includes(data.strategic_support.layers[0].display_label));
   assert(rendered.includes(data.strategic_support.state_label));
@@ -26,6 +31,7 @@ for (const data of fixtures) {
 assert(html.includes('id="s-language"'));
 assert(script.includes("fd.append('output_language', outputLanguage)"));
 const escape = context.escapeHtml;
+context.ShimmerLocale.select('en');
 context.escapeHtml = value => String(value);
 assert(context.multiRoundHtml(fixtures[0]).includes('<script>bad()'));
 context.escapeHtml = escape;

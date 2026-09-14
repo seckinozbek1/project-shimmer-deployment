@@ -236,7 +236,7 @@ class LanguageChecks(unittest.TestCase):
         ui = (ROOT / "scripts/ui/console.html").read_text(encoding="utf-8")
         self.assertIn('id="s-language"', ui)
         self.assertIn("fd.append('output_language', outputLanguage)", ui)
-        self.assertIn("escapeHtml(node.display_label)", ui)
+        self.assertIn("escapeHtml(displayValue(node.type, node.display_label))", ui)
         import agent_activation
         tree = ast.parse((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
         node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "_build_arg_parser")

@@ -5,6 +5,7 @@ It does not change routing, findings, or the forward-only quote requirement.
 """
 from __future__ import annotations
 
+import localization
 import json
 from pathlib import Path
 
@@ -105,22 +106,14 @@ def read_report(run_dir):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+@localization.presentation
 def summary_lines(report):
     if not report:
         return []
     counts, expected = report["counts"], report["prediction"]
-    return ["", "## Absence quote prediction", "",
-            f"Quote-or-refusal check: **{report['status']}**. "
-            f"{counts['claims']} judged absence claim(s): {counts['quoted']} quoted, "
-            f"{counts['refused']} refused, {counts['violations']} violation(s).",
-            f"Judged questions: {counts['judged_plans']} planned, {counts['returned']} returned, "
-            f"{counts['successful']} successful, {counts['no_consumer']} without a consumer, "
-            f"{counts['empty_answers']} empty successful answer(s).",
-            f"Historical forecast: {expected['expected_judged_plans']} judged and "
-            f"{expected['expected_computed_plans']} computed plans; observed counts "
-            f"{report['count_comparison']}. Computed: {counts['computed_plans']} planned, "
-            f"{counts['computed_completed']} completed, no quote required.",
-            "PASS checks emitted claims only. Empty or non-absence answers do not confirm "
-            "the forecast of fourteen claims. A matching count does not establish the same cohort.",
-            "Quotes establish text presence, not that an absence conclusion is true. "
-            "See [the run audit](../audit/absence_quote_prediction.json) for per-question outcomes."]
+    return ["", localization.text('## Absence quote prediction'), "",
+            f'{localization.text('Quote-or-refusal check: **')}{report['status']}**. {counts['claims']}{localization.text(' judged absence claim(s): ')}{counts['quoted']}{localization.text(' quoted, ')}{counts['refused']}{localization.text(' refused, ')}{counts['violations']}{localization.text(' violation(s).')}',
+            f'{localization.text('Judged questions: ')}{counts['judged_plans']}{localization.text(' planned, ')}{counts['returned']}{localization.text(' returned, ')}{counts['successful']}{localization.text(' successful, ')}{counts['no_consumer']}{localization.text(' without a consumer, ')}{counts['empty_answers']}{localization.text(' empty successful answer(s).')}',
+            f'{localization.text('Historical forecast: ')}{expected['expected_judged_plans']}{localization.text(' judged and ')}{expected['expected_computed_plans']}{localization.text(' computed plans; observed counts ')}{report['count_comparison']}{localization.text('. Computed: ')}{counts['computed_plans']}{localization.text(' planned, ')}{counts['computed_completed']}{localization.text(' completed, no quote required.')}',
+            localization.text('PASS checks emitted claims only. Empty or non-absence answers do not confirm the forecast of fourteen claims. A matching count does not establish the same cohort.'),
+            localization.text('Quotes establish text presence, not that an absence conclusion is true. See [the run audit](../audit/absence_quote_prediction.json) for per-question outcomes.')]

@@ -3080,7 +3080,8 @@ async def console():
     STEP B5 changes nothing about why /console lives where it does."""
     if not UI_CONSOLE_PATH.exists():
         raise HTTPException(status_code=500, detail="console.html missing")
-    return HTMLResponse(content=UI_CONSOLE_PATH.read_text(encoding="utf-8"))
+    import localization
+    return HTMLResponse(content=localization.console_document(UI_CONSOLE_PATH))
 
 
 @app.get("/health")

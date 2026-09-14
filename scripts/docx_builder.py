@@ -17,6 +17,7 @@ Implementation notes:
 
 from __future__ import annotations
 
+import localization
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -329,30 +330,31 @@ class AmendmentDocxBuilder:
         action = amendment.get("action", "flag")
         severity = amendment.get("severity", "advisory")
         finding_type = amendment.get("finding_type", "—")
-        body = (amendment.get("comment") or "").strip()
+        body = localization.message((amendment.get("comment") or "").strip())
         context_refs = amendment.get("context_refs") or []
         # Genesis Part XXV: uncertain margin comments are explicitly
         # tagged so a reviewer skimming the docx never confuses them
         # with confident findings.
         is_uncertain = bool(amendment.get("uncertain"))
-        header_prefix = "[UNCERTAIN] " if is_uncertain else ""
+        header_prefix = localization.text('[UNCERTAIN] ') if is_uncertain else ""
         if is_uncertain and not body.lstrip().startswith("[UNCERTAIN]"):
-            body = "[UNCERTAIN] " + body
+            body = localization.text('[UNCERTAIN] ') + body
         lines = [
-            f"{header_prefix}[{conv}] [{loc}] {finding_type} / {severity} / {action}",
+            f"{header_prefix}[{conv}] [{loc}] {localization.label(finding_type)} / {localization.label(severity)} / {localization.label(action)}",
             "",
             body,
         ]
         if context_refs:
             lines.append("")
-            lines.append("Context references: " + ", ".join(context_refs))
+            lines.append(localization.text('Context references: ') + ", ".join(context_refs))
         return "\n".join(lines)
 
     # ---------- public API ------------------------------------------------------------------
 
+    @localization.presentation
     def build(self, output_path: Path) -> Path:
         self._add_title()
-        self._add_header("Source text with tracked changes")
+        self._add_header(localization.text('Source text with tracked changes'))
         # Render body as paragraphs. If amendments target specific paragraphs, attach to those.
         paragraphs = _split_body(self.body_text)
         unattached = list(self.amendments)
@@ -374,19 +376,16 @@ class AmendmentDocxBuilder:
                     p._p.append(self._make_run(para_text))
         # Any amendments that didn't anchor in the body get appended as standalone paragraphs.
         if unattached:
-            self._add_header("Additional amendments (no anchor found in source body)")
+            self._add_header(localization.text('Additional amendments (no anchor found in source body)'))
             for a in unattached:
-                anchor_text = (a.get("original_text") or "(unspecified location)").strip()
+                anchor_text = (a.get("original_text") or localization.text('(unspecified location)')).strip()
                 self._paragraph_with_amendment(anchor_text, a)
         # Citation-references section (plain text reference for auditors)
-        self._add_header("References cited by the amendments above")
+        self._add_header(localization.text('References cited by the amendments above'))
         for i, a in enumerate(self.amendments, 1):
             p = self.doc.add_paragraph()
             p._p.append(self._make_run(
-                f"Amendment {i}: convention {a.get('convention_ref', '?')}; "
-                f"operational location {a.get('location', '?')}; "
-                f"context refs {', '.join(a.get('context_refs') or []) or '(none)'}; "
-                f"action {a.get('action', 'flag')}; severity {a.get('severity', 'advisory')}."
+                f'{localization.text('Amendment ')}{i}{localization.text(': convention ')}{a.get('convention_ref', '?')}{localization.text('; operational location ')}{a.get('location', '?')}{localization.text('; context refs ')}{', '.join(a.get('context_refs') or []) or localization.text('(none)')}{localization.text('; action ')}{localization.label(a.get('action', 'flag'))}{localization.text('; severity ')}{localization.label(a.get('severity', 'advisory'))}.'
             ))
         self._flush_comments()
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -402,6 +401,7 @@ def _split_body(text: str) -> list[str]:
     return paras or [""]
 
 
+@localization.presentation
 def build_amendments_docx(*, title: str, body_text: str, amendments: list[dict],
                           output_path: Path) -> Path:
     """Convenience wrapper."""

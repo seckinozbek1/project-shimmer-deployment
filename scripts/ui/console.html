@@ -589,6 +589,8 @@ a.rule-link:hover { text-decoration-style: solid; }
       <p class="masthead-name">SHIMMER: Review desk</p>
       <div class="masthead-right">
         <div id="masthead-state" class="masthead-state" hidden></div>
+        <label id="ui-language-label" for="ui-language">Output language</label>
+        <select id="ui-language"><option value="en">English</option><option value="tr">Türkçe</option></select>
         <div id="view-switch" class="view-switch" role="group" aria-label="Language">
           <button type="button" id="view-switch-human" class="view-switch-option">Reviewer</button>
           <button type="button" id="view-switch-developer" class="view-switch-option">Developer</button>
@@ -606,9 +608,22 @@ a.rule-link:hover { text-decoration-style: solid; }
 
 <main id="app"></main>
 
+<script src="localization_catalog.js"></script>
+<script src="localization.js"></script>
 <script>
 (function () {
 "use strict";
+var ui = ShimmerLocale.text;
+document.getElementById("ui-language").addEventListener("change", function () {
+  ShimmerLocale.select(this.value);
+  if (document.getElementById("submit-form")) {
+    document.getElementById("submit-result").innerHTML = "";
+    document.getElementById("s-language").dispatchEvent(new Event("change"));
+    refreshTokenUi();
+  } else render();
+});
+var displayValue = ShimmerLocale.value;
+
 
 /* =======================================================================
    Session credentials use sessionStorage, never localStorage or a URL.
@@ -640,7 +655,7 @@ var forceTokenScreen = false;
 
 function refreshTokenUi() {
   var t = getToken();
-  tokenLink.textContent = t ? "Signed in" : "Not signed in";
+  tokenLink.textContent = t ? ui("Signed in") : ui("Not signed in");
 }
 tokenLink.addEventListener("click", function (e) {
   e.preventDefault();
@@ -714,13 +729,13 @@ function apiJson(path, opts) {
    never invent a friendlier message than the server actually gave. */
 function detailText(body) {
   var d = body && body.detail;
-  if (typeof d === "string") return d;
+  if (typeof d === "string") return ShimmerLocale.message(d);
   if (d && typeof d === "object") {
-    if (d.error && d.report) return d.error + ": " + d.report;
-    if (d.error) return d.error;
+    if (d.error && d.report) return ShimmerLocale.message(d.error) + ": " + ShimmerLocale.message(d.report);
+    if (d.error) return ShimmerLocale.message(d.error);
     try { return JSON.stringify(d); } catch (e) { return String(d); }
   }
-  return "The server did not explain why.";
+  return ui("The server did not explain why.");
 }
 
 /* =======================================================================
@@ -728,17 +743,17 @@ function detailText(body) {
    See CONSOLE_PLAN.md "State and outcome, expressed visually".
 ======================================================================= */
 function stateToken(state, outcome) {
-  if (state === "queued") return { dot: "circle hollow", tone: "quiet", label: "Queued" };
-  if (state === "running") return { dot: "circle filled pulse", tone: "periwinkle", label: "Running" };
-  if (state === "awaiting_approval") return { dot: "ring", tone: "periwinkle", label: "Awaiting your decision" };
-  if (state === "cancelled") return { dot: "square hollow", tone: "quiet", label: "Cancelled" };
+  if (state === "queued") return { dot: "circle hollow", tone: "quiet", label: ui("Queued") };
+  if (state === "running") return { dot: "circle filled pulse", tone: "periwinkle", label: ui("Running") };
+  if (state === "awaiting_approval") return { dot: "ring", tone: "periwinkle", label: ui("Awaiting your decision") };
+  if (state === "cancelled") return { dot: "square hollow", tone: "quiet", label: ui("Cancelled") };
   if (state === "stopped") {
-    if (outcome === "succeeded") return { dot: "circle filled", tone: "mint", label: "Completed" };
-    if (outcome === "governance_stop") return { dot: "square", tone: "peach", label: "Stopped by a rule" };
-    if (outcome === "crashed") return { dot: "triangle", tone: "rose", label: "Crashed" };
-    if (outcome === "timed_out") return { dot: "triangle", tone: "rose", label: "Timed out" };
+    if (outcome === "succeeded") return { dot: "circle filled", tone: "mint", label: ui("Completed") };
+    if (outcome === "governance_stop") return { dot: "square", tone: "peach", label: ui("Stopped by a rule") };
+    if (outcome === "crashed") return { dot: "triangle", tone: "rose", label: ui("Crashed") };
+    if (outcome === "timed_out") return { dot: "triangle", tone: "rose", label: ui("Timed out") };
   }
-  return { dot: "circle hollow", tone: "quiet", label: state || "Unknown" };
+  return { dot: "circle hollow", tone: "quiet", label: state || ui("Unknown") };
 }
 
 function stateDotHtml(tok, opts) {
@@ -786,12 +801,12 @@ var GOVERNANCE_SENTENCES_HUMAN = {
 
 function nextActionSentence(run) {
   var state = run.state, outcome = run.outcome;
-  if (state === "queued") return "Waiting for the run ahead of it to finish. Nothing to do: this page updates on its own.";
-  if (state === "running") return "Nothing to do yet. This page updates on its own; you can leave and come back.";
-  if (state === "awaiting_approval") return "This run is waiting on you: decide below, or come back to it later. The run will not continue until you do.";
+  if (state === "queued") return ui("Waiting for the run ahead of it to finish. Nothing to do: this page updates on its own.");
+  if (state === "running") return ui("Nothing to do yet. This page updates on its own; you can leave and come back.");
+  if (state === "awaiting_approval") return ui("This run is waiting on you: decide below, or come back to it later. The run will not continue until you do.");
   if (state === "cancelled") {
-    var cdetail = (run.stop_reason && run.stop_reason.detail) || "cancelled by request";
-    return "Cancelled: " + cdetail + ".";
+    var cdetail = (run.stop_reason && run.stop_reason.detail) || ui("cancelled by request");
+    return ui("Cancelled: ") + cdetail + ".";
   }
   if (state === "stopped") {
     if (outcome === "succeeded") {
@@ -808,17 +823,17 @@ function nextActionSentence(run) {
          is not asserted here, only that the log explains it, since this
          function cannot rule out a cause other than missing conventions. */
       if (!run.documents || run.documents.length === 0) {
-        return "Process exited successfully; no documents are listed. Check completion evidence and logs before inferring what was reviewed.";
+        return ui("Process exited successfully; no documents are listed. Check completion evidence and logs before inferring what was reviewed.");
       }
-      return "Finished. Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning.";
+      return ui("Finished. Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning.");
     }
     if (outcome === "governance_stop") {
       var code = run.stop_reason && run.stop_reason.code;
-      var sentence = GOVERNANCE_SENTENCES[code] || "The pipeline stopped itself on purpose, under a governance rule.";
-      return "Stopped by a rule. This was not an error: the pipeline refused on purpose. " + sentence;
+      var sentence = ui(GOVERNANCE_SENTENCES[code]) || ui("The pipeline stopped itself on purpose, under a governance rule.");
+      return ui("Stopped by a rule. This was not an error: the pipeline refused on purpose. ") + sentence;
     }
     if (outcome === "crashed" || outcome === "timed_out") {
-      return "The run did not finish. See the detail below, or the full log. You can submit it again.";
+      return ui("The run did not finish. See the detail below, or the full log. You can submit it again.");
     }
   }
   return "";
@@ -844,15 +859,15 @@ function mutedParenHtml(html) {
 function nextActionSentenceHuman(run) {
   var state = run.state, outcome = run.outcome;
   if (state === "queued") {
-    return '<strong>Waiting to start.</strong> Another review is running first; this one will begin as soon as it finishes. Nothing to do. ' + mutedParen("state: queued");
+    return ui('<strong>Waiting to start.</strong> Another review is running first; this one will begin as soon as it finishes. Nothing to do. ') + mutedParen(ui("state: queued"));
   }
   if (state === "running") {
     var prog = parseProgress(run.progress);
     var idx = phaseIndex(prog.phase);
     var pname = phaseHumanName(prog.phase, run.task);
-    var stepText = (idx >= 0) ? (", phase " + (idx + 1) + " of " + PHASES.length + ', "' + escapeHtml(pname || currentPhaseName(prog.phase) || "") + '"') : "";
-    return '<strong>In progress' + (pname ? ": " + escapeHtml(pname).toLowerCase() : "") + '.</strong> This page updates on its own; it is fine to leave and come back. ' +
-      mutedParen("state: running" + stepText);
+    var stepText = (idx >= 0) ? (ui(", phase ") + (idx + 1) + ui(" of ") + PHASES.length + ', "' + escapeHtml(pname || currentPhaseName(prog.phase) || "") + '"') : "";
+    return ui('<strong>In progress') + (pname ? ": " + escapeHtml(pname).toLowerCase() : "") + ui('.</strong> This page updates on its own; it is fine to leave and come back. ') +
+      mutedParen(ui("state: running") + stepText);
   }
   if (state === "awaiting_approval") {
     /* Short, generic, status-box-only: the full detail (the folded message,
@@ -863,15 +878,15 @@ function nextActionSentenceHuman(run) {
        once, in the approval block). Showing the same paragraph twice was a
        real bug, not a design choice: fixed here by never building the full
        sentence in this function at all. */
-    return '<strong>Paused: needs your decision.</strong> Decide below, or come back to it later. ' +
-      'The review will not continue until you answer. ' + mutedParen("state: awaiting_approval");
+    return ui('<strong>Paused: needs your decision.</strong> Decide below, or come back to it later. ') +
+      ui('The review will not continue until you answer. ') + mutedParen(ui("state: awaiting_approval"));
   }
   if (state === "cancelled") {
     var cdetail = (run.stop_reason && run.stop_reason.detail) || "";
     var sub = cdetail.indexOf("before it started") !== -1
-      ? "It had not started yet."
-      : "It had already begun; whatever finished before the cancellation is still available below.";
-    return '<strong>Cancelled, at your request.</strong> ' + sub + " " + mutedParen("state: cancelled");
+      ? ui("It had not started yet.")
+      : ui("It had already begun; whatever finished before the cancellation is still available below.");
+    return ui('<strong>Cancelled, at your request.</strong> ') + sub + " " + mutedParen(ui("state: cancelled"));
   }
   if (state === "stopped") {
     if (outcome === "succeeded") {
@@ -884,23 +899,23 @@ function nextActionSentenceHuman(run) {
          be as visible here as it now is in the developer view, not
          smoothed over by the reviewer view's plainer language. */
       if (!run.documents || run.documents.length === 0) {
-        return '<strong>Process finished; no documents are listed.</strong> This list alone cannot establish what was checked or whether outputs exist. Read the completion evidence and log. ' + mutedParen("state: completed, no documents");
+        return ui('<strong>Process finished; no documents are listed.</strong> This list alone cannot establish what was checked or whether outputs exist. Read the completion evidence and log. ') + mutedParen(ui("state: completed, no documents"));
       }
-      return '<strong>Process finished.</strong> Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning. ' + mutedParen("state: completed");
+      return ui('<strong>Process finished.</strong> Start with the findings and recorded failures below, or download available outputs. A successful exit does not certify complete coverage or correct reasoning. ') + mutedParen(ui("state: completed"));
     }
     if (outcome === "governance_stop") {
       var code = run.stop_reason && run.stop_reason.code;
-      var sentenceHuman = GOVERNANCE_SENTENCES_HUMAN[code] || "A rule this system enforces stopped the review before it could finish.";
-      return '<strong>Stopped on purpose, before finishing. This is not an error.</strong> ' + sentenceHuman + ' ' +
-        'Nothing you submitted was lost; if you resubmit, the review restarts from the beginning. ' + mutedParen("governance code: " + (code || ""));
+      var sentenceHuman = ui(GOVERNANCE_SENTENCES_HUMAN[code]) || ui("A rule this system enforces stopped the review before it could finish.");
+      return ui('<strong>Stopped on purpose, before finishing. This is not an error.</strong> ') + sentenceHuman + ' ' +
+        ui('Nothing you submitted was lost; if you resubmit, the review restarts from the beginning. ') + mutedParen(ui("governance code: ") + (code || ""));
     }
     if (outcome === "crashed") {
-      return '<strong>The review stopped before it finished, because of a fault in the system, not in your document.</strong> Nothing you submitted was lost. ' +
-        "You can submit it again; if it fails the same way twice, that is worth reporting. " + mutedParen("technical detail in the developer view and the full log");
+      return ui('<strong>The review stopped before it finished, because of a fault in the system, not in your document.</strong> Nothing you submitted was lost. ') +
+        ui("You can submit it again; if it fails the same way twice, that is worth reporting. ") + mutedParen(ui("technical detail in the developer view and the full log"));
     }
     if (outcome === "timed_out") {
-      return '<strong>The review did not finish in time and was stopped.</strong> This is a failure, not a refusal: nothing about your document caused it to be turned away, ' +
-        "it simply ran longer than the system allows and had to be cut off. Nothing you submitted was lost. You can submit it again. " + mutedParen("run timeout, not a governance rule");
+      return ui('<strong>The review did not finish in time and was stopped.</strong> This is a failure, not a refusal: nothing about your document caused it to be turned away, ') +
+        ui("it simply ran longer than the system allows and had to be cut off. Nothing you submitted was lost. You can submit it again. ") + mutedParen(ui("run timeout, not a governance rule"));
     }
   }
   return "";
@@ -920,12 +935,12 @@ function approvalDetailHuman(run) {
   var payload = pa.payload || {};
   var figureSentence = "";
   if (payload.value_a !== undefined || payload.value_b !== undefined) {
-    figureSentence = " The figure in question is " + escapeHtml(String(payload.value_a)) + " against " + escapeHtml(String(payload.value_b)) +
-      (payload.unit_id ? (" for unit " + escapeHtml(String(payload.unit_id))) : "") + ".";
+    figureSentence = ui(" The figure in question is ") + escapeHtml(String(payload.value_a)) + ui(" against ") + escapeHtml(String(payload.value_b)) +
+      (payload.unit_id ? (ui(" for unit ") + escapeHtml(String(payload.unit_id))) : "") + ".";
   }
   var ruleUnitParen = [];
-  if (payload.rule_id) ruleUnitParen.push("rule " + payload.rule_id);
-  if (payload.unit_id) ruleUnitParen.push("unit " + payload.unit_id);
+  if (payload.rule_id) ruleUnitParen.push(ui("rule ") + payload.rule_id);
+  if (payload.unit_id) ruleUnitParen.push(ui("unit ") + payload.unit_id);
   /* Every OTHER payload key (beyond value_a/value_b/unit_id/rule_id/message,
      already folded into the sentence above) still needs to surface here:
      the human view is a rewording, never a filtering, so a topic this
@@ -934,9 +949,9 @@ function approvalDetailHuman(run) {
   var handled = { value_a: 1, value_b: 1, unit_id: 1, rule_id: 1, message: 1 };
   var extra = Object.keys(payload).filter(function (k) { return !handled[k]; });
   var extraSentence = extra.length
-    ? (" Also: " + extra.map(function (k) { return k + " " + payload[k]; }).join(", ") + ".")
+    ? (ui(" Also: ") + extra.map(function (k) { return k + " " + payload[k]; }).join(", ") + ".")
     : "";
-  return escapeHtml(msg) + figureSentence + escapeHtml(extraSentence) +
+  return escapeHtml(ShimmerLocale.message(msg)) + figureSentence + escapeHtml(extraSentence) +
     (ruleUnitParen.length ? (" " + mutedParen(ruleUnitParen.join(", "))) : "");
 }
 
@@ -980,10 +995,10 @@ function phaseIndex(currentPhase) {
 /* task: "review" or "draft" (run.task); only phase 3 branches on it, every
    other phase's `human` string is shared and task is ignored for them. */
 function phaseHumanLabel(p, task) {
-  if (p.humanReview || p.humanDraft) {
-    return task === "draft" ? p.humanDraft : p.humanReview;
+  if (ui(p.humanReview) || ui(p.humanDraft)) {
+    return task === "draft" ? ui(p.humanDraft) : ui(p.humanReview);
   }
-  return p.human;
+  return ui(p.human);
 }
 
 function phaseHumanName(currentPhase, task) {
@@ -1011,7 +1026,7 @@ function phaseLadderHtml(currentPhase) {
     var cls = "", mark = "·";
     if (idx >= 0 && i < idx) { cls = "done"; mark = "✓"; }
     else if (i === idx) { cls = "current"; mark = "▶"; }
-    return '<li class="' + cls + '"><span class="mark">' + mark + '</span><span>' + p.n + '&nbsp;&nbsp;' + escapeHtml(p.name) + '</span></li>';
+    return '<li class="' + cls + '"><span class="mark">' + mark + '</span><span>' + p.n + '&nbsp;&nbsp;' + escapeHtml(ui(p.name)) + '</span></li>';
   }).join("");
   return '<ul class="phase-ladder">' + items + '</ul>';
 }
@@ -1026,14 +1041,14 @@ function phaseLadderHumanHtml(currentPhase, task) {
     if (idx >= 0 && i < idx) { cls = "done"; mark = "✓"; }
     else if (i === idx) { cls = "current"; mark = "▶"; }
     return '<li class="' + cls + '"><span class="mark">' + mark + '</span><span>' +
-      'step ' + (i + 1) + ' of ' + PHASES.length + '&nbsp;&nbsp;' + escapeHtml(phaseHumanLabel(p, task)) + '</span></li>';
+      ui('step ') + (i + 1) + ui(' of ') + PHASES.length + '&nbsp;&nbsp;' + escapeHtml(phaseHumanLabel(p, task)) + '</span></li>';
   }).join("");
   return '<ul class="phase-ladder">' + items + '</ul>';
 }
 
 function currentPhaseName(currentPhase) {
   var found = PHASES.filter(function (p) { return p.n === currentPhase; })[0];
-  return found ? found.name : null;
+  return found ? ui(found.name) : null;
 }
 
 /* =======================================================================
@@ -1051,8 +1066,8 @@ function pairBarHtml(run) {
   return (
     '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
     '<div class="progress-caption">' +
-      '<span>at least ' + settled + ' of ' + planned + ' pairs settled</span>' +
-      '<span>' + (calls || 0) + ' model call' + ((calls === 1) ? "" : "s") + ' so far, all phases</span>' +
+      ui('<span>at least ') + settled + ui(' of ') + planned + ui(' pairs settled</span>') +
+      '<span>' + (calls || 0) + ui(' model call') + ((calls === 1) ? "" : ui("s")) + ui(' so far, all phases</span>') +
     '</div>' +
     /* console audit finding 11. These two numbers count different things and
        cannot be reconciled by a reader: the settled figure is derived from
@@ -1062,10 +1077,10 @@ function pairBarHtml(run) {
        count reads either as the floor being wrong or as each pair costing
        several calls. Neither is true, so the page now says what each counts. */
     '<p class="muted" style="font-size:0.8rem;margin-top:0.35rem">' +
-      settled + ' pairs closed by arithmetic alone, with no model call. This is a floor, not a live counter: ' +
-      'pairs a model is actively judging are not separately counted. ' +
-      'The call count beside it is every model call the run has made in any phase, not only the ones judging pairs, ' +
-      'so the two numbers are not meant to reconcile.' +
+      settled + ui(' pairs closed by arithmetic alone, with no model call. This is a floor, not a live counter: ') +
+      ui('pairs a model is actively judging are not separately counted. ') +
+      ui('The call count beside it is every model call the run has made in any phase, not only the ones judging pairs, ') +
+      ui('so the two numbers are not meant to reconcile.') +
     '</p>'
   );
 }
@@ -1091,18 +1106,18 @@ function estimateRemaining(run, allRuns) {
   var median = durations[Math.floor(durations.length / 2)];
   var elapsed = (Date.now() - new Date(run.started_at).getTime()) / 60000;
   var n = durations.length;
-  var qualifier = n < 3 ? " (based on " + n + " earlier run" + (n === 1 ? "" : "s") + ", treat this loosely)" : " (rough, from " + n + " earlier runs)";
+  var qualifier = n < 3 ? ui(" (based on ") + n + ui(" earlier run") + (n === 1 ? "" : ui("s")) + ui(", treat this loosely)") : ui(" (rough, from ") + n + ui(" earlier runs)");
   /* Honesty, not false precision: once elapsed time has already reached or
      passed the historical median, "~0 min remaining" reads as a broken
      countdown, not as the true statement it actually is (this run is
      already at or past what a comparable run usually takes). Say that
      plainly instead of printing a number that looks like a promise. */
   if (elapsed >= median) {
-    return "already past the typical duration for a comparable run" + qualifier;
+    return ui("already past the typical duration for a comparable run") + qualifier;
   }
   var remaining = Math.round(median - elapsed);
-  if (remaining < 1) return "under a minute, typically" + qualifier;
-  return "~" + remaining + " min" + qualifier;
+  if (remaining < 1) return ui("under a minute, typically") + qualifier;
+  return "~" + remaining + ui(" min") + qualifier;
 }
 
 /* =======================================================================
@@ -1134,6 +1149,7 @@ function setNavActive(view) {
 }
 
 function render() {
+  ShimmerLocale.refresh();
   clearPoll();
   mastheadState.hidden = true;
   refreshViewSwitchUi();
@@ -1180,19 +1196,19 @@ function harnessPartSummary(part, shared, human) {
     part = (shared || {})[key] || part;
   }
   if (Array.isArray(part.declared_subjects)) {
-    if (part.declared_subjects.length) return "declares: " + part.declared_subjects.join(", ");
-    return "declares no subject, by decision" + (part.subjects_note ? ": " + part.subjects_note : "");
+    if (part.declared_subjects.length) return ui("declares: ") + part.declared_subjects.join(", ");
+    return ui("declares no subject, by decision") + (part.subjects_note ? ": " + ShimmerLocale.message(part.subjects_note) : "");
   }
-  if (Array.isArray(part.does) && part.does.length) return part.does.join("; ");
+  if (Array.isArray(part.does) && part.does.length) return part.does.map(function (v) { return ShimmerLocale.message(v); }).join("; ");
   if (human) {
-    if (typeof part.summary === "string" && part.summary.trim()) return part.summary;
-    return "decided, with no plain-language summary recorded";
+    if (typeof part.summary === "string" && part.summary.trim()) return ShimmerLocale.message(part.summary);
+    return ui("decided, with no plain-language summary recorded");
   }
   var fields = ["condition", "how", "where", "summary", "text", "note", "reason", "limit"];
   for (var i = 0; i < fields.length; i++) {
-    if (typeof part[fields[i]] === "string" && part[fields[i]]) return part[fields[i]];
+    if (typeof part[fields[i]] === "string" && part[fields[i]]) return ShimmerLocale.message(part[fields[i]]);
   }
-  return "decided";
+  return ui("decided");
 }
 
 function harnessHtml(body, human) {
@@ -1203,31 +1219,31 @@ function harnessHtml(body, human) {
   var unresolved = body.unresolved || {};
   var unresolvedCount = body.unresolved_part_count || 0;
   var heading = human
-    ? "Agents (" + names.length + ")"
-    : "agent_harness (" + names.length + " agents)";
+    ? ui("Agents (") + names.length + ")"
+    : ui("agent_harness (") + names.length + ui(" agents)");
   var note = human
-    ? "Every agent, described in nine parts. A part still undecided is shown as undecided with the reason, not left out." +
-      (unresolvedCount ? " Undecided parts: " + unresolvedCount + "." : " Every part is decided.")
-    : "config/agent_harness.json as served by GET /harness; nine parts per agent (night W4). unresolved_part_count=" + unresolvedCount + ".";
+    ? ui("Every agent, described in nine parts. A part still undecided is shown as undecided with the reason, not left out.") +
+      (unresolvedCount ? ui(" Undecided parts: ") + unresolvedCount + "." : ui(" Every part is decided."))
+    : ui("config/agent_harness.json as served by GET /harness; nine parts per agent (night W4). unresolved_part_count=") + unresolvedCount + ".";
   var html = '<h2>' + escapeHtml(heading) + '</h2><p class="muted">' + escapeHtml(note) + '</p>';
   names.forEach(function (name) {
     var entry = agents[name] || {};
     var open = (unresolved[name] || []).length;
     html += '<section class="harness-agent"><h3>' + escapeHtml(name) +
-      (open ? ' <span class="harness-open">' + escapeHtml(human ? (open + " undecided") : ("unresolved=" + open)) + '</span>' : '') + '</h3>';
+      (open ? ' <span class="harness-open">' + escapeHtml(human ? (open + ui(" undecided")) : ("unresolved=" + open)) + '</span>' : '') + '</h3>';
     html += '<ul class="harness-parts">';
     partNames.forEach(function (p) {
       var part = entry[p];
-      var label = human ? (HARNESS_PART_LABELS_HUMAN[p] || p) : p;
+      var label = human ? (ui(HARNESS_PART_LABELS_HUMAN[p]) || p) : p;
       if (!part || typeof part !== "object") {
         html += '<li class="harness-part harness-part-missing"><span class="harness-label">' + escapeHtml(label) + '</span>: ' +
-          escapeHtml(human ? "not recorded in the harness file" : "missing from agent_harness.json") + '</li>';
+          escapeHtml(human ? ui("not recorded in the harness file") : ui("missing from agent_harness.json")) + '</li>';
         return;
       }
       if (part.decided === false) {
         html += '<li class="harness-part harness-part-unresolved"><span class="harness-label">' + escapeHtml(label) + '</span>: ' +
-          '<strong>' + escapeHtml(human ? "undecided" : "decided: false") + '</strong> ' +
-          escapeHtml(part.unresolved_because || (human ? "(no reason recorded)" : "(no unresolved_because)")) + '</li>';
+          '<strong>' + escapeHtml(human ? ui("undecided") : ui("decided: false")) + '</strong> ' +
+          escapeHtml(ShimmerLocale.message(part.unresolved_because) || (human ? ui("(no reason recorded)") : ui("(no unresolved_because)"))) + '</li>';
         return;
       }
       html += '<li class="harness-part"><span class="harness-label">' + escapeHtml(label) + '</span>: ' +
@@ -1260,8 +1276,8 @@ function ontologyStoreHtml(body, human) {
     return '<li class="mono">' + escapeHtml(r.convention_ref) + ': ' + r.provisions + '</li>';
   }).join("");
   var heading = human
-    ? "What the ontology store holds (" + body.provision_count + ")"
-    : "ontology.provisions (" + body.provision_count + ", scope " + escapeHtml(body.scope || "") + ")";
+    ? ui("What the ontology store holds (") + body.provision_count + ")"
+    : ui("ontology.provisions (") + body.provision_count + ui(", scope ") + escapeHtml(body.scope || "") + ")";
   /* console audit finding 8: the developer note carried stub_count,
      superseded_in_live, log_events and without_provenance and the reviewer note
      carried none of them, which is a filtering rather than a rewording. Two of
@@ -1271,29 +1287,29 @@ function ontologyStoreHtml(body, human) {
      the sentence stays quiet in the common case. */
   var extras = "";
   if (body.stub_count) {
-    extras += " " + body.stub_count + " of these are placeholders rather than captured content.";
+    extras += " " + body.stub_count + ui(" of these are placeholders rather than captured content.");
   }
   if (body.without_provenance) {
-    extras += " " + body.without_provenance + " do not record which agent or run produced them.";
+    extras += " " + body.without_provenance + ui(" do not record which agent or run produced them.");
   }
   if (body.superseded_in_live) {
-    extras += " " + body.superseded_in_live + " have been replaced by a later version.";
+    extras += " " + body.superseded_in_live + ui(" have been replaced by a later version.");
   }
   if (body.log_events) {
-    extras += " The store has recorded " + body.log_events + " events.";
+    extras += ui(" The store has recorded ") + body.log_events + ui(" events.");
   }
   var note = human
-    ? "Provisions captured at the end of past runs, each with the agent whose finding it rests on and the rule that governed it. A record of what was decided before, for looking up afterwards; a review in progress does not read it." + extras
-    : "GET /ontology: provenance only, no provision text. stubs=" + (body.stub_count || 0) +
+    ? ui("Provisions captured at the end of past runs, each with the agent whose finding it rests on and the rule that governed it. A record of what was decided before, for looking up afterwards; a review in progress does not read it.") + extras
+    : ui("GET /ontology: provenance only, no provision text. stubs=") + (body.stub_count || 0) +
       ", superseded_in_live=" + (body.superseded_in_live || 0) +
       ", log_events=" + (body.log_events || 0) +
       ", without_provenance=" + (body.without_provenance || 0) + ".";
   var out = '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p>';
   if (agents) {
-    out += '<h3>' + (human ? "By agent" : "by_agent") + '</h3><ul class="amendment-refusals">' + agents + '</ul>';
+    out += '<h3>' + (human ? ui("By agent") : "by_agent") + '</h3><ul class="amendment-refusals">' + agents + '</ul>';
   }
   if (rules) {
-    out += '<h3>' + (human ? "By rule" : "by_convention_ref") + '</h3><ul class="amendment-refusals">' + rules + '</ul>';
+    out += '<h3>' + (human ? ui("By rule") : "by_convention_ref") + '</h3><ul class="amendment-refusals">' + rules + '</ul>';
   }
   /* console audit finding 3: the section rendered only the two aggregate lists
      and discarded body.provisions entirely, the per-provision array the route
@@ -1305,16 +1321,16 @@ function ontologyStoreHtml(body, human) {
      and a citation already use. */
   var provisions = body.provisions || [];
   if (provisions.length) {
-    out += '<h3>' + (human ? "Each provision" : "provisions") + '</h3>' +
+    out += '<h3>' + (human ? ui("Each provision") : "provisions") + '</h3>' +
       '<ul class="amendment-refusals">' + provisions.map(function (pr, i) {
         var pid = "prov-" + i;
         var who = human
-          ? ((pr.agent ? pr.agent : "no agent recorded") + ", " +
-             (pr.convention_ref ? "under " + pr.convention_ref : "under no rule") +
-             (pr.stub ? ", a placeholder rather than captured content" : "") +
-             (pr.revision > 1 ? ", revision " + pr.revision : ""))
-          : ("agent=" + (pr.agent || "none") + " rule=" + (pr.convention_ref || "none") +
-             " revision=" + pr.revision + (pr.stub ? " stub" : ""));
+          ? ((pr.agent ? pr.agent : ui("no agent recorded")) + ", " +
+             (pr.convention_ref ? ui("under ") + pr.convention_ref : ui("under no rule")) +
+             (pr.stub ? ui(", a placeholder rather than captured content") : "") +
+             (pr.revision > 1 ? ui(", revision ") + pr.revision : ""))
+          : ("agent=" + (pr.agent || ui("none")) + " rule=" + (pr.convention_ref || ui("none")) +
+             " revision=" + pr.revision + (pr.stub ? ui(" stub") : ""));
         return '<li' + (human ? '' : ' class="mono"') + '>' +
           '<a href="#" class="prov-link mono" id="' + pid + '" data-provision-id="' +
           escapeHtml(pr.id || "") + '">' + escapeHtml(pr.id || "") + '</a>' +
@@ -1340,12 +1356,12 @@ function wireProvisionLinks(scope) {
       panel.hidden = false;
       if (panel._loaded) return;
       panel._loaded = true;
-      panel.innerHTML = '<span class="muted">Loading…</span>';
+      panel.innerHTML = ui('<span class="muted">Loading…</span>');
       apiJson("/ontology/provisions/" + encodeURIComponent(a.getAttribute("data-provision-id"))).then(function (res) {
         if (!res.ok) {
           panel.innerHTML = '<div class="notice warn">' + escapeHtml(
             isHumanView()
-              ? "This provision's history is not available: " + detailText(res.body) + "."
+              ? ui("This provision's history is not available: ") + detailText(res.body) + "."
               : detailText(res.body)) + '</div>';
           return;
         }
@@ -1354,12 +1370,12 @@ function wireProvisionLinks(scope) {
         panel.innerHTML = '<div class="rule-panel-body">' +
           '<div class="rule-panel-head"><span class="mono">' + escapeHtml(res.body.id || "") + '</span>' +
           ' <span class="muted">' + escapeHtml(human
-            ? (revs.length === 1 ? "one version" : revs.length + " versions, oldest first")
-            : revs.length + " revision(s)") + '</span></div>' +
+            ? (revs.length === 1 ? ui("one version") : revs.length + ui(" versions, oldest first"))
+            : revs.length + ui(" revision(s)")) + '</span></div>' +
           '<ul class="amendment-refusals">' + revs.map(function (r) {
             return '<li class="mono">' + escapeHtml(
-              (human ? "version " : "revision ") + r.revision + ": " +
-              (r.agent || "no agent") + ", run " + (r.run || "unknown")) + '</li>';
+              (human ? ui("version ") : ui("revision ")) + r.revision + ": " +
+              (r.agent || ui("no agent")) + ui(", run ") + (r.run || ui("unknown"))) + '</li>';
           }).join("") + '</ul></div>';
       });
     });
@@ -1380,15 +1396,15 @@ function ontologyGnnHtml(body, human) {
      node type, degree, edges. That is stated before any number, because a
      reader who sees counts first reads them as evidence of learning. */
   if (!body) return "";
-  var heading = human ? "The cross-run model" : "ontology.gnn_state";
+  var heading = human ? ui("The cross-run model") : "ontology.gnn_state";
   var lead = human
-    ? "This model has learned nothing, and that is expected rather than broken. It keeps its weights between runs, so it does not forget; what is missing is the signal to learn from, which only builds up as runs accumulate. Anything it suggests today rests on the shape of the graph alone: how things are connected, not what they mean."
-    : "tier2_signal=empty, learned_relevance=false. ranked_on: " + escapeHtml(body.ranked_on || "");
+    ? ui("This model has learned nothing, and that is expected rather than broken. It keeps its weights between runs, so it does not forget; what is missing is the signal to learn from, which only builds up as runs accumulate. Anything it suggests today rests on the shape of the graph alone: how things are connected, not what they mean.")
+    : ui("tier2_signal=empty, learned_relevance=false. ranked_on: ") + escapeHtml(body.ranked_on || "");
   var out = '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(lead) + '</p>';
   if (!body.exists) {
     out += '<p class="muted">' + escapeHtml(human
-      ? "No model state has been written yet. It is created at the end of a run."
-      : (body.note || "no gnn_state.json")) + '</p>';
+      ? ui("No model state has been written yet. It is created at the end of a run.")
+      : (ShimmerLocale.message(body.note) || ui("no gnn_state.json"))) + '</p>';
     return out;
   }
   /* console audit finding 12. last_loss is 0.0 when NO backward pass ran (the
@@ -1401,28 +1417,28 @@ function ontologyGnnHtml(body, human) {
      than as the literal word null. */
   var noStep = !body.last_delta_size;
   var lossValue = (body.last_loss === null || body.last_loss === undefined)
-    ? (human ? "not recorded" : "not recorded (absent from the state file)")
+    ? (human ? ui("not recorded") : ui("not recorded (absent from the state file)"))
     : (noStep
         ? (human
-            ? "not measured this run, because no new nodes arrived to fit"
-            : String(body.last_loss) + " (no backward pass; last_delta_size=0)")
+            ? ui("not measured this run, because no new nodes arrived to fit")
+            : String(body.last_loss) + ui(" (no backward pass; last_delta_size=0)"))
         : String(body.last_loss));
   var valueOrNot = function (v) {
-    return (v === null || v === undefined) ? "not recorded" : String(v);
+    return (v === null || v === undefined) ? ui("not recorded") : String(v);
   };
   var rows = [
-    [human ? "Nodes seen" : "trained_count", valueOrNot(body.trained_count)],
-    [human ? "Updates" : "n_updates", valueOrNot(body.n_updates)],
-    [human ? "New nodes this run" : "last_delta_size", valueOrNot(body.last_delta_size)],
-    [human ? "Reconstruction error" : "last_loss", lossValue]
+    [human ? ui("Nodes seen") : "trained_count", valueOrNot(body.trained_count)],
+    [human ? ui("Updates") : "n_updates", valueOrNot(body.n_updates)],
+    [human ? ui("New nodes this run") : "last_delta_size", valueOrNot(body.last_delta_size)],
+    [human ? ui("Reconstruction error") : "last_loss", lossValue]
   ];
   out += '<ul class="amendment-refusals">' + rows.map(function (r) {
     return '<li class="mono">' + escapeHtml(String(r[0])) + ': ' + escapeHtml(String(r[1])) + '</li>';
   }).join("") + '</ul>';
   if (noStep) {
     out += '<p class="muted">' + escapeHtml(human
-      ? "No new nodes arrived this run, so no training step ran at all. The figures above are carried over from the last run that had something to fit."
-      : "last_delta_size=0: no backward pass ran, weights unchanged, last_loss is the initialised 0.0 and not a measurement") + '</p>';
+      ? ui("No new nodes arrived this run, so no training step ran at all. The figures above are carried over from the last run that had something to fit.")
+      : ui("last_delta_size=0: no backward pass ran, weights unchanged, last_loss is the initialised 0.0 and not a measurement")) + '</p>';
   }
   return out;
 }
@@ -1435,15 +1451,15 @@ function ontologyRelationsHtml(body, human) {
      Disappears when empty, like every section here except the GNN state. */
   if (!body || !body.relation_count) return "";
   var heading = human
-    ? "What relates to what (" + body.relation_count + ")"
-    : "ontology.relations (" + body.relation_count + ", scope " + escapeHtml(body.scope || "") + ")";
+    ? ui("What relates to what (") + body.relation_count + ")"
+    : ui("ontology.relations (") + body.relation_count + ui(", scope ") + escapeHtml(body.scope || "") + ")";
   var agreed = body.agreed_count || 0;
   var note = human
-    ? ("Pairs of passages one mechanism or both noticed. " +
-       (agreed ? agreed + " of them were found by both, which is the stronger case: two independent mechanisms saw the same pair. " : "") +
-       "A relation says one passage names, or reads like, another. It does not say they agree or conflict, and it is not evidence for any finding.")
-    : ("agreed_count=" + agreed + ". by_method counts OBSERVATIONS, relation_count counts PAIRS; " +
-       "they do not sum once a pair is agreed. Ordering: agreed pairs first, the one declared rule, no weighting.");
+    ? (ui("Pairs of passages one mechanism or both noticed. ") +
+       (agreed ? agreed + ui(" of them were found by both, which is the stronger case: two independent mechanisms saw the same pair. ") : "") +
+       ui("A relation says one passage names, or reads like, another. It does not say they agree or conflict, and it is not evidence for any finding."))
+    : ("agreed_count=" + agreed + ui(". by_method counts OBSERVATIONS, relation_count counts PAIRS; ") +
+       ui("they do not sum once a pair is agreed. Ordering: agreed pairs first, the one declared rule, no weighting."));
   var items = (body.relations || []).map(function (r) {
     var both = r.agreed;
     var methods = (r.found_by || []).join(", ");
@@ -1452,15 +1468,15 @@ function ontologyRelationsHtml(body, human) {
     var obs = (r.observations || []).map(function (o) {
       return human
         ? (o.method === "pattern"
-            ? "one passage names the other (" + escapeHtml(o.reported_source) + " to " + escapeHtml(o.reported_target) + ")"
-            : "they read alike" + (o.score !== undefined && o.score !== null ? " (closeness " + escapeHtml(String(o.score)) + ")" : ""))
+            ? ui("one passage names the other (") + escapeHtml(o.reported_source) + ui(" to ") + escapeHtml(o.reported_target) + ")"
+            : ui("they read alike") + (o.score !== undefined && o.score !== null ? ui(" (closeness ") + escapeHtml(String(o.score)) + ")" : ""))
         : escapeHtml(o.method) + ": " + escapeHtml(o.reported_source) + " -> " + escapeHtml(o.reported_target) +
           (o.pattern ? " [" + escapeHtml(o.pattern) + "]" : "") +
           (o.score !== undefined && o.score !== null ? " score=" + escapeHtml(String(o.score)) : "");
     }).join("; ");
     if (human) {
-      return '<li>' + (both ? '<strong>Found by both mechanisms.</strong> ' : '') +
-        escapeHtml(r.source_unit) + ' and ' + escapeHtml(r.target_unit) +
+      return '<li>' + (both ? ui('<strong>Found by both mechanisms.</strong> ') : '') +
+        escapeHtml(r.source_unit) + ui(' and ') + escapeHtml(r.target_unit) +
         '<div class="muted">' + obs + '</div></li>';
     }
     return '<li class="mono">' + (both ? '[agreed] ' : '') +
@@ -1482,29 +1498,29 @@ function ontologyConflictsHtml(body, human) {
   if (!body || !body.answered_count) return "";
   var rate = body.override_rate || {};
   var heading = human
-    ? "Conflicts you have answered (" + body.answered_count + ")"
-    : "ontology.conflict_resolutions (" + body.answered_count + ")";
+    ? ui("Conflicts you have answered (") + body.answered_count + ")"
+    : ui("ontology.conflict_resolutions (") + body.answered_count + ")";
   var items = (body.answered || []).map(function (a) {
     var answerWord = human
-      ? (a.answer === "rule" ? "the current rule wins"
-         : a.answer === "store" ? "what the store remembered wins"
-         : "keep refusing this pair")
+      ? (a.answer === "rule" ? ui("the current rule wins")
+         : a.answer === "store" ? ui("what the store remembered wins")
+         : ui("keep refusing this pair"))
       : a.answer;
     var sides = (a.store_rule || a.rule_id)
       ? (human
-          ? " (the store remembered " + escapeHtml(a.store_rule || "nothing") + ", the run would have applied " + escapeHtml(a.rule_id || "nothing") + ")"
+          ? ui(" (the store remembered ") + escapeHtml(a.store_rule || ui("nothing")) + ui(", the run would have applied ") + escapeHtml(a.rule_id || ui("nothing")) + ")"
           : " store_rule=" + escapeHtml(a.store_rule || "") + " rule_id=" + escapeHtml(a.rule_id || ""))
       : "";
     return (human ? '<li>' : '<li class="mono">') +
       escapeHtml(a.provision_id || a.conflict_id) + ': ' + escapeHtml(answerWord) + sides + '</li>';
   }).join("");
   var rateLine = (rate.override_rate === null || rate.override_rate === undefined)
-    ? (human ? "No answers yet, so there is no rate to show."
-             : "override_rate=null (no answers yet, deliberately not 0.0)")
+    ? (human ? ui("No answers yet, so there is no rate to show.")
+             : ui("override_rate=null (no answers yet, deliberately not 0.0)"))
     : (human
-        ? "You have overridden what the store remembered in " + rate.overrode_store + " of " + rate.answered + " answers."
+        ? ui("You have overridden what the store remembered in ") + rate.overrode_store + ui(" of ") + rate.answered + ui(" answers.")
         : "override_rate=" + rate.override_rate + " (overrode_store=" + rate.overrode_store + ", answered=" + rate.answered + ")");
-  var caveat = rate.caveat ? '<p class="muted">' + escapeHtml(rate.caveat) + '</p>' : "";
+  var caveat = rate.caveat ? '<p class="muted">' + escapeHtml(ShimmerLocale.message(rate.caveat)) + '</p>' : "";
   return '<h2>' + heading + '</h2>' +
     '<ul class="amendment-refusals">' + items + '</ul>' +
     '<p class="muted">' + escapeHtml(rateLine) + '</p>' + caveat;
@@ -1518,17 +1534,17 @@ function ontologyCandidatesHtml(body, human) {
      says about itself. Disappears when nothing is proposed. */
   if (!body || !body.candidate_count) return "";
   var heading = human
-    ? "Pairs the model suggests looking at (" + body.candidate_count + ")"
-    : "ontology.candidates (" + body.candidate_count + ")";
+    ? ui("Pairs the model suggests looking at (") + body.candidate_count + ")"
+    : ui("ontology.candidates (") + body.candidate_count + ")";
   var lead = human
-    ? "These are suggestions of where to look, not findings, and they are ranked by the shape of the graph alone: how things are connected, not what they mean. The model has learned nothing to rank with. Weights came from " + escapeHtml(body.weights_from || "unknown") + "."
+    ? ui("These are suggestions of where to look, not findings, and they are ranked by the shape of the graph alone: how things are connected, not what they mean. The model has learned nothing to rank with. Weights came from ") + escapeHtml(body.weights_from || ui("unknown")) + "."
     : "ranked_on: " + escapeHtml(body.ranked_on || "") + " | learned_relevance=" +
       String(body.learned_relevance) + " tier2_signal=" + escapeHtml(body.tier2_signal || "") +
       " weights_from=" + escapeHtml(body.weights_from || "");
   var items = (body.candidates || []).map(function (c) {
-    var where = c.same_document ? (human ? "same document" : "same_document") : (human ? "across documents" : "cross_document");
+    var where = c.same_document ? (human ? ui("same document") : "same_document") : (human ? ui("across documents") : "cross_document");
     return (human ? '<li>' : '<li class="mono">') +
-      escapeHtml(c.source) + ' and ' + escapeHtml(c.target) +
+      escapeHtml(c.source) + ui(' and ') + escapeHtml(c.target) +
       ' <span class="muted">' + escapeHtml(String(c.score)) + ', ' + escapeHtml(where) + '</span></li>';
   }).join("");
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(lead) + '</p>' +
@@ -1536,11 +1552,11 @@ function ontologyCandidatesHtml(body, human) {
 }
 
 function renderAgents() {
-  app.innerHTML = '<p class="muted">Loading…</p>';
+  app.innerHTML = ui('<p class="muted">Loading…</p>');
   apiJson("/harness").then(function (res) {
     if (currentRoute().view !== "agents") return;
     if (!res.ok) {
-      app.innerHTML = '<h2>' + (isHumanView() ? 'Agents' : 'agent_harness') + '</h2><div class="notice error">' +
+      app.innerHTML = '<h2>' + (isHumanView() ? ui('Agents') : 'agent_harness') + '</h2><div class="notice error">' +
         escapeHtml(detailText(res.body)) + '</div>';
       return;
     }
@@ -1585,7 +1601,7 @@ function renderAgents() {
       conflictsHolder.innerHTML = conRes.ok ? ontologyConflictsHtml(conRes.body, isHumanView()) : "";
     });
   }).catch(function () {
-    app.innerHTML = '<div class="notice error">The request did not reach the server.</div>';
+    app.innerHTML = ui('<div class="notice error">The request did not reach the server.</div>');
   });
 }
 
@@ -1602,14 +1618,14 @@ function renderNeedsToken() {
   app.innerHTML =
     '<div class="empty-state" style="text-align:left">' +
       (already
-        ? '<p>Replace the saved access token, or continue with the one already set.</p>'
-        : '<p>In the Shimmer startup window, click <strong>Copy access token</strong>, paste it below, then choose <strong>Use this token</strong>.</p><p>If someone else operates this server, ask them for your access token.</p>') +
-      '<p class="muted" style="font-size:0.85rem">The token is kept only for this browser tab, for this session. It is never stored beyond that, and never appears in a URL.</p>' +
-      '<label for="needs-token-input">Access token</label>' +
-      '<input type="password" id="needs-token-input" placeholder="access token" autocomplete="off" style="max-width:20rem">' +
+        ? ui('<p>Replace the saved access token, or continue with the one already set.</p>')
+        : ui('<p>In the Shimmer startup window, click <strong>Copy access token</strong>, paste it below, then choose <strong>Use this token</strong>.</p><p>If someone else operates this server, ask them for your access token.</p>')) +
+      ui('<p class="muted" style="font-size:0.85rem">The token is kept only for this browser tab, for this session. It is never stored beyond that, and never appears in a URL.</p>') +
+      ui('<label for="needs-token-input">Access token</label>') +
+      ui('<input type="password" id="needs-token-input" placeholder="access token" autocomplete="off" style="max-width:20rem">') +
       '<div style="margin-top:0.75rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">' +
-        '<button type="button" class="button" id="needs-token-save">Use this token</button>' +
-        (already ? '<button type="button" class="button secondary" id="needs-token-continue">Continue without changing it</button>' : '') +
+        ui('<button type="button" class="button" id="needs-token-save">Use this token</button>') +
+        (already ? ui('<button type="button" class="button secondary" id="needs-token-continue">Continue without changing it</button>') : '') +
       '</div>' +
     '</div>';
   var input = document.getElementById("needs-token-input");
@@ -1651,14 +1667,14 @@ function relativeWhen(iso) {
   if (isNaN(d)) return iso;
   var diffMs = Date.now() - d.getTime();
   var mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return "just now";
+  if (mins < 1) return ui("just now");
   var hh = d.getHours(), mm = d.getMinutes();
   var clock = (hh < 10 ? "0" + hh : hh) + ":" + (mm < 10 ? "0" + mm : mm);
   var hrs = Math.floor(mins / 60);
   if (hrs < 24 && d.toDateString() === new Date().toDateString()) return clock;
   var days = Math.floor(hrs / 24);
-  if (days === 1) return "yesterday, " + clock;
-  if (days < 7) return days + " days ago, " + clock;
+  if (days === 1) return ui("yesterday, ") + clock;
+  if (days < 7) return days + ui(" days ago, ") + clock;
   return d.toLocaleDateString() + ", " + clock;
 }
 
@@ -1679,7 +1695,7 @@ function formatSubmittedAt(iso) {
   var d = new Date(iso);
   if (isNaN(d)) return iso;
   var hh = d.getHours(), mm = d.getMinutes();
-  return d.getDate() + " " + MONTH_NAMES[d.getMonth()] + " " + d.getFullYear() + ", " +
+  return d.getDate() + " " + ui(MONTH_NAMES[d.getMonth()]) + " " + d.getFullYear() + ", " +
     (hh < 10 ? "0" + hh : hh) + ":" + (mm < 10 ? "0" + mm : mm);
 }
 
@@ -1687,7 +1703,7 @@ function runFriendlyTitle(run) {
   var files = run.files || [];
   if (files.length > 0) {
     return files.length > 1
-      ? (files[0] + " and " + (files.length - 1) + " more")
+      ? (files[0] + ui(" and ") + (files.length - 1) + ui(" more"))
       : files[0];
   }
   if (run.question) {
@@ -1705,7 +1721,7 @@ function runDisplayNameHtml(run, compact) {
   var when = formatSubmittedAt(run.submitted_at);
   var sizeStyle = compact ? "" : ' style="font-size:1.05rem"';
   return '<span' + sizeStyle + '>' + escapeHtml(title) +
-    (when ? ', submitted ' + escapeHtml(when) : '') + '</span> ' +
+    (when ? ui(', submitted ') + escapeHtml(when) : '') + '</span> ' +
     mutedParen(run.run_id);
 }
 
@@ -1716,24 +1732,24 @@ var lastRunsFetch = [];
 
 function renderList() {
   app.innerHTML =
-    '<h1>Runs</h1>' +
+    ui('<h1>Runs</h1>') +
     '<div class="filter-bar">' +
       '<select id="f-state">' +
-        '<option value="">Any state</option>' +
-        '<option value="queued">Queued</option>' +
-        '<option value="running">Running</option>' +
-        '<option value="awaiting_approval">Awaiting decision</option>' +
-        '<option value="stopped">Finished</option>' +
-        '<option value="cancelled">Cancelled</option>' +
+        ui('<option value="">Any state</option>') +
+        ui('<option value="queued">Queued</option>') +
+        ui('<option value="running">Running</option>') +
+        ui('<option value="awaiting_approval">Awaiting decision</option>') +
+        ui('<option value="stopped">Finished</option>') +
+        ui('<option value="cancelled">Cancelled</option>') +
       '</select>' +
       '<select id="f-task">' +
-        '<option value="">Any task</option>' +
-        '<option value="review">Review</option>' +
-        '<option value="draft">Draft</option>' +
+        ui('<option value="">Any task</option>') +
+        ui('<option value="review">Review</option>') +
+        ui('<option value="draft">Draft</option>') +
       '</select>' +
-      '<input type="search" id="f-search" placeholder="search run id">' +
+      ui('<input type="search" id="f-search" placeholder="search run id">') +
     '</div>' +
-    '<div id="run-list-body"><p class="muted">Loading…</p></div>';
+    ui('<div id="run-list-body"><p class="muted">Loading…</p></div>');
 
   document.getElementById("f-state").addEventListener("change", applyListFilter);
   document.getElementById("f-task").addEventListener("change", applyListFilter);
@@ -1750,7 +1766,7 @@ function renderList() {
 
 function renderListError(res) {
   document.getElementById("run-list-body").innerHTML =
-    '<div class="notice error">Could not load runs (' + (res.status || "network error") + '). ' + escapeHtml(detailText(res.body)) + '</div>';
+    ui('<div class="notice error">Could not load runs (') + (res.status || ui("network error")) + '). ' + escapeHtml(detailText(res.body)) + '</div>';
 }
 
 function applyListFilter() {
@@ -1765,11 +1781,11 @@ function applyListFilter() {
   });
   var body = document.getElementById("run-list-body");
   if (lastRunsFetch.length === 0) {
-    body.innerHTML = '<div class="empty-state">No runs yet. Submit documents to start a review, or a question to start a draft.</div>';
+    body.innerHTML = ui('<div class="empty-state">No runs yet. Submit documents to start a review, or a question to start a draft.</div>');
     return;
   }
   if (rows.length === 0) {
-    body.innerHTML = '<div class="empty-state">No runs match this filter.</div>';
+    body.innerHTML = ui('<div class="empty-state">No runs match this filter.</div>');
     return;
   }
   var human = isHumanView();
@@ -1783,7 +1799,7 @@ function applyListFilter() {
       '<a class="run-row' + (human ? " human" : "") + '" href="#/runs/' + encodeURIComponent(r.run_id) + '">' +
         firstCell +
         '<span class="state tone-' + tok.tone + '">' + stateDotHtml(tok) + '<span>' + escapeHtml(tok.label) + '</span></span>' +
-        '<span class="task">' + escapeHtml(r.task || "") + '</span>' +
+        '<span class="task">' + escapeHtml(displayValue(r.task || "")) + '</span>' +
         '<span class="when">' + escapeHtml(relativeWhen(r.submitted_at)) + '</span>' +
       '</a>'
     );
@@ -1795,68 +1811,81 @@ function applyListFilter() {
 ======================================================================= */
 function renderSubmit() {
   app.innerHTML =
-    '<h1>Submit a run</h1>' +
-    '<p id="startup-backend" class="notice">Checking this server...</p>' +
-    '<p>Select your files, choose what to review, then check the plan before starting. Existing reference files and review rules remain available.</p>' +
+    ui('<h1>Submit a run</h1>') +
+    ui('<p id="startup-backend" class="notice">Checking this server...</p>') +
+    ui('<p>Select your files, choose what to review, then check the plan before starting. Existing reference files and review rules remain available.</p>') +
     '<form id="submit-form">' +
-      '<label for="s-task">Task</label>' +
+      ui('<label for="s-task">Task</label>') +
       '<select id="s-task" class="form-control">' +
-        '<option value="">Choose Review or Draft</option>' +
-        '<option value="review">Review: upload documents</option>' +
-        '<option value="draft">Draft: generate a memo from a question</option>' +
+        ui('<option value="">Choose Review or Draft</option>') +
+        ui('<option value="review">Review: upload documents</option>') +
+        ui('<option value="draft">Draft: generate a memo from a question</option>') +
       '</select>' +
-      '<label for="s-files">Documents and review rules</label>' +
-      '<input type="file" id="s-files" multiple>' +
-      '<p class="field-hint">Choose PDF, Word (.docx), Markdown or text files. A review needs a document to review. A draft can use reference files or start with a question alone.</p>' +
+      ui('<label for="s-files">Documents and review rules</label>') +
+      '<input type="file" id="s-files" multiple hidden>' +
+      ui('<button type="button" class="button secondary" id="s-files-button">Choose files</button>') +
+      ui('<p class="field-hint">Choose PDF, Word (.docx), Markdown or text files. A review needs a document to review. A draft can use reference files or start with a question alone.</p>') +
       '<div id="s-file-roles"></div>' +
-      '<label for="s-question">Question</label>' +
-      '<textarea id="s-question" rows="3" placeholder="the memo question/brief"></textarea>' +
-      '<p class="field-hint">Required for a draft. Optional framing for a review. Draft memo generation currently requires Cloud; Local Draft is unsupported.</p>' +
-      '<label for="s-sensitive">Privacy</label>' +
+      ui('<label for="s-question">Question</label>') +
+      ui('<textarea id="s-question" rows="3" placeholder="the memo question/brief"></textarea>') +
+      ui('<p class="field-hint">Required for a draft. Optional framing for a review. Draft memo generation currently requires Cloud; Local Draft is unsupported.</p>') +
+      ui('<label for="s-sensitive">Privacy</label>') +
       '<select id="s-sensitive" class="form-control">' +
-        '<option value="">Choose Normal or Sensitive</option>' +
-        '<option value="false">Normal: I declare these documents non-sensitive</option>' +
-        '<option value="true">Sensitive: privacy protection and redaction are required</option>' +
+        ui('<option value="">Choose Normal or Sensitive</option>') +
+        ui('<option value="false">Normal: I declare these documents non-sensitive</option>') +
+        ui('<option value="true">Sensitive: privacy protection and redaction are required</option>') +
       '</select>' +
-      '<p class="field-hint">Normal keeps full text and waives redaction for this run. Cloud processing can send that text to providers. Sensitive cannot start until the operator has activated the required privacy layer.</p>' +
-      '<label for="s-language">Output language / ??kt? dili</label>' +
-      '<select id="s-language" class="form-control"><option value="en">English</option><option value="tr">T?rk?e</option></select>' +
-      '<p class="field-hint">Input may be multilingual. Source quotations and evidence identifiers are preserved.</p>' +
-      '<details><summary>Advanced intake and review options</summary>' +
-      '<label><input type="checkbox" id="s-multi-round"> Multi-round positioning (unverified with models)</label>' +
-      '<label for="s-case">Case manifest JSON (multi-round only)</label>' +
-      '<textarea id="s-case" rows="3" placeholder="Paste the case manifest with rounds, actors, issues and source spans"></textarea>' +
-      '<p class="field-hint">Explicit case analysis with independent review. Normal privacy and Review task required. Performance and substantive quality are unmeasured.</p>' +
-      '<label for="s-intake">Files supplied as</label>' +
+      ui('<p class="field-hint">Normal keeps full text and waives redaction for this run. Cloud processing can send that text to providers. Sensitive cannot start until the operator has activated the required privacy layer.</p>') +
+      ui('<label for="s-language">Output language</label>') +
+      ui('<select id="s-language" class="form-control"><option value="en">English</option><option value="tr">Türkçe</option></select>') +
+      ui('<p class="field-hint">Input may be multilingual. Source quotations and evidence identifiers are preserved.</p>') +
+      ui('<details><summary>Advanced intake and review options</summary>') +
+      ui('<label><input type="checkbox" id="s-multi-round"> Multi-round positioning (unverified with models)</label>') +
+      ui('<label for="s-case">Case manifest JSON (multi-round only)</label>') +
+      ui('<textarea id="s-case" rows="3" placeholder="Paste the case manifest with rounds, actors, issues and source spans"></textarea>') +
+      ui('<p class="field-hint">Explicit case analysis with independent review. Normal privacy and Review task required. Performance and substantive quality are unmeasured.</p>') +
+      ui('<label for="s-intake">Files supplied as</label>') +
       '<select id="s-intake" class="form-control">' +
-        '<option value="standalone">Ordinary documents (recommended)</option>' +
-        '<option value="integrated">Prepared external ingestion bundle</option>' +
+        ui('<option value="standalone">Ordinary documents (recommended)</option>') +
+        ui('<option value="integrated">Prepared external ingestion bundle</option>') +
       '</select>' +
-      '<p class="field-hint">A prepared bundle must include its original ingestion sidecar and satisfy the existing ingestion contract.</p>' +
-      '<label for="s-mode">Review mode</label>' +
+      ui('<p class="field-hint">A prepared bundle must include its original ingestion sidecar and satisfy the existing ingestion contract.</p>') +
+      ui('<label for="s-mode">Review mode</label>') +
       '<select id="s-mode" class="form-control">' +
-        '<option value="">Default for this server</option>' +
-        '<option value="paired">Paired</option>' +
-        '<option value="wide">Wide</option>' +
+        ui('<option value="">Default for this server</option>') +
+        ui('<option value="paired">Paired</option>') +
+        ui('<option value="wide">Wide</option>') +
       '</select>' +
       '</details>' +
       '<div style="margin-top:1.25rem">' +
-        '<button type="submit" class="button">Review the plan</button>' +
+        ui('<button type="submit" class="button">Review the plan</button>') +
       '</div>' +
     '</form>' +
     '<div id="submit-result"></div>';
+  ShimmerLocale.bindForm(document.getElementById("submit-form"));
+  document.getElementById("s-files-button").addEventListener("click", function () { document.getElementById("s-files").click(); });
   var serverHealth = null;
+  var serverHealthFailed = false;
   apiJson('/health').then(function (res) {
     if (!document.getElementById('startup-backend')) return;
     if (!res.ok) throw new Error('health');
     serverHealth = res.body;
-    document.getElementById('startup-backend').textContent =
-      'Backend: ' + (res.body.backend_profile === 'local' ? 'Local, models on this machine.' : 'Cloud, provider processing can incur charges.') +
-      ' To change backend, stop Shimmer in the startup window and start it again.';
+    updateServerHealth();
   }).catch(function () {
+    serverHealthFailed = true;
     var el = document.getElementById('startup-backend');
-    if (el) el.textContent = 'The server could not be reached. Check the Shimmer startup window before continuing.';
+    if (el) el.textContent = ui('The server could not be reached. Check the Shimmer startup window before continuing.');
   });
+  function updateServerHealth() {
+    if (!serverHealth) {
+      var failed = document.getElementById('startup-backend');
+      if (serverHealthFailed && failed) failed.textContent = ui('The server could not be reached. Check the Shimmer startup window before continuing.');
+      return;
+    }
+    document.getElementById('startup-backend').textContent =
+      ui('Backend: ') + (serverHealth.backend_profile === 'local' ? ui('Local, models on this machine.') : ui('Cloud, provider processing can incur charges.')) +
+      ui(' To change backend, stop Shimmer in the startup window and start it again.');
+  }
   function fileRoles() {
     var box = document.getElementById('s-file-roles');
     box.innerHTML = '';
@@ -1866,12 +1895,19 @@ function renderSubmit() {
     for (var i = 0; i < files.length; i++) {
       box.innerHTML += '<label for="s-role-' + i + '">' + escapeHtml(files[i].name) + '</label>' +
         '<select id="s-role-' + i + '" class="form-control">' +
-        (draft ? '' : '<option value="">Choose this file\'s role</option><option value="target">Document to review</option>') +
-        '<option value="grounding">Reference material or review rules</option>' +
-        (draft ? '' : '<option value="prior">Earlier version for comparison</option>') + '</select>';
+        (draft ? '' : ui('<option value="">Choose this file\'s role</option><option value="target">Document to review</option>')) +
+        ui('<option value="grounding">Reference material or review rules</option>') +
+        (draft ? '' : ui('<option value="prior">Earlier version for comparison</option>')) + '</select>';
     }
-    if (files.length) box.innerHTML += '<p class="field-hint">Review rules are recognised by the existing rule parser. All other reference files stay grounding; an earlier version is never reviewed as a new document.</p>';
+    if (files.length) box.innerHTML += ui('<p class="field-hint">Review rules are recognised by the existing rule parser. All other reference files stay grounding; an earlier version is never reviewed as a new document.</p>');
   }
+  document.getElementById('s-language').addEventListener('change', function () {
+    var roles = Array.from(document.querySelectorAll('[id^="s-role-"]')).map(function (el) { return el.value; });
+    fileRoles();
+    roles.forEach(function (value, i) { var el=document.getElementById('s-role-'+i); if(el) el.value=value; });
+    updateServerHealth();
+    refreshTokenUi();
+  });
   ['s-task', 's-files', 's-intake'].forEach(function (id) {
     document.getElementById(id).addEventListener('change', fileRoles);
   });
@@ -1892,36 +1928,36 @@ function renderSubmit() {
     var targets = [], prior = [], plan = [];
     var resultBox = document.getElementById('submit-result');
     function fail(message) { resultBox.innerHTML = '<div class="notice error">' + escapeHtml(message) + '</div>'; }
-    if (!serverHealth) { fail('Wait for the server check, or restart Shimmer if it cannot connect.'); return; }
-    if (!task || !sensitive) { fail('Choose both a task and a privacy posture.'); return; }
-    if (task === 'draft' && !question) { fail('Enter the question you want the draft to answer.'); return; }
-    if (task === 'review' && !files.length) { fail('Select the documents for this review.'); return; }
+    if (!serverHealth) { fail(ui('Wait for the server check, or restart Shimmer if it cannot connect.')); return; }
+    if (!task || !sensitive) { fail(ui('Choose both a task and a privacy posture.')); return; }
+    if (task === 'draft' && !question) { fail(ui('Enter the question you want the draft to answer.')); return; }
+    if (task === 'review' && !files.length) { fail(ui('Select the documents for this review.')); return; }
     if (sensitive === 'true' && serverHealth.sensitive_layer_active === false) {
-      fail('Sensitive work cannot start: the required privacy layer is inactive. Ask the operator to activate it before submitting sensitive documents.'); return;
+      fail(ui('Sensitive work cannot start: the required privacy layer is inactive. Ask the operator to activate it before submitting sensitive documents.')); return;
     }
     for (var n = 0; n < files.length; n++) {
       var role = intake === 'standalone' ? document.getElementById('s-role-' + n).value : 'bundle';
-      if (!role) { fail('Choose a role for every selected file.'); return; }
+      if (!role) { fail(ui('Choose a role for every selected file.')); return; }
       if (role === 'target') targets.push(files[n].name);
       if (role === 'prior') prior.push(files[n].name);
-      plan.push('<li>' + escapeHtml(files[n].name) + ': ' + escapeHtml({target:'review', grounding:'reference material or rules', prior:'earlier version', bundle:'prepared bundle'}[role]) + '</li>');
+      plan.push('<li>' + escapeHtml(files[n].name) + ': ' + escapeHtml({target:'review', grounding:ui('reference material or rules'), prior:ui('earlier version'), bundle:ui('prepared bundle')}[role]) + '</li>');
     }
-    if (intake === 'standalone' && task === 'review' && !targets.length) { fail('Mark at least one selected file as the document to review.'); return; }
+    if (intake === 'standalone' && task === 'review' && !targets.length) { fail(ui('Mark at least one selected file as the document to review.')); return; }
     var fd = new FormData();
     var outputLanguage = document.getElementById('s-language').value;
-    if (['en', 'tr'].indexOf(outputLanguage) < 0) { fail('Choose English or T?rk?e.'); return; }
+    if (['en', 'tr'].indexOf(outputLanguage) < 0) { fail(ui('Choose English or Turkish.')); return; }
     fd.append('input_language', 'auto');
     fd.append('output_language', outputLanguage);
-    plan.push('<li>Output language / ??kt? dili: ' + (outputLanguage === 'tr' ? 'T?rk?e' : 'English') + '</li>');
+    plan.push(ui('<li>Output language: ') + (outputLanguage === 'tr' ? ui('Türkçe') : ui('English')) + '</li>');
     var multiRound = document.getElementById('s-multi-round').checked;
     var caseText = document.getElementById('s-case').value.trim();
     if (multiRound) {
-      if (task !== 'review' || sensitive !== 'false' || !caseText) { fail('Multi-round needs Review, Normal privacy and a case manifest.'); return; }
-      try { JSON.parse(caseText); } catch (err) { fail('Case manifest must be valid JSON.'); return; }
+      if (task !== 'review' || sensitive !== 'false' || !caseText) { fail(ui('Multi-round needs Review, Normal privacy and a case manifest.')); return; }
+      try { JSON.parse(caseText); } catch (err) { fail(ui('Case manifest must be valid JSON.')); return; }
       fd.append('multi_round', 'true');
       fd.append('multi_round_manifest', caseText);
-      plan.push('<li>Multi-round positioning requested; model quality remains unverified.</li>');
-    } else if (caseText) { fail('Select multi-round explicitly to use a case manifest.'); return; }
+      plan.push(ui('<li>Multi-round positioning requested; model quality remains unverified.</li>'));
+    } else if (caseText) { fail(ui('Select multi-round explicitly to use a case manifest.')); return; }
     fd.append("task", task);
     if (question) fd.append("question", question);
     if (mode) fd.append("review_mode", mode);
@@ -1932,18 +1968,18 @@ function renderSubmit() {
     fd.append('confirmed', 'true');
     for (var i = 0; i < files.length; i++) fd.append("files", files[i]);
 
-    resultBox.innerHTML = '<section class="notice"><h2>Ready to start?</h2><p>' + escapeHtml(task === 'draft' ? 'Draft a memo' : 'Review the selected documents') +
-      ' using ' + escapeHtml(serverHealth.backend_profile) + ' processing. Privacy: ' + (sensitive === 'true' ? 'Sensitive.' : 'Normal, non-sensitive documents and no redaction.') +
-      '</p>' + (question ? '<p>Question: ' + escapeHtml(question) + '</p>' : '') + '<ul>' + plan.join('') + '</ul>' +
-      '<p>Files are checked before a review is queued. Starting can use models and, with Cloud, incur provider charges.</p>' +
-      '<button type="button" class="button" id="s-confirm">Confirm and start</button> ' +
-      '<button type="button" class="button secondary" id="s-cancel">Cancel</button></section>';
+    resultBox.innerHTML = ui('<section class="notice"><h2>Ready to start?</h2><p>') + escapeHtml(task === 'draft' ? ui('Draft a memo') : ui('Review the selected documents')) +
+      ui(' using ') + escapeHtml(displayValue(serverHealth.backend_profile)) + ui(' processing. Privacy: ') + (sensitive === 'true' ? ui('Sensitive.') : ui('Normal, non-sensitive documents and no redaction.')) +
+      '</p>' + (question ? ui('<p>Question: ') + escapeHtml(question) + '</p>' : '') + '<ul>' + plan.join('') + '</ul>' +
+      ui('<p>Files are checked before a review is queued. Starting can use models and, with Cloud, incur provider charges.</p>') +
+      ui('<button type="button" class="button" id="s-confirm">Confirm and start</button> ') +
+      ui('<button type="button" class="button secondary" id="s-cancel">Cancel</button></section>');
     document.getElementById('s-cancel').addEventListener('click', function () {
-      resultBox.innerHTML = '<div class="notice">Cancelled. No files were uploaded and no review was started.</div>';
+      resultBox.innerHTML = ui('<div class="notice">Cancelled. No files were uploaded and no review was started.</div>');
     });
     document.getElementById('s-confirm').addEventListener('click', function () {
       this.disabled = true;
-      resultBox.innerHTML = '<div class="notice">Checking files and submitting...</div>';
+      resultBox.innerHTML = ui('<div class="notice">Checking files and submitting...</div>');
       api("/submit", { method: "POST", body: fd }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (body) {
         return { ok: r.ok, status: r.status, body: body };
@@ -1955,7 +1991,7 @@ function renderSubmit() {
         resultBox.innerHTML = '<div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>';
       }
     }).catch(function () {
-      resultBox.innerHTML = '<div class="notice error">The server did not confirm this submission. Check Runs before trying again, and inspect the Shimmer startup window if it has stopped.</div>';
+      resultBox.innerHTML = ui('<div class="notice error">The server did not confirm this submission. Check Runs before trying again, and inspect the Shimmer startup window if it has stopped.</div>');
     });
     });
   });
@@ -1967,7 +2003,7 @@ function renderSubmit() {
 var detailPollMs = 4000;
 
 function renderDetail(runId) {
-  app.innerHTML = '<p class="muted">Loading…</p>';
+  app.innerHTML = ui('<p class="muted">Loading…</p>');
   loadDetail(runId, true);
 }
 
@@ -1975,13 +2011,13 @@ function renderDetail(runId) {
 /* Routing evidence is a compact operator summary; individual decisions are
    available only in Developer view. A live snapshot is not a coverage verdict. */
 function activationSummaryHtml(data, human) {
-  var out = '<h2>Agent activity</h2>';
+  var out = ui('<h2>Agent activity</h2>');
   var completion = data && data.completion;
   out += '<p>' + escapeHtml(completion
-    ? 'Pipeline completion record: ' + completion.state + '. This is execution evidence, not a quality certificate.'
-    : 'Pipeline completion is not recorded or could not be validated.') + '</p>';
+    ? ui('Pipeline completion record: ') + completion.state + ui('. This is execution evidence, not a quality certificate.')
+    : ui('Pipeline completion is not recorded or could not be validated.')) + '</p>';
   if (!data || data.recorded !== true) {
-    return out + '<p class="notice">Activation evidence is unavailable (' + escapeHtml((data && data.availability) || 'request_failed') + '). No call count or skipped-agent conclusion can be drawn.</p>';
+    return out + ui('<p class="notice">Activation evidence is unavailable (') + escapeHtml((data && data.availability) || 'request_failed') + ui('). No call count or skipped-agent conclusion can be drawn.</p>');
   }
   var rows = data.decisions, states = data.agent_states;
   var calls = rows.filter(function (r) { return r.actual_call === true; }).length;
@@ -1990,21 +2026,21 @@ function activationSummaryHtml(data, human) {
   var capped = rows.filter(function (r) { return r.truncated === true; }).length;
   var noncalls = rows.filter(function (r) { return r.activated === false; }).length;
   var unreached = states.filter(function (s) { return s.state === 'phase_not_reached'; }).length;
-  out += '<p>Routing profile: <strong>' + escapeHtml(data.activation_mode) + '</strong>. ' + calls +
-    ' dispatch attempts; ' + noncalls + ' explicit non-call decisions; ' + unreached + ' agents have no reached-phase decision.</p>' +
-    '<p>' + failures + ' recorded execution or preparation failures; ' + recovery + ' recovered replies; ' + capped + ' capped replies. Attempts are not successful generations, and a non-call is not a clean finding. Counts are the recorded snapshot.</p>';
+  out += ui('<p>Routing profile: <strong>') + escapeHtml(data.activation_mode) + '</strong>. ' + calls +
+    ui(' dispatch attempts; ') + noncalls + ui(' explicit non-call decisions; ') + unreached + ui(' agents have no reached-phase decision.</p>') +
+    '<p>' + failures + ui(' recorded execution or preparation failures; ') + recovery + ui(' recovered replies; ') + capped + ui(' capped replies. Attempts are not successful generations, and a non-call is not a clean finding. Counts are the recorded snapshot.</p>');
   if (human) return out;
-  out += '<details><summary>Per-agent states and activation decisions</summary><ul>';
+  out += ui('<details><summary>Per-agent states and activation decisions</summary><ul>');
   states.forEach(function (s) {
-    out += '<li>' + escapeHtml(s.agent) + ': latest state ' + escapeHtml(s.state) +
-      ', eligibility ' + escapeHtml(s.eligible === null ? 'unknown' : String(s.eligible)) +
-      ', total dispatch attempts ' + s.actual_calls + '</li>';
+    out += '<li>' + escapeHtml(s.agent) + ui(': latest state ') + escapeHtml(displayValue(s.state)) +
+      ui(', eligibility ') + escapeHtml(s.eligible === null ? ui('unknown') : String(s.eligible)) +
+      ui(', total dispatch attempts ') + s.actual_calls + '</li>';
   });
   out += '</ul><ol>';
   rows.forEach(function (r) {
-    out += '<li>' + escapeHtml(r.agent) + ': ' + escapeHtml(r.reason) + ' (' + escapeHtml(r.state) +
-      '), phase ' + escapeHtml(r.source_phase) + ', re-fire ' + escapeHtml(r.refire_count) + '/' + escapeHtml(r.refire_limit) +
-      ', trigger ' + escapeHtml(r.trigger_source) + '.<pre>' + escapeHtml(JSON.stringify(r, null, 2)) + '</pre></li>';
+    out += '<li>' + escapeHtml(r.agent) + ': ' + escapeHtml(displayValue(r.reason)) + ' (' + escapeHtml(displayValue(r.state)) +
+      ui('), phase ') + escapeHtml(r.source_phase) + ui(', re-fire ') + escapeHtml(r.refire_count) + '/' + escapeHtml(r.refire_limit) +
+      ui(', trigger ') + escapeHtml(r.trigger_source) + '.<pre>' + escapeHtml(JSON.stringify(r, null, 2)) + '</pre></li>';
   });
   return out + '</ol></details>';
 }
@@ -2012,7 +2048,7 @@ function activationSummaryHtml(data, human) {
 function loadActivation(runId) {
   var holder = document.createElement('section');
   holder.id = 'activation-summary';
-  holder.innerHTML = '<h2>Agent activity</h2><p>Loading recorded activity...</p>';
+  holder.innerHTML = ui('<h2>Agent activity</h2><p>Loading recorded activity...</p>');
   app.appendChild(holder);
   return apiJson('/runs/' + encodeURIComponent(runId) + '/activation').then(function (res) {
     if (currentRoute().runId !== runId || document.getElementById('activation-summary') !== holder) return;
@@ -2025,23 +2061,23 @@ function loadActivation(runId) {
 }
 
 function multiRoundHtml(data) {
-  if (!data || !data.recorded) return '<h2>Multi-round positioning</h2><p>No valid recorded case output.</p>';
-  var out = '<h2>Multi-round positioning</h2><p>' + (data.fixture ? 'SYNTHETIC FIXTURE. ' : '') +
-    escapeHtml(data.activation.state) + '. ' + escapeHtml(data.outcome || '') + ' ' +
-    escapeHtml(data.activation.reason || '') + '. Model quality and performance remain unverified.</p>';
+  if (!data || !data.recorded) return ui('<h2>Multi-round positioning</h2><p>No valid recorded case output.</p>');
+  var out = ui('<h2>Multi-round positioning</h2><p>') + (data.fixture ? ui('SYNTHETIC FIXTURE. ') : '') +
+    escapeHtml(displayValue(data.activation.state)) + '. ' + escapeHtml(displayValue(data.outcome || '')) + ' ' +
+    escapeHtml(displayValue(data.activation.reason || '')) + ui('. Model quality and performance remain unverified.</p>');
   if (data.strategic_support) {
-    out += '<p>' + escapeHtml(data.strategic_support.state_label || data.strategic_support.state) + '</p>';
+    out += '<p>' + escapeHtml(displayValue(data.strategic_support.state, data.strategic_support.state_label || data.strategic_support.state)) + '</p>';
     data.strategic_support.layers.forEach(function (node) {
-      out += '<details><summary>' + escapeHtml(node.display_label) + ' ' + escapeHtml(node.display_state || '') + '</summary><pre>' +
+      out += '<details><summary>' + escapeHtml(displayValue(node.type, node.display_label)) + ' ' + escapeHtml(displayValue(node.state, node.display_state || '')) + '</summary><pre>' +
         escapeHtml(JSON.stringify(node, null, 2)) + '</pre></details>';
     });
   }
   if (!data.view) return out;
-  out += '<p>Case: ' + escapeHtml(data.view.case_id) + '</p>';
+  out += ui('<p>Case: ') + escapeHtml(data.view.case_id) + '</p>';
   out += citationsHtml(data.view.evidence.map(function (e) { return e.ref_id; }), data.run_id, true);
   ['rounds', 'actors', 'issues', 'current_positions', 'actor_history', 'issue_history', 'movements',
    'unresolved', 'trajectory', 'decision_support', 'structural_comparisons', 'missing_sequences', 'evidence', 'records'].forEach(function (key) {
-    out += '<details><summary>' + escapeHtml(key.replace(/_/g, ' ')) + '</summary><pre>' +
+    out += '<details><summary>' + escapeHtml(displayValue(key, key.replace(/_/g, ' '))) + '</summary><pre>' +
       escapeHtml(JSON.stringify(data.view[key], null, 2)) + '</pre></details>';
   });
   return out;
@@ -2066,11 +2102,12 @@ function loadDetail(runId, isFirstLoad) {
   apiJson("/runs/" + encodeURIComponent(runId)).then(function (res) {
     if (currentRoute().runId !== runId) return; // navigated away while in flight
     if (!res.ok) {
-      app.innerHTML = '<div class="notice error">Could not load this run (' + res.status + '). ' + escapeHtml(detailText(res.body)) + '</div>';
+      app.innerHTML = ui('<div class="notice error">Could not load this run (') + res.status + '). ' + escapeHtml(detailText(res.body)) + '</div>';
       mastheadState.hidden = true;
       return;
     }
     var run = res.body;
+    ShimmerLocale.select(run.output_language || "en");
     updateMastheadState(run);
     var needsRunsForEstimate = run.state === "running" || run.state === "queued";
     if (needsRunsForEstimate) {
@@ -2083,7 +2120,7 @@ function loadDetail(runId, isFirstLoad) {
       schedulePoll(runId, run.state);
     }
   }).catch(function () {
-    if (isFirstLoad) app.innerHTML = '<div class="notice error">The request did not reach the server.</div>';
+    if (isFirstLoad) app.innerHTML = ui('<div class="notice error">The request did not reach the server.</div>');
   });
 }
 
@@ -2092,17 +2129,17 @@ function loadDetail(runId, isFirstLoad) {
    of the sentence (the masthead has no room for prose, only the label). */
 function mastheadHumanLabel(run) {
   var state = run.state, outcome = run.outcome;
-  if (state === "queued") return "Waiting to start";
-  if (state === "running") return "In progress";
-  if (state === "awaiting_approval") return "Paused: needs your decision";
-  if (state === "cancelled") return "Cancelled, at your request";
+  if (state === "queued") return ui("Waiting to start");
+  if (state === "running") return ui("In progress");
+  if (state === "awaiting_approval") return ui("Paused: needs your decision");
+  if (state === "cancelled") return ui("Cancelled, at your request");
   if (state === "stopped") {
-    if (outcome === "succeeded") return "Process finished";
-    if (outcome === "governance_stop") return "Stopped on purpose";
-    if (outcome === "crashed") return "Stopped by a system fault";
-    if (outcome === "timed_out") return "Did not finish in time";
+    if (outcome === "succeeded") return ui("Process finished");
+    if (outcome === "governance_stop") return ui("Stopped on purpose");
+    if (outcome === "crashed") return ui("Stopped by a system fault");
+    if (outcome === "timed_out") return ui("Did not finish in time");
   }
-  return "Unknown";
+  return ui("Unknown");
 }
 
 function updateMastheadState(run) {
@@ -2123,6 +2160,7 @@ function schedulePoll(runId, state) {
 }
 
 function renderDetailBody(run, allRuns) {
+  ShimmerLocale.select(run.output_language || "en");
   var tok = stateToken(run.state, run.outcome);
   var human = isHumanView();
   var html = "";
@@ -2131,10 +2169,10 @@ function renderDetailBody(run, allRuns) {
     '<div><h1><a href="#/runs" style="color:var(--quiet-text);text-decoration:none">&larr;</a> ' +
       (human ? runDisplayNameHtml(run, false) : '<span class="mono">' + escapeHtml(run.run_id) + '</span>') +
       '</h1>' +
-      '<div class="detail-meta">' + escapeHtml(run.task || "") + (run.review_mode ? " · " + escapeHtml(run.review_mode) : "") +
-      (human ? "" : (' · submitted ' + escapeHtml(relativeWhen(run.submitted_at)))) + '</div></div>';
+      '<div class="detail-meta">' + escapeHtml(displayValue(run.task || "")) + (run.review_mode ? " · " + escapeHtml(displayValue(run.review_mode)) : "") +
+      (human ? "" : (ui(' · submitted ') + escapeHtml(relativeWhen(run.submitted_at)))) + '</div></div>';
   if (run.state === "queued" || run.state === "running") {
-    html += '<button class="button danger" id="cancel-btn">Cancel</button>';
+    html += ui('<button class="button danger" id="cancel-btn">Cancel</button>');
   }
   html += '</div>';
 
@@ -2144,7 +2182,7 @@ function renderDetailBody(run, allRuns) {
     if (run.state === "running" && run.progress) {
       var prog = parseProgress(run.progress);
       var pname = currentPhaseName(prog.phase);
-      if (pname) html += ', phase ' + escapeHtml(prog.phase) + ', ' + escapeHtml(pname);
+      if (pname) html += ui(', phase ') + escapeHtml(prog.phase) + ', ' + escapeHtml(pname);
     }
     html += '</span></div>';
   } else {
@@ -2154,7 +2192,7 @@ function renderDetailBody(run, allRuns) {
   if (run.state === "running") {
     html += pairBarHtml(run);
     var est = estimateRemaining(run, allRuns);
-    if (est) html += '<p class="muted" style="font-size:0.85rem;margin-top:0.25rem">Estimated remaining: ' + escapeHtml(est) + '</p>';
+    if (est) html += ui('<p class="muted" style="font-size:0.85rem;margin-top:0.25rem">Estimated remaining: ') + escapeHtml(est) + '</p>';
   }
 
   /* The raw stop_reason.detail box (including a crash's Python traceback)
@@ -2170,8 +2208,8 @@ function renderDetailBody(run, allRuns) {
     }
     var raw = run.stop_reason.detail || "";
     var truncated = raw.length > 400 ? raw.slice(0, 400) + "…" : raw;
-    html += escapeHtml(truncated);
-    if (raw.length > 400) html += ' <a href="#/runs/' + encodeURIComponent(run.run_id) + '" onclick="document.getElementById(\'log-panel\').scrollIntoView()">view full log below</a>';
+    html += escapeHtml(ShimmerLocale.message(truncated));
+    if (raw.length > 400) html += ' <a href="#/runs/' + encodeURIComponent(run.run_id) + ui('" onclick="document.getElementById(\'log-panel\').scrollIntoView()">view full log below</a>');
     html += '</div>';
   }
 
@@ -2194,8 +2232,8 @@ function renderDetailBody(run, allRuns) {
   if (isPartialReview) {
     html += '<p class="notice warn" style="margin-top:0.6rem">' + escapeHtml(
       isLiveState
-        ? (human ? "Anything found or paired below was found so far, not a complete review yet." : "Partial: found so far, this run is still in progress. Not a complete review.")
-        : (human ? "Anything found or paired below was found before this run ended. This is not a complete review." : "Partial: found before this run ended (not stopped/succeeded). Not a complete review.")
+        ? (human ? ui("Anything found or paired below was found so far, not a complete review yet.") : ui("Partial: found so far, this run is still in progress. Not a complete review."))
+        : (human ? ui("Anything found or paired below was found before this run ended. This is not a complete review.") : ui("Partial: found before this run ended (not stopped/succeeded). Not a complete review."))
     ) + '</p>';
   }
   html += '</div>'; // status-block
@@ -2207,7 +2245,7 @@ function renderDetailBody(run, allRuns) {
      state. A reviewer deciding Approve/Deny needs to see how far the run
      had gotten before it paused, the same as anyone watching a running run. */
   if (run.state === "running" || run.state === "queued" || run.state === "awaiting_approval") {
-    html += '<h2>' + (human ? "Steps" : "Phases") + '</h2>';
+    html += '<h2>' + (human ? ui("Steps") : ui("Phases")) + '</h2>';
     var prog2 = parseProgress(run.progress);
     html += human ? phaseLadderHumanHtml(prog2.phase, run.task) : phaseLadderHtml(prog2.phase);
   }
@@ -2226,7 +2264,7 @@ function renderDetailBody(run, allRuns) {
      never a heading over "nothing to download yet." Same in both views:
      presence never differs, only wording. */
   if (run.documents && run.documents.length) {
-    html += '<h2>Documents</h2>';
+    html += ui('<h2>Documents</h2>');
     html += renderDocuments(run);
   }
 
@@ -2278,7 +2316,7 @@ function renderDetailBody(run, allRuns) {
 function renderApprovalBlock(run) {
   var pa = run.pending_approval;
   var human = isHumanView();
-  var html = '<h2>' + (human ? "Paused: needs your decision" : "Awaiting your decision") + '</h2>';
+  var html = '<h2>' + (human ? ui("Paused: needs your decision") : ui("Awaiting your decision")) + '</h2>';
   /* A governed pause with no message and no payload is possible (the server
      does not require either field, _pending_approval_for's own defaults);
      approvalDetailHuman() would then return an empty string and the
@@ -2289,8 +2327,8 @@ function renderApprovalBlock(run) {
   if (!hasContent) {
     html += '<p class="notice warn">' + escapeHtml(
       human
-        ? "This run is waiting on a decision, but the system did not record what it needs decided. Check the log before answering; approving or denying blind is not recommended."
-        : "No message or payload was recorded for this pending approval (pending_approval.json carries neither). Check the log before answering."
+        ? ui("This run is waiting on a decision, but the system did not record what it needs decided. Check the log before answering; approving or denying blind is not recommended.")
+        : ui("No message or payload was recorded for this pending approval (pending_approval.json carries neither). Check the log before answering.")
     ) + '</p>';
   } else if (human) {
     /* The payload's raw key/value table is folded into one sentence rather
@@ -2304,7 +2342,7 @@ function renderApprovalBlock(run) {
        this is the only place the full detail appears. */
     html += '<p class="approval-message">' + approvalDetailHuman(run) + '</p>';
   } else {
-    html += '<p class="approval-message">' + escapeHtml(pa.message || pa.topic || "") + '</p>';
+    html += '<p class="approval-message">' + escapeHtml(ShimmerLocale.message(pa.message || pa.topic || "")) + '</p>';
     if (pa.payload && Object.keys(pa.payload).length) {
       html += '<table class="kv-table">' + Object.keys(pa.payload).filter(function (k) { return k !== "message"; }).map(function (k) {
         return '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(pa.payload[k]) + '</td></tr>';
@@ -2312,12 +2350,12 @@ function renderApprovalBlock(run) {
     }
   }
   if (pa.timeout_at) {
-    html += '<p class="muted" style="font-size:0.8rem;margin-top:0.5rem">If nobody answers by ' + escapeHtml(new Date(pa.timeout_at).toLocaleString()) + ', this defaults to deferred.</p>';
+    html += ui('<p class="muted" style="font-size:0.8rem;margin-top:0.5rem">If nobody answers by ') + escapeHtml(new Date(pa.timeout_at).toLocaleString()) + ui(', this defaults to deferred.</p>');
   }
-  html += '<textarea id="approval-rationale" placeholder="rationale (optional)"></textarea>';
+  html += ui('<textarea id="approval-rationale" placeholder="rationale (optional)"></textarea>');
   html += '<div class="approval-actions">' +
-    '<button class="button" id="approval-approve">Approve</button>' +
-    '<button class="button secondary" id="approval-deny">Deny</button>' +
+    ui('<button class="button" id="approval-approve">Approve</button>') +
+    ui('<button class="button secondary" id="approval-deny">Deny</button>') +
     '<span id="approval-result"></span>' +
     '</div>';
   return html;
@@ -2326,19 +2364,19 @@ function renderApprovalBlock(run) {
 function answerApproval(runId, decision) {
   var rationale = (document.getElementById("approval-rationale") || {}).value || "";
   var resultEl = document.getElementById("approval-result");
-  resultEl.textContent = "Recording…";
+  resultEl.textContent = ui("Recording…");
   apiJson("/runs/" + encodeURIComponent(runId) + "/approval", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ decision: decision, rationale: rationale })
   }).then(function (res) {
     if (res.ok) {
-      resultEl.textContent = "Recorded. The run has not resumed yet: this page will update once it does.";
+      resultEl.textContent = ui("Recorded. The run has not resumed yet: this page will update once it does.");
       loadDetail(runId, false);
     } else {
-      resultEl.textContent = detailText(res.body) + ". Nothing was changed.";
+      resultEl.textContent = detailText(res.body) + ui(". Nothing was changed.");
     }
-  }).catch(function () { resultEl.textContent = "The request did not reach the server."; });
+  }).catch(function () { resultEl.textContent = ui("The request did not reach the server."); });
 }
 
 function confirmCancel(runId) {
@@ -2347,16 +2385,16 @@ function confirmCancel(runId) {
   var box = document.createElement("div");
   box.id = "cancel-confirm";
   box.className = "notice warn";
-  box.innerHTML = "Cancel this run? This stops real work in progress and cannot be undone. " +
-    '<button class="button danger" id="cancel-confirm-yes" style="margin-left:0.5rem">Yes, cancel</button> ' +
-    '<button class="button secondary" id="cancel-confirm-no">No</button>';
+  box.innerHTML = ui("Cancel this run? This stops real work in progress and cannot be undone. ") +
+    ui('<button class="button danger" id="cancel-confirm-yes" style="margin-left:0.5rem">Yes, cancel</button> ') +
+    ui('<button class="button secondary" id="cancel-confirm-no">No</button>');
   document.querySelector(".detail-header").insertAdjacentElement("afterend", box);
   document.getElementById("cancel-confirm-no").addEventListener("click", function () { box.remove(); });
   document.getElementById("cancel-confirm-yes").addEventListener("click", function () {
-    box.textContent = "Cancelling…";
+    box.textContent = ui("Cancelling…");
     apiJson("/runs/" + encodeURIComponent(runId) + "/cancel", { method: "POST" }).then(function (res) {
       if (res.ok) { loadDetail(runId, false); }
-      else { box.className = "notice error"; box.textContent = detailText(res.body) + ". Nothing was changed."; }
+      else { box.className = "notice error"; box.textContent = detailText(res.body) + ui(". Nothing was changed."); }
     });
   });
 }
@@ -2369,9 +2407,9 @@ function confirmCancel(runId) {
 ======================================================================= */
 function renderDocuments(run) {
   return run.documents.map(function (d) {
-    var statusText = d.status === "done" ? "done" : "in progress";
+    var statusText = displayValue(d.status === "done" ? "done" : "running", d.status === "done" ? "done" : "in progress");
     var action = d.status === "done"
-      ? '<button class="button secondary" data-download="' + escapeHtml(d.deliverables_url) + '" data-name="' + escapeHtml(d.doc_id) + '.zip">Download</button>'
+      ? '<button class="button secondary" data-download="' + escapeHtml(d.deliverables_url) + '" data-name="' + escapeHtml(d.doc_id) + ui('.zip">Download</button>')
       : '<span class="muted">.</span>';
     return '<div class="doc-row"><span class="doc-id">' + escapeHtml(d.doc_id) + '</span>' +
       '<span class="muted">' + statusText + '</span>' + action + '</div>';
@@ -2393,7 +2431,7 @@ function attachDownloadHandlers() {
 
 function downloadWithToken(url, filename, btn) {
   var original = btn.textContent;
-  btn.textContent = "Downloading…";
+  btn.textContent = ui("Downloading…");
   btn.disabled = true;
   api(url).then(function (r) {
     if (!r.ok) throw new Error("HTTP " + r.status);
@@ -2411,7 +2449,7 @@ function downloadWithToken(url, filename, btn) {
     btn.textContent = original;
     btn.disabled = false;
   }).catch(function () {
-    btn.textContent = "Failed, retry";
+    btn.textContent = ui("Failed, retry");
     btn.disabled = false;
   });
 }
@@ -2428,14 +2466,14 @@ function renderArchiveSection(run) {
   var human = isHumanView();
   var label, noteText;
   if (human) {
-    label = isPartial ? "Download what's finished so far." : "Download full archive";
-    noteText = isPartial ? "This review did not complete, so some documents may be missing from this download." : "";
+    label = isPartial ? ui("Download what's finished so far.") : ui("Download full archive");
+    noteText = isPartial ? ui("This review did not complete, so some documents may be missing from this download.") : "";
   } else {
-    label = isPartial ? "Download partial archive" : "Download full archive";
-    noteText = isPartial ? "This run did not finish successfully: the archive contains only the documents that completed." : "";
+    label = isPartial ? ui("Download partial archive") : ui("Download full archive");
+    noteText = isPartial ? ui("This run did not finish successfully: the archive contains only the documents that completed.") : "";
   }
   var note = noteText ? '<p class="muted" style="font-size:0.8rem;margin-top:0.4rem">' + escapeHtml(noteText) + '</p>' : "";
-  return '<h2>Archive</h2>' +
+  return ui('<h2>Archive</h2>') +
     '<button class="button secondary" data-download="/runs/' + encodeURIComponent(run.run_id) + '/deliverables" data-name="' + encodeURIComponent(run.run_id) + '_deliverables.zip">' + escapeHtml(label) + '</button>' +
     note + attachDownloadHandlers();
 }
@@ -2506,7 +2544,7 @@ function citationsHtml(refs, runId, human) {
       escapeHtml(ref) + '" data-run-id="' + escapeHtml(runId) + '">' + escapeHtml(ref) + '</a>' +
       '<span class="rule-panel" id="' + id + '-panel" hidden></span>';
   }).join(" ");
-  var lead = human ? "Rests on: " : "source_refs: ";
+  var lead = human ? ui("Rests on: ") : "source_refs: ";
   return '<div class="muted" style="margin-top:0.25rem">' + escapeHtml(lead) + links + '</div>';
 }
 
@@ -2525,7 +2563,7 @@ function wireCitationLinks(scope) {
       panel.hidden = false;
       if (panel._loaded) return;
       panel._loaded = true;
-      panel.innerHTML = '<span class="muted">Loading…</span>';
+      panel.innerHTML = ui('<span class="muted">Loading…</span>');
       var runId = a.getAttribute("data-run-id");
       var refId = a.getAttribute("data-ref-id");
       apiJson("/runs/" + encodeURIComponent(runId) + "/references?ref_id=" +
@@ -2533,7 +2571,7 @@ function wireCitationLinks(scope) {
         if (!res.ok) {
           panel.innerHTML = '<div class="notice warn">' + escapeHtml(
             isHumanView()
-              ? "The passage behind this citation is not on record for this run: " + detailText(res.body) + "."
+              ? ui("The passage behind this citation is not on record for this run: ") + detailText(res.body) + "."
               : detailText(res.body)) + '</div>';
           return;
         }
@@ -2542,8 +2580,8 @@ function wireCitationLinks(scope) {
         if (!one) {
           panel.innerHTML = '<div class="notice warn">' + escapeHtml(
             isHumanView()
-              ? "This run's reference index holds no passage under that id."
-              : "no entry for " + refId) + '</div>';
+              ? ui("This run's reference index holds no passage under that id.")
+              : ui("no entry for ") + refId) + '</div>';
           return;
         }
         var where = one.document_name || one.document_id || "";
@@ -2569,12 +2607,12 @@ function wireRuleLinks(scope) {
       panel.hidden = false;
       if (panel._loaded) return;
       panel._loaded = true;
-      panel.innerHTML = '<span class="muted">Loading…</span>';
+      panel.innerHTML = ui('<span class="muted">Loading…</span>');
       apiJson("/rules/" + encodeURIComponent(a.getAttribute("data-rule-id"))).then(function (res) {
         if (!res.ok) {
           panel.innerHTML = '<div class="notice warn">' + escapeHtml(
             isHumanView()
-              ? "This rule's own text is not available: " + detailText(res.body) + "."
+              ? ui("This rule's own text is not available: ") + detailText(res.body) + "."
               : detailText(res.body)
           ) + '</div>';
           return;
@@ -2583,8 +2621,8 @@ function wireRuleLinks(scope) {
         var shown = r.source_rule_id || r.id || "";
         panel.innerHTML = '<div class="rule-panel-body">' +
           '<div class="rule-panel-head"><span class="mono">' + escapeHtml(shown) + '</span>' +
-          (r.severity ? ' <span class="muted">' + escapeHtml(r.severity) + '</span>' : '') + '</div>' +
-          '<p class="muted">Current registry text; it may differ from the rule used by this run.</p>' +
+          (r.severity ? ' <span class="muted">' + escapeHtml(displayValue(r.severity)) + '</span>' : '') + '</div>' +
+          ui('<p class="muted">Current registry text; it may differ from the rule used by this run.</p>') +
           '<p>' + escapeHtml(r.rule || "") + '</p>' +
           '</div>';
       });
@@ -2604,7 +2642,7 @@ function findingRuleParen(f, extra) {
 
 function findingPriorParen(f) {
   var id = f.unit_id || "";
-  return mutedParen((id ? id + ", " : "") + "compared to the earlier version");
+  return mutedParen((id ? id + ", " : "") + ui("compared to the earlier version"));
 }
 
 /* One relation -> one human sentence, exactly per CONSOLE_LANGUAGE.md's
@@ -2628,26 +2666,26 @@ function findingSentenceHtml(f) {
        together; fixed here rather than left, per the same rule this whole
        pass has followed for every other defect found along the way. */
     if (irregular) {
-      return '<strong>The total does not check out.</strong> The stated total, ' + escapeHtml(a) +
-        ', does not match what its parts add up to, ' + escapeHtml(b) + '. ' +
+      return ui('<strong>The total does not check out.</strong> The stated total, ') + escapeHtml(a) +
+        ui(', does not match what its parts add up to, ') + escapeHtml(b) + '. ' +
         findingRuleParen(f, "irregular");
     }
-    return '<strong>The total checks out.</strong> The stated total, ' + escapeHtml(a) +
-      ', matches what its parts add up to, ' + escapeHtml(b) + ', within the tolerance the rule allows. ' +
+    return ui('<strong>The total checks out.</strong> The stated total, ') + escapeHtml(a) +
+      ui(', matches what its parts add up to, ') + escapeHtml(b) + ui(', within the tolerance the rule allows. ') +
       findingRuleParen(f);
   }
   if (rel === "above_band") {
-    return '<strong>This figure is higher than the reference table allows.</strong> The document states ' + escapeHtml(a) +
-      '. The reference table\'s upper bound for this category is ' + escapeHtml(b) + '. ' +
+    return ui('<strong>This figure is higher than the reference table allows.</strong> The document states ') + escapeHtml(a) +
+      ui('. The reference table\'s upper bound for this category is ') + escapeHtml(b) + '. ' +
       findingRuleParen(f, "irregular");
   }
   if (rel === "below_band") {
-    return '<strong>This figure is lower than the reference table allows.</strong> The document states ' + escapeHtml(a) +
-      '. The reference table\'s lower bound for this category is ' + escapeHtml(b) + '. ' +
+    return ui('<strong>This figure is lower than the reference table allows.</strong> The document states ') + escapeHtml(a) +
+      ui('. The reference table\'s lower bound for this category is ') + escapeHtml(b) + '. ' +
       findingRuleParen(f, "irregular");
   }
   if (rel === "missing_field") {
-    return '<strong>Something the rule requires is missing.</strong> The document does not state a required value, and the rule requires one. ' +
+    return ui('<strong>Something the rule requires is missing.</strong> The document does not state a required value, and the rule requires one. ') +
       findingRuleParen(f, "irregular");
   }
   if (rel === "product_mismatch") {
@@ -2655,12 +2693,12 @@ function findingSentenceHtml(f) {
        paired_review.py's own product_mismatch check carries "agrees":
        _close(computed, vc), ok when the arithmetic matches. */
     if (irregular) {
-      return '<strong>The stated total doesn\'t match the calculation behind it.</strong> The document states a total of ' + escapeHtml(a) +
-        '. Quantity times unit price works out to ' + escapeHtml(b) + '. ' +
+      return ui('<strong>The stated total doesn\'t match the calculation behind it.</strong> The document states a total of ') + escapeHtml(a) +
+        ui('. Quantity times unit price works out to ') + escapeHtml(b) + '. ' +
         findingRuleParen(f, "irregular");
     }
-    return '<strong>The stated total matches the calculation behind it.</strong> The document states a total of ' + escapeHtml(a) +
-      '. Quantity times unit price works out to ' + escapeHtml(b) + ', within the tolerance the rule allows. ' +
+    return ui('<strong>The stated total matches the calculation behind it.</strong> The document states a total of ') + escapeHtml(a) +
+      ui('. Quantity times unit price works out to ') + escapeHtml(b) + ui(', within the tolerance the rule allows. ') +
       findingRuleParen(f);
   }
   if (rel === "ratio_out_of_range") {
@@ -2670,17 +2708,17 @@ function findingSentenceHtml(f) {
        one that is out of range. The relation's own name names the CHECK,
        not always its outcome; the verdict says which way it went. */
     if (irregular) {
-      return '<strong>This ratio is outside the range the rule allows.</strong> The document states a ratio of ' + escapeHtml(a) +
-        '. The rule permits ' + escapeHtml(b) + '. ' +
+      return ui('<strong>This ratio is outside the range the rule allows.</strong> The document states a ratio of ') + escapeHtml(a) +
+        ui('. The rule permits ') + escapeHtml(b) + '. ' +
         findingRuleParen(f, "irregular");
     }
-    return '<strong>This ratio is within the range the rule allows.</strong> The document states a ratio of ' + escapeHtml(a) +
-      '. The rule permits ' + escapeHtml(b) + '. ' +
+    return ui('<strong>This ratio is within the range the rule allows.</strong> The document states a ratio of ') + escapeHtml(a) +
+      ui('. The rule permits ') + escapeHtml(b) + '. ' +
       findingRuleParen(f);
   }
   if (rel === "date_window") {
-    return '<strong>This date is outside the window the rule requires.</strong> The document states ' + escapeHtml(a) +
-      '. The rule requires ' + escapeHtml(b) + '. ' +
+    return ui('<strong>This date is outside the window the rule requires.</strong> The document states ') + escapeHtml(a) +
+      ui('. The rule requires ') + escapeHtml(b) + '. ' +
       findingRuleParen(f, "irregular");
   }
   if (rel === "licence_missing") {
@@ -2694,42 +2732,42 @@ function findingSentenceHtml(f) {
        specific kind of document still reads their own wording here, since
        the rule's own text, cited in the parenthetical, is theirs, not this
        file's. */
-    return '<strong>A reference this rule requires is missing.</strong> This unit needs an accompanying reference or citation that this rule requires, and none is present. ' +
+    return ui('<strong>A reference this rule requires is missing.</strong> This unit needs an accompanying reference or citation that this rule requires, and none is present. ') +
       findingRuleParen(f, "irregular");
   }
   if (rel === "changed_from_prior") {
-    var label = f.field_label || "this field";
-    return '<strong>This changed since the earlier draft.</strong> The ' + escapeHtml(label) + ' was ' + escapeHtml(b) +
-      '; this version states ' + escapeHtml(a) + (f.delta ? (", a change of " + escapeHtml(String(f.delta))) : "") +
-      '. This is not a problem, only a change worth knowing about. ' + findingPriorParen(f);
+    var label = f.field_label || ui("this field");
+    return ui('<strong>This changed since the earlier draft.</strong> The ') + escapeHtml(label) + ui(' was ') + escapeHtml(b) +
+      ui('; this version states ') + escapeHtml(a) + (f.delta ? (ui(", a change of ") + escapeHtml(String(f.delta))) : "") +
+      ui('. This is not a problem, only a change worth knowing about. ') + findingPriorParen(f);
   }
   if (rel === "unchanged_from_prior") {
-    var label2 = f.field_label || "this field";
-    return '<strong>This is unchanged since the earlier draft.</strong> The ' + escapeHtml(label2) + ' was ' + escapeHtml(b) + ' and still is. ' +
+    var label2 = f.field_label || ui("this field");
+    return ui('<strong>This is unchanged since the earlier draft.</strong> The ') + escapeHtml(label2) + ui(' was ') + escapeHtml(b) + ui(' and still is. ') +
       findingPriorParen(f);
   }
   if (rel === "moved_toward") {
-    var label3 = f.field_label || "this field";
-    return '<strong>This moved closer to what the reference table allows.</strong> The ' + escapeHtml(label3) + ' was ' + escapeHtml(b) +
-      ', now ' + escapeHtml(a) + (f.band_distance_change ? (": " + escapeHtml(String(f.band_distance_change)) + " closer to the band the rule states") : ", closer to the band the rule states") +
+    var label3 = f.field_label || ui("this field");
+    return ui('<strong>This moved closer to what the reference table allows.</strong> The ') + escapeHtml(label3) + ui(' was ') + escapeHtml(b) +
+      ui(', now ') + escapeHtml(a) + (f.band_distance_change ? (": " + escapeHtml(String(f.band_distance_change)) + ui(" closer to the band the rule states")) : ui(", closer to the band the rule states")) +
       '. ' + findingPriorParen(f);
   }
   if (rel === "moved_away") {
-    var label4 = f.field_label || "this field";
-    return '<strong>This moved further from what the reference table allows.</strong> The ' + escapeHtml(label4) + ' was ' + escapeHtml(b) +
-      ', now ' + escapeHtml(a) + (f.band_distance_change ? (": " + escapeHtml(String(f.band_distance_change)) + " further from the band the rule states") : ", further from the band the rule states") +
-      '. This is not flagged as irregular by itself; it is a direction worth watching. ' + findingPriorParen(f);
+    var label4 = f.field_label || ui("this field");
+    return ui('<strong>This moved further from what the reference table allows.</strong> The ') + escapeHtml(label4) + ui(' was ') + escapeHtml(b) +
+      ui(', now ') + escapeHtml(a) + (f.band_distance_change ? (": " + escapeHtml(String(f.band_distance_change)) + ui(" further from the band the rule states")) : ui(", further from the band the rule states")) +
+      ui('. This is not flagged as irregular by itself; it is a direction worth watching. ') + findingPriorParen(f);
   }
   if (rel === "absent_since_prior") {
-    var label5 = f.field_label || "this field";
-    return '<strong>This is no longer in the document.</strong> The earlier version stated a ' + escapeHtml(label5) + ' of ' + escapeHtml(b) +
-      '. The current version does not state one at all. ' + findingPriorParen(f);
+    var label5 = f.field_label || ui("this field");
+    return ui('<strong>This is no longer in the document.</strong> The earlier version stated a ') + escapeHtml(label5) + ui(' of ') + escapeHtml(b) +
+      ui('. The current version does not state one at all. ') + findingPriorParen(f);
   }
   /* Unrecognised relation: an honest restatement of the developer row,
      never a blank space, since the human view must never drop a fact the
      developer view shows. */
-  return '<strong>' + escapeHtml(rel || "Finding") + (irregular ? " (irregular)" : "") + '.</strong> ' +
-    escapeHtml(f.explanation || "") + " " + escapeHtml(a) + " / " + escapeHtml(b) + " " + findingRuleParen(f);
+  return '<strong>' + escapeHtml(rel || ui("Finding")) + (irregular ? ui(" (irregular)") : "") + '.</strong> ' +
+    escapeHtml(ShimmerLocale.message(f.explanation || "")) + " " + escapeHtml(a) + " / " + escapeHtml(b) + " " + findingRuleParen(f);
 }
 
 /* =======================================================================
@@ -2757,8 +2795,8 @@ function amendmentOriginalHtml(a, human) {
     return escapeHtml(a.original_text);
   }
   var note = human
-    ? "The original wording was not recorded for this amendment."
-    : "original_text not a passage (raw value: " + (a.original_text || "(empty)") + ")";
+    ? ui("The original wording was not recorded for this amendment.")
+    : ui("original_text not a passage (raw value: ") + (a.original_text || ui("(empty)")) + ")";
   return '<span class="muted">' + escapeHtml(note) + '</span>';
 }
 
@@ -2772,25 +2810,25 @@ function amendmentRepairNoteHtml(a, human) {
      and payload fix land). */
   if (!a.unit_id_repaired_to) return "";
   var note = human
-    ? "Matched to unit " + a.unit_id_repaired_to + " by content, the finding's own unit id did not match directly."
-    : "unit_id_repaired_to: " + a.unit_id_repaired_to + " (finding_unit_id did not match a unit directly; resolved by content match)";
+    ? ui("Matched to unit ") + a.unit_id_repaired_to + ui(" by content, the finding's own unit id did not match directly.")
+    : "unit_id_repaired_to: " + a.unit_id_repaired_to + ui(" (finding_unit_id did not match a unit directly; resolved by content match)");
   return '<p class="amendment-repair-note">' + escapeHtml(note) + '</p>';
 }
 
 function amendmentHumanHtml(a) {
   var proposed = a.proposed_text
     ? escapeHtml(a.proposed_text)
-    : '<span class="muted">No proposed wording was given for this correction.</span>';
+    : ui('<span class="muted">No proposed wording was given for this correction.</span>');
   var reasoning = a.comment
-    ? escapeHtml(a.comment)
-    : '<span class="muted">No reasoning was recorded for this proposal.</span>';
+    ? escapeHtml(ShimmerLocale.message(a.comment))
+    : ui('<span class="muted">No reasoning was recorded for this proposal.</span>');
   var ruleShown = a.source_rule_id || a.convention_ref || "";
   return '<div class="amendment-block">' +
-    '<p class="amendment-label">Proposed correction ' + (ruleShown ? ruleLinkHtml(a.convention_ref, ruleShown) : "") + '</p>' +
-    '<p><span class="amendment-field-label">As it stands:</span> ' + amendmentOriginalHtml(a, true) + '</p>' +
+    ui('<p class="amendment-label">Proposed correction ') + (ruleShown ? ruleLinkHtml(a.convention_ref, ruleShown) : "") + '</p>' +
+    ui('<p><span class="amendment-field-label">As it stands:</span> ') + amendmentOriginalHtml(a, true) + '</p>' +
     amendmentRepairNoteHtml(a, true) +
-    '<p><span class="amendment-field-label">Proposed:</span> ' + proposed + '</p>' +
-    '<p><span class="amendment-field-label">Why:</span> ' + reasoning + '</p>' +
+    ui('<p><span class="amendment-field-label">Proposed:</span> ') + proposed + '</p>' +
+    ui('<p><span class="amendment-field-label">Why:</span> ') + reasoning + '</p>' +
     '</div>';
 }
 
@@ -2799,11 +2837,11 @@ function amendmentDeveloperHtml(a) {
     ? escapeHtml(a.proposed_text)
     : '<span class="muted">proposed_text: null</span>';
   var reasoning = a.comment
-    ? escapeHtml(a.comment)
-    : '<span class="muted">comment: empty</span>';
+    ? escapeHtml(ShimmerLocale.message(a.comment))
+    : ui('<span class="muted">comment: empty</span>');
   var ruleShown = a.source_rule_id || a.convention_ref || "";
   return '<div class="amendment-block">' +
-    '<p class="amendment-label mono">amendment ' + (ruleShown ? ruleLinkHtml(a.convention_ref, ruleShown) : "") + '</p>' +
+    ui('<p class="amendment-label mono">amendment ') + (ruleShown ? ruleLinkHtml(a.convention_ref, ruleShown) : "") + '</p>' +
     '<p><span class="amendment-field-label">original_text:</span> ' + amendmentOriginalHtml(a, false) + '</p>' +
     amendmentRepairNoteHtml(a, false) +
     '<p><span class="amendment-field-label">proposed_text:</span> ' + proposed + '</p>' +
@@ -2839,17 +2877,17 @@ function relationWord(relation, human) {
      being hidden, because an unrecognised relation is a real fact. */
   if (!human) return relation || "";
   var words = {
-    "above_band": "a figure above the allowed range",
-    "below_band": "a figure below the allowed range",
-    "ratio_out_of_range": "a ratio outside the allowed range",
-    "sum_mismatch": "a total that does not match its parts",
-    "product_mismatch": "a product that does not match its factors",
-    "missing_field": "a required field that is absent",
-    "changed_from_prior": "a figure that changed since the earlier version",
-    "unchanged_from_prior": "a figure unchanged since the earlier version",
-    "moved_toward": "a figure that moved toward the range",
-    "moved_away": "a figure that moved away from the range",
-    "absent_since_prior": "a term the earlier version stated and this one does not"
+    "above_band": ui("a figure above the allowed range"),
+    "below_band": ui("a figure below the allowed range"),
+    "ratio_out_of_range": ui("a ratio outside the allowed range"),
+    "sum_mismatch": ui("a total that does not match its parts"),
+    "product_mismatch": ui("a product that does not match its factors"),
+    "missing_field": ui("a required field that is absent"),
+    "changed_from_prior": ui("a figure that changed since the earlier version"),
+    "unchanged_from_prior": ui("a figure unchanged since the earlier version"),
+    "moved_toward": ui("a figure that moved toward the range"),
+    "moved_away": ui("a figure that moved away from the range"),
+    "absent_since_prior": ui("a term the earlier version stated and this one does not")
   };
   return words[relation] || relation || "";
 }
@@ -2869,19 +2907,19 @@ function amendmentRefusalsHtml(refusals, human) {
          relation the route supplies. A developer comparing the two views saw
          strictly less than a reviewer, which inverts the split this surface is
          built on. Both now carry both. */
-      ? '<li>' + escapeHtml(where ? where + ": " : "") + escapeHtml(r.reason) +
+      ? '<li>' + escapeHtml(where ? where + ": " : "") + escapeHtml(displayValue(r.reason)) +
         (r.relation ? ' <span class="muted">' + escapeHtml("(" + relationWord(r.relation, true) + ")") + '</span>' : '') +
-        (r.explanation ? '<div class="muted">' + escapeHtml(r.explanation) + '</div>' : '') + '</li>'
+        (r.explanation ? '<div class="muted">' + escapeHtml(ShimmerLocale.message(r.explanation)) + '</div>' : '') + '</li>'
       : '<li class="mono">' + escapeHtml(where) +
-        (r.relation ? ' [' + escapeHtml(r.relation) + ']' : '') + ': ' + escapeHtml(r.reason) +
-        (r.explanation ? '<div class="muted">' + escapeHtml(r.explanation) + '</div>' : '') + '</li>';
+        (r.relation ? ' [' + escapeHtml(displayValue(r.relation)) + ']' : '') + ': ' + escapeHtml(displayValue(r.reason)) +
+        (r.explanation ? '<div class="muted">' + escapeHtml(ShimmerLocale.message(r.explanation)) + '</div>' : '') + '</li>';
   }).join("");
   var heading = human
-    ? "Findings without a proposed correction (" + refusals.length + ")"
-    : "amendment_refusals (" + refusals.length + ")";
+    ? ui("Findings without a proposed correction (") + refusals.length + ")"
+    : ui("amendment_refusals (") + refusals.length + ")";
   var note = human
-    ? "Each finding remains reported. Its reason explains whether a correction was withheld by the rule or could not be built."
-    : "Findings with a withheld or unavailable amendment; see GET /runs/{run_id}/amendment-refusals for the reason, severity and finding_stands record.";
+    ? ui("Each finding remains reported. Its reason explains whether a correction was withheld by the rule or could not be built.")
+    : ui("Findings with a withheld or unavailable amendment; see GET /runs/{run_id}/amendment-refusals for the reason, severity and finding_stands record.");
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
 }
 
@@ -2895,15 +2933,15 @@ function contractViolationsHtml(violations, human) {
   var rows = violations.map(function (v) {
     var missing = (v.missing_fields || []).join(", ");
     return human
-      ? '<li>' + escapeHtml(v.agent || "") + ' produced nothing usable: ' + escapeHtml(missing) + '</li>'
+      ? '<li>' + escapeHtml(v.agent || "") + ui(' produced nothing usable: ') + escapeHtml(missing) + '</li>'
       : '<li class="mono">' + escapeHtml(v.agent || "") + ' (' + escapeHtml(v.model || "") + '): ' + escapeHtml(missing) + '</li>';
   }).join("");
   var heading = human
-    ? "Calls that produced nothing usable (" + violations.length + ")"
-    : "contract_violations (" + violations.length + ")";
+    ? ui("Calls that produced nothing usable (") + violations.length + ")"
+    : ui("contract_violations (") + violations.length + ")";
   var note = human
-    ? "Each of these calls failed its agent's own contract outright, no finding at all, thin or otherwise, came out of it."
-    : "Every CONTRACT_VIOLATION on this run's bus; see GET /runs/{run_id}/contract-violations.";
+    ? ui("Each of these calls failed its agent's own contract outright, no finding at all, thin or otherwise, came out of it.")
+    : ui("Every CONTRACT_VIOLATION on this run's bus; see GET /runs/{run_id}/contract-violations.");
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
 }
 
@@ -2926,18 +2964,18 @@ function conventionAssignmentHtml(byRule, human) {
   var items = rows.map(function (r) {
     var subjects = (r.subjects || []).join(", ");
     var why = r.status === "unassigned"
-      ? "no agent declares: " + subjects
-      : "matched " + (r.agents || []).join(", ") + ", no rule-consuming path today";
+      ? ui("no agent declares: ") + subjects
+      : ui("matched ") + (r.agents || []).join(", ") + ui(", no rule-consuming path today");
     return human
       ? '<li>' + ruleLinkHtml(r.rule_id, r.source_rule_id || r.rule_id) + ': ' + escapeHtml(why) + '</li>'
       : '<li class="mono">' + escapeHtml(r.rule_id) + ' [' + escapeHtml(subjects) + ']: ' + escapeHtml(why) + '</li>';
   }).join("");
   var heading = human
-    ? "Rules no agent handles (" + rows.length + ")"
-    : "convention_assignment.unassigned (" + rows.length + ")";
+    ? ui("Rules no agent handles (") + rows.length + ")"
+    : ui("convention_assignment.unassigned (") + rows.length + ")";
   var note = human
-    ? "Each of these rules carries a subject tag, but no agent that can act on it declares that subject today. Relabel the rule or add the subject to an agent."
-    : "Rules with status unassigned or assigned_no_consumer; see GET /runs/{run_id}/convention-assignment.";
+    ? ui("Each of these rules carries a subject tag, but no agent that can act on it declares that subject today. Relabel the rule or add the subject to an agent.")
+    : ui("Rules with status unassigned or assigned_no_consumer; see GET /runs/{run_id}/convention-assignment.");
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
 }
 
@@ -2964,29 +3002,29 @@ function conventionDistributionHtml(body, human) {
       return human ? ruleLinkHtml(id, (byRule[id] || {}).source_rule_id || id) : escapeHtml(id);
     }).join(", ");
     return human
-      ? '<li>' + escapeHtml(a) + ' handles ' + ids.length + (ids.length === 1 ? ' rule: ' : ' rules: ') + links + '</li>'
+      ? '<li>' + escapeHtml(a) + ui(' handles ') + ids.length + (ids.length === 1 ? ui(' rule: ') : ui(' rules: ')) + links + '</li>'
       : '<li class="mono">' + escapeHtml(a) + ': [' + links + ']</li>';
   }).join("");
   if (!rows) {
     rows = human
-      ? '<li>No tagged rule reached any agent by its subject.</li>'
-      : '<li class="mono">by_agent: every entry empty</li>';
+      ? ui('<li>No tagged rule reached any agent by its subject.</li>')
+      : ui('<li class="mono">by_agent: every entry empty</li>');
   }
   var heading = human
-    ? "Which rules each agent handles (" + ruleIds.length + (ruleIds.length === 1 ? " rule)" : " rules)")
-    : "convention_assignment.by_agent (" + ruleIds.length + " rules)";
+    ? ui("Which rules each agent handles (") + ruleIds.length + (ruleIds.length === 1 ? ui(" rule)") : ui(" rules)"))
+    : ui("convention_assignment.by_agent (") + ruleIds.length + ui(" rules)");
   var untaggedLine = untagged.length
     ? (human
-      ? untagged.length + (untagged.length === 1 ? " rule carries" : " rules carry") + " no subject tag and " + (untagged.length === 1 ? "goes" : "go") + " to every convention checker, as before tagging existed."
-      : "untagged=" + untagged.length + " (routed to every convention-review agent; today's default).")
-    : (human ? "Every rule carries a subject tag." : "untagged=0.");
+      ? untagged.length + (untagged.length === 1 ? ui(" rule carries") : ui(" rules carry")) + ui(" no subject tag and ") + (untagged.length === 1 ? ui("goes") : ui("go")) + ui(" to every convention checker, as before tagging existed.")
+      : "untagged=" + untagged.length + ui(" (routed to every convention-review agent; today's default)."))
+    : (human ? ui("Every rule carries a subject tag.") : "untagged=0.");
   var unassignedLine = unassigned.length
-    ? (human ? " " + unassigned.length + (unassigned.length === 1 ? " rule matched" : " rules matched") + " no agent that can act on it (listed below)."
-             : " unassigned_or_no_consumer=" + unassigned.length + " (listed below).")
+    ? (human ? " " + unassigned.length + (unassigned.length === 1 ? ui(" rule matched") : ui(" rules matched")) + ui(" no agent that can act on it (listed below).")
+             : " unassigned_or_no_consumer=" + unassigned.length + ui(" (listed below)."))
     : "";
   var note = human
-    ? "Decided once when the rules were loaded, by comparing each rule's subject tag with the subjects each agent declares. " + untaggedLine + unassignedLine
-    : "Computed once at BOOT by convention_assignment.assign_conventions; see GET /runs/{run_id}/convention-assignment. " + untaggedLine + unassignedLine;
+    ? ui("Decided once when the rules were loaded, by comparing each rule's subject tag with the subjects each agent declares. ") + untaggedLine + unassignedLine
+    : ui("Computed once at BOOT by convention_assignment.assign_conventions; see GET /runs/{run_id}/convention-assignment. ") + untaggedLine + unassignedLine;
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + rows + '</ul>';
 }
 
@@ -3000,15 +3038,15 @@ function notFiringHtml(notFiring, human) {
   if (!notFiring || notFiring.length === 0) return "";
   var items = notFiring.map(function (a) {
     return human
-      ? '<li>' + escapeHtml(a) + ' did not run: no rule was assigned to it and no untagged rule remained for it to check.</li>'
+      ? '<li>' + escapeHtml(a) + ui(' did not run: no rule was assigned to it and no untagged rule remained for it to check.</li>')
       : '<li class="mono">' + escapeHtml(a) + '</li>';
   }).join("");
   var heading = human
-    ? "Checkers that did not run (" + notFiring.length + ")"
-    : "convention_review.not_firing (" + notFiring.length + ")";
+    ? ui("Checkers that did not run (") + notFiring.length + ")"
+    : ui("convention_review.not_firing (") + notFiring.length + ")";
   var note = human
-    ? "The review skipped these on purpose, by the firing rule, not by a fault. Tag a rule with a subject they declare and they run next time."
-    : "convention_assignment.not_firing_convention_review_agents(assignment): the W3 wide-mode firing gate's own answer (pipeline._convention_review_firing_agents delegates to it).";
+    ? ui("The review skipped these on purpose, by the firing rule, not by a fault. Tag a rule with a subject they declare and they run next time.")
+    : ui("convention_assignment.not_firing_convention_review_agents(assignment): the W3 wide-mode firing gate's own answer (pipeline._convention_review_firing_agents delegates to it).");
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
 }
 
@@ -3028,17 +3066,17 @@ function idleAgentsHtml(idleAgents, human, untaggedCount) {
   var items = idleAgents.map(function (a) {
     var subs = (a.subjects || []).join(", ");
     return human
-      ? '<li>' + escapeHtml(a.agent) + ' matched no tagged rule (declares: ' + escapeHtml(subs) + ')</li>'
+      ? '<li>' + escapeHtml(a.agent) + ui(' matched no tagged rule (declares: ') + escapeHtml(subs) + ')</li>'
       : '<li class="mono">' + escapeHtml(a.agent) + ': [' + escapeHtml(subs) + ']</li>';
   }).join("");
   var heading = human
-    ? "Agents no tagged rule reached (" + idleAgents.length + ")"
-    : "convention_assignment.agents_with_nothing_assigned (" + idleAgents.length + ")";
+    ? ui("Agents no tagged rule reached (") + idleAgents.length + ")"
+    : ui("convention_assignment.agents_with_nothing_assigned (") + idleAgents.length + ")";
   var note = human
-    ? "Each of these agents declares a subject, but no rule loaded this run carries a matching tag." +
-      (untagged ? " The " + untagged + " untagged " + (untagged === 1 ? "rule" : "rules") + " still reach every convention checker among them." : "")
-    : "Agents with a non-empty subjects list whose by_agent entry is empty; see GET /runs/{run_id}/convention-assignment." +
-      (untagged ? " untagged=" + untagged + " still routes to the convention-review agents." : "");
+    ? ui("Each of these agents declares a subject, but no rule loaded this run carries a matching tag.") +
+      (untagged ? ui(" The ") + untagged + " untagged " + (untagged === 1 ? ui("rule") : ui("rules")) + ui(" still reach every convention checker among them.") : "")
+    : ui("Agents with a non-empty subjects list whose by_agent entry is empty; see GET /runs/{run_id}/convention-assignment.") +
+      (untagged ? " untagged=" + untagged + ui(" still routes to the convention-review agents.") : "");
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
 }
 
@@ -3053,15 +3091,15 @@ function undatedDocumentsHtml(excluded, human) {
   if (!excluded || excluded.length === 0) return "";
   var items = excluded.map(function (d) {
     return human
-      ? '<li>' + escapeHtml(d.filename) + ' was not reviewed (no date could be resolved)</li>'
+      ? '<li>' + escapeHtml(d.filename) + ui(' was not reviewed (no date could be resolved)</li>')
       : '<li class="mono">' + escapeHtml(d.filename) + ': date_source=' + escapeHtml(d.date_source || "unresolved") + '</li>';
   }).join("");
   var heading = human
-    ? "Documents not reviewed, no date (" + excluded.length + ")"
-    : "document_dating.unresolved_documents, excluded (" + excluded.length + ")";
+    ? ui("Documents not reviewed, no date (") + excluded.length + ")"
+    : ui("document_dating.unresolved_documents, excluded (") + excluded.length + ")";
   var note = human
-    ? "No date could be read from the filename, the document's own text, or its metadata, so each fell outside the review cutoff and was NOT reviewed. This is not the same as being reviewed and found clean. Name them in input/context/_review_targets.json, or set cutoff_type to all in config/review_scope.json."
-    : "date=None fails review_scope.apply_cutoff; see GET /runs/{run_id}/undated-documents. The date is never guessed from the network.";
+    ? ui("No date could be read from the filename, the document's own text, or its metadata, so each fell outside the review cutoff and was NOT reviewed. This is not the same as being reviewed and found clean. Name them in input/context/_review_targets.json, or set cutoff_type to all in config/review_scope.json.")
+    : ui("date=None fails review_scope.apply_cutoff; see GET /runs/{run_id}/undated-documents. The date is never guessed from the network.");
   return '<h2>' + heading + '</h2><p class="muted">' + escapeHtml(note) + '</p><ul class="amendment-refusals">' + items + '</ul>';
 }
 
@@ -3117,7 +3155,7 @@ function loadFindings(runId, isPartial) {
     apiJson("/runs/" + encodeURIComponent(runId) + "/amendments"),
   ]).then(function (results) {
     var res = results[0], amendRes = results[1];
-    if (!res.ok) { holder.innerHTML = '<h2>Findings</h2><div class="notice error">' + escapeHtml(detailText(res.body)) + '</div>'; return; }
+    if (!res.ok) { holder.innerHTML = ui('<h2>Findings</h2><div class="notice error">') + escapeHtml(detailText(res.body)) + '</div>'; return; }
     var findings = res.body.findings || [];
     if (findings.length === 0) { holder.innerHTML = ""; return; }
     var byKey = {};
@@ -3126,7 +3164,7 @@ function loadFindings(runId, isPartial) {
         byKey[amendmentKey(a.finding_unit_id, a.finding_rule_id)] = a;
       });
     }
-    var heading = '<h2>Findings (' + findings.length + ')</h2>';
+    var heading = ui('<h2>Findings (') + findings.length + ')</h2>';
     if (isHumanView()) {
       holder.innerHTML = heading +
         '<ul class="findings-human">' + findings.map(function (f) {
@@ -3150,12 +3188,12 @@ function loadFindings(runId, isPartial) {
       return '<tr class="' + cls + '">' +
         '<td class="mono fig">' + ruleLinkHtml(f.rule_id, ruleShown) + '</td>' +
         '<td class="mono fig">' + escapeHtml(f.unit_id || "") + '</td>' +
-        '<td>' + escapeHtml(f.relation || "") + '</td>' +
-        '<td>' + escapeHtml(f.record_verdict || "") + '</td>' +
+        '<td>' + escapeHtml(displayValue(f.relation || "")) + '</td>' +
+        '<td>' + escapeHtml(displayValue(f.record_verdict || "")) + '</td>' +
         '<td class="fig">' + escapeHtml(f.value_a) + " " + escapeHtml(f.unit_a || "") + " / " + escapeHtml(f.value_b) + " " + escapeHtml(f.unit_b || "") + '</td>' +
         '<td class="explanation">' +
           '<span class="' + (long ? "truncated" : "") + '" id="' + explId + '">' + escapeHtml(explanation) + '</span>' +
-          (long ? '<br><button class="expand-toggle" data-target="' + explId + '">Show more</button>' : '') +
+          (long ? '<br><button class="expand-toggle" data-target="' + explId + ui('">Show more</button>') : '') +
           citationsHtml(f.source_refs, runId, false) +
           (amend ? amendmentDeveloperHtml(amend) : "") +
         '</td>' +
@@ -3163,7 +3201,7 @@ function loadFindings(runId, isPartial) {
     }).join("");
     holder.innerHTML = heading +
       '<table class="findings"><thead><tr>' +
-      '<th>Rule</th><th>Unit</th><th>Relation</th><th>Verdict</th><th>Figures</th><th>Explanation</th>' +
+      ui('<th>Rule</th><th>Unit</th><th>Relation</th><th>Verdict</th><th>Figures</th><th>Explanation</th>') +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
     wireCitationLinks(holder);
     holder.querySelectorAll(".expand-toggle").forEach(function (btn) {
@@ -3204,7 +3242,7 @@ function loadPairs(runId, isPartial, human) {
   holder.id = "pairs-holder";
   app.appendChild(holder);
   apiJson("/runs/" + encodeURIComponent(runId) + "/pairs").then(function (res) {
-    var heading = human ? "Which rules were checked against which passages" : "Pairing map";
+    var heading = human ? ui("Which rules were checked against which passages") : ui("Pairing map");
     if (!res.ok) {
       holder.innerHTML = '<h2>' + escapeHtml(heading) + '</h2><div class="notice error">' +
         escapeHtml(detailText(res.body)) + '</div>';
@@ -3224,7 +3262,7 @@ function loadPairs(runId, isPartial, human) {
     }
     function unitLabel(u) {
       return human
-        ? "Passage " + (u.unit_id || "") + (u.kind ? " (" + u.kind + ")" : "")
+        ? ui("Passage ") + (u.unit_id || "") + (u.kind ? " (" + u.kind + ")" : "")
         : (u.unit_id || "") + " (" + (u.kind || "") + ")";
     }
     var body = docs.map(function (d) {
@@ -3232,20 +3270,20 @@ function loadPairs(runId, isPartial, human) {
         var undecided = (u.undecided || []);
         return '<div class="pairs-unit">' +
           '<span class="uid">' + escapeHtml(unitLabel(u)) + '</span><br>' +
-          (u.paired || []).map(function (p) { return chipHtml(p, "", human ? "checked here" : ""); }).join("") +
-          (u.rejected || []).map(function (p) { return chipHtml(p, "muted", human ? "set aside" : "rejected"); }).join("") +
+          (u.paired || []).map(function (p) { return chipHtml(p, "", human ? ui("checked here") : ""); }).join("") +
+          (u.rejected || []).map(function (p) { return chipHtml(p, "muted", human ? ui("set aside") : "rejected"); }).join("") +
           /* finding 5: the undecided list itself, which only its count reached */
           (undecided.length
             ? '<div class="muted">' + escapeHtml(
-                (human ? "left undecided: " : "undecided: ") + undecided.join(", ")) + '</div>'
+                (human ? ui("left undecided: ") : ui("undecided: ")) + undecided.join(", ")) + '</div>'
             : '') +
         '</div>';
       }).join("");
       var summary = human
-        ? escapeHtml(d.document_id) + ': ' + d.pair_count + ' rule' + (d.pair_count === 1 ? '' : 's') +
-          ' checked here, ' + d.rejected_count + ' set aside, ' + d.undecided_count + ' left undecided'
-        : escapeHtml(d.document_id) + ': ' + d.pair_count + ' paired, ' + d.rejected_count +
-          ' rejected, ' + d.undecided_count + ' undecided';
+        ? escapeHtml(d.document_id) + ': ' + d.pair_count + ui(' rule') + (d.pair_count === 1 ? '' : ui('s')) +
+          ui(' checked here, ') + d.rejected_count + ui(' set aside, ') + d.undecided_count + ui(' left undecided')
+        : escapeHtml(d.document_id) + ': ' + d.pair_count + ui(' paired, ') + d.rejected_count +
+          ui(' rejected, ') + d.undecided_count + ui(' undecided');
       return '<details class="pairs-doc"><summary>' + summary + '</summary>' +
         (d.semantic_pairing ? '<div class="notice">' + escapeHtml(d.semantic_pairing.reason) + '</div>' : '') +
         '<div class="pairs-body">' + units + '</div></details>';
@@ -3258,44 +3296,44 @@ function loadPairs(runId, isPartial, human) {
     var notJudged = res.body.not_judged || [];
     if (notJudged.length) {
       extra += '<h3>' + escapeHtml(human
-        ? "Rules no checker judged (" + notJudged.length + ")"
-        : "not_judged (" + notJudged.length + ")") + '</h3>' +
+        ? ui("Rules no checker judged (") + notJudged.length + ")"
+        : ui("not_judged (") + notJudged.length + ")") + '</h3>' +
         '<p class="muted">' + escapeHtml(human
-          ? "These rules were paired with a passage, but no convention checker was assigned to act on them, so no call was made. They are recorded rather than dropped."
-          : "plans phase 5.5 made no call for: the rule has no convention-review consumer") + '</p>' +
+          ? ui("These rules were paired with a passage, but no convention checker was assigned to act on them, so no call was made. They are recorded rather than dropped.")
+          : ui("plans phase 5.5 made no call for: the rule has no convention-review consumer")) + '</p>' +
         '<ul class="amendment-refusals">' + notJudged.map(function (n) {
           var where = [n.unit_id, n.source_rule_id || n.rule_id].filter(Boolean).join(" / ");
           return (human ? '<li>' : '<li class="mono">') + escapeHtml(where) +
-            (n.reason ? ': ' + escapeHtml(n.reason) : '') +
+            (n.reason ? ': ' + escapeHtml(ShimmerLocale.message(n.reason)) : '') +
             (n.status ? ' <span class="muted">' + escapeHtml(n.status) + '</span>' : '') + '</li>';
         }).join("") + '</ul>';
     }
     var reattributed = res.body.reattributed || [];
     if (reattributed.length) {
       extra += '<h3>' + escapeHtml(human
-        ? "Checks moved to another rule (" + reattributed.length + ")"
-        : "reattributed (" + reattributed.length + ")") + '</h3>' +
+        ? ui("Checks moved to another rule (") + reattributed.length + ")"
+        : ui("reattributed (") + reattributed.length + ")") + '</h3>' +
         '<p class="muted">' + escapeHtml(human
-          ? "The same arithmetic applies whichever rule prompted it, so these checks were attributed to a rule that does have a checker."
-          : "rule-independent computed plans moved to a paired rule with a judging agent") + '</p>' +
+          ? ui("The same arithmetic applies whichever rule prompted it, so these checks were attributed to a rule that does have a checker.")
+          : ui("rule-independent computed plans moved to a paired rule with a judging agent")) + '</p>' +
         '<ul class="amendment-refusals">' + reattributed.map(function (r) {
           return (human ? '<li>' : '<li class="mono">') +
-            escapeHtml((r.unit_id || "") + ": " + (r.from_rule_id || "") + " to " + (r.to_rule_id || "")) + '</li>';
+            escapeHtml((r.unit_id || "") + ": " + (r.from_rule_id || "") + ui(" to ") + (r.to_rule_id || "")) + '</li>';
         }).join("") + '</ul>';
     }
     var unmatched = [];
     docs.forEach(function (d) { (d.unmatched_units || []).forEach(function (u) { unmatched.push(d.document_id + ": " + u); }); });
     if (unmatched.length) {
       extra += '<h3>' + escapeHtml(human
-        ? "Passages no rule reached (" + unmatched.length + ")"
-        : "unmatched_units (" + unmatched.length + ")") + '</h3>' +
+        ? ui("Passages no rule reached (") + unmatched.length + ")"
+        : ui("unmatched_units (") + unmatched.length + ")") + '</h3>' +
         '<ul class="amendment-refusals">' + unmatched.map(function (u) {
           return (human ? '<li>' : '<li class="mono">') + escapeHtml(u) + '</li>';
         }).join("") + '</ul>';
     }
 
     var note = human
-      ? '<p class="muted">' + escapeHtml("Which rules the review checked against which passages, and which it set aside, with the reason recorded before any verdict was reached.") + '</p>'
+      ? '<p class="muted">' + escapeHtml(ui("Which rules the review checked against which passages, and which it set aside, with the reason recorded before any verdict was reached.")) + '</p>'
       : "";
     holder.innerHTML = '<h2>' + escapeHtml(heading) + '</h2>' + note + body + extra;
     wireRuleLinks(holder);
@@ -3317,11 +3355,11 @@ function loadPairs(runId, isPartial, human) {
 function renderLogPanel(run, holder) {
   var runId = run.run_id;
   if (!run.has_log) {
-    holder.innerHTML = '<h2 id="log-panel">Log</h2><p class="muted">' +
-      escapeHtml("There is no log for this run.") + '</p>';
+    holder.innerHTML = ui('<h2 id="log-panel">Log</h2><p class="muted">') +
+      escapeHtml(ui("There is no log for this run.")) + '</p>';
     return;
   }
-  holder.innerHTML = '<h2 id="log-panel">Log</h2><button class="button secondary" id="log-load">Load log</button><div id="log-body"></div>';
+  holder.innerHTML = ui('<h2 id="log-panel">Log</h2><button class="button secondary" id="log-load">Load log</button><div id="log-body"></div>');
   // Uses api() (the raw fetch wrapper), not apiJson(): the log route returns
   // text/plain, not JSON. On failure, detailText() reads the server's own
   // reason (the same helper every other failure path on this surface uses)
@@ -3330,7 +3368,7 @@ function renderLogPanel(run, holder) {
   // (e.g. the file was rotated or removed between the record and the click).
   document.getElementById("log-load").addEventListener("click", function () {
     var body = document.getElementById("log-body");
-    body.innerHTML = '<p class="muted">Loading…</p>';
+    body.innerHTML = ui('<p class="muted">Loading…</p>');
     api("/runs/" + encodeURIComponent(runId) + "/log").then(function (r) {
       if (!r.ok) {
         return r.json().catch(function () { return {}; }).then(function (json) {
@@ -3340,7 +3378,7 @@ function renderLogPanel(run, holder) {
       return r.text().then(function (text) {
         var lines = text.split("\n");
         var shown = lines.length > 400 ? lines.slice(-400).join("\n") : text;
-        body.innerHTML = (lines.length > 400 ? '<p class="muted" style="font-size:0.8rem">Showing the last 400 of ' + lines.length + ' lines.</p>' : "") +
+        body.innerHTML = (lines.length > 400 ? ui('<p class="muted" style="font-size:0.8rem">Showing the last 400 of ') + lines.length + ui(' lines.</p>') : "") +
           '<div class="log-box">' + escapeHtml(shown) + '</div>';
       });
     });

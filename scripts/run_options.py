@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import threading
+import localization
 
 _LOCK = threading.RLock()
 
@@ -87,7 +88,7 @@ LABELS["tr"].update(accepted="Kabul edildi", rejected="Reddedildi", refused="Yan
 
 def label(key, language="en"):
     Options(output_language=language)
-    return LABELS[language].get(key, key)
+    return LABELS[language].get(key, localization.label(key, language))
 
 
 def review_markdown(payload, document_name="", language="tr"):
@@ -110,7 +111,8 @@ def review_markdown(payload, document_name="", language="tr"):
         lines.append(f"### {title} {i}")
         for field, heading in headings.items():
             if amendment.get(field):
-                lines.extend(["**" + heading + ":**", block(amendment[field]), ""])
+                shown = localization.message(amendment[field], language) if field == "comment" else amendment[field]
+                lines.extend(["**" + heading + ":**", block(shown), ""])
         lines.extend(["**" + label("evidence", language) + ":**",
                       block({k: v for k, v in amendment.items() if k not in headings}), ""])
     lines.extend(["## " + label("evidence", language) + " / " + label("references", language),

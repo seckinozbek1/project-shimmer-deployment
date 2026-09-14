@@ -8,6 +8,7 @@ that always carries the citation grid.
 
 from __future__ import annotations
 
+import localization
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
@@ -17,6 +18,7 @@ import finding_record
 def _now(): return datetime.now(timezone.utc).isoformat()
 
 
+@localization.presentation
 def render_context_summary(
     *,
     document_id: str,
@@ -26,36 +28,36 @@ def render_context_summary(
     body_text: str = "",
 ) -> str:
     topics = topics or []
-    lines = [f"# {document_name} — Context summary", "",
-             f"- generated: {_now()}",
-             f"- document id: {document_id}",
-             f"- context references cited: {len(context_refs)}",
+    lines = [f'# {document_name}{localization.text(' — Context summary')}', "",
+             f'{localization.text('- generated: ')}{_now()}',
+             f'{localization.text('- document id: ')}{document_id}',
+             f'{localization.text('- context references cited: ')}{len(context_refs)}',
              "",
-             "## What the reference corpus establishes about this document's topics",
+             localization.text("## What the reference corpus establishes about this document's topics"),
              ""]
     if topics:
-        lines.append("**Topics addressed:**")
+        lines.append(localization.text('**Topics addressed:**'))
         for t in topics:
             lines.append(f"- {t}")
         lines.append("")
     if body_text.strip():
-        lines.append(body_text.strip())
+        lines.append(localization.message(body_text.strip()))
         lines.append("")
-    lines.append("## Reference citations (from context corpus)")
+    lines.append(localization.text('## Reference citations (from context corpus)'))
     lines.append("")
     if not context_refs:
-        lines.append("_no context references cited_")
+        lines.append(localization.text('_no context references cited_'))
     else:
         for ref in context_refs:
             loc = ref.get("location", {}) or {}
             page = loc.get("page", "?"); para = loc.get("paragraph", "?")
             lines.append(
-                f"- **[{ref.get('ref_id')}]** {ref.get('document_name', '?')} "
-                f"(p{page}, para {para}): {ref.get('text_excerpt', '')[:240]}"
+                f'- **[{ref.get('ref_id')}]** {ref.get('document_name', '?')}{localization.text(' (p')}{page}{localization.text(', para ')}{para}): {ref.get('text_excerpt', '')[:240]}'
             )
     return "\n".join(lines)
 
 
+@localization.presentation
 def render_operative_summary(
     *,
     document_id: str,
@@ -78,18 +80,18 @@ def render_operative_summary(
     render loop below iterates the UNION instead, and the two counts in the
     header/body are asserted equal, not merely hoped equal: a RuntimeError beats
     a silently incomplete deliverable."""
-    lines = [f"# {document_name} — Operative summary", "",
-             f"- generated: {_now()}",
-             f"- document id: {document_id}",
-             f"- convention categories evaluated: {len(conventions_by_category)}",
-             f"- findings: {len(findings)}",
+    lines = [f'# {document_name}{localization.text(' — Operative summary')}', "",
+             f'{localization.text('- generated: ')}{_now()}',
+             f'{localization.text('- document id: ')}{document_id}',
+             f'{localization.text('- convention categories evaluated: ')}{len(conventions_by_category)}',
+             f'{localization.text('- findings: ')}{len(findings)}',
              ""]
     # R6: the operator's framing question for a review run is echoed, never parsed.
     if (question or "").strip():
-        lines += ["## Operator question", "", question.strip(), ""]
-    lines += ["## What the document says, organized by convention category", ""]
+        lines += [localization.text('## Operator question'), "", question.strip(), ""]
+    lines += [localization.text('## What the document says, organized by convention category'), ""]
     if body_text.strip():
-        lines.append(body_text.strip())
+        lines.append(localization.message(body_text.strip()))
         lines.append("")
     categories = set(conventions_by_category) | {f.get("category") or "unclassified" for f in findings}
     rendered_count = 0
@@ -102,12 +104,12 @@ def render_operative_summary(
                 lines.append(f"- **[{c.get('id')}]** ({c.get('severity', '?')}/{c.get('action', '?')}): "
                              f"{c.get('rule', '')[:240]}")
         else:
-            lines.append("_no conventions in this category_")
+            lines.append(localization.text('_no conventions in this category_'))
             lines.append("")
         category_findings = [f for f in findings if (f.get("category") or "unclassified") == category]
         if category_findings:
             lines.append("")
-            lines.append("**Findings:**")
+            lines.append(localization.text('**Findings:**'))
             for f in category_findings:
                 refs = ", ".join(f.get("ref_ids", []) or [])
                 # structure H3: a typed Finding record is rendered from its FIELDS,
@@ -121,8 +123,7 @@ def render_operative_summary(
                     if prose:
                         lines.append(f"  - {prose}")
                 else:
-                    lines.append(f"- {f.get('verdict', '?')} on [{f.get('conv_id', '?')}] "
-                                 f"at refs [{refs}]: {f.get('reasoning', '')[:240]}")
+                    lines.append(f'- {f.get('verdict', '?')}{localization.text(' on [')}{f.get('conv_id', '?')}{localization.text('] at refs [')}{refs}]: {f.get('reasoning', '')[:240]}')
                 rendered_count += 1
         lines.append("")
     # R6 / INFRA-044: the comparison with the operator-declared earlier version, an
@@ -138,9 +139,8 @@ def render_operative_summary(
                    and str(f.get("record_verdict") or "").lower() == "irregular"]
         lines.extend(finding_record.render_prior_comparison(
             findings, refusals=prior_refusals, orphans=prior_orphans, outside=outside,
-            heading="## Compared with the earlier version"))
+            heading=localization.text('## Compared with the earlier version')))
     if rendered_count != len(findings):
         raise RuntimeError(
-            f"render_operative_summary: header claims {len(findings)} findings but only "
-            f"{rendered_count} were rendered; a finding would have been silently dropped")
+            f'{localization.text('render_operative_summary: header claims ')}{len(findings)}{localization.text(' findings but only ')}{rendered_count}{localization.text(' were rendered; a finding would have been silently dropped')}')
     return "\n".join(lines)

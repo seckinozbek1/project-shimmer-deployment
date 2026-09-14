@@ -51,6 +51,7 @@ pipeline_amendment_validator follows for `required` and `field_forms`.
 
 from __future__ import annotations
 
+import localization
 import json
 import re
 from pathlib import Path
@@ -379,6 +380,7 @@ def _fmt(value):
     return str(value)
 
 
+@localization.presentation
 def prior_record_line(item) -> str:
     """One bullet for a prior-version record: the earlier figure, the figure now,
     the delta, the band distance change when one orients it, the rule (with the
@@ -390,18 +392,19 @@ def prior_record_line(item) -> str:
     unit_b = item.get("unit_b") or ""
     unit_a = item.get("unit_a") or ""
     if item.get("relation") == "absent_since_prior":
-        figures = f"{_fmt(item.get('value_b'))}{unit_b} -> (not stated)"
+        figures = f'{_fmt(item.get('value_b'))}{unit_b}{localization.text(' -> (not stated)')}'
     else:
         figures = f"{_fmt(item.get('value_b'))}{unit_b} -> {_fmt(item.get('value_a'))}{unit_a}"
         if item.get("delta") is not None:
-            figures += f" (delta {item['delta']:+g})"
+            figures += f'{localization.text(' (delta ')}{item['delta']:+g})'
     extra = ""
     if item.get("band_distance_change") is not None:
-        extra = f" band distance {item['band_distance_change']:+g}"
+        extra = f'{localization.text(' band distance ')}{item['band_distance_change']:+g}'
     return (f"- {item.get('unit_id', '?')} {item.get('field_label', '')}: {figures}{extra} "
             f"[{tag}] refs={refs}")
 
 
+@localization.presentation
 def render_prior_comparison(findings, *, refusals=(), orphans=(), outside=(),
                             heading="## Compared with the earlier version") -> list:
     """The comparison section, as lines, for document_summary.md and
@@ -419,28 +422,27 @@ def render_prior_comparison(findings, *, refusals=(), orphans=(), outside=(),
     refusals, orphans, outside = list(refusals or []), list(orphans or []), list(outside or [])
     if not prior and not refusals and not orphans and not outside:
         return []
-    lines = [heading, ""]
+    lines = [localization.text(heading), ""]
     for relation, title in _PRIOR_SECTIONS:
         rows = [f for f in prior if f.get("relation") == relation]
-        lines.append(f"### {title}")
+        lines.append(f"### {localization.text(title)}")
         lines.append("")
         if rows:
             lines.extend(prior_record_line(f) for f in rows)
         else:
-            lines.append("- (none)")
+            lines.append(localization.text('- (none)'))
         lines.append("")
     if outside:
-        lines.append("### Outside a stated band now")
+        lines.append(localization.text('### Outside a stated band now'))
         lines.append("")
         lines.extend(f"- {typed_line(f)}" for f in outside)
         lines.append("")
     if refusals or orphans:
-        lines.append("### Not comparable")
+        lines.append(localization.text('### Not comparable'))
         lines.append("")
         for r in refusals:
-            lines.append(f"- {r.get('unit_id', '?')} {r.get('label', '')}: {r.get('reason', '')}")
+            lines.append(f"- {r.get('unit_id', '?')} {r.get('label', '')}: {localization.message(r.get('reason', ''))}")
         for o in orphans:
-            lines.append(f"- (earlier heading {o.get('unit_slug') or '?'}) {o.get('label', '')}: "
-                         f"{o.get('reason', '')}")
+            lines.append(f'{localization.text('- (earlier heading ')}{o.get('unit_slug') or '?'}) {o.get('label', '')}: {localization.message(o.get('reason', ''))}')
         lines.append("")
     return lines
