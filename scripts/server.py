@@ -7,7 +7,7 @@ resources. Native ownership-aware cleanup differs from legacy ingestion cleanup.
 
 The desktop starter supplies a loopback server and ephemeral authentication.
 Direct server setup, environment variables and the exact route table live in
-README.md; operator instructions live in docs/RUNBOOK.md. No token value belongs
+docs/RUNTIME_REFERENCE.md; operator instructions live in docs/RUNBOOK.md. No token value belongs
 in source, URLs or logs. /health and /console are public; data/action routes
 require Bearer authentication. /health is liveness, not readiness or quality.
 
