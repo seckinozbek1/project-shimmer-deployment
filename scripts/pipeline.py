@@ -41,6 +41,7 @@ else:
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 import agent_wrapper
+import execution_topology
 import agent_activation
 from agent_wrapper import (AgentWrapper, load_api_keys, decode_items,
                            current_items, make_envelope, is_envelope)
@@ -1037,6 +1038,7 @@ def _populate_operational(project_root: Path, search_router: SearchRouter,
 
 # ---------- agent helpers ------------------------------------------------------------------
 
+@execution_topology.wrapper_factory
 def _build_wrapper(name: str, orch: TopOrchestrator, keys: dict) -> AgentWrapper:
     return AgentWrapper(name=name, constitution=orch.constitution, bus=orch.bus,
                         registry=orch.registry, contracts=orch.contracts,
@@ -1118,6 +1120,7 @@ def _truncate_doc(text: str, max_chars: int) -> str:
     return _truncate(text, max_chars)
 
 
+@execution_topology.ordered_calls
 async def _gather_or_serial(tasks):
     """Run tasks concurrently on cloud, sequentially on local (VRAM safety)."""
     if _is_local_profile():
@@ -1180,6 +1183,7 @@ async def _run_one(wrapper, work_payload, run_objectives, channel="main", max_to
     return r
 
 
+@execution_topology.ordered_documents
 async def _gather_docs(op_docs, process_doc, max_concurrent_docs):
     """BP-5: run `process_doc(doc)` concurrently across operational documents,
     bounded by a semaphore (default 4 to stay under a single-key Claude rate limit).
@@ -1294,6 +1298,7 @@ async def _deepen_legal_analyst_findings_local(wrapper, findings, doc, embed_sto
 
 # ---------- pipeline phases ----------------------------------------------------------------
 
+@execution_topology.phase_boundary
 async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
                                         run_objectives, convention_registry,
                                         reference_index, ctx_refs_excerpt,
@@ -1391,6 +1396,7 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     return results
 
 
+@execution_topology.phase_boundary
 async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
                         convention_registry, reference_index, max_concurrent_docs=4):
     by_doc_agent = {(r["doc_id"], r["agent"]): r
@@ -1635,6 +1641,7 @@ def _prior_comparison(orch, doc, pairing, convention_registry, prior_docs, refer
         return []
 
 
+@execution_topology.phase_boundary
 async def phase_5_5_convention_review(orch, keys, op_docs, run_objectives,
                                       convention_registry, reference_index,
                                       embed_store=None, structural_inventory=None,
@@ -2822,6 +2829,7 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
     return path
 
 
+@execution_topology.phase_boundary
 async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                             run_objectives, convention_registry, reference_index,
                             embed_store=None, max_concurrent_docs=4,
@@ -3420,6 +3428,7 @@ def _append_board_to_deliverable(info, consolidated):
         pass
 
 
+@execution_topology.phase_boundary
 def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
                                convention_registry, *, run_is_non_sensitive,
                                board_tunables=None):
@@ -3804,6 +3813,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     the end of the list) and nothing caught it, because no gate check built the
     parser. check_115_pipeline_parser_builds_every_flag_once now does."""
     parser = argparse.ArgumentParser(description="Project Shimmer pipeline")
+    parser.add_argument("--execution-topology", choices=("reference_serial", "dependency_dag"),
+                        default="reference_serial", help="Execution scheduling, independent of activation and backend profile.")
+    parser.add_argument("--topology-config", default=None, help="Explicit device/residency lane JSON for dependency_dag.")
     parser.add_argument("--multi-round", action="store_true",
                         help="Explicit case positioning mode; ordinary Review/Draft remain the default.")
     parser.add_argument("--multi-round-manifest", default=None,
@@ -3908,6 +3920,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 @run_completion_mod.tracked
+@execution_topology.entrypoint
 def main(argv=None):
     parser = _build_arg_parser()
     args = parser.parse_args(argv)
@@ -4171,7 +4184,7 @@ def main(argv=None):
     # call skips the cold load. Only when redaction will ACTUALLY run: it is gated on
     # the sensitivity layer being active (non-sensitive mode skips the scrub phase),
     # and not waived, so there is no point loading a multi-GB model otherwise.
-    if redaction_enabled and sensitivity_layer.is_active():
+    if redaction_enabled and sensitivity_layer.is_active() and execution_topology.reference_prewarm_enabled():
         threading.Thread(target=_prewarm_qwen, args=(ROOT,), daemon=True).start()
 
     # Draft mode phase 0: generate a memo from the question and mark it as the review
@@ -4848,6 +4861,7 @@ def main(argv=None):
         if renamed.run_dir != run_ctx.run_dir:
             run_ctx = renamed
             completion.run_context = run_ctx
+            execution_topology.rebind_run(run_ctx)
             print(f"[pipeline] run folder: output/runs/{run_ctx.run_dir.name}",
                   file=sys.stderr, flush=True)
 

@@ -197,7 +197,8 @@ class MultiRoundChecks(unittest.TestCase):
     def test_pre_multi_round_pipeline_contract_is_unchanged(self):
         baseline = json.loads((ROOT / "benchmark/fixtures/multi_round_baseline_contract.json").read_text(encoding="utf-8"))
         self.assertEqual(baseline["baseline_commit"], mr.BASELINE)
-        tree = ast.parse((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
+        from execution_topology_checks import reference_tree
+        tree = reference_tree((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
         digests = {}
         for node in tree.body:
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):

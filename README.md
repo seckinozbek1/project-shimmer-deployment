@@ -12,6 +12,14 @@ The **Current-version cloud composite experiment** has completed its first
 three amendments. Warm/composite results and broad quality equivalence remain
 unverified; the full experiment is incomplete. The A100 was terminated via API.
 
+Execution topology is explicitly selectable: `reference_serial` remains the default;
+`dependency_dag` adds bounded scheduling and explicit-device resident workers for
+ordinary Review. The current local semantic graph retains its rolling-bus order;
+only independent fixtures have demonstrated overlap. Production speedup and
+multi-GPU/remote-auxiliary execution remain unverified. See the
+[execution-topology report](docs/fix/EXECUTION_TOPOLOGY_OPTIMIZATION.md).
+The next locked item is **Optimized current-version cloud composite experiment**.
+
 Shimmer is a governed document-review prototype. It combines model reasoning with
 typed findings, deterministic comparisons, citations, proposed amendments and an
 auditable record of what ran. It has 18 registered agents; conditional phases
