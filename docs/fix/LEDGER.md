@@ -1,3 +1,39 @@
+# Current-version A100 smoke stage, 2026-09-14
+
+Report: [A100_CURRENT_VERSION_SMOKE.md](A100_CURRENT_VERSION_SMOKE.md).
+At source d15b544, one unchanged dense/paired synthetic Review completed on one
+A100 40GB SXM4: 1,958 s native wall, 20 calls, three amendments, exit 0. All measured
+calls reconcile. Multi-round entry guards false; source hashes unchanged; no case
+artifacts or task calls. Remote no-generation gate 27 PASS / 1 SKIP / 0 FAIL.
+
+Deployment-only preparation used isolated pinned dependencies, Python 3.12.3,
+torch 2.5.1+cu121 and exact cached baseline model revisions. Existing host torch
+2.7.0 performed only the shipped safe embedding-format conversion. Official
+lambda-guest-agent 1.0.0 installed and active; package inventories prove no other
+installed system package change and no venv change. Its metrics are supplemental.
+
+Scoring matches 3/5 location, zero FP/clean flags, attribution 3/3, but BIRCH prose
+and PROCESSOR grounding defects persist. VERIFIER/FACT_CHECKER contract refusals
+mean broad quality equivalence is not established. Five caps, 18 recovered outputs,
+98.18% generation wall. Six fewer legal follow-ups are existing response-dependent
+behavior, not a newly accepted sparse optimization or hardware-only speedup.
+
+curl.exe Bearer API authentication works. A100 price verified at $1.99/hour.
+Evidence archived locally with matching remote/local SHA-256 before API teardown;
+absence verified 12:00:01.922 UTC. Estimated total $2.157 before tax (about $2.19
+with minute rounding), below soft and hard limits. Watchdog stopped. No A10 or
+other resource added, no local auxiliary inference, no warm sample, no push.
+
+This documentation-only commit closes the first smoke stage, not the full
+current-version composite item. README now links measured smoke evidence; runtime
+source and image unchanged. Warm/composite/local-auxiliary work remains; no second
+node is justified by the current serial execution path. The later multi-round
+experiment and minimum-spec finalization remain unstarted. Operator files and
+prior evidence are preserved. Detailed evidence stays under ignored
+output/a100_smoke_20260914/.
+
+---
+
 # Multi-round implementation closure, 2026-09-14
 
 Implemented explicit case positioning through the existing pipeline entry,
