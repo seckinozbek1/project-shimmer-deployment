@@ -58,6 +58,10 @@ Rejected proposals retain their states and are not presented as accepted advice.
 
 This is additive saved evidence, not a new unauthenticated or live-generation
 endpoint. English/Turkish prose is model-instructed, not translated by a heuristic.
-Turkish amendment Markdown and case labels are implemented; legacy console chrome
-and DOCX structural headings are not fully internationalized. Original quotations
-and existing saved content are preserved in their original language.
+Turkish mode now covers supported console, CLI, report and DOCX structural text
+through a shared catalog at presentation boundaries. Canonical API/schema fields,
+enums, IDs, provenance and exact source quotations remain unchanged. Reopened runs
+use persisted `output_language`; older runs fall back to English. Existing saved
+source/model prose and raw diagnostic evidence retain their original language.
+See [localization closure](../fix/BRIEFS_LANGUAGE_STRATEGY_IMPLEMENTATION.md#localization-completion-2026-09-14)
+for the supported surfaces, intentional exceptions and deterministic validation.

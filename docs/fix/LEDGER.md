@@ -1,3 +1,69 @@
+# Localization completion, 2026-09-14
+
+## Localization completion, 2026-09-14
+
+Starting commit: `2a84becd825163487842476b8807a269b73078bf`.
+Turkish mode is now intended to provide complete user-facing localization across
+the supported current console, report, DOCX and CLI presentation surfaces.
+
+**Invariant:** In Turkish output mode, no user-facing English structural/chrome
+text should remain unless it is intentionally preserved source content, a
+canonical identifier, or an untranslated proper name/technical token that must
+remain exact.
+
+The shared catalog in `scripts/ui/localization_catalog.js` is consumed by the
+Python presentation helper and the browser helper. Translation occurs at display
+boundaries, before source values are interpolated. No heavyweight framework or
+new API route is introduced. English is the default and unknown exact technical
+diagnostics retain their original text.
+
+Completed surfaces:
+- Console navigation, buttons, submission controls and confirmation text;
+  health, progress, phase/governance states, warnings, validation, known errors,
+  refusals, empty/unavailable states, agent/harness descriptions and downloads.
+- Review/findings/amendment, case/multi-round, trajectory, strategic-support and
+  recommendation labels, including enum-to-display projections.
+- Context, operative, prior-comparison, audit, absence-prediction, per-agent and
+  run-summary report structure; amendment Markdown headings and owned comments.
+- DOCX headings, explanatory/comment labels, uncertainty captions and reference
+  ledger structure. Persisted output language reaches the actual DOCX writer.
+- CLI help and known operator prompts, summaries, errors and completion messages.
+
+Intentionally exact content: original/quoted source passages, operator-authored
+text, filenames, proper/model names, agent/rule/evidence IDs, provenance, numeric
+values, canonical JSON fields and enum values, raw structured evidence and original
+diagnostic logs/tracebacks. Commands, flags and required approval response tokens
+remain exact. Native operating-system file dialogs and Word application chrome
+are outside Shimmer's renderer; the console's file-selection button is localized.
+Existing saved source/model prose is not retrospectively translated. Actual
+model-generated Turkish prose quality remains **UNVERIFIED** without generation.
+
+The audit also corrected corrupted Turkish selector characters, late-bound
+language rendering and DOCX language propagation. Switching the submission form's
+language preserves user input and file roles; reopening a run uses its saved
+language, with English fallback for older runs. Computed amendment commentary is
+translated only for display; its canonical record is unchanged.
+
+Validation: `python scripts/localization_no_generation_gate.py` exited 0:
+**94 PASS / 2 SKIP / 0 FAIL** (21 localization, 24 briefs/language/strategy,
+23 topology, 17 multi-round and 9 safe legacy checks). The localization suite
+includes 16 assertions against the actual console functions in offline Node and
+actual generated DOCX ZIP/XML checks. Known legacy English headings are rejected
+in targeted Turkish fixtures; source quotations, IDs, canonical enums, HTML
+escaping, English output/fallback, locale isolation, persisted options, CLI errors
+and help are checked. Fail-and-restore probes prove the localization assertions
+detect neutralized translations. Syntax checks cover 107 Python modules. The
+two skips remain unavailable FastAPI and optional local prompts/snapshots coverage.
+
+All 325 prior A100 evidence files match their recorded SHA-256 manifest.
+No model generation, GPU, provider/cloud workload, remote execution, provisioning
+or real multi-round execution occurred. Serial/reference and DAG modes remain
+available; multi-round remains inactive by default. Nothing was pushed.
+Operator-owned `SHIMMER_HANDOFF.md` and `durable/` are preserved.
+
+The next locked item remains **Optimized current-version cloud composite experiment**.
+It has not started.
+
 # Briefs, languages and strategic support implementation, 2026-09-14
 
 Entry: clean main at `6b92ed3b17c9ae7123a72a474d8267724a11839e`, matching the

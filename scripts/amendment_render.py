@@ -39,6 +39,7 @@ from typing import Any, Callable
 from run_context import DELIVERABLE_FILENAMES
 import finding_record
 import run_options
+import localization
 
 # Master fields every render reads. The renders consult only these keys for
 # content; anything else they receive is presentation-only (see module docstring).
@@ -114,6 +115,7 @@ def render_amendments_md(payload: dict, *, document_name: str = "",
     return "\n".join(lines)
 
 
+@localization.presentation
 def render_amendments_docx(payload: dict, output_path: Path, *,
                            title: str | None = None, body_text: str = "") -> Path:
     """Pure render of the canonical master `payload` to a tracked-changes .docx.
@@ -123,7 +125,8 @@ def render_amendments_docx(payload: dict, output_path: Path, *,
     docx_builder is imported lazily so python-docx stays an optional dependency.
     """
     from docx_builder import build_amendments_docx
-    title = title or f"{payload.get('document_id', 'document')} — Convention review (tracked changes)"
+    title = title or (str(payload.get('document_id', 'document')) + " \u2014 " +
+                      localization.text("Convention review (tracked changes)"))
     return build_amendments_docx(
         title=title,
         body_text=body_text or "",
@@ -172,11 +175,13 @@ def write_amendment_deliverables(payload: dict, *, deliv_dir: Path, doc_id: str,
     # (3) docx render, pure function of the master (+ body_text canvas)
     docx_error = None
     try:
+        language = run_options.saved(Path(deliv_dir).parent).output_language
         render_amendments_docx(
             payload, docx_path,
             title=f"{document_name or payload.get('document_id', 'document')} — "
-                  f"Convention review (tracked changes)",
+                  + localization.text("Convention review (tracked changes)", language),
             body_text=body_text,
+            output_language=language,
         )
     except Exception as e:  # python-docx missing or build failure: never fatal
         docx_error = f"{type(e).__name__}: {e}"

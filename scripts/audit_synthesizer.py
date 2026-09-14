@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import localization
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -161,7 +162,8 @@ class AuditSynthesizer:
             synthesis_path = audit_dir / "audit_synthesis.md"
             deltas_path = audit_dir / "delta_proposals.json"
         synthesis_path.parent.mkdir(parents=True, exist_ok=True)
-        synthesis_path.write_text(_render_md(summary), encoding="utf-8")
+        import run_options
+        synthesis_path.write_text(_render_md(summary, output_language=run_options.for_context(self.run_context).output_language), encoding="utf-8")
         deltas_path.write_text(
             json.dumps({"generated_at": summary["generated_at"], "proposals": summary["delta_proposals"]},
                        indent=2, ensure_ascii=False), encoding="utf-8")
@@ -181,22 +183,23 @@ def _count_disputed_by_source(findings):
     return out
 
 
+@localization.presentation
 def _render_md(summary):
-    lines = ["# Audit synthesis", "", f"- generated: {summary['generated_at']}",
-             f"- bus messages: {summary['bus_messages']}",
-             f"- findings: {len(summary['findings'])}",
-             f"- DELTA proposals: {len(summary['delta_proposals'])}", "", "## Findings"]
-    if not summary["findings"]: lines.append("_no findings this run_")
+    lines = [localization.text('# Audit synthesis'), "", f'{localization.text('- generated: ')}{summary['generated_at']}',
+             f'{localization.text('- bus messages: ')}{summary['bus_messages']}',
+             f'{localization.text('- findings: ')}{len(summary['findings'])}',
+             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}', "", localization.text('## Findings')]
+    if not summary["findings"]: lines.append(localization.text('_no findings this run_'))
     else:
         for f in summary["findings"]:
-            lines.append(f"- [{f['severity'].upper()}] ({f['category']}) {f['summary']}")
-    lines.append("\n## DELTA proposals")
-    if not summary["delta_proposals"]: lines.append("_no DELTAs proposed this run_")
+            lines.append(f"- [{f['severity'].upper()}] ({f['category']}) {localization.message(f['summary'])}")
+    lines.append(localization.text('\n## DELTA proposals'))
+    if not summary["delta_proposals"]: lines.append(localization.text('_no DELTAs proposed this run_'))
     else:
         for d in summary["delta_proposals"]:
             lines.append(f"### {d['id']} — {d['kind']}")
-            lines.append(f"- trigger: {d['trigger']}")
-            lines.append(f"- proposed change: {d['proposed_change'].get('action')}")
-            lines.append(f"- target: {d['proposed_change'].get('target')}")
-            lines.append(f"- requires operator approval: {d['requires_operator_approval']}\n")
+            lines.append(f'{localization.text('- trigger: ')}{localization.message(d['trigger'])}')
+            lines.append(f'{localization.text('- proposed change: ')}{d['proposed_change'].get('action')}')
+            lines.append(f'{localization.text('- target: ')}{d['proposed_change'].get('target')}')
+            lines.append(f'{localization.text('- requires operator approval: ')}{d['requires_operator_approval']}\n')
     return "\n".join(lines)

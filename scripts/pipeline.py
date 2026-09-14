@@ -17,6 +17,9 @@ CLI shortcuts (also): --save-snapshot, --load-snapshot, --reset-snapshot, --list
 
 from __future__ import annotations
 
+import localization
+print = localization.operator_print
+input = localization.operator_input
 import argparse
 import asyncio
 import io
@@ -2748,6 +2751,7 @@ def _mint_web_references(results, reference_index) -> int:
     return minted
 
 
+@localization.saved_presentation
 def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
                                    total_cost_usd, task, question="",
                                    external_conflict_report=None):
@@ -2768,22 +2772,22 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
     total_amendments = sum((deliverables.get(d["id"]) or {}).get("amendment_count", 0)
                            for d in op_docs)
     lines = [
-        f"# Run summary ({task})",
+        f'{localization.text('# Run summary (')}{task})',
         "",
     ]
     if (question or "").strip():
-        lines.append(f"- question: {question.strip()}")
+        lines.append(f'{localization.text('- question: ')}{question.strip()}')
     lines += [
-        f"- generated: {datetime.now(timezone.utc).isoformat()}",
-        f"- documents reviewed: {len(op_docs)}",
-        f"- total amendments: {total_amendments}",
-        f"- total cost: ${total_cost_usd:.4f}",
+        f'{localization.text('- generated: ')}{datetime.now(timezone.utc).isoformat()}',
+        f'{localization.text('- documents reviewed: ')}{len(op_docs)}',
+        f'{localization.text('- total amendments: ')}{total_amendments}',
+        f'{localization.text('- total cost: $')}{total_cost_usd:.4f}',
         "",
-        "## Documents",
+        localization.text('## Documents'),
         "",
     ]
     if not op_docs:
-        lines.append("(no documents under review)")
+        lines.append(localization.text('(no documents under review)'))
     for doc in op_docs:
         info = deliverables.get(doc["id"]) or {}
         n = info.get("amendment_count", 0)
@@ -2791,37 +2795,30 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         suffix = ""
         compared = info.get("prior_comparison_count", 0)
         if compared:
-            suffix = f", {compared} term(s) compared with the earlier version"
+            suffix = f', {compared}{localization.text(' term(s) compared with the earlier version')}'
             absent = info.get("prior_absent_count", 0)
             if absent:
-                suffix += f", {absent} absent since it"
-        lines.append(f"- [{doc['name']}]({doc['id']}/): {n} amendment(s){suffix}")
+                suffix += f', {absent}{localization.text(' absent since it')}'
+        lines.append(f'- [{doc['name']}]({doc['id']}/): {n}{localization.text(' amendment(s)')}{suffix}')
 
     # THREE-D: the refused pairs, on the surface the operator already reads.
     # Nothing is emitted when no external rules were supplied, so a run without
     # them is unchanged.
     rep = external_conflict_report or {}
     if rep.get("external_rules_compared"):
-        lines += ["", "## Rule conflicts put to you", ""]
+        lines += ["", localization.text('## Rule conflicts put to you'), ""]
         if not rep.get("count"):
             lines.append(
-                f"None. {rep['external_rules_compared']} external rule(s) were "
-                f"compared against your conventions and none disagreed.")
+                f'{localization.text('None. ')}{rep['external_rules_compared']}{localization.text(' external rule(s) were compared against your conventions and none disagreed.')}')
         else:
             lines.append(
-                f"{rep['count']} unresolved conflict(s). Conflicting external "
-                f"rules are REFUSED as additions. Your conventions remain in "
-                f"force; this report does not withdraw them. Each conflict needs "
-                f"your answer; an unchanged answered conflict is not raised again.")
+                f'{rep['count']}{localization.text(' unresolved conflict(s). Conflicting external rules are REFUSED as additions. Your conventions remain in force; this report does not withdraw them. Each conflict needs your answer; an unchanged answered conflict is not raised again.')}')
             lines.append("")
             for c in rep.get("conflicts", []):
                 diffs = ", ".join(
-                    f"{d['field']}: yours says {d['convention']}, the external "
-                    f"rule says {d['external']}" for d in c.get("differences", []))
+                    f'{d['field']}{localization.text(': yours says ')}{d['convention']}{localization.text(', the external rule says ')}{d['external']}' for d in c.get("differences", []))
                 lines.append(
-                    f"- **{c['subject']}**: your {c['convention_rule_id']} vs "
-                    f"external {c['external_rule_id']} ({diffs})  \n"
-                    f"  conflict id `{c['conflict_id']}`")
+                    f'- **{c['subject']}{localization.text('**: your ')}{c['convention_rule_id']}{localization.text(' vs external ')}{c['external_rule_id']} ({diffs}{localization.text(')  \n  conflict id `')}{c['conflict_id']}`')
         # The limit travels WITH the list, never separately (THREE-C).
         if rep.get("limit_notice"):
             lines += ["", f"> {rep['limit_notice']}"]
@@ -2833,6 +2830,7 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
 
 
 @execution_topology.phase_boundary
+@localization.run_presentation
 async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                             run_objectives, convention_registry, reference_index,
                             embed_store=None, max_concurrent_docs=4,
@@ -3576,9 +3574,10 @@ def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
     return summary
 
 
+@localization.presentation
 def _render_per_agent_md(doc, production, audit, conv_review):
-    lines = [f"# {doc['name']}: per-agent deliverable", "",
-             f"- generated: {datetime.now(timezone.utc).isoformat()}"]
+    lines = [f'# {doc['name']}{localization.text(': per-agent deliverable')}', "",
+             f'{localization.text('- generated: ')}{datetime.now(timezone.utc).isoformat()}']
     all_results = (production + audit + conv_review)
     by_agent = {}
     for r in all_results:
@@ -3589,10 +3588,10 @@ def _render_per_agent_md(doc, production, audit, conv_review):
                   "PRACTICE_AUDITOR", "STYLE_GUARDIAN"):
         lines.append(f"\n## {agent}")
         if agent not in by_agent:
-            lines.append("_(agent did not run)_"); continue
+            lines.append(localization.text('_(agent did not run)_')); continue
         for r in by_agent[agent]:
             if not r.get("ok"):
-                lines.append(f"_(failed: {r.get('error')})_"); continue
+                lines.append(f'{localization.text('_(failed: ')}{r.get('error')})_'); continue
             lines.append("```json")
             lines.append(json.dumps(r.get("parsed"), indent=2, ensure_ascii=False))
             lines.append("```")
@@ -3927,8 +3926,10 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 @run_completion_mod.tracked
 @execution_topology.entrypoint
+@localization.cli_presentation
 def main(argv=None):
     parser = _build_arg_parser()
+    localization.localize_parser(parser)
     args = parser.parse_args(argv)
 
     # Do not read case material or alter prompts on an ordinary invocation.

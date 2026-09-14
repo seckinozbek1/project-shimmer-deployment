@@ -54,6 +54,8 @@ def reference_tree(source):
             if node.name == "main":
                 class Rebind(ast.NodeTransformer):
                     def visit_Expr(self, n):
+                        if ast.unparse(n) == "localization.localize_parser(parser)":
+                            return None
                         if ast.unparse(n) == "run_options.configure(run_ctx, args.input_language, args.output_language, args.agent_briefs)":
                             return None
                         return None if ast.unparse(n) == "execution_topology.rebind_run(run_ctx)" else n
@@ -62,7 +64,39 @@ def reference_tree(source):
                             n.test.values = n.test.values[:2]
                         return self.generic_visit(n)
                 node = Rebind().visit(node)
-    return tree
+    class PresentationOnly(ast.NodeTransformer):
+        # Invert only the explicit localization adapters. The pinned semantic
+        # function bodies, calls, schemas and completion order still compare.
+        def visit_FunctionDef(self, node):
+            node.decorator_list = [d for d in node.decorator_list if ast.unparse(d) not in {
+                "localization.presentation", "localization.saved_presentation", "localization.run_presentation",
+                "localization.cli_presentation"}]
+            return self.generic_visit(node)
+        visit_AsyncFunctionDef = visit_FunctionDef
+
+        def visit_JoinedStr(self, node):
+            values = []
+            for value in node.values:
+                if (isinstance(value, ast.FormattedValue) and isinstance(value.value, ast.Call)
+                        and ast.unparse(value.value.func) == "localization.text"
+                        and len(value.value.args) == 1 and isinstance(value.value.args[0], ast.Constant)
+                        and not value.value.keywords):
+                    value = value.value.args[0]
+                else:
+                    value = self.visit(value)
+                if values and isinstance(value, ast.Constant) and isinstance(values[-1], ast.Constant):
+                    values[-1].value += value.value
+                else:
+                    values.append(value)
+            node.values = values
+            return node
+
+        def visit_Call(self, node):
+            if (ast.unparse(node.func) == "localization.text" and len(node.args) == 1
+                    and isinstance(node.args[0], ast.Constant) and not node.keywords):
+                return node.args[0]
+            return self.generic_visit(node)
+    return PresentationOnly().visit(tree)
 
 
 def sleeper(value, seconds=0.04):
