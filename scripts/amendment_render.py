@@ -38,6 +38,7 @@ from typing import Any, Callable
 # is owned by run_context, so the writer and the pipeline agree on one source.
 from run_context import DELIVERABLE_FILENAMES
 import finding_record
+import run_options
 
 # Master fields every render reads. The renders consult only these keys for
 # content; anything else they receive is presentation-only (see module docstring).
@@ -49,12 +50,16 @@ CANONICAL_CONTENT_KEYS = ("document_id", "amendments", "_validator_errors",
 
 
 def render_amendments_md(payload: dict, *, document_name: str = "",
-                         category_for_conv: Callable[[str], Any] | None = None) -> str:
+                         category_for_conv: Callable[[str], Any] | None = None,
+                         output_language: str = "en") -> str:
     """Pure render of the canonical master `payload` to Markdown.
 
     Content comes solely from `payload`; `document_name` is the cosmetic heading
     and `category_for_conv` only decorates a convention_ref already in the master.
     """
+    run_options.Options(output_language=output_language)
+    if output_language == "tr":
+        return run_options.review_markdown(payload, document_name, output_language)
     amendments = payload.get("amendments", [])
     validator_errors = payload.get("_validator_errors", [])
     n_uncertain = sum(1 for a in amendments if a.get("uncertain"))
@@ -131,7 +136,7 @@ def _md_amendment_count(md_text: str) -> int:
     """Count rendered amendment sections in a Markdown render (lines like
     '### [UNCERTAIN] Amendment 3 [CONV-1] — ...')."""
     return sum(1 for ln in md_text.splitlines()
-               if ln.startswith("### ") and "Amendment " in ln)
+               if ln.startswith("### ") and ("Amendment " in ln or "Değişiklik " in ln))
 
 
 def write_amendment_deliverables(payload: dict, *, deliv_dir: Path, doc_id: str,
@@ -161,7 +166,8 @@ def write_amendment_deliverables(payload: dict, *, deliv_dir: Path, doc_id: str,
     json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     # (2) markdown render, pure function of the master
     md_text = render_amendments_md(payload, document_name=document_name,
-                                   category_for_conv=category_for_conv)
+                                   category_for_conv=category_for_conv,
+                                   output_language=run_options.saved(Path(deliv_dir).parent).output_language)
     md_path.write_text(md_text, encoding="utf-8")
     # (3) docx render, pure function of the master (+ body_text canvas)
     docx_error = None

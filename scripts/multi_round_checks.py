@@ -94,7 +94,9 @@ class MultiRoundChecks(unittest.TestCase):
         tree = ast.parse((ROOT / "scripts/server.py").read_text(encoding="utf-8"))
         submit = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef) and n.name == "submit")
         start = next(i for i, n in enumerate(submit.body) if isinstance(n, ast.Assign) and ast.unparse(n.targets[0]) == "case_manifest")
-        prefix = ast.Module(body=submit.body[start:start + 2], type_ignores=[])
+        guard = next(n for n in submit.body if isinstance(n, ast.If) and
+                     ast.unparse(n.test) == "multi_round is not None or multi_round_manifest is not None")
+        prefix = ast.Module(body=[submit.body[start], guard], type_ignores=[])
 
         class HTTPRefusal(Exception):
             pass

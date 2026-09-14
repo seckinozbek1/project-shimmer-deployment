@@ -1819,6 +1819,9 @@ function renderSubmit() {
         '<option value="true">Sensitive: privacy protection and redaction are required</option>' +
       '</select>' +
       '<p class="field-hint">Normal keeps full text and waives redaction for this run. Cloud processing can send that text to providers. Sensitive cannot start until the operator has activated the required privacy layer.</p>' +
+      '<label for="s-language">Output language / ??kt? dili</label>' +
+      '<select id="s-language" class="form-control"><option value="en">English</option><option value="tr">T?rk?e</option></select>' +
+      '<p class="field-hint">Input may be multilingual. Source quotations and evidence identifiers are preserved.</p>' +
       '<details><summary>Advanced intake and review options</summary>' +
       '<label><input type="checkbox" id="s-multi-round"> Multi-round positioning (unverified with models)</label>' +
       '<label for="s-case">Case manifest JSON (multi-round only)</label>' +
@@ -1905,6 +1908,11 @@ function renderSubmit() {
     }
     if (intake === 'standalone' && task === 'review' && !targets.length) { fail('Mark at least one selected file as the document to review.'); return; }
     var fd = new FormData();
+    var outputLanguage = document.getElementById('s-language').value;
+    if (['en', 'tr'].indexOf(outputLanguage) < 0) { fail('Choose English or T?rk?e.'); return; }
+    fd.append('input_language', 'auto');
+    fd.append('output_language', outputLanguage);
+    plan.push('<li>Output language / ??kt? dili: ' + (outputLanguage === 'tr' ? 'T?rk?e' : 'English') + '</li>');
     var multiRound = document.getElementById('s-multi-round').checked;
     var caseText = document.getElementById('s-case').value.trim();
     if (multiRound) {
@@ -2021,6 +2029,13 @@ function multiRoundHtml(data) {
   var out = '<h2>Multi-round positioning</h2><p>' + (data.fixture ? 'SYNTHETIC FIXTURE. ' : '') +
     escapeHtml(data.activation.state) + '. ' + escapeHtml(data.outcome || '') + ' ' +
     escapeHtml(data.activation.reason || '') + '. Model quality and performance remain unverified.</p>';
+  if (data.strategic_support) {
+    out += '<p>' + escapeHtml(data.strategic_support.state_label || data.strategic_support.state) + '</p>';
+    data.strategic_support.layers.forEach(function (node) {
+      out += '<details><summary>' + escapeHtml(node.display_label) + ' ' + escapeHtml(node.display_state || '') + '</summary><pre>' +
+        escapeHtml(JSON.stringify(node, null, 2)) + '</pre></details>';
+    });
+  }
   if (!data.view) return out;
   out += '<p>Case: ' + escapeHtml(data.view.case_id) + '</p>';
   out += citationsHtml(data.view.evidence.map(function (e) { return e.ref_id; }), data.run_id, true);

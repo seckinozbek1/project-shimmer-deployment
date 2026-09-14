@@ -1,0 +1,751 @@
+{
+  "notice": "Authored semantic fixtures, not generated output or evaluated language quality.",
+  "turkish_case": {
+    "fixture_notice": "SYNTHETIC, PRE-AUTHORED SEMANTIC OUTPUTS. NOT MODEL QUALITY EVIDENCE.",
+    "manifest": {
+      "schema_version": 1,
+      "case_id": "fixture_case",
+      "fixture": true,
+      "rounds": [
+        {
+          "round_id": "r1",
+          "sequence": 1,
+          "document_ids": [
+            "doc1"
+          ]
+        },
+        {
+          "round_id": "r2",
+          "sequence": 2,
+          "document_ids": [
+            "doc2"
+          ]
+        },
+        {
+          "round_id": "r4",
+          "sequence": 4,
+          "document_ids": [
+            "doc4"
+          ]
+        }
+      ],
+      "actors": [
+        {
+          "actor_id": "actor_a",
+          "label": "Actor A"
+        },
+        {
+          "actor_id": "actor_b",
+          "label": "Actor B"
+        }
+      ],
+      "issues": [
+        {
+          "issue_id": "issue_a",
+          "label": "Issue A"
+        },
+        {
+          "issue_id": "issue_b",
+          "label": "Issue B"
+        }
+      ],
+      "sources": [
+        {
+          "source_id": "s1_actor_a",
+          "round_id": "r1",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "document_id": "doc1",
+          "unit_id": "unit_s1_actor_a",
+          "char_start": 0,
+          "char_end": 33,
+          "quote": "Kurum, ilk g?r???n? bildirmi?tir.",
+          "state": "accepted"
+        },
+        {
+          "source_id": "s2_actor_a",
+          "round_id": "r2",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "document_id": "doc2",
+          "unit_id": "unit_s2_actor_a",
+          "char_start": 0,
+          "char_end": 37,
+          "quote": "Kurum, sonraki g?r???n? a??klam??t?r.",
+          "state": "accepted"
+        },
+        {
+          "source_id": "s4_actor_a",
+          "round_id": "r4",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "document_id": "doc4",
+          "unit_id": "unit_s4_actor_a",
+          "char_start": 0,
+          "char_end": 32,
+          "quote": "Nihai g?r?? kayda ge?irilmi?tir.",
+          "state": "accepted"
+        },
+        {
+          "source_id": "s2_actor_b",
+          "round_id": "r2",
+          "actor_id": "actor_b",
+          "issue_id": "issue_b",
+          "document_id": "doc2",
+          "unit_id": "unit_s2_actor_b",
+          "char_start": 38,
+          "char_end": 73,
+          "quote": "Di?er kurum, ek g?r???n? sunmu?tur.",
+          "state": "accepted"
+        }
+      ]
+    },
+    "documents": [
+      {
+        "id": "doc1",
+        "name": "doc1.md",
+        "text": "Kurum, ilk g?r???n? bildirmi?tir.\n"
+      },
+      {
+        "id": "doc2",
+        "name": "doc2.md",
+        "text": "Kurum, sonraki g?r???n? a??klam??t?r.\nDi?er kurum, ek g?r???n? sunmu?tur.\n"
+      },
+      {
+        "id": "doc4",
+        "name": "doc4.md",
+        "text": "Nihai g?r?? kayda ge?irilmi?tir.\n"
+      }
+    ],
+    "producer_envelope": {
+      "agent": "PROCESSOR",
+      "doc_id": "fixture_case",
+      "items": [
+        {
+          "record_id": "p_s1_actor_a",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r1",
+          "kind": "position",
+          "state": "accepted",
+          "category": "observed_evidence",
+          "confidence": "CONFIDENT",
+          "text": "Kurum, ilk g?r???n? bildirmi?tir.",
+          "source_ids": [
+            "s1_actor_a"
+          ],
+          "position": "typed_a",
+          "value": 1,
+          "unit": "declared_unit"
+        },
+        {
+          "record_id": "p_s2_actor_a",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r2",
+          "kind": "position",
+          "state": "accepted",
+          "category": "observed_evidence",
+          "confidence": "CONFIDENT",
+          "text": "Kurum, sonraki g?r???n? a??klam??t?r.",
+          "source_ids": [
+            "s2_actor_a"
+          ],
+          "position": "typed_a",
+          "value": 2,
+          "unit": "declared_unit"
+        },
+        {
+          "record_id": "p_s4_actor_a",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "kind": "position",
+          "state": "accepted",
+          "category": "observed_evidence",
+          "confidence": "CONFIDENT",
+          "text": "Nihai g?r?? kayda ge?irilmi?tir.",
+          "source_ids": [
+            "s4_actor_a"
+          ],
+          "position": "typed_b",
+          "value": 4,
+          "unit": "declared_unit"
+        },
+        {
+          "record_id": "p_s2_actor_b",
+          "case_id": "fixture_case",
+          "actor_id": "actor_b",
+          "issue_id": "issue_b",
+          "round_id": "r2",
+          "kind": "position",
+          "state": "accepted",
+          "category": "observed_evidence",
+          "confidence": "CONFIDENT",
+          "text": "Di?er kurum, ek g?r???n? sunmu?tur.",
+          "source_ids": [
+            "s2_actor_b"
+          ],
+          "position": "typed_a",
+          "value": 2,
+          "unit": "declared_unit"
+        },
+        {
+          "record_id": "m_concession",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "movement",
+          "state": "accepted",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ],
+          "previous_position_id": "p_s1_actor_a",
+          "current_position_id": "p_s4_actor_a",
+          "movement": "concession"
+        },
+        {
+          "record_id": "m_hardening",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "movement",
+          "state": "accepted",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ],
+          "previous_position_id": "p_s1_actor_a",
+          "current_position_id": "p_s4_actor_a",
+          "movement": "hardening"
+        },
+        {
+          "record_id": "m_reversal",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "movement",
+          "state": "accepted",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ],
+          "previous_position_id": "p_s1_actor_a",
+          "current_position_id": "p_s4_actor_a",
+          "movement": "reversal"
+        },
+        {
+          "record_id": "m_stable",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "movement",
+          "state": "accepted",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ],
+          "previous_position_id": "p_s1_actor_a",
+          "current_position_id": "p_s4_actor_a",
+          "movement": "stable"
+        },
+        {
+          "record_id": "m_ambiguous",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "movement",
+          "state": "accepted",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ],
+          "previous_position_id": "p_s1_actor_a",
+          "current_position_id": "p_s4_actor_a",
+          "movement": "ambiguous"
+        },
+        {
+          "record_id": "unresolved_issue_1",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "unresolved_issue",
+          "state": "accepted",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "record_id": "trajectory_1",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "trajectory",
+          "state": "accepted",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "record_id": "decision_support_1",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "decision_support",
+          "state": "accepted",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "record_id": "insufficient_1",
+          "case_id": "fixture_case",
+          "actor_id": "actor_a",
+          "issue_id": "issue_a",
+          "round_id": "r4",
+          "previous_round_id": "r1",
+          "kind": "decision_support",
+          "state": "insufficient_evidence",
+          "category": "semantic_interpretation",
+          "confidence": "UNCERTAIN",
+          "text": "?nceden yaz?lm?? olas? yorum; kan?tlar kesin bir sonuca yeterli de?ildir.",
+          "source_ids": []
+        }
+      ]
+    },
+    "reviewer_envelope": {
+      "agent": "VERIFIER",
+      "doc_id": "fixture_case",
+      "items": [
+        {
+          "target_record_id": "p_s1_actor_a",
+          "state": "accepted",
+          "confidence": "CONFIDENT",
+          "source_ids": [
+            "s1_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "p_s2_actor_a",
+          "state": "accepted",
+          "confidence": "CONFIDENT",
+          "source_ids": [
+            "s2_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "p_s4_actor_a",
+          "state": "accepted",
+          "confidence": "CONFIDENT",
+          "source_ids": [
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "p_s2_actor_b",
+          "state": "accepted",
+          "confidence": "CONFIDENT",
+          "source_ids": [
+            "s2_actor_b"
+          ]
+        },
+        {
+          "target_record_id": "m_concession",
+          "state": "accepted",
+          "confidence": "UNCERTAIN",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "m_hardening",
+          "state": "accepted",
+          "confidence": "UNCERTAIN",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "m_reversal",
+          "state": "accepted",
+          "confidence": "UNCERTAIN",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "m_stable",
+          "state": "accepted",
+          "confidence": "UNCERTAIN",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "m_ambiguous",
+          "state": "accepted",
+          "confidence": "UNCERTAIN",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "unresolved_issue_1",
+          "state": "accepted",
+          "confidence": "UNCERTAIN",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "trajectory_1",
+          "state": "accepted",
+          "confidence": "UNCERTAIN",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "decision_support_1",
+          "state": "accepted",
+          "confidence": "UNCERTAIN",
+          "source_ids": [
+            "s1_actor_a",
+            "s4_actor_a"
+          ]
+        },
+        {
+          "target_record_id": "insufficient_1",
+          "state": "insufficient_evidence",
+          "confidence": "UNCERTAIN",
+          "source_ids": []
+        }
+      ]
+    }
+  },
+  "language_cases": [
+    {
+      "input_language": "auto",
+      "output_language": "en",
+      "text": "The institution states its grounds.",
+      "explanation": "The institution should clarify its stated grounds."
+    },
+    {
+      "input_language": "auto",
+      "output_language": "tr",
+      "text": "The institution states its grounds.",
+      "explanation": "Yetkili kurumun gerek?esi a??kl??a kavu?turulmal?d?r."
+    },
+    {
+      "input_language": "auto",
+      "output_language": "en",
+      "text": "Kurum, gerek?esini belirtmektedir.",
+      "explanation": "The institution should clarify its stated grounds."
+    },
+    {
+      "input_language": "auto",
+      "output_language": "tr",
+      "text": "Kurum, gerek?esini belirtmektedir.",
+      "explanation": "Yetkili kurumun gerek?esi a??kl??a kavu?turulmal?d?r."
+    },
+    {
+      "input_language": "auto",
+      "output_language": "en",
+      "text": "Kurum g?r?? bildirdi. Additional evidence is pending.",
+      "explanation": "The institution should clarify its stated grounds."
+    },
+    {
+      "input_language": "auto",
+      "output_language": "tr",
+      "text": "Kurum g?r?? bildirdi. Additional evidence is pending.",
+      "explanation": "Yetkili kurumun gerek?esi a??kl??a kavu?turulmal?d?r."
+    }
+  ],
+  "strategies": {
+    "en": [
+      {
+        "type": "STRATEGIC_OPTION",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "interpretation_ids": [
+          "m_concession"
+        ],
+        "trajectory_ids": [
+          "m_concession"
+        ],
+        "actor_ids": [
+          "actor_a"
+        ],
+        "issue_ids": [
+          "issue_a"
+        ],
+        "round_ids": [
+          "r1",
+          "r4"
+        ],
+        "option_ids": [],
+        "record_id": "option_1",
+        "action": "Request clarification.",
+        "upside": "May resolve ambiguity.",
+        "risk": "May delay a decision.",
+        "assumptions": [
+          "The record is incomplete."
+        ],
+        "uncertainty": "Competing interpretations remain."
+      },
+      {
+        "type": "STRATEGIC_OPTION",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "interpretation_ids": [
+          "m_hardening"
+        ],
+        "trajectory_ids": [
+          "m_hardening"
+        ],
+        "actor_ids": [
+          "actor_a"
+        ],
+        "issue_ids": [
+          "issue_a"
+        ],
+        "round_ids": [
+          "r1",
+          "r4"
+        ],
+        "option_ids": [],
+        "record_id": "option_2",
+        "action": "Preserve the current position pending evidence.",
+        "upside": "May resolve ambiguity.",
+        "risk": "May delay a decision.",
+        "assumptions": [
+          "The record is incomplete."
+        ],
+        "uncertainty": "Competing interpretations remain."
+      },
+      {
+        "type": "RECOMMENDATION",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "interpretation_ids": [
+          "m_concession"
+        ],
+        "trajectory_ids": [
+          "m_concession"
+        ],
+        "actor_ids": [
+          "actor_a"
+        ],
+        "issue_ids": [
+          "issue_a"
+        ],
+        "round_ids": [
+          "r1",
+          "r4"
+        ],
+        "option_ids": [
+          "option_1"
+        ],
+        "record_id": "recommendation_1",
+        "action": "Request clarification.",
+        "upside": "May resolve ambiguity.",
+        "risk": "May delay a decision.",
+        "assumptions": [
+          "The record is incomplete."
+        ],
+        "uncertainty": "Competing interpretations remain."
+      }
+    ],
+    "tr": [
+      {
+        "type": "STRATEGIC_OPTION",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "interpretation_ids": [
+          "m_concession"
+        ],
+        "trajectory_ids": [
+          "m_concession"
+        ],
+        "actor_ids": [
+          "actor_a"
+        ],
+        "issue_ids": [
+          "issue_a"
+        ],
+        "round_ids": [
+          "r1",
+          "r4"
+        ],
+        "option_ids": [],
+        "record_id": "option_1",
+        "action": "Gerek?eli a??klama talep edin.",
+        "upside": "Belirsizli?in giderilmesine yard?mc? olabilir.",
+        "risk": "Karar s?reci uzayabilir.",
+        "assumptions": [
+          "Kay?tlar hen?z tamamlanmam??t?r."
+        ],
+        "uncertainty": "Birbiriyle yar??an yorumlar ge?erlili?ini korumaktad?r."
+      },
+      {
+        "type": "STRATEGIC_OPTION",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "interpretation_ids": [
+          "m_hardening"
+        ],
+        "trajectory_ids": [
+          "m_hardening"
+        ],
+        "actor_ids": [
+          "actor_a"
+        ],
+        "issue_ids": [
+          "issue_a"
+        ],
+        "round_ids": [
+          "r1",
+          "r4"
+        ],
+        "option_ids": [],
+        "record_id": "option_2",
+        "action": "Yeni kan?t gelene kadar mevcut tutumu koruyun.",
+        "upside": "Belirsizli?in giderilmesine yard?mc? olabilir.",
+        "risk": "Karar s?reci uzayabilir.",
+        "assumptions": [
+          "Kay?tlar hen?z tamamlanmam??t?r."
+        ],
+        "uncertainty": "Birbiriyle yar??an yorumlar ge?erlili?ini korumaktad?r."
+      },
+      {
+        "type": "RECOMMENDATION",
+        "state": "accepted",
+        "confidence": "UNCERTAIN",
+        "source_ids": [
+          "s1_actor_a",
+          "s4_actor_a"
+        ],
+        "interpretation_ids": [
+          "m_concession"
+        ],
+        "trajectory_ids": [
+          "m_concession"
+        ],
+        "actor_ids": [
+          "actor_a"
+        ],
+        "issue_ids": [
+          "issue_a"
+        ],
+        "round_ids": [
+          "r1",
+          "r4"
+        ],
+        "option_ids": [
+          "option_1"
+        ],
+        "record_id": "recommendation_1",
+        "action": "Gerek?eli a??klama talep edin.",
+        "upside": "Belirsizli?in giderilmesine yard?mc? olabilir.",
+        "risk": "Karar s?reci uzayabilir.",
+        "assumptions": [
+          "Kay?tlar hen?z tamamlanmam??t?r."
+        ],
+        "uncertainty": "Birbiriyle yar??an yorumlar ge?erlili?ini korumaktad?r."
+      }
+    ]
+  },
+  "ordinary_tr": {
+    "document_id": "doc1",
+    "amendments": [
+      {
+        "convention_ref": "CONV-1",
+        "location": "REF-0001",
+        "action": "flag",
+        "severity": "minor",
+        "original_text": "The institution states its grounds.",
+        "comment": "Yetkili kurumun gerek?esi a??kl??a kavu?turulmal?d?r.",
+        "context_refs": [
+          "REF-0002"
+        ],
+        "uncertain": true,
+        "value": 3.5
+      }
+    ],
+    "_validator_errors": []
+  }
+}

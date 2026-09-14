@@ -41,7 +41,7 @@
       "A missing round or absent actor/issue is not evidence of continuity. Non-adjacent comparisons are allowed when explicitly supported.",
       "Cross-round statements need evidence from both named rounds, for the named actor and issue. Keep unsupported claims insufficient_evidence, unknown or not_comparable.",
       "Concession, hardening, reversal, agreement, convergence, divergence and significance are semantic judgments, never conclusions from numeric deltas alone.",
-      "Distinguish observed_evidence from semantic_interpretation and recommendation. Do not generate recommendations unless explicitly requested in run objectives. Movement does not automatically justify advice.",
+      "Keep this trajectory call observational and interpretive. Do not emit recommendation records here; explicit strategic options and recommendations belong to the separate independently reviewed decision-support phase. Movement never automatically justifies advice.",
       "Include current positions, histories through individual observations, movements, unresolved issues, persistent disagreements, convergence/divergence, trajectory and decision-support observations only where supported.",
       "For positions include position; for all other kinds include previous_round_id. Movements must link two position records and carry all their source_ids.",
       "The state accepted is a proposal pending independent review. Never claim measured quality or complete coverage."
