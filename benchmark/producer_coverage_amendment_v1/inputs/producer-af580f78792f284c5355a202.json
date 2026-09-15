@@ -1,0 +1,24 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-af580f78792f284c5355a202",
+  "input_sha256": "4d0906e0846124d5505d21c31d8eb8576a8a7474a230b045d951b12ccb13a4fb",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "08:10 event opened: CLM-A: collection 53 recorded 53 entries (REF-1001).\n09:25 event amended: No second claim was submitted.\n11:40 follow-up: The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001"
+    ],
+    "required_refs": [
+      "REF-1001"
+    ],
+    "routed_rules": []
+  }
+}

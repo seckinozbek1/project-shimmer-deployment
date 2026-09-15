@@ -1,0 +1,22 @@
+test_canonical_roundtrip (checks.Checks.test_canonical_roundtrip) ... ok
+test_claim_conflict_not_epistemic (checks.Checks.test_claim_conflict_not_epistemic) ... ok
+test_distinct_semantics (checks.Checks.test_distinct_semantics) ... ok
+test_effect_conflict_uncertainty (checks.Checks.test_effect_conflict_uncertainty) ... ok
+test_effect_evaluation_exclusion (checks.Checks.test_effect_evaluation_exclusion) ... ok
+test_effect_evidence (checks.Checks.test_effect_evidence) ... ok
+test_effect_gap_difference (checks.Checks.test_effect_gap_difference) ... ok
+test_effect_gap_equivalence (checks.Checks.test_effect_gap_equivalence) ... ok
+test_effect_isolation (checks.Checks.test_effect_isolation) ... ok
+test_effect_r06 (checks.Checks.test_effect_r06) ... ok
+test_effect_rendering (checks.Checks.test_effect_rendering) ... ok
+test_empty_and_refusal (checks.Checks.test_empty_and_refusal) ... ok
+test_equivalence_and_generic_projection (checks.Checks.test_equivalence_and_generic_projection) ... ok
+test_evidence_ownership (checks.Checks.test_evidence_ownership) ... ok
+test_renderer_equivalent_and_existing_contract (checks.Checks.test_renderer_equivalent_and_existing_contract) ... ok
+test_sequence_and_state_qualifiers (checks.Checks.test_sequence_and_state_qualifiers) ... ok
+test_unknown_qualifiers_fail_closed (checks.Checks.test_unknown_qualifiers_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.006s
+
+OK

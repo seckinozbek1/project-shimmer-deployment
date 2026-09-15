@@ -1,0 +1,20 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-dea3cd39224752c92df30250",
+  "input_sha256": "d82ffe5f6e4122f52c47717dd22bae1d7b3ee469d0535e3467775f5d0e21fd43",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "paired_register / Institute of Nimbular Blenkets: divider only."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [],
+    "required_refs": [],
+    "routed_rules": []
+  }
+}

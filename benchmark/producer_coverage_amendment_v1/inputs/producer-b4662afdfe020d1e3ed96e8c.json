@@ -1,0 +1,26 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-b4662afdfe020d1e3ed96e8c",
+  "input_sha256": "befb87022d0b1a73604e37ac4fe43b4c4ba5fbdd99443436e4f4ca156786aa7e",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "Question: What was entered first?\nAnswer: CLM-A: vraxlet 60 recorded 74 flomquils (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: vraxlet 60 retained 79 flomquils (REF-1002).\nClerk note: The date is absent. When was this recorded?"
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": []
+  }
+}

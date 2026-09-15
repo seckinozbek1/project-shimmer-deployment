@@ -1,0 +1,26 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-43676d9f77d0f99f8d010533",
+  "input_sha256": "b56fe629f55d066355fb13ca287ff955db65f946bb7815e72aa748ab9fe82b88",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "08:10 event opened: CLM-A: filing office 54 recorded 56 notices (REF-1001).\n09:25 event amended: CLM-B: filing office 54 retained 61 notices (REF-1002).\n11:40 follow-up: The date is absent. When was this recorded?"
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": []
+  }
+}

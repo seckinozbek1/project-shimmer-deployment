@@ -1,0 +1,32 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-2f1e4d83f4247f4096625c77",
+  "input_sha256": "67c46d17538c0bd037e9b9327bf63ff5a519ba36b4aff5eb2a8b2565987a0b6a",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "ENTRY A = CLM-C: vendor 51 is assigned 47 pallets (REF-1003).\nENTRY B = CLM-D: the same vendor 51 is assigned 49 pallets (REF-1004).\nFOLLOW-UP FIELD = These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s112",
+        "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+      }
+    ],
+    "supplied_refs": [
+      "REF-1003",
+      "REF-1004",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-1003",
+      "REF-1004"
+    ],
+    "routed_rules": []
+  }
+}

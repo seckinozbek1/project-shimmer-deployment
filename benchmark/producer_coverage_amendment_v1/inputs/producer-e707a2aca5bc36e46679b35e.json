@@ -1,0 +1,20 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-e707a2aca5bc36e46679b35e",
+  "input_sha256": "d3a7e1238e7c76f67dd138e652c8319523c370af24fdf706957fac339489e1fb",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "- Unreadable entry for vendor 47.\n- [unrecoverable fragment]\n- The semantic content cannot be established."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [],
+    "required_refs": [],
+    "routed_rules": []
+  }
+}
