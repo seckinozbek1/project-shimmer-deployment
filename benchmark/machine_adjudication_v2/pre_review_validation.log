@@ -1,0 +1,17 @@
+test_evidence_validation_effect (normalizer_checks.NormalizerChecks.test_evidence_validation_effect) ... ok
+test_gap_normalization_effect (normalizer_checks.NormalizerChecks.test_gap_normalization_effect) ... ok
+test_gold_isolation_effect (normalizer_checks.NormalizerChecks.test_gold_isolation_effect) ... ok
+test_held_out_exclusion_effect (normalizer_checks.NormalizerChecks.test_held_out_exclusion_effect) ... ok
+test_missing_date_paraphrases (normalizer_checks.NormalizerChecks.test_missing_date_paraphrases) ... ok
+test_preserved_r06_train_exclusion_effect (normalizer_checks.NormalizerChecks.test_preserved_r06_train_exclusion_effect) ... ok
+test_real_semantic_differences_preserved (normalizer_checks.NormalizerChecks.test_real_semantic_differences_preserved) ... ok
+test_review_ambiguity_separation_effect (normalizer_checks.NormalizerChecks.test_review_ambiguity_separation_effect) ... ok
+test_unavailability_synonyms (normalizer_checks.NormalizerChecks.test_unavailability_synonyms) ... ok
+test_uncertainty_normalization_effect (normalizer_checks.NormalizerChecks.test_uncertainty_normalization_effect) ... ok
+test_uncertainty_synonyms (normalizer_checks.NormalizerChecks.test_uncertainty_synonyms) ... ok
+test_unsupported_paraphrases_and_inference_rejected (normalizer_checks.NormalizerChecks.test_unsupported_paraphrases_and_inference_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.008s
+
+OK
