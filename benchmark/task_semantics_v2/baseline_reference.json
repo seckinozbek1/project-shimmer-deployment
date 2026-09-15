@@ -1,0 +1,39 @@
+{
+  "version": "semantic-task-v1",
+  "commits": [
+    "090b3d5",
+    "cab07cd"
+  ],
+  "hashes": {
+    "benchmark/task_semantics/.gitattributes": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+    "benchmark/task_semantics/acceptance_registration.template.json": "00af87b9f91bdfd60a00ec27d1ce22646180cfe334e6dfc286835f416b53cc96",
+    "benchmark/task_semantics/build_seed.py": "d39f1f44f83869e4cc09be44d4f2b2ce076ea6e4f3a128253599c31268448b96",
+    "benchmark/task_semantics/checks.py": "5ab2ba653501b83d8f193db60bf557775e9d5103c2860223b9ea18537d3f2f5e",
+    "benchmark/task_semantics/core.py": "b9858ab721a6e2b8912b15bfdf0ec11c960a7f2ab054150abc5318a5ba28d1a7",
+    "benchmark/task_semantics/evaluate_outputs.py": "c07d007adad116943e32c52934cf7ba4b9fb1a698da8eaa6a4efb2fe92ccf930",
+    "benchmark/task_semantics/family_ancestry.json": "4bc92d9ef0b765881a19a2f13c0d44331f6c7c1f0f78f7c750e5f1c405118b5d",
+    "benchmark/task_semantics/frozen_dataset.json": "13a4d7618503d91ac4662c23693caf0a631108e662cf4c174c070f640f5cef82",
+    "benchmark/task_semantics/negative_candidates.json": "772f7894fc163489df33c65cc62f1fffb7271e899b58a5c7bb664aa6485de74e",
+    "benchmark/task_semantics/README.md": "b47d6dddb5a6815c19ef5d593f0e86fe5a6adaac8a54a253d12ec85ab5be5aa3",
+    "benchmark/task_semantics/record.schema.json": "323997abbc797a2f577269ef86a44f8445990509cca9000bc7140fe700922401",
+    "benchmark/task_semantics/run_gate.py": "77229ef4041e3f36dc9c7dd4a54aed6c1898f9458922b5bbb8eb7345bda0770b",
+    "benchmark/task_semantics/seed.json": "003aefd37d40a8ca1c90dbcc2e6429195f015f0c669b6d95eea7df98b2649142",
+    "benchmark/task_semantics/split_manifest.json": "e7f470ffd14a4ebc12999ee79105798b2f88602513ff876ce1567e26edd16e72",
+    "benchmark/task_semantics/split_plan.json": "ea8f2f4d5d28648dec7323db0e33c312974652955727efefcebf8be1f30c90a6",
+    "benchmark/task_semantics/transformations.json": "dc94b6c54c20e5768aae793eb96effc3c4e14404d2be002addb261fc8471705e",
+    "config/semantic_task_contract_v1.json": "bb8247b10849297a3fb5718ddc2e25cc549f3460b209092b001016ef6741a9e5",
+    "docs/fix/domain_agnostic_tuning_20260915/.gitattributes": "53628631f02c7e369369c2efd12a62076bec4e44f2ecdf1216102be3e2c7e484",
+    "docs/fix/domain_agnostic_tuning_20260915/ARTIFACT_HASHES.json": "1142bba0a9743618ded7ce4514c7fd4250419c169a4755fdc131fbebb68239b4",
+    "docs/fix/domain_agnostic_tuning_20260915/authored_baseline.json": "46961d9e2d3897daccc7900a323de6b97344c0ffb90bec2c5ea7c78bda5eec9a",
+    "docs/fix/domain_agnostic_tuning_20260915/historical_baseline.json": "91e4bd38fcaf46af0fe4f1559dc9a78a8b3665a051c5d7fc6ccf63cc27183f08",
+    "docs/fix/domain_agnostic_tuning_20260915/leakage_audit.json": "49f3c9f35add32a9aa4e3e91b647a2ea803b1f1531c060a66ae49c6d52b277e1",
+    "docs/fix/domain_agnostic_tuning_20260915/negative_baseline.json": "a6cbe5c3da1e7be43ec346d11502b3bc2c5d5752648862a2033b82028f2aee45",
+    "docs/fix/domain_agnostic_tuning_20260915/production_validation.json": "343c15833710d69bd65e74bc03c80307ce18c3349e90940df3b0995bef0798ea",
+    "docs/fix/domain_agnostic_tuning_20260915/production_validation.log": "b6e064908f495d78508c1d86dca0a520415bb31e050e983b2a00fa57333d24f2",
+    "docs/fix/domain_agnostic_tuning_20260915/readiness.json": "b97080725cb7c5fe4b7ea7eb9f2389e50a4eb91fcdfa6e5dc286ef356907aba2",
+    "docs/fix/domain_agnostic_tuning_20260915/security_scan.json": "c23b1896514a81d1ae6a4e4855ff1d49e366e7bbc770a3d9b699e0f00a67dfc7",
+    "docs/fix/domain_agnostic_tuning_20260915/statistics.json": "aeb82ab99dd4b14b539f508a83aeee3a032bdb0e4bbc3f67291eff6dcf5dd2b2",
+    "docs/fix/domain_agnostic_tuning_20260915/validation.json": "2a059ddc65fa27ac4a3778de2549182f49e402a4fc83689c5bf44b63ea0fd055",
+    "docs/fix/domain_agnostic_tuning_20260915/validation.log": "479239d88ee16372d2a7629591c93a5d00c01a932ff27d54045670f8c51f56f9"
+  }
+}

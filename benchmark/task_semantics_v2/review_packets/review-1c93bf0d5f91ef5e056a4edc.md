@@ -1,0 +1,49 @@
+# Independent semantic review
+
+Packet: review-1c93bf0d5f91ef5e056a4edc
+
+Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.
+
+```json
+{
+  "role": "auditor",
+  "production_contract": "semantic-task-v1",
+  "source_spans": [
+    {
+      "alias": "s0",
+      "text": "BEGIN REGISTER\nDEBIT OBSERVATION :: CLM-A: vraxlet 84 recorded 146 flomquils (REF-1001).\nCREDIT OBSERVATION :: CLM-B: vraxlet 84 retained 151 flomquils (REF-1002).\nMEMO ONLY :: The date is absent. When was this recorded?\nEND REGISTER"
+    }
+  ],
+  "context_only_spans": [],
+  "supplied_refs": [
+    "REF-1001",
+    "REF-1002"
+  ],
+  "required_refs": [
+    "REF-1001",
+    "REF-1002"
+  ],
+  "routed_rules": [],
+  "extraction": "BEGIN REGISTER\nDEBIT OBSERVATION :: CLM-A: vraxlet 84 recorded 146 flomquils (REF-1001).\nCREDIT OBSERVATION :: CLM-B: vraxlet 84 retained 151 flomquils (REF-1002).\nMEMO ONLY :: The date is absent. When was this recorded?\nEND REGISTER"
+}
+```
+
+## Response template (pending, not a submitted review)
+
+```json
+{
+  "packet_id": "review-1c93bf0d5f91ef5e056a4edc",
+  "input_sha256": "1c93bf0d5f91ef5e056a4edc8ad93b536f1d284acc041194f571837dd59db45a",
+  "review_version": "semantic-benchmark-v2",
+  "reviewer_id": null,
+  "reviewer_kind": null,
+  "independence_attestation": false,
+  "reviewed_at": null,
+  "semantic_target": null,
+  "semantic_judgment": null,
+  "reason_components": [],
+  "rationale": null,
+  "ambiguity": null,
+  "formatting_judgment": "not_assessed"
+}
+```

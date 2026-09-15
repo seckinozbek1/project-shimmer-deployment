@@ -1,0 +1,2215 @@
+{
+  "packet_to_examples": {
+    "review-f55ed771ece107a7cec26b01": [
+      "train-negotiation-producer-extracted"
+    ],
+    "review-bda0068233829941c3829b5a": [
+      "train-negotiation-auditor-match"
+    ],
+    "review-abd076c1dab61757762aa080": [
+      "train-negotiation-auditor-number_change"
+    ],
+    "review-1f81bbc7cf57c61b6ab4e37c": [
+      "train-negotiation-auditor-label_swap"
+    ],
+    "review-38a32718a11f55d96108efcf": [
+      "train-negotiation-auditor-unit_change"
+    ],
+    "review-47c0a5dd9fe24dacf73b22e2": [
+      "train-negotiation-auditor-entity_swap"
+    ],
+    "review-3717e94b74fd6b417e7e2e6c": [
+      "train-negotiation-auditor-claim_omission"
+    ],
+    "review-290ea07024f7c057c32921f5": [
+      "train-negotiation-auditor-gap_omission"
+    ],
+    "review-8ea6604004ebf13f495decef": [
+      "train-negotiation-auditor-unsupported_addition"
+    ],
+    "review-e1d711a66641a86809ea0b0f": [
+      "train-negotiation-auditor-uncertainty_removed"
+    ],
+    "review-acd2a86156aa02b9f80f8626": [
+      "train-negotiation-auditor-unsupported_certainty"
+    ],
+    "review-f4b89c73e5d892971af2bc56": [
+      "train-negotiation-producer-insufficient_evidence"
+    ],
+    "review-3f7a1f25729171fa20f256ae": [
+      "train-negotiation-auditor-insufficient_evidence"
+    ],
+    "review-73183f5d73758efc91259715": [
+      "train-negotiation-producer-empty"
+    ],
+    "review-3e51ff37b23702fd2990acc6": [
+      "train-contracts-producer-extracted"
+    ],
+    "review-ff689209b7930ac0961a0312": [
+      "train-contracts-auditor-match"
+    ],
+    "review-dd368208170158d60fc6b087": [
+      "train-contracts-auditor-number_change"
+    ],
+    "review-17e10fa6435e27eef5aebb4e": [
+      "train-contracts-auditor-label_swap"
+    ],
+    "review-caa3d49481d2880838d73eaa": [
+      "train-contracts-auditor-unit_change"
+    ],
+    "review-79180ac28c16e54317e1bacd": [
+      "train-contracts-auditor-entity_swap"
+    ],
+    "review-bcdb47025fba4b0bbde4da56": [
+      "train-contracts-auditor-claim_omission"
+    ],
+    "review-c3fd57c7bc3d09630e6abbb3": [
+      "train-contracts-auditor-gap_omission"
+    ],
+    "review-61499cc2f7bd815cfc1dd977": [
+      "train-contracts-auditor-unsupported_addition"
+    ],
+    "review-9335edf1e7541793bad43eb4": [
+      "train-contracts-auditor-uncertainty_removed"
+    ],
+    "review-1f5a2c8445e463c4b9751e78": [
+      "train-contracts-auditor-unsupported_certainty"
+    ],
+    "review-bfbc2e63ab4358f8eb17f009": [
+      "train-contracts-producer-insufficient_evidence"
+    ],
+    "review-486263f870b32f356aba38c0": [
+      "train-contracts-auditor-insufficient_evidence"
+    ],
+    "review-39a6d925586fe95d76caabd9": [
+      "train-contracts-producer-empty"
+    ],
+    "review-80683ce4a821a195cd591943": [
+      "train-regulation-producer-extracted"
+    ],
+    "review-812e00c7c8749ecb972d12c9": [
+      "train-regulation-auditor-match"
+    ],
+    "review-2d15112422452610d51bcc14": [
+      "train-regulation-auditor-number_change"
+    ],
+    "review-cafd14cff51983b941b75d44": [
+      "train-regulation-auditor-label_swap"
+    ],
+    "review-d8bac0ca3efc43255b1cec7d": [
+      "train-regulation-auditor-unit_change"
+    ],
+    "review-d7d0a4b5aa790b611338c7ed": [
+      "train-regulation-auditor-entity_swap"
+    ],
+    "review-1b7091629e66cdb0d0395084": [
+      "train-regulation-auditor-claim_omission"
+    ],
+    "review-8b33b34e1a1db2bd5a56873f": [
+      "train-regulation-auditor-gap_omission"
+    ],
+    "review-11c68d6f671c1afce1808b0b": [
+      "train-regulation-auditor-unsupported_addition"
+    ],
+    "review-fe5f6d519813cddfb9a2a033": [
+      "train-regulation-auditor-uncertainty_removed"
+    ],
+    "review-7ba25d331372c88d1b78aaa7": [
+      "train-regulation-auditor-unsupported_certainty"
+    ],
+    "review-f2de631395d37f7585c74b75": [
+      "train-regulation-producer-insufficient_evidence"
+    ],
+    "review-26f2e62ed0c04907d1924a38": [
+      "train-regulation-auditor-insufficient_evidence"
+    ],
+    "review-36370f119ea3544558634dcd": [
+      "train-regulation-producer-empty"
+    ],
+    "review-4f4bba1707b4fa5a653a34fd": [
+      "train-clinical-producer-extracted"
+    ],
+    "review-d91876b19a08e6efd4c0e354": [
+      "train-clinical-auditor-match"
+    ],
+    "review-70293b6bba9b56389f5571a8": [
+      "train-clinical-auditor-number_change"
+    ],
+    "review-37c0bee2b600ed6b0c76cfae": [
+      "train-clinical-auditor-label_swap"
+    ],
+    "review-b0b6b56d7695eacb4d70d75a": [
+      "train-clinical-auditor-unit_change"
+    ],
+    "review-294b1e653240b6ab3e09b738": [
+      "train-clinical-auditor-entity_swap"
+    ],
+    "review-971cf85fe47b79afe0c6c73e": [
+      "train-clinical-auditor-claim_omission"
+    ],
+    "review-5a1ae59cbc4a6c093223b5b3": [
+      "train-clinical-auditor-gap_omission"
+    ],
+    "review-7ef0bc944fb8ce3de62c3887": [
+      "train-clinical-auditor-unsupported_addition"
+    ],
+    "review-588259bf308670c463210d82": [
+      "train-clinical-auditor-uncertainty_removed"
+    ],
+    "review-22ef9ec7d6ba7bf86c3fd4e3": [
+      "train-clinical-auditor-unsupported_certainty"
+    ],
+    "review-9133e4ccb803c4c8b269ccf8": [
+      "train-clinical-producer-insufficient_evidence"
+    ],
+    "review-e7220b6cdd2af5926898ef81": [
+      "train-clinical-auditor-insufficient_evidence"
+    ],
+    "review-d9a9a6bc9a9c3e50b7cb68d2": [
+      "train-clinical-producer-empty"
+    ],
+    "review-584f0b819b47559a44a3cd5e": [
+      "train-device-producer-extracted"
+    ],
+    "review-5b97ad4a33b1130b4788e13e": [
+      "train-device-auditor-match"
+    ],
+    "review-acc24d4f205d3408df4dcaaf": [
+      "train-device-auditor-number_change"
+    ],
+    "review-3900120f9d4e8b74fefcfac5": [
+      "train-device-auditor-label_swap"
+    ],
+    "review-186b07fe5dad38cd244fbd3c": [
+      "train-device-auditor-unit_change"
+    ],
+    "review-6484252163d9129c48ebcb10": [
+      "train-device-auditor-entity_swap"
+    ],
+    "review-0605d7122069473bbd1c468f": [
+      "train-device-auditor-claim_omission"
+    ],
+    "review-094a6bacf44d03bf687566b3": [
+      "train-device-auditor-gap_omission"
+    ],
+    "review-7d93033d1694d0e0bfbf1765": [
+      "train-device-auditor-unsupported_addition"
+    ],
+    "review-f2318d6c463ab079eb83dfe3": [
+      "train-device-auditor-uncertainty_removed"
+    ],
+    "review-d17d478a6fc1b7faa83fe85f": [
+      "train-device-auditor-unsupported_certainty"
+    ],
+    "review-acd6f0c1efce99eaefd87cdd": [
+      "train-device-producer-insufficient_evidence"
+    ],
+    "review-b7a2a8d105db17f86507e8bc": [
+      "train-device-auditor-insufficient_evidence"
+    ],
+    "review-ef409f2a6da77695ad806f69": [
+      "train-device-producer-empty"
+    ],
+    "review-0ed8b8320704b2a1dfe99322": [
+      "train-procurement-producer-extracted"
+    ],
+    "review-c9662a1a36b48a4dbb36b481": [
+      "train-procurement-auditor-match"
+    ],
+    "review-708c5517a084fb48ecc97b78": [
+      "train-procurement-auditor-number_change"
+    ],
+    "review-b56b8281a0da821b0b503e4f": [
+      "train-procurement-auditor-label_swap"
+    ],
+    "review-bec54afb3333ada104972718": [
+      "train-procurement-auditor-unit_change"
+    ],
+    "review-8e0916340b880c23e9b6bc1d": [
+      "train-procurement-auditor-entity_swap"
+    ],
+    "review-9ba71ceadbd0e64fc3e726cc": [
+      "train-procurement-auditor-claim_omission"
+    ],
+    "review-3a55e0d5dddfd04bc3d5b7dc": [
+      "train-procurement-auditor-gap_omission"
+    ],
+    "review-ded67d6feeb7245dbb262b43": [
+      "train-procurement-auditor-unsupported_addition"
+    ],
+    "review-fd147a9bf62768176b6ae5d0": [
+      "train-procurement-auditor-uncertainty_removed"
+    ],
+    "review-0aa29e55ddfd25e467926d73": [
+      "train-procurement-auditor-unsupported_certainty"
+    ],
+    "review-44598ef9e6885eb9e5a2d662": [
+      "train-procurement-producer-insufficient_evidence"
+    ],
+    "review-c1431ac659435c306b3bec39": [
+      "train-procurement-auditor-insufficient_evidence"
+    ],
+    "review-dfe3f696a71c81d02d36d88b": [
+      "train-procurement-producer-empty"
+    ],
+    "review-c5b9fd8e5a0d5a69b15db89a": [
+      "train-catalogue-producer-extracted"
+    ],
+    "review-c49a93f247d7c21cb5f5bedb": [
+      "train-catalogue-auditor-match"
+    ],
+    "review-7326c48dfa0e23f2201005a1": [
+      "train-catalogue-auditor-number_change"
+    ],
+    "review-8a0a450bde2c109547deb0a1": [
+      "train-catalogue-auditor-label_swap"
+    ],
+    "review-109bc1836be7caae07fa58be": [
+      "train-catalogue-auditor-unit_change"
+    ],
+    "review-ad07186d7589fad267f347d8": [
+      "train-catalogue-auditor-entity_swap"
+    ],
+    "review-78d397ebb7f8c87341bd06fd": [
+      "train-catalogue-auditor-claim_omission"
+    ],
+    "review-d97d4b86f5f58075c9829801": [
+      "train-catalogue-auditor-gap_omission"
+    ],
+    "review-8bb5f009ff43c5a50e042844": [
+      "train-catalogue-auditor-unsupported_addition"
+    ],
+    "review-84629ce4af1a3aaa53d54e4b": [
+      "train-catalogue-auditor-uncertainty_removed"
+    ],
+    "review-d5aea6035721bb835ebf7335": [
+      "train-catalogue-auditor-unsupported_certainty"
+    ],
+    "review-a2c377dc0c8f21c3c1582062": [
+      "train-catalogue-producer-insufficient_evidence"
+    ],
+    "review-f0c991fcdafc403a7dbf039a": [
+      "train-catalogue-auditor-insufficient_evidence"
+    ],
+    "review-09a42f88f83b0a41d4d45b73": [
+      "train-catalogue-producer-empty"
+    ],
+    "review-525bcbd64c0a907e92071cd2": [
+      "train-nonsense-producer-extracted"
+    ],
+    "review-cdb887c2a3bfc3a4e63ec1d6": [
+      "train-nonsense-auditor-match"
+    ],
+    "review-b9e4fdb4faab99eb72979ef9": [
+      "train-nonsense-auditor-number_change"
+    ],
+    "review-bcb124afc221b81722dc0b58": [
+      "train-nonsense-auditor-label_swap"
+    ],
+    "review-a922624cba96311a98228fd3": [
+      "train-nonsense-auditor-unit_change"
+    ],
+    "review-7c56f16c2ed6b3c3f22d3a8b": [
+      "train-nonsense-auditor-entity_swap"
+    ],
+    "review-2d4f72c99c7e7f480491c9fd": [
+      "train-nonsense-auditor-claim_omission"
+    ],
+    "review-1f06b1af1c439234e89699d7": [
+      "train-nonsense-auditor-gap_omission"
+    ],
+    "review-72d973b1d92d68f7bf10eed2": [
+      "train-nonsense-auditor-unsupported_addition"
+    ],
+    "review-ab0f3d6873e52c74777d7265": [
+      "train-nonsense-auditor-uncertainty_removed"
+    ],
+    "review-b7e0a074234306a07902bbb4": [
+      "train-nonsense-auditor-unsupported_certainty"
+    ],
+    "review-dd7f9205dcdae51c82d451e3": [
+      "train-nonsense-producer-insufficient_evidence"
+    ],
+    "review-33eff93477db715e095c2ff3": [
+      "train-nonsense-auditor-insufficient_evidence"
+    ],
+    "review-9755235ed736eb7e69cd8928": [
+      "train-nonsense-producer-empty"
+    ],
+    "review-061b45bad6acfa203c5ecda5": [
+      "dev-negotiation-producer-extracted"
+    ],
+    "review-4a89f385f1328065843df65e": [
+      "dev-negotiation-auditor-match"
+    ],
+    "review-ab329768d06768ceb99093b3": [
+      "dev-negotiation-auditor-number_change"
+    ],
+    "review-b5d4e704c15ac02afa654e1b": [
+      "dev-negotiation-auditor-label_swap"
+    ],
+    "review-d434ea07a29b3541e3f14e71": [
+      "dev-negotiation-auditor-unit_change"
+    ],
+    "review-e8034b426f447dce231f55b8": [
+      "dev-negotiation-auditor-entity_swap"
+    ],
+    "review-09f3f9d04af6a46b28e84951": [
+      "dev-negotiation-auditor-claim_omission"
+    ],
+    "review-1264c40a5253f86441268103": [
+      "dev-negotiation-auditor-gap_omission"
+    ],
+    "review-85ac193964289fbd0d034a1b": [
+      "dev-negotiation-auditor-unsupported_addition"
+    ],
+    "review-4f2956a59d2948297217d46e": [
+      "dev-negotiation-auditor-uncertainty_removed"
+    ],
+    "review-8a1137bf5da492645ab82067": [
+      "dev-negotiation-auditor-unsupported_certainty"
+    ],
+    "review-bbf1e003888173af59a4d9e4": [
+      "dev-negotiation-producer-insufficient_evidence"
+    ],
+    "review-4384e9378563dfaae2623607": [
+      "dev-negotiation-auditor-insufficient_evidence"
+    ],
+    "review-4e5a7a847e7e723f87e6b148": [
+      "dev-negotiation-producer-empty"
+    ],
+    "review-18827ee0c35beeea1ce1b7d6": [
+      "dev-contracts-producer-extracted"
+    ],
+    "review-9ada1467bda8332ec18a3ab7": [
+      "dev-contracts-auditor-match"
+    ],
+    "review-b751a19eeb224fb5a5426ce0": [
+      "dev-contracts-auditor-number_change"
+    ],
+    "review-c3c53a92d69347e49b048e90": [
+      "dev-contracts-auditor-label_swap"
+    ],
+    "review-bef1d09ad812473f4cb9d083": [
+      "dev-contracts-auditor-unit_change"
+    ],
+    "review-de35fc46f3dd960b1da1317a": [
+      "dev-contracts-auditor-entity_swap"
+    ],
+    "review-8ac149f8d7fb6433db7d5a54": [
+      "dev-contracts-auditor-claim_omission"
+    ],
+    "review-a74b77a8c7e0ad31b1fd068e": [
+      "dev-contracts-auditor-gap_omission"
+    ],
+    "review-6a5f1e3b73349de645609649": [
+      "dev-contracts-auditor-unsupported_addition"
+    ],
+    "review-2901fd3229e5deb3f2ffe488": [
+      "dev-contracts-auditor-uncertainty_removed"
+    ],
+    "review-b9875cf4d081ed1fca43590a": [
+      "dev-contracts-auditor-unsupported_certainty"
+    ],
+    "review-b45d1c6995a32eb93ce7242d": [
+      "dev-contracts-producer-insufficient_evidence"
+    ],
+    "review-13d6f0d09b38bfa2550f0ea6": [
+      "dev-contracts-auditor-insufficient_evidence"
+    ],
+    "review-7cfc4e4fb06156471eef4a7f": [
+      "dev-contracts-producer-empty"
+    ],
+    "review-addec4d35d0197c35e58920d": [
+      "dev-regulation-producer-extracted"
+    ],
+    "review-22cb9274777989eec42740e8": [
+      "dev-regulation-auditor-match"
+    ],
+    "review-bba01445852a22cfdf1d4e4b": [
+      "dev-regulation-auditor-number_change"
+    ],
+    "review-c0a5967779417786e3af1eea": [
+      "dev-regulation-auditor-label_swap"
+    ],
+    "review-a616625d68b38b59abb9aac5": [
+      "dev-regulation-auditor-unit_change"
+    ],
+    "review-8e12ed346ab4539a838cee03": [
+      "dev-regulation-auditor-entity_swap"
+    ],
+    "review-62db6550426167a07bde4dfa": [
+      "dev-regulation-auditor-claim_omission"
+    ],
+    "review-07ccda43b5bdc17d3607f505": [
+      "dev-regulation-auditor-gap_omission"
+    ],
+    "review-1ce0bebea9a5e2db4a76dd71": [
+      "dev-regulation-auditor-unsupported_addition"
+    ],
+    "review-904d197cdae30d6471c64428": [
+      "dev-regulation-auditor-uncertainty_removed"
+    ],
+    "review-30e2ee65dfa7d38d584208bc": [
+      "dev-regulation-auditor-unsupported_certainty"
+    ],
+    "review-7485579a8a54991be8fb385f": [
+      "dev-regulation-producer-insufficient_evidence"
+    ],
+    "review-cb9c002f72c70023f4031af4": [
+      "dev-regulation-auditor-insufficient_evidence"
+    ],
+    "review-51114f714ade1b7930896e94": [
+      "dev-regulation-producer-empty"
+    ],
+    "review-2c3b01ac65e99e619b1ebf5b": [
+      "dev-clinical-producer-extracted"
+    ],
+    "review-059466f1f59d45233302e777": [
+      "dev-clinical-auditor-match"
+    ],
+    "review-83b5a7362107cb4e7be1d3e0": [
+      "dev-clinical-auditor-number_change"
+    ],
+    "review-f75fa6cafe3f302087b30c0d": [
+      "dev-clinical-auditor-label_swap"
+    ],
+    "review-32cc3a4a1ffba9fb9047fd0d": [
+      "dev-clinical-auditor-unit_change"
+    ],
+    "review-2b73b1580dae526a378105e3": [
+      "dev-clinical-auditor-entity_swap"
+    ],
+    "review-b619c0b722dbc5e72a935aa6": [
+      "dev-clinical-auditor-claim_omission"
+    ],
+    "review-2f7eb3609d19be7cfdae0fad": [
+      "dev-clinical-auditor-gap_omission"
+    ],
+    "review-38aa5c10ed48bc4570b192c6": [
+      "dev-clinical-auditor-unsupported_addition"
+    ],
+    "review-ae1531e6cf08ec9b27669664": [
+      "dev-clinical-auditor-uncertainty_removed"
+    ],
+    "review-7360f08cc468411cd5bb3939": [
+      "dev-clinical-auditor-unsupported_certainty"
+    ],
+    "review-a7cd750e85b243a91145ebe7": [
+      "dev-clinical-producer-insufficient_evidence"
+    ],
+    "review-d1658da4baa9bb476d660079": [
+      "dev-clinical-auditor-insufficient_evidence"
+    ],
+    "review-b8d3d8ec62d50aedea39c1ce": [
+      "dev-clinical-producer-empty"
+    ],
+    "review-0c48dd2374d352c8fcdb91fd": [
+      "dev-device-producer-extracted"
+    ],
+    "review-600b102324da2f10964fa061": [
+      "dev-device-auditor-match"
+    ],
+    "review-1ff9a6f1066603ca34a3642c": [
+      "dev-device-auditor-number_change"
+    ],
+    "review-c88dbba5a3ae1abbfedcdd9f": [
+      "dev-device-auditor-label_swap"
+    ],
+    "review-a9f043c96e92d3f00a7a7f33": [
+      "dev-device-auditor-unit_change"
+    ],
+    "review-065d1b3492b6e647171b0f14": [
+      "dev-device-auditor-entity_swap"
+    ],
+    "review-53fdff902098444ab0c778c1": [
+      "dev-device-auditor-claim_omission"
+    ],
+    "review-3de6d3b214014f24566b3b26": [
+      "dev-device-auditor-gap_omission"
+    ],
+    "review-7ccecf86d46140c58ac3fe4c": [
+      "dev-device-auditor-unsupported_addition"
+    ],
+    "review-a09dd79b127f3f2a0fe2ddb3": [
+      "dev-device-auditor-uncertainty_removed"
+    ],
+    "review-65fb1609b8204d5bb2a1c8ee": [
+      "dev-device-auditor-unsupported_certainty"
+    ],
+    "review-ae2c27b1423f305600b56b96": [
+      "dev-device-producer-insufficient_evidence"
+    ],
+    "review-f50e67a89b3316914d83205e": [
+      "dev-device-auditor-insufficient_evidence"
+    ],
+    "review-78df86bfa9076c4c2c0b5ae4": [
+      "dev-device-producer-empty"
+    ],
+    "review-0ecbb19c518b3978f280b693": [
+      "dev-procurement-producer-extracted"
+    ],
+    "review-b6d667cf6494e90f5335d426": [
+      "dev-procurement-auditor-match"
+    ],
+    "review-a3f3e479bbe45449ee83dc90": [
+      "dev-procurement-auditor-number_change"
+    ],
+    "review-59f4dc161d54f1c57b7371e0": [
+      "dev-procurement-auditor-label_swap"
+    ],
+    "review-3417f499f5a7711564644583": [
+      "dev-procurement-auditor-unit_change"
+    ],
+    "review-65c2695d4f37b68acac87b4d": [
+      "dev-procurement-auditor-entity_swap"
+    ],
+    "review-468571c995b85f0ec8c3b321": [
+      "dev-procurement-auditor-claim_omission"
+    ],
+    "review-1a956287f09f1a95167c8a44": [
+      "dev-procurement-auditor-gap_omission"
+    ],
+    "review-2c10a338db639a34c811de34": [
+      "dev-procurement-auditor-unsupported_addition"
+    ],
+    "review-765e2a8704a42d9cfeca5d6b": [
+      "dev-procurement-auditor-uncertainty_removed"
+    ],
+    "review-7eda46c6a74fe6781375204c": [
+      "dev-procurement-auditor-unsupported_certainty"
+    ],
+    "review-34706e1f0cca87046a6a31d1": [
+      "dev-procurement-producer-insufficient_evidence"
+    ],
+    "review-44e41c0234ec12ad83d6504b": [
+      "dev-procurement-auditor-insufficient_evidence"
+    ],
+    "review-16be7ff85ef144cbb7f44292": [
+      "dev-procurement-producer-empty"
+    ],
+    "review-4a4f23c9cafe83c13434dd70": [
+      "dev-catalogue-producer-extracted"
+    ],
+    "review-b522443dda11f2fb781b258a": [
+      "dev-catalogue-auditor-match"
+    ],
+    "review-5a7f114b75fa7db9cb289664": [
+      "dev-catalogue-auditor-number_change"
+    ],
+    "review-71b8d212c5ca3714e3de3ef0": [
+      "dev-catalogue-auditor-label_swap"
+    ],
+    "review-4ecaa6091b71d11e542fc0cc": [
+      "dev-catalogue-auditor-unit_change"
+    ],
+    "review-912ce85c4f48fe0820797350": [
+      "dev-catalogue-auditor-entity_swap"
+    ],
+    "review-c17deb10791119330af42af7": [
+      "dev-catalogue-auditor-claim_omission"
+    ],
+    "review-ff1a213c8036b2a0e1da2f02": [
+      "dev-catalogue-auditor-gap_omission"
+    ],
+    "review-0827bb7c3df4545967eb963c": [
+      "dev-catalogue-auditor-unsupported_addition"
+    ],
+    "review-330f82575e8c9c6dffd70a2f": [
+      "dev-catalogue-auditor-uncertainty_removed"
+    ],
+    "review-2b565a2b9e1902a503a6ca8e": [
+      "dev-catalogue-auditor-unsupported_certainty"
+    ],
+    "review-eb26132377c8fd5f7fa80fe2": [
+      "dev-catalogue-producer-insufficient_evidence"
+    ],
+    "review-d4a448d7567746abd06df130": [
+      "dev-catalogue-auditor-insufficient_evidence"
+    ],
+    "review-ecce38bdd22edd6130d7b406": [
+      "dev-catalogue-producer-empty"
+    ],
+    "review-5d44b6f27f223e716ef415f5": [
+      "dev-nonsense-producer-extracted"
+    ],
+    "review-1d5f660faf87aae208464eea": [
+      "dev-nonsense-auditor-match"
+    ],
+    "review-5f5e5049c7cf81555eb9c1d0": [
+      "dev-nonsense-auditor-number_change"
+    ],
+    "review-291cf758f27e175610eba843": [
+      "dev-nonsense-auditor-label_swap"
+    ],
+    "review-90488ddb53ab327168f98c60": [
+      "dev-nonsense-auditor-unit_change"
+    ],
+    "review-f8cdf4ffa9cdf653ec542d90": [
+      "dev-nonsense-auditor-entity_swap"
+    ],
+    "review-7ca44b05da1f3c43210d93a1": [
+      "dev-nonsense-auditor-claim_omission"
+    ],
+    "review-186c1bc1e15873ccbcf8f071": [
+      "dev-nonsense-auditor-gap_omission"
+    ],
+    "review-1674f369b07f86fc690f7735": [
+      "dev-nonsense-auditor-unsupported_addition"
+    ],
+    "review-f0baad2f553236c6f3383a9b": [
+      "dev-nonsense-auditor-uncertainty_removed"
+    ],
+    "review-887b23403530a6c9df627e30": [
+      "dev-nonsense-auditor-unsupported_certainty"
+    ],
+    "review-16d9fd9be176749a45006805": [
+      "dev-nonsense-producer-insufficient_evidence"
+    ],
+    "review-d604f868594ddfe527d176d5": [
+      "dev-nonsense-auditor-insufficient_evidence"
+    ],
+    "review-d3f08e42c7d50f703adda36c": [
+      "dev-nonsense-producer-empty"
+    ],
+    "review-974dffe8f9df052daff63430": [
+      "test-negotiation-producer-extracted"
+    ],
+    "review-022d6b3873c8fbf3076358e9": [
+      "test-negotiation-auditor-match"
+    ],
+    "review-5b59bbac2424f875ff9c8149": [
+      "test-negotiation-auditor-number_change"
+    ],
+    "review-84330c0d3843b51c8a309ada": [
+      "test-negotiation-auditor-label_swap"
+    ],
+    "review-b385f5ba393d352895f98f91": [
+      "test-negotiation-auditor-unit_change"
+    ],
+    "review-dc86238f378429d39410c8e8": [
+      "test-negotiation-auditor-entity_swap"
+    ],
+    "review-958c4d5cf705534a01651e5e": [
+      "test-negotiation-auditor-claim_omission"
+    ],
+    "review-ae61c64e5194498238ec22ea": [
+      "test-negotiation-auditor-gap_omission"
+    ],
+    "review-fc9e333f75fdcff7831cb864": [
+      "test-negotiation-auditor-unsupported_addition"
+    ],
+    "review-3595876db8e06bdf0974cc69": [
+      "test-negotiation-auditor-uncertainty_removed"
+    ],
+    "review-c570b457cfafbbc100e33fd4": [
+      "test-negotiation-auditor-unsupported_certainty"
+    ],
+    "review-f6d56e42fef2a383896f4b69": [
+      "test-negotiation-producer-insufficient_evidence"
+    ],
+    "review-013c45904cb6d824d2ab47fa": [
+      "test-negotiation-auditor-insufficient_evidence"
+    ],
+    "review-b426cfd807fe91ccb8135691": [
+      "test-negotiation-producer-empty"
+    ],
+    "review-5cba2b263d6587d7ff31bed7": [
+      "test-contracts-producer-extracted"
+    ],
+    "review-889d1754225b993ba1d93231": [
+      "test-contracts-auditor-match"
+    ],
+    "review-54ee4dca8d2cef58ce9a112c": [
+      "test-contracts-auditor-number_change"
+    ],
+    "review-d6c91cf02163e09de5bff562": [
+      "test-contracts-auditor-label_swap"
+    ],
+    "review-4e7d4baa53fc51096fa5150b": [
+      "test-contracts-auditor-unit_change"
+    ],
+    "review-37c7fd0b15b1ff44e17d7695": [
+      "test-contracts-auditor-entity_swap"
+    ],
+    "review-8458a65d879f149a8462ae96": [
+      "test-contracts-auditor-claim_omission"
+    ],
+    "review-b1ff75289c689941049c9b43": [
+      "test-contracts-auditor-gap_omission"
+    ],
+    "review-1931be69a9cc1c50c4e6f5c5": [
+      "test-contracts-auditor-unsupported_addition"
+    ],
+    "review-fbd681eabbf873b219e1c5c9": [
+      "test-contracts-auditor-uncertainty_removed"
+    ],
+    "review-dc7592e933f76bdf6be4aac0": [
+      "test-contracts-auditor-unsupported_certainty"
+    ],
+    "review-94d09b89004b5c456a416744": [
+      "test-contracts-producer-insufficient_evidence"
+    ],
+    "review-2518eceae08b0ae4b17bd087": [
+      "test-contracts-auditor-insufficient_evidence"
+    ],
+    "review-899dd42e5e1640cae82c21c6": [
+      "test-contracts-producer-empty"
+    ],
+    "review-f6440ada631364da83893782": [
+      "test-regulation-producer-extracted"
+    ],
+    "review-e5912b70bc47dcd4b8286524": [
+      "test-regulation-auditor-match"
+    ],
+    "review-352aecee8df27b98864dc312": [
+      "test-regulation-auditor-number_change"
+    ],
+    "review-98cd3827e57e251eaedf1a2b": [
+      "test-regulation-auditor-label_swap"
+    ],
+    "review-e6fd8fdbf84def579caba448": [
+      "test-regulation-auditor-unit_change"
+    ],
+    "review-11f2a0738b80d2f85f36bc23": [
+      "test-regulation-auditor-entity_swap"
+    ],
+    "review-d9b5e6a9e4927f92332f3444": [
+      "test-regulation-auditor-claim_omission"
+    ],
+    "review-53a0d8ca81dc8139f5c613c1": [
+      "test-regulation-auditor-gap_omission"
+    ],
+    "review-03b3d536f6413acb6e63cd04": [
+      "test-regulation-auditor-unsupported_addition"
+    ],
+    "review-1714195bbdabd1cfdc0050eb": [
+      "test-regulation-auditor-uncertainty_removed"
+    ],
+    "review-54e728ed1f4bffd04b22df35": [
+      "test-regulation-auditor-unsupported_certainty"
+    ],
+    "review-e73e91b2d5106c473aab5698": [
+      "test-regulation-producer-insufficient_evidence"
+    ],
+    "review-1e194b503dff48db33ac32fd": [
+      "test-regulation-auditor-insufficient_evidence"
+    ],
+    "review-afda356a9c27aecd913cf328": [
+      "test-regulation-producer-empty"
+    ],
+    "review-104f7d71c0e70964cbfa9407": [
+      "test-clinical-producer-extracted"
+    ],
+    "review-2e328b504fcd39d572e4cb8d": [
+      "test-clinical-auditor-match"
+    ],
+    "review-8a9e8f6b3df4c794b33e4813": [
+      "test-clinical-auditor-number_change"
+    ],
+    "review-3810e2601a3ba412139bd5b5": [
+      "test-clinical-auditor-label_swap"
+    ],
+    "review-26026ab5c7b80e36abe88cb7": [
+      "test-clinical-auditor-unit_change"
+    ],
+    "review-3a657fc66db1bd5a9fa1ff68": [
+      "test-clinical-auditor-entity_swap"
+    ],
+    "review-1e62b643142d379cd7d6e920": [
+      "test-clinical-auditor-claim_omission"
+    ],
+    "review-712f8850f94f32e4fbce1904": [
+      "test-clinical-auditor-gap_omission"
+    ],
+    "review-5631ffcb6952e133f1bc3beb": [
+      "test-clinical-auditor-unsupported_addition"
+    ],
+    "review-7c40ddd29127725df23c3a13": [
+      "test-clinical-auditor-uncertainty_removed"
+    ],
+    "review-446b135a371e39b90baec694": [
+      "test-clinical-auditor-unsupported_certainty"
+    ],
+    "review-00411ac4cffbca71583fb649": [
+      "test-clinical-producer-insufficient_evidence"
+    ],
+    "review-b1884b0b6e724fbf332520f7": [
+      "test-clinical-auditor-insufficient_evidence"
+    ],
+    "review-b08c2fe87ed7eb7aa7c0247c": [
+      "test-clinical-producer-empty"
+    ],
+    "review-0dc5fa096b6e330d4c8e375d": [
+      "test-device-producer-extracted"
+    ],
+    "review-6bb70ae6fdaa6cbd590d0cef": [
+      "test-device-auditor-match"
+    ],
+    "review-f97cc67d3e347ed07edf8719": [
+      "test-device-auditor-number_change"
+    ],
+    "review-4835c80428160560291b74ad": [
+      "test-device-auditor-label_swap"
+    ],
+    "review-3ab2fae420793317b58a9a3b": [
+      "test-device-auditor-unit_change"
+    ],
+    "review-198d0dfedc2eb10c194cb7d4": [
+      "test-device-auditor-entity_swap"
+    ],
+    "review-9d7b4867f6444c04bc90cad1": [
+      "test-device-auditor-claim_omission"
+    ],
+    "review-f99ce1f3c17ee2b5f6ed2ff7": [
+      "test-device-auditor-gap_omission"
+    ],
+    "review-4ece25d9ac09ac7992b45637": [
+      "test-device-auditor-unsupported_addition"
+    ],
+    "review-246e5d091f51ce9ac13da7b9": [
+      "test-device-auditor-uncertainty_removed"
+    ],
+    "review-70365ebcb883d731167e775d": [
+      "test-device-auditor-unsupported_certainty"
+    ],
+    "review-77763e292fa3096f0daa6003": [
+      "test-device-producer-insufficient_evidence"
+    ],
+    "review-3ea512e60c668eb894d9da30": [
+      "test-device-auditor-insufficient_evidence"
+    ],
+    "review-798a517f1043ffa24676d382": [
+      "test-device-producer-empty"
+    ],
+    "review-810f25ab10cd350f678cead1": [
+      "test-procurement-producer-extracted"
+    ],
+    "review-5f8c30b5852dc508fdf37cdf": [
+      "test-procurement-auditor-match"
+    ],
+    "review-e14b068f3338c8dbb3441eff": [
+      "test-procurement-auditor-number_change"
+    ],
+    "review-f30af7057989673265e3d8a7": [
+      "test-procurement-auditor-label_swap"
+    ],
+    "review-487fd838f05ea19e407071ef": [
+      "test-procurement-auditor-unit_change"
+    ],
+    "review-c6e974aab2cc0d2dfef6de81": [
+      "test-procurement-auditor-entity_swap"
+    ],
+    "review-5429eaa340ac3c0b088a9ce8": [
+      "test-procurement-auditor-claim_omission"
+    ],
+    "review-621172963a4655f90782214d": [
+      "test-procurement-auditor-gap_omission"
+    ],
+    "review-6f7698686f94a524559864d5": [
+      "test-procurement-auditor-unsupported_addition"
+    ],
+    "review-40470f6a2eb9bc4d5d502886": [
+      "test-procurement-auditor-uncertainty_removed"
+    ],
+    "review-762ec9d81bf29bc0aae839de": [
+      "test-procurement-auditor-unsupported_certainty"
+    ],
+    "review-4656d3d3db19b80a2689724c": [
+      "test-procurement-producer-insufficient_evidence"
+    ],
+    "review-6ae9c147a3247cf77b2e4c1e": [
+      "test-procurement-auditor-insufficient_evidence"
+    ],
+    "review-fb03a6cdae9e233bf0fef911": [
+      "test-procurement-producer-empty"
+    ],
+    "review-1a1aa5bea72382ae772bdda1": [
+      "test-catalogue-producer-extracted"
+    ],
+    "review-e849f07d6c1a313e911ad5b7": [
+      "test-catalogue-auditor-match"
+    ],
+    "review-a16497c0f97d16f4b66f3633": [
+      "test-catalogue-auditor-number_change"
+    ],
+    "review-a90976164a2b1f5e5ba1e2ea": [
+      "test-catalogue-auditor-label_swap"
+    ],
+    "review-51fc0f5e626627308cae733e": [
+      "test-catalogue-auditor-unit_change"
+    ],
+    "review-7c59a538051028b5f85444a9": [
+      "test-catalogue-auditor-entity_swap"
+    ],
+    "review-bc214afe42f653e6086561d7": [
+      "test-catalogue-auditor-claim_omission"
+    ],
+    "review-55904008b5aefd1ab1bfff15": [
+      "test-catalogue-auditor-gap_omission"
+    ],
+    "review-cebca5b10e577875367a5d16": [
+      "test-catalogue-auditor-unsupported_addition"
+    ],
+    "review-68ffa17aae80844e49eba7cb": [
+      "test-catalogue-auditor-uncertainty_removed"
+    ],
+    "review-7f669fbaf8bc4160b513e91f": [
+      "test-catalogue-auditor-unsupported_certainty"
+    ],
+    "review-4be98fe0416015be9f9d1062": [
+      "test-catalogue-producer-insufficient_evidence"
+    ],
+    "review-3f865d42e14d51e1dea1d7d2": [
+      "test-catalogue-auditor-insufficient_evidence"
+    ],
+    "review-02939e73a1144f2f0ffefb0e": [
+      "test-catalogue-producer-empty"
+    ],
+    "review-cebf69535ef12c79e3f8503d": [
+      "test-nonsense-producer-extracted"
+    ],
+    "review-3d0a6287365814354c85ede9": [
+      "test-nonsense-auditor-match"
+    ],
+    "review-f70bedf1d761c2d3fe7fd777": [
+      "test-nonsense-auditor-number_change"
+    ],
+    "review-35846825d7625b30d70e7167": [
+      "test-nonsense-auditor-label_swap"
+    ],
+    "review-b40b671ea08282fc3ad68d7f": [
+      "test-nonsense-auditor-unit_change"
+    ],
+    "review-21167261d0aa9a8ba2bb355a": [
+      "test-nonsense-auditor-entity_swap"
+    ],
+    "review-516c2f712a9b5c2cc2552d88": [
+      "test-nonsense-auditor-claim_omission"
+    ],
+    "review-3fd30a4a63aa25a11b624455": [
+      "test-nonsense-auditor-gap_omission"
+    ],
+    "review-3c5ef363a359912b1b2e7ab0": [
+      "test-nonsense-auditor-unsupported_addition"
+    ],
+    "review-6ec96addffd13875ae6ff5b4": [
+      "test-nonsense-auditor-uncertainty_removed"
+    ],
+    "review-a01c8597893317583ee70dd5": [
+      "test-nonsense-auditor-unsupported_certainty"
+    ],
+    "review-f3d8bb02d234b6139649c0e4": [
+      "test-nonsense-producer-insufficient_evidence"
+    ],
+    "review-64fc34988d0420e251fec3ac": [
+      "test-nonsense-auditor-insufficient_evidence"
+    ],
+    "review-727dbb21bfda44c7edfa299e": [
+      "test-nonsense-producer-empty"
+    ],
+    "review-3bf73ae041759335f5eaeb34": [
+      "sealed_adversarial-negotiation-producer-extracted"
+    ],
+    "review-4aa77ebee0350849bcf0b584": [
+      "sealed_adversarial-negotiation-auditor-match"
+    ],
+    "review-e571b85756cc817cbd20221e": [
+      "sealed_adversarial-negotiation-auditor-number_change"
+    ],
+    "review-efeace1f389bd7adb663e32b": [
+      "sealed_adversarial-negotiation-auditor-label_swap"
+    ],
+    "review-628af29bf1f0af9dc55e1c7e": [
+      "sealed_adversarial-negotiation-auditor-unit_change"
+    ],
+    "review-3a19816e2558917661c22229": [
+      "sealed_adversarial-negotiation-auditor-entity_swap"
+    ],
+    "review-38d7ca512c4b5424405eaf20": [
+      "sealed_adversarial-negotiation-auditor-claim_omission"
+    ],
+    "review-ab7faf7618c42fba7b45ce6b": [
+      "sealed_adversarial-negotiation-auditor-gap_omission"
+    ],
+    "review-45eb598d28ed62d4671be7f3": [
+      "sealed_adversarial-negotiation-auditor-unsupported_addition"
+    ],
+    "review-89eb7ab3af82640b5780ad04": [
+      "sealed_adversarial-negotiation-auditor-uncertainty_removed"
+    ],
+    "review-8f75da27c11afb78ec918ec7": [
+      "sealed_adversarial-negotiation-auditor-unsupported_certainty"
+    ],
+    "review-1a63b8bee4756215d006fc70": [
+      "sealed_adversarial-negotiation-producer-insufficient_evidence"
+    ],
+    "review-510be47455a8e873db8d64c2": [
+      "sealed_adversarial-negotiation-auditor-insufficient_evidence"
+    ],
+    "review-23a07d3d62f58f4447027cc1": [
+      "sealed_adversarial-negotiation-producer-empty"
+    ],
+    "review-97423cf523f7ca0370d66c81": [
+      "sealed_adversarial-contracts-producer-extracted"
+    ],
+    "review-5b9b92ec688ad4c9ca7b01a8": [
+      "sealed_adversarial-contracts-auditor-match"
+    ],
+    "review-0c669e2684e8c9d442b11d24": [
+      "sealed_adversarial-contracts-auditor-number_change"
+    ],
+    "review-286e5b7f946deb23bd81026c": [
+      "sealed_adversarial-contracts-auditor-label_swap"
+    ],
+    "review-dfa317ad1557397307bc315b": [
+      "sealed_adversarial-contracts-auditor-unit_change"
+    ],
+    "review-e26efd1fcb218889e1550392": [
+      "sealed_adversarial-contracts-auditor-entity_swap"
+    ],
+    "review-08359c134616ee852c6a771e": [
+      "sealed_adversarial-contracts-auditor-claim_omission"
+    ],
+    "review-cedef112409cd9cabd5486ae": [
+      "sealed_adversarial-contracts-auditor-gap_omission"
+    ],
+    "review-73f174f6f149843786a21e66": [
+      "sealed_adversarial-contracts-auditor-unsupported_addition"
+    ],
+    "review-64dedda69f7cccfd18e9c0d5": [
+      "sealed_adversarial-contracts-auditor-uncertainty_removed"
+    ],
+    "review-71bc273b32e8aee47e7ff46d": [
+      "sealed_adversarial-contracts-auditor-unsupported_certainty"
+    ],
+    "review-e5c3b2c883db1a181e8212f1": [
+      "sealed_adversarial-contracts-producer-insufficient_evidence"
+    ],
+    "review-fe20c74c208af5dfe4215b4f": [
+      "sealed_adversarial-contracts-auditor-insufficient_evidence"
+    ],
+    "review-a827698479a3a2ac7b5ef077": [
+      "sealed_adversarial-contracts-producer-empty"
+    ],
+    "review-3bde990780bfa0b71f351f15": [
+      "sealed_adversarial-regulation-producer-extracted"
+    ],
+    "review-e13574208b64f74e57d0c56d": [
+      "sealed_adversarial-regulation-auditor-match"
+    ],
+    "review-f687044efd722af9bfae8a3a": [
+      "sealed_adversarial-regulation-auditor-number_change"
+    ],
+    "review-0a1c9b54fc2389a3266c1139": [
+      "sealed_adversarial-regulation-auditor-label_swap"
+    ],
+    "review-f18fc75e39636a29726caf8c": [
+      "sealed_adversarial-regulation-auditor-unit_change"
+    ],
+    "review-d90f882ea30264df8036ac8e": [
+      "sealed_adversarial-regulation-auditor-entity_swap"
+    ],
+    "review-7ae15f723c4b894f655ffbaf": [
+      "sealed_adversarial-regulation-auditor-claim_omission"
+    ],
+    "review-06365758ec2175215185233b": [
+      "sealed_adversarial-regulation-auditor-gap_omission"
+    ],
+    "review-13fc20112fdae531a2d03a6a": [
+      "sealed_adversarial-regulation-auditor-unsupported_addition"
+    ],
+    "review-d720202f802d96ee26f93277": [
+      "sealed_adversarial-regulation-auditor-uncertainty_removed"
+    ],
+    "review-79a4100f6cacd1b8e959eb52": [
+      "sealed_adversarial-regulation-auditor-unsupported_certainty"
+    ],
+    "review-a7bef48b8b78b3d390f99d36": [
+      "sealed_adversarial-regulation-producer-insufficient_evidence"
+    ],
+    "review-a13af039067c81a256760143": [
+      "sealed_adversarial-regulation-auditor-insufficient_evidence"
+    ],
+    "review-db78a1cd0f0516528d3b6c3c": [
+      "sealed_adversarial-regulation-producer-empty"
+    ],
+    "review-83eec96add89fffaae3c5cad": [
+      "sealed_adversarial-clinical-producer-extracted"
+    ],
+    "review-946d115b0fd570249738e959": [
+      "sealed_adversarial-clinical-auditor-match"
+    ],
+    "review-969a2884031a38eddd3bb476": [
+      "sealed_adversarial-clinical-auditor-number_change"
+    ],
+    "review-580adf9e9ef50d342f428036": [
+      "sealed_adversarial-clinical-auditor-label_swap"
+    ],
+    "review-396cbf9a3c262ff1190dc7bf": [
+      "sealed_adversarial-clinical-auditor-unit_change"
+    ],
+    "review-31d16425cf128496a0ada028": [
+      "sealed_adversarial-clinical-auditor-entity_swap"
+    ],
+    "review-40d5acf0445cf0ed43830473": [
+      "sealed_adversarial-clinical-auditor-claim_omission"
+    ],
+    "review-0343c31317e2e3d4422fb6e4": [
+      "sealed_adversarial-clinical-auditor-gap_omission"
+    ],
+    "review-45bb64fc9cd5e0022cf43c79": [
+      "sealed_adversarial-clinical-auditor-unsupported_addition"
+    ],
+    "review-cb54d1dc57c1f22da3fe9e5f": [
+      "sealed_adversarial-clinical-auditor-uncertainty_removed"
+    ],
+    "review-4c846e243179b5fab3cb766c": [
+      "sealed_adversarial-clinical-auditor-unsupported_certainty"
+    ],
+    "review-578891902c7ccbc4a668d200": [
+      "sealed_adversarial-clinical-producer-insufficient_evidence"
+    ],
+    "review-dd632b1dc713b5d4da09ad04": [
+      "sealed_adversarial-clinical-auditor-insufficient_evidence"
+    ],
+    "review-f46e75fc4ea1daca35c470ce": [
+      "sealed_adversarial-clinical-producer-empty"
+    ],
+    "review-41332c4c1fc4d742224980c4": [
+      "sealed_adversarial-device-producer-extracted"
+    ],
+    "review-78ea9bc81c753569db1d063a": [
+      "sealed_adversarial-device-auditor-match"
+    ],
+    "review-d4c501b16760a59201b1e968": [
+      "sealed_adversarial-device-auditor-number_change"
+    ],
+    "review-c3b9a7532993a2711d30df6b": [
+      "sealed_adversarial-device-auditor-label_swap"
+    ],
+    "review-d682ecdc79dae5ad3054a67d": [
+      "sealed_adversarial-device-auditor-unit_change"
+    ],
+    "review-9671d05ab201457c99bee4fc": [
+      "sealed_adversarial-device-auditor-entity_swap"
+    ],
+    "review-de831e8a8952c63bdb0d589d": [
+      "sealed_adversarial-device-auditor-claim_omission"
+    ],
+    "review-d9c5b0a1b02349b3a350b411": [
+      "sealed_adversarial-device-auditor-gap_omission"
+    ],
+    "review-2143f34758009aae57b54d10": [
+      "sealed_adversarial-device-auditor-unsupported_addition"
+    ],
+    "review-ed0402693d96aa87d26aadd0": [
+      "sealed_adversarial-device-auditor-uncertainty_removed"
+    ],
+    "review-29c0d8a068f6586e8a281e34": [
+      "sealed_adversarial-device-auditor-unsupported_certainty"
+    ],
+    "review-3c036ebe008ceb3006af5d6c": [
+      "sealed_adversarial-device-producer-insufficient_evidence"
+    ],
+    "review-934896ee455e9af56a574c9a": [
+      "sealed_adversarial-device-auditor-insufficient_evidence"
+    ],
+    "review-d186d9782a02ca795460eca7": [
+      "sealed_adversarial-device-producer-empty"
+    ],
+    "review-4502af6a595486cfd50e9cd2": [
+      "sealed_adversarial-procurement-producer-extracted"
+    ],
+    "review-8428b52a4e3dbce4a960cf29": [
+      "sealed_adversarial-procurement-auditor-match"
+    ],
+    "review-5c6f2bfad0bff7752fbf8e3e": [
+      "sealed_adversarial-procurement-auditor-number_change"
+    ],
+    "review-cac4934fd474da12f39f84bf": [
+      "sealed_adversarial-procurement-auditor-label_swap"
+    ],
+    "review-d3cbdc89c6e0d51dd7408b34": [
+      "sealed_adversarial-procurement-auditor-unit_change"
+    ],
+    "review-5776823da3ccf3d29dcf23fc": [
+      "sealed_adversarial-procurement-auditor-entity_swap"
+    ],
+    "review-2abb7176617eae770edba564": [
+      "sealed_adversarial-procurement-auditor-claim_omission"
+    ],
+    "review-9262baab2ad104d31561f6fb": [
+      "sealed_adversarial-procurement-auditor-gap_omission"
+    ],
+    "review-8698afe96b2095a8f8392512": [
+      "sealed_adversarial-procurement-auditor-unsupported_addition"
+    ],
+    "review-69d3b3ca0dd21d4c365c042b": [
+      "sealed_adversarial-procurement-auditor-uncertainty_removed"
+    ],
+    "review-b99323c20293f0e3a8c0ab65": [
+      "sealed_adversarial-procurement-auditor-unsupported_certainty"
+    ],
+    "review-b63bcc69653231ce250bb323": [
+      "sealed_adversarial-procurement-producer-insufficient_evidence"
+    ],
+    "review-c865151f3ca9cc5f2962d848": [
+      "sealed_adversarial-procurement-auditor-insufficient_evidence"
+    ],
+    "review-6755e1b4cf336e7f0ffc80a1": [
+      "sealed_adversarial-procurement-producer-empty"
+    ],
+    "review-49cf2707560a2aaa5221aa97": [
+      "sealed_adversarial-catalogue-producer-extracted"
+    ],
+    "review-d06424f3eb4136a21d30d903": [
+      "sealed_adversarial-catalogue-auditor-match"
+    ],
+    "review-ad9814b5242cf6a649847563": [
+      "sealed_adversarial-catalogue-auditor-number_change"
+    ],
+    "review-fa55434cd3907c8fd7a4b6e5": [
+      "sealed_adversarial-catalogue-auditor-label_swap"
+    ],
+    "review-e8f1b5f9779ad881b09b4dfc": [
+      "sealed_adversarial-catalogue-auditor-unit_change"
+    ],
+    "review-e2863c0953b67776e2f89adc": [
+      "sealed_adversarial-catalogue-auditor-entity_swap"
+    ],
+    "review-3cf75853e2fc97b3ff373b0b": [
+      "sealed_adversarial-catalogue-auditor-claim_omission"
+    ],
+    "review-d0bcc906866f10d50281a36b": [
+      "sealed_adversarial-catalogue-auditor-gap_omission"
+    ],
+    "review-161db993e689a1cf40499a48": [
+      "sealed_adversarial-catalogue-auditor-unsupported_addition"
+    ],
+    "review-0c312b9bc1cdc0d7262afbd3": [
+      "sealed_adversarial-catalogue-auditor-uncertainty_removed"
+    ],
+    "review-ae186984804e89f960c651a4": [
+      "sealed_adversarial-catalogue-auditor-unsupported_certainty"
+    ],
+    "review-379d7b411a16155217076c8f": [
+      "sealed_adversarial-catalogue-producer-insufficient_evidence"
+    ],
+    "review-a16a39a663f471b740af774c": [
+      "sealed_adversarial-catalogue-auditor-insufficient_evidence"
+    ],
+    "review-c0c8a59e439ec75001a2348e": [
+      "sealed_adversarial-catalogue-producer-empty"
+    ],
+    "review-5303f7a5695641cc4dcc58ac": [
+      "sealed_adversarial-nonsense-producer-extracted"
+    ],
+    "review-4ecf1eaf4efb135014b0bb16": [
+      "sealed_adversarial-nonsense-auditor-match"
+    ],
+    "review-7d4dd0790e0ac77dd647b217": [
+      "sealed_adversarial-nonsense-auditor-number_change"
+    ],
+    "review-cb83941efe3882ccf48d71ed": [
+      "sealed_adversarial-nonsense-auditor-label_swap"
+    ],
+    "review-c9171b2832c89dcf77aece9f": [
+      "sealed_adversarial-nonsense-auditor-unit_change"
+    ],
+    "review-2ddf39fee6cf662b2d32fc3c": [
+      "sealed_adversarial-nonsense-auditor-entity_swap"
+    ],
+    "review-3322808bfbeef0716ab11dce": [
+      "sealed_adversarial-nonsense-auditor-claim_omission"
+    ],
+    "review-62dfa114b0e040acaff3acda": [
+      "sealed_adversarial-nonsense-auditor-gap_omission"
+    ],
+    "review-a2f3873ea5ea470957a603fe": [
+      "sealed_adversarial-nonsense-auditor-unsupported_addition"
+    ],
+    "review-93208745485ce32e5b6045d4": [
+      "sealed_adversarial-nonsense-auditor-uncertainty_removed"
+    ],
+    "review-cdbfd33f0284c6f91b98a803": [
+      "sealed_adversarial-nonsense-auditor-unsupported_certainty"
+    ],
+    "review-1a00a555580f47a4dfc88275": [
+      "sealed_adversarial-nonsense-producer-insufficient_evidence"
+    ],
+    "review-05a5ba5a010a4fede2f16d4c": [
+      "sealed_adversarial-nonsense-auditor-insufficient_evidence"
+    ],
+    "review-d1accf22e3cffa12c997556a": [
+      "sealed_adversarial-nonsense-producer-empty"
+    ],
+    "review-d630c401eb08541e270fcf36": [
+      "v2-paragraph-negotiation-primary"
+    ],
+    "review-dd4f5f0ea2a38d3d6ab159b8": [
+      "v2-paragraph-negotiation-conflicting"
+    ],
+    "review-11b64f2dd31a91473f095b1d": [
+      "v2-paragraph-negotiation-empty"
+    ],
+    "review-8a7410f6a54ed4442c1a16b9": [
+      "v2-paragraph-negotiation-refusal"
+    ],
+    "review-18eb69f00b6d4fb3884e8a0b": [
+      "v2-paragraph-negotiation-match"
+    ],
+    "review-0a9f233869223583287b2e04": [
+      "v2-paragraph-negotiation-changed"
+    ],
+    "review-4bf3f298cce56706d7e96404": [
+      "v2-paragraph-contracts-primary"
+    ],
+    "review-bb1f942017264c22b24bb71d": [
+      "v2-paragraph-contracts-conflicting"
+    ],
+    "review-fb79a0dc1c26d1ace8996669": [
+      "v2-paragraph-contracts-empty"
+    ],
+    "review-1d805a831683c3b736eca9ef": [
+      "v2-paragraph-contracts-refusal"
+    ],
+    "review-b96a51de7b010e643defadc8": [
+      "v2-paragraph-contracts-match"
+    ],
+    "review-b455637a9669a70c59d8d7eb": [
+      "v2-paragraph-contracts-changed"
+    ],
+    "review-d71a2ee17660b66c502a5528": [
+      "v2-paragraph-procurement-primary"
+    ],
+    "review-921307743f3605bf8ebac77d": [
+      "v2-paragraph-procurement-conflicting"
+    ],
+    "review-cc8ccda525d72f1b8d9d214f": [
+      "v2-paragraph-procurement-empty"
+    ],
+    "review-ab7c97e64e902a2d6d1ad1ae": [
+      "v2-paragraph-procurement-refusal"
+    ],
+    "review-109bd26d12f5a43fcf3eeb48": [
+      "v2-paragraph-procurement-match"
+    ],
+    "review-5fefb844e8675f4c8e952ae8": [
+      "v2-paragraph-procurement-changed"
+    ],
+    "review-702d9057771af3d882369a9a": [
+      "v2-paragraph-device-primary"
+    ],
+    "review-e112e69147389b2a2c56f46e": [
+      "v2-paragraph-device-conflicting"
+    ],
+    "review-aab9bc6594923496b25e73d3": [
+      "v2-paragraph-device-empty"
+    ],
+    "review-2439ba4a56da325f2237053c": [
+      "v2-paragraph-device-refusal"
+    ],
+    "review-94297c8c6c72d65a25fabce7": [
+      "v2-paragraph-device-match"
+    ],
+    "review-f2d5aa4286528348afa90b72": [
+      "v2-paragraph-device-changed"
+    ],
+    "review-d936b42744d9c914ac79c0dc": [
+      "v2-bullet_list-negotiation-primary"
+    ],
+    "review-c9b60b9d533773bb060d516d": [
+      "v2-bullet_list-negotiation-conflicting"
+    ],
+    "review-5a9a85cd3508620442deecb0": [
+      "v2-bullet_list-negotiation-empty"
+    ],
+    "review-b65237a13d1df3a535acacad": [
+      "v2-bullet_list-negotiation-refusal"
+    ],
+    "review-3fa635a732046e21ce52e81f": [
+      "v2-bullet_list-negotiation-match"
+    ],
+    "review-2263d5c69fe76ee445f3eb6d": [
+      "v2-bullet_list-negotiation-changed"
+    ],
+    "review-b2b0e4347840cc781a4ed74a": [
+      "v2-bullet_list-contracts-primary"
+    ],
+    "review-60a2b854fea4dd7144504df6": [
+      "v2-bullet_list-contracts-conflicting"
+    ],
+    "review-22b5e265873f1098b2ab99b3": [
+      "v2-bullet_list-contracts-empty"
+    ],
+    "review-8919f9fad7f77176e387627d": [
+      "v2-bullet_list-contracts-refusal"
+    ],
+    "review-21a4f1bdff383e55659a2f90": [
+      "v2-bullet_list-contracts-match"
+    ],
+    "review-a7d8662d6f1ccf9b860dea3c": [
+      "v2-bullet_list-contracts-changed"
+    ],
+    "review-36b003f92ad5bf5fd665b690": [
+      "v2-bullet_list-procurement-primary"
+    ],
+    "review-e722ce9d4d0cb9fd13688ae8": [
+      "v2-bullet_list-procurement-conflicting"
+    ],
+    "review-d52b201eb29df10514251068": [
+      "v2-bullet_list-procurement-empty"
+    ],
+    "review-6d8357b54a060da1bce79dea": [
+      "v2-bullet_list-procurement-refusal"
+    ],
+    "review-0e21ea030bdabda2aa6a2480": [
+      "v2-bullet_list-procurement-match"
+    ],
+    "review-44c6e5e48ca4b20547a222f6": [
+      "v2-bullet_list-procurement-changed"
+    ],
+    "review-c49b480fd12c5d1f8e5c9178": [
+      "v2-bullet_list-device-primary"
+    ],
+    "review-d476df3af7432e808334b875": [
+      "v2-bullet_list-device-conflicting"
+    ],
+    "review-a0d317c0ef9ddaf4efce7b2d": [
+      "v2-bullet_list-device-empty"
+    ],
+    "review-fd0777890121a9ab3678607f": [
+      "v2-bullet_list-device-refusal"
+    ],
+    "review-ba7e12d4a02062ca3a441fd9": [
+      "v2-bullet_list-device-match"
+    ],
+    "review-6eff9502321969a5cb080237": [
+      "v2-bullet_list-device-changed"
+    ],
+    "review-50b9be05e3af1c22a2a6470e": [
+      "v2-form_fields-negotiation-primary"
+    ],
+    "review-c193b7c5372da41915cf67a1": [
+      "v2-form_fields-negotiation-conflicting"
+    ],
+    "review-5f700834827298e31d925f04": [
+      "v2-form_fields-negotiation-empty"
+    ],
+    "review-1e565c7159da1ba92698704e": [
+      "v2-form_fields-negotiation-refusal"
+    ],
+    "review-1dd991bdf76c1e688b844629": [
+      "v2-form_fields-negotiation-match"
+    ],
+    "review-a8c8d786ce7c8c2fe1d4ed51": [
+      "v2-form_fields-negotiation-changed"
+    ],
+    "review-ae968e422dc344e0847f40d4": [
+      "v2-form_fields-contracts-primary"
+    ],
+    "review-fbcf7fec6086a1fde46ae1ef": [
+      "v2-form_fields-contracts-conflicting"
+    ],
+    "review-733ad41140dbf4728b567461": [
+      "v2-form_fields-contracts-empty"
+    ],
+    "review-97f974f3784d88560d14123c": [
+      "v2-form_fields-contracts-refusal"
+    ],
+    "review-ec7bb37954530227e9fb35b0": [
+      "v2-form_fields-contracts-match"
+    ],
+    "review-c0fa0eae347bdb3590a610bb": [
+      "v2-form_fields-contracts-changed"
+    ],
+    "review-1472ca98fe6ae9552d4500e6": [
+      "v2-form_fields-procurement-primary"
+    ],
+    "review-fb7c26762ccc408c7c7ed02c": [
+      "v2-form_fields-procurement-conflicting"
+    ],
+    "review-fac81167f54eada02c40d9d0": [
+      "v2-form_fields-procurement-empty"
+    ],
+    "review-981f5332da9d6166124f3e55": [
+      "v2-form_fields-procurement-refusal"
+    ],
+    "review-4fd1163bad1a896f2cc94b30": [
+      "v2-form_fields-procurement-match"
+    ],
+    "review-c879e622c91d5c4787c15735": [
+      "v2-form_fields-procurement-changed"
+    ],
+    "review-661467bc91f332c478b007c7": [
+      "v2-form_fields-device-primary"
+    ],
+    "review-db9a61b6e3cc00c52f38c1c8": [
+      "v2-form_fields-device-conflicting"
+    ],
+    "review-8db1103b99e9217ef5fa79f5": [
+      "v2-form_fields-device-empty"
+    ],
+    "review-35a39536296641441979da17": [
+      "v2-form_fields-device-refusal"
+    ],
+    "review-94a1115658fb32fc79f7d356": [
+      "v2-form_fields-device-match"
+    ],
+    "review-b864c53147521b8e83abbfe3": [
+      "v2-form_fields-device-changed"
+    ],
+    "review-c4ae16a8095ae10b9d8d0720": [
+      "v2-chronological_events-catalogue-primary"
+    ],
+    "review-aa567fce9515ffcca9e93868": [
+      "v2-chronological_events-catalogue-conflicting"
+    ],
+    "review-c71c7c9a8b3127c9b0562fa4": [
+      "v2-chronological_events-catalogue-empty"
+    ],
+    "review-dc8e9ee6a2474e3fc41996bc": [
+      "v2-chronological_events-catalogue-refusal"
+    ],
+    "review-f08981dee347d29053e271e4": [
+      "v2-chronological_events-catalogue-match"
+    ],
+    "review-3ddba1092be6bd584890d2ee": [
+      "v2-chronological_events-catalogue-changed"
+    ],
+    "review-1901408aa78dc9a493cda352": [
+      "v2-chronological_events-regulation-primary"
+    ],
+    "review-008fa015433b8336de7d44c5": [
+      "v2-chronological_events-regulation-conflicting"
+    ],
+    "review-1997b43ea5a61ff7f7131ad6": [
+      "v2-chronological_events-regulation-empty"
+    ],
+    "review-cd2cc2fa4b4d4b9e696b9450": [
+      "v2-chronological_events-regulation-refusal"
+    ],
+    "review-a2204b03015eae9e5ac9034a": [
+      "v2-chronological_events-regulation-match"
+    ],
+    "review-4e91dd3b5e2fc1e7c4c111f8": [
+      "v2-chronological_events-regulation-changed"
+    ],
+    "review-10054314ae1495292d0d00c0": [
+      "v2-chronological_events-clinical-primary"
+    ],
+    "review-cf31651e9bc73bbd323c90c7": [
+      "v2-chronological_events-clinical-conflicting"
+    ],
+    "review-0a7cd353dc33090ed5f5a292": [
+      "v2-chronological_events-clinical-empty"
+    ],
+    "review-22478f7a29c77cf8ea086061": [
+      "v2-chronological_events-clinical-refusal"
+    ],
+    "review-16cbc9928e0ffd39489cc7ed": [
+      "v2-chronological_events-clinical-match"
+    ],
+    "review-8606a60dcd53a968b46a74fd": [
+      "v2-chronological_events-clinical-changed"
+    ],
+    "review-616e4a035cdea0bf15981e83": [
+      "v2-chronological_events-nonsense-primary"
+    ],
+    "review-0615977dc51ddb9e13a05282": [
+      "v2-chronological_events-nonsense-conflicting"
+    ],
+    "review-61aedf6f152d8fe2f76e3e77": [
+      "v2-chronological_events-nonsense-empty"
+    ],
+    "review-ece60a6a2fa22b9f63a77bb2": [
+      "v2-chronological_events-nonsense-refusal"
+    ],
+    "review-d7a7b36af0c07d000c1c53c0": [
+      "v2-chronological_events-nonsense-match"
+    ],
+    "review-da3e305bdd181a4c3036c9b8": [
+      "v2-chronological_events-nonsense-changed"
+    ],
+    "review-1f904cd1048489f6cdebad56": [
+      "v2-question_answer-catalogue-primary"
+    ],
+    "review-78fba2337d12d9254ad39237": [
+      "v2-question_answer-catalogue-conflicting"
+    ],
+    "review-8eea82026d8c4f48f37681b0": [
+      "v2-question_answer-catalogue-empty"
+    ],
+    "review-8e94a09c4a64e091ef008994": [
+      "v2-question_answer-catalogue-refusal"
+    ],
+    "review-587ea719c84c152dd3441aae": [
+      "v2-question_answer-catalogue-match"
+    ],
+    "review-a8b53f2c92752b44a59b5ff2": [
+      "v2-question_answer-catalogue-changed"
+    ],
+    "review-4d4ffaa5d993a27b1ae74c21": [
+      "v2-question_answer-regulation-primary"
+    ],
+    "review-c4fed73a8e05e5fe0e5c5437": [
+      "v2-question_answer-regulation-conflicting"
+    ],
+    "review-dcc4b801997044aeed718e74": [
+      "v2-question_answer-regulation-empty"
+    ],
+    "review-175cef24e20082303832c6db": [
+      "v2-question_answer-regulation-refusal"
+    ],
+    "review-07454605163271289046815e": [
+      "v2-question_answer-regulation-match"
+    ],
+    "review-dcd8d07c545f5560816344c2": [
+      "v2-question_answer-regulation-changed"
+    ],
+    "review-01b5bc99d5b760a80408484c": [
+      "v2-question_answer-clinical-primary"
+    ],
+    "review-5b0cc4b8f523eb8959b25c65": [
+      "v2-question_answer-clinical-conflicting"
+    ],
+    "review-47e840fa7695448058a4497b": [
+      "v2-question_answer-clinical-empty"
+    ],
+    "review-151ab8b4f1b7907d0f340ffe": [
+      "v2-question_answer-clinical-refusal"
+    ],
+    "review-4d635bbb053960a531b9d5ad": [
+      "v2-question_answer-clinical-match"
+    ],
+    "review-b49ae4bc4ef9a4618a74b8fd": [
+      "v2-question_answer-clinical-changed"
+    ],
+    "review-7b4cdb3ad8fd3fc310438f67": [
+      "v2-question_answer-nonsense-primary"
+    ],
+    "review-9e52f0b60de56dd5cde04a73": [
+      "v2-question_answer-nonsense-conflicting"
+    ],
+    "review-5126375df39dae21399af04a": [
+      "v2-question_answer-nonsense-empty"
+    ],
+    "review-60f34ce499e5047aca6ce401": [
+      "v2-question_answer-nonsense-refusal"
+    ],
+    "review-4fdbc8842bb66ea1bbde6c94": [
+      "v2-question_answer-nonsense-match"
+    ],
+    "review-ddf74dc2865967807742719e": [
+      "v2-question_answer-nonsense-changed"
+    ],
+    "review-fbdef51d9cc9e837c1bf87c1": [
+      "v2-memo_sections-catalogue-primary"
+    ],
+    "review-9ae0cc62e5a4890a0c583939": [
+      "v2-memo_sections-catalogue-conflicting"
+    ],
+    "review-6b92d255275640d4721db52f": [
+      "v2-memo_sections-catalogue-empty"
+    ],
+    "review-9be79fb2e8877dbbf158c9a6": [
+      "v2-memo_sections-catalogue-refusal"
+    ],
+    "review-b4d2edb55f2cfd524c66391e": [
+      "v2-memo_sections-catalogue-match"
+    ],
+    "review-e02b198638e26da0d4c26c1b": [
+      "v2-memo_sections-catalogue-changed"
+    ],
+    "review-33abcbd1cbac074cfabf0a84": [
+      "v2-memo_sections-regulation-primary"
+    ],
+    "review-a308aa397d1e59318e9b1c6a": [
+      "v2-memo_sections-regulation-conflicting"
+    ],
+    "review-5c3694d1ca4971be1d0b6cda": [
+      "v2-memo_sections-regulation-empty"
+    ],
+    "review-c71978c2c40c981c85a6d486": [
+      "v2-memo_sections-regulation-refusal"
+    ],
+    "review-1f76a3ec7730931104a411b6": [
+      "v2-memo_sections-regulation-match"
+    ],
+    "review-5a09f9e16b6c29cd2d7c29d2": [
+      "v2-memo_sections-regulation-changed"
+    ],
+    "review-0f727f98669f2a654d493aed": [
+      "v2-memo_sections-clinical-primary"
+    ],
+    "review-f70eca4a38ee9d577f8d3136": [
+      "v2-memo_sections-clinical-conflicting"
+    ],
+    "review-88a09ea292e506bad9a81dd2": [
+      "v2-memo_sections-clinical-empty"
+    ],
+    "review-6f304fdee4009e55e9956e84": [
+      "v2-memo_sections-clinical-refusal"
+    ],
+    "review-05f8d296daa0bc1c54ab4615": [
+      "v2-memo_sections-clinical-match"
+    ],
+    "review-864f172c0ce6dd35064ebb48": [
+      "v2-memo_sections-clinical-changed"
+    ],
+    "review-e5324daf28df0ffe96e2d43d": [
+      "v2-memo_sections-nonsense-primary"
+    ],
+    "review-df5af1f71c9ce9e9590cbe44": [
+      "v2-memo_sections-nonsense-conflicting"
+    ],
+    "review-f843de811ae3a5d167dd5094": [
+      "v2-memo_sections-nonsense-empty"
+    ],
+    "review-731a6e2b81c8d78e2a2687d8": [
+      "v2-memo_sections-nonsense-refusal"
+    ],
+    "review-e424f19b99b9f7c20545d93d": [
+      "v2-memo_sections-nonsense-match"
+    ],
+    "review-7e4a43ae726eae8df3d0efed": [
+      "v2-memo_sections-nonsense-changed"
+    ],
+    "review-fd76873f0357685aed0c98a2": [
+      "v2-compact_table-astronomy-primary"
+    ],
+    "review-8d08c171d32dcb1bfae81fcf": [
+      "v2-compact_table-astronomy-conflicting"
+    ],
+    "review-e255b907f1d9a598b4b602f9": [
+      "v2-compact_table-astronomy-empty"
+    ],
+    "review-e54d067d66e5052d2b3f7974": [
+      "v2-compact_table-astronomy-refusal"
+    ],
+    "review-78438f79548ebb7d23c69bdf": [
+      "v2-compact_table-astronomy-match"
+    ],
+    "review-ad9a66c3e2e277f8cd47a320": [
+      "v2-compact_table-astronomy-changed"
+    ],
+    "review-7d6e7b9f85be4bc7973db4a8": [
+      "v2-compact_table-ecology-primary"
+    ],
+    "review-0d2bd27645f0169a0e0dc03f": [
+      "v2-compact_table-ecology-conflicting"
+    ],
+    "review-eb3a399eceda8ef53b4aaf96": [
+      "v2-compact_table-ecology-empty"
+    ],
+    "review-71b0ad93fb956a7914912ade": [
+      "v2-compact_table-ecology-refusal"
+    ],
+    "review-f63c3a6431ab0a64e2626b77": [
+      "v2-compact_table-ecology-match"
+    ],
+    "review-2f1a4341acf8d2d641e08841": [
+      "v2-compact_table-ecology-changed"
+    ],
+    "review-a3e8aa85f45fae8216e0de2e": [
+      "v2-compact_table-negotiation-primary"
+    ],
+    "review-c73a3ad1c3a6300de6fee92c": [
+      "v2-compact_table-negotiation-conflicting"
+    ],
+    "review-940525bac060c267ae94209e": [
+      "v2-compact_table-negotiation-empty"
+    ],
+    "review-b8163ed24c671c39c9dade74": [
+      "v2-compact_table-negotiation-refusal"
+    ],
+    "review-a9de650585a8fd35687cade4": [
+      "v2-compact_table-negotiation-match"
+    ],
+    "review-7632b7bec37d23a57bc5da2b": [
+      "v2-compact_table-negotiation-changed"
+    ],
+    "review-ff767eaad52ea4394e71c6fd": [
+      "v2-compact_table-device-primary"
+    ],
+    "review-f7d9b1b51e356359d62d4a4c": [
+      "v2-compact_table-device-conflicting"
+    ],
+    "review-8dc325cc386e624b94bf292a": [
+      "v2-compact_table-device-empty"
+    ],
+    "review-d19e177c1e65fb81b60e3d07": [
+      "v2-compact_table-device-refusal"
+    ],
+    "review-3814db712db3a1e64dc10366": [
+      "v2-compact_table-device-match"
+    ],
+    "review-e4663af4d43b21d9baa1ca24": [
+      "v2-compact_table-device-changed"
+    ],
+    "review-c710b5e50ae2f810ff8e2291": [
+      "v2-multirow_table-astronomy-primary"
+    ],
+    "review-a948d846e4b6151efbfafe81": [
+      "v2-multirow_table-astronomy-conflicting"
+    ],
+    "review-434359a9a74ec80193355b99": [
+      "v2-multirow_table-astronomy-empty"
+    ],
+    "review-9231b4f8784082cecddb9737": [
+      "v2-multirow_table-astronomy-refusal"
+    ],
+    "review-d2002a50d5b6c1199db30e6c": [
+      "v2-multirow_table-astronomy-match"
+    ],
+    "review-a5b3647ec31b0ec905c59d1d": [
+      "v2-multirow_table-astronomy-changed"
+    ],
+    "review-85218b2bac49fd06e75fb4f5": [
+      "v2-multirow_table-ecology-primary"
+    ],
+    "review-42e31c0bcc51e3bc262550f0": [
+      "v2-multirow_table-ecology-conflicting"
+    ],
+    "review-bb7846abeb2b462fce2dab20": [
+      "v2-multirow_table-ecology-empty"
+    ],
+    "review-0163c3bfa87be6d1b72cd327": [
+      "v2-multirow_table-ecology-refusal"
+    ],
+    "review-fce5256dd3a5b0e61d63ef27": [
+      "v2-multirow_table-ecology-match"
+    ],
+    "review-1e5213e5c19690e8ff8442a1": [
+      "v2-multirow_table-ecology-changed"
+    ],
+    "review-d80747388008bb4a17086b44": [
+      "v2-multirow_table-negotiation-primary"
+    ],
+    "review-5d575b3e5e507ca88481e80c": [
+      "v2-multirow_table-negotiation-conflicting"
+    ],
+    "review-fceb8c5e2c5048c590716a7a": [
+      "v2-multirow_table-negotiation-empty"
+    ],
+    "review-cf582e11b4035da50709a78f": [
+      "v2-multirow_table-negotiation-refusal"
+    ],
+    "review-5d7897b05678564688fc0f74": [
+      "v2-multirow_table-negotiation-match"
+    ],
+    "review-6afe0f508b1bdc5c8b699ded": [
+      "v2-multirow_table-negotiation-changed"
+    ],
+    "review-4925dfe45080a3a1c59565ed": [
+      "v2-multirow_table-device-primary"
+    ],
+    "review-23795e6b1c8da569e796adbc": [
+      "v2-multirow_table-device-conflicting"
+    ],
+    "review-2b1ea6e0084fa32dbf5467e9": [
+      "v2-multirow_table-device-empty"
+    ],
+    "review-07b3782bb5d948358f498ea5": [
+      "v2-multirow_table-device-refusal"
+    ],
+    "review-915f2e1779a23d46a2ff7290": [
+      "v2-multirow_table-device-match"
+    ],
+    "review-4a85ff36b5e8decdd5ffc954": [
+      "v2-multirow_table-device-changed"
+    ],
+    "review-41b2df2240e3de387df0e78d": [
+      "v2-mixed_prose_table-astronomy-primary"
+    ],
+    "review-f2f9cd0996c66304a341cb7f": [
+      "v2-mixed_prose_table-astronomy-conflicting"
+    ],
+    "review-9d5b77330106d28eb173fd68": [
+      "v2-mixed_prose_table-astronomy-empty"
+    ],
+    "review-537aa1b0f7d4c861c917b5df": [
+      "v2-mixed_prose_table-astronomy-refusal"
+    ],
+    "review-ae08ec92eca403a07d0d2f69": [
+      "v2-mixed_prose_table-astronomy-match"
+    ],
+    "review-5f8e1ea9473f25272c2bb17c": [
+      "v2-mixed_prose_table-astronomy-changed"
+    ],
+    "review-2455e0af6840aa90eeeea829": [
+      "v2-mixed_prose_table-ecology-primary"
+    ],
+    "review-1a85967104ee69c46e30d8d8": [
+      "v2-mixed_prose_table-ecology-conflicting"
+    ],
+    "review-c843e056e941a11f3e444cf1": [
+      "v2-mixed_prose_table-ecology-empty"
+    ],
+    "review-370466c1cb383a925b79d2ce": [
+      "v2-mixed_prose_table-ecology-refusal"
+    ],
+    "review-0e531d2b62d73338f6af9c6f": [
+      "v2-mixed_prose_table-ecology-match"
+    ],
+    "review-627ec8405e03b878f0496d32": [
+      "v2-mixed_prose_table-ecology-changed"
+    ],
+    "review-3aca4aa24123f61036a94517": [
+      "v2-mixed_prose_table-negotiation-primary"
+    ],
+    "review-e9c63a8331327aeb8b1c28ed": [
+      "v2-mixed_prose_table-negotiation-conflicting"
+    ],
+    "review-c9accc8bc30dc9fe95e97401": [
+      "v2-mixed_prose_table-negotiation-empty"
+    ],
+    "review-264db8f1e4fbdc6829197d3f": [
+      "v2-mixed_prose_table-negotiation-refusal"
+    ],
+    "review-7c78c244ca15427642ae3398": [
+      "v2-mixed_prose_table-negotiation-match"
+    ],
+    "review-89b55718f9c4c1f5280b5a01": [
+      "v2-mixed_prose_table-negotiation-changed"
+    ],
+    "review-6988a0777a6a9e704af68695": [
+      "v2-mixed_prose_table-device-primary"
+    ],
+    "review-df14ea2c7d51cfad10eb2b26": [
+      "v2-mixed_prose_table-device-conflicting"
+    ],
+    "review-f744b9df66c5c67dbe75d9c1": [
+      "v2-mixed_prose_table-device-empty"
+    ],
+    "review-712f7ab922a6a865271d6f6b": [
+      "v2-mixed_prose_table-device-refusal"
+    ],
+    "review-750a7ebf572705f66b469446": [
+      "v2-mixed_prose_table-device-match"
+    ],
+    "review-f07710eac3fd1adc2f4d9a31": [
+      "v2-mixed_prose_table-device-changed"
+    ],
+    "review-af8b0e9ecbfb49fdfe4a63ef": [
+      "v2-nested_provisions-astronomy-primary"
+    ],
+    "review-5ef9cc5d36a99a4fbff88d05": [
+      "v2-nested_provisions-astronomy-conflicting"
+    ],
+    "review-8595c9a0686c5774de1b5dbb": [
+      "v2-nested_provisions-astronomy-empty"
+    ],
+    "review-7633bb9a4cdef70a499e4981": [
+      "v2-nested_provisions-astronomy-refusal"
+    ],
+    "review-cbc27d1040376cacb0c49c8b": [
+      "v2-nested_provisions-astronomy-match"
+    ],
+    "review-dc447215feb258432ef89a59": [
+      "v2-nested_provisions-astronomy-changed"
+    ],
+    "review-7b82adfd9e15e42dffd29c6f": [
+      "v2-nested_provisions-ecology-primary"
+    ],
+    "review-ded87b54701e6199fae5f82f": [
+      "v2-nested_provisions-ecology-conflicting"
+    ],
+    "review-d49391771e16df13656706bf": [
+      "v2-nested_provisions-ecology-empty"
+    ],
+    "review-ddd00cb66465153df2d67c29": [
+      "v2-nested_provisions-ecology-refusal"
+    ],
+    "review-8426fbfa1f7b8afb4c793317": [
+      "v2-nested_provisions-ecology-match"
+    ],
+    "review-a24f8dc97768789f8fe4d7d6": [
+      "v2-nested_provisions-ecology-changed"
+    ],
+    "review-ec64f37a22851e42bc01e27d": [
+      "v2-nested_provisions-contracts-primary"
+    ],
+    "review-2e13cf6dbc77a12ef0e9ba45": [
+      "v2-nested_provisions-contracts-conflicting"
+    ],
+    "review-db8808f61b58406b958c7ad4": [
+      "v2-nested_provisions-contracts-empty"
+    ],
+    "review-23cddd974b674bcd1226db5d": [
+      "v2-nested_provisions-contracts-refusal"
+    ],
+    "review-fd4553ad94f9f20808f9dbaf": [
+      "v2-nested_provisions-contracts-match"
+    ],
+    "review-9f0c1cf54c65b7cf619ab969": [
+      "v2-nested_provisions-contracts-changed"
+    ],
+    "review-0597d7b4f3e9c16e9814b903": [
+      "v2-nested_provisions-nonsense-primary"
+    ],
+    "review-0832aae1ed7f7d781c8efa40": [
+      "v2-nested_provisions-nonsense-conflicting"
+    ],
+    "review-15bc6e301ec248381f303efd": [
+      "v2-nested_provisions-nonsense-empty"
+    ],
+    "review-aafac77c15875d8985a69ea0": [
+      "v2-nested_provisions-nonsense-refusal"
+    ],
+    "review-b402507fa426b65cb019467e": [
+      "v2-nested_provisions-nonsense-match"
+    ],
+    "review-9bfacff051795f1f2dc35f7c": [
+      "v2-nested_provisions-nonsense-changed"
+    ],
+    "review-bcb5e8f9e56d447c3f92b1b2": [
+      "v2-transaction_register-astronomy-primary"
+    ],
+    "review-186675791d0785830fb7d3d0": [
+      "v2-transaction_register-astronomy-conflicting"
+    ],
+    "review-5da488605d15c28816eb85ee": [
+      "v2-transaction_register-astronomy-empty"
+    ],
+    "review-cf861305c1aca1d608e922a7": [
+      "v2-transaction_register-astronomy-refusal"
+    ],
+    "review-5ff41c12ea05af09d46c6011": [
+      "v2-transaction_register-astronomy-match"
+    ],
+    "review-a2960345881a1660acda6389": [
+      "v2-transaction_register-astronomy-changed"
+    ],
+    "review-444a32d3325d5b3a415e684e": [
+      "v2-transaction_register-ecology-primary"
+    ],
+    "review-dc7251bb7a4b3c0960d2819e": [
+      "v2-transaction_register-ecology-conflicting"
+    ],
+    "review-ce2f34d784fa497c9f827a08": [
+      "v2-transaction_register-ecology-empty"
+    ],
+    "review-15d975c52f36eff8bc2c7992": [
+      "v2-transaction_register-ecology-refusal"
+    ],
+    "review-86d8458b322d34cf1c231362": [
+      "v2-transaction_register-ecology-match"
+    ],
+    "review-8e168bd9df1a0d49ab927390": [
+      "v2-transaction_register-ecology-changed"
+    ],
+    "review-507381f2d7851e5ce0d0d723": [
+      "v2-transaction_register-contracts-primary"
+    ],
+    "review-034cdcae3114a8fc5e88f9d5": [
+      "v2-transaction_register-contracts-conflicting"
+    ],
+    "review-ea7678600f6fe75b2ee97e62": [
+      "v2-transaction_register-contracts-empty"
+    ],
+    "review-002c4dd62b7e7ced8d76d239": [
+      "v2-transaction_register-contracts-refusal"
+    ],
+    "review-cf08e08b69e5c2b7e0e99d79": [
+      "v2-transaction_register-contracts-match"
+    ],
+    "review-d8978be350e0e8f97527b0c3": [
+      "v2-transaction_register-contracts-changed"
+    ],
+    "review-ca12321d034b26a24a3e7bdd": [
+      "v2-transaction_register-nonsense-primary"
+    ],
+    "review-f858c1baa2738d2d35d34911": [
+      "v2-transaction_register-nonsense-conflicting"
+    ],
+    "review-9b16d012abad18abe110af43": [
+      "v2-transaction_register-nonsense-empty"
+    ],
+    "review-6bc019904ff949c00c6bf749": [
+      "v2-transaction_register-nonsense-refusal"
+    ],
+    "review-1c93bf0d5f91ef5e056a4edc": [
+      "v2-transaction_register-nonsense-match"
+    ],
+    "review-4db76d0028a3d3200bcbe01c": [
+      "v2-transaction_register-nonsense-changed"
+    ],
+    "review-f2efc3227729d23ac7f513a0": [
+      "v2-machine_records-astronomy-primary"
+    ],
+    "review-9935c225f0d966e8c0488282": [
+      "v2-machine_records-astronomy-conflicting"
+    ],
+    "review-87a9e540c30c94a2639114cd": [
+      "v2-machine_records-astronomy-empty"
+    ],
+    "review-2e9e21f03b9ec06e65ff55e4": [
+      "v2-machine_records-astronomy-refusal"
+    ],
+    "review-9bb1d6874c1de5d7428bd600": [
+      "v2-machine_records-astronomy-match"
+    ],
+    "review-3c5498af06642cdd8d552218": [
+      "v2-machine_records-astronomy-changed"
+    ],
+    "review-3fb22dbabb9ad628b0f04740": [
+      "v2-machine_records-ecology-primary"
+    ],
+    "review-56252d3a3245fe6d3fab7c6e": [
+      "v2-machine_records-ecology-conflicting"
+    ],
+    "review-4f695de7ab0ab6748329c60c": [
+      "v2-machine_records-ecology-empty"
+    ],
+    "review-822bffb7dbde687a4fc3115b": [
+      "v2-machine_records-ecology-refusal"
+    ],
+    "review-c9ba40e04dc27d0b92235870": [
+      "v2-machine_records-ecology-match"
+    ],
+    "review-627c562de27af3ce77e238d0": [
+      "v2-machine_records-ecology-changed"
+    ],
+    "review-ffb84c0a473f4f9629e604c7": [
+      "v2-machine_records-contracts-primary"
+    ],
+    "review-8f21d641defcc2c4e575f99d": [
+      "v2-machine_records-contracts-conflicting"
+    ],
+    "review-f49186f1ad4199740a1bba77": [
+      "v2-machine_records-contracts-empty"
+    ],
+    "review-7f5f35fa83e0a720518298ff": [
+      "v2-machine_records-contracts-refusal"
+    ],
+    "review-9de3e3805944a6d55692104f": [
+      "v2-machine_records-contracts-match"
+    ],
+    "review-74ee4a2f0b1f50d4b2353113": [
+      "v2-machine_records-contracts-changed"
+    ],
+    "review-e8e77eb7e68763f67de71a23": [
+      "v2-machine_records-nonsense-primary"
+    ],
+    "review-abb9da3fbad353e277d7638e": [
+      "v2-machine_records-nonsense-conflicting"
+    ],
+    "review-1b06c51d8d735404281feffd": [
+      "v2-machine_records-nonsense-empty"
+    ],
+    "review-0f974d7e80dea7c854b66096": [
+      "v2-machine_records-nonsense-refusal"
+    ],
+    "review-6eae980a3f782ca01033a273": [
+      "v2-machine_records-nonsense-match"
+    ],
+    "review-00228876a896285647836932": [
+      "v2-machine_records-nonsense-changed"
+    ]
+  },
+  "reviewed": 0,
+  "pending_examples": 736,
+  "warning": "Administrator mapping is excluded from the reviewer packet export. No independent review has occurred."
+}

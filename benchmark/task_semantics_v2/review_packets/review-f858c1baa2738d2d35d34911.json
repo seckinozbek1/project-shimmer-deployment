@@ -1,0 +1,47 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-f858c1baa2738d2d35d34911",
+  "input_sha256": "f858c1baa2738d2d35d3491154d1068b26f295671b05f769a1da5ad78bc163ad",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "BEGIN REGISTER\nDEBIT OBSERVATION :: CLM-C: vraxlet 84 is assigned 146 flomquils (REF-1003).\nCREDIT OBSERVATION :: CLM-D: the same vraxlet 84 is assigned 148 flomquils (REF-1004).\nMEMO ONLY :: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\nEND REGISTER\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s148",
+        "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+      }
+    ],
+    "supplied_refs": [
+      "REF-1003",
+      "REF-1004",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-1003",
+      "REF-1004"
+    ],
+    "routed_rules": []
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-f858c1baa2738d2d35d34911",
+    "input_sha256": "f858c1baa2738d2d35d3491154d1068b26f295671b05f769a1da5ad78bc163ad",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}

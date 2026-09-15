@@ -1,0 +1,49 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-3aca4aa24123f61036a94517",
+  "input_sha256": "3aca4aa24123f61036a94517fcf6e0aa4913867ac1ef3e0f3e41c9735efccb26",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "Opening statement: CLM-A: delegation 75 recorded 119 offered seats (REF-1001).\n\n| Supplement | Content |\n|---|---|\n"
+      },
+      {
+        "alias": "s73",
+        "text": "| Detail | CLM-B: delegation 75 retained 124 offered seats (REF-1002). |"
+      },
+      {
+        "alias": "sbb",
+        "text": "\n\nClosing qualification: The date is absent. When was this recorded? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": []
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-3aca4aa24123f61036a94517",
+    "input_sha256": "3aca4aa24123f61036a94517fcf6e0aa4913867ac1ef3e0f3e41c9735efccb26",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}

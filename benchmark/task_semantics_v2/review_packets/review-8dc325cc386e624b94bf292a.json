@@ -1,0 +1,43 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-8dc325cc386e624b94bf292a",
+  "input_sha256": "8dc325cc386e624b94bf292a86de00cfd94ba5e5f219c4e8500edd41f5fa7e4b",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "| Field | Content |\n|---|---|\n"
+      },
+      {
+        "alias": "s1e",
+        "text": "| Primary | Divider for sensor bank 68. |\n"
+      },
+      {
+        "alias": "s48",
+        "text": "| Secondary | No semantic entry. End marker. |"
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [],
+    "required_refs": [],
+    "routed_rules": []
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-8dc325cc386e624b94bf292a",
+    "input_sha256": "8dc325cc386e624b94bf292a86de00cfd94ba5e5f219c4e8500edd41f5fa7e4b",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}

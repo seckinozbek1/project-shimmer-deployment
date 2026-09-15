@@ -1,0 +1,53 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-4925dfe45080a3a1c59565ed",
+  "input_sha256": "4925dfe45080a3a1c59565ed789cfdbc5820b0de4256075a1595beb2005ddf74",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "| Sequence | Evidence |\n|---|---|\n"
+      },
+      {
+        "alias": "s22",
+        "text": "| 1 | CLM-A: sensor bank 72 recorded 110 pulses (REF-1001). |\n"
+      },
+      {
+        "alias": "s60",
+        "text": "| 2 | CLM-B: sensor bank 72 retained 115 pulses (REF-1002). |\n"
+      },
+      {
+        "alias": "s9e",
+        "text": "| 3 | The date is absent. When was this recorded? |"
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": []
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-4925dfe45080a3a1c59565ed",
+    "input_sha256": "4925dfe45080a3a1c59565ed789cfdbc5820b0de4256075a1595beb2005ddf74",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}

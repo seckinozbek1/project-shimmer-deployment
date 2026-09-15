@@ -1,0 +1,50 @@
+# Independent semantic review
+
+Packet: review-264db8f1e4fbdc6829197d3f
+
+Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.
+
+```json
+{
+  "role": "producer",
+  "production_contract": "semantic-task-v1",
+  "source_spans": [
+    {
+      "alias": "s0",
+      "text": "Opening statement: Unreadable entry for delegation 75.\n\n| Supplement | Content |\n|---|---|\n"
+    },
+    {
+      "alias": "s5b",
+      "text": "| Detail | [unrecoverable fragment] |"
+    },
+    {
+      "alias": "s80",
+      "text": "\n\nClosing qualification: The semantic content cannot be established."
+    }
+  ],
+  "context_only_spans": [],
+  "supplied_refs": [],
+  "required_refs": [],
+  "routed_rules": []
+}
+```
+
+## Response template (pending, not a submitted review)
+
+```json
+{
+  "packet_id": "review-264db8f1e4fbdc6829197d3f",
+  "input_sha256": "264db8f1e4fbdc6829197d3f5ea33f7f99eb8b43eb8a4ecd93f351e5409d7179",
+  "review_version": "semantic-benchmark-v2",
+  "reviewer_id": null,
+  "reviewer_kind": null,
+  "independence_attestation": false,
+  "reviewed_at": null,
+  "semantic_target": null,
+  "semantic_judgment": null,
+  "reason_components": [],
+  "rationale": null,
+  "ambiguity": null,
+  "formatting_judgment": "not_assessed"
+}
+```

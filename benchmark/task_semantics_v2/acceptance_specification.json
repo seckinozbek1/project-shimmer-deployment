@@ -1,0 +1,53 @@
+{
+  "version": "model-acceptance-prereg-v2",
+  "dataset_version": "semantic-benchmark-v2",
+  "production_contract": "semantic-task-v1",
+  "state": "PARTIALLY_REGISTERED_REQUIRES_OPERATOR_REGISTRATION",
+  "created_before_any_tuning": true,
+  "thresholds": {
+    "producer": {
+      "claim_precision": "REQUIRES_OPERATOR_REGISTRATION",
+      "claim_recall": "REQUIRES_OPERATOR_REGISTRATION",
+      "gap_precision": "REQUIRES_OPERATOR_REGISTRATION",
+      "gap_recall": "REQUIRES_OPERATOR_REGISTRATION",
+      "evidence_precision": "REQUIRES_OPERATOR_REGISTRATION",
+      "evidence_recall": "REQUIRES_OPERATOR_REGISTRATION",
+      "refusal_precision": "REQUIRES_OPERATOR_REGISTRATION",
+      "refusal_recall": "REQUIRES_OPERATOR_REGISTRATION",
+      "semantic_completeness": "REQUIRES_OPERATOR_REGISTRATION",
+      "contract_validity": "REQUIRES_OPERATOR_REGISTRATION",
+      "uncertainty_preservation": "REQUIRES_OPERATOR_REGISTRATION"
+    },
+    "auditor": {
+      "relation_accuracy": "REQUIRES_OPERATOR_REGISTRATION",
+      "per_class_precision": "REQUIRES_OPERATOR_REGISTRATION",
+      "per_class_recall": "REQUIRES_OPERATOR_REGISTRATION",
+      "refusal_precision": "REQUIRES_OPERATOR_REGISTRATION",
+      "refusal_recall": "REQUIRES_OPERATOR_REGISTRATION",
+      "reason_correctness": "REQUIRES_OPERATOR_REGISTRATION",
+      "evidence_precision": "REQUIRES_OPERATOR_REGISTRATION",
+      "evidence_recall": "REQUIRES_OPERATOR_REGISTRATION",
+      "contract_validity": "REQUIRES_OPERATOR_REGISTRATION",
+      "uncertainty_preservation": "REQUIRES_OPERATOR_REGISTRATION"
+    },
+    "shared": {
+      "minimum_independent_review_coverage": "REQUIRES_OPERATOR_REGISTRATION",
+      "minimum_document_families": "REQUIRES_OPERATOR_REGISTRATION",
+      "minimum_template_families": "REQUIRES_OPERATOR_REGISTRATION",
+      "heldout_domain_floor": "REQUIRES_OPERATOR_REGISTRATION",
+      "unseen_template_floor": "REQUIRES_OPERATOR_REGISTRATION",
+      "maximum_family_variability": "REQUIRES_OPERATOR_REGISTRATION"
+    }
+  },
+  "catastrophic_limits": {
+    "invented_evidence": 0,
+    "unrouted_rule_attribution": 0,
+    "confident_wrong_match_divergence": 0,
+    "truncation": 0,
+    "producer_source_copy": 0,
+    "governance_violations": 0
+  },
+  "rationale": "Zero limits implement existing exact evidence, governance, no-copy and zero-truncation invariants. No measured independent sample supports inventing other numeric quality/family thresholds.",
+  "selection_rule": "No single aggregate F1 acceptance. Independent review, domain/template holdout and family-aware uncertainty are required.",
+  "registration_rule": "Operator must register all unresolved thresholds prospectively and freeze a new specification before training; never fit them after model test results."
+}

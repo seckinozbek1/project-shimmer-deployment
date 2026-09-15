@@ -1,0 +1,54 @@
+# Independent semantic review
+
+Packet: review-c4fed73a8e05e5fe0e5c5437
+
+Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.
+
+```json
+{
+  "role": "producer",
+  "production_contract": "semantic-task-v1",
+  "source_spans": [
+    {
+      "alias": "s0",
+      "text": "Question: What was entered first?\nAnswer: CLM-C: filing office 58 is assigned 68 notices (REF-1003).\nQuestion: What followed?\nAnswer: CLM-D: the same filing office 58 is assigned 70 notices (REF-1004).\nClerk note: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+    }
+  ],
+  "context_only_spans": [
+    {
+      "alias": "s151",
+      "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+    }
+  ],
+  "supplied_refs": [
+    "REF-1003",
+    "REF-1004",
+    "REF-9999"
+  ],
+  "required_refs": [
+    "REF-1003",
+    "REF-1004"
+  ],
+  "routed_rules": []
+}
+```
+
+## Response template (pending, not a submitted review)
+
+```json
+{
+  "packet_id": "review-c4fed73a8e05e5fe0e5c5437",
+  "input_sha256": "c4fed73a8e05e5fe0e5c543715e76042f81af0793539fa7f5b8a0ec0e2892ff3",
+  "review_version": "semantic-benchmark-v2",
+  "reviewer_id": null,
+  "reviewer_kind": null,
+  "independence_attestation": false,
+  "reviewed_at": null,
+  "semantic_target": null,
+  "semantic_judgment": null,
+  "reason_components": [],
+  "rationale": null,
+  "ambiguity": null,
+  "formatting_judgment": "not_assessed"
+}
+```

@@ -1,0 +1,21 @@
+{
+  "version": "semantic-benchmark-v2",
+  "training_access_domains": [
+    "catalogue",
+    "clinical",
+    "contracts",
+    "device",
+    "negotiation",
+    "nonsense",
+    "procurement",
+    "regulation"
+  ],
+  "held_out_domains": [
+    "astronomy",
+    "ecology"
+  ],
+  "sealed_domain_reservations": [
+    "independent_domain_pending"
+  ],
+  "axes": "Ordinary family split is unchanged; domain holdout is a second filter. New held-out domains have no train/dev labels or renamed descendants."
+}
