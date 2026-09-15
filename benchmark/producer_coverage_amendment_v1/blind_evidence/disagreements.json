@@ -1,0 +1,144 @@
+{
+  "required_adjudication": [
+    "producer-005f2f46d93e0911ee733187",
+    "producer-0410db59da5bfbb5a932a6dc",
+    "producer-13a7e6cd6aa7fb33c332e588",
+    "producer-2f1e4d83f4247f4096625c77",
+    "producer-30bf1146cec8cf9917576b6c",
+    "producer-32b0476f0b32001fd73eec0c",
+    "producer-36389afa4fa0f9f1b6f43576",
+    "producer-52ee7ec4bf4645fbb156b85b",
+    "producer-5d021839b35a787e8b17021c",
+    "producer-60a7789aea5e119cdb51c3dd",
+    "producer-6f58b117aaa7a56fc87d031f",
+    "producer-757110918920b42131d69cad",
+    "producer-78355f4bb3301b0744fa7702",
+    "producer-9140af935f36703b7e071634",
+    "producer-9b241eb4f89e75dc6b96be59",
+    "producer-a27c1c7e73badc5230c9a62b",
+    "producer-a3e2724a61ef8a665d03cb31",
+    "producer-af580f78792f284c5355a202",
+    "producer-b0404b38a1a5f408142f11a0",
+    "producer-b0e4c1ea3c2e79bc0e53f909",
+    "producer-b16011b96fe6f78de462f95a",
+    "producer-c8192fc8742410f09d2fa879",
+    "producer-d3662213a33a75489b3ef507",
+    "producer-e0928f79ab4a1931030ce499",
+    "producer-f30e2ed5ae4e05ff7211bc8d",
+    "producer-f4d67be0ec81bb3b823f66fb"
+  ],
+  "hard": [
+    "producer-0410db59da5bfbb5a932a6dc",
+    "producer-2f1e4d83f4247f4096625c77",
+    "producer-30bf1146cec8cf9917576b6c",
+    "producer-32b0476f0b32001fd73eec0c",
+    "producer-36389afa4fa0f9f1b6f43576",
+    "producer-52ee7ec4bf4645fbb156b85b",
+    "producer-5d021839b35a787e8b17021c",
+    "producer-60a7789aea5e119cdb51c3dd",
+    "producer-6f58b117aaa7a56fc87d031f",
+    "producer-9140af935f36703b7e071634",
+    "producer-9b241eb4f89e75dc6b96be59",
+    "producer-a27c1c7e73badc5230c9a62b",
+    "producer-a3e2724a61ef8a665d03cb31",
+    "producer-b0404b38a1a5f408142f11a0",
+    "producer-b0e4c1ea3c2e79bc0e53f909",
+    "producer-b16011b96fe6f78de462f95a",
+    "producer-d3662213a33a75489b3ef507",
+    "producer-e0928f79ab4a1931030ce499",
+    "producer-f30e2ed5ae4e05ff7211bc8d",
+    "producer-f4d67be0ec81bb3b823f66fb"
+  ],
+  "invalid_primaries": [
+    {
+      "packet_id": "producer-005f2f46d93e0911ee733187",
+      "slot": "A",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-005f2f46d93e0911ee733187",
+      "slot": "B",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-005f2f46d93e0911ee733187",
+      "slot": "C",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-13a7e6cd6aa7fb33c332e588",
+      "slot": "A",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-13a7e6cd6aa7fb33c332e588",
+      "slot": "B",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-13a7e6cd6aa7fb33c332e588",
+      "slot": "C",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-757110918920b42131d69cad",
+      "slot": "A",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-757110918920b42131d69cad",
+      "slot": "B",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-757110918920b42131d69cad",
+      "slot": "C",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-78355f4bb3301b0744fa7702",
+      "slot": "A",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-78355f4bb3301b0744fa7702",
+      "slot": "B",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-78355f4bb3301b0744fa7702",
+      "slot": "C",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-af580f78792f284c5355a202",
+      "slot": "A",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-af580f78792f284c5355a202",
+      "slot": "B",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-af580f78792f284c5355a202",
+      "slot": "C",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-c8192fc8742410f09d2fa879",
+      "slot": "A",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-c8192fc8742410f09d2fa879",
+      "slot": "B",
+      "error": "No explicit gap/question support"
+    },
+    {
+      "packet_id": "producer-c8192fc8742410f09d2fa879",
+      "slot": "C",
+      "error": "No explicit gap/question support"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-0026190489a812183ab21115",
+  "input_sha256": "9f1e4c6d21714cb695a09329df38ce03a310b276fd4394b0d32ec909263a8e7c",
+  "slot": "A",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:26.877922+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_date",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "origin": "source_explicit",
+            "support": "The date is absent. When was this recorded?"
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recorder",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "origin": "source_explicit",
+            "support": "The recorder is unnamed. Who recorded it?"
+          }
+        ],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Retain all owned claim identifiers and references; annotate explicit missing fields and questions, and only source-expressed epistemic qualifications. Context-only content is excluded."
+}

@@ -1,0 +1,105 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-005f2f46d93e0911ee733187",
+  "input_sha256": "6e86bc0c575db07788a42e3d25e69fbdfb27b8644312d60fd0fb0f5a37567d99",
+  "slot": "C",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:56.054162+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "refs": [
+          "REF-1001"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "explicit_question",
+            "subject": "owned_record",
+            "attribute": "entry_content",
+            "relation": "first",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "support": "What was entered first?"
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "entry_content",
+            "relation": "next",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "support": "What followed?\nAnswer: No second claim was submitted."
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "entry:2",
+            "attribute": "entry_content",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "support": "No second claim was submitted."
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_date",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "support": "The date is absent. When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "owned_record",
+            "attribute": "interpretation",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "support": "The interpretation remains uncertain."
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Independently reviewed the owned span and context boundary; retained all owned claim and reference IDs. Typed atoms preserve explicit missing information, questions, and epistemic qualifiers. The explicitly unsubmitted second claim is missing entry:2 content. Sequence questions ask for entry content in first/next order; retained even when answered."
+}

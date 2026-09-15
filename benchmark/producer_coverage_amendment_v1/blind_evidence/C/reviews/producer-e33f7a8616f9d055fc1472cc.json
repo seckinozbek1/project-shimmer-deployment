@@ -1,0 +1,24 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-e33f7a8616f9d055fc1472cc",
+  "input_sha256": "f71ad7eea562e49457374f0adc1a92002cdd1fa32804bd2d3177770d23768bc2",
+  "slot": "C",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:56.069162+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "refs": [],
+        "gap_atoms": [],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "The owned span is a divider/end marker with no substantive semantic entry; examined as empty."
+}

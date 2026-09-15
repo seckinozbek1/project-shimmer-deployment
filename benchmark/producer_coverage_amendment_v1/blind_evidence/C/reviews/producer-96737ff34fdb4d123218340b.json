@@ -1,0 +1,16 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-96737ff34fdb4d123218340b",
+  "input_sha256": "4eb0c5d16beeb45edd8a2b1e17ea49d9ea38fbf3a6d0a7f300cc21847c15f84b",
+  "slot": "C",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:56.062162+00:00",
+  "label": {
+    "status": "refused",
+    "items": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Source explicitly describes an unreadable, unrecoverable fragment whose semantic content cannot be established."
+}

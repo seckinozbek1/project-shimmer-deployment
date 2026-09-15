@@ -1,0 +1,64 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-b16011b96fe6f78de462f95a",
+  "input_sha256": "b11055c923ace4e83667d2b865eeba8effae81b14750c9159470c1d7f9b429c9",
+  "slot": "B",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:36.191978+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "observation_date",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "origin": "source_explicit",
+            "support": "The observation date is unavailable. What is the observation date?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "entry:2",
+            "attribute": "interpretation",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "origin": "source_explicit",
+            "support": "The interpretation of the second entry remains unresolved."
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Retained all owned assertion IDs and references. Annotated explicit absent information, surface questions, and qualified uncertainty with their stated referents; excluded context-only material. Conflicting assertions are retained without inferring additional uncertainty."
+}

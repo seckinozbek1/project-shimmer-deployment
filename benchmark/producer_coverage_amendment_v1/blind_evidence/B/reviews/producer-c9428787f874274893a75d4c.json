@@ -1,0 +1,24 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-c9428787f874274893a75d4c",
+  "input_sha256": "2efbee64ce4c221f050ded3643e228574fe0ad909ad7eb6d5e1ff71ac37357ab",
+  "slot": "B",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:36.193991+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "refs": [],
+        "gap_atoms": [],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Owned divider has no substantive semantic entry."
+}

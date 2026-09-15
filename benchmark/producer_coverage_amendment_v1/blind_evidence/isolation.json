@@ -1,0 +1,7 @@
+{
+  "fresh_primary_contexts": 3,
+  "fresh_adjudicator": true,
+  "detected_violations": 0,
+  "method": "Exact packet hashes, folder-only instructions and agent attestations; shared filesystem/parent model, no OS enforcement or cross-model diversity",
+  "human_reviewed": false
+}

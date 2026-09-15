@@ -1,0 +1,64 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-4f82ee17dd2bfe5188b8ff0d",
+  "input_sha256": "b7e8334b54eebc3cc8e67141760c8bf2c0522b8a3a16a322ea0ae08f2cf4b46f",
+  "slot": "A",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:26.881922+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "amendment",
+            "attribute": "effective_time",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "origin": "source_explicit",
+            "support": "No effective period is specified. When does the amendment take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "amendment",
+            "attribute": "ratification_status",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "origin": "source_explicit",
+            "support": "It is unclear whether the amendment was ratified."
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Retain all owned claim identifiers and references; annotate explicit missing fields and questions, and only source-expressed epistemic qualifications. Context-only content is excluded."
+}

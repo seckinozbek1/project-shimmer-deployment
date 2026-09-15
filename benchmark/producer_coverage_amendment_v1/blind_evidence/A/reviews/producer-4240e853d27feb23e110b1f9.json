@@ -1,0 +1,64 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-4240e853d27feb23e110b1f9",
+  "input_sha256": "dbd93f828ba3696c3dc673ae0fe8375628d592c3cce1d3830412253057ff42ea",
+  "slot": "A",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:26.880904+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "observation_date",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "origin": "source_explicit",
+            "support": "The observation date is unavailable. What is the observation date?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "entry:2",
+            "attribute": "interpretation",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "origin": "source_explicit",
+            "support": "The interpretation of the second entry remains unresolved."
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Retain all owned claim identifiers and references; annotate explicit missing fields and questions, and only source-expressed epistemic qualifications. Context-only content is excluded."
+}

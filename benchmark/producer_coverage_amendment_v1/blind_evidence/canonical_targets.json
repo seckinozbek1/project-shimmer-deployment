@@ -1,0 +1,1524 @@
+{
+  "producer-0026190489a812183ab21115": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recorder; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-005f2f46d93e0911ee733187": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Explicit question: owned_record; entry_order; first; owned_record; none.",
+          "Explicit question: owned_record; entry_order; next; owned_record; none.",
+          "Missing information: entry:2; entry_content; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-0410db59da5bfbb5a932a6dc": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: amendment; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: amendment; ratification_status; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-05fdd68c06edc04d37841781": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-13a7e6cd6aa7fb33c332e588": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Missing information: entry:2; entry_content; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-1800ccd7f5e08566872035b4": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-18a5e1e9f5a4e5bf7ae39774": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-1c7b0c2372b8ffbf4f87412f": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-1e2c7b2307509d50e9e374d1": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-1f80c271a5e61dea2a7709b6": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-20af097605dd0ef9a7ebfb0e": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Explicit question: owned_record; entry_order; first; owned_record; none.",
+          "Explicit question: owned_record; entry_order; next; owned_record; none.",
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-24b881666fef3ebca0317b70": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-2f1e4d83f4247f4096625c77": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-30bf1146cec8cf9917576b6c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-32b0476f0b32001fd73eec0c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; observation_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-35b96eeb222d7b325f6e22d2": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-36389afa4fa0f9f1b6f43576": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-4240e853d27feb23e110b1f9": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; observation_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-43676d9f77d0f99f8d010533": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-448d671a754137f8ec973f66": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-4f82ee17dd2bfe5188b8ff0d": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: amendment; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: amendment; ratification_status; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-52ee7ec4bf4645fbb156b85b": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; observation_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-5d021839b35a787e8b17021c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: amendment; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: amendment; ratification_status; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-6086fb27ef61d718674cd26e": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-60a7789aea5e119cdb51c3dd": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: amendment; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: amendment; ratification_status; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-6f58b117aaa7a56fc87d031f": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-757110918920b42131d69cad": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Missing information: entry:2; entry_content; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-77f4b4477af1f2dfe0e18b9a": {
+    "items": [],
+    "status": "refused"
+  },
+  "producer-78355f4bb3301b0744fa7702": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Missing information: entry:2; entry_content; none; owned_record; none.",
+          "Missing information: owned_record; recorder; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-78685fdff40623dcc1ce907a": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Explicit question: owned_record; entry_order; first; owned_record; none.",
+          "Explicit question: owned_record; entry_order; next; owned_record; none.",
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-7b604ca2f70d476794503535": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Explicit question: owned_record; entry_order; first; owned_record; none.",
+          "Explicit question: owned_record; entry_order; next; owned_record; none.",
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-7c9a61a719aca85d2a911b99": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; observation_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-7f7e5e7847fbcd3c5293c2c0": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recorder; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-824eb09298204a461197677e": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: amendment; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: amendment; ratification_status; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-8c069a22093770bee2aee1e3": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recorder; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-9140af935f36703b7e071634": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-93acc273d64a6f9579e9df9d": {
+    "items": [],
+    "status": "refused"
+  },
+  "producer-96737ff34fdb4d123218340b": {
+    "items": [],
+    "status": "refused"
+  },
+  "producer-9ae4bf05d3d1eccc28612ee6": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-9b241eb4f89e75dc6b96be59": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-a216e5dcfcea0c7c5d5649d0": {
+    "items": [],
+    "status": "refused"
+  },
+  "producer-a23009c3dae25955af484d37": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Explicit question: owned_record; entry_order; first; owned_record; none.",
+          "Explicit question: owned_record; entry_order; next; owned_record; none.",
+          "Missing information: owned_record; recorder; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-a27c1c7e73badc5230c9a62b": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-a2915eebbbd56e84859dddab": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recorder; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-a298d94c687548641fe57fa8": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "producer-a3e2724a61ef8a665d03cb31": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: amendment; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: amendment; ratification_status; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-af580f78792f284c5355a202": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Missing information: entry:2; entry_content; none; owned_record; none.",
+          "Missing information: owned_record; recorder; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-b0404b38a1a5f408142f11a0": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-b0a1f1802f47c4a16ee2175c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "producer-b0e4c1ea3c2e79bc0e53f909": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-b16011b96fe6f78de462f95a": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; observation_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-b4662afdfe020d1e3ed96e8c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Explicit question: owned_record; entry_order; first; owned_record; none.",
+          "Explicit question: owned_record; entry_order; next; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-b60622bf8db2160a234a2bda": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-b7b7a0a383b65ff94c9fe0cc": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "producer-bd0452c40c516e6888732c20": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: amendment; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: amendment; ratification_status; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-bff534189fc4f5fde3847e98": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "producer-c4739aae26c71227387bae6e": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-c8192fc8742410f09d2fa879": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Missing information: entry:2; entry_content; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-c9428787f874274893a75d4c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "producer-cc91bacc9578cff5951b3106": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Explicit question: owned_record; entry_order; first; owned_record; none.",
+          "Explicit question: owned_record; entry_order; next; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-cda17bb25ad815886cab917c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; observation_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-d0678dca8decc309845fa14b": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-d3662213a33a75489b3ef507": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; observation_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-d7fcd184e937f08ff1ed2a33": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-dbbd0f44017c9c322ef2503e": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-de0004d06229eeb9ec9c50cf": {
+    "items": [],
+    "status": "refused"
+  },
+  "producer-dea3cd39224752c92df30250": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "producer-e0928f79ab4a1931030ce499": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-e2cedee18c117a7191b5a691": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-e33f7a8616f9d055fc1472cc": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "producer-e3e848499df4bc792268d7d5": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; observation_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-e707a2aca5bc36e46679b35e": {
+    "items": [],
+    "status": "refused"
+  },
+  "producer-e7ffd25a8ea605a20320bda7": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: amendment; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: amendment; ratification_status; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-e96a96396932436c09108230": {
+    "items": [],
+    "status": "refused"
+  },
+  "producer-f1e0bd32fdb1af27448de5a9": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-f2fae7de51a7c01f1dd0508c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Missing information: owned_record; recorder; none; owned_record; none.",
+          "Missing information: owned_record; recording_date; none; owned_record; none."
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-f30e2ed5ae4e05ff7211bc8d": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Explicit question: owned_record; entry_order; first; owned_record; none.",
+          "Explicit question: owned_record; entry_order; next; owned_record; none.",
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-f4d67be0ec81bb3b823f66fb": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Missing information: owned_record; effective_time; none; owned_record; none."
+        ],
+        "uncertainty": [
+          "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-fde5bb7e456eb8fdc73afa0e": {
+    "items": [],
+    "status": "refused"
+  },
+  "producer-fffd2f422a06f8470f5f260e": {
+    "items": [],
+    "status": "refused"
+  }
+}

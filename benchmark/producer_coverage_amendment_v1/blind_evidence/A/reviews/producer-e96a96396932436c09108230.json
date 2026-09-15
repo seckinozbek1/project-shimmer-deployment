@@ -1,0 +1,16 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-e96a96396932436c09108230",
+  "input_sha256": "50cf238915bb0d1f567537b1f3cbb88977da22bc94e575f20735b839932a02c3",
+  "slot": "A",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:26.893434+00:00",
+  "label": {
+    "status": "refused",
+    "items": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Unusable owned fragment explicitly prevents semantic review."
+}

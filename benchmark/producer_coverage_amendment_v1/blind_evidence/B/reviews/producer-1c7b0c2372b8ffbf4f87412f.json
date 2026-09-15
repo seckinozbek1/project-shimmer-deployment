@@ -1,0 +1,47 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-1c7b0c2372b8ffbf4f87412f",
+  "input_sha256": "66c72eed2666403711a0df3527d84def2ded7a86859c2a9227139dd2caba1a18",
+  "slot": "B",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:36.182979+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_date",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "origin": "source_explicit",
+            "support": "The date is absent. When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Retained all owned assertion IDs and references. Annotated explicit absent information, surface questions, and qualified uncertainty with their stated referents; excluded context-only material. Conflicting assertions are retained without inferring additional uncertainty."
+}

@@ -1,0 +1,106 @@
+{
+  "producer-005f2f46d93e0911ee733187": {
+    "valid": false,
+    "error": "No explicit gap/question support"
+  },
+  "producer-0410db59da5bfbb5a932a6dc": {
+    "valid": true,
+    "error": null
+  },
+  "producer-13a7e6cd6aa7fb33c332e588": {
+    "valid": false,
+    "error": "No explicit gap/question support"
+  },
+  "producer-2f1e4d83f4247f4096625c77": {
+    "valid": true,
+    "error": null
+  },
+  "producer-30bf1146cec8cf9917576b6c": {
+    "valid": true,
+    "error": null
+  },
+  "producer-32b0476f0b32001fd73eec0c": {
+    "valid": true,
+    "error": null
+  },
+  "producer-36389afa4fa0f9f1b6f43576": {
+    "valid": true,
+    "error": null
+  },
+  "producer-52ee7ec4bf4645fbb156b85b": {
+    "valid": true,
+    "error": null
+  },
+  "producer-5d021839b35a787e8b17021c": {
+    "valid": true,
+    "error": null
+  },
+  "producer-60a7789aea5e119cdb51c3dd": {
+    "valid": true,
+    "error": null
+  },
+  "producer-6f58b117aaa7a56fc87d031f": {
+    "valid": true,
+    "error": null
+  },
+  "producer-757110918920b42131d69cad": {
+    "valid": false,
+    "error": "No explicit gap/question support"
+  },
+  "producer-78355f4bb3301b0744fa7702": {
+    "valid": false,
+    "error": "No explicit gap/question support"
+  },
+  "producer-9140af935f36703b7e071634": {
+    "valid": true,
+    "error": null
+  },
+  "producer-9b241eb4f89e75dc6b96be59": {
+    "valid": true,
+    "error": null
+  },
+  "producer-a27c1c7e73badc5230c9a62b": {
+    "valid": true,
+    "error": null
+  },
+  "producer-a3e2724a61ef8a665d03cb31": {
+    "valid": true,
+    "error": null
+  },
+  "producer-af580f78792f284c5355a202": {
+    "valid": false,
+    "error": "No explicit gap/question support"
+  },
+  "producer-b0404b38a1a5f408142f11a0": {
+    "valid": true,
+    "error": null
+  },
+  "producer-b0e4c1ea3c2e79bc0e53f909": {
+    "valid": true,
+    "error": null
+  },
+  "producer-b16011b96fe6f78de462f95a": {
+    "valid": true,
+    "error": null
+  },
+  "producer-c8192fc8742410f09d2fa879": {
+    "valid": false,
+    "error": "No explicit gap/question support"
+  },
+  "producer-d3662213a33a75489b3ef507": {
+    "valid": true,
+    "error": null
+  },
+  "producer-e0928f79ab4a1931030ce499": {
+    "valid": true,
+    "error": null
+  },
+  "producer-f30e2ed5ae4e05ff7211bc8d": {
+    "valid": true,
+    "error": null
+  },
+  "producer-f4d67be0ec81bb3b823f66fb": {
+    "valid": true,
+    "error": null
+  }
+}

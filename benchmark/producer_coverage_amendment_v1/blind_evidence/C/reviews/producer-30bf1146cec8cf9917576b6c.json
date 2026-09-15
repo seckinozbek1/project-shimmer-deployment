@@ -1,0 +1,64 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-30bf1146cec8cf9917576b6c",
+  "input_sha256": "93fa2de911f12a63e1e83b8b7d06479e736bb5d0aad25a4757496b90878a9667",
+  "slot": "C",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:56.057163+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "effective_time",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "support": "The effective time is missing. When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "owned_record",
+            "attribute": "interpretation",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "support": "The interpretation remains uncertain."
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Independently reviewed the owned span and context boundary; retained all owned claim and reference IDs. Typed atoms preserve explicit missing information, questions, and epistemic qualifiers."
+}

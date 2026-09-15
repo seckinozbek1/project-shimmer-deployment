@@ -1,0 +1,24 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-bff534189fc4f5fde3847e98",
+  "input_sha256": "781c7e792bee30520ace1e830dc825cfa7013ca774c87b94838d154fd567df1d",
+  "slot": "A",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:26.889434+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "refs": [],
+        "gap_atoms": [],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Owned divider/end-marker content has no semantic assertions, questions or epistemic qualifications."
+}

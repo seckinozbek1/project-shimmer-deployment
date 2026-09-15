@@ -1,0 +1,57 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "outer_fields": [
+    "protocol",
+    "policy",
+    "packet_id",
+    "input_sha256",
+    "slot",
+    "provenance",
+    "reviewed_at",
+    "label",
+    "rationale"
+  ],
+  "label_fields": [
+    "status",
+    "items",
+    "source_uncertainty_present",
+    "review_ambiguity"
+  ],
+  "item_fields": [
+    "span",
+    "claims",
+    "refs",
+    "gap_atoms",
+    "uncertainty_atoms"
+  ],
+  "atom_fields": [
+    "attribute",
+    "category",
+    "kind",
+    "origin",
+    "refs",
+    "relation",
+    "scope",
+    "span",
+    "subject",
+    "support",
+    "unit"
+  ],
+  "attributes": [
+    "effective_time",
+    "entry_content",
+    "entry_order",
+    "identity",
+    "interpretation",
+    "observation_date",
+    "quantity",
+    "ratification_status",
+    "recorder",
+    "recording_date",
+    "reporting_date",
+    "state"
+  ],
+  "no_gold": true,
+  "human_reviewed": false
+}
