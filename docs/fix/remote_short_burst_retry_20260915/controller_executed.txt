@@ -1,0 +1,160 @@
+"""Single authorized retry transport. Repository maintained CLI owns all preparation/inference."""
+import hashlib, json, os, shlex, subprocess, sys, tarfile, time
+from pathlib import Path
+from datetime import datetime, timezone
+BASE=Path(__file__).resolve().parent
+ROOT=BASE.parents[1]
+sys.path.insert(0,str(ROOT/'tools'))
+from cloud_run_watchdog import load_credential
+from prepare_cloud_run import git, credential_locations
+from prepare_source_layer import manifest
+from runtime_contract import remote_resolver_command, load_contract
+KEYFILE=Path('C:/Users/secki/local/api_keys/config.py')
+IDENTITY=ROOT/'output/cloud_access/retry_20260915'
+REMOTE='/home/ubuntu/shimmer_retry_20260915'
+NAME='shimmer-retry-20260915'
+def utc():return datetime.now(timezone.utc).isoformat()
+def write(name,value):
+    path=BASE/name
+    temp=path.with_suffix(path.suffix+'.tmp')
+    temp.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8');temp.replace(path)
+def request(endpoint,body=None):
+    assert endpoint in ('instance-types','images','instances','ssh-keys','file-systems','instance-operations/launch','instance-operations/terminate')
+    key=load_credential(KEYFILE)
+    config='header = "Authorization: Bearer '+key.replace('\\','\\\\').replace('"','\\"')+'"\n'
+    args=['curl.exe','--disable','--silent','--proto','=https','--connect-timeout','10','--max-time','25','--config','-','--write-out','\n%{http_code}']
+    if body is not None:args+=['--header','Content-Type: application/json','--data-binary',json.dumps(body)]
+    p=subprocess.run(args+['https://cloud.lambda.ai/api/v1/'+endpoint],input=config,capture_output=True,text=True,timeout=30)
+    payload,_,status=p.stdout.rpartition('\n')
+    if p.returncode or status not in ('200','201'):raise RuntimeError('provider HTTP '+status)
+    return json.loads(payload)['data']
+def prepare():
+    head=git(ROOT,'rev-parse','HEAD').decode().strip();status=git(ROOT,'status','--short').decode()
+    assert all(line.startswith('?? ') for line in status.splitlines())
+    cfg=json.loads((ROOT/'config/local_models.json').read_text())
+    pins=json.loads((ROOT/'tools/cloud_run/models.json').read_text())
+    m=manifest(ROOT)
+    # Integrity covers bounded configuration as well as executable source.
+    for p in [ROOT/'config'/name for name in ('local_models.json','constitution.json','agent_contracts.json')]:
+        data=p.read_bytes();assert not credential_locations(data,str(p))
+        m['source_files'][p.relative_to(ROOT).as_posix()]={'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
+    for name in m['source_files']:
+        assert not credential_locations((ROOT/name).read_bytes(),name), 'Possible credential; stop'
+    write('source_layer.json',m)
+    with tarfile.open(BASE/'source.tar.gz','w:gz') as tar:
+        for name in m['source_files']:tar.add(ROOT/name,arcname=name,recursive=False)
+        tar.add(BASE/'source_layer.json',arcname='source_layer.json',recursive=False)
+    inventory=request('instance-types');write('inventory_at_preparation.json',dict(utc=utc(),data=inventory))
+    available=[v for v in inventory.values() if v['instance_type']['specs']['gpus']==1 and v['instance_type'].get('architecture')=='x86_64' and v['regions_with_capacity_available']]
+    selected=min(available,key=lambda v:v['instance_type']['price_cents_per_hour'])
+    assert selected['instance_type']['name']=='gpu_1x_a10'
+    rate=selected['instance_type']['price_cents_per_hour']/100
+    assert rate<=1.29 and any(x['name']=='us-east-1' for x in selected['regions_with_capacity_available'])
+    images=json.loads((BASE/'images.json').read_text())['data']
+    image=next(x for x in images if x['region']['name']=='us-east-1' and x['family']=='lambda-stack-24-04' and x['architecture']=='x86_64')
+    public=Path(str(IDENTITY)+'.pub').read_text().strip()
+    keys=request('ssh-keys');matches=[x for x in keys if x.get('public_key','').split()[:2]==public.split()[:2]]
+    if not matches:
+        match=request('ssh-keys',dict(name=NAME,public_key=public));write('ssh_registration.json',dict(name=match['name'],id=match.get('id'),utc=utc()))
+    else:match=matches[0]
+    write('ssh_identity.json',dict(provider_key_name=match['name'],public_sha256=hashlib.sha256(public.encode()).hexdigest()))
+    write('cache_inventory.json',dict(utc=utc(),filesystems=request('file-systems')))
+    write('manifest.json',dict(utc=utc(),source_commit=head,git_status=status,multi_round=False,full_pipeline=False,paid_inference_api=False,
+        soft_usd=1,hard_usd=2,termination_reserve_seconds=180,hourly_rate=rate,instance_type='gpu_1x_a10',region='us-east-1',image=image,
+        hardware_policy='Cheapest available x86_64 single GPU, prefer 24 GiB; explicit Python3.12 image; no second instance',
+        runtime_contract=load_contract(),runtime_profile='experiment',models={role:dict(id=cfg[role],revision=pins[cfg[role]]) for role in ('active_producer','active_auditor')},
+        generation_limits=dict(max_new_tokens=384,max_time_seconds=25,seed=7,do_sample=False),maximum_calls=9,
+        probe_definitions=['hardware readiness','producer cold load','one compact PROCESSOR partition','at most one source-copy reference','one independent auditor fixture','one mandatory producer-auditor pair','two independent calls serial and jointly admitted only if valid','capacity4 not admitted without real capacity2 overlap'],
+        maintained_entrypoint='tools/prepare_remote_experiment.py',source_bytes=(BASE/'source.tar.gz').stat().st_size,
+        source_archive_sha256=hashlib.sha256((BASE/'source.tar.gz').read_bytes()).hexdigest()))
+    print('PREPARED',head,rate,(BASE/'source.tar.gz').stat().st_size,flush=True)
+def watch():
+    info=json.loads((BASE/'launch.json').read_text());m=json.loads((BASE/'manifest.json').read_text());iid=info['response']['instance_ids'][0]
+    deadline=info['epoch']+m['hard_usd']/m['hourly_rate']*3600-m['termination_reserve_seconds']
+    write('WATCHDOG_ARMED.json',dict(instance_id=iid,deadline_epoch=deadline,pid=os.getpid(),utc=utc()))
+    while True:
+        write('cost.json',dict(utc=utc(),estimated_usd=(time.time()-info['epoch'])*m['hourly_rate']/3600))
+        if time.time()>=deadline or (BASE/'TERMINATE_REQUEST').exists():
+            try:
+                rows=[x for x in request('instances') if x['id']==iid]
+                if not rows or rows[0]['status']=='terminated':
+                    end=time.time();write('TERMINATION_VERIFIED.json',dict(instance_id=iid,utc=utc(),epoch=end,provider_status='absent_from_active_instances' if not rows else 'terminated',billable_duration_upper_bound_seconds=end-info['epoch'],estimated_cost_upper_bound_usd=(end-info['epoch'])*m['hourly_rate']/3600));return
+                request('instance-operations/terminate',dict(instance_ids=[iid]))
+                if not (BASE/'termination_requested.json').exists():write('termination_requested.json',dict(utc=utc(),epoch=time.time(),instance_id=iid))
+            except Exception as e:write('watch_error.json',dict(type=type(e).__name__,utc=utc()))
+        time.sleep(5)
+def execute():
+    assert not (BASE/'launch_intent.json').exists(),'One instance only; no launch retry'
+    m=json.loads((BASE/'manifest.json').read_text());key=json.loads((BASE/'ssh_identity.json').read_text())
+    start=time.time();write('launch_intent.json',dict(epoch=start,utc=utc(),name=NAME))
+    data=request('instance-operations/launch',dict(region_name=m['region'],instance_type_name=m['instance_type'],ssh_key_names=[key['provider_key_name']],quantity=1,name=NAME,image=dict(id=m['image']['id'])))
+    write('launch.json',dict(epoch=start,utc=utc(),response=data));iid=data['instance_ids'][0]
+    flags=getattr(subprocess,'DETACHED_PROCESS',0)|getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)|getattr(subprocess,'CREATE_NO_WINDOW',0)
+    subprocess.Popen([sys.executable,str(__file__),'watch'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=flags)
+    ssh=None;options=None;host=None
+    def transport(label,args,timeout=30,required=True):
+        begin=time.time()
+        p=subprocess.run(args,capture_output=True,timeout=timeout)
+        output=p.stdout+p.stderr
+        assert not credential_locations(output,label),'Possible credential in remote output; stop'
+        (BASE/(label+'.log')).write_bytes(output)
+        write(label+'_timing.json',dict(start_epoch=begin,seconds=time.time()-begin,returncode=p.returncode))
+        if required and p.returncode:raise RuntimeError(label+' failed')
+        return p
+    try:
+        for _ in range(20):
+            if (BASE/'WATCHDOG_ARMED.json').exists():break
+            time.sleep(.5)
+        assert (BASE/'WATCHDOG_ARMED.json').exists()
+        while time.time()-start<300:
+            rows=[x for x in request('instances') if x['id']==iid]
+            if rows and rows[0]['status']=='active' and rows[0].get('ip'):break
+            time.sleep(5)
+        else:raise RuntimeError('Provisioning timeout')
+        row=rows[0];write('instance_state.json',dict(utc=utc(),instance=row,provisioning_seconds=time.time()-start))
+        assert row['instance_type']['price_cents_per_hour']/100==m['hourly_rate']
+        host='ubuntu@'+row['ip'];options=['-i',str(IDENTITY),'-o','IdentitiesOnly=yes','-o','BatchMode=yes','-o','StrictHostKeyChecking=accept-new','-o','UserKnownHostsFile='+str(BASE/'known_hosts'),'-o','ConnectTimeout=10','-o','ServerAliveInterval=15','-o','ServerAliveCountMax=3'];ssh=['ssh',*options,host]
+        sshstart=time.time()
+        for _ in range(15):
+            if subprocess.run(ssh+['true'],capture_output=True,timeout=20).returncode==0:break
+            time.sleep(5)
+        else:raise RuntimeError('SSH readiness failed')
+        write('ssh_ready.json',dict(epoch=time.time(),seconds=time.time()-sshstart,from_launch_seconds=time.time()-start))
+        resolved=transport('runtime_resolver',ssh+[remote_resolver_command(profile='experiment')])
+        selected=json.loads(resolved.stdout);write('resolved_interpreter.json',selected)
+        exe=selected['executable'];assert exe.startswith('/')
+        transport('mkdir',ssh+['mkdir '+REMOTE])
+        transport('source_transfer',['scp',*options,str(BASE/'source.tar.gz'),host+':'+REMOTE+'/source.tar.gz'],90)
+        prefix='cd '+REMOTE+' && '
+        transport('source_unpack',ssh+[prefix+'printf "%s  source.tar.gz\n" '+shlex.quote(m['source_archive_sha256'])+' | sha256sum -c - && tar -xzf source.tar.gz'])
+        hardware='nvidia-smi; lscpu; free -b; df -B1 .; '+shlex.quote(exe)+' -I -S -c '+shlex.quote('import sys,json;print(json.dumps({"python":sys.version,"executable":sys.executable}))')
+        transport('hardware',ssh+[prefix+hardware])
+        remaining=int(start+m['hard_usd']/m['hourly_rate']*3600-300-time.time())
+        duration=min(1800,remaining);assert duration>0
+        command=prefix+'SHIMMER_EXPERIMENT_SOURCE_COMMIT='+m['source_commit']+' HF_HUB_DISABLE_TELEMETRY=1 timeout --signal=TERM --kill-after=15 '+str(duration)+' '+shlex.quote(exe)+' -B -u tools/prepare_remote_experiment.py --root '+REMOTE+' --manifest source_layer.json --output '+REMOTE+'/evidence --interpreter '+shlex.quote(exe)+' --execute --install-missing'
+        transport('maintained_preparation_probe',ssh+[command],duration+30)
+    except Exception as e:
+        write('controller_failure.json',dict(type=type(e).__name__,reason=str(e),utc=utc()));print('STOPPED',type(e).__name__,str(e),flush=True)
+    finally:
+        if ssh:
+            try:
+                transport('remote_process_state',ssh+['pgrep -af "[p]repare_remote_experiment.py|[r]emote_short_burst_probe.py|[r]emote_experiment_models.py" || true'],required=False)
+                # Kill only this experiment's named script processes, then recheck.
+                transport('stop_workloads',ssh+['pkill -TERM -f "[t]ools/prepare_remote_experiment.py|[t]ools/remote_short_burst_probe.py|[t]ools/remote_experiment_models.py" || true'],required=False)
+                transport('remote_process_final',ssh+['pgrep -af "[t]ools/prepare_remote_experiment.py|[t]ools/remote_short_burst_probe.py|[t]ools/remote_experiment_models.py" || true'],required=False)
+                packed=transport('pack_evidence',ssh+['cd '+REMOTE+' && tar -czf evidence.tar.gz evidence'],required=False)
+                if packed.returncode==0:
+                    transport('collect',['scp',*options,host+':'+REMOTE+'/evidence.tar.gz',str(BASE/'evidence.tar.gz')],90)
+                    with tarfile.open(BASE/'evidence.tar.gz') as archive:
+                        for member in archive.getmembers():
+                            assert member.isfile() or member.isdir()
+                            target=(BASE/member.name).resolve();assert target.is_relative_to(BASE)
+                        archive.extractall(BASE,filter='data')
+                    write('collection_integrity.json',dict(bytes=(BASE/'evidence.tar.gz').stat().st_size,sha256=hashlib.sha256((BASE/'evidence.tar.gz').read_bytes()).hexdigest(),tar_valid=True,local_extraction_verified=True))
+            except Exception as e:write('collection_failure.json',dict(type=type(e).__name__,utc=utc()))
+        (BASE/'TERMINATE_REQUEST').touch()
+        for _ in range(48):
+            if (BASE/'TERMINATION_VERIFIED.json').exists():print((BASE/'TERMINATION_VERIFIED.json').read_text(),flush=True);return
+            time.sleep(5)
+        print('Independent termination watchdog continues; verification pending',flush=True)
+if __name__=='__main__':globals()[sys.argv[1]]()
