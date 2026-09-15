@@ -1,0 +1,9 @@
+{
+  "status": "FIRST_TUNING_EXPERIMENT_REVIEW_PENDING",
+  "revision": "first-tuning-review-cohort-v2",
+  "first_reviews": 0,
+  "second_reviews": 0,
+  "eligible_training": 0,
+  "final_model_acceptance_ready": false,
+  "training_authorized": false
+}

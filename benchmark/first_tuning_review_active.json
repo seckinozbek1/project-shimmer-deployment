@@ -1,0 +1,7 @@
+{
+  "revision": "first-tuning-review-cohort-v2",
+  "directory": "benchmark/first_tuning_review_cohort_v2",
+  "freeze_sha256": "e817c04931b3b93367249904241b429bc733c60aeb22ec7433d5f9b5a0d23a70",
+  "supersession": "SUPERSEDED_BEFORE_HUMAN_REVIEW",
+  "previous_revision": "first-tuning-experiment-v1"
+}

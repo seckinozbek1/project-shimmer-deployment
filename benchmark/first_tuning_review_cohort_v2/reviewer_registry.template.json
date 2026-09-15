@@ -1,0 +1,4 @@
+{
+  "reviewers": {},
+  "instruction": "Operator supplies verified independent human IDs with human=true, operator_verified=true, independent_of_authorship=true, is_operator=false. No pre-approved identities."
+}

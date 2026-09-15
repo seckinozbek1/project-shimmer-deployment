@@ -1,0 +1,50 @@
+{
+  "revision": "first-tuning-review-cohort-v2",
+  "seed": "shimmer-review-rebalance-20260915-v2",
+  "algorithm": "Hard role caps; semantic coverage deficits, family diversity, then risk.\n\n    TRAIN/DEV producers are substantive only. Auditor refusal coverage is\n    reserved before diversity filling. Second review reserves four refusals per\n    role, twelve gaps and twelve uncertainty cases before maximizing families,\n    templates/domains/relations and source difficulty. Stable SHA-256 breaks ties.\n    ",
+  "approved_allocation": {
+    "train": 78,
+    "dev": 40,
+    "held_out": 72,
+    "additional_evaluation": 2
+  },
+  "missing_without_additional_evaluation": [
+    "attributed_dialogue",
+    "scope_notice"
+  ],
+  "max_families_under_allocation": 54,
+  "selected_families": 54,
+  "family_upper_bound_proof": "20 TRAIN + 20 DEV + 12 mandatory held-out families + at most one family per extra evaluation row = 54.",
+  "dropped_families": [
+    "sealed_adversarial-catalogue",
+    "sealed_adversarial-clinical",
+    "sealed_adversarial-contracts",
+    "sealed_adversarial-device",
+    "sealed_adversarial-negotiation",
+    "sealed_adversarial-procurement",
+    "sealed_adversarial-regulation",
+    "test-catalogue",
+    "test-clinical",
+    "test-contracts",
+    "test-device",
+    "test-negotiation",
+    "test-procurement",
+    "test-regulation",
+    "v2-compact_table-device",
+    "v2-compact_table-negotiation",
+    "v2-machine_records-contracts",
+    "v2-machine_records-nonsense",
+    "v2-mixed_prose_table-device",
+    "v2-mixed_prose_table-negotiation",
+    "v2-multirow_table-device",
+    "v2-multirow_table-negotiation",
+    "v2-nested_provisions-contracts",
+    "v2-nested_provisions-nonsense",
+    "v2-transaction_register-contracts",
+    "v2-transaction_register-nonsense"
+  ],
+  "dropped_reason": "Non-held-out TEST/public-adversarial families outside the two authorized additional evaluation slots.",
+  "producer_policy": "All 48 TRAIN/DEV producers are substantive extraction; mandatory held-out empty/refusal rows retained.",
+  "double_policy": "At least four refusal cases per role, twelve gaps and twelve uncertainty cases, then maximum family diversity and difficult source proxies.",
+  "acceptance_sha256": "8b70b096b128183707b2cc77c7577efebc8a5232336316a498f133306e3495da"
+}
