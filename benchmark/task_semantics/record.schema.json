@@ -1,0 +1,318 @@
+{
+  "type": "object",
+  "properties": {
+    "example_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1
+    },
+    "document_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1
+    },
+    "style": {
+      "type": "string",
+      "minLength": 1
+    },
+    "document_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "template_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "derivation_group": {
+      "type": "string",
+      "minLength": 1
+    },
+    "paraphrase_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "renamed_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "near_duplicate_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "split_plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "enum": [
+        "producer",
+        "auditor"
+      ]
+    },
+    "abstract_relation": {
+      "enum": [
+        "EXTRACTED",
+        "EMPTY",
+        "MATCH",
+        "DIVERGENCE",
+        "OMISSION",
+        "ADDITION",
+        "INSUFFICIENT_EVIDENCE"
+      ]
+    },
+    "split": {
+      "enum": [
+        "train",
+        "dev",
+        "test",
+        "sealed_adversarial",
+        "regression"
+      ]
+    },
+    "parent_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ledger_max_chars": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_text": {
+      "type": "string"
+    },
+    "extraction_text": {
+      "type": "string"
+    },
+    "gold_target": {
+      "type": "object"
+    },
+    "expected_refusal": {
+      "type": "boolean"
+    },
+    "expected_uncertainty": {
+      "type": "boolean"
+    },
+    "owned_aliases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "context_only_aliases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "supplied_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "required_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "routed_rules": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "distractor_rules": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "hard_negative_tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "versions": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "semantic-task-v1"
+        },
+        "task": {
+          "const": "semantic-task-v1"
+        },
+        "adapter": {
+          "const": "semantic-task-v1"
+        },
+        "validator": {
+          "const": "semantic-task-v1"
+        }
+      },
+      "required": [
+        "schema",
+        "task",
+        "adapter",
+        "validator"
+      ],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rights": {
+          "type": "string",
+          "minLength": 1
+        },
+        "privacy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "public_regression": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "rights",
+        "privacy",
+        "public_regression"
+      ],
+      "additionalProperties": false
+    },
+    "adjudication": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "enum": [
+            "authored_single",
+            "independently_reviewed",
+            "adjudicated"
+          ]
+        },
+        "first_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "first_judgment": {
+          "type": "object"
+        },
+        "second_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "second_judgment": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "agreement": {
+          "enum": [
+            "not_reviewed",
+            "agree",
+            "disagree"
+          ]
+        },
+        "final_target": {
+          "type": "object"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ambiguity": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "state",
+        "first_id",
+        "first_judgment",
+        "second_id",
+        "second_judgment",
+        "agreement",
+        "final_target",
+        "rationale",
+        "ambiguity"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "example_id",
+    "task_type",
+    "domain",
+    "document_type",
+    "language",
+    "style",
+    "document_family",
+    "template_family",
+    "derivation_group",
+    "paraphrase_family",
+    "renamed_family",
+    "near_duplicate_family",
+    "split_plan_id",
+    "notes",
+    "role",
+    "abstract_relation",
+    "split",
+    "parent_id",
+    "ledger_max_chars",
+    "source_text",
+    "extraction_text",
+    "gold_target",
+    "expected_refusal",
+    "expected_uncertainty",
+    "owned_aliases",
+    "context_only_aliases",
+    "supplied_refs",
+    "required_refs",
+    "routed_rules",
+    "distractor_rules",
+    "hard_negative_tags",
+    "versions",
+    "provenance",
+    "adjudication"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shimmer:semantic-task-v1:record"
+}

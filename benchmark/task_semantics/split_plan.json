@@ -1,0 +1,167 @@
+{
+  "id": "split-plan-v1-before-variants",
+  "allocation": [
+    {
+      "family": "train-negotiation",
+      "split": "train",
+      "template": "paired_register"
+    },
+    {
+      "family": "train-contracts",
+      "split": "train",
+      "template": "paired_register"
+    },
+    {
+      "family": "train-regulation",
+      "split": "train",
+      "template": "paired_register"
+    },
+    {
+      "family": "train-clinical",
+      "split": "train",
+      "template": "paired_register"
+    },
+    {
+      "family": "train-device",
+      "split": "train",
+      "template": "paired_register"
+    },
+    {
+      "family": "train-procurement",
+      "split": "train",
+      "template": "paired_register"
+    },
+    {
+      "family": "train-catalogue",
+      "split": "train",
+      "template": "paired_register"
+    },
+    {
+      "family": "train-nonsense",
+      "split": "train",
+      "template": "paired_register"
+    },
+    {
+      "family": "dev-negotiation",
+      "split": "dev",
+      "template": "revision_log"
+    },
+    {
+      "family": "dev-contracts",
+      "split": "dev",
+      "template": "revision_log"
+    },
+    {
+      "family": "dev-regulation",
+      "split": "dev",
+      "template": "revision_log"
+    },
+    {
+      "family": "dev-clinical",
+      "split": "dev",
+      "template": "revision_log"
+    },
+    {
+      "family": "dev-device",
+      "split": "dev",
+      "template": "revision_log"
+    },
+    {
+      "family": "dev-procurement",
+      "split": "dev",
+      "template": "revision_log"
+    },
+    {
+      "family": "dev-catalogue",
+      "split": "dev",
+      "template": "revision_log"
+    },
+    {
+      "family": "dev-nonsense",
+      "split": "dev",
+      "template": "revision_log"
+    },
+    {
+      "family": "test-negotiation",
+      "split": "test",
+      "template": "attributed_dialogue"
+    },
+    {
+      "family": "test-contracts",
+      "split": "test",
+      "template": "attributed_dialogue"
+    },
+    {
+      "family": "test-regulation",
+      "split": "test",
+      "template": "attributed_dialogue"
+    },
+    {
+      "family": "test-clinical",
+      "split": "test",
+      "template": "attributed_dialogue"
+    },
+    {
+      "family": "test-device",
+      "split": "test",
+      "template": "attributed_dialogue"
+    },
+    {
+      "family": "test-procurement",
+      "split": "test",
+      "template": "attributed_dialogue"
+    },
+    {
+      "family": "test-catalogue",
+      "split": "test",
+      "template": "attributed_dialogue"
+    },
+    {
+      "family": "test-nonsense",
+      "split": "test",
+      "template": "attributed_dialogue"
+    },
+    {
+      "family": "sealed_adversarial-negotiation",
+      "split": "sealed_adversarial",
+      "template": "scope_notice"
+    },
+    {
+      "family": "sealed_adversarial-contracts",
+      "split": "sealed_adversarial",
+      "template": "scope_notice"
+    },
+    {
+      "family": "sealed_adversarial-regulation",
+      "split": "sealed_adversarial",
+      "template": "scope_notice"
+    },
+    {
+      "family": "sealed_adversarial-clinical",
+      "split": "sealed_adversarial",
+      "template": "scope_notice"
+    },
+    {
+      "family": "sealed_adversarial-device",
+      "split": "sealed_adversarial",
+      "template": "scope_notice"
+    },
+    {
+      "family": "sealed_adversarial-procurement",
+      "split": "sealed_adversarial",
+      "template": "scope_notice"
+    },
+    {
+      "family": "sealed_adversarial-catalogue",
+      "split": "sealed_adversarial",
+      "template": "scope_notice"
+    },
+    {
+      "family": "sealed_adversarial-nonsense",
+      "split": "sealed_adversarial",
+      "template": "scope_notice"
+    }
+  ],
+  "seed_adversarial_is_public": true,
+  "final_blind_replacement_required": true
+}

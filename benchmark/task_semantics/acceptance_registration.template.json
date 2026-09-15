@@ -1,0 +1,14 @@
+{
+  "state": "unregistered",
+  "registered_before_run": false,
+  "rationale": null,
+  "dataset_sha256": null,
+  "minimum_families": null,
+  "minimum_contract_rate": null,
+  "goals": [
+    "near-perfect task semantics",
+    "zero truncation",
+    "evidence/governance integrity"
+  ],
+  "note": "Independent adjudication, final blind dataset, uncertainty bounds and prospective criteria required; seed scores cannot accept a model."
+}
