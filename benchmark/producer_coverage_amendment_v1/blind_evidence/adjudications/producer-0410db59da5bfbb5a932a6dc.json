@@ -1,0 +1,66 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-0410db59da5bfbb5a932a6dc",
+  "input_sha256": "43f6ddd8db95f3799ac5ac18983f770eb09be3e3adf1bbd04d0dc856008d5102",
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "reviewed_at": "2026-09-15T18:17:43.522028+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "amendment",
+            "attribute": "effective_time",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "origin": "source_explicit",
+            "support": "No effective period is specified. When does the amendment take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "amendment",
+            "attribute": "ratification_status",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "origin": "source_explicit",
+            "support": "It is unclear whether the amendment was ratified."
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Council of Talks retains Orin and Vela assertions. The absent effective period and unanswered effect question concern amendment effective_time; unclear ratification is amendment ratification_status uncertainty. All owned references are retained on the item and every atom; context-only references and claims are excluded. Source uncertainty does not create review ambiguity.",
+  "decision": "candidate_A",
+  "disagreement_causes": []
+}

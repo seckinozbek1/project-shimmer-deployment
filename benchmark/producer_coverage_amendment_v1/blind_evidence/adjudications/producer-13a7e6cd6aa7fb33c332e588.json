@@ -1,0 +1,79 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-13a7e6cd6aa7fb33c332e588",
+  "input_sha256": "418f96bd378c8002a513ec582b17481717fb614120d0dce93c8768b72cbd7224",
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "reviewed_at": "2026-09-15T18:17:43.522028+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "refs": [
+          "REF-1001"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "entry:2",
+            "attribute": "entry_content",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "support": "No second claim was submitted."
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_date",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "support": "The date is absent. When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "owned_record",
+            "attribute": "interpretation",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "support": "The interpretation remains uncertain."
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Delegation 45 has only CLM-A. No second claim was submitted explicitly says entry:2 content is not supplied, satisfying the frozen absence rule without annotation ambiguity. The recording date is expressly absent and the general interpretation uncertain. There are no sequence questions in this bullet layout. All owned references are retained on the item and every atom; context-only references and claims are excluded. Source uncertainty does not create review ambiguity.",
+  "decision": "candidate_B",
+  "disagreement_causes": [
+    "explicit_absence_review_ambiguity"
+  ]
+}

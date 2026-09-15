@@ -1,0 +1,66 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-9140af935f36703b7e071634",
+  "input_sha256": "e4e25a5b5476d3fe56e35fd19348297809bc7ef5fcab5b5462a78d7ec5626c40",
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "reviewed_at": "2026-09-15T18:17:43.526027+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "effective_time",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "support": "The effective time is missing. When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "owned_record",
+            "attribute": "interpretation",
+            "relation": null,
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "support": "The interpretation remains uncertain."
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Sensor bank 52 retains both conflicting pulse assignments. Only the explicitly missing effective time and expressly uncertain interpretation require atoms; no pulse-quantity uncertainty follows from contradiction. All owned references are retained on the item and every atom; context-only references and claims are excluded. Source uncertainty does not create review ambiguity.",
+  "decision": "candidate_A",
+  "disagreement_causes": []
+}

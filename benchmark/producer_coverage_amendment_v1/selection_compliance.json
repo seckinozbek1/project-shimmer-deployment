@@ -1,0 +1,59 @@
+{
+  "status": "FAIL",
+  "reason": "Reserve selector fell back to easy empty/refusal TRAIN rows despite operator prohibition; immutable attempted selection retained, these rows excluded from eligibility.",
+  "counts": [
+    {
+      "split": "dev",
+      "substantive": false,
+      "count": 40
+    },
+    {
+      "split": "dev",
+      "substantive": true,
+      "count": 32
+    },
+    {
+      "split": "train",
+      "substantive": false,
+      "count": 40
+    },
+    {
+      "split": "train",
+      "substantive": true,
+      "count": 32
+    }
+  ],
+  "substantive_unused_train": 0,
+  "substantive_unused_dev": 16,
+  "disallowed_reserve_ids": [
+    "train-catalogue-producer-empty",
+    "train-clinical-producer-empty",
+    "train-contracts-producer-insufficient_evidence",
+    "train-device-producer-empty",
+    "train-device-producer-insufficient_evidence",
+    "train-negotiation-producer-insufficient_evidence",
+    "train-nonsense-producer-empty",
+    "train-procurement-producer-insufficient_evidence",
+    "train-regulation-producer-insufficient_evidence",
+    "v2-bullet_list-contracts-empty",
+    "v2-bullet_list-procurement-refusal",
+    "v2-form_fields-negotiation-refusal",
+    "v2-form_fields-procurement-empty",
+    "v2-paragraph-contracts-refusal",
+    "v2-paragraph-negotiation-empty",
+    "v2-paragraph-procurement-refusal"
+  ],
+  "disallowed_reserve_count": 16,
+  "requested_compliant_population": {
+    "train": 32,
+    "dev": 32,
+    "total": 64
+  },
+  "actual_review_population": {
+    "train": 48,
+    "dev": 32,
+    "total": 80
+  },
+  "selection_governance_pass": false,
+  "policy_retrofit": false
+}

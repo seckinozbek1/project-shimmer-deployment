@@ -1,0 +1,16 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-77f4b4477af1f2dfe0e18b9a",
+  "input_sha256": "4aec83afe7210b240b3ec8553c9656a6b9a8bf0f896eacf7eded7eeb7ca88bac",
+  "slot": "B",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:14:36.186977+00:00",
+  "label": {
+    "status": "refused",
+    "items": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Owned source is explicitly unreadable and cannot support semantic extraction."
+}
