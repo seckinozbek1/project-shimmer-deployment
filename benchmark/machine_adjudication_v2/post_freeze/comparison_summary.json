@@ -1,0 +1,23 @@
+{
+  "producer": {
+    "total": 96,
+    "refusal_agreement": 96,
+    "claim_agreement": 96,
+    "typed_gap_agreement": 92,
+    "typed_uncertainty_agreement": 48,
+    "evidence_agreement": 96,
+    "wording_only_difference": 0,
+    "projection_unresolved": 16,
+    "structured_semantic_agreement": 48
+  },
+  "auditor": {
+    "total": 96,
+    "refusal_agreement": 96,
+    "relation_agreement": 96,
+    "evidence_agreement": 96,
+    "confidence_agreement": 96,
+    "structured_semantic_agreement": 96
+  },
+  "semantic_disputes": 48,
+  "note": "V2 methodology changes representation, not model capability. Wording-only differences are not semantic errors; unsupported legacy projections remain disputes."
+}

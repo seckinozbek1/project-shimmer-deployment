@@ -1,0 +1,532 @@
+{
+  "n": 192,
+  "unanimous": 154,
+  "majority": 29,
+  "no_majority": 9,
+  "unanimous_rate": 0.8020833333333334,
+  "majority_rate": 0.15104166666666666,
+  "no_majority_rate": 0.046875,
+  "review_ambiguity": 0,
+  "source_uncertainty": 126,
+  "breakdowns": {
+    "domain": {
+      "astronomy": {
+        "n": 36,
+        "unanimous": 32,
+        "majority": 4,
+        "no_majority": 0,
+        "unanimous_rate": 0.8888888888888888,
+        "majority_rate": 0.1111111111111111,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 24
+      },
+      "catalogue": {
+        "n": 12,
+        "unanimous": 8,
+        "majority": 4,
+        "no_majority": 0,
+        "unanimous_rate": 0.6666666666666666,
+        "majority_rate": 0.3333333333333333,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 12
+      },
+      "clinical": {
+        "n": 12,
+        "unanimous": 8,
+        "majority": 2,
+        "no_majority": 2,
+        "unanimous_rate": 0.6666666666666666,
+        "majority_rate": 0.16666666666666666,
+        "no_majority_rate": 0.16666666666666666,
+        "review_ambiguity": 0,
+        "source_uncertainty": 12
+      },
+      "contracts": {
+        "n": 18,
+        "unanimous": 15,
+        "majority": 2,
+        "no_majority": 1,
+        "unanimous_rate": 0.8333333333333334,
+        "majority_rate": 0.1111111111111111,
+        "no_majority_rate": 0.05555555555555555,
+        "review_ambiguity": 0,
+        "source_uncertainty": 9
+      },
+      "device": {
+        "n": 18,
+        "unanimous": 14,
+        "majority": 3,
+        "no_majority": 1,
+        "unanimous_rate": 0.7777777777777778,
+        "majority_rate": 0.16666666666666666,
+        "no_majority_rate": 0.05555555555555555,
+        "review_ambiguity": 0,
+        "source_uncertainty": 9
+      },
+      "ecology": {
+        "n": 36,
+        "unanimous": 32,
+        "majority": 2,
+        "no_majority": 2,
+        "unanimous_rate": 0.8888888888888888,
+        "majority_rate": 0.05555555555555555,
+        "no_majority_rate": 0.05555555555555555,
+        "review_ambiguity": 0,
+        "source_uncertainty": 6
+      },
+      "negotiation": {
+        "n": 17,
+        "unanimous": 13,
+        "majority": 4,
+        "no_majority": 0,
+        "unanimous_rate": 0.7647058823529411,
+        "majority_rate": 0.23529411764705882,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 17
+      },
+      "nonsense": {
+        "n": 14,
+        "unanimous": 10,
+        "majority": 3,
+        "no_majority": 1,
+        "unanimous_rate": 0.7142857142857143,
+        "majority_rate": 0.21428571428571427,
+        "no_majority_rate": 0.07142857142857142,
+        "review_ambiguity": 0,
+        "source_uncertainty": 11
+      },
+      "procurement": {
+        "n": 17,
+        "unanimous": 13,
+        "majority": 3,
+        "no_majority": 1,
+        "unanimous_rate": 0.7647058823529411,
+        "majority_rate": 0.17647058823529413,
+        "no_majority_rate": 0.058823529411764705,
+        "review_ambiguity": 0,
+        "source_uncertainty": 17
+      },
+      "regulation": {
+        "n": 12,
+        "unanimous": 9,
+        "majority": 2,
+        "no_majority": 1,
+        "unanimous_rate": 0.75,
+        "majority_rate": 0.16666666666666666,
+        "no_majority_rate": 0.08333333333333333,
+        "review_ambiguity": 0,
+        "source_uncertainty": 9
+      }
+    },
+    "gap": {
+      "False": {
+        "n": 120,
+        "unanimous": 82,
+        "majority": 29,
+        "no_majority": 9,
+        "unanimous_rate": 0.6833333333333333,
+        "majority_rate": 0.24166666666666667,
+        "no_majority_rate": 0.075,
+        "review_ambiguity": 0,
+        "source_uncertainty": 66
+      },
+      "True": {
+        "n": 72,
+        "unanimous": 72,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 60
+      }
+    },
+    "held_out": {
+      "False": {
+        "n": 120,
+        "unanimous": 90,
+        "majority": 23,
+        "no_majority": 7,
+        "unanimous_rate": 0.75,
+        "majority_rate": 0.19166666666666668,
+        "no_majority_rate": 0.058333333333333334,
+        "review_ambiguity": 0,
+        "source_uncertainty": 96
+      },
+      "True": {
+        "n": 72,
+        "unanimous": 64,
+        "majority": 6,
+        "no_majority": 2,
+        "unanimous_rate": 0.8888888888888888,
+        "majority_rate": 0.08333333333333333,
+        "no_majority_rate": 0.027777777777777776,
+        "review_ambiguity": 0,
+        "source_uncertainty": 30
+      }
+    },
+    "refusal": {
+      "False": {
+        "n": 162,
+        "unanimous": 124,
+        "majority": 29,
+        "no_majority": 9,
+        "unanimous_rate": 0.7654320987654321,
+        "majority_rate": 0.17901234567901234,
+        "no_majority_rate": 0.05555555555555555,
+        "review_ambiguity": 0,
+        "source_uncertainty": 108
+      },
+      "True": {
+        "n": 30,
+        "unanimous": 30,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 18
+      }
+    },
+    "relation": {
+      "ADDITION": {
+        "n": 18,
+        "unanimous": 0,
+        "majority": 18,
+        "no_majority": 0,
+        "unanimous_rate": 0.0,
+        "majority_rate": 1.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 12
+      },
+      "DIVERGENCE": {
+        "n": 18,
+        "unanimous": 0,
+        "majority": 9,
+        "no_majority": 9,
+        "unanimous_rate": 0.0,
+        "majority_rate": 0.5,
+        "no_majority_rate": 0.5,
+        "review_ambiguity": 0,
+        "source_uncertainty": 12
+      },
+      "EMPTY": {
+        "n": 12,
+        "unanimous": 12,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 0
+      },
+      "EXTRACTED": {
+        "n": 72,
+        "unanimous": 72,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 60
+      },
+      "INSUFFICIENT_EVIDENCE": {
+        "n": 30,
+        "unanimous": 30,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 18
+      },
+      "MATCH": {
+        "n": 24,
+        "unanimous": 24,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 12
+      },
+      "OMISSION": {
+        "n": 18,
+        "unanimous": 16,
+        "majority": 2,
+        "no_majority": 0,
+        "unanimous_rate": 0.8888888888888888,
+        "majority_rate": 0.1111111111111111,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 12
+      }
+    },
+    "role": {
+      "auditor": {
+        "n": 96,
+        "unanimous": 58,
+        "majority": 29,
+        "no_majority": 9,
+        "unanimous_rate": 0.6041666666666666,
+        "majority_rate": 0.3020833333333333,
+        "no_majority_rate": 0.09375,
+        "review_ambiguity": 0,
+        "source_uncertainty": 66
+      },
+      "producer": {
+        "n": 96,
+        "unanimous": 96,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 60
+      }
+    },
+    "source_uncertainty": {
+      "False": {
+        "n": 66,
+        "unanimous": 54,
+        "majority": 6,
+        "no_majority": 6,
+        "unanimous_rate": 0.8181818181818182,
+        "majority_rate": 0.09090909090909091,
+        "no_majority_rate": 0.09090909090909091,
+        "review_ambiguity": 0,
+        "source_uncertainty": 0
+      },
+      "True": {
+        "n": 126,
+        "unanimous": 100,
+        "majority": 23,
+        "no_majority": 3,
+        "unanimous_rate": 0.7936507936507936,
+        "majority_rate": 0.18253968253968253,
+        "no_majority_rate": 0.023809523809523808,
+        "review_ambiguity": 0,
+        "source_uncertainty": 126
+      }
+    },
+    "template": {
+      "attributed_dialogue": {
+        "n": 1,
+        "unanimous": 1,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 1
+      },
+      "paired_register": {
+        "n": 32,
+        "unanimous": 21,
+        "majority": 10,
+        "no_majority": 1,
+        "unanimous_rate": 0.65625,
+        "majority_rate": 0.3125,
+        "no_majority_rate": 0.03125,
+        "review_ambiguity": 0,
+        "source_uncertainty": 32
+      },
+      "revision_log": {
+        "n": 16,
+        "unanimous": 13,
+        "majority": 3,
+        "no_majority": 0,
+        "unanimous_rate": 0.8125,
+        "majority_rate": 0.1875,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 16
+      },
+      "scope_notice": {
+        "n": 1,
+        "unanimous": 1,
+        "majority": 0,
+        "no_majority": 0,
+        "unanimous_rate": 1.0,
+        "majority_rate": 0.0,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 1
+      },
+      "v2-bullet_list": {
+        "n": 15,
+        "unanimous": 13,
+        "majority": 1,
+        "no_majority": 1,
+        "unanimous_rate": 0.8666666666666667,
+        "majority_rate": 0.06666666666666667,
+        "no_majority_rate": 0.06666666666666667,
+        "review_ambiguity": 0,
+        "source_uncertainty": 9
+      },
+      "v2-chronological_events": {
+        "n": 8,
+        "unanimous": 5,
+        "majority": 2,
+        "no_majority": 1,
+        "unanimous_rate": 0.625,
+        "majority_rate": 0.25,
+        "no_majority_rate": 0.125,
+        "review_ambiguity": 0,
+        "source_uncertainty": 6
+      },
+      "v2-compact_table": {
+        "n": 12,
+        "unanimous": 11,
+        "majority": 1,
+        "no_majority": 0,
+        "unanimous_rate": 0.9166666666666666,
+        "majority_rate": 0.08333333333333333,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 5
+      },
+      "v2-form_fields": {
+        "n": 16,
+        "unanimous": 13,
+        "majority": 2,
+        "no_majority": 1,
+        "unanimous_rate": 0.8125,
+        "majority_rate": 0.125,
+        "no_majority_rate": 0.0625,
+        "review_ambiguity": 0,
+        "source_uncertainty": 10
+      },
+      "v2-machine_records": {
+        "n": 12,
+        "unanimous": 10,
+        "majority": 1,
+        "no_majority": 1,
+        "unanimous_rate": 0.8333333333333334,
+        "majority_rate": 0.08333333333333333,
+        "no_majority_rate": 0.08333333333333333,
+        "review_ambiguity": 0,
+        "source_uncertainty": 5
+      },
+      "v2-memo_sections": {
+        "n": 8,
+        "unanimous": 5,
+        "majority": 2,
+        "no_majority": 1,
+        "unanimous_rate": 0.625,
+        "majority_rate": 0.25,
+        "no_majority_rate": 0.125,
+        "review_ambiguity": 0,
+        "source_uncertainty": 6
+      },
+      "v2-mixed_prose_table": {
+        "n": 12,
+        "unanimous": 10,
+        "majority": 1,
+        "no_majority": 1,
+        "unanimous_rate": 0.8333333333333334,
+        "majority_rate": 0.08333333333333333,
+        "no_majority_rate": 0.08333333333333333,
+        "review_ambiguity": 0,
+        "source_uncertainty": 5
+      },
+      "v2-multirow_table": {
+        "n": 12,
+        "unanimous": 11,
+        "majority": 1,
+        "no_majority": 0,
+        "unanimous_rate": 0.9166666666666666,
+        "majority_rate": 0.08333333333333333,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 5
+      },
+      "v2-nested_provisions": {
+        "n": 12,
+        "unanimous": 11,
+        "majority": 1,
+        "no_majority": 0,
+        "unanimous_rate": 0.9166666666666666,
+        "majority_rate": 0.08333333333333333,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 5
+      },
+      "v2-paragraph": {
+        "n": 15,
+        "unanimous": 12,
+        "majority": 2,
+        "no_majority": 1,
+        "unanimous_rate": 0.8,
+        "majority_rate": 0.13333333333333333,
+        "no_majority_rate": 0.06666666666666667,
+        "review_ambiguity": 0,
+        "source_uncertainty": 9
+      },
+      "v2-question_answer": {
+        "n": 8,
+        "unanimous": 6,
+        "majority": 1,
+        "no_majority": 1,
+        "unanimous_rate": 0.75,
+        "majority_rate": 0.125,
+        "no_majority_rate": 0.125,
+        "review_ambiguity": 0,
+        "source_uncertainty": 6
+      },
+      "v2-transaction_register": {
+        "n": 12,
+        "unanimous": 11,
+        "majority": 1,
+        "no_majority": 0,
+        "unanimous_rate": 0.9166666666666666,
+        "majority_rate": 0.08333333333333333,
+        "no_majority_rate": 0.0,
+        "review_ambiguity": 0,
+        "source_uncertainty": 5
+      }
+    },
+    "unseen": {
+      "False": {
+        "n": 118,
+        "unanimous": 88,
+        "majority": 23,
+        "no_majority": 7,
+        "unanimous_rate": 0.7457627118644068,
+        "majority_rate": 0.19491525423728814,
+        "no_majority_rate": 0.059322033898305086,
+        "review_ambiguity": 0,
+        "source_uncertainty": 94
+      },
+      "True": {
+        "n": 74,
+        "unanimous": 66,
+        "majority": 6,
+        "no_majority": 2,
+        "unanimous_rate": 0.8918918918918919,
+        "majority_rate": 0.08108108108108109,
+        "no_majority_rate": 0.02702702702702703,
+        "review_ambiguity": 0,
+        "source_uncertainty": 32
+      }
+    }
+  },
+  "producer_typed_gap_unanimous": 96,
+  "producer_typed_uncertainty_unanimous": 96,
+  "auditor_relation_unanimous": 96,
+  "adjudications": 56,
+  "overturns": 0,
+  "majority_adjudicated": 47
+}

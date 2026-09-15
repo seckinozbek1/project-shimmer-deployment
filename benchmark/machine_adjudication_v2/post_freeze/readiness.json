@@ -1,0 +1,68 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "primary_count": 576,
+  "valid_effective_primary": 576,
+  "adjudications": 56,
+  "review_ambiguities": 0,
+  "source_uncertainty": 126,
+  "train_candidates": 58,
+  "dev_candidates": 24,
+  "candidate_roles": {
+    "auditor": 70,
+    "producer": 12
+  },
+  "excluded": 36,
+  "excluded_disputes": 36,
+  "excluded_review_ambiguity": 0,
+  "human_first_reviews": 0,
+  "human_second_reviews": 0,
+  "human_adjudications": 0,
+  "training_authorized": false,
+  "criteria": {
+    "M01": {
+      "measured": 576,
+      "required": 576,
+      "passed": true
+    },
+    "M02": {
+      "measured": 576,
+      "required": 576,
+      "passed": true
+    },
+    "M03": {
+      "measured": 48,
+      "required": 48,
+      "passed": true
+    },
+    "M04": {
+      "measured": 56,
+      "required": 56,
+      "ambiguous_candidates": 0,
+      "passed": true
+    },
+    "M05": {
+      "measured": 72,
+      "required": 72,
+      "evaluation_candidates": 0,
+      "passed": true
+    },
+    "M06": {
+      "measured": 0,
+      "required": 0,
+      "passed": true
+    },
+    "M07": {
+      "measured": true,
+      "required": true,
+      "passed": true
+    }
+  },
+  "meaningful_machine_pool": true,
+  "machine_status": "AGENT_ADJUDICATED_TUNING_EXPERIMENT_READY",
+  "human_status": "FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING",
+  "final_model_acceptance_ready": false,
+  "local_tests": 29,
+  "normalizer_effect_proofs": 7,
+  "model_improvement_claimed": false,
+  "limitation": "Pool has 12 producer TRAIN and zero producer DEV; restricted machine review readiness does not establish balanced producer tuning/evaluation readiness."
+}

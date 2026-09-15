@@ -1,0 +1,20 @@
+{
+  "primary_evidence_unanimous": 192,
+  "evidence_valid_triples": 192,
+  "producer_projection_unresolved": 16,
+  "producer_exact_wording_but_projection_unresolved": 12,
+  "producer_explicit_conflict_atom_disputes": 36,
+  "producer_conflict_only_disputes": 32,
+  "producer_conflict_plus_unprojected_question_disputes": 4,
+  "candidate_source_uncertainty_preserved": 58,
+  "train_roles": {
+    "auditor": 46,
+    "producer": 12
+  },
+  "dev_roles": {
+    "auditor": 24
+  },
+  "normalization_changed_after_gold": false,
+  "normalization_limitation": "Unsupported legacy ratification/second-entry qualifiers and question-answer wording remain quarantined. No post-gold synonym expansion.",
+  "import_failure": "First comparison launch resolved scripts/pipeline.py via inherited sys.path and aborted in OpenMP initialization before comparison checkpoint or target reads. Explicit V2 path fixed; no model generation or pipeline execution occurred; no frozen normalizer changed."
+}

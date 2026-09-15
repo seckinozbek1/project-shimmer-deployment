@@ -1,0 +1,21 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "primary_count": 576,
+  "valid_effective_primary": 576,
+  "adjudications": 56,
+  "review_ambiguities": 0,
+  "source_uncertainty": 126,
+  "train_candidates": 58,
+  "dev_candidates": 24,
+  "candidate_roles": {
+    "auditor": 70,
+    "producer": 12
+  },
+  "excluded": 36,
+  "excluded_disputes": 36,
+  "excluded_review_ambiguity": 0,
+  "human_first_reviews": 0,
+  "human_second_reviews": 0,
+  "human_adjudications": 0,
+  "training_authorized": false
+}
