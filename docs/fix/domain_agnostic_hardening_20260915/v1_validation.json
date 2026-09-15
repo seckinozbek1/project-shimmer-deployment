@@ -1,0 +1,15 @@
+{
+  "tests": 42,
+  "failures": 0,
+  "errors": 0,
+  "authored_outcomes": 448,
+  "negative_rejections": 576,
+  "effect_proofs": [
+    "whole-response parsing",
+    "exact evidence scoring",
+    "cross-split leakage"
+  ],
+  "model_imports_blocked": true,
+  "network_blocked": true,
+  "no_training": true
+}

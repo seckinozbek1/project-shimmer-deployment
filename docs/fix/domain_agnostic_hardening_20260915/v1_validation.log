@@ -1,0 +1,47 @@
+test_acceptance_cannot_promote_public_seed (checks.DatasetTests.test_acceptance_cannot_promote_public_seed) ... ok
+test_acceptance_not_configured (checks.DatasetTests.test_acceptance_not_configured) ... ok
+test_adjudication_workflow (checks.DatasetTests.test_adjudication_workflow) ... ok
+test_all_negative_candidates (checks.DatasetTests.test_all_negative_candidates) ... ok
+test_auditor_both_inputs_empty (checks.DatasetTests.test_auditor_both_inputs_empty) ... ok
+test_balanced_domains_and_roles (checks.DatasetTests.test_balanced_domains_and_roles) ... ok
+test_broken_ancestry (checks.DatasetTests.test_broken_ancestry) ... ok
+test_corpus_and_every_gold (checks.DatasetTests.test_corpus_and_every_gold) ... ok
+test_cross_split_all_family_dimensions (checks.DatasetTests.test_cross_split_all_family_dimensions) ... ok
+test_cross_split_exact_duplicate (checks.DatasetTests.test_cross_split_exact_duplicate) ... ok
+test_cyclic_ancestry (checks.DatasetTests.test_cyclic_ancestry) ... ok
+test_duplicate_id (checks.DatasetTests.test_duplicate_id) ... ok
+test_effect_proofs (checks.DatasetTests.test_effect_proofs) ... ok
+test_error_taxonomy_and_aggregation (checks.DatasetTests.test_error_taxonomy_and_aggregation) ... ok
+test_evidence_precision_recall_no_repair (checks.DatasetTests.test_evidence_precision_recall_no_repair) ... ok
+test_frozen_authorities (checks.DatasetTests.test_frozen_authorities) ... ok
+test_governance (checks.DatasetTests.test_governance) ... ok
+test_hash_bound_reason_adjudication (checks.DatasetTests.test_hash_bound_reason_adjudication) ... ok
+test_invalid_gold (checks.DatasetTests.test_invalid_gold) ... ok
+test_irrelevant_available_evidence (checks.DatasetTests.test_irrelevant_available_evidence) ... ok
+test_malformed_types_fail_closed (checks.DatasetTests.test_malformed_types_fail_closed) ... ok
+test_manifest_and_negative_ancestry_drift (checks.DatasetTests.test_manifest_and_negative_ancestry_drift) ... ok
+test_missing_gold_claim (checks.DatasetTests.test_missing_gold_claim) ... ok
+test_multiple_claims_single_alias (checks.DatasetTests.test_multiple_claims_single_alias) ... ok
+test_no_numeric_equality_fidelity_shortcut (checks.DatasetTests.test_no_numeric_equality_fidelity_shortcut) ... ok
+test_over_under_refusal (checks.DatasetTests.test_over_under_refusal) ... ok
+test_privacy_rights_refusal_uncertainty (checks.DatasetTests.test_privacy_rights_refusal_uncertainty) ... ok
+test_production_rule_attribution_gold_rejected (checks.DatasetTests.test_production_rule_attribution_gold_rejected) ... ok
+test_prompt_inputs_exclude_gold_and_context_ownership (checks.DatasetTests.test_prompt_inputs_exclude_gold_and_context_ownership) ... ok
+test_reason_not_fluency (checks.DatasetTests.test_reason_not_fluency) ... ok
+test_refusal_never_production_acceptance (checks.DatasetTests.test_refusal_never_production_acceptance) ... ok
+test_regression_flag (checks.DatasetTests.test_regression_flag) ... ok
+test_regression_hash (checks.DatasetTests.test_regression_hash) ... ok
+test_saved_output_interface (checks.DatasetTests.test_saved_output_interface) ... ok
+test_schema_missing_fields_and_unknowns (checks.DatasetTests.test_schema_missing_fields_and_unknowns) ... ok
+test_split_plan_precedes_variants (checks.DatasetTests.test_split_plan_precedes_variants) ... ok
+test_status_transitions (checks.DatasetTests.test_status_transitions) ... ok
+test_strict_json_no_fences_trailing_prefix_duplicates (checks.DatasetTests.test_strict_json_no_fences_trailing_prefix_duplicates) ... ok
+test_transport_independent_of_contract (checks.DatasetTests.test_transport_independent_of_contract) ... ok
+test_truncation_overrides_valid_json (checks.DatasetTests.test_truncation_overrides_valid_json) ... ok
+test_tuning_export_excludes_heldout (checks.DatasetTests.test_tuning_export_excludes_heldout) ... ok
+test_valid_json_wrong_semantics (checks.DatasetTests.test_valid_json_wrong_semantics) ... ok
+
+----------------------------------------------------------------------
+Ran 42 tests in 2.432s
+
+OK

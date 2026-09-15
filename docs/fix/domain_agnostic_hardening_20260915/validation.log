@@ -1,0 +1,40 @@
+test_acceptance_registration (hardening_checks.HardeningTests.test_acceptance_registration) ... ok
+test_all_compound_negatives (hardening_checks.HardeningTests.test_all_compound_negatives) ... ok
+test_all_exported_packets_blinded (hardening_checks.HardeningTests.test_all_exported_packets_blinded) ... ok
+test_all_gold (hardening_checks.HardeningTests.test_all_gold) ... ok
+test_baseline_and_freeze (hardening_checks.HardeningTests.test_baseline_and_freeze) ... ok
+test_disagreement_and_resolution (hardening_checks.HardeningTests.test_disagreement_and_resolution) ... ok
+test_domain_holdout (hardening_checks.HardeningTests.test_domain_holdout) ... ok
+test_effect_proofs (hardening_checks.HardeningTests.test_effect_proofs) ... ok
+test_family_statistics (hardening_checks.HardeningTests.test_family_statistics) ... ok
+test_family_weight_not_row_weight (hardening_checks.HardeningTests.test_family_weight_not_row_weight) ... ok
+test_final_result_excludes_answers (hardening_checks.HardeningTests.test_final_result_excludes_answers) ... ok
+test_first_second_review (hardening_checks.HardeningTests.test_first_second_review) ... ok
+test_governance_existing_boundary (hardening_checks.HardeningTests.test_governance_existing_boundary) ... ok
+test_invalid_adjudicated_contract (hardening_checks.HardeningTests.test_invalid_adjudicated_contract) ... ok
+test_no_self_or_machine_review (hardening_checks.HardeningTests.test_no_self_or_machine_review) ... ok
+test_packet_allowlist (hardening_checks.HardeningTests.test_packet_allowlist) ... ok
+test_packet_changes_when_review_input_changes (hardening_checks.HardeningTests.test_packet_changes_when_review_input_changes) ... ok
+test_public_seed_cannot_be_sealed (hardening_checks.HardeningTests.test_public_seed_cannot_be_sealed) ... ok
+test_reason_paraphrase_review (hardening_checks.HardeningTests.test_reason_paraphrase_review) ... ok
+test_review_binding_version_and_date (hardening_checks.HardeningTests.test_review_binding_version_and_date) ... ok
+test_review_journal_append_only (hardening_checks.HardeningTests.test_review_journal_append_only) ... ok
+test_review_pending (hardening_checks.HardeningTests.test_review_pending) ... ok
+test_role_and_target_judgment_consistency (hardening_checks.HardeningTests.test_role_and_target_judgment_consistency) ... ok
+test_seal_synthetic_contribution_interface (hardening_checks.HardeningTests.test_seal_synthetic_contribution_interface) ... ok
+test_sealed_answer_exposure (hardening_checks.HardeningTests.test_sealed_answer_exposure) ... ok
+test_sealed_default_cannot_read (hardening_checks.HardeningTests.test_sealed_default_cannot_read) ... ok
+test_sealed_inside_repo_rejected (hardening_checks.HardeningTests.test_sealed_inside_repo_rejected) ... ok
+test_sealed_missing_permit (hardening_checks.HardeningTests.test_sealed_missing_permit) ... ok
+test_sealed_population_pending (hardening_checks.HardeningTests.test_sealed_population_pending) ... ok
+test_semantic_formatting_separate (hardening_checks.HardeningTests.test_semantic_formatting_separate) ... ok
+test_structural_and_producer_coverage (hardening_checks.HardeningTests.test_structural_and_producer_coverage) ... ok
+test_synthetic_final_mode_and_append_only (hardening_checks.HardeningTests.test_synthetic_final_mode_and_append_only) ... ok
+test_training_hash_tamper (hardening_checks.HardeningTests.test_training_hash_tamper) ... ok
+test_training_view (hardening_checks.HardeningTests.test_training_view) ... ok
+test_unseen_templates (hardening_checks.HardeningTests.test_unseen_templates) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 7.413s
+
+OK

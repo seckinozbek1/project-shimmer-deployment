@@ -1,0 +1,1074 @@
+{
+  "results": [
+    {
+      "example_id": "public-ab-producer",
+      "role": "producer",
+      "family": "train-negotiation",
+      "split": "regression",
+      "state": "malformed",
+      "transport_complete": true,
+      "truncated": false,
+      "contract_valid": false,
+      "production_accepted": false,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "over_refusal": false,
+      "under_refusal": false,
+      "unsupported_forced_answer": false,
+      "insufficient_evidence_recognized": null,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "unrouted_rule_count": 0,
+      "raw_sha256": "c6f0887d401cdae010b8c74a473448fc2abb7bca85f961d24c65daa25883572a",
+      "exact_alias_valid": true,
+      "ownership_valid": false,
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "information_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "examined_empty_correct": true,
+      "copied_source_violation": true,
+      "semantic_completeness": false,
+      "semantic_correct": false,
+      "accepted_outcome": false,
+      "semantic_accepted": false,
+      "error_classes": [
+        "instruction_following_formatting_error",
+        "evidence_selection_error",
+        "model_semantic_capability_error"
+      ],
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "incorrect_confident_judgment": false,
+        "silent_gap_omission": true
+      },
+      "label": "producer_old",
+      "provenance": "historical_generated_model_output",
+      "original_source_commit": "54df6a48e8646cf721d6d2e2f2ecb60125a92bef",
+      "original_usage": {
+        "input_tokens": 610,
+        "output_tokens": 259,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 12.408040009000018,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "8e9e24361119625e6dad41616c38d8371794a1d79dfbd23ed5d49f64856d155e",
+        "cap_hit": false,
+        "terminal_token_id": 151645,
+        "configured_eos_token_ids": [
+          151645,
+          151643
+        ]
+      },
+      "evaluated_contract": "semantic-task-v1 (OLD controls also rejected by their original adapter)",
+      "preserved_original_contract_valid": false,
+      "preserved_raw_diagnostics": {
+        "judgment_correct": false,
+        "reason_correct": null,
+        "evidence_complete": true,
+        "claims_preserved": true,
+        "gap_preserved": false,
+        "rule_hallucination": false,
+        "semantic_accepted": false,
+        "explanation": "Two prose-copy items claim one owned alias; both claim IDs and refs are emitted but the missing reporting-date gap is absent. Existing hydration rejects ownership/draft_text.",
+        "label": "producer_old",
+        "adjudicator": "assistant semantic review, human-readable",
+        "basis": "authorized original and authored extraction; raw output inspected independently of parser",
+        "raw_sha256": "c6f0887d401cdae010b8c74a473448fc2abb7bca85f961d24c65daa25883572a",
+        "contract_valid": false,
+        "observations_from_raw_only": true,
+        "acceptance_path_unchanged": true
+      },
+      "diagnostic_notice": "Original hash-bound single-review observations only; no prefix parsing, repair, or acceptance."
+    },
+    {
+      "example_id": "public-ab-producer",
+      "role": "producer",
+      "family": "train-negotiation",
+      "split": "regression",
+      "state": "malformed",
+      "transport_complete": true,
+      "truncated": false,
+      "contract_valid": false,
+      "production_accepted": false,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "over_refusal": false,
+      "under_refusal": false,
+      "unsupported_forced_answer": false,
+      "insufficient_evidence_recognized": null,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "unrouted_rule_count": 0,
+      "raw_sha256": "7b2bb54ffe56777ae1b0990d8f52813a3793214cc54d8b5956ba140685b2f9d3",
+      "exact_alias_valid": true,
+      "ownership_valid": false,
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "information_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "examined_empty_correct": true,
+      "copied_source_violation": false,
+      "semantic_completeness": false,
+      "semantic_correct": false,
+      "accepted_outcome": false,
+      "semantic_accepted": false,
+      "error_classes": [
+        "instruction_following_formatting_error",
+        "evidence_selection_error",
+        "model_semantic_capability_error"
+      ],
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "incorrect_confident_judgment": false,
+        "silent_gap_omission": true
+      },
+      "label": "producer_new",
+      "provenance": "historical_generated_model_output",
+      "original_source_commit": "54df6a48e8646cf721d6d2e2f2ecb60125a92bef",
+      "original_usage": {
+        "input_tokens": 333,
+        "output_tokens": 84,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 3.970458177000012,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "b0cd3c1f6eb687992910475667fabed4ded130ca8cb06f443521ec52c45658a1",
+        "cap_hit": false,
+        "terminal_token_id": 151645,
+        "configured_eos_token_ids": [
+          151645,
+          151643
+        ]
+      },
+      "evaluated_contract": "semantic-task-v1 (OLD controls also rejected by their original adapter)",
+      "preserved_original_contract_valid": false,
+      "preserved_raw_diagnostics": {
+        "judgment_correct": false,
+        "reason_correct": null,
+        "evidence_complete": true,
+        "claims_preserved": true,
+        "gap_preserved": false,
+        "rule_hallucination": false,
+        "semantic_accepted": false,
+        "explanation": "One correct alias, both claims and both refs are visible in the raw response. It uses markdown fences, omits the explicit missing-date gap, and sets status=empty despite populated claims. Strict JSON rejects the response; even its displayed fields contradict the validated extracted/empty rule. No post-generation repair or acceptance.",
+        "label": "producer_new",
+        "adjudicator": "assistant semantic review, human-readable",
+        "basis": "authorized original and authored extraction; raw output inspected independently of parser",
+        "raw_sha256": "7b2bb54ffe56777ae1b0990d8f52813a3793214cc54d8b5956ba140685b2f9d3",
+        "contract_valid": false,
+        "observations_from_raw_only": true,
+        "acceptance_path_unchanged": true
+      },
+      "diagnostic_notice": "Original hash-bound single-review observations only; no prefix parsing, repair, or acceptance."
+    },
+    {
+      "example_id": "public-ab-auditor",
+      "role": "auditor",
+      "family": "train-negotiation",
+      "split": "regression",
+      "state": "incomplete",
+      "transport_complete": false,
+      "truncated": true,
+      "contract_valid": false,
+      "production_accepted": false,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "over_refusal": false,
+      "under_refusal": false,
+      "unsupported_forced_answer": false,
+      "insufficient_evidence_recognized": null,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "unrouted_rule_count": 1,
+      "raw_sha256": "e7940ea05c52af007c614148595121277ce229ada4c5ef4d906350f29a2bf32f",
+      "expected_relation": "MATCH",
+      "predicted_relation": null,
+      "relation_correct": false,
+      "reason_correct": null,
+      "reason_basis": "unassessed",
+      "uncertainty_preserved": false,
+      "incorrect_confident_judgment": false,
+      "semantic_correct": false,
+      "accepted_outcome": false,
+      "semantic_accepted": false,
+      "error_classes": [
+        "truncation_output_efficiency_error",
+        "instruction_following_formatting_error",
+        "evidence_selection_error",
+        "unsupported_hallucination_attribution_error",
+        "model_semantic_capability_error"
+      ],
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": true,
+        "incorrect_confident_judgment": false,
+        "silent_gap_omission": false
+      },
+      "label": "auditor_old",
+      "provenance": "historical_generated_model_output",
+      "original_source_commit": "54df6a48e8646cf721d6d2e2f2ecb60125a92bef",
+      "original_usage": {
+        "input_tokens": 1875,
+        "output_tokens": 384,
+        "truncated": true,
+        "finish_reason": "length",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 18.16874744200004,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "9a77d7299564580be380f2b823bdde6f2b4413e2e3694bba128eb57dcc0ce57e",
+        "cap_hit": true,
+        "terminal_token_id": 29899,
+        "configured_eos_token_ids": 32000
+      },
+      "evaluated_contract": "semantic-task-v1 (OLD controls also rejected by their original adapter)",
+      "preserved_original_contract_valid": false,
+      "preserved_raw_diagnostics": {
+        "judgment_correct": false,
+        "reason_correct": false,
+        "evidence_complete": false,
+        "rule_hallucination": true,
+        "semantic_accepted": false,
+        "explanation": "Compares planned with reported quantities instead of original with extraction, calls movement irregular, invents CONV-001, includes only REF-0001, and truncates inside the duplicated envelope.",
+        "label": "auditor_old",
+        "adjudicator": "assistant semantic review, human-readable",
+        "basis": "authorized original and authored extraction; raw output inspected independently of parser",
+        "raw_sha256": "e7940ea05c52af007c614148595121277ce229ada4c5ef4d906350f29a2bf32f",
+        "contract_valid": false,
+        "observations_from_raw_only": true,
+        "acceptance_path_unchanged": true
+      },
+      "diagnostic_notice": "Original hash-bound single-review observations only; no prefix parsing, repair, or acceptance."
+    },
+    {
+      "example_id": "public-ab-auditor",
+      "role": "auditor",
+      "family": "train-negotiation",
+      "split": "regression",
+      "state": "malformed",
+      "transport_complete": true,
+      "truncated": false,
+      "contract_valid": false,
+      "production_accepted": false,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "over_refusal": false,
+      "under_refusal": false,
+      "unsupported_forced_answer": false,
+      "insufficient_evidence_recognized": null,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "unrouted_rule_count": 0,
+      "raw_sha256": "492652920c11786aec6d0429e25f7602ad31c5f043e0b3b841cc022aac11a2ad",
+      "expected_relation": "MATCH",
+      "predicted_relation": null,
+      "relation_correct": false,
+      "reason_correct": null,
+      "reason_basis": "unassessed",
+      "uncertainty_preserved": false,
+      "incorrect_confident_judgment": false,
+      "semantic_correct": false,
+      "accepted_outcome": false,
+      "semantic_accepted": false,
+      "error_classes": [
+        "instruction_following_formatting_error",
+        "evidence_selection_error",
+        "model_semantic_capability_error"
+      ],
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "incorrect_confident_judgment": false,
+        "silent_gap_omission": false
+      },
+      "label": "auditor_new",
+      "provenance": "historical_generated_model_output",
+      "original_source_commit": "54df6a48e8646cf721d6d2e2f2ecb60125a92bef",
+      "original_usage": {
+        "input_tokens": 488,
+        "output_tokens": 350,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 16.322966930999996,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "c9172df69079406656d40d2d753641d8179bbbc68c6690df39955290e11d0f7c",
+        "cap_hit": false,
+        "terminal_token_id": 32000,
+        "configured_eos_token_ids": 32000
+      },
+      "evaluated_contract": "semantic-task-v1 (OLD controls also rejected by their original adapter)",
+      "preserved_original_contract_valid": false,
+      "preserved_raw_diagnostics": {
+        "judgment_correct": true,
+        "reason_correct": false,
+        "evidence_complete": true,
+        "rule_hallucination": false,
+        "semantic_accepted": false,
+        "explanation": "MATCH and both refs are present, and its opening fidelity statement is correct. However it calls the already-absent reporting date an extraction discrepancy/omission and says the gap was not addressed in extraction, although the extraction preserves the absence and adds an open question. Reason correctness is therefore partial, not passed. A long unsolicited explanation follows the complete JSON prefix, violating the one-object/no-extra-output contract. Reached configured EOS 32000 before cap; not a stop-configuration or transport failure.",
+        "label": "auditor_new",
+        "adjudicator": "assistant semantic review, human-readable",
+        "basis": "authorized original and authored extraction; raw output inspected independently of parser",
+        "raw_sha256": "492652920c11786aec6d0429e25f7602ad31c5f043e0b3b841cc022aac11a2ad",
+        "contract_valid": false,
+        "observations_from_raw_only": true,
+        "acceptance_path_unchanged": true
+      },
+      "diagnostic_notice": "Original hash-bound single-review observations only; no prefix parsing, repair, or acceptance."
+    }
+  ],
+  "summary": {
+    "n": 4,
+    "aggregate": {
+      "accepted_outcome": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "contract_valid": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "copied_source_violation": {
+        "n": 2,
+        "count": 1,
+        "rate": 0.5
+      },
+      "exact_alias_valid": {
+        "n": 2,
+        "count": 2,
+        "rate": 1.0
+      },
+      "examined_empty_correct": {
+        "n": 2,
+        "count": 2,
+        "rate": 1.0
+      },
+      "expected_refusal": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "incorrect_confident_judgment": {
+        "n": 2,
+        "count": 0,
+        "rate": 0.0
+      },
+      "over_refusal": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "ownership_valid": {
+        "n": 2,
+        "count": 0,
+        "rate": 0.0
+      },
+      "predicted_refusal": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "preserved_original_contract_valid": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "production_accepted": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "refusal_correct": {
+        "n": 4,
+        "count": 4,
+        "rate": 1.0
+      },
+      "relation_correct": {
+        "n": 2,
+        "count": 0,
+        "rate": 0.0
+      },
+      "semantic_accepted": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "semantic_completeness": {
+        "n": 2,
+        "count": 0,
+        "rate": 0.0
+      },
+      "semantic_correct": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "transport_complete": {
+        "n": 4,
+        "count": 3,
+        "rate": 0.75
+      },
+      "truncated": {
+        "n": 4,
+        "count": 1,
+        "rate": 0.25
+      },
+      "uncertainty_preserved": {
+        "n": 2,
+        "count": 0,
+        "rate": 0.0
+      },
+      "under_refusal": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "unsupported_forced_answer": {
+        "n": 4,
+        "count": 0,
+        "rate": 0.0
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 4,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "information_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 8,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "class_MATCH": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "class_DIVERGENCE": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "class_OMISSION": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "class_ADDITION": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "class_INSUFFICIENT_EVIDENCE": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "catastrophic_counts": {
+        "silent_gap_omission": 2,
+        "invented_rule": 1
+      },
+      "accepted_outcome_descriptive_wilson95": [
+        0,
+        0.4898908364545973
+      ]
+    },
+    "per_role": {
+      "producer": {
+        "accepted_outcome": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "contract_valid": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "copied_source_violation": {
+          "n": 2,
+          "count": 1,
+          "rate": 0.5
+        },
+        "exact_alias_valid": {
+          "n": 2,
+          "count": 2,
+          "rate": 1.0
+        },
+        "examined_empty_correct": {
+          "n": 2,
+          "count": 2,
+          "rate": 1.0
+        },
+        "expected_refusal": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "over_refusal": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "ownership_valid": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "predicted_refusal": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "preserved_original_contract_valid": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "production_accepted": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "refusal_correct": {
+          "n": 2,
+          "count": 2,
+          "rate": 1.0
+        },
+        "semantic_accepted": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "semantic_completeness": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "semantic_correct": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "transport_complete": {
+          "n": 2,
+          "count": 2,
+          "rate": 1.0
+        },
+        "truncated": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "under_refusal": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "unsupported_forced_answer": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "claims": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "information_gaps": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "uncertainty": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "evidence": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "class_MATCH": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_DIVERGENCE": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_OMISSION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_ADDITION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_INSUFFICIENT_EVIDENCE": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "catastrophic_counts": {
+          "silent_gap_omission": 2
+        },
+        "accepted_outcome_descriptive_wilson95": [
+          0,
+          0.6576197724933469
+        ]
+      },
+      "auditor": {
+        "accepted_outcome": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "contract_valid": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "expected_refusal": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "incorrect_confident_judgment": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "over_refusal": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "predicted_refusal": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "preserved_original_contract_valid": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "production_accepted": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "refusal_correct": {
+          "n": 2,
+          "count": 2,
+          "rate": 1.0
+        },
+        "relation_correct": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "semantic_accepted": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "semantic_correct": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "transport_complete": {
+          "n": 2,
+          "count": 1,
+          "rate": 0.5
+        },
+        "truncated": {
+          "n": 2,
+          "count": 1,
+          "rate": 0.5
+        },
+        "uncertainty_preserved": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "under_refusal": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "unsupported_forced_answer": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "evidence": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "class_MATCH": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "class_DIVERGENCE": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_OMISSION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_ADDITION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_INSUFFICIENT_EVIDENCE": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "catastrophic_counts": {
+          "invented_rule": 1
+        },
+        "accepted_outcome_descriptive_wilson95": [
+          0,
+          0.6576197724933469
+        ]
+      }
+    },
+    "per_family": {
+      "train-negotiation": {
+        "accepted_outcome": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "contract_valid": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "copied_source_violation": {
+          "n": 2,
+          "count": 1,
+          "rate": 0.5
+        },
+        "exact_alias_valid": {
+          "n": 2,
+          "count": 2,
+          "rate": 1.0
+        },
+        "examined_empty_correct": {
+          "n": 2,
+          "count": 2,
+          "rate": 1.0
+        },
+        "expected_refusal": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "incorrect_confident_judgment": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "over_refusal": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "ownership_valid": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "predicted_refusal": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "preserved_original_contract_valid": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "production_accepted": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "refusal_correct": {
+          "n": 4,
+          "count": 4,
+          "rate": 1.0
+        },
+        "relation_correct": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "semantic_accepted": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "semantic_completeness": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "semantic_correct": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "transport_complete": {
+          "n": 4,
+          "count": 3,
+          "rate": 0.75
+        },
+        "truncated": {
+          "n": 4,
+          "count": 1,
+          "rate": 0.25
+        },
+        "uncertainty_preserved": {
+          "n": 2,
+          "count": 0,
+          "rate": 0.0
+        },
+        "under_refusal": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "unsupported_forced_answer": {
+          "n": 4,
+          "count": 0,
+          "rate": 0.0
+        },
+        "claims": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "information_gaps": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "uncertainty": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "evidence": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 8,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "class_MATCH": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "class_DIVERGENCE": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_OMISSION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_ADDITION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "class_INSUFFICIENT_EVIDENCE": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "catastrophic_counts": {
+          "silent_gap_omission": 2,
+          "invented_rule": 1
+        },
+        "accepted_outcome_descriptive_wilson95": [
+          0,
+          0.4898908364545973
+        ]
+      }
+    },
+    "interval_warning": "Descriptive only: correlated authored rows are not independent model trials; use family breakdown."
+  },
+  "all_four_rejections_reproduced": true,
+  "historical_entries_verified": 106,
+  "historical_manifest_sha256": "9344fd8d3292490d7409c9896b4a93fc2a12c412966d07216d10e86d1cf0a3a1"
+}
