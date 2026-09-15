@@ -1,0 +1,8 @@
+{
+  "remote_actual_interpreter": "3.10.12",
+  "remote_result": "SyntaxError importing scripts/finding_record.py:395",
+  "local_interpreter": "3.12.3",
+  "local_import_and_fixture_checks": "passed",
+  "feature_version_ast_check": "non-authoritative: local ast.parse accepted this syntax even when feature_version requested 3.10; do not use it as an interpreter-compatibility gate",
+  "required_next_check": "Execute compile/import with the actual remote Python 3.12 interpreter before model preparation."
+}

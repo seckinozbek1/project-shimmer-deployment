@@ -1,0 +1,4 @@
+{
+  "type": "SyntaxError",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/ubuntu/shimmer_bounded_20260915/probe.py\", line 152, in <module>\n    try:main()\n  File \"/home/ubuntu/shimmer_bounded_20260915/probe.py\", line 12, in main\n    import agent_wrapper as aw, bounded_extraction as ex, execution_topology as et\n  File \"/home/ubuntu/shimmer_bounded_20260915/scripts/agent_wrapper.py\", line 33, in <module>\n    from bus_reader import (_estimate_tokens, assemble_context,\n  File \"/home/ubuntu/shimmer_bounded_20260915/scripts/bus_reader.py\", line 16, in <module>\n    import finding_record\n  File \"/home/ubuntu/shimmer_bounded_20260915/scripts/finding_record.py\", line 395\n    figures = f'{_fmt(item.get('value_b'))}{unit_b}{localization.text(' -> (not stated)')}'\n                                ^^^^^^^\nSyntaxError: f-string: unmatched '('\n"
+}

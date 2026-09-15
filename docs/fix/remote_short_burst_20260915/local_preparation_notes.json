@@ -1,0 +1,12 @@
+{
+  "existing_ssh_identity": "protected; no ssh agent available",
+  "temporary_ssh_identity": "generated in ignored output/cloud_access; public registration only",
+  "temporary_key_acl": "restricted to operator account after initial SSH permission diagnostic; no key contents emitted",
+  "targeted_deterministic_checks": {
+    "passed": 17,
+    "failed": 0
+  },
+  "fixture_spans": 1,
+  "fixture_reconstruction_check": true,
+  "configured_remote_cache_filesystems": 0
+}

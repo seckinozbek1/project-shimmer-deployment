@@ -2204,3 +2204,19 @@ with THREE), TWO.
 - **TWENTY-ONE** record the quote prediction where a run checks it (the
   prediction is already in this file, under "This run"; it still needs to be
   somewhere a run reads).
+
+
+## 2026-09-15: Remote bounded feasibility attempt after c514d5b
+
+Authorized one Lambda A10 instance ($1.29/hour, $2 ceiling), source-only transfer,
+ordinary bounded probes, and verified shutdown. Result CLOUD_FULL_RUN_INDETERMINATE:
+the experiment launcher used default Python 3.10.12 instead of the required 3.12
+runtime, causing a source import SyntaxError before any model load/generation.
+No full pipeline, multi-round or paid inference API. No production source change.
+Collected evidence and null-valued projection are in REMOTE_SHORT_BURST_FEASIBILITY.md
+and remote_short_burst_20260915/. Prior historical evidence is unchanged.
+Provider termination verified at 07:17:18.016016 UTC; conservative instance cost
+upper bound $0.1219585353 / 340.349401 s. Temporary SSH identity cleaned up.
+17 deterministic recommendation checks passed; no model quality claim follows.
+Next launcher must explicitly select and prevalidate Python 3.12.3 before downloads.
+README/image behavior unchanged; no image rebuild or broad runtime refactor.

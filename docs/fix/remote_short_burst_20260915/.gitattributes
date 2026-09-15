@@ -1,0 +1,4 @@
+# Preserve measured artifact bytes and hashes across Windows checkouts.
+* -text whitespace=cr-at-eol
+# Preserve the verbatim terminal capture, including terminal padding.
+readiness.txt -diff

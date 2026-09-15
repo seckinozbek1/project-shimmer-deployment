@@ -1,0 +1,67 @@
+{
+  "created_utc": "2026-09-15T07:11:12.255990+00:00",
+  "source_commit": "c514d5b68a13a18858608ee176f308d922236541",
+  "initial_untracked": [
+    "SHIMMER_HANDOFF.md",
+    "durable/"
+  ],
+  "tracked_dirty": false,
+  "multi_round": false,
+  "full_pipeline": false,
+  "provider": "Lambda",
+  "instance_type": "gpu_1x_a10",
+  "hourly_rate": 1.29,
+  "soft_usd": 1,
+  "hard_usd": 2,
+  "termination_reserve_seconds": 180,
+  "region": "us-east-1",
+  "model_revisions": {
+    "BAAI/bge-m3": "5617a9f61b028005a4858fdac845db406aefb181",
+    "unsloth/Phi-3.5-mini-instruct-bnb-4bit": "5c20803aa197416f43fb455e55c85178775320cb",
+    "unsloth/Qwen2.5-7B-Instruct-bnb-4bit": "bdd404162d94997f390efbfa660eb3f21cbbc81d"
+  },
+  "model_selection": {
+    "schema_version": "1.0.0",
+    "description": "Local-profile checkpoint selection. The pipeline reads active_producer/active_auditor and maps every local_producer agent to the producer id and every local_auditor agent to the auditor id. If this file is absent or unreadable, the pipeline falls back to the original full-precision ids, so removing it restores the pre-existing behaviour exactly.",
+    "active_producer": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+    "active_auditor": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+    "available": {
+      "producer": {
+        "prequantised_4bit": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+        "full_precision": "Qwen/Qwen2.5-7B-Instruct"
+      },
+      "auditor": {
+        "prequantised_4bit": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+        "full_precision": "microsoft/Phi-3.5-mini-instruct"
+      }
+    },
+    "why": "Quantising a full-precision checkpoint on the fly stages every fp16 shard in system RAM before writing 4-bit weights, so peak host RAM tracks the fp16 size (~15.2 GB for the 7B producer, ~7.6 GB for the auditor) rather than the ~5.5 GB / ~2.3 GB the weights finally occupy. On a 16 GB machine that peak is what kills the run. A pre-quantised checkpoint is read at its stored 4-bit size with no fp16 staging step. Same model family, same LAW-III producer/auditor split, same 4-bit NF4 weights.",
+    "notes": "LAW-III: producer and auditor MUST stay in different model families (Qwen vs Phi). Changing active_producer/active_auditor to the full_precision ids restores the original load path, including its BitsAndBytesConfig quantise-on-load behaviour."
+  },
+  "generation_limits": {
+    "max_new_tokens": 384,
+    "max_time_seconds": 25,
+    "do_sample": false,
+    "seed": 7
+  },
+  "topology": {
+    "name": "report_optimized",
+    "device": "cuda:0",
+    "resident_limit": 2,
+    "owners": 1
+  },
+  "probe_definitions": [
+    "readiness",
+    "cold producer load",
+    "one compact partition",
+    "one native source-copy comparison",
+    "one authored independent audit",
+    "one producer to auditor chain if producer accepted",
+    "two independent calls serial then jointly admitted if quality permits",
+    "capacity4 only if actual capacity2 passes"
+  ],
+  "maximum_model_calls": 9,
+  "source_transfer_bytes": 1264923,
+  "source_archive_sha256": "1357d054762b591d98851fdf623be0047c7cc852027da28eb501bd053dddf700",
+  "probe_sha256": "30e402e827436cd59345738ecfa4668a51679ddaca074c18136e51140862fd58"
+}

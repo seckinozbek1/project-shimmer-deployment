@@ -1,0 +1,16 @@
+[
+  {
+    "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+    "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+    "cache_present_before": false,
+    "seconds": 6.1759843826293945,
+    "path": "/home/ubuntu/.cache/huggingface/hub/models--unsloth--Phi-3.5-mini-instruct-bnb-4bit/snapshots/5c20803aa197416f43fb455e55c85178775320cb"
+  },
+  {
+    "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+    "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+    "cache_present_before": false,
+    "seconds": 7.513014554977417,
+    "path": "/home/ubuntu/.cache/huggingface/hub/models--unsloth--Qwen2.5-7B-Instruct-bnb-4bit/snapshots/bdd404162d94997f390efbfa660eb3f21cbbc81d"
+  }
+]

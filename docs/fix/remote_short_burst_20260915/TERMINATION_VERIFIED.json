@@ -1,0 +1,8 @@
+{
+  "instance_id": "95bbd0c1a9e64361b80c0ff8011b84a3",
+  "utc": "2026-09-15T07:17:18.016016+00:00",
+  "status": "absent_from_provider_active_instances",
+  "epoch": 1789456637.117738,
+  "estimated_cost_upper_bound_usd": 0.12163665232261023,
+  "billable_duration_upper_bound_seconds": 339.4511227607727
+}
