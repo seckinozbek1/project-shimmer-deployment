@@ -1,0 +1,11 @@
+{
+  "entries_verified": 106,
+  "rejections_reproduced": 4,
+  "raw_hashes": {
+    "producer_old": "c6f0887d401cdae010b8c74a473448fc2abb7bca85f961d24c65daa25883572a",
+    "producer_new": "7b2bb54ffe56777ae1b0990d8f52813a3793214cc54d8b5956ba140685b2f9d3",
+    "auditor_old": "e7940ea05c52af007c614148595121277ce229ada4c5ef4d906350f29a2bf32f",
+    "auditor_new": "492652920c11786aec6d0429e25f7602ad31c5f043e0b3b841cc022aac11a2ad"
+  },
+  "historical_evidence_rewritten": false
+}

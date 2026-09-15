@@ -1,0 +1,14 @@
+{
+  "status": "FIRST_TUNING_EXPERIMENT_REVIEW_PENDING",
+  "selected": 192,
+  "first_reviews_valid": 0,
+  "designated_second_reviews_valid": 0,
+  "reviewed_accepted": 0,
+  "reviewed_held_out": 0,
+  "reviewed_templates": 0,
+  "reviewed_unseen_templates": 0,
+  "unresolved_disagreements": [],
+  "invalid_review_examples": [],
+  "final_model_acceptance_ready": false,
+  "sealed_final_required_for_review_ready": false
+}
