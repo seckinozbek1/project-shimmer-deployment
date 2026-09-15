@@ -7,6 +7,7 @@ An existing compatible environment is required; no implicit environment rebuild.
 from __future__ import annotations
 import argparse
 import json
+import importlib.metadata
 from pathlib import Path
 import subprocess
 import sys
@@ -79,6 +80,36 @@ def prepare(root, manifest, output, *, candidate_commands=None, install=None,
         raise
 
 
+def install_missing(selected, missing, root, output, runner=subprocess.run):
+    """Resolve only missing core packages and their pinned dependency closure.
+
+    A dry-run plan is validated before mutation. Existing distributions cannot
+    be replaced, and every proposed package/version must be in runtime.lock.
+    """
+    lock = root / 'tools/cloud_run/runtime.lock'
+    pins = dict(line.split('==', 1) for line in lock.read_text().splitlines()
+                if '==' in line and not line.startswith('#'))
+    pins = {k.lower().replace('_', '-'):v for k,v in pins.items()}
+    plan = output / 'dependency_install_plan.json'
+    index = ['--index-url', 'https://pypi.org/simple', '--extra-index-url', 'https://download.pytorch.org/whl/cu121']
+    runner(runtime.command(selected, '-m', 'pip', 'install', '--dry-run', '--report', plan,
+        '--only-binary=:all:', '--constraint', lock, *index,
+        *[name+'=='+pins[name] for name in missing]), check=True)
+    proposed = json.loads(plan.read_text())['install']
+    # Query the selected environment, never the bootstrap environment.
+    query = 'import importlib.metadata as m,json;print(json.dumps({d.metadata["Name"].lower().replace("_","-"):d.version for d in m.distributions()}))'
+    current = runner(runtime.command(selected, '-I', '-c', query), capture_output=True, text=True, check=True)
+    installed = json.loads(current.stdout)
+    names=[]
+    for item in proposed:
+        name=item['metadata']['name'].lower().replace('_','-'); version=item['metadata']['version']
+        if name not in pins or version != pins[name] or name in installed:
+            raise runtime.RuntimeContractError('Dependency plan would change an existing or undeclared distribution: '+name)
+        names.append(name+'=='+version)
+    if names:
+        runner(runtime.command(selected, '-m', 'pip', 'install', '--no-deps', '--only-binary=:all:', *index, *names), check=True)
+
+
 def main(argv=None, runner=subprocess.run):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1])
@@ -96,13 +127,9 @@ def main(argv=None, runner=subprocess.run):
         if name not in manifest:
             p.error('Source manifest must include runtime contract and dependency lock')
     def install(selected, missing):
-        pins = dict(line.split('==', 1) for line in (root / 'tools/cloud_run/runtime.lock').read_text().splitlines()
-                    if '==' in line and not line.startswith('#'))
-        pins = {k.lower().replace('_', '-'): v for k, v in pins.items()}
-        runner(runtime.command(selected, '-m', 'pip', 'install', '--no-deps',
-            *[name + '==' + pins[name] for name in missing]), check=True)
+        install_missing(selected, missing, root, args.output.absolute(), runner)
     def acquire(selected):
-        runner(runtime.command(selected, root / 'tools/remote_experiment_models.py', '--execute', '--root', root), check=True)
+        runner(runtime.command(selected, root / 'tools/remote_experiment_models.py', '--execute', '--root', root, '--output', args.output.absolute() / 'model_acquisition.json'), check=True)
     def infer(selected):
         runner(runtime.command(selected, root / 'tools/remote_short_burst_probe.py', '--execute', '--output', args.output.absolute() / 'probe'), check=True)
     # Checking locally cannot install even if --install-missing was accidentally supplied.

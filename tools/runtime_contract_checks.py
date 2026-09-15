@@ -277,7 +277,7 @@ class RuntimeChecks(unittest.TestCase):
                     'missing': ['psutil'] if dependency_checks == 1 else [],
                     'dependencies_ready': dependency_checks > 1}))
             return self.runner(args, **kwargs)
-        with contextlib.redirect_stdout(io.StringIO()):
+        with contextlib.redirect_stdout(io.StringIO()), patch.object(preparation, 'install_missing', side_effect=lambda selected, missing, root, output, runner: runner(runtime.command(selected, '-m', 'pip', 'install'), check=True)):
             preparation.main(['--root', str(self.root), '--manifest', str(path),
                 '--output', str(self.root / 'cli'), '--interpreter', 'python', '--interpreter', self.exe,
                 '--execute', '--install-missing'], runner=runner)

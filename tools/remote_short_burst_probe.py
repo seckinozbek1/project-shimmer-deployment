@@ -80,10 +80,12 @@ def main():
         return result.value
     def load(role):
         def action():
+            ram_before=psutil.Process().memory_info().rss/2**30
+            vram_before=torch.cuda.memory_allocated()/2**20
             begin=time.perf_counter();tok,model=aw._load_qwen(cfg[role])
             model.generation_config.do_sample=False;model.generation_config.max_time=25.0
             data['loads'].append(dict(role=role,seconds=time.perf_counter()-begin,device=str(model.device),
-                 device_map=model.hf_device_map,allocated_mib=torch.cuda.memory_allocated()/2**20,
+                 device_map=model.hf_device_map,host_rss_before_gib=ram_before,host_rss_after_gib=psutil.Process().memory_info().rss/2**30,vram_before_mib=vram_before,cpu_offload=any(str(v) in ('cpu','disk') for v in model.hf_device_map.values()),allocated_mib=torch.cuda.memory_allocated()/2**20,
                  residents=list(rt.scheduler.workers[0].residents)))
             write('probe.json',data)
         run_one(task('load_'+role,action,cfg[role]))
@@ -110,7 +112,8 @@ def main():
         def action():
             torch.manual_seed(7);begin=time.perf_counter()
             result=w.dispatch(prompt,max_new_tokens=384)
-            row=dict(label=label,role=role,wall_seconds=time.perf_counter()-begin,usage=result.usage,raw_text=result.raw_text,backend_ok=result.ok)
+            row=dict(label=label,role=role,start_epoch=time.time()-(time.perf_counter()-begin),wall_seconds=time.perf_counter()-begin,usage=result.usage,raw_text=result.raw_text,backend_ok=result.ok)
+            row['output_tokens_per_second']=(result.usage.get('output_tokens',0)/result.usage['generation_seconds']) if result.usage.get('generation_seconds') else None
             data['calls'].append(row);write('probe.json',data)
             obj,missing=w.parse_contract_output(result.raw_text)
             items=(obj or {}).get('items',[]) if isinstance(obj,dict) else []
@@ -121,7 +124,9 @@ def main():
                 semantic=reconstructed and claims=={'CLM-001','CLM-002'} and 'date' in questions
             else:
                 reconstructed=None
-                semantic=bool(items) and all(x.get('finding')=='MATCH' and {'REF-0001','REF-0002'}<=set(x.get('ref_ids',[])) for x in items)
+                checks=dict(typed_claim_correct=bool(items) and all(x.get('finding')=='MATCH' for x in items),reason_present=bool(items) and all(bool(x.get('reasoning','').strip()) for x in items),references_correct=bool(items) and all({'REF-0001','REF-0002'}<=set(x.get('ref_ids',[])) for x in items))
+                row['auditor_fixture_checks']=checks
+                semantic=all(checks.values())
             row.update(parsed=obj,contract_valid=not missing,contract_missing=missing,accepted_items=len(items) if not missing else 0,
                        source_reconstructed_exactly=reconstructed,semantic_fixture_checks=semantic,
                        accepted=bool(result.ok and not missing and result.usage.get('truncated') is False and semantic))

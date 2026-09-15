@@ -89,6 +89,21 @@ def safe_metadata(raw):
     return result
 
 
+def provider_instance(raw):
+    """Project the provider shape before it crosses the transport boundary."""
+    try:
+        kind = raw.get('instance_type', {})
+        specs = kind.get('specs', {})
+        value = dict(instance_id=raw['id'], name=raw.get('name'), type=kind.get('name'),
+            gpu_type=kind.get('gpu_description'), gpu_count=specs.get('gpus'),
+            region=raw.get('region', {}).get('name'), status=raw.get('status'),
+            public_ip=raw.get('ip'), hourly_rate=kind.get('price_cents_per_hour', 0)/100,
+            cpu=specs.get('vcpus'), ram_gib=specs.get('memory_gib'), storage_gib=specs.get('storage_gib'))
+        return safe_metadata({k:v for k,v in value.items() if v is not None})
+    except Exception:
+        raise InvalidPreparation('invalid provider instance metadata') from None
+
+
 def safe_name(name):
     path = PurePosixPath(name)
     return (bool(name) and not path.is_absolute() and '\\' not in name and ':' not in name
