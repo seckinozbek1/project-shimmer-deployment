@@ -1,0 +1,28 @@
+{
+  "status": "FIRST_TUNING_EXPERIMENT_IMPLEMENTATION_READY",
+  "experiment": "first-domain-agnostic-tuning-v1",
+  "training_authorized": false,
+  "counts": {
+    "producer": {
+      "train": 32,
+      "dev": 32
+    },
+    "auditor": {
+      "train": 46,
+      "dev": 24
+    }
+  },
+  "checks_passed": 19,
+  "effect_proofs": 9,
+  "real_model_training": false,
+  "real_optimizer_updates": 0,
+  "model_generation_calls": 0,
+  "cloud_calls": 0,
+  "paid_api_calls": 0,
+  "protected_reads": 0,
+  "credential_findings": 0,
+  "historical_evidence_modified": false,
+  "human_review_status": "FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING",
+  "scope": "Implementation readiness only. No model-quality, independent-test, human-validation or training-authorization claim.",
+  "runtime_limit": "Exact remote CUDA/PEFT imports and kernel behavior must pass future runtime preflight; no full model loaded locally."
+}

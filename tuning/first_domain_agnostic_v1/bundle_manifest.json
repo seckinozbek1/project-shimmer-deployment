@@ -1,0 +1,33 @@
+{
+  "file_count": 22,
+  "bytes": 88146,
+  "sha256": "155b6b539d9d924bc56d473fd5fcc34dcacab5379554c91b351fc4f535f48a70",
+  "files": [
+    "benchmark/producer_coverage_amendment_v3/semantics.py",
+    "benchmark/producer_coverage_amendment_v3/structural.py",
+    "benchmark/task_semantics/core.py",
+    "scripts/bounded_extraction.py",
+    "scripts/compact_contracts.py",
+    "scripts/finding_record.py",
+    "scripts/localization.py",
+    "scripts/pairing_map.py",
+    "tuning/first_domain_agnostic_v1/auditor/dataset.json",
+    "tuning/first_domain_agnostic_v1/auditor/dev.json",
+    "tuning/first_domain_agnostic_v1/auditor/experiment.json",
+    "tuning/first_domain_agnostic_v1/auditor/train.json",
+    "tuning/first_domain_agnostic_v1/common.py",
+    "tuning/first_domain_agnostic_v1/dependency_lock.json",
+    "tuning/first_domain_agnostic_v1/evaluation.py",
+    "tuning/first_domain_agnostic_v1/experiment.json",
+    "tuning/first_domain_agnostic_v1/producer/dataset.json",
+    "tuning/first_domain_agnostic_v1/producer/dev.json",
+    "tuning/first_domain_agnostic_v1/producer/experiment.json",
+    "tuning/first_domain_agnostic_v1/producer/train.json",
+    "tuning/first_domain_agnostic_v1/train.py",
+    "tuning/first_domain_agnostic_v1/freeze.json"
+  ],
+  "protected_labels": 0,
+  "credential_hits": 0,
+  "model_weights": 0,
+  "uploaded": false
+}

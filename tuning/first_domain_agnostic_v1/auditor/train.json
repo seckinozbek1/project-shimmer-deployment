@@ -1,0 +1,2235 @@
+[
+  {
+    "example_id": "train-catalogue-auditor-insufficient_evidence",
+    "packet_id": "review-f0c991fcdafc403a7dbf039a",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Collection Haze planned 24 catalogue entries (REF-0001); CLM-B: Collection Iris reported 31 catalogue entries (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s100",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [],
+      "routed_rules": [],
+      "extraction": "paired_register / Archive Office: [extraction incomplete]"
+    },
+    "input_sha256": "f0c991fcdafc403a7dbf039a3f0d95dcf999203bfcce1115c0f786ecdec1f970",
+    "semantic_target": {
+      "items": [],
+      "status": "refused"
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-catalogue-auditor-unsupported_addition",
+    "packet_id": "review-8bb5f009ff43c5a50e042844",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Collection Haze planned 24 catalogue entries (REF-0001); CLM-B: Collection Iris reported 31 catalogue entries (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s100",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Collection Haze planned 24 catalogue entries (REF-0001); CLM-B: Collection Iris reported 31 catalogue entries (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved. A supervisor approved both entries."
+    },
+    "input_sha256": "8bb5f009ff43c5a50e0428445196bd25a4195b1c34c4c5fac39b20ae17c9cf38",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor of both entries without support in the owned source; the original claims and qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-catalogue-auditor-unsupported_certainty",
+    "packet_id": "review-d5aea6035721bb835ebf7335",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Collection Haze planned 24 catalogue entries (REF-0001); CLM-B: Collection Iris reported 31 catalogue entries (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s100",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Collection Haze planned 24 catalogue entries (REF-0001); CLM-B: Collection Iris reported 31 catalogue entries (REF-0002). The observation date is unavailable. What is the observation date? The matter is certain."
+    },
+    "input_sha256": "d5aea6035721bb835ebf733500d57b9ace4c2e95bd95490c6a1833925487fcca",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "Unresolved second-entry interpretation is replaced with certainty. The catalogue claims and observation-date gap remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-clinical-auditor-insufficient_evidence",
+    "packet_id": "review-e7220b6cdd2af5926898ef81",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Case Alder planned 18 recorded observations (REF-0001); CLM-B: Case Birch reported 18 recorded observations (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sfe",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [],
+      "routed_rules": [],
+      "extraction": "paired_register / Synthetic Clinic: [extraction incomplete]"
+    },
+    "input_sha256": "e7220b6cdd2af5926898ef81df9e4660d3d67580490a6d2933e3ec857d062342",
+    "semantic_target": {
+      "items": [],
+      "status": "refused"
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-clinical-auditor-number_change",
+    "packet_id": "review-70293b6bba9b56389f5571a8",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Case Alder planned 18 recorded observations (REF-0001); CLM-B: Case Birch reported 18 recorded observations (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sfe",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Case Alder planned 21 recorded observations (REF-0001); CLM-B: Case Birch reported 18 recorded observations (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved."
+    },
+    "input_sha256": "70293b6bba9b56389f5571a831e38abeb1986662556c23d545cb09db6bb4ff0e",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "Case Alder planned 18 observations in the source but 21 in the extraction. Case Birch and both qualifications remain unchanged.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-clinical-auditor-unsupported_addition",
+    "packet_id": "review-7ef0bc944fb8ce3de62c3887",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Case Alder planned 18 recorded observations (REF-0001); CLM-B: Case Birch reported 18 recorded observations (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sfe",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Case Alder planned 18 recorded observations (REF-0001); CLM-B: Case Birch reported 18 recorded observations (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved. A supervisor approved both entries."
+    },
+    "input_sha256": "7ef0bc944fb8ce3de62c38870cec25a35ab92e09609cd841563e3f2effe53a76",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor of both entries without support in the owned source; the original claims and qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-contracts-auditor-insufficient_evidence",
+    "packet_id": "review-486263f870b32f356aba38c0",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Leto planned 14 delivery lots (REF-0001); CLM-B: Mira reported 14 delivery lots (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "se2",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [],
+      "routed_rules": [],
+      "extraction": "paired_register / Accord Office: [extraction incomplete]"
+    },
+    "input_sha256": "486263f870b32f356aba38c0e9b4c067663880e436ec8cef96bfc511452f611f",
+    "semantic_target": {
+      "items": [],
+      "status": "refused"
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-contracts-auditor-uncertainty_removed",
+    "packet_id": "review-9335edf1e7541793bad43eb4",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Leto planned 14 delivery lots (REF-0001); CLM-B: Mira reported 14 delivery lots (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "se2",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Leto planned 14 delivery lots (REF-0001); CLM-B: Mira reported 14 delivery lots (REF-0002). The observation date is unavailable. What is the observation date? "
+    },
+    "input_sha256": "9335edf1e7541793bad43eb47e45bc8790067bfd5294708613855e36c717af61",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The uncertainty about interpreting the second entry is omitted; both claims and the observation-date gap remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-contracts-auditor-unsupported_certainty",
+    "packet_id": "review-1f5a2c8445e463c4b9751e78",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Leto planned 14 delivery lots (REF-0001); CLM-B: Mira reported 14 delivery lots (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "se2",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Leto planned 14 delivery lots (REF-0001); CLM-B: Mira reported 14 delivery lots (REF-0002). The observation date is unavailable. What is the observation date? The matter is certain."
+    },
+    "input_sha256": "1f5a2c8445e463c4b9751e786c0b28f63d8f2caf47b06b7c4c3a9a8765bb287f",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The explicitly unresolved interpretation of the second entry is replaced by an unsupported assertion that the matter is certain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-device-auditor-insufficient_evidence",
+    "packet_id": "review-b7a2a8d105db17f86507e8bc",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Module Cedar planned 20 signal cycles (REF-0001); CLM-B: Module Elm reported 27 signal cycles (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf0",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [],
+      "routed_rules": [],
+      "extraction": "paired_register / Test Lab: [extraction incomplete]"
+    },
+    "input_sha256": "b7a2a8d105db17f86507e8bc66315694b6c5142e322685b3a4cda148a3518308",
+    "semantic_target": {
+      "items": [],
+      "status": "refused"
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-device-auditor-uncertainty_removed",
+    "packet_id": "review-f2318d6c463ab079eb83dfe3",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Module Cedar planned 20 signal cycles (REF-0001); CLM-B: Module Elm reported 27 signal cycles (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf0",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Module Cedar planned 20 signal cycles (REF-0001); CLM-B: Module Elm reported 27 signal cycles (REF-0002). The observation date is unavailable. What is the observation date? "
+    },
+    "input_sha256": "f2318d6c463ab079eb83dfe3b0555680c032d3abca1fa2068591569acde40d25",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "Both module claims and the observation-date gap remain but the second-entry interpretation uncertainty is removed.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-device-auditor-unsupported_addition",
+    "packet_id": "review-7d93033d1694d0e0bfbf1765",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Module Cedar planned 20 signal cycles (REF-0001); CLM-B: Module Elm reported 27 signal cycles (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf0",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Module Cedar planned 20 signal cycles (REF-0001); CLM-B: Module Elm reported 27 signal cycles (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved. A supervisor approved both entries."
+    },
+    "input_sha256": "7d93033d1694d0e0bfbf17659507ddeb0cd208662b3a2068167c96fde243c0b1",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor of both entries without support in the owned source; the original claims and qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-negotiation-auditor-insufficient_evidence",
+    "packet_id": "review-3f7a1f25729171fa20f256ae",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Orin planned 12 concessions (REF-0001); CLM-B: Vela reported 19 concessions (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sde",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [],
+      "routed_rules": [],
+      "extraction": "paired_register / Council of Talks: [extraction incomplete]"
+    },
+    "input_sha256": "3f7a1f25729171fa20f256aec890543ca940661b64e427a8a7e659d5f5718d7b",
+    "semantic_target": {
+      "items": [],
+      "status": "refused"
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-negotiation-auditor-uncertainty_removed",
+    "packet_id": "review-e1d711a66641a86809ea0b0f",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Orin planned 12 concessions (REF-0001); CLM-B: Vela reported 19 concessions (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sde",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Orin planned 12 concessions (REF-0001); CLM-B: Vela reported 19 concessions (REF-0002). The observation date is unavailable. What is the observation date? "
+    },
+    "input_sha256": "e1d711a66641a86809ea0b0ffbb1d2e14f9181bf23a8e749d3ee5651eba8cbae",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The uncertainty about interpreting the second entry is omitted; both claims and the observation-date gap remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-negotiation-auditor-unsupported_addition",
+    "packet_id": "review-8ea6604004ebf13f495decef",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Orin planned 12 concessions (REF-0001); CLM-B: Vela reported 19 concessions (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sde",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Orin planned 12 concessions (REF-0001); CLM-B: Vela reported 19 concessions (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved. A supervisor approved both entries."
+    },
+    "input_sha256": "8ea6604004ebf13f495decef0a56a4d7bd7de2a11b751771b25a44a1a1cf1f53",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor of both entries without support in the owned source; the original claims and qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-nonsense-auditor-entity_swap",
+    "packet_id": "review-7c56f16c2ed6b3c3f22d3a8b",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Zorvit planned 26 quavels (REF-0001); CLM-B: Plenko reported 26 quavels (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sda",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Plenko planned 26 quavels (REF-0001); CLM-B: Zorvit reported 26 quavels (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved."
+    },
+    "input_sha256": "7c56f16c2ed6b3c3f22d3a8b5882d88f86f693d159ce114cd568e3b39a4abf8b",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "Zorvit and Plenko are exchanged between CLM-A planned and CLM-B reported, changing entity attribution despite equal quantities.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-nonsense-auditor-insufficient_evidence",
+    "packet_id": "review-33eff93477db715e095c2ff3",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Zorvit planned 26 quavels (REF-0001); CLM-B: Plenko reported 26 quavels (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sda",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [],
+      "routed_rules": [],
+      "extraction": "paired_register / Institute of Nimbular Blenkets: [extraction incomplete]"
+    },
+    "input_sha256": "33eff93477db715e095c2ff389383805c6c2f430978175a6d5a866e874bfe9c2",
+    "semantic_target": {
+      "items": [],
+      "status": "refused"
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-nonsense-auditor-uncertainty_removed",
+    "packet_id": "review-ab0f3d6873e52c74777d7265",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Zorvit planned 26 quavels (REF-0001); CLM-B: Plenko reported 26 quavels (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sda",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Zorvit planned 26 quavels (REF-0001); CLM-B: Plenko reported 26 quavels (REF-0002). The observation date is unavailable. What is the observation date? "
+    },
+    "input_sha256": "ab0f3d6873e52c74777d72650596665e77d60fde13a53e571a0109dda07b28da",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The uncertainty about interpreting the second entry is omitted; both claims and the observation-date gap remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-procurement-auditor-insufficient_evidence",
+    "packet_id": "review-c1431ac659435c306b3bec39",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Bidder Flint planned 22 supply crates (REF-0001); CLM-B: Bidder Gale reported 22 supply crates (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf1",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [],
+      "routed_rules": [],
+      "extraction": "paired_register / Purchasing Desk: [extraction incomplete]"
+    },
+    "input_sha256": "c1431ac659435c306b3bec3945b0b8fc086c2339921ef42170184c215932f3f3",
+    "semantic_target": {
+      "items": [],
+      "status": "refused"
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-procurement-auditor-label_swap",
+    "packet_id": "review-b56b8281a0da821b0b503e4f",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Bidder Flint planned 22 supply crates (REF-0001); CLM-B: Bidder Gale reported 22 supply crates (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf1",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Bidder Flint reported 22 supply crates (REF-0001); CLM-B: Bidder Gale planned 22 supply crates (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved."
+    },
+    "input_sha256": "b56b8281a0da821b0b503e4faa0f7b9b06bef775216672389e03be4c689d7ac5",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "Bidder Flint is changed from planned to reported, and Bidder Gale from reported to planned; the equal quantities do not preserve those labels.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-procurement-auditor-unsupported_addition",
+    "packet_id": "review-ded67d6feeb7245dbb262b43",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Bidder Flint planned 22 supply crates (REF-0001); CLM-B: Bidder Gale reported 22 supply crates (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf1",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Bidder Flint planned 22 supply crates (REF-0001); CLM-B: Bidder Gale reported 22 supply crates (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved. A supervisor approved both entries."
+    },
+    "input_sha256": "ded67d6feeb7245dbb262b43447faa72efe286033e9fc3498df99b4dc7da5dba",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor of both entries without support in the owned source; the original claims and qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-regulation-auditor-gap_omission",
+    "packet_id": "review-8b33b34e1a1db2bd5a56873f",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Nera planned 16 filed notices (REF-0001); CLM-B: Sola reported 23 filed notices (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "se2",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Nera planned 16 filed notices (REF-0001); CLM-B: Sola reported 23 filed notices (REF-0002).  The interpretation of the second entry remains unresolved."
+    },
+    "input_sha256": "8b33b34e1a1db2bd5a56873faa89f4ed55f321a3572abdc29e8437e1b542235a",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The observation-date gap and question are omitted. The owned claims remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-regulation-auditor-insufficient_evidence",
+    "packet_id": "review-26f2e62ed0c04907d1924a38",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Nera planned 16 filed notices (REF-0001); CLM-B: Sola reported 23 filed notices (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "se2",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [],
+      "routed_rules": [],
+      "extraction": "paired_register / Registry Board: [extraction incomplete]"
+    },
+    "input_sha256": "26f2e62ed0c04907d1924a38fb8a95948ef471cc67ae889dd74056ff453d5f9f",
+    "semantic_target": {
+      "items": [],
+      "status": "refused"
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "train-regulation-auditor-match",
+    "packet_id": "review-812e00c7c8749ecb972d12c9",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Nera planned 16 filed notices (REF-0001); CLM-B: Sola reported 23 filed notices (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "se2",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: Nera planned 16 filed notices (REF-0001); CLM-B: Sola reported 23 filed notices (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved."
+    },
+    "input_sha256": "812e00c7c8749ecb972d12c9959728effe0e07664c78d70b7a1bcd17441b9a1c",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The planned 16 and reported 23 notices belong to distinct entries and are preserved, with observation-date absence and second-entry uncertainty.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-bullet_list-contracts-changed",
+    "packet_id": "review-a7d8662d6f1ccf9b860dea3c",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-A: service desk 46 recorded 32 delivery windows (REF-1001).\n- CLM-B: service desk 46 retained 37 delivery windows (REF-1002).\n- The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "- CLM-A: service desk 46 recorded 32 delivery windows (REF-1001).\n- CLM-B: service desk 46 retained 37 delivery windows (REF-1002).\n- The date is absent. When was this recorded? The entry was approved by an external director."
+    },
+    "input_sha256": "a7d8662d6f1ccf9b860dea3cafec02ece15df16e51b2f4548603b95380259414",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-bullet_list-contracts-match",
+    "packet_id": "review-21a4f1bdff383e55659a2f90",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-A: service desk 46 recorded 32 delivery windows (REF-1001).\n- CLM-B: service desk 46 retained 37 delivery windows (REF-1002).\n- The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "- CLM-A: service desk 46 recorded 32 delivery windows (REF-1001).\n- CLM-B: service desk 46 retained 37 delivery windows (REF-1002).\n- The date is absent. When was this recorded?"
+    },
+    "input_sha256": "21a4f1bdff383e55659a2f903cb3c5c697f17f9acb183eae781eb1b1c31d5944",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-bullet_list-device-changed",
+    "packet_id": "review-6eff9502321969a5cb080237",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-A: sensor bank 48 recorded 38 pulses (REF-1001).\n- CLM-B: sensor bank 48 retained 43 pulses (REF-1002).\n- The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "- CLM-A: sensor bank 48 recorded 38 pulses (REF-1001).\n- CLM-B: sensor bank 48 retained 43 pulses (REF-1002).\n- "
+    },
+    "input_sha256": "6eff9502321969a5cb080237636c125a9d7aabeae12047b0e4f6e4e37aad1b87",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "Both pulse claims are retained, but the recording-date absence and question are deleted.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-bullet_list-device-match",
+    "packet_id": "review-ba7e12d4a02062ca3a441fd9",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-A: sensor bank 48 recorded 38 pulses (REF-1001).\n- CLM-B: sensor bank 48 retained 43 pulses (REF-1002).\n- The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "- CLM-A: sensor bank 48 recorded 38 pulses (REF-1001).\n- CLM-B: sensor bank 48 retained 43 pulses (REF-1002).\n- The date is absent. When was this recorded?"
+    },
+    "input_sha256": "ba7e12d4a02062ca3a441fd93a256a1b53f5c484e29e80f1c32e5769205c916c",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-bullet_list-negotiation-changed",
+    "packet_id": "review-2263d5c69fe76ee445f3eb6d",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-A: delegation 45 recorded 29 offered seats (REF-1001).\n- No second claim was submitted.\n- The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": [],
+      "extraction": "- CLM-A: delegation 45 recorded 29 offered seats (REF-1001).\n- No second claim was submitted.\n- "
+    },
+    "input_sha256": "2263d5c69fe76ee445f3eb6d2310531a95b0a39cbf6346ee14d94638d10bada4",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-1001"
+          ],
+          "reasoning": "The extraction retains the owned claims but removes both the recording-date gap and the explicit uncertain interpretation.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-bullet_list-negotiation-match",
+    "packet_id": "review-3fa635a732046e21ce52e81f",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-A: delegation 45 recorded 29 offered seats (REF-1001).\n- No second claim was submitted.\n- The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": [],
+      "extraction": "- CLM-A: delegation 45 recorded 29 offered seats (REF-1001).\n- No second claim was submitted.\n- The date is absent. When was this recorded? The interpretation remains uncertain."
+    },
+    "input_sha256": "3fa635a732046e21ce52e81f85e931d761f926c0f236fd2338569de43af00842",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-bullet_list-procurement-changed",
+    "packet_id": "review-44c6e5e48ca4b20547a222f6",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-A: vendor 47 recorded 35 pallets (REF-1001).\n- CLM-B: vendor 47 retained 40 pallets (REF-1002).\n- The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "- CLM-A: vendor 47 recorded 36 pallets (REF-1001).\n- CLM-B: vendor 47 retained 40 pallets (REF-1002).\n- The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+    },
+    "input_sha256": "44c6e5e48ca4b20547a222f61f0c6bf113f86e538e6591e17b31baf98deaa32e",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The recorded quantity changes from 35 to 36 pallets. The retained 40 pallets and the date, recorder and uncertainty qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-form_fields-contracts-changed",
+    "packet_id": "review-c0fa0eae347bdb3590a610bb",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-A: service desk 50 recorded 44 delivery windows (REF-1001).\nENTRY B = CLM-B: service desk 50 retained 49 delivery windows (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "ENTRY A = CLM-A: service desk 50 recorded 45 delivery windows (REF-1001).\nENTRY B = CLM-B: service desk 50 retained 49 delivery windows (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+    },
+    "input_sha256": "c0fa0eae347bdb3590a610bbf9d34d0e0c96a459dcf54fc8dc5a552a780f2b83",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The recorded quantity changes from 44 to 45 delivery windows; retained 49 and the date and recorder gaps remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-form_fields-contracts-match",
+    "packet_id": "review-ec7bb37954530227e9fb35b0",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-A: service desk 50 recorded 44 delivery windows (REF-1001).\nENTRY B = CLM-B: service desk 50 retained 49 delivery windows (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "ENTRY A = CLM-A: service desk 50 recorded 44 delivery windows (REF-1001).\nENTRY B = CLM-B: service desk 50 retained 49 delivery windows (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+    },
+    "input_sha256": "ec7bb37954530227e9fb35b0469b3c94c7e61e6ab1dea6aae5a3aff4e9b46018",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-form_fields-device-changed",
+    "packet_id": "review-b864c53147521b8e83abbfe3",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-A: sensor bank 52 recorded 50 pulses (REF-1001).\nENTRY B = CLM-B: sensor bank 52 retained 55 pulses (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "ENTRY A = CLM-A: sensor bank 52 recorded 50 pulses (REF-1001).\nENTRY B = CLM-B: sensor bank 52 retained 55 pulses (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The entry was approved by an external director."
+    },
+    "input_sha256": "b864c53147521b8e83abbfe31a8c318bc47078e2d4db1f431854e67486b7a479",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "External-director approval is newly asserted without support; recorded 50 and retained 55 pulses and the date gap remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-form_fields-device-match",
+    "packet_id": "review-94a1115658fb32fc79f7d356",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-A: sensor bank 52 recorded 50 pulses (REF-1001).\nENTRY B = CLM-B: sensor bank 52 retained 55 pulses (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "ENTRY A = CLM-A: sensor bank 52 recorded 50 pulses (REF-1001).\nENTRY B = CLM-B: sensor bank 52 retained 55 pulses (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded?"
+    },
+    "input_sha256": "94a1115658fb32fc79f7d35690dfa9bb2b3c0cc619adf84dd811b1519556181f",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-form_fields-negotiation-changed",
+    "packet_id": "review-a8c8d786ce7c8c2fe1d4ed51",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-A: delegation 49 recorded 41 offered seats (REF-1001).\nENTRY B = No second claim was submitted.\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": [],
+      "extraction": "ENTRY A = CLM-A: delegation 49 recorded 41 offered seats (REF-1001).\nENTRY B = No second claim was submitted.\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain. The entry was approved by an external director."
+    },
+    "input_sha256": "a8c8d786ce7c8c2fe1d4ed51248c5644277769f79b077ddf2193f7a69d8ad202",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-1001"
+          ],
+          "reasoning": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-form_fields-negotiation-match",
+    "packet_id": "review-1dd991bdf76c1e688b844629",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-A: delegation 49 recorded 41 offered seats (REF-1001).\nENTRY B = No second claim was submitted.\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": [],
+      "extraction": "ENTRY A = CLM-A: delegation 49 recorded 41 offered seats (REF-1001).\nENTRY B = No second claim was submitted.\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+    },
+    "input_sha256": "1dd991bdf76c1e688b844629f3d749298890ec3bc3e785f2e365e087a3b5941c",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-form_fields-procurement-changed",
+    "packet_id": "review-c879e622c91d5c4787c15735",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-A: vendor 51 recorded 47 pallets (REF-1001).\nENTRY B = CLM-B: vendor 51 retained 52 pallets (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "ENTRY A = CLM-A: vendor 51 recorded 47 pallets (REF-1001).\nENTRY B = CLM-B: vendor 51 retained 52 pallets (REF-1002).\nFOLLOW-UP FIELD = "
+    },
+    "input_sha256": "c879e622c91d5c4787c15735e95970228833718803578591b8926703fb0a62c2",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction retains the owned claims but removes both the recording-date gap and the explicit uncertain interpretation.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-form_fields-procurement-match",
+    "packet_id": "review-4fd1163bad1a896f2cc94b30",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-A: vendor 51 recorded 47 pallets (REF-1001).\nENTRY B = CLM-B: vendor 51 retained 52 pallets (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "ENTRY A = CLM-A: vendor 51 recorded 47 pallets (REF-1001).\nENTRY B = CLM-B: vendor 51 retained 52 pallets (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+    },
+    "input_sha256": "4fd1163bad1a896f2cc94b302ed23fd9a83ee1d093257eafadfe309f938fa701",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-paragraph-contracts-changed",
+    "packet_id": "review-b455637a9669a70c59d8d7eb",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: service desk 42 recorded 20 delivery windows (REF-1001). In a separate statement, CLM-B: service desk 42 retained 25 delivery windows (REF-1002). Finally, The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: service desk 42 recorded 20 delivery windows (REF-1001). In a separate statement, CLM-B: service desk 42 retained 25 delivery windows (REF-1002). Finally, "
+    },
+    "input_sha256": "b455637a9669a70c59d8d7eba4e7c3cc16428aab93dda36dff15c99900bf2d08",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The recording-date gap and question are omitted. The owned claims remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-paragraph-contracts-match",
+    "packet_id": "review-b96a51de7b010e643defadc8",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: service desk 42 recorded 20 delivery windows (REF-1001). In a separate statement, CLM-B: service desk 42 retained 25 delivery windows (REF-1002). Finally, The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: service desk 42 recorded 20 delivery windows (REF-1001). In a separate statement, CLM-B: service desk 42 retained 25 delivery windows (REF-1002). Finally, The date is absent. When was this recorded?"
+    },
+    "input_sha256": "b96a51de7b010e643defadc85c056ae1729b68bb08a363fe25f186565ca1b031",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-paragraph-device-changed",
+    "packet_id": "review-f2d5aa4286528348afa90b72",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: sensor bank 44 recorded 26 pulses (REF-1001). In a separate statement, CLM-B: sensor bank 44 retained 31 pulses (REF-1002). Finally, The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: sensor bank 44 recorded 27 pulses (REF-1001). In a separate statement, CLM-B: sensor bank 44 retained 31 pulses (REF-1002). Finally, The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+    },
+    "input_sha256": "f2d5aa4286528348afa90b7234efda856b2c185cdc84b2e7ddb15871ead8e5fe",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The recorded pulse count changes from 26 to 27. Retained 31 and the missing date and recorder remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-paragraph-device-match",
+    "packet_id": "review-94297c8c6c72d65a25fabce7",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: sensor bank 44 recorded 26 pulses (REF-1001). In a separate statement, CLM-B: sensor bank 44 retained 31 pulses (REF-1002). Finally, The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: sensor bank 44 recorded 26 pulses (REF-1001). In a separate statement, CLM-B: sensor bank 44 retained 31 pulses (REF-1002). Finally, The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+    },
+    "input_sha256": "94297c8c6c72d65a25fabce7798784b8703e58c805e37967c183a90cc90af7c6",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-paragraph-negotiation-changed",
+    "packet_id": "review-0a9f233869223583287b2e04",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: delegation 41 recorded 17 offered seats (REF-1001). In a separate statement, No second claim was submitted. Finally, The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: delegation 41 recorded 18 offered seats (REF-1001). In a separate statement, No second claim was submitted. Finally, The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+    },
+    "input_sha256": "0a9f233869223583287b2e04e7a09581ead719d7afa16deee5087e1c30edb355",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-1001"
+          ],
+          "reasoning": "CLM-A changes delegation 41 from 17 to 18 offered seats. The remaining source qualifications are retained.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-paragraph-procurement-changed",
+    "packet_id": "review-5fefb844e8675f4c8e952ae8",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: vendor 43 recorded 23 pallets (REF-1001). In a separate statement, CLM-B: vendor 43 retained 28 pallets (REF-1002). Finally, The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: vendor 43 recorded 23 pallets (REF-1001). In a separate statement, CLM-B: vendor 43 retained 28 pallets (REF-1002). Finally, The date is absent. When was this recorded? The interpretation remains uncertain. The entry was approved by an external director."
+    },
+    "input_sha256": "5fefb844e8675f4c8e952ae849ce71023e7655446a9ed38775c5e73ee9b9a01b",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  {
+    "example_id": "v2-paragraph-procurement-match",
+    "packet_id": "review-109bd26d12f5a43fcf3eeb48",
+    "split": "train",
+    "role": "auditor",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: vendor 43 recorded 23 pallets (REF-1001). In a separate statement, CLM-B: vendor 43 retained 28 pallets (REF-1002). Finally, The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "CLM-A: vendor 43 recorded 23 pallets (REF-1001). In a separate statement, CLM-B: vendor 43 retained 28 pallets (REF-1002). Finally, The date is absent. When was this recorded? The interpretation remains uncertain."
+    },
+    "input_sha256": "109bd26d12f5a43fcf3eeb4824ef6b7e0e773c6fedac532c335d8a690aad13d5",
+    "semantic_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "gap_atoms": [],
+    "uncertainty_atoms": [],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  }
+]

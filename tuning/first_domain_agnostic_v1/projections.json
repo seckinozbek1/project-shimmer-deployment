@@ -1,0 +1,149 @@
+{
+  "classification": "TRAINING_MEMORY_PROJECTION",
+  "measurements": false,
+  "recommended_first_candidate": "one A10 24 GB class, sequential roles",
+  "prior_observed_vram_mib": 23028,
+  "prior_reference_hourly_usd": 1.29,
+  "current_inventory_queried": false,
+  "memory": {
+    "producer": {
+      "classification": "TRAINING_MEMORY_PROJECTION",
+      "quantized_linear_parameters": 6525288448,
+      "quantized_linear_gib": 3.403,
+      "fp32_embeddings_and_head_gib": 4.061,
+      "adapter_gradients_optimizer_gib": 0.301,
+      "checkpointed_activation_gib": [
+        2.0,
+        5.0
+      ],
+      "cuda_workspace_allocator_gib": [
+        2.0,
+        4.0
+      ],
+      "total_gib": [
+        11.76,
+        16.76
+      ],
+      "host_ram_gib": [
+        16,
+        32
+      ],
+      "assumptions": "one role, batch 1, eager attention, checkpointing, observed sequence ceiling; no model duplication"
+    },
+    "auditor": {
+      "classification": "TRAINING_MEMORY_PROJECTION",
+      "quantized_linear_parameters": 3623878656,
+      "quantized_linear_gib": 1.89,
+      "fp32_embeddings_and_head_gib": 0.734,
+      "adapter_gradients_optimizer_gib": 0.223,
+      "checkpointed_activation_gib": [
+        1.5,
+        4.0
+      ],
+      "cuda_workspace_allocator_gib": [
+        2.0,
+        4.0
+      ],
+      "total_gib": [
+        6.35,
+        10.85
+      ],
+      "host_ram_gib": [
+        16,
+        32
+      ],
+      "assumptions": "one role, batch 1, eager attention, checkpointing, observed sequence ceiling; no model duplication"
+    }
+  },
+  "work": {
+    "producer": {
+      "train_sequence_tokens": 47490,
+      "dev_target_tokens_reference": 9700,
+      "assumed_training_sequence_tokens_per_second": [
+        80,
+        250
+      ],
+      "assumed_decode_tokens_per_second": [
+        20,
+        60
+      ],
+      "training_minutes": [
+        4.166,
+        12.89375
+      ]
+    },
+    "auditor": {
+      "train_sequence_tokens": 56866,
+      "dev_target_tokens_reference": 2678,
+      "assumed_training_sequence_tokens_per_second": [
+        120,
+        400
+      ],
+      "assumed_decode_tokens_per_second": [
+        30,
+        90
+      ],
+      "training_minutes": [
+        3.3694166666666665,
+        10.898055555555555
+      ]
+    }
+  },
+  "phase_minutes": {
+    "setup_including_model_acquisition_hydration": [
+      5,
+      15
+    ],
+    "producer_training": [
+      4.17,
+      12.89
+    ],
+    "producer_dev_evaluation": [
+      2,
+      8
+    ],
+    "auditor_training": [
+      3.37,
+      10.9
+    ],
+    "auditor_dev_evaluation": [
+      1,
+      4
+    ],
+    "protected_base_evaluation": [
+      5,
+      16
+    ],
+    "protected_tuned_evaluation": [
+      5,
+      16
+    ],
+    "teardown": [
+      1,
+      3
+    ]
+  },
+  "total_wall_minutes": [
+    26.54,
+    85.79
+  ],
+  "gpu_rental_minutes": [
+    26.54,
+    85.79
+  ],
+  "total_cost_usd": [
+    0.57,
+    1.84
+  ],
+  "uncertainty": "Planning assumptions, not benchmarks. Kernel compatibility, download throughput and generated length unmeasured. Stop on OOM; no automatic larger instance or parameter sweep.",
+  "minimum_higher_class_if_needed": "single 40 GB GPU, only after separate revised authorization",
+  "inference_goal_separate": {
+    "marginal_ordinary_run_usd": [
+      0,
+      0.1
+    ],
+    "wall_seconds": 120,
+    "evidence_from_this_task": false
+  },
+  "training_cost_is_one_time": true
+}

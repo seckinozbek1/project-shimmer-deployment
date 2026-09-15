@@ -1,0 +1,586 @@
+{
+  "source": "benchmark/machine_adjudication_v1/post_freeze/r06_population.json",
+  "source_sha256": "1f7ec1eb851e59f4cb318fd24cd99e8380a1037d2dc9adae026dd4906864f2b3",
+  "metadata": [
+    {
+      "example_id": "dev-catalogue-auditor-insufficient_evidence",
+      "split": "dev",
+      "document_family": "dev-catalogue"
+    },
+    {
+      "example_id": "dev-catalogue-producer-extracted",
+      "split": "dev",
+      "document_family": "dev-catalogue"
+    },
+    {
+      "example_id": "dev-clinical-auditor-insufficient_evidence",
+      "split": "dev",
+      "document_family": "dev-clinical"
+    },
+    {
+      "example_id": "dev-clinical-producer-extracted",
+      "split": "dev",
+      "document_family": "dev-clinical"
+    },
+    {
+      "example_id": "dev-contracts-auditor-insufficient_evidence",
+      "split": "dev",
+      "document_family": "dev-contracts"
+    },
+    {
+      "example_id": "dev-contracts-producer-extracted",
+      "split": "dev",
+      "document_family": "dev-contracts"
+    },
+    {
+      "example_id": "dev-device-auditor-insufficient_evidence",
+      "split": "dev",
+      "document_family": "dev-device"
+    },
+    {
+      "example_id": "dev-device-auditor-unsupported_certainty",
+      "split": "dev",
+      "document_family": "dev-device"
+    },
+    {
+      "example_id": "dev-negotiation-auditor-gap_omission",
+      "split": "dev",
+      "document_family": "dev-negotiation"
+    },
+    {
+      "example_id": "dev-negotiation-auditor-insufficient_evidence",
+      "split": "dev",
+      "document_family": "dev-negotiation"
+    },
+    {
+      "example_id": "dev-nonsense-auditor-insufficient_evidence",
+      "split": "dev",
+      "document_family": "dev-nonsense"
+    },
+    {
+      "example_id": "dev-nonsense-auditor-unsupported_addition",
+      "split": "dev",
+      "document_family": "dev-nonsense"
+    },
+    {
+      "example_id": "dev-procurement-auditor-insufficient_evidence",
+      "split": "dev",
+      "document_family": "dev-procurement"
+    },
+    {
+      "example_id": "dev-procurement-producer-extracted",
+      "split": "dev",
+      "document_family": "dev-procurement"
+    },
+    {
+      "example_id": "dev-regulation-auditor-insufficient_evidence",
+      "split": "dev",
+      "document_family": "dev-regulation"
+    },
+    {
+      "example_id": "dev-regulation-auditor-match",
+      "split": "dev",
+      "document_family": "dev-regulation"
+    },
+    {
+      "example_id": "sealed_adversarial-nonsense-auditor-insufficient_evidence",
+      "split": "sealed_adversarial",
+      "document_family": "sealed_adversarial-nonsense"
+    },
+    {
+      "example_id": "test-nonsense-auditor-insufficient_evidence",
+      "split": "test",
+      "document_family": "test-nonsense"
+    },
+    {
+      "example_id": "v2-chronological_events-catalogue-changed",
+      "split": "dev",
+      "document_family": "v2-chronological_events-catalogue"
+    },
+    {
+      "example_id": "v2-chronological_events-catalogue-conflicting",
+      "split": "dev",
+      "document_family": "v2-chronological_events-catalogue"
+    },
+    {
+      "example_id": "v2-chronological_events-clinical-changed",
+      "split": "dev",
+      "document_family": "v2-chronological_events-clinical"
+    },
+    {
+      "example_id": "v2-chronological_events-clinical-conflicting",
+      "split": "dev",
+      "document_family": "v2-chronological_events-clinical"
+    },
+    {
+      "example_id": "v2-chronological_events-nonsense-changed",
+      "split": "dev",
+      "document_family": "v2-chronological_events-nonsense"
+    },
+    {
+      "example_id": "v2-chronological_events-nonsense-conflicting",
+      "split": "dev",
+      "document_family": "v2-chronological_events-nonsense"
+    },
+    {
+      "example_id": "v2-chronological_events-regulation-changed",
+      "split": "dev",
+      "document_family": "v2-chronological_events-regulation"
+    },
+    {
+      "example_id": "v2-chronological_events-regulation-conflicting",
+      "split": "dev",
+      "document_family": "v2-chronological_events-regulation"
+    },
+    {
+      "example_id": "v2-compact_table-astronomy-changed",
+      "split": "test",
+      "document_family": "v2-compact_table-astronomy"
+    },
+    {
+      "example_id": "v2-compact_table-astronomy-conflicting",
+      "split": "test",
+      "document_family": "v2-compact_table-astronomy"
+    },
+    {
+      "example_id": "v2-compact_table-astronomy-empty",
+      "split": "test",
+      "document_family": "v2-compact_table-astronomy"
+    },
+    {
+      "example_id": "v2-compact_table-astronomy-match",
+      "split": "test",
+      "document_family": "v2-compact_table-astronomy"
+    },
+    {
+      "example_id": "v2-compact_table-astronomy-primary",
+      "split": "test",
+      "document_family": "v2-compact_table-astronomy"
+    },
+    {
+      "example_id": "v2-compact_table-astronomy-refusal",
+      "split": "test",
+      "document_family": "v2-compact_table-astronomy"
+    },
+    {
+      "example_id": "v2-compact_table-ecology-changed",
+      "split": "test",
+      "document_family": "v2-compact_table-ecology"
+    },
+    {
+      "example_id": "v2-compact_table-ecology-conflicting",
+      "split": "test",
+      "document_family": "v2-compact_table-ecology"
+    },
+    {
+      "example_id": "v2-compact_table-ecology-empty",
+      "split": "test",
+      "document_family": "v2-compact_table-ecology"
+    },
+    {
+      "example_id": "v2-compact_table-ecology-match",
+      "split": "test",
+      "document_family": "v2-compact_table-ecology"
+    },
+    {
+      "example_id": "v2-compact_table-ecology-primary",
+      "split": "test",
+      "document_family": "v2-compact_table-ecology"
+    },
+    {
+      "example_id": "v2-compact_table-ecology-refusal",
+      "split": "test",
+      "document_family": "v2-compact_table-ecology"
+    },
+    {
+      "example_id": "v2-machine_records-astronomy-changed",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-astronomy"
+    },
+    {
+      "example_id": "v2-machine_records-astronomy-conflicting",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-astronomy"
+    },
+    {
+      "example_id": "v2-machine_records-astronomy-empty",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-astronomy"
+    },
+    {
+      "example_id": "v2-machine_records-astronomy-match",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-astronomy"
+    },
+    {
+      "example_id": "v2-machine_records-astronomy-primary",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-astronomy"
+    },
+    {
+      "example_id": "v2-machine_records-astronomy-refusal",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-astronomy"
+    },
+    {
+      "example_id": "v2-machine_records-ecology-changed",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-ecology"
+    },
+    {
+      "example_id": "v2-machine_records-ecology-conflicting",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-ecology"
+    },
+    {
+      "example_id": "v2-machine_records-ecology-empty",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-ecology"
+    },
+    {
+      "example_id": "v2-machine_records-ecology-match",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-ecology"
+    },
+    {
+      "example_id": "v2-machine_records-ecology-primary",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-ecology"
+    },
+    {
+      "example_id": "v2-machine_records-ecology-refusal",
+      "split": "sealed_adversarial",
+      "document_family": "v2-machine_records-ecology"
+    },
+    {
+      "example_id": "v2-memo_sections-catalogue-changed",
+      "split": "dev",
+      "document_family": "v2-memo_sections-catalogue"
+    },
+    {
+      "example_id": "v2-memo_sections-catalogue-conflicting",
+      "split": "dev",
+      "document_family": "v2-memo_sections-catalogue"
+    },
+    {
+      "example_id": "v2-memo_sections-clinical-changed",
+      "split": "dev",
+      "document_family": "v2-memo_sections-clinical"
+    },
+    {
+      "example_id": "v2-memo_sections-clinical-conflicting",
+      "split": "dev",
+      "document_family": "v2-memo_sections-clinical"
+    },
+    {
+      "example_id": "v2-memo_sections-nonsense-changed",
+      "split": "dev",
+      "document_family": "v2-memo_sections-nonsense"
+    },
+    {
+      "example_id": "v2-memo_sections-nonsense-conflicting",
+      "split": "dev",
+      "document_family": "v2-memo_sections-nonsense"
+    },
+    {
+      "example_id": "v2-memo_sections-regulation-changed",
+      "split": "dev",
+      "document_family": "v2-memo_sections-regulation"
+    },
+    {
+      "example_id": "v2-memo_sections-regulation-conflicting",
+      "split": "dev",
+      "document_family": "v2-memo_sections-regulation"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-astronomy-changed",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-astronomy"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-astronomy-conflicting",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-astronomy"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-astronomy-empty",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-astronomy"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-astronomy-match",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-astronomy"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-astronomy-primary",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-astronomy"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-astronomy-refusal",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-astronomy"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-ecology-changed",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-ecology"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-ecology-conflicting",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-ecology"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-ecology-empty",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-ecology"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-ecology-match",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-ecology"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-ecology-primary",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-ecology"
+    },
+    {
+      "example_id": "v2-mixed_prose_table-ecology-refusal",
+      "split": "test",
+      "document_family": "v2-mixed_prose_table-ecology"
+    },
+    {
+      "example_id": "v2-multirow_table-astronomy-changed",
+      "split": "test",
+      "document_family": "v2-multirow_table-astronomy"
+    },
+    {
+      "example_id": "v2-multirow_table-astronomy-conflicting",
+      "split": "test",
+      "document_family": "v2-multirow_table-astronomy"
+    },
+    {
+      "example_id": "v2-multirow_table-astronomy-empty",
+      "split": "test",
+      "document_family": "v2-multirow_table-astronomy"
+    },
+    {
+      "example_id": "v2-multirow_table-astronomy-match",
+      "split": "test",
+      "document_family": "v2-multirow_table-astronomy"
+    },
+    {
+      "example_id": "v2-multirow_table-astronomy-primary",
+      "split": "test",
+      "document_family": "v2-multirow_table-astronomy"
+    },
+    {
+      "example_id": "v2-multirow_table-astronomy-refusal",
+      "split": "test",
+      "document_family": "v2-multirow_table-astronomy"
+    },
+    {
+      "example_id": "v2-multirow_table-ecology-changed",
+      "split": "test",
+      "document_family": "v2-multirow_table-ecology"
+    },
+    {
+      "example_id": "v2-multirow_table-ecology-conflicting",
+      "split": "test",
+      "document_family": "v2-multirow_table-ecology"
+    },
+    {
+      "example_id": "v2-multirow_table-ecology-empty",
+      "split": "test",
+      "document_family": "v2-multirow_table-ecology"
+    },
+    {
+      "example_id": "v2-multirow_table-ecology-match",
+      "split": "test",
+      "document_family": "v2-multirow_table-ecology"
+    },
+    {
+      "example_id": "v2-multirow_table-ecology-primary",
+      "split": "test",
+      "document_family": "v2-multirow_table-ecology"
+    },
+    {
+      "example_id": "v2-multirow_table-ecology-refusal",
+      "split": "test",
+      "document_family": "v2-multirow_table-ecology"
+    },
+    {
+      "example_id": "v2-nested_provisions-astronomy-changed",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-astronomy"
+    },
+    {
+      "example_id": "v2-nested_provisions-astronomy-conflicting",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-astronomy"
+    },
+    {
+      "example_id": "v2-nested_provisions-astronomy-empty",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-astronomy"
+    },
+    {
+      "example_id": "v2-nested_provisions-astronomy-match",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-astronomy"
+    },
+    {
+      "example_id": "v2-nested_provisions-astronomy-primary",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-astronomy"
+    },
+    {
+      "example_id": "v2-nested_provisions-astronomy-refusal",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-astronomy"
+    },
+    {
+      "example_id": "v2-nested_provisions-ecology-changed",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-ecology"
+    },
+    {
+      "example_id": "v2-nested_provisions-ecology-conflicting",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-ecology"
+    },
+    {
+      "example_id": "v2-nested_provisions-ecology-empty",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-ecology"
+    },
+    {
+      "example_id": "v2-nested_provisions-ecology-match",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-ecology"
+    },
+    {
+      "example_id": "v2-nested_provisions-ecology-primary",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-ecology"
+    },
+    {
+      "example_id": "v2-nested_provisions-ecology-refusal",
+      "split": "sealed_adversarial",
+      "document_family": "v2-nested_provisions-ecology"
+    },
+    {
+      "example_id": "v2-question_answer-catalogue-changed",
+      "split": "dev",
+      "document_family": "v2-question_answer-catalogue"
+    },
+    {
+      "example_id": "v2-question_answer-catalogue-conflicting",
+      "split": "dev",
+      "document_family": "v2-question_answer-catalogue"
+    },
+    {
+      "example_id": "v2-question_answer-clinical-changed",
+      "split": "dev",
+      "document_family": "v2-question_answer-clinical"
+    },
+    {
+      "example_id": "v2-question_answer-clinical-conflicting",
+      "split": "dev",
+      "document_family": "v2-question_answer-clinical"
+    },
+    {
+      "example_id": "v2-question_answer-nonsense-changed",
+      "split": "dev",
+      "document_family": "v2-question_answer-nonsense"
+    },
+    {
+      "example_id": "v2-question_answer-nonsense-conflicting",
+      "split": "dev",
+      "document_family": "v2-question_answer-nonsense"
+    },
+    {
+      "example_id": "v2-question_answer-regulation-changed",
+      "split": "dev",
+      "document_family": "v2-question_answer-regulation"
+    },
+    {
+      "example_id": "v2-question_answer-regulation-conflicting",
+      "split": "dev",
+      "document_family": "v2-question_answer-regulation"
+    },
+    {
+      "example_id": "v2-transaction_register-astronomy-changed",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-astronomy"
+    },
+    {
+      "example_id": "v2-transaction_register-astronomy-conflicting",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-astronomy"
+    },
+    {
+      "example_id": "v2-transaction_register-astronomy-empty",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-astronomy"
+    },
+    {
+      "example_id": "v2-transaction_register-astronomy-match",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-astronomy"
+    },
+    {
+      "example_id": "v2-transaction_register-astronomy-primary",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-astronomy"
+    },
+    {
+      "example_id": "v2-transaction_register-astronomy-refusal",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-astronomy"
+    },
+    {
+      "example_id": "v2-transaction_register-ecology-changed",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-ecology"
+    },
+    {
+      "example_id": "v2-transaction_register-ecology-conflicting",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-ecology"
+    },
+    {
+      "example_id": "v2-transaction_register-ecology-empty",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-ecology"
+    },
+    {
+      "example_id": "v2-transaction_register-ecology-match",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-ecology"
+    },
+    {
+      "example_id": "v2-transaction_register-ecology-primary",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-ecology"
+    },
+    {
+      "example_id": "v2-transaction_register-ecology-refusal",
+      "split": "sealed_adversarial",
+      "document_family": "v2-transaction_register-ecology"
+    }
+  ],
+  "counts": {
+    "dev": 40,
+    "test": 37,
+    "sealed_adversarial": 37
+  },
+  "target_source_hashes": {
+    "benchmark/task_semantics/seed.json": "003aefd37d40a8ca1c90dbcc2e6429195f015f0c669b6d95eea7df98b2649142",
+    "benchmark/task_semantics_v2/extension.json": "d67cd69891e10705f6a4c250df28ecdda2230437594977a3a082d5cce712ca28"
+  },
+  "evaluation_scope": "development-inclusive registered non-TRAIN; not independent final evidence"
+}

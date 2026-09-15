@@ -1,0 +1,658 @@
+{
+  "rows": [
+    {
+      "example_id": "train-catalogue-auditor-insufficient_evidence",
+      "split": "train",
+      "raw_input": 228,
+      "rendered_prompt": 523,
+      "target": 13,
+      "total": 536
+    },
+    {
+      "example_id": "train-catalogue-auditor-unsupported_addition",
+      "split": "train",
+      "raw_input": 305,
+      "rendered_prompt": 600,
+      "target": 81,
+      "total": 681
+    },
+    {
+      "example_id": "train-catalogue-auditor-unsupported_certainty",
+      "split": "train",
+      "raw_input": 292,
+      "rendered_prompt": 587,
+      "target": 79,
+      "total": 666
+    },
+    {
+      "example_id": "train-clinical-auditor-insufficient_evidence",
+      "split": "train",
+      "raw_input": 228,
+      "rendered_prompt": 523,
+      "target": 13,
+      "total": 536
+    },
+    {
+      "example_id": "train-clinical-auditor-number_change",
+      "split": "train",
+      "raw_input": 292,
+      "rendered_prompt": 587,
+      "target": 86,
+      "total": 673
+    },
+    {
+      "example_id": "train-clinical-auditor-unsupported_addition",
+      "split": "train",
+      "raw_input": 299,
+      "rendered_prompt": 594,
+      "target": 81,
+      "total": 675
+    },
+    {
+      "example_id": "train-contracts-auditor-insufficient_evidence",
+      "split": "train",
+      "raw_input": 222,
+      "rendered_prompt": 517,
+      "target": 13,
+      "total": 530
+    },
+    {
+      "example_id": "train-contracts-auditor-uncertainty_removed",
+      "split": "train",
+      "raw_input": 275,
+      "rendered_prompt": 570,
+      "target": 75,
+      "total": 645
+    },
+    {
+      "example_id": "train-contracts-auditor-unsupported_certainty",
+      "split": "train",
+      "raw_input": 280,
+      "rendered_prompt": 575,
+      "target": 78,
+      "total": 653
+    },
+    {
+      "example_id": "train-device-auditor-insufficient_evidence",
+      "split": "train",
+      "raw_input": 225,
+      "rendered_prompt": 520,
+      "target": 13,
+      "total": 533
+    },
+    {
+      "example_id": "train-device-auditor-uncertainty_removed",
+      "split": "train",
+      "raw_input": 283,
+      "rendered_prompt": 578,
+      "target": 75,
+      "total": 653
+    },
+    {
+      "example_id": "train-device-auditor-unsupported_addition",
+      "split": "train",
+      "raw_input": 301,
+      "rendered_prompt": 596,
+      "target": 81,
+      "total": 677
+    },
+    {
+      "example_id": "train-negotiation-auditor-insufficient_evidence",
+      "split": "train",
+      "raw_input": 226,
+      "rendered_prompt": 521,
+      "target": 13,
+      "total": 534
+    },
+    {
+      "example_id": "train-negotiation-auditor-uncertainty_removed",
+      "split": "train",
+      "raw_input": 281,
+      "rendered_prompt": 576,
+      "target": 75,
+      "total": 651
+    },
+    {
+      "example_id": "train-negotiation-auditor-unsupported_addition",
+      "split": "train",
+      "raw_input": 299,
+      "rendered_prompt": 594,
+      "target": 81,
+      "total": 675
+    },
+    {
+      "example_id": "train-nonsense-auditor-entity_swap",
+      "split": "train",
+      "raw_input": 298,
+      "rendered_prompt": 593,
+      "target": 87,
+      "total": 680
+    },
+    {
+      "example_id": "train-nonsense-auditor-insufficient_evidence",
+      "split": "train",
+      "raw_input": 234,
+      "rendered_prompt": 529,
+      "target": 13,
+      "total": 542
+    },
+    {
+      "example_id": "train-nonsense-auditor-uncertainty_removed",
+      "split": "train",
+      "raw_input": 287,
+      "rendered_prompt": 582,
+      "target": 75,
+      "total": 657
+    },
+    {
+      "example_id": "train-procurement-auditor-insufficient_evidence",
+      "split": "train",
+      "raw_input": 233,
+      "rendered_prompt": 528,
+      "target": 13,
+      "total": 541
+    },
+    {
+      "example_id": "train-procurement-auditor-label_swap",
+      "split": "train",
+      "raw_input": 304,
+      "rendered_prompt": 599,
+      "target": 87,
+      "total": 686
+    },
+    {
+      "example_id": "train-procurement-auditor-unsupported_addition",
+      "split": "train",
+      "raw_input": 311,
+      "rendered_prompt": 606,
+      "target": 81,
+      "total": 687
+    },
+    {
+      "example_id": "train-regulation-auditor-gap_omission",
+      "split": "train",
+      "raw_input": 284,
+      "rendered_prompt": 579,
+      "target": 69,
+      "total": 648
+    },
+    {
+      "example_id": "train-regulation-auditor-insufficient_evidence",
+      "split": "train",
+      "raw_input": 227,
+      "rendered_prompt": 522,
+      "target": 13,
+      "total": 535
+    },
+    {
+      "example_id": "train-regulation-auditor-match",
+      "split": "train",
+      "raw_input": 296,
+      "rendered_prompt": 591,
+      "target": 84,
+      "total": 675
+    },
+    {
+      "example_id": "v2-bullet_list-contracts-changed",
+      "split": "train",
+      "raw_input": 242,
+      "rendered_prompt": 537,
+      "target": 78,
+      "total": 615
+    },
+    {
+      "example_id": "v2-bullet_list-contracts-match",
+      "split": "train",
+      "raw_input": 233,
+      "rendered_prompt": 528,
+      "target": 81,
+      "total": 609
+    },
+    {
+      "example_id": "v2-bullet_list-device-changed",
+      "split": "train",
+      "raw_input": 223,
+      "rendered_prompt": 518,
+      "target": 73,
+      "total": 591
+    },
+    {
+      "example_id": "v2-bullet_list-device-match",
+      "split": "train",
+      "raw_input": 233,
+      "rendered_prompt": 528,
+      "target": 81,
+      "total": 609
+    },
+    {
+      "example_id": "v2-bullet_list-negotiation-changed",
+      "split": "train",
+      "raw_input": 172,
+      "rendered_prompt": 467,
+      "target": 69,
+      "total": 536
+    },
+    {
+      "example_id": "v2-bullet_list-negotiation-match",
+      "split": "train",
+      "raw_input": 187,
+      "rendered_prompt": 482,
+      "target": 77,
+      "total": 559
+    },
+    {
+      "example_id": "v2-bullet_list-procurement-changed",
+      "split": "train",
+      "raw_input": 257,
+      "rendered_prompt": 552,
+      "target": 89,
+      "total": 641
+    },
+    {
+      "example_id": "v2-form_fields-contracts-changed",
+      "split": "train",
+      "raw_input": 281,
+      "rendered_prompt": 576,
+      "target": 84,
+      "total": 660
+    },
+    {
+      "example_id": "v2-form_fields-contracts-match",
+      "split": "train",
+      "raw_input": 281,
+      "rendered_prompt": 576,
+      "target": 81,
+      "total": 657
+    },
+    {
+      "example_id": "v2-form_fields-device-changed",
+      "split": "train",
+      "raw_input": 268,
+      "rendered_prompt": 563,
+      "target": 84,
+      "total": 647
+    },
+    {
+      "example_id": "v2-form_fields-device-match",
+      "split": "train",
+      "raw_input": 259,
+      "rendered_prompt": 554,
+      "target": 81,
+      "total": 635
+    },
+    {
+      "example_id": "v2-form_fields-negotiation-changed",
+      "split": "train",
+      "raw_input": 222,
+      "rendered_prompt": 517,
+      "target": 71,
+      "total": 588
+    },
+    {
+      "example_id": "v2-form_fields-negotiation-match",
+      "split": "train",
+      "raw_input": 213,
+      "rendered_prompt": 508,
+      "target": 77,
+      "total": 585
+    },
+    {
+      "example_id": "v2-form_fields-procurement-changed",
+      "split": "train",
+      "raw_input": 246,
+      "rendered_prompt": 541,
+      "target": 76,
+      "total": 617
+    },
+    {
+      "example_id": "v2-form_fields-procurement-match",
+      "split": "train",
+      "raw_input": 261,
+      "rendered_prompt": 556,
+      "target": 84,
+      "total": 640
+    },
+    {
+      "example_id": "v2-paragraph-contracts-changed",
+      "split": "train",
+      "raw_input": 223,
+      "rendered_prompt": 518,
+      "target": 69,
+      "total": 587
+    },
+    {
+      "example_id": "v2-paragraph-contracts-match",
+      "split": "train",
+      "raw_input": 233,
+      "rendered_prompt": 528,
+      "target": 81,
+      "total": 609
+    },
+    {
+      "example_id": "v2-paragraph-device-changed",
+      "split": "train",
+      "raw_input": 255,
+      "rendered_prompt": 550,
+      "target": 84,
+      "total": 634
+    },
+    {
+      "example_id": "v2-paragraph-device-match",
+      "split": "train",
+      "raw_input": 255,
+      "rendered_prompt": 550,
+      "target": 81,
+      "total": 631
+    },
+    {
+      "example_id": "v2-paragraph-negotiation-changed",
+      "split": "train",
+      "raw_input": 211,
+      "rendered_prompt": 506,
+      "target": 77,
+      "total": 583
+    },
+    {
+      "example_id": "v2-paragraph-procurement-changed",
+      "split": "train",
+      "raw_input": 244,
+      "rendered_prompt": 539,
+      "target": 78,
+      "total": 617
+    },
+    {
+      "example_id": "v2-paragraph-procurement-match",
+      "split": "train",
+      "raw_input": 235,
+      "rendered_prompt": 530,
+      "target": 84,
+      "total": 614
+    },
+    {
+      "example_id": "dev-catalogue-auditor-insufficient_evidence",
+      "split": "dev",
+      "raw_input": 257,
+      "rendered_prompt": 552,
+      "target": 13,
+      "total": 565
+    },
+    {
+      "example_id": "dev-clinical-auditor-insufficient_evidence",
+      "split": "dev",
+      "raw_input": 263,
+      "rendered_prompt": 558,
+      "target": 13,
+      "total": 571
+    },
+    {
+      "example_id": "dev-contracts-auditor-insufficient_evidence",
+      "split": "dev",
+      "raw_input": 254,
+      "rendered_prompt": 549,
+      "target": 13,
+      "total": 562
+    },
+    {
+      "example_id": "dev-device-auditor-insufficient_evidence",
+      "split": "dev",
+      "raw_input": 256,
+      "rendered_prompt": 551,
+      "target": 13,
+      "total": 564
+    },
+    {
+      "example_id": "dev-device-auditor-unsupported_certainty",
+      "split": "dev",
+      "raw_input": 346,
+      "rendered_prompt": 641,
+      "target": 77,
+      "total": 718
+    },
+    {
+      "example_id": "dev-negotiation-auditor-gap_omission",
+      "split": "dev",
+      "raw_input": 340,
+      "rendered_prompt": 635,
+      "target": 72,
+      "total": 707
+    },
+    {
+      "example_id": "dev-negotiation-auditor-insufficient_evidence",
+      "split": "dev",
+      "raw_input": 259,
+      "rendered_prompt": 554,
+      "target": 13,
+      "total": 567
+    },
+    {
+      "example_id": "dev-nonsense-auditor-insufficient_evidence",
+      "split": "dev",
+      "raw_input": 272,
+      "rendered_prompt": 567,
+      "target": 13,
+      "total": 580
+    },
+    {
+      "example_id": "dev-nonsense-auditor-unsupported_addition",
+      "split": "dev",
+      "raw_input": 378,
+      "rendered_prompt": 673,
+      "target": 77,
+      "total": 750
+    },
+    {
+      "example_id": "dev-procurement-auditor-insufficient_evidence",
+      "split": "dev",
+      "raw_input": 267,
+      "rendered_prompt": 562,
+      "target": 13,
+      "total": 575
+    },
+    {
+      "example_id": "dev-regulation-auditor-insufficient_evidence",
+      "split": "dev",
+      "raw_input": 259,
+      "rendered_prompt": 554,
+      "target": 13,
+      "total": 567
+    },
+    {
+      "example_id": "dev-regulation-auditor-match",
+      "split": "dev",
+      "raw_input": 357,
+      "rendered_prompt": 652,
+      "target": 84,
+      "total": 736
+    },
+    {
+      "example_id": "v2-chronological_events-catalogue-changed",
+      "split": "dev",
+      "raw_input": 251,
+      "rendered_prompt": 546,
+      "target": 75,
+      "total": 621
+    },
+    {
+      "example_id": "v2-chronological_events-clinical-changed",
+      "split": "dev",
+      "raw_input": 298,
+      "rendered_prompt": 593,
+      "target": 78,
+      "total": 671
+    },
+    {
+      "example_id": "v2-chronological_events-nonsense-changed",
+      "split": "dev",
+      "raw_input": 313,
+      "rendered_prompt": 608,
+      "target": 86,
+      "total": 694
+    },
+    {
+      "example_id": "v2-chronological_events-regulation-changed",
+      "split": "dev",
+      "raw_input": 269,
+      "rendered_prompt": 564,
+      "target": 69,
+      "total": 633
+    },
+    {
+      "example_id": "v2-memo_sections-catalogue-changed",
+      "split": "dev",
+      "raw_input": 238,
+      "rendered_prompt": 533,
+      "target": 72,
+      "total": 605
+    },
+    {
+      "example_id": "v2-memo_sections-clinical-changed",
+      "split": "dev",
+      "raw_input": 274,
+      "rendered_prompt": 569,
+      "target": 76,
+      "total": 645
+    },
+    {
+      "example_id": "v2-memo_sections-nonsense-changed",
+      "split": "dev",
+      "raw_input": 300,
+      "rendered_prompt": 595,
+      "target": 78,
+      "total": 673
+    },
+    {
+      "example_id": "v2-memo_sections-regulation-changed",
+      "split": "dev",
+      "raw_input": 301,
+      "rendered_prompt": 596,
+      "target": 87,
+      "total": 683
+    },
+    {
+      "example_id": "v2-question_answer-catalogue-changed",
+      "split": "dev",
+      "raw_input": 212,
+      "rendered_prompt": 507,
+      "target": 69,
+      "total": 576
+    },
+    {
+      "example_id": "v2-question_answer-clinical-changed",
+      "split": "dev",
+      "raw_input": 309,
+      "rendered_prompt": 604,
+      "target": 88,
+      "total": 692
+    },
+    {
+      "example_id": "v2-question_answer-nonsense-changed",
+      "split": "dev",
+      "raw_input": 279,
+      "rendered_prompt": 574,
+      "target": 69,
+      "total": 643
+    },
+    {
+      "example_id": "v2-question_answer-regulation-changed",
+      "split": "dev",
+      "raw_input": 286,
+      "rendered_prompt": 581,
+      "target": 78,
+      "total": 659
+    }
+  ],
+  "summary": {
+    "all": {
+      "raw_input": {
+        "min": 172,
+        "median": 262.0,
+        "p90": 305,
+        "p95": 340,
+        "max": 378
+      },
+      "rendered_prompt": {
+        "min": 467,
+        "median": 557.0,
+        "p90": 600,
+        "p95": 635,
+        "max": 673
+      },
+      "target": {
+        "min": 13,
+        "median": 77.0,
+        "p90": 84,
+        "p95": 87,
+        "max": 89
+      },
+      "total": {
+        "min": 530,
+        "median": 633.5,
+        "p90": 686,
+        "p95": 707,
+        "max": 750
+      }
+    },
+    "train": {
+      "raw_input": {
+        "min": 172,
+        "median": 255.0,
+        "p90": 299,
+        "p95": 304,
+        "max": 311
+      },
+      "rendered_prompt": {
+        "min": 467,
+        "median": 550.0,
+        "p90": 594,
+        "p95": 599,
+        "max": 606
+      },
+      "target": {
+        "min": 13,
+        "median": 78.0,
+        "p90": 84,
+        "p95": 87,
+        "max": 89
+      },
+      "total": {
+        "min": 530,
+        "median": 632.5,
+        "p90": 677,
+        "p95": 681,
+        "max": 687
+      }
+    },
+    "dev": {
+      "raw_input": {
+        "min": 212,
+        "median": 273.0,
+        "p90": 346,
+        "p95": 357,
+        "max": 378
+      },
+      "rendered_prompt": {
+        "min": 507,
+        "median": 568.0,
+        "p90": 641,
+        "p95": 652,
+        "max": 673
+      },
+      "target": {
+        "min": 13,
+        "median": 72.0,
+        "p90": 86,
+        "p95": 87,
+        "max": 88
+      },
+      "total": {
+        "min": 562,
+        "median": 638.0,
+        "p90": 718,
+        "p95": 736,
+        "max": 750
+      }
+    }
+  },
+  "max_seq_length": 800,
+  "truncated": 0
+}
