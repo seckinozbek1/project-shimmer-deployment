@@ -1,0 +1,28 @@
+{
+  "version": "machine-agent-review-v2",
+  "registered_at": "2026-09-15T17:04:26.337012+00:00",
+  "cohort": "first-tuning-review-cohort-v2",
+  "method": "Fresh context A/B/C and fresh adjudicator. Typed exact/set comparison, finite source-grounded vocabulary, no fuzzy similarity.",
+  "source_uncertainty_exclusion": false,
+  "review_ambiguity_exclusion": true,
+  "evidence": "All packet-visible required auditor refs; producer owned per-span refs and atom binding.",
+  "primary_count": 576,
+  "schema_repairs_max_per_output": 1,
+  "semantic_retries": 0,
+  "adjudication": "No-majority, any invalid primary, all hard 48.",
+  "isolation": "Packet-only fresh contexts; shared filesystem and parent model, not OS isolation or cross-model diversity.",
+  "criteria": {
+    "M01": "576/576 primary slots",
+    "M02": "576/576 effective judgments valid",
+    "M03": "48/48 designated adjudications",
+    "M04": "All required adjudications complete; no review-ambiguous training label",
+    "M05": "72/72 held-out reviewed and training excluded",
+    "M06": "Zero detected gold isolation violations",
+    "M07": "Frozen benchmark/acceptance/history preserved"
+  },
+  "meaningful_pool": "Nonempty TRAIN and DEV, with producer and auditor candidates represented overall. No new performance threshold.",
+  "post_freeze_mapping": "Same prospectively frozen finite normalizer for authored wording, source-bound and fail-closed; no post-hoc synonym additions.",
+  "training_authorized": false,
+  "human_status": "PENDING",
+  "historical_v1_modified": false
+}

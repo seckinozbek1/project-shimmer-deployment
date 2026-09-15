@@ -1,0 +1,324 @@
+{
+  "source": "Frozen V1 primary judgments and active packet-visible evidence only; no authored targets.",
+  "failures": 35,
+  "unique_packets": 17,
+  "missing_required": 35,
+  "context_or_unowned": 0,
+  "entries": [
+    {
+      "packet_id": "review-1264c40a5253f86441268103",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0001"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-1f5a2c8445e463c4b9751e78",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0001"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-44c6e5e48ca4b20547a222f6",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-44c6e5e48ca4b20547a222f6",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-44c6e5e48ca4b20547a222f6",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-5a09f9e16b6c29cd2d7c29d2",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-5a09f9e16b6c29cd2d7c29d2",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-5a09f9e16b6c29cd2d7c29d2",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-627c562de27af3ce77e238d0",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-627c562de27af3ce77e238d0",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-627c562de27af3ce77e238d0",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-627ec8405e03b878f0496d32",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-627ec8405e03b878f0496d32",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-627ec8405e03b878f0496d32",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-65fb1609b8204d5bb2a1c8ee",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0001"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-70293b6bba9b56389f5571a8",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-0002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-70293b6bba9b56389f5571a8",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-0002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-70293b6bba9b56389f5571a8",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-9335edf1e7541793bad43eb4",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0001"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-ab0f3d6873e52c74777d7265",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0001"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-c0fa0eae347bdb3590a610bb",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-c0fa0eae347bdb3590a610bb",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-c0fa0eae347bdb3590a610bb",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-d5aea6035721bb835ebf7335",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0001"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-da3e305bdd181a4c3036c9b8",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-da3e305bdd181a4c3036c9b8",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-da3e305bdd181a4c3036c9b8",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-e1d711a66641a86809ea0b0f",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0001"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-f2318d6c463ab079eb83dfe3",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-0001"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-f2d5aa4286528348afa90b72",
+      "slot": "A",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-f2d5aa4286528348afa90b72",
+      "slot": "B",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    },
+    {
+      "packet_id": "review-f2d5aa4286528348afa90b72",
+      "slot": "C",
+      "missing_required_refs": [
+        "REF-1002"
+      ],
+      "context_or_unowned_refs": [],
+      "classification": "omitted packet-visible mandatory response-level refs"
+    }
+  ]
+}
