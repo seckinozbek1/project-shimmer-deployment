@@ -1,0 +1,34 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-4cd94ee8acec634d1fc68f39",
+  "input_sha256": "311d2ec198674b018e079d657c4d0caa22cf177fd83b0b9ee9a6681b2380910f",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "Revision history maintained by Archive Office: CLM-A registers Collection Haze proposed 24 catalogue entries under REF-0001. The retained amendment, CLM-B, registers Collection Iris amended 31 catalogue entries under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s182",
+        "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+      }
+    ],
+    "supplied_refs": [
+      "REF-0001",
+      "REF-0002",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-0001",
+      "REF-0002"
+    ],
+    "routed_rules": []
+  }
+}

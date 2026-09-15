@@ -1,0 +1,28 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-c5f70f2e56cb2dda222fa62f",
+  "input_sha256": "c7b48a54ca9f416b43cfda1c60d67070c199487ce937bd2ec30f69b0fe496a9a",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "Question: What was entered first?\nAnswer: CLM-A: fictional case 59 recorded 71 recorded events (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: fictional case 59 retained 76 recorded events (REF-1002).\nClerk note: The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": []
+  }
+}

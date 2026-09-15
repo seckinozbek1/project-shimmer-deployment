@@ -1,0 +1,28 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-d6a0ea19c3394dc3f887ed6e",
+  "input_sha256": "66c72eed2666403711a0df3527d84def2ded7a86859c2a9227139dd2caba1a18",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "- CLM-A: service desk 46 recorded 32 delivery windows (REF-1001).\n- CLM-B: service desk 46 retained 37 delivery windows (REF-1002).\n- The date is absent. When was this recorded?"
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": []
+  }
+}
