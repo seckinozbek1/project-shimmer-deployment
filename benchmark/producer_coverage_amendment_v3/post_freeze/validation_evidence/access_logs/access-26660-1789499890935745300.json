@@ -1,0 +1,42 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "pid": 26660,
+  "successful_target_reads": [],
+  "authorized_target_open_attempts": [],
+  "blocked_target_reads": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v3\\__pycache__\\population.cpython-312.pyc",
+      "at": "2026-09-15T19:18:10.939736+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v3\\__pycache__\\semantics.cpython-312.pyc",
+      "at": "2026-09-15T19:18:10.985631+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v3\\__pycache__\\structural.cpython-312.pyc",
+      "at": "2026-09-15T19:18:10.995636+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\compact_contracts.cpython-312.pyc",
+      "at": "2026-09-15T19:18:11.000760+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\bounded_extraction.cpython-312.pyc",
+      "at": "2026-09-15T19:18:11.007180+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\pairing_map.cpython-312.pyc",
+      "at": "2026-09-15T19:18:11.033175+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\finding_record.cpython-312.pyc",
+      "at": "2026-09-15T19:18:11.040179+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\localization.cpython-312.pyc",
+      "at": "2026-09-15T19:18:11.047878+00:00"
+    }
+  ],
+  "first_actual_target_read_at": null
+}

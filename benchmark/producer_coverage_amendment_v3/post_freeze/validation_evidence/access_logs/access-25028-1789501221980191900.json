@@ -1,0 +1,68 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "pid": 25028,
+  "successful_target_reads": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\first_tuning_experiment_v1\\acceptance_registration.json",
+      "at": "2026-09-15T19:40:28.303108+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\first_tuning_experiment_v1\\cohort.json",
+      "at": "2026-09-15T19:40:29.005391+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\first_tuning_experiment_v1\\freeze.json",
+      "at": "2026-09-15T19:40:29.701940+00:00"
+    }
+  ],
+  "authorized_target_open_attempts": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v3\\__pycache__\\semantics.cpython-312.pyc",
+      "at": "2026-09-15T19:40:22.728300+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v3\\__pycache__\\structural.cpython-312.pyc",
+      "at": "2026-09-15T19:40:23.429254+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\compact_contracts.cpython-312.pyc",
+      "at": "2026-09-15T19:40:24.121263+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\bounded_extraction.cpython-312.pyc",
+      "at": "2026-09-15T19:40:24.826298+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\pairing_map.cpython-312.pyc",
+      "at": "2026-09-15T19:40:25.538841+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\finding_record.cpython-312.pyc",
+      "at": "2026-09-15T19:40:26.237707+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\localization.cpython-312.pyc",
+      "at": "2026-09-15T19:40:26.922895+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\first_tuning_experiment_v1\\acceptance_registration.json",
+      "at": "2026-09-15T19:40:27.612710+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\first_tuning_experiment_v1\\cohort.json",
+      "at": "2026-09-15T19:40:28.305238+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\first_tuning_experiment_v1\\freeze.json",
+      "at": "2026-09-15T19:40:29.008292+00:00"
+    }
+  ],
+  "blocked_target_reads": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\tools\\__pycache__\\cloud_run_common.cpython-312.pyc",
+      "at": "2026-09-15T19:40:21.986315+00:00"
+    }
+  ],
+  "first_actual_target_read_at": "2026-09-15T19:40:28.303108+00:00"
+}

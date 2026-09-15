@@ -1,0 +1,14 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "pid": 22500,
+  "successful_target_reads": [],
+  "authorized_target_open_attempts": [],
+  "blocked_target_reads": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\tools\\__pycache__\\cloud_run_common.cpython-312.pyc",
+      "at": "2026-09-15T19:29:44.213204+00:00"
+    }
+  ],
+  "first_actual_target_read_at": null
+}

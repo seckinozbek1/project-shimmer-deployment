@@ -1,0 +1,13 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "active_release": {
+    "policy_id": "producer-semantic-policy-v3",
+    "release_id": "producer-coverage-amendment-v3",
+    "renderer_id": "producer-target-renderer-v3",
+    "use": "curation_only",
+    "training_authorized": false
+  },
+  "commit": "aad0ec046d7f507d522bf094771b56ea16fd94c9",
+  "manifest_sha256": "d750fdff3883102292e4f31e8cd0c86612a743571db56d02663ac476b4439fa9"
+}

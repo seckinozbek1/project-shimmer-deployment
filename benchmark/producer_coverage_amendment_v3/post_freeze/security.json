@@ -1,0 +1,10 @@
+{
+  "files_scanned": 935,
+  "credential_findings": 0,
+  "operator_content_used": false,
+  "reviewer_target_exposure_detected": false,
+  "pre_gold_target_reads": 0,
+  "strict_chronology_pass": true,
+  "privacy_basis": "Only current source-bound synthetic packets, machine reviews, generic fixtures, reports and safe hash/access metadata; no operator documents or durable private state.",
+  "limitations": "Process guard for maintained workflows; procedural fresh-session workspace isolation, not a hostile-code or OS sandbox."
+}

@@ -1,0 +1,152 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "pid": 20812,
+  "successful_target_reads": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\config\\pricing.json",
+      "at": "2026-09-15T19:31:19.192133+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\fixtures\\topology_reference_contract.json",
+      "at": "2026-09-15T19:31:26.634294+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\config\\constitution.json",
+      "at": "2026-09-15T19:31:33.633403+00:00"
+    }
+  ],
+  "authorized_target_open_attempts": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\compact_contract_no_generation_gate.cpython-312.pyc",
+      "at": "2026-09-15T19:31:07.028197+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\report_recommendations_no_generation_gate.cpython-312.pyc",
+      "at": "2026-09-15T19:31:07.866799+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\agent_wrapper.cpython-312.pyc",
+      "at": "2026-09-15T19:31:08.577908+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\call_evidence.cpython-312.pyc",
+      "at": "2026-09-15T19:31:09.285374+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\agent_activation.cpython-312.pyc",
+      "at": "2026-09-15T19:31:09.986328+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\agent_briefs.cpython-312.pyc",
+      "at": "2026-09-15T19:31:10.688645+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\run_options.cpython-312.pyc",
+      "at": "2026-09-15T19:31:11.396937+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\localization.cpython-312.pyc",
+      "at": "2026-09-15T19:31:12.112809+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\generation_observation.cpython-312.pyc",
+      "at": "2026-09-15T19:31:12.828522+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\bus_reader.cpython-312.pyc",
+      "at": "2026-09-15T19:31:13.544471+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\finding_record.cpython-312.pyc",
+      "at": "2026-09-15T19:31:14.262084+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\reference_builder.cpython-312.pyc",
+      "at": "2026-09-15T19:31:14.961062+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\constitution.cpython-312.pyc",
+      "at": "2026-09-15T19:31:15.670083+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\constitution_guard.cpython-312.pyc",
+      "at": "2026-09-15T19:31:16.372556+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\message_bus.cpython-312.pyc",
+      "at": "2026-09-15T19:31:17.077715+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\cost_tracker.cpython-312.pyc",
+      "at": "2026-09-15T19:31:17.774190+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\config\\pricing.json",
+      "at": "2026-09-15T19:31:18.478831+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\shimmer_logging.cpython-312.pyc",
+      "at": "2026-09-15T19:31:19.199154+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\report_recommendations_checks.cpython-312.pyc",
+      "at": "2026-09-15T19:31:19.926808+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\bounded_extraction.cpython-312.pyc",
+      "at": "2026-09-15T19:31:20.671907+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\pairing_map.cpython-312.pyc",
+      "at": "2026-09-15T19:31:21.391463+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\semantic_waves.cpython-312.pyc",
+      "at": "2026-09-15T19:31:22.102158+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\execution_topology.cpython-312.pyc",
+      "at": "2026-09-15T19:31:22.801147+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\execution_scheduler.cpython-312.pyc",
+      "at": "2026-09-15T19:31:23.520810+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\run_context.cpython-312.pyc",
+      "at": "2026-09-15T19:31:24.243641+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\execution_topology_checks.cpython-312.pyc",
+      "at": "2026-09-15T19:31:24.973506+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\fixtures\\topology_reference_contract.json",
+      "at": "2026-09-15T19:31:25.901784+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\run_completion.cpython-312.pyc",
+      "at": "2026-09-15T19:31:26.900228+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\verify_session1.cpython-312.pyc",
+      "at": "2026-09-15T19:31:28.507131+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\durable_paths.cpython-312.pyc",
+      "at": "2026-09-15T19:31:29.278545+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\config\\constitution.json",
+      "at": "2026-09-15T19:31:32.880828+00:00"
+    }
+  ],
+  "blocked_target_reads": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\tools\\__pycache__\\cloud_run_common.cpython-312.pyc",
+      "at": "2026-09-15T19:31:06.305245+00:00"
+    }
+  ],
+  "first_actual_target_read_at": "2026-09-15T19:31:19.192133+00:00"
+}

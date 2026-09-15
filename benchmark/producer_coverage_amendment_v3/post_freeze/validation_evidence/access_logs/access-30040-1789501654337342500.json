@@ -1,0 +1,3236 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "pid": 30040,
+  "successful_target_reads": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\release_freeze.json",
+      "at": "2026-09-15T19:47:42.122546+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\.gitattributes",
+      "at": "2026-09-15T19:47:42.972082+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\INSTRUCTIONS.md",
+      "at": "2026-09-15T19:47:43.806270+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\POLICY.md",
+      "at": "2026-09-15T19:47:44.616210+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\PRIMARY_HASHES.json",
+      "at": "2026-09-15T19:47:45.477835+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-0026190489a812183ab21115.json",
+      "at": "2026-09-15T19:47:46.308726+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:47:47.134712+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:47:47.972995+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-05fdd68c06edc04d37841781.json",
+      "at": "2026-09-15T19:47:48.821241+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:47:49.657844+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-1800ccd7f5e08566872035b4.json",
+      "at": "2026-09-15T19:47:50.509809+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-18a5e1e9f5a4e5bf7ae39774.json",
+      "at": "2026-09-15T19:47:51.335163+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-1c7b0c2372b8ffbf4f87412f.json",
+      "at": "2026-09-15T19:47:52.195619+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-1e2c7b2307509d50e9e374d1.json",
+      "at": "2026-09-15T19:47:53.031934+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-1f80c271a5e61dea2a7709b6.json",
+      "at": "2026-09-15T19:47:53.883610+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-20af097605dd0ef9a7ebfb0e.json",
+      "at": "2026-09-15T19:47:54.734972+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-24b881666fef3ebca0317b70.json",
+      "at": "2026-09-15T19:47:55.560613+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:47:56.383061+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:47:57.201093+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:47:58.054396+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-35b96eeb222d7b325f6e22d2.json",
+      "at": "2026-09-15T19:47:58.905777+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:47:59.729332+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-4240e853d27feb23e110b1f9.json",
+      "at": "2026-09-15T19:48:00.560549+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-43676d9f77d0f99f8d010533.json",
+      "at": "2026-09-15T19:48:01.396320+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-448d671a754137f8ec973f66.json",
+      "at": "2026-09-15T19:48:02.247764+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-4f82ee17dd2bfe5188b8ff0d.json",
+      "at": "2026-09-15T19:48:03.073098+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:48:03.939373+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:48:04.790996+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-6086fb27ef61d718674cd26e.json",
+      "at": "2026-09-15T19:48:05.632577+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:48:06.499140+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:48:07.457344+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:48:08.367796+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-77f4b4477af1f2dfe0e18b9a.json",
+      "at": "2026-09-15T19:48:09.309205+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:48:10.204573+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-78685fdff40623dcc1ce907a.json",
+      "at": "2026-09-15T19:48:11.107801+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-7b604ca2f70d476794503535.json",
+      "at": "2026-09-15T19:48:12.018367+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-7c9a61a719aca85d2a911b99.json",
+      "at": "2026-09-15T19:48:12.941131+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-7f7e5e7847fbcd3c5293c2c0.json",
+      "at": "2026-09-15T19:48:13.848160+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-824eb09298204a461197677e.json",
+      "at": "2026-09-15T19:48:14.735258+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-8c069a22093770bee2aee1e3.json",
+      "at": "2026-09-15T19:48:15.629053+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:48:16.515053+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-93acc273d64a6f9579e9df9d.json",
+      "at": "2026-09-15T19:48:17.435374+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-96737ff34fdb4d123218340b.json",
+      "at": "2026-09-15T19:48:18.392690+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-9ae4bf05d3d1eccc28612ee6.json",
+      "at": "2026-09-15T19:48:19.313159+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:48:20.178396+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a216e5dcfcea0c7c5d5649d0.json",
+      "at": "2026-09-15T19:48:21.012001+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a23009c3dae25955af484d37.json",
+      "at": "2026-09-15T19:48:21.878785+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:48:22.726604+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a2915eebbbd56e84859dddab.json",
+      "at": "2026-09-15T19:48:23.688574+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a298d94c687548641fe57fa8.json",
+      "at": "2026-09-15T19:48:24.520185+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:48:25.352460+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:48:26.200706+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:48:27.058408+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b0a1f1802f47c4a16ee2175c.json",
+      "at": "2026-09-15T19:48:27.895872+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:48:28.777583+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:48:29.642403+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b4662afdfe020d1e3ed96e8c.json",
+      "at": "2026-09-15T19:48:30.457799+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b60622bf8db2160a234a2bda.json",
+      "at": "2026-09-15T19:48:31.296027+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b7b7a0a383b65ff94c9fe0cc.json",
+      "at": "2026-09-15T19:48:32.125237+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-bd0452c40c516e6888732c20.json",
+      "at": "2026-09-15T19:48:32.977489+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-bff534189fc4f5fde3847e98.json",
+      "at": "2026-09-15T19:48:33.815997+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-c4739aae26c71227387bae6e.json",
+      "at": "2026-09-15T19:48:34.644878+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:48:35.485829+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-c9428787f874274893a75d4c.json",
+      "at": "2026-09-15T19:48:36.319108+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-cc91bacc9578cff5951b3106.json",
+      "at": "2026-09-15T19:48:37.162716+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-cda17bb25ad815886cab917c.json",
+      "at": "2026-09-15T19:48:37.982538+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-d0678dca8decc309845fa14b.json",
+      "at": "2026-09-15T19:48:38.827981+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:48:39.650772+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-d7fcd184e937f08ff1ed2a33.json",
+      "at": "2026-09-15T19:48:40.476205+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-dbbd0f44017c9c322ef2503e.json",
+      "at": "2026-09-15T19:48:41.301926+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-de0004d06229eeb9ec9c50cf.json",
+      "at": "2026-09-15T19:48:42.171792+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-dea3cd39224752c92df30250.json",
+      "at": "2026-09-15T19:48:43.025007+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:48:43.833842+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e2cedee18c117a7191b5a691.json",
+      "at": "2026-09-15T19:48:44.661054+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e33f7a8616f9d055fc1472cc.json",
+      "at": "2026-09-15T19:48:45.486348+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e3e848499df4bc792268d7d5.json",
+      "at": "2026-09-15T19:48:46.304946+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e707a2aca5bc36e46679b35e.json",
+      "at": "2026-09-15T19:48:47.168602+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e7ffd25a8ea605a20320bda7.json",
+      "at": "2026-09-15T19:48:47.996026+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e96a96396932436c09108230.json",
+      "at": "2026-09-15T19:48:48.825244+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-f1e0bd32fdb1af27448de5a9.json",
+      "at": "2026-09-15T19:48:49.677498+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-f2fae7de51a7c01f1dd0508c.json",
+      "at": "2026-09-15T19:48:50.507399+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:48:51.382576+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:48:52.220723+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-fde5bb7e456eb8fdc73afa0e.json",
+      "at": "2026-09-15T19:48:53.057331+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-fffd2f422a06f8470f5f260e.json",
+      "at": "2026-09-15T19:48:53.931731+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\SCHEMA.json",
+      "at": "2026-09-15T19:48:54.782850+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudication_validation.json",
+      "at": "2026-09-15T19:48:55.644698+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:48:56.475801+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:48:57.312592+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:48:58.160687+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:48:58.992183+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:48:59.858338+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:49:00.733828+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:49:01.600028+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:49:02.455108+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:49:03.290619+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:49:04.112881+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:49:04.962925+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:49:05.804044+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:49:06.668707+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:49:07.496955+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:49:08.334561+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:49:09.184044+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:49:10.050483+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:49:10.894976+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:49:11.733281+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:49:12.574768+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:49:13.411608+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:49:14.288495+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:49:15.069668+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:49:15.839841+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:49:16.635379+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:49:17.407923+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\INSTRUCTIONS.md",
+      "at": "2026-09-15T19:49:18.191287+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\POLICY.md",
+      "at": "2026-09-15T19:49:18.945085+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\PRIMARY_HASHES.json",
+      "at": "2026-09-15T19:49:19.707979+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-0026190489a812183ab21115.json",
+      "at": "2026-09-15T19:49:20.468071+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:49:21.243902+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:49:22.014227+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-05fdd68c06edc04d37841781.json",
+      "at": "2026-09-15T19:49:22.881232+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:49:23.726950+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-1800ccd7f5e08566872035b4.json",
+      "at": "2026-09-15T19:49:24.508057+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-18a5e1e9f5a4e5bf7ae39774.json",
+      "at": "2026-09-15T19:49:25.285133+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-1c7b0c2372b8ffbf4f87412f.json",
+      "at": "2026-09-15T19:49:26.071102+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-1e2c7b2307509d50e9e374d1.json",
+      "at": "2026-09-15T19:49:26.871072+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-1f80c271a5e61dea2a7709b6.json",
+      "at": "2026-09-15T19:49:27.659508+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-20af097605dd0ef9a7ebfb0e.json",
+      "at": "2026-09-15T19:49:28.457168+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-24b881666fef3ebca0317b70.json",
+      "at": "2026-09-15T19:49:29.248385+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:49:30.006560+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:49:30.779089+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:49:31.566200+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-35b96eeb222d7b325f6e22d2.json",
+      "at": "2026-09-15T19:49:32.328113+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:49:33.097881+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-4240e853d27feb23e110b1f9.json",
+      "at": "2026-09-15T19:49:33.868394+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-43676d9f77d0f99f8d010533.json",
+      "at": "2026-09-15T19:49:34.675716+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-448d671a754137f8ec973f66.json",
+      "at": "2026-09-15T19:49:35.440469+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-4f82ee17dd2bfe5188b8ff0d.json",
+      "at": "2026-09-15T19:49:36.216176+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:49:36.979568+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:49:37.762548+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-6086fb27ef61d718674cd26e.json",
+      "at": "2026-09-15T19:49:38.543385+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:49:39.313836+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:49:40.098642+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:49:40.866655+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-77f4b4477af1f2dfe0e18b9a.json",
+      "at": "2026-09-15T19:49:41.643508+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:49:42.395668+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-78685fdff40623dcc1ce907a.json",
+      "at": "2026-09-15T19:49:43.167565+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-7b604ca2f70d476794503535.json",
+      "at": "2026-09-15T19:49:43.923347+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-7c9a61a719aca85d2a911b99.json",
+      "at": "2026-09-15T19:49:44.693859+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-7f7e5e7847fbcd3c5293c2c0.json",
+      "at": "2026-09-15T19:49:45.470449+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-824eb09298204a461197677e.json",
+      "at": "2026-09-15T19:49:46.268784+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-8c069a22093770bee2aee1e3.json",
+      "at": "2026-09-15T19:49:47.034701+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:49:47.800977+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-93acc273d64a6f9579e9df9d.json",
+      "at": "2026-09-15T19:49:48.578722+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-96737ff34fdb4d123218340b.json",
+      "at": "2026-09-15T19:49:49.343771+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-9ae4bf05d3d1eccc28612ee6.json",
+      "at": "2026-09-15T19:49:50.092810+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:49:50.865413+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a216e5dcfcea0c7c5d5649d0.json",
+      "at": "2026-09-15T19:49:51.636870+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a23009c3dae25955af484d37.json",
+      "at": "2026-09-15T19:49:52.419538+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:49:53.198438+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a2915eebbbd56e84859dddab.json",
+      "at": "2026-09-15T19:49:53.966241+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a298d94c687548641fe57fa8.json",
+      "at": "2026-09-15T19:49:54.753999+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:49:55.540502+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:49:56.308717+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:49:57.082713+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b0a1f1802f47c4a16ee2175c.json",
+      "at": "2026-09-15T19:49:57.885580+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:49:58.657460+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:49:59.431033+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b4662afdfe020d1e3ed96e8c.json",
+      "at": "2026-09-15T19:50:00.210261+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b60622bf8db2160a234a2bda.json",
+      "at": "2026-09-15T19:50:00.984015+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b7b7a0a383b65ff94c9fe0cc.json",
+      "at": "2026-09-15T19:50:01.752743+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-bd0452c40c516e6888732c20.json",
+      "at": "2026-09-15T19:50:02.512418+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-bff534189fc4f5fde3847e98.json",
+      "at": "2026-09-15T19:50:03.283431+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-c4739aae26c71227387bae6e.json",
+      "at": "2026-09-15T19:50:04.086919+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:50:04.854193+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-c9428787f874274893a75d4c.json",
+      "at": "2026-09-15T19:50:05.627233+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-cc91bacc9578cff5951b3106.json",
+      "at": "2026-09-15T19:50:06.390046+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-cda17bb25ad815886cab917c.json",
+      "at": "2026-09-15T19:50:07.188352+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-d0678dca8decc309845fa14b.json",
+      "at": "2026-09-15T19:50:07.990160+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:50:08.790080+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-d7fcd184e937f08ff1ed2a33.json",
+      "at": "2026-09-15T19:50:09.554833+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-dbbd0f44017c9c322ef2503e.json",
+      "at": "2026-09-15T19:50:10.329374+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-de0004d06229eeb9ec9c50cf.json",
+      "at": "2026-09-15T19:50:11.110810+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-dea3cd39224752c92df30250.json",
+      "at": "2026-09-15T19:50:11.880286+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:50:12.658316+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e2cedee18c117a7191b5a691.json",
+      "at": "2026-09-15T19:50:13.442516+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e33f7a8616f9d055fc1472cc.json",
+      "at": "2026-09-15T19:50:14.229029+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e3e848499df4bc792268d7d5.json",
+      "at": "2026-09-15T19:50:15.016046+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e707a2aca5bc36e46679b35e.json",
+      "at": "2026-09-15T19:50:15.801330+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e7ffd25a8ea605a20320bda7.json",
+      "at": "2026-09-15T19:50:16.576614+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e96a96396932436c09108230.json",
+      "at": "2026-09-15T19:50:17.345632+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-f1e0bd32fdb1af27448de5a9.json",
+      "at": "2026-09-15T19:50:18.128065+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-f2fae7de51a7c01f1dd0508c.json",
+      "at": "2026-09-15T19:50:18.946857+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:50:19.729142+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:50:20.498374+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-fde5bb7e456eb8fdc73afa0e.json",
+      "at": "2026-09-15T19:50:21.254587+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-fffd2f422a06f8470f5f260e.json",
+      "at": "2026-09-15T19:50:22.019868+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\SCHEMA.json",
+      "at": "2026-09-15T19:50:22.792512+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\INSTRUCTIONS.md",
+      "at": "2026-09-15T19:50:23.589632+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\POLICY.md",
+      "at": "2026-09-15T19:50:24.368640+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\PRIMARY_HASHES.json",
+      "at": "2026-09-15T19:50:25.114141+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-0026190489a812183ab21115.json",
+      "at": "2026-09-15T19:50:25.907556+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:50:26.689806+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:50:27.466565+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-05fdd68c06edc04d37841781.json",
+      "at": "2026-09-15T19:50:28.248785+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:50:29.033266+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-1800ccd7f5e08566872035b4.json",
+      "at": "2026-09-15T19:50:29.827165+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-18a5e1e9f5a4e5bf7ae39774.json",
+      "at": "2026-09-15T19:50:30.605976+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-1c7b0c2372b8ffbf4f87412f.json",
+      "at": "2026-09-15T19:50:31.395750+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-1e2c7b2307509d50e9e374d1.json",
+      "at": "2026-09-15T19:50:32.171604+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-1f80c271a5e61dea2a7709b6.json",
+      "at": "2026-09-15T19:50:32.944226+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-20af097605dd0ef9a7ebfb0e.json",
+      "at": "2026-09-15T19:50:33.718992+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-24b881666fef3ebca0317b70.json",
+      "at": "2026-09-15T19:50:34.501809+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:50:35.287434+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:50:36.090124+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:50:36.863343+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-35b96eeb222d7b325f6e22d2.json",
+      "at": "2026-09-15T19:50:37.625217+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:50:38.391771+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-4240e853d27feb23e110b1f9.json",
+      "at": "2026-09-15T19:50:39.178376+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-43676d9f77d0f99f8d010533.json",
+      "at": "2026-09-15T19:50:39.971109+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-448d671a754137f8ec973f66.json",
+      "at": "2026-09-15T19:50:40.762388+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-4f82ee17dd2bfe5188b8ff0d.json",
+      "at": "2026-09-15T19:50:41.550387+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:50:42.324554+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:50:43.104003+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-6086fb27ef61d718674cd26e.json",
+      "at": "2026-09-15T19:50:43.881329+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:50:44.668702+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:50:45.462526+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:50:46.248543+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-77f4b4477af1f2dfe0e18b9a.json",
+      "at": "2026-09-15T19:50:47.010189+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:50:47.786609+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-78685fdff40623dcc1ce907a.json",
+      "at": "2026-09-15T19:50:48.553279+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-7b604ca2f70d476794503535.json",
+      "at": "2026-09-15T19:50:49.331647+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-7c9a61a719aca85d2a911b99.json",
+      "at": "2026-09-15T19:50:50.128583+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-7f7e5e7847fbcd3c5293c2c0.json",
+      "at": "2026-09-15T19:50:50.901648+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-824eb09298204a461197677e.json",
+      "at": "2026-09-15T19:50:51.667700+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-8c069a22093770bee2aee1e3.json",
+      "at": "2026-09-15T19:50:52.437797+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:50:53.217058+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-93acc273d64a6f9579e9df9d.json",
+      "at": "2026-09-15T19:50:54.065017+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-96737ff34fdb4d123218340b.json",
+      "at": "2026-09-15T19:50:54.948631+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-9ae4bf05d3d1eccc28612ee6.json",
+      "at": "2026-09-15T19:50:55.731352+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:50:56.514413+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a216e5dcfcea0c7c5d5649d0.json",
+      "at": "2026-09-15T19:50:57.317336+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a23009c3dae25955af484d37.json",
+      "at": "2026-09-15T19:50:58.088012+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:50:58.846596+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a2915eebbbd56e84859dddab.json",
+      "at": "2026-09-15T19:50:59.632540+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a298d94c687548641fe57fa8.json",
+      "at": "2026-09-15T19:51:00.419357+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:51:01.205590+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:51:01.972844+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:51:02.753702+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b0a1f1802f47c4a16ee2175c.json",
+      "at": "2026-09-15T19:51:03.536442+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:51:04.319458+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:51:05.128090+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b4662afdfe020d1e3ed96e8c.json",
+      "at": "2026-09-15T19:51:06.004883+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b60622bf8db2160a234a2bda.json",
+      "at": "2026-09-15T19:51:06.887187+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b7b7a0a383b65ff94c9fe0cc.json",
+      "at": "2026-09-15T19:51:07.670880+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-bd0452c40c516e6888732c20.json",
+      "at": "2026-09-15T19:51:08.446442+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-bff534189fc4f5fde3847e98.json",
+      "at": "2026-09-15T19:51:09.232608+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-c4739aae26c71227387bae6e.json",
+      "at": "2026-09-15T19:51:10.001595+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:51:10.798226+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-c9428787f874274893a75d4c.json",
+      "at": "2026-09-15T19:51:11.593134+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-cc91bacc9578cff5951b3106.json",
+      "at": "2026-09-15T19:51:12.401523+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-cda17bb25ad815886cab917c.json",
+      "at": "2026-09-15T19:51:13.179667+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-d0678dca8decc309845fa14b.json",
+      "at": "2026-09-15T19:51:13.963445+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:51:14.736392+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-d7fcd184e937f08ff1ed2a33.json",
+      "at": "2026-09-15T19:51:15.506042+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-dbbd0f44017c9c322ef2503e.json",
+      "at": "2026-09-15T19:51:16.284172+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-de0004d06229eeb9ec9c50cf.json",
+      "at": "2026-09-15T19:51:17.047301+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-dea3cd39224752c92df30250.json",
+      "at": "2026-09-15T19:51:17.841274+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:51:18.643215+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e2cedee18c117a7191b5a691.json",
+      "at": "2026-09-15T19:51:19.422074+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e33f7a8616f9d055fc1472cc.json",
+      "at": "2026-09-15T19:51:20.184842+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e3e848499df4bc792268d7d5.json",
+      "at": "2026-09-15T19:51:20.948826+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e707a2aca5bc36e46679b35e.json",
+      "at": "2026-09-15T19:51:21.711789+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e7ffd25a8ea605a20320bda7.json",
+      "at": "2026-09-15T19:51:22.505817+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e96a96396932436c09108230.json",
+      "at": "2026-09-15T19:51:23.291133+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-f1e0bd32fdb1af27448de5a9.json",
+      "at": "2026-09-15T19:51:24.086239+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-f2fae7de51a7c01f1dd0508c.json",
+      "at": "2026-09-15T19:51:24.852808+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:51:25.635338+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:51:26.425137+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-fde5bb7e456eb8fdc73afa0e.json",
+      "at": "2026-09-15T19:51:27.191393+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-fffd2f422a06f8470f5f260e.json",
+      "at": "2026-09-15T19:51:27.971581+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\SCHEMA.json",
+      "at": "2026-09-15T19:51:28.764121+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\canonical_targets.json",
+      "at": "2026-09-15T19:51:29.546995+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\consensus.json",
+      "at": "2026-09-15T19:51:30.330887+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\disagreements.json",
+      "at": "2026-09-15T19:51:31.104305+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\isolation.json",
+      "at": "2026-09-15T19:51:31.875519+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\labels.json",
+      "at": "2026-09-15T19:51:32.656509+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\POLICY_FREEZE.json",
+      "at": "2026-09-15T19:51:33.430260+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\PRE_GOLD_FREEZE.json",
+      "at": "2026-09-15T19:51:34.225413+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\selection.json",
+      "at": "2026-09-15T19:51:34.997435+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-0026190489a812183ab21115.json",
+      "at": "2026-09-15T19:51:35.774044+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:51:36.550525+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:51:37.332786+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-05fdd68c06edc04d37841781.json",
+      "at": "2026-09-15T19:51:38.131418+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:51:38.953202+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-1800ccd7f5e08566872035b4.json",
+      "at": "2026-09-15T19:51:39.751621+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-18a5e1e9f5a4e5bf7ae39774.json",
+      "at": "2026-09-15T19:51:40.531740+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-1c7b0c2372b8ffbf4f87412f.json",
+      "at": "2026-09-15T19:51:41.298397+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-1e2c7b2307509d50e9e374d1.json",
+      "at": "2026-09-15T19:51:42.058432+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-1f80c271a5e61dea2a7709b6.json",
+      "at": "2026-09-15T19:51:42.848473+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-20af097605dd0ef9a7ebfb0e.json",
+      "at": "2026-09-15T19:51:43.621266+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-24b881666fef3ebca0317b70.json",
+      "at": "2026-09-15T19:51:44.413953+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:51:45.200183+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:51:45.975133+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:51:46.773644+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-35b96eeb222d7b325f6e22d2.json",
+      "at": "2026-09-15T19:51:47.560587+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:51:48.357681+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-4240e853d27feb23e110b1f9.json",
+      "at": "2026-09-15T19:51:49.160345+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-43676d9f77d0f99f8d010533.json",
+      "at": "2026-09-15T19:51:49.998870+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-448d671a754137f8ec973f66.json",
+      "at": "2026-09-15T19:51:50.805911+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-4f82ee17dd2bfe5188b8ff0d.json",
+      "at": "2026-09-15T19:51:51.583050+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:51:52.368249+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:51:53.150194+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-6086fb27ef61d718674cd26e.json",
+      "at": "2026-09-15T19:51:53.920333+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:51:54.721873+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:51:55.525302+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:51:56.296197+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-77f4b4477af1f2dfe0e18b9a.json",
+      "at": "2026-09-15T19:51:57.069733+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:51:57.878877+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-78685fdff40623dcc1ce907a.json",
+      "at": "2026-09-15T19:51:58.687780+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-7b604ca2f70d476794503535.json",
+      "at": "2026-09-15T19:51:59.591990+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-7c9a61a719aca85d2a911b99.json",
+      "at": "2026-09-15T19:52:00.371356+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-7f7e5e7847fbcd3c5293c2c0.json",
+      "at": "2026-09-15T19:52:01.140462+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-824eb09298204a461197677e.json",
+      "at": "2026-09-15T19:52:01.925222+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-8c069a22093770bee2aee1e3.json",
+      "at": "2026-09-15T19:52:02.713171+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:52:03.535639+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-93acc273d64a6f9579e9df9d.json",
+      "at": "2026-09-15T19:52:04.337595+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-96737ff34fdb4d123218340b.json",
+      "at": "2026-09-15T19:52:05.144049+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-9ae4bf05d3d1eccc28612ee6.json",
+      "at": "2026-09-15T19:52:05.923010+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:52:06.709815+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a216e5dcfcea0c7c5d5649d0.json",
+      "at": "2026-09-15T19:52:07.516093+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a23009c3dae25955af484d37.json",
+      "at": "2026-09-15T19:52:08.297368+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:52:09.065641+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a2915eebbbd56e84859dddab.json",
+      "at": "2026-09-15T19:52:09.811383+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a298d94c687548641fe57fa8.json",
+      "at": "2026-09-15T19:52:10.546985+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:52:11.279269+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:52:12.012008+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:52:12.765094+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b0a1f1802f47c4a16ee2175c.json",
+      "at": "2026-09-15T19:52:13.491088+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:52:14.221715+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:52:14.994223+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b4662afdfe020d1e3ed96e8c.json",
+      "at": "2026-09-15T19:52:15.721975+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b60622bf8db2160a234a2bda.json",
+      "at": "2026-09-15T19:52:16.449773+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b7b7a0a383b65ff94c9fe0cc.json",
+      "at": "2026-09-15T19:52:17.178084+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-bd0452c40c516e6888732c20.json",
+      "at": "2026-09-15T19:52:17.909565+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-bff534189fc4f5fde3847e98.json",
+      "at": "2026-09-15T19:52:18.678270+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-c4739aae26c71227387bae6e.json",
+      "at": "2026-09-15T19:52:19.410545+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:52:20.135301+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-c9428787f874274893a75d4c.json",
+      "at": "2026-09-15T19:52:20.881511+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-cc91bacc9578cff5951b3106.json",
+      "at": "2026-09-15T19:52:21.634262+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-cda17bb25ad815886cab917c.json",
+      "at": "2026-09-15T19:52:22.350719+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-d0678dca8decc309845fa14b.json",
+      "at": "2026-09-15T19:52:23.078728+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:52:23.824668+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-d7fcd184e937f08ff1ed2a33.json",
+      "at": "2026-09-15T19:52:24.577680+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-dbbd0f44017c9c322ef2503e.json",
+      "at": "2026-09-15T19:52:25.326424+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-de0004d06229eeb9ec9c50cf.json",
+      "at": "2026-09-15T19:52:26.062808+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-dea3cd39224752c92df30250.json",
+      "at": "2026-09-15T19:52:26.789814+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:52:27.533579+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e2cedee18c117a7191b5a691.json",
+      "at": "2026-09-15T19:52:28.262556+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e33f7a8616f9d055fc1472cc.json",
+      "at": "2026-09-15T19:52:29.024821+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e3e848499df4bc792268d7d5.json",
+      "at": "2026-09-15T19:52:29.803572+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e707a2aca5bc36e46679b35e.json",
+      "at": "2026-09-15T19:52:30.613500+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e7ffd25a8ea605a20320bda7.json",
+      "at": "2026-09-15T19:52:31.350115+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e96a96396932436c09108230.json",
+      "at": "2026-09-15T19:52:32.076081+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-f1e0bd32fdb1af27448de5a9.json",
+      "at": "2026-09-15T19:52:32.805430+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-f2fae7de51a7c01f1dd0508c.json",
+      "at": "2026-09-15T19:52:33.543096+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:52:34.292034+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:52:35.030689+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-fde5bb7e456eb8fdc73afa0e.json",
+      "at": "2026-09-15T19:52:35.785950+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-fffd2f422a06f8470f5f260e.json",
+      "at": "2026-09-15T19:52:36.548560+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\machine_adjudicated_producer_candidates_v1\\dev.json",
+      "at": "2026-09-15T19:52:37.312278+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\machine_adjudicated_producer_candidates_v1\\manifest.json",
+      "at": "2026-09-15T19:52:38.061935+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\machine_adjudicated_producer_candidates_v1\\train.json",
+      "at": "2026-09-15T19:52:38.796890+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\policy.md",
+      "at": "2026-09-15T19:52:39.535588+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\POLICY_FREEZE.json",
+      "at": "2026-09-15T19:52:40.273930+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\excluded_candidates.json",
+      "at": "2026-09-15T19:52:41.014202+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\GOLD_COMPARISON_STARTED.json",
+      "at": "2026-09-15T19:52:41.748336+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\legacy_comparison.json",
+      "at": "2026-09-15T19:52:42.475116+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\legacy_summary.json",
+      "at": "2026-09-15T19:52:43.215601+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\limitations.json",
+      "at": "2026-09-15T19:52:43.958795+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\readiness.json",
+      "at": "2026-09-15T19:52:44.683496+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\summary.json",
+      "at": "2026-09-15T19:52:45.414409+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\pre_review_validation.log",
+      "at": "2026-09-15T19:52:46.166675+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\README.md",
+      "at": "2026-09-15T19:52:46.903858+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\reviewer_instructions.md",
+      "at": "2026-09-15T19:52:47.639511+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\schema.json",
+      "at": "2026-09-15T19:52:48.373787+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\selection.json",
+      "at": "2026-09-15T19:52:49.105986+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\selection_compliance.json",
+      "at": "2026-09-15T19:52:49.858988+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\agent_attestations.json",
+      "at": "2026-09-15T19:52:50.588622+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\final_release_scan.json",
+      "at": "2026-09-15T19:52:51.360003+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\historical_integrity.json",
+      "at": "2026-09-15T19:52:52.097824+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\preserved_cohort\\export_security.json",
+      "at": "2026-09-15T19:52:52.842240+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\preserved_cohort\\historical_integrity.json",
+      "at": "2026-09-15T19:52:53.573913+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\preserved_cohort\\validation.json",
+      "at": "2026-09-15T19:52:54.306983+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\preserved_cohort\\validation.log",
+      "at": "2026-09-15T19:52:55.040796+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\production_contract\\validation.json",
+      "at": "2026-09-15T19:52:55.770421+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\production_contract\\validation.log",
+      "at": "2026-09-15T19:52:56.525675+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\security.json",
+      "at": "2026-09-15T19:52:57.277715+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\validation.log",
+      "at": "2026-09-15T19:52:58.009336+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\release_freeze.json",
+      "at": "2026-09-15T19:52:59.530507+00:00"
+    }
+  ],
+  "authorized_target_open_attempts": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v3\\__pycache__\\semantics.cpython-312.pyc",
+      "at": "2026-09-15T19:47:35.307662+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v3\\__pycache__\\structural.cpython-312.pyc",
+      "at": "2026-09-15T19:47:36.189516+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\compact_contracts.cpython-312.pyc",
+      "at": "2026-09-15T19:47:37.055050+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\bounded_extraction.cpython-312.pyc",
+      "at": "2026-09-15T19:47:37.913381+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\pairing_map.cpython-312.pyc",
+      "at": "2026-09-15T19:47:38.787795+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\finding_record.cpython-312.pyc",
+      "at": "2026-09-15T19:47:39.615243+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\scripts\\__pycache__\\localization.cpython-312.pyc",
+      "at": "2026-09-15T19:47:40.443056+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\release_freeze.json",
+      "at": "2026-09-15T19:47:41.273458+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\.gitattributes",
+      "at": "2026-09-15T19:47:42.125546+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\INSTRUCTIONS.md",
+      "at": "2026-09-15T19:47:42.976081+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\POLICY.md",
+      "at": "2026-09-15T19:47:43.809269+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\PRIMARY_HASHES.json",
+      "at": "2026-09-15T19:47:44.620208+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-0026190489a812183ab21115.json",
+      "at": "2026-09-15T19:47:45.480835+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:47:46.311726+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:47:47.137712+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-05fdd68c06edc04d37841781.json",
+      "at": "2026-09-15T19:47:47.975995+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:47:48.824241+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-1800ccd7f5e08566872035b4.json",
+      "at": "2026-09-15T19:47:49.661844+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-18a5e1e9f5a4e5bf7ae39774.json",
+      "at": "2026-09-15T19:47:50.513810+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-1c7b0c2372b8ffbf4f87412f.json",
+      "at": "2026-09-15T19:47:51.338163+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-1e2c7b2307509d50e9e374d1.json",
+      "at": "2026-09-15T19:47:52.198619+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-1f80c271a5e61dea2a7709b6.json",
+      "at": "2026-09-15T19:47:53.034935+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-20af097605dd0ef9a7ebfb0e.json",
+      "at": "2026-09-15T19:47:53.888618+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-24b881666fef3ebca0317b70.json",
+      "at": "2026-09-15T19:47:54.737970+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:47:55.564614+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:47:56.386062+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:47:57.204094+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-35b96eeb222d7b325f6e22d2.json",
+      "at": "2026-09-15T19:47:58.057395+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:47:58.909967+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-4240e853d27feb23e110b1f9.json",
+      "at": "2026-09-15T19:47:59.732333+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-43676d9f77d0f99f8d010533.json",
+      "at": "2026-09-15T19:48:00.564549+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-448d671a754137f8ec973f66.json",
+      "at": "2026-09-15T19:48:01.398319+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-4f82ee17dd2bfe5188b8ff0d.json",
+      "at": "2026-09-15T19:48:02.251983+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:48:03.077097+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:48:03.942373+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-6086fb27ef61d718674cd26e.json",
+      "at": "2026-09-15T19:48:04.795007+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:48:05.636576+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:48:06.506140+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:48:07.461344+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-77f4b4477af1f2dfe0e18b9a.json",
+      "at": "2026-09-15T19:48:08.370796+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:48:09.312730+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-78685fdff40623dcc1ce907a.json",
+      "at": "2026-09-15T19:48:10.211084+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-7b604ca2f70d476794503535.json",
+      "at": "2026-09-15T19:48:11.113326+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-7c9a61a719aca85d2a911b99.json",
+      "at": "2026-09-15T19:48:12.023365+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-7f7e5e7847fbcd3c5293c2c0.json",
+      "at": "2026-09-15T19:48:12.947131+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-824eb09298204a461197677e.json",
+      "at": "2026-09-15T19:48:13.853162+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-8c069a22093770bee2aee1e3.json",
+      "at": "2026-09-15T19:48:14.739261+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:48:15.634056+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-93acc273d64a6f9579e9df9d.json",
+      "at": "2026-09-15T19:48:16.519051+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-96737ff34fdb4d123218340b.json",
+      "at": "2026-09-15T19:48:17.440373+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-9ae4bf05d3d1eccc28612ee6.json",
+      "at": "2026-09-15T19:48:18.396690+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:48:19.316672+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a216e5dcfcea0c7c5d5649d0.json",
+      "at": "2026-09-15T19:48:20.182396+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a23009c3dae25955af484d37.json",
+      "at": "2026-09-15T19:48:21.016510+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:48:21.883788+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a2915eebbbd56e84859dddab.json",
+      "at": "2026-09-15T19:48:22.730601+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a298d94c687548641fe57fa8.json",
+      "at": "2026-09-15T19:48:23.691574+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:48:24.523184+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:48:25.356462+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:48:26.205720+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b0a1f1802f47c4a16ee2175c.json",
+      "at": "2026-09-15T19:48:27.062409+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:48:27.899871+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:48:28.781582+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b4662afdfe020d1e3ed96e8c.json",
+      "at": "2026-09-15T19:48:29.647404+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b60622bf8db2160a234a2bda.json",
+      "at": "2026-09-15T19:48:30.461797+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-b7b7a0a383b65ff94c9fe0cc.json",
+      "at": "2026-09-15T19:48:31.301027+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-bd0452c40c516e6888732c20.json",
+      "at": "2026-09-15T19:48:32.129237+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-bff534189fc4f5fde3847e98.json",
+      "at": "2026-09-15T19:48:32.980857+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-c4739aae26c71227387bae6e.json",
+      "at": "2026-09-15T19:48:33.818994+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:48:34.647878+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-c9428787f874274893a75d4c.json",
+      "at": "2026-09-15T19:48:35.488829+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-cc91bacc9578cff5951b3106.json",
+      "at": "2026-09-15T19:48:36.323614+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-cda17bb25ad815886cab917c.json",
+      "at": "2026-09-15T19:48:37.165715+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-d0678dca8decc309845fa14b.json",
+      "at": "2026-09-15T19:48:37.986538+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:48:38.831980+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-d7fcd184e937f08ff1ed2a33.json",
+      "at": "2026-09-15T19:48:39.653772+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-dbbd0f44017c9c322ef2503e.json",
+      "at": "2026-09-15T19:48:40.480206+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-de0004d06229eeb9ec9c50cf.json",
+      "at": "2026-09-15T19:48:41.304925+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-dea3cd39224752c92df30250.json",
+      "at": "2026-09-15T19:48:42.176792+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:48:43.031528+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e2cedee18c117a7191b5a691.json",
+      "at": "2026-09-15T19:48:43.836843+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e33f7a8616f9d055fc1472cc.json",
+      "at": "2026-09-15T19:48:44.665054+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e3e848499df4bc792268d7d5.json",
+      "at": "2026-09-15T19:48:45.489349+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e707a2aca5bc36e46679b35e.json",
+      "at": "2026-09-15T19:48:46.309945+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e7ffd25a8ea605a20320bda7.json",
+      "at": "2026-09-15T19:48:47.172601+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-e96a96396932436c09108230.json",
+      "at": "2026-09-15T19:48:48.002025+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-f1e0bd32fdb1af27448de5a9.json",
+      "at": "2026-09-15T19:48:48.829244+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-f2fae7de51a7c01f1dd0508c.json",
+      "at": "2026-09-15T19:48:49.682499+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:48:50.513398+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:48:51.385576+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-fde5bb7e456eb8fdc73afa0e.json",
+      "at": "2026-09-15T19:48:52.224723+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\reviews\\producer-fffd2f422a06f8470f5f260e.json",
+      "at": "2026-09-15T19:48:53.061331+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\A\\SCHEMA.json",
+      "at": "2026-09-15T19:48:53.935255+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudication_validation.json",
+      "at": "2026-09-15T19:48:54.786845+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:48:55.649702+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:48:56.480801+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:48:57.316596+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:48:58.165688+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:48:58.997181+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:48:59.864339+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:49:00.737335+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:49:01.608027+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:49:02.459110+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:49:03.294620+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:49:04.117881+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:49:04.967927+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:49:05.808043+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:49:06.672708+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:49:07.499956+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:49:08.337561+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:49:09.189052+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:49:10.055483+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:49:10.900974+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:49:11.737281+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:49:12.578768+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:49:13.415608+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:49:14.292496+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:49:15.073667+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:49:15.843347+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\adjudications\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:49:16.639378+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\INSTRUCTIONS.md",
+      "at": "2026-09-15T19:49:17.411923+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\POLICY.md",
+      "at": "2026-09-15T19:49:18.195287+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\PRIMARY_HASHES.json",
+      "at": "2026-09-15T19:49:18.950084+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-0026190489a812183ab21115.json",
+      "at": "2026-09-15T19:49:19.712980+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:49:20.472071+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:49:21.249418+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-05fdd68c06edc04d37841781.json",
+      "at": "2026-09-15T19:49:22.018230+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:49:22.885234+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-1800ccd7f5e08566872035b4.json",
+      "at": "2026-09-15T19:49:23.730950+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-18a5e1e9f5a4e5bf7ae39774.json",
+      "at": "2026-09-15T19:49:24.513057+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-1c7b0c2372b8ffbf4f87412f.json",
+      "at": "2026-09-15T19:49:25.290133+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-1e2c7b2307509d50e9e374d1.json",
+      "at": "2026-09-15T19:49:26.075102+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-1f80c271a5e61dea2a7709b6.json",
+      "at": "2026-09-15T19:49:26.875072+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-20af097605dd0ef9a7ebfb0e.json",
+      "at": "2026-09-15T19:49:27.663508+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-24b881666fef3ebca0317b70.json",
+      "at": "2026-09-15T19:49:28.462168+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:49:29.251895+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:49:30.010561+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:49:30.784088+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-35b96eeb222d7b325f6e22d2.json",
+      "at": "2026-09-15T19:49:31.570199+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:49:32.333113+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-4240e853d27feb23e110b1f9.json",
+      "at": "2026-09-15T19:49:33.101882+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-43676d9f77d0f99f8d010533.json",
+      "at": "2026-09-15T19:49:33.872392+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-448d671a754137f8ec973f66.json",
+      "at": "2026-09-15T19:49:34.679716+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-4f82ee17dd2bfe5188b8ff0d.json",
+      "at": "2026-09-15T19:49:35.445469+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:49:36.221175+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:49:36.984568+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-6086fb27ef61d718674cd26e.json",
+      "at": "2026-09-15T19:49:37.766548+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:49:38.548387+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:49:39.320836+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:49:40.103642+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-77f4b4477af1f2dfe0e18b9a.json",
+      "at": "2026-09-15T19:49:40.870656+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:49:41.648515+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-78685fdff40623dcc1ce907a.json",
+      "at": "2026-09-15T19:49:42.399668+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-7b604ca2f70d476794503535.json",
+      "at": "2026-09-15T19:49:43.171570+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-7c9a61a719aca85d2a911b99.json",
+      "at": "2026-09-15T19:49:43.928348+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-7f7e5e7847fbcd3c5293c2c0.json",
+      "at": "2026-09-15T19:49:44.697859+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-824eb09298204a461197677e.json",
+      "at": "2026-09-15T19:49:45.475448+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-8c069a22093770bee2aee1e3.json",
+      "at": "2026-09-15T19:49:46.272784+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:49:47.038701+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-93acc273d64a6f9579e9df9d.json",
+      "at": "2026-09-15T19:49:47.805977+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-96737ff34fdb4d123218340b.json",
+      "at": "2026-09-15T19:49:48.583723+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-9ae4bf05d3d1eccc28612ee6.json",
+      "at": "2026-09-15T19:49:49.347771+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:49:50.097810+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a216e5dcfcea0c7c5d5649d0.json",
+      "at": "2026-09-15T19:49:50.870413+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a23009c3dae25955af484d37.json",
+      "at": "2026-09-15T19:49:51.640871+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:49:52.426537+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a2915eebbbd56e84859dddab.json",
+      "at": "2026-09-15T19:49:53.203439+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a298d94c687548641fe57fa8.json",
+      "at": "2026-09-15T19:49:53.971241+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:49:54.757999+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:49:55.545501+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:49:56.313717+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b0a1f1802f47c4a16ee2175c.json",
+      "at": "2026-09-15T19:49:57.087713+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:49:57.890579+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:49:58.663457+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b4662afdfe020d1e3ed96e8c.json",
+      "at": "2026-09-15T19:49:59.436032+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b60622bf8db2160a234a2bda.json",
+      "at": "2026-09-15T19:50:00.215266+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-b7b7a0a383b65ff94c9fe0cc.json",
+      "at": "2026-09-15T19:50:00.989013+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-bd0452c40c516e6888732c20.json",
+      "at": "2026-09-15T19:50:01.756753+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-bff534189fc4f5fde3847e98.json",
+      "at": "2026-09-15T19:50:02.517417+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-c4739aae26c71227387bae6e.json",
+      "at": "2026-09-15T19:50:03.288437+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:50:04.090917+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-c9428787f874274893a75d4c.json",
+      "at": "2026-09-15T19:50:04.858203+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-cc91bacc9578cff5951b3106.json",
+      "at": "2026-09-15T19:50:05.632231+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-cda17bb25ad815886cab917c.json",
+      "at": "2026-09-15T19:50:06.395048+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-d0678dca8decc309845fa14b.json",
+      "at": "2026-09-15T19:50:07.194349+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:50:07.995816+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-d7fcd184e937f08ff1ed2a33.json",
+      "at": "2026-09-15T19:50:08.794081+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-dbbd0f44017c9c322ef2503e.json",
+      "at": "2026-09-15T19:50:09.561845+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-de0004d06229eeb9ec9c50cf.json",
+      "at": "2026-09-15T19:50:10.333375+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-dea3cd39224752c92df30250.json",
+      "at": "2026-09-15T19:50:11.115808+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:50:11.885286+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e2cedee18c117a7191b5a691.json",
+      "at": "2026-09-15T19:50:12.664333+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e33f7a8616f9d055fc1472cc.json",
+      "at": "2026-09-15T19:50:13.446515+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e3e848499df4bc792268d7d5.json",
+      "at": "2026-09-15T19:50:14.234028+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e707a2aca5bc36e46679b35e.json",
+      "at": "2026-09-15T19:50:15.022039+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e7ffd25a8ea605a20320bda7.json",
+      "at": "2026-09-15T19:50:15.805330+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-e96a96396932436c09108230.json",
+      "at": "2026-09-15T19:50:16.582139+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-f1e0bd32fdb1af27448de5a9.json",
+      "at": "2026-09-15T19:50:17.350629+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-f2fae7de51a7c01f1dd0508c.json",
+      "at": "2026-09-15T19:50:18.135062+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:50:18.950856+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:50:19.734141+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-fde5bb7e456eb8fdc73afa0e.json",
+      "at": "2026-09-15T19:50:20.503373+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\reviews\\producer-fffd2f422a06f8470f5f260e.json",
+      "at": "2026-09-15T19:50:21.259584+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\B\\SCHEMA.json",
+      "at": "2026-09-15T19:50:22.024867+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\INSTRUCTIONS.md",
+      "at": "2026-09-15T19:50:22.797512+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\POLICY.md",
+      "at": "2026-09-15T19:50:23.593632+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\PRIMARY_HASHES.json",
+      "at": "2026-09-15T19:50:24.373636+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-0026190489a812183ab21115.json",
+      "at": "2026-09-15T19:50:25.119141+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:50:25.912569+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:50:26.696807+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-05fdd68c06edc04d37841781.json",
+      "at": "2026-09-15T19:50:27.473580+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:50:28.254784+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-1800ccd7f5e08566872035b4.json",
+      "at": "2026-09-15T19:50:29.042266+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-18a5e1e9f5a4e5bf7ae39774.json",
+      "at": "2026-09-15T19:50:29.834166+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-1c7b0c2372b8ffbf4f87412f.json",
+      "at": "2026-09-15T19:50:30.611977+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-1e2c7b2307509d50e9e374d1.json",
+      "at": "2026-09-15T19:50:31.399749+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-1f80c271a5e61dea2a7709b6.json",
+      "at": "2026-09-15T19:50:32.176610+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-20af097605dd0ef9a7ebfb0e.json",
+      "at": "2026-09-15T19:50:32.951226+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-24b881666fef3ebca0317b70.json",
+      "at": "2026-09-15T19:50:33.728988+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:50:34.507809+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:50:35.291947+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:50:36.096136+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-35b96eeb222d7b325f6e22d2.json",
+      "at": "2026-09-15T19:50:36.869340+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:50:37.631217+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-4240e853d27feb23e110b1f9.json",
+      "at": "2026-09-15T19:50:38.395769+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-43676d9f77d0f99f8d010533.json",
+      "at": "2026-09-15T19:50:39.183377+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-448d671a754137f8ec973f66.json",
+      "at": "2026-09-15T19:50:39.976113+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-4f82ee17dd2bfe5188b8ff0d.json",
+      "at": "2026-09-15T19:50:40.767393+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:50:41.555388+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:50:42.328554+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-6086fb27ef61d718674cd26e.json",
+      "at": "2026-09-15T19:50:43.110003+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:50:43.888330+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:50:44.675703+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:50:45.467526+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-77f4b4477af1f2dfe0e18b9a.json",
+      "at": "2026-09-15T19:50:46.253543+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:50:47.016188+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-78685fdff40623dcc1ce907a.json",
+      "at": "2026-09-15T19:50:47.791604+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-7b604ca2f70d476794503535.json",
+      "at": "2026-09-15T19:50:48.558279+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-7c9a61a719aca85d2a911b99.json",
+      "at": "2026-09-15T19:50:49.336647+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-7f7e5e7847fbcd3c5293c2c0.json",
+      "at": "2026-09-15T19:50:50.133583+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-824eb09298204a461197677e.json",
+      "at": "2026-09-15T19:50:50.907646+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-8c069a22093770bee2aee1e3.json",
+      "at": "2026-09-15T19:50:51.672700+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:50:52.443797+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-93acc273d64a6f9579e9df9d.json",
+      "at": "2026-09-15T19:50:53.223058+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-96737ff34fdb4d123218340b.json",
+      "at": "2026-09-15T19:50:54.070016+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-9ae4bf05d3d1eccc28612ee6.json",
+      "at": "2026-09-15T19:50:54.954628+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:50:55.736354+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a216e5dcfcea0c7c5d5649d0.json",
+      "at": "2026-09-15T19:50:56.521416+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a23009c3dae25955af484d37.json",
+      "at": "2026-09-15T19:50:57.323336+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:50:58.093012+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a2915eebbbd56e84859dddab.json",
+      "at": "2026-09-15T19:50:58.851602+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a298d94c687548641fe57fa8.json",
+      "at": "2026-09-15T19:50:59.637540+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:51:00.426358+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:51:01.211593+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:51:01.977844+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b0a1f1802f47c4a16ee2175c.json",
+      "at": "2026-09-15T19:51:02.759702+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:51:03.542442+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:51:04.325459+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b4662afdfe020d1e3ed96e8c.json",
+      "at": "2026-09-15T19:51:05.133178+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b60622bf8db2160a234a2bda.json",
+      "at": "2026-09-15T19:51:06.011883+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-b7b7a0a383b65ff94c9fe0cc.json",
+      "at": "2026-09-15T19:51:06.892193+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-bd0452c40c516e6888732c20.json",
+      "at": "2026-09-15T19:51:07.677881+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-bff534189fc4f5fde3847e98.json",
+      "at": "2026-09-15T19:51:08.453481+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-c4739aae26c71227387bae6e.json",
+      "at": "2026-09-15T19:51:09.238608+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:51:10.008113+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-c9428787f874274893a75d4c.json",
+      "at": "2026-09-15T19:51:10.804226+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-cc91bacc9578cff5951b3106.json",
+      "at": "2026-09-15T19:51:11.599135+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-cda17bb25ad815886cab917c.json",
+      "at": "2026-09-15T19:51:12.407028+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-d0678dca8decc309845fa14b.json",
+      "at": "2026-09-15T19:51:13.185667+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:51:13.968447+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-d7fcd184e937f08ff1ed2a33.json",
+      "at": "2026-09-15T19:51:14.742392+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-dbbd0f44017c9c322ef2503e.json",
+      "at": "2026-09-15T19:51:15.511555+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-de0004d06229eeb9ec9c50cf.json",
+      "at": "2026-09-15T19:51:16.289173+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-dea3cd39224752c92df30250.json",
+      "at": "2026-09-15T19:51:17.054302+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:51:17.846274+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e2cedee18c117a7191b5a691.json",
+      "at": "2026-09-15T19:51:18.649213+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e33f7a8616f9d055fc1472cc.json",
+      "at": "2026-09-15T19:51:19.427076+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e3e848499df4bc792268d7d5.json",
+      "at": "2026-09-15T19:51:20.189842+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e707a2aca5bc36e46679b35e.json",
+      "at": "2026-09-15T19:51:20.954826+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e7ffd25a8ea605a20320bda7.json",
+      "at": "2026-09-15T19:51:21.717795+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-e96a96396932436c09108230.json",
+      "at": "2026-09-15T19:51:22.510817+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-f1e0bd32fdb1af27448de5a9.json",
+      "at": "2026-09-15T19:51:23.297133+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-f2fae7de51a7c01f1dd0508c.json",
+      "at": "2026-09-15T19:51:24.091240+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:51:24.858807+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:51:25.641339+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-fde5bb7e456eb8fdc73afa0e.json",
+      "at": "2026-09-15T19:51:26.431137+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\reviews\\producer-fffd2f422a06f8470f5f260e.json",
+      "at": "2026-09-15T19:51:27.198393+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\C\\SCHEMA.json",
+      "at": "2026-09-15T19:51:27.976582+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\canonical_targets.json",
+      "at": "2026-09-15T19:51:28.770122+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\consensus.json",
+      "at": "2026-09-15T19:51:29.552995+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\disagreements.json",
+      "at": "2026-09-15T19:51:30.336887+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\isolation.json",
+      "at": "2026-09-15T19:51:31.110305+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\labels.json",
+      "at": "2026-09-15T19:51:31.881519+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\POLICY_FREEZE.json",
+      "at": "2026-09-15T19:51:32.662510+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\PRE_GOLD_FREEZE.json",
+      "at": "2026-09-15T19:51:33.436261+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\blind_evidence\\selection.json",
+      "at": "2026-09-15T19:51:34.232413+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-0026190489a812183ab21115.json",
+      "at": "2026-09-15T19:51:35.010443+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-005f2f46d93e0911ee733187.json",
+      "at": "2026-09-15T19:51:35.779044+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-0410db59da5bfbb5a932a6dc.json",
+      "at": "2026-09-15T19:51:36.555526+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-05fdd68c06edc04d37841781.json",
+      "at": "2026-09-15T19:51:37.339787+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-13a7e6cd6aa7fb33c332e588.json",
+      "at": "2026-09-15T19:51:38.138417+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-1800ccd7f5e08566872035b4.json",
+      "at": "2026-09-15T19:51:38.958203+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-18a5e1e9f5a4e5bf7ae39774.json",
+      "at": "2026-09-15T19:51:39.757622+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-1c7b0c2372b8ffbf4f87412f.json",
+      "at": "2026-09-15T19:51:40.537746+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-1e2c7b2307509d50e9e374d1.json",
+      "at": "2026-09-15T19:51:41.304395+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-1f80c271a5e61dea2a7709b6.json",
+      "at": "2026-09-15T19:51:42.063432+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-20af097605dd0ef9a7ebfb0e.json",
+      "at": "2026-09-15T19:51:42.854474+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-24b881666fef3ebca0317b70.json",
+      "at": "2026-09-15T19:51:43.628733+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-2f1e4d83f4247f4096625c77.json",
+      "at": "2026-09-15T19:51:44.421953+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-30bf1146cec8cf9917576b6c.json",
+      "at": "2026-09-15T19:51:45.206184+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-32b0476f0b32001fd73eec0c.json",
+      "at": "2026-09-15T19:51:45.981134+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-35b96eeb222d7b325f6e22d2.json",
+      "at": "2026-09-15T19:51:46.779644+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-36389afa4fa0f9f1b6f43576.json",
+      "at": "2026-09-15T19:51:47.566587+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-4240e853d27feb23e110b1f9.json",
+      "at": "2026-09-15T19:51:48.363681+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-43676d9f77d0f99f8d010533.json",
+      "at": "2026-09-15T19:51:49.166344+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-448d671a754137f8ec973f66.json",
+      "at": "2026-09-15T19:51:50.003870+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-4f82ee17dd2bfe5188b8ff0d.json",
+      "at": "2026-09-15T19:51:50.811916+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-52ee7ec4bf4645fbb156b85b.json",
+      "at": "2026-09-15T19:51:51.588051+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-5d021839b35a787e8b17021c.json",
+      "at": "2026-09-15T19:51:52.374249+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-6086fb27ef61d718674cd26e.json",
+      "at": "2026-09-15T19:51:53.156194+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-60a7789aea5e119cdb51c3dd.json",
+      "at": "2026-09-15T19:51:53.928839+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-6f58b117aaa7a56fc87d031f.json",
+      "at": "2026-09-15T19:51:54.729378+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-757110918920b42131d69cad.json",
+      "at": "2026-09-15T19:51:55.530811+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-77f4b4477af1f2dfe0e18b9a.json",
+      "at": "2026-09-15T19:51:56.301197+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-78355f4bb3301b0744fa7702.json",
+      "at": "2026-09-15T19:51:57.074733+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-78685fdff40623dcc1ce907a.json",
+      "at": "2026-09-15T19:51:57.884877+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-7b604ca2f70d476794503535.json",
+      "at": "2026-09-15T19:51:58.696780+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-7c9a61a719aca85d2a911b99.json",
+      "at": "2026-09-15T19:51:59.598985+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-7f7e5e7847fbcd3c5293c2c0.json",
+      "at": "2026-09-15T19:52:00.377356+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-824eb09298204a461197677e.json",
+      "at": "2026-09-15T19:52:01.146461+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-8c069a22093770bee2aee1e3.json",
+      "at": "2026-09-15T19:52:01.932220+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-9140af935f36703b7e071634.json",
+      "at": "2026-09-15T19:52:02.719186+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-93acc273d64a6f9579e9df9d.json",
+      "at": "2026-09-15T19:52:03.541638+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-96737ff34fdb4d123218340b.json",
+      "at": "2026-09-15T19:52:04.344598+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-9ae4bf05d3d1eccc28612ee6.json",
+      "at": "2026-09-15T19:52:05.149047+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-9b241eb4f89e75dc6b96be59.json",
+      "at": "2026-09-15T19:52:05.929009+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a216e5dcfcea0c7c5d5649d0.json",
+      "at": "2026-09-15T19:52:06.715814+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a23009c3dae25955af484d37.json",
+      "at": "2026-09-15T19:52:07.523109+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a27c1c7e73badc5230c9a62b.json",
+      "at": "2026-09-15T19:52:08.303371+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a2915eebbbd56e84859dddab.json",
+      "at": "2026-09-15T19:52:09.071642+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a298d94c687548641fe57fa8.json",
+      "at": "2026-09-15T19:52:09.817382+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-a3e2724a61ef8a665d03cb31.json",
+      "at": "2026-09-15T19:52:10.552983+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-af580f78792f284c5355a202.json",
+      "at": "2026-09-15T19:52:11.285924+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b0404b38a1a5f408142f11a0.json",
+      "at": "2026-09-15T19:52:12.019010+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b0a1f1802f47c4a16ee2175c.json",
+      "at": "2026-09-15T19:52:12.771094+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b0e4c1ea3c2e79bc0e53f909.json",
+      "at": "2026-09-15T19:52:13.498092+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b16011b96fe6f78de462f95a.json",
+      "at": "2026-09-15T19:52:14.227724+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b4662afdfe020d1e3ed96e8c.json",
+      "at": "2026-09-15T19:52:14.999223+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b60622bf8db2160a234a2bda.json",
+      "at": "2026-09-15T19:52:15.727985+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-b7b7a0a383b65ff94c9fe0cc.json",
+      "at": "2026-09-15T19:52:16.456772+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-bd0452c40c516e6888732c20.json",
+      "at": "2026-09-15T19:52:17.183084+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-bff534189fc4f5fde3847e98.json",
+      "at": "2026-09-15T19:52:17.917565+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-c4739aae26c71227387bae6e.json",
+      "at": "2026-09-15T19:52:18.685272+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-c8192fc8742410f09d2fa879.json",
+      "at": "2026-09-15T19:52:19.416545+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-c9428787f874274893a75d4c.json",
+      "at": "2026-09-15T19:52:20.141299+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-cc91bacc9578cff5951b3106.json",
+      "at": "2026-09-15T19:52:20.887510+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-cda17bb25ad815886cab917c.json",
+      "at": "2026-09-15T19:52:21.640264+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-d0678dca8decc309845fa14b.json",
+      "at": "2026-09-15T19:52:22.355722+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-d3662213a33a75489b3ef507.json",
+      "at": "2026-09-15T19:52:23.083730+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-d7fcd184e937f08ff1ed2a33.json",
+      "at": "2026-09-15T19:52:23.830681+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-dbbd0f44017c9c322ef2503e.json",
+      "at": "2026-09-15T19:52:24.583680+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-de0004d06229eeb9ec9c50cf.json",
+      "at": "2026-09-15T19:52:25.332435+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-dea3cd39224752c92df30250.json",
+      "at": "2026-09-15T19:52:26.069807+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e0928f79ab4a1931030ce499.json",
+      "at": "2026-09-15T19:52:26.795814+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e2cedee18c117a7191b5a691.json",
+      "at": "2026-09-15T19:52:27.539577+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e33f7a8616f9d055fc1472cc.json",
+      "at": "2026-09-15T19:52:28.270079+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e3e848499df4bc792268d7d5.json",
+      "at": "2026-09-15T19:52:29.032830+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e707a2aca5bc36e46679b35e.json",
+      "at": "2026-09-15T19:52:29.810572+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e7ffd25a8ea605a20320bda7.json",
+      "at": "2026-09-15T19:52:30.619499+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-e96a96396932436c09108230.json",
+      "at": "2026-09-15T19:52:31.356115+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-f1e0bd32fdb1af27448de5a9.json",
+      "at": "2026-09-15T19:52:32.082081+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-f2fae7de51a7c01f1dd0508c.json",
+      "at": "2026-09-15T19:52:32.811431+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-f30e2ed5ae4e05ff7211bc8d.json",
+      "at": "2026-09-15T19:52:33.549601+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-f4d67be0ec81bb3b823f66fb.json",
+      "at": "2026-09-15T19:52:34.298035+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-fde5bb7e456eb8fdc73afa0e.json",
+      "at": "2026-09-15T19:52:35.037696+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\inputs\\producer-fffd2f422a06f8470f5f260e.json",
+      "at": "2026-09-15T19:52:35.791950+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\machine_adjudicated_producer_candidates_v1\\dev.json",
+      "at": "2026-09-15T19:52:36.557070+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\machine_adjudicated_producer_candidates_v1\\manifest.json",
+      "at": "2026-09-15T19:52:37.319285+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\machine_adjudicated_producer_candidates_v1\\train.json",
+      "at": "2026-09-15T19:52:38.067936+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\policy.md",
+      "at": "2026-09-15T19:52:38.802890+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\POLICY_FREEZE.json",
+      "at": "2026-09-15T19:52:39.546601+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\excluded_candidates.json",
+      "at": "2026-09-15T19:52:40.279931+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\GOLD_COMPARISON_STARTED.json",
+      "at": "2026-09-15T19:52:41.019202+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\legacy_comparison.json",
+      "at": "2026-09-15T19:52:41.753841+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\legacy_summary.json",
+      "at": "2026-09-15T19:52:42.480117+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\limitations.json",
+      "at": "2026-09-15T19:52:43.221601+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\readiness.json",
+      "at": "2026-09-15T19:52:43.963971+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\post_freeze\\summary.json",
+      "at": "2026-09-15T19:52:44.689498+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\pre_review_validation.log",
+      "at": "2026-09-15T19:52:45.421409+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\README.md",
+      "at": "2026-09-15T19:52:46.172675+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\reviewer_instructions.md",
+      "at": "2026-09-15T19:52:46.912858+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\schema.json",
+      "at": "2026-09-15T19:52:47.645515+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\selection.json",
+      "at": "2026-09-15T19:52:48.381784+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\selection_compliance.json",
+      "at": "2026-09-15T19:52:49.111987+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\agent_attestations.json",
+      "at": "2026-09-15T19:52:49.866987+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\final_release_scan.json",
+      "at": "2026-09-15T19:52:50.594622+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\historical_integrity.json",
+      "at": "2026-09-15T19:52:51.366003+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\preserved_cohort\\export_security.json",
+      "at": "2026-09-15T19:52:52.103824+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\preserved_cohort\\historical_integrity.json",
+      "at": "2026-09-15T19:52:52.849247+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\preserved_cohort\\validation.json",
+      "at": "2026-09-15T19:52:53.579914+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\preserved_cohort\\validation.log",
+      "at": "2026-09-15T19:52:54.312984+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\production_contract\\validation.json",
+      "at": "2026-09-15T19:52:55.047806+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\production_contract\\validation.log",
+      "at": "2026-09-15T19:52:55.777423+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\security.json",
+      "at": "2026-09-15T19:52:56.532676+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\validation\\validation.log",
+      "at": "2026-09-15T19:52:57.284715+00:00"
+    },
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\producer_coverage_amendment_v1\\release_freeze.json",
+      "at": "2026-09-15T19:52:58.754020+00:00"
+    }
+  ],
+  "blocked_target_reads": [
+    {
+      "path": "C:\\Users\\secki\\local\\shimmer-deployment\\tools\\__pycache__\\cloud_run_common.cpython-312.pyc",
+      "at": "2026-09-15T19:47:34.345342+00:00"
+    }
+  ],
+  "first_actual_target_read_at": "2026-09-15T19:47:42.122546+00:00"
+}

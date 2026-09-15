@@ -1,0 +1,9 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "pid": 29452,
+  "successful_target_reads": [],
+  "authorized_target_open_attempts": [],
+  "blocked_target_reads": [],
+  "first_actual_target_read_at": null
+}

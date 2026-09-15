@@ -1,0 +1,29 @@
+test_additional_evaluation_exact_templates (v3_cohort_post_checks.Checks.test_additional_evaluation_exact_templates) ... ok
+test_admin_filename_allowlist_effect (v3_cohort_post_checks.Checks.test_admin_filename_allowlist_effect) ... ok
+test_archives_exact_safe_members_and_hashes (v3_cohort_post_checks.Checks.test_archives_exact_safe_members_and_hashes) ... ok
+test_blank_gold_byte_guard_effect (v3_cohort_post_checks.Checks.test_blank_gold_byte_guard_effect) ... ok
+test_double_count_subset_balance (v3_cohort_post_checks.Checks.test_double_count_subset_balance) ... ok
+test_double_hard_case_minima (v3_cohort_post_checks.Checks.test_double_hard_case_minima) ... ok
+test_double_max_families_and_templates_domains (v3_cohort_post_checks.Checks.test_double_max_families_and_templates_domains) ... ok
+test_exact_allocation_unique_disjoint (v3_cohort_post_checks.Checks.test_exact_allocation_unique_disjoint) ... ok
+test_family_maximum_mathematical_bound (v3_cohort_post_checks.Checks.test_family_maximum_mathematical_bound) ... ok
+test_first_semantic_coverage (v3_cohort_post_checks.Checks.test_first_semantic_coverage) ... ok
+test_foreign_packet_assignment_rejected (v3_cohort_post_checks.Checks.test_foreign_packet_assignment_rejected) ... ok
+test_held_out_exclusion_effect (v3_cohort_post_checks.Checks.test_held_out_exclusion_effect) ... ok
+test_legacy_packet_id_coincidence_rejected (v3_cohort_post_checks.Checks.test_legacy_packet_id_coincidence_rejected) ... ok
+test_mandatory_held_out (v3_cohort_post_checks.Checks.test_mandatory_held_out) ... ok
+test_maximum_tuning_pool_and_evaluation_exclusion (v3_cohort_post_checks.Checks.test_maximum_tuning_pool_and_evaluation_exclusion) ... ok
+test_no_journal_inside_any_benchmark_export (v3_cohort_post_checks.Checks.test_no_journal_inside_any_benchmark_export) ... ok
+test_reproducible_including_reversed_input (v3_cohort_post_checks.Checks.test_reproducible_including_reversed_input) ... ok
+test_resolution_binding_rejects_old (v3_cohort_post_checks.Checks.test_resolution_binding_rejects_old) ... ok
+test_role_counts_each_access_category (v3_cohort_post_checks.Checks.test_role_counts_each_access_category) ... ok
+test_substantive_tuning_producers_only (v3_cohort_post_checks.Checks.test_substantive_tuning_producers_only) ... ok
+test_supersession_explicit_hashes_preserved (v3_cohort_post_checks.Checks.test_supersession_explicit_hashes_preserved) ... ok
+test_template_domain_and_unseen_coverage (v3_cohort_post_checks.Checks.test_template_domain_and_unseen_coverage) ... ok
+test_unselected_authored_rows_never_automatically_eligible (v3_cohort_post_checks.Checks.test_unselected_authored_rows_never_automatically_eligible) ... ok
+unittest.case.FunctionTestCase (profile_integrity) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 68.503s
+
+OK

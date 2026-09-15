@@ -1,0 +1,21 @@
+{
+  "frozen_method_and_labels_changed": false,
+  "corrections": [
+    {
+      "component": "Windows post harness",
+      "detail": "Supply equivalent O_ACCMODE mask and pre-create stdlib asyncio wakeup pair; original network/target guard remains installed for tests"
+    },
+    {
+      "component": "Post R06 cohort reference",
+      "original": "first_tuning_experiment_v1/cohort.json",
+      "original_non_train_count": 153,
+      "correct": "first_tuning_review_cohort_v2/cohort.json",
+      "required_non_train_count": 114,
+      "action": "Stop incomplete wrong-scope validation and retain logs; use correct frozen maintained cohort in a separate post-only adapter"
+    },
+    {
+      "component": "Historical hash orchestration",
+      "detail": "Independent catalog workers execute identical SHA256 comparisons under unchanged V3 guard; aggregate exact actual hashes, manifest/worker hashes and label-freeze binding"
+    }
+  ]
+}

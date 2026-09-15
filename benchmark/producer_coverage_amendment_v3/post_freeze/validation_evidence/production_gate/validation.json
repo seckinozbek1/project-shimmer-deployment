@@ -1,0 +1,84 @@
+{
+  "base_status": 1,
+  "base_counts": {
+    "PASS": 48,
+    "FAIL": 1,
+    "SKIP": 1
+  },
+  "new_tests": 29,
+  "new_failures": 0,
+  "regressions": [
+    {
+      "check": "18 agent output validates against contract",
+      "status": "PASS",
+      "detail": "parser enforces canonical wrapper + per-item core; bare list/dict rejected"
+    },
+    {
+      "check": "39 canonical inter-agent envelope enforced (INFRA-037)",
+      "status": "PASS",
+      "detail": "all 18 agents enforce the canonical wrapper of flat core-bearing items"
+    },
+    {
+      "check": "135 role anchor is contract-derived, local-only, and last in the prompt (local D4)",
+      "status": "PASS",
+      "detail": "anchor absent with no local profile set; present and LAST under the local profile; changing agent_contracts.json's required and item_kind and agent_registry.json's does[0] each independently changed the generated text for PROCESSOR"
+    },
+    {
+      "check": "149 field forms declared in the contract reach both the prompt and the validator (structure H2b)",
+      "status": "PASS",
+      "detail": "field_forms is declared in config/agent_contracts.json, drives the validator's per-field checks (swapping the declaration changes what it enforces), and is rendered verbatim into AMENDMENT_DRAFTER's prompt with a filled worked example; real run_task tells a compliant envelope from a non-compliant one; an agent with no declared forms is byte-unchanged"
+    },
+    {
+      "check": "150 the typed Finding record rejects a rule outside the registry (structure H3)",
+      "status": "PASS",
+      "detail": "the typed Finding record rejects a rule_id outside the registry, an undeclared relation, a figure with no unit and a non-citation in source_refs, and requires ['rule_id', 'unit_id', 'relation', 'record_verdict']; the schema, the relation set and the verdict set are read from the contract, proved by swapping it"
+    },
+    {
+      "check": "151 downstream payloads and bus lines carry no upstream prose (structure H3)",
+      "status": "PASS",
+      "detail": "Source-isolated live _typed_for_agent: inter-agent payloads are projected through strip_reasoning (every one of 9 prose fields removed, every typed field kept), a bare list and a non-payload are handled, and the bus renders a Finding record as a compact typed line carrying rule, relation, values and verdict with no prose; a message with no Finding record is unchanged"
+    },
+    {
+      "check": "194 agent contract field names match what a consumer reads",
+      "status": "PASS",
+      "detail": "every agent contract that offers finding_record (AMENDMENT_DRAFTER, PRACTICE_AUDITOR, REDACTOR, STYLE_GUARDIAN) names its own rule-id field consistently with finding_record.RULE_ID_FIELD_ALIASES, checked against the live contract file, not a stale copy; a minimal real finding under each agent's own field name resolves correctly; removing procedure_id from the alias list is shown to break resolution for PRACTICE_AUDITOR's own field, and restoring it brings resolution back"
+    }
+  ],
+  "mutations": [
+    {
+      "name": "compact_source_reconstruction",
+      "status": "PASS",
+      "before": "CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.\n",
+      "mutated": "s0",
+      "restored": "CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.\n"
+    },
+    {
+      "name": "required_evidence",
+      "status": "PASS",
+      "before": true,
+      "mutated": false,
+      "restored": true
+    },
+    {
+      "name": "no_complete_prefix_recovery",
+      "status": "PASS",
+      "before": true,
+      "mutated": false,
+      "restored": true
+    },
+    {
+      "name": "task_contract_isolation",
+      "status": "PASS",
+      "before": true,
+      "mutated": false,
+      "restored": true
+    }
+  ],
+  "model_generation": false,
+  "cloud": false,
+  "paid_api": false,
+  "full_pipeline": false,
+  "multi_round": false,
+  "passed_checks": 84,
+  "status": "FAIL"
+}

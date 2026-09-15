@@ -1,0 +1,11 @@
+{
+  "first_successful_target_open": {
+    "path": "C:\\Users\\secki\\local\\shimmer-deployment\\benchmark\\task_semantics\\seed.json",
+    "at": "2026-09-15T19:30:04.419558+00:00",
+    "log": "access-2976-1789500595411468200.json"
+  },
+  "commit": "aad0ec046d7f507d522bf094771b56ea16fd94c9",
+  "manifest_sha256": "d750fdff3883102292e4f31e8cd0c86612a743571db56d02663ac476b4439fa9",
+  "pre_gold_target_reads": 0,
+  "barrier": "Actual commit object and exact manifest/current hashes verified before opening authored targets"
+}

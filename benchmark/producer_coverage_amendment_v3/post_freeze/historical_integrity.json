@@ -1,0 +1,24 @@
+{
+  "pre_gold_commit": "aad0ec046d7f507d522bf094771b56ea16fd94c9",
+  "frozen_files": {
+    "machine_adjudication_v1": 961,
+    "machine_adjudication_v2": 692,
+    "producer_coverage_amendment_v1": 406,
+    "producer_coverage_amendment_v2": 338,
+    "historical_contract_ab": 106,
+    "first_tuning_review_cohort_v2": 503,
+    "first_tuning_experiment_v1": 502
+  },
+  "preserved_auditor": {
+    "train": 46,
+    "dev": 24
+  },
+  "r06_exact_non_train_population": 114,
+  "r06_train_exclusion_effect": true,
+  "registered_criteria": 27,
+  "catastrophic_zero_limits": 6,
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "training_authorized": false,
+  "final_model_acceptance": false
+}
