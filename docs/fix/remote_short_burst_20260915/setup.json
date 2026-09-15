@@ -1,0 +1,42 @@
+{
+  "started_epoch": 1789456502.4402833,
+  "steps": [
+    {
+      "label": "readiness",
+      "start_epoch": 1789456502.44037,
+      "seconds": 0.8658542633056641,
+      "returncode": 0
+    },
+    {
+      "label": "venv",
+      "start_epoch": 1789456503.3066156,
+      "seconds": 2.3678877353668213,
+      "returncode": 0
+    },
+    {
+      "label": "dependencies",
+      "start_epoch": 1789456505.6747065,
+      "seconds": 10.279317617416382,
+      "returncode": 0
+    },
+    {
+      "label": "cuda_check",
+      "start_epoch": 1789456515.954259,
+      "seconds": 1.8174467086791992,
+      "returncode": 0
+    },
+    {
+      "label": "model_acquisition",
+      "start_epoch": 1789456517.7719355,
+      "seconds": 13.944939374923706,
+      "returncode": 0
+    },
+    {
+      "label": "bounded_probe",
+      "start_epoch": 1789456531.7176793,
+      "seconds": 1.7185304164886475,
+      "returncode": 1
+    }
+  ],
+  "finished_epoch": 1789456531.7172184
+}
