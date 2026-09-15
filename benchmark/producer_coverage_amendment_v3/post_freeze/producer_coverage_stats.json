@@ -1,0 +1,22 @@
+{
+  "train": {
+    "count": 32,
+    "domains": 8,
+    "templates": 4,
+    "families": 20,
+    "gap": 32,
+    "uncertainty": 26,
+    "multi_claim": 29,
+    "evidence_selection": 29
+  },
+  "dev": {
+    "count": 32,
+    "domains": 8,
+    "templates": 4,
+    "families": 20,
+    "gap": 32,
+    "uncertainty": 26,
+    "multi_claim": 29,
+    "evidence_selection": 29
+  }
+}

@@ -1,3 +1,17 @@
+# Latest handoff: producer clean-run V3 ? COMPLETE
+
+`PRODUCER_TUNING_COVERAGE_READY`
+`BALANCED_AGENT_ADJUDICATED_TUNING_EXPERIMENT_READY`
+`FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING`
+
+Method freeze `749c82c`; label freeze `aad0ec0`. Clean pre-gold chronology: zero authored-target reads. 64 packets (32 TRAIN/32 DEV), 192 valid primaries, 64 unanimous triples, 16 valid adjudications, zero unresolved ambiguity. Legacy differences: six source-supported under-specifications; no unresolved diagnostic. Eligible producers 32/32; preserved auditors 46/24; combined 78 TRAIN / 56 DEV, with role-separated manifest. Human counts remain zero. Curation only; no training/model/cloud/push authorization.
+
+45 pre-gold tests and 110 post-gold tests/checks passed; 3,508 historical catalog hashes preserved. R06 stays at its original 114 non-TRAIN examples. Post-only Windows/test-cohort adapter corrections and stopped broad-gate runs are documented, without changes to frozen methods or labels.
+
+See [PRODUCER_TUNING_CLEAN_RUN_V3.md](PRODUCER_TUNING_CLEAN_RUN_V3.md). Any tuning requires separate authorization; human review remains pending. All prior handoff history follows unchanged.
+
+---
+
 # Producer amendment V2 completed ? curation-only, quarantined
 
 **PRODUCER_TUNING_COVERAGE_NOT_READY**.

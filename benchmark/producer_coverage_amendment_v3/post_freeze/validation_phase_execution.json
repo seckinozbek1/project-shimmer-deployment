@@ -1,0 +1,21 @@
+{
+  "PRE_GOLD_SAFE_tests": 45,
+  "POST_GOLD_ONLY_tests_checks": 110,
+  "pre_suite": {
+    "semantic_heading": 33,
+    "guard": 12
+  },
+  "post_suite": {
+    "selected_cohort": 24,
+    "production": 85,
+    "R06_train_exclusion": 1
+  },
+  "additional_post_evidence": {
+    "production_effect_proofs": 4,
+    "historical_rejections_reproduced": 4,
+    "historical_catalog_hashes": 3508
+  },
+  "bootstrap_and_assembly": "Source-only inspection/compilation, new packet metadata, guarded collection/freezes, git metadata and secret scans; no authored-target-bearing commands before label commit",
+  "full_cohort_gate_counted_as_pass": false,
+  "original_wrong_cohort_post_run_counted_as_pass": false
+}

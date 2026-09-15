@@ -1,0 +1,4147 @@
+[
+  {
+    "example_id": "dev-catalogue-producer-extracted",
+    "packet_id": "producer-v3-4cd94ee8acec634d1fc68f39",
+    "split": "dev",
+    "role": "producer",
+    "domain": "catalogue",
+    "template_family": "revision_log",
+    "document_family": "dev-catalogue",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Archive Office: CLM-A registers Collection Haze proposed 24 catalogue entries under REF-0001. The retained amendment, CLM-B, registers Collection Iris amended 31 catalogue entries under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s182",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "311d2ec198674b018e079d657c4d0caa22cf177fd83b0b9ee9a6681b2380910f",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "amendment",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "When does the amendment take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "amendment",
+              "attribute": "ratification_status",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "It is unclear whether the amendment was ratified.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "dev-clinical-producer-extracted",
+    "packet_id": "producer-v3-d46e74cce0a9945d064a5c5d",
+    "split": "dev",
+    "role": "producer",
+    "domain": "clinical",
+    "template_family": "revision_log",
+    "document_family": "dev-clinical",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Synthetic Clinic: CLM-A registers Case Alder proposed 18 recorded observations under REF-0001. The retained amendment, CLM-B, registers Case Birch amended 18 recorded observations under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s182",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "2ac5990763bf066917ff621870be388c31c8d3783321290318644eb33fdf168e",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "amendment",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "When does the amendment take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "amendment",
+              "attribute": "ratification_status",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "It is unclear whether the amendment was ratified.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "dev-contracts-producer-extracted",
+    "packet_id": "producer-v3-ab1489413ec6c5968db664ec",
+    "split": "dev",
+    "role": "producer",
+    "domain": "contracts",
+    "template_family": "revision_log",
+    "document_family": "dev-contracts",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Accord Office: CLM-A registers Leto proposed 14 delivery lots under REF-0001. The retained amendment, CLM-B, registers Mira amended 14 delivery lots under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s163",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "60cbb75d97f08656af3fbc6243f8d2fab42f572b9f33ec1ba411ef21242ac230",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "amendment",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "When does the amendment take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "amendment",
+              "attribute": "ratification_status",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "It is unclear whether the amendment was ratified.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "dev-device-producer-extracted",
+    "packet_id": "producer-v3-b546899ee591356aef64c87f",
+    "split": "dev",
+    "role": "producer",
+    "domain": "device",
+    "template_family": "revision_log",
+    "document_family": "dev-device",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Test Lab: CLM-A registers Module Cedar proposed 20 signal cycles under REF-0001. The retained amendment, CLM-B, registers Module Elm amended 27 signal cycles under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s16c",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "d44aa67809dd3464888cbb25e06b7b36a1d47beae0556a9c049f347200b86f0e",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "amendment",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "No effective period is specified. When does the amendment take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "amendment",
+              "attribute": "ratification_status",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "It is unclear whether the amendment was ratified.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "dev-negotiation-producer-extracted",
+    "packet_id": "producer-v3-fac0ffbd24cba64f589f4a16",
+    "split": "dev",
+    "role": "producer",
+    "domain": "negotiation",
+    "template_family": "revision_log",
+    "document_family": "dev-negotiation",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Council of Talks: CLM-A registers Orin proposed 12 concessions under REF-0001. The retained amendment, CLM-B, registers Vela amended 19 concessions under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s162",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "43f6ddd8db95f3799ac5ac18983f770eb09be3e3adf1bbd04d0dc856008d5102",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "amendment",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "No effective period is specified. When does the amendment take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "amendment",
+              "attribute": "ratification_status",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "It is unclear whether the amendment was ratified.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "dev-nonsense-producer-extracted",
+    "packet_id": "producer-v3-ea85203f2f0c13b6374eaa83",
+    "split": "dev",
+    "role": "producer",
+    "domain": "nonsense",
+    "template_family": "revision_log",
+    "document_family": "dev-nonsense",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Institute of Nimbular Blenkets: CLM-A registers Zorvit proposed 26 quavels under REF-0001. The retained amendment, CLM-B, registers Plenko amended 26 quavels under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s16c",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "c69c01b161f0f7f4bdc25310c94fc46ed3759fb3c114b8be43c8bb7fd6e0dee2",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "amendment",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "When does the amendment take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "amendment",
+              "attribute": "ratification_status",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "It is unclear whether the amendment was ratified.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "dev-procurement-producer-extracted",
+    "packet_id": "producer-v3-d39916a4ea519346386e95dc",
+    "split": "dev",
+    "role": "producer",
+    "domain": "procurement",
+    "template_family": "revision_log",
+    "document_family": "dev-procurement",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Purchasing Desk: CLM-A registers Bidder Flint proposed 22 supply crates under REF-0001. The retained amendment, CLM-B, registers Bidder Gale amended 22 supply crates under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s174",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "e4167c3bdb763f890da19fe186d71217dd417f1abd878eed722ca9f0108d9642",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "amendment",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "No effective period is specified. When does the amendment take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "amendment",
+              "attribute": "ratification_status",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "It is unclear whether the amendment was ratified.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "dev-regulation-producer-extracted",
+    "packet_id": "producer-v3-4574849d129153b0f2d55672",
+    "split": "dev",
+    "role": "producer",
+    "domain": "regulation",
+    "template_family": "revision_log",
+    "document_family": "dev-regulation",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Registry Board: CLM-A registers Nera proposed 16 filed notices under REF-0001. The retained amendment, CLM-B, registers Sola amended 23 filed notices under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s164",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "b7e8334b54eebc3cc8e67141760c8bf2c0522b8a3a16a322ea0ae08f2cf4b46f",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "amendment",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "When does the amendment take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "amendment",
+              "attribute": "ratification_status",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "support": "It is unclear whether the amendment was ratified.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-chronological_events-catalogue-conflicting",
+    "packet_id": "producer-v3-8c9175405939892332166624",
+    "split": "dev",
+    "role": "producer",
+    "domain": "catalogue",
+    "template_family": "v2-chronological_events",
+    "document_family": "v2-chronological_events-catalogue",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-C: collection 53 is assigned 53 entries (REF-1003).\n09:25 event amended: CLM-D: the same collection 53 is assigned 55 entries (REF-1004).\n11:40 follow-up: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s12e",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "cadc3f74c51a7a2b07bd7f35775f8dac2b8204ec201904123e9481c743df49be",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-chronological_events-catalogue-primary",
+    "packet_id": "producer-v3-0512c721d8c1157039c75186",
+    "split": "dev",
+    "role": "producer",
+    "domain": "catalogue",
+    "template_family": "v2-chronological_events",
+    "document_family": "v2-chronological_events-catalogue",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-A: collection 53 recorded 53 entries (REF-1001).\n09:25 event amended: No second claim was submitted.\n11:40 follow-up: The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "4d0906e0846124d5505d21c31d8eb8576a8a7474a230b045d951b12ccb13a4fb",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A"
+          ],
+          "refs": [
+            "REF-1001"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_nonoccurrence",
+              "subject": "entry",
+              "attribute": "submission_occurrence",
+              "ordinal": 2,
+              "relation": null,
+              "state": "not_submitted",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "No second claim was submitted.",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recorder",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "The recorder is unnamed.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1001"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-chronological_events-clinical-conflicting",
+    "packet_id": "producer-v3-cc7495ca2d04fbee709521ac",
+    "split": "dev",
+    "role": "producer",
+    "domain": "clinical",
+    "template_family": "v2-chronological_events",
+    "document_family": "v2-chronological_events-clinical",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-C: fictional case 55 is assigned 59 recorded events (REF-1003).\n09:25 event amended: CLM-D: the same fictional case 55 is assigned 61 recorded events (REF-1004).\n11:40 follow-up: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s146",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "1dcbd2283bb95f2af3a7fa4399cb7639c8a767af0544f20b34e4692df836f5b9",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing. When does it take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-chronological_events-clinical-primary",
+    "packet_id": "producer-v3-fa958243fbe6a2e71f22a243",
+    "split": "dev",
+    "role": "producer",
+    "domain": "clinical",
+    "template_family": "v2-chronological_events",
+    "document_family": "v2-chronological_events-clinical",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-A: fictional case 55 recorded 59 recorded events (REF-1001).\n09:25 event amended: CLM-B: fictional case 55 retained 64 recorded events (REF-1002).\n11:40 follow-up: The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "6d95e96a5bd52408fe98cc628d93762c903d2e74d9e314fa43f960d8c41be6aa",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-chronological_events-nonsense-conflicting",
+    "packet_id": "producer-v3-b8b17df073ddc5b78712b7c7",
+    "split": "dev",
+    "role": "producer",
+    "domain": "nonsense",
+    "template_family": "v2-chronological_events",
+    "document_family": "v2-chronological_events-nonsense",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-C: vraxlet 56 is assigned 62 flomquils (REF-1003).\n09:25 event amended: CLM-D: the same vraxlet 56 is assigned 64 flomquils (REF-1004).\n11:40 follow-up: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s12c",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "9322f62ddcbbcdbf388dd5c4edfee4e7057b739bb4b98fcd6eb69017479fe64c",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-chronological_events-nonsense-primary",
+    "packet_id": "producer-v3-645734026558775fa160685f",
+    "split": "dev",
+    "role": "producer",
+    "domain": "nonsense",
+    "template_family": "v2-chronological_events",
+    "document_family": "v2-chronological_events-nonsense",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-A: vraxlet 56 recorded 62 flomquils (REF-1001).\n09:25 event amended: CLM-B: vraxlet 56 retained 67 flomquils (REF-1002).\n11:40 follow-up: The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "1f145af7ae4bc3affd14a0662198e1cdb7350527bf3a240008ed472c59807911",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recorder",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "The recorder is unnamed.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": []
+        }
+      ],
+      "source_uncertainty_present": false,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-chronological_events-regulation-conflicting",
+    "packet_id": "producer-v3-c51a91fe52d44d88c78d546b",
+    "split": "dev",
+    "role": "producer",
+    "domain": "regulation",
+    "template_family": "v2-chronological_events",
+    "document_family": "v2-chronological_events-regulation",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-C: filing office 54 is assigned 56 notices (REF-1003).\n09:25 event amended: CLM-D: the same filing office 54 is assigned 58 notices (REF-1004).\n11:40 follow-up: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s134",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "5aadadd19692d4de18304d5ccb23b4c19a80967c19aefc0678fe03a8aabb8ed2",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-chronological_events-regulation-primary",
+    "packet_id": "producer-v3-1cc089fc0164844fbd299058",
+    "split": "dev",
+    "role": "producer",
+    "domain": "regulation",
+    "template_family": "v2-chronological_events",
+    "document_family": "v2-chronological_events-regulation",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-A: filing office 54 recorded 56 notices (REF-1001).\n09:25 event amended: CLM-B: filing office 54 retained 61 notices (REF-1002).\n11:40 follow-up: The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "b56fe629f55d066355fb13ca287ff955db65f946bb7815e72aa748ab9fe82b88",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": []
+        }
+      ],
+      "source_uncertainty_present": false,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-memo_sections-catalogue-conflicting",
+    "packet_id": "producer-v3-0db920a935bd1923e2e55efc",
+    "split": "dev",
+    "role": "producer",
+    "domain": "catalogue",
+    "template_family": "v2-memo_sections",
+    "document_family": "v2-memo_sections-catalogue",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-C: collection 61 is assigned 77 entries (REF-1003).\nSupporting entry: CLM-D: the same collection 61 is assigned 79 entries (REF-1004).\nUnresolved matters: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s157",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "e5af7d375862f8486e568330278780d73e7ff278e3d3951064daf6d64f1999bb",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-memo_sections-catalogue-primary",
+    "packet_id": "producer-v3-17b7f2ea9a8a77b6da7234c0",
+    "split": "dev",
+    "role": "producer",
+    "domain": "catalogue",
+    "template_family": "v2-memo_sections",
+    "document_family": "v2-memo_sections-catalogue",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: collection 61 recorded 77 entries (REF-1001).\nSupporting entry: No second claim was submitted.\nUnresolved matters: The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "8fab95e1cedf9d0f6ebaecdbc842c32d6398a3b2020effed85d67eed27128ea9",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A"
+          ],
+          "refs": [
+            "REF-1001"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_nonoccurrence",
+              "subject": "entry",
+              "attribute": "submission_occurrence",
+              "ordinal": 2,
+              "relation": null,
+              "state": "not_submitted",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "No second claim was submitted.",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "The date is absent. When was this recorded?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1001"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-memo_sections-clinical-conflicting",
+    "packet_id": "producer-v3-b79f40bdf2e616f990759d7f",
+    "split": "dev",
+    "role": "producer",
+    "domain": "clinical",
+    "template_family": "v2-memo_sections",
+    "document_family": "v2-memo_sections-clinical",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-C: fictional case 63 is assigned 83 recorded events (REF-1003).\nSupporting entry: CLM-D: the same fictional case 63 is assigned 85 recorded events (REF-1004).\nUnresolved matters: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s16f",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "bb7dfde6c777a7f3181bdc181d57de282c938b71b464b46b17cf2754e3acfdf4",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-memo_sections-clinical-primary",
+    "packet_id": "producer-v3-cfa789238e72c4194c7f7b33",
+    "split": "dev",
+    "role": "producer",
+    "domain": "clinical",
+    "template_family": "v2-memo_sections",
+    "document_family": "v2-memo_sections-clinical",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: fictional case 63 recorded 83 recorded events (REF-1001).\nSupporting entry: CLM-B: fictional case 63 retained 88 recorded events (REF-1002).\nUnresolved matters: The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "5e4b0ba6fec77337bde3d77098c9129fa65615ef4f7b80cc5f79a1cf21ff1bcc",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-memo_sections-nonsense-conflicting",
+    "packet_id": "producer-v3-fac8d5be1085af07123efd96",
+    "split": "dev",
+    "role": "producer",
+    "domain": "nonsense",
+    "template_family": "v2-memo_sections",
+    "document_family": "v2-memo_sections-nonsense",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-C: vraxlet 64 is assigned 86 flomquils (REF-1003).\nSupporting entry: CLM-D: the same vraxlet 64 is assigned 88 flomquils (REF-1004).\nUnresolved matters: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s155",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "b30af42fe8841605bfd1101bce6789e1f2c619bad81fbaf2651b78b3fa6dd492",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-memo_sections-nonsense-primary",
+    "packet_id": "producer-v3-1601d18980580f5d434366e5",
+    "split": "dev",
+    "role": "producer",
+    "domain": "nonsense",
+    "template_family": "v2-memo_sections",
+    "document_family": "v2-memo_sections-nonsense",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: vraxlet 64 recorded 86 flomquils (REF-1001).\nSupporting entry: CLM-B: vraxlet 64 retained 91 flomquils (REF-1002).\nUnresolved matters: The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "0257261f84f528826cc715465a19e9ef801b1c35b9f8e6320a38588e77f4b6a2",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": []
+        }
+      ],
+      "source_uncertainty_present": false,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-memo_sections-regulation-conflicting",
+    "packet_id": "producer-v3-c7849d8f71c6ed351a0c1567",
+    "split": "dev",
+    "role": "producer",
+    "domain": "regulation",
+    "template_family": "v2-memo_sections",
+    "document_family": "v2-memo_sections-regulation",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-C: filing office 62 is assigned 80 notices (REF-1003).\nSupporting entry: CLM-D: the same filing office 62 is assigned 82 notices (REF-1004).\nUnresolved matters: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s15d",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "624532c8e73fa7e19fba013d8fbf3413239e4fe135c434e777a98667e102dd3d",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-memo_sections-regulation-primary",
+    "packet_id": "producer-v3-0c9fb5f63f203df36f0e3ed6",
+    "split": "dev",
+    "role": "producer",
+    "domain": "regulation",
+    "template_family": "v2-memo_sections",
+    "document_family": "v2-memo_sections-regulation",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: filing office 62 recorded 80 notices (REF-1001).\nSupporting entry: CLM-B: filing office 62 retained 85 notices (REF-1002).\nUnresolved matters: The date is absent. When was this recorded? The recorder is unnamed. Who recorded it?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "a35dfc0be55ba19ab45cfbdb3d362fe26dc09d0aaa01a7353ce4ffc2647ee45d",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recorder",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "The recorder is unnamed.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": []
+        }
+      ],
+      "source_uncertainty_present": false,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-question_answer-catalogue-conflicting",
+    "packet_id": "producer-v3-bed68ae91685e80efe6b3ca9",
+    "split": "dev",
+    "role": "producer",
+    "domain": "catalogue",
+    "template_family": "v2-question_answer",
+    "document_family": "v2-question_answer-catalogue",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-C: collection 57 is assigned 65 entries (REF-1003).\nQuestion: What followed?\nAnswer: CLM-D: the same collection 57 is assigned 67 entries (REF-1004).\nClerk note: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s14b",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "5bf5ceca9571bc7536c8717392abde62ddfd083dbd203f86ff2031d7c34ba6f1",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_content",
+              "ordinal": 1,
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "What was entered first?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_order",
+              "ordinal": "next",
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "What followed?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing. When does it take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-question_answer-catalogue-primary",
+    "packet_id": "producer-v3-9b73948b5cabaf1be3b6a00a",
+    "split": "dev",
+    "role": "producer",
+    "domain": "catalogue",
+    "template_family": "v2-question_answer",
+    "document_family": "v2-question_answer-catalogue",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-A: collection 57 recorded 65 entries (REF-1001).\nQuestion: What followed?\nAnswer: No second claim was submitted.\nClerk note: The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "6e86bc0c575db07788a42e3d25e69fbdfb27b8644312d60fd0fb0f5a37567d99",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A"
+          ],
+          "refs": [
+            "REF-1001"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_content",
+              "ordinal": 1,
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "What was entered first?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_order",
+              "ordinal": "next",
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "What followed?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_nonoccurrence",
+              "subject": "entry",
+              "attribute": "submission_occurrence",
+              "ordinal": 2,
+              "relation": null,
+              "state": "not_submitted",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "No second claim was submitted.",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1001"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-question_answer-clinical-conflicting",
+    "packet_id": "producer-v3-38ec8e4e32c5037b557e4734",
+    "split": "dev",
+    "role": "producer",
+    "domain": "clinical",
+    "template_family": "v2-question_answer",
+    "document_family": "v2-question_answer-clinical",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-C: fictional case 59 is assigned 71 recorded events (REF-1003).\nQuestion: What followed?\nAnswer: CLM-D: the same fictional case 59 is assigned 73 recorded events (REF-1004).\nClerk note: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s163",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "2415b9dc3fb6517b371d30e39231d9f91c567e3648fe14fd9df78f746ed52c9d",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_content",
+              "ordinal": 1,
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "What was entered first?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_order",
+              "ordinal": "next",
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "What followed?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-question_answer-clinical-primary",
+    "packet_id": "producer-v3-c5f70f2e56cb2dda222fa62f",
+    "split": "dev",
+    "role": "producer",
+    "domain": "clinical",
+    "template_family": "v2-question_answer",
+    "document_family": "v2-question_answer-clinical",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-A: fictional case 59 recorded 71 recorded events (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: fictional case 59 retained 76 recorded events (REF-1002).\nClerk note: The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "c7b48a54ca9f416b43cfda1c60d67070c199487ce937bd2ec30f69b0fe496a9a",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_content",
+              "ordinal": 1,
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "What was entered first?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_order",
+              "ordinal": "next",
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "What followed?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recorder",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "The recorder is unnamed.",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-question_answer-nonsense-conflicting",
+    "packet_id": "producer-v3-688e80fd498f0a7ba869fd6b",
+    "split": "dev",
+    "role": "producer",
+    "domain": "nonsense",
+    "template_family": "v2-question_answer",
+    "document_family": "v2-question_answer-nonsense",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-C: vraxlet 60 is assigned 74 flomquils (REF-1003).\nQuestion: What followed?\nAnswer: CLM-D: the same vraxlet 60 is assigned 76 flomquils (REF-1004).\nClerk note: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s149",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "9ed056d6c7fbbb7e1dde9f19b82f66dbe166b27d8ac14b7e13dda20c4d077cbd",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_content",
+              "ordinal": 1,
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "What was entered first?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_order",
+              "ordinal": "next",
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "What followed?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing. When does it take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-question_answer-nonsense-primary",
+    "packet_id": "producer-v3-480d2836d50a4fbedce94188",
+    "split": "dev",
+    "role": "producer",
+    "domain": "nonsense",
+    "template_family": "v2-question_answer",
+    "document_family": "v2-question_answer-nonsense",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-A: vraxlet 60 recorded 74 flomquils (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: vraxlet 60 retained 79 flomquils (REF-1002).\nClerk note: The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "befb87022d0b1a73604e37ac4fe43b4c4ba5fbdd99443436e4f4ca156786aa7e",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_content",
+              "ordinal": 1,
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "What was entered first?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_order",
+              "ordinal": "next",
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "What followed?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": []
+        }
+      ],
+      "source_uncertainty_present": false,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-question_answer-regulation-conflicting",
+    "packet_id": "producer-v3-8971adec69bd4d724b4cf0c7",
+    "split": "dev",
+    "role": "producer",
+    "domain": "regulation",
+    "template_family": "v2-question_answer",
+    "document_family": "v2-question_answer-regulation",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-C: filing office 58 is assigned 68 notices (REF-1003).\nQuestion: What followed?\nAnswer: CLM-D: the same filing office 58 is assigned 70 notices (REF-1004).\nClerk note: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s151",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "1ecb5ecd02e3e76a5ba7e3637354c9b90d93b9d3264d15a876809dd827811f1d",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_content",
+              "ordinal": 1,
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "What was entered first?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_order",
+              "ordinal": "next",
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "What followed?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The effective time is missing. When does it take effect?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "ordinal": null,
+              "relation": null,
+              "state": "unknown",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "support": "The interpretation remains uncertain.",
+              "origin": "source_explicit"
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "uncertainty": [
+            "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-question_answer-regulation-primary",
+    "packet_id": "producer-v3-75ffdd959ce9d41f3e3c920a",
+    "split": "dev",
+    "role": "producer",
+    "domain": "regulation",
+    "template_family": "v2-question_answer",
+    "document_family": "v2-question_answer-regulation",
+    "provenance": "machine_adjudicated_producer_candidate_v3",
+    "evidence_kind": "training_label_curation_evidence",
+    "use": "curation_only",
+    "human_reviewed": false,
+    "training_authorized": false,
+    "policy": "producer-semantic-policy-v3",
+    "renderer": "producer-target-renderer-v3",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-A: filing office 58 recorded 68 notices (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: filing office 58 retained 73 notices (REF-1002).\nClerk note: The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "1a72a927533c3f224c508cfbb1d869fbec0802b25a87d1f85868b9d2117cca02",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_content",
+              "ordinal": 1,
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "What was entered first?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "explicit_question",
+              "subject": "entry",
+              "attribute": "entry_order",
+              "ordinal": "next",
+              "relation": null,
+              "state": "requested",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "What followed?",
+              "origin": "source_explicit"
+            },
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "recording_time",
+              "ordinal": null,
+              "relation": null,
+              "state": "unspecified",
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "support": "When was this recorded?",
+              "origin": "source_explicit"
+            }
+          ],
+          "uncertainty_atoms": []
+        }
+      ],
+      "source_uncertainty_present": false,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "uncertainty": [],
+          "status": "extracted",
+          "refs": [
+            "REF-1001",
+            "REF-1002"
+          ]
+        }
+      ]
+    }
+  }
+]
