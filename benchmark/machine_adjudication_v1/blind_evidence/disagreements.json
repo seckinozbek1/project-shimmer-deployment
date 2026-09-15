@@ -1,0 +1,383 @@
+{
+  "required_adjudication": [
+    "review-008fa015433b8336de7d44c5",
+    "review-05a5ba5a010a4fede2f16d4c",
+    "review-0615977dc51ddb9e13a05282",
+    "review-0d2bd27645f0169a0e0dc03f",
+    "review-0ecbb19c518b3978f280b693",
+    "review-1264c40a5253f86441268103",
+    "review-13d6f0d09b38bfa2550f0ea6",
+    "review-1674f369b07f86fc690f7735",
+    "review-186675791d0785830fb7d3d0",
+    "review-18827ee0c35beeea1ce1b7d6",
+    "review-1a85967104ee69c46e30d8d8",
+    "review-1f5a2c8445e463c4b9751e78",
+    "review-26f2e62ed0c04907d1924a38",
+    "review-2c3b01ac65e99e619b1ebf5b",
+    "review-2e9e21f03b9ec06e65ff55e4",
+    "review-33eff93477db715e095c2ff3",
+    "review-370466c1cb383a925b79d2ce",
+    "review-3f7a1f25729171fa20f256ae",
+    "review-42e31c0bcc51e3bc262550f0",
+    "review-4384e9378563dfaae2623607",
+    "review-44c6e5e48ca4b20547a222f6",
+    "review-44e41c0234ec12ad83d6504b",
+    "review-486263f870b32f356aba38c0",
+    "review-4a4f23c9cafe83c13434dd70",
+    "review-56252d3a3245fe6d3fab7c6e",
+    "review-5a09f9e16b6c29cd2d7c29d2",
+    "review-5b0cc4b8f523eb8959b25c65",
+    "review-5ef9cc5d36a99a4fbff88d05",
+    "review-60a2b854fea4dd7144504df6",
+    "review-627c562de27af3ce77e238d0",
+    "review-627ec8405e03b878f0496d32",
+    "review-64fc34988d0420e251fec3ac",
+    "review-65fb1609b8204d5bb2a1c8ee",
+    "review-6eff9502321969a5cb080237",
+    "review-70293b6bba9b56389f5571a8",
+    "review-71b0ad93fb956a7914912ade",
+    "review-78fba2337d12d9254ad39237",
+    "review-812e00c7c8749ecb972d12c9",
+    "review-8d08c171d32dcb1bfae81fcf",
+    "review-921307743f3605bf8ebac77d",
+    "review-9231b4f8784082cecddb9737",
+    "review-9335edf1e7541793bad43eb4",
+    "review-9935c225f0d966e8c0488282",
+    "review-9ae0cc62e5a4890a0c583939",
+    "review-9e52f0b60de56dd5cde04a73",
+    "review-a24f8dc97768789f8fe4d7d6",
+    "review-a308aa397d1e59318e9b1c6a",
+    "review-a948d846e4b6151efbfafe81",
+    "review-aa567fce9515ffcca9e93868",
+    "review-ab0f3d6873e52c74777d7265",
+    "review-ad9a66c3e2e277f8cd47a320",
+    "review-b49ae4bc4ef9a4618a74b8fd",
+    "review-b7a2a8d105db17f86507e8bc",
+    "review-b864c53147521b8e83abbfe3",
+    "review-bb1f942017264c22b24bb71d",
+    "review-bb7846abeb2b462fce2dab20",
+    "review-c0fa0eae347bdb3590a610bb",
+    "review-c1431ac659435c306b3bec39",
+    "review-c193b7c5372da41915cf67a1",
+    "review-c4fed73a8e05e5fe0e5c5437",
+    "review-c9b60b9d533773bb060d516d",
+    "review-cb9c002f72c70023f4031af4",
+    "review-cf31651e9bc73bbd323c90c7",
+    "review-d1658da4baa9bb476d660079",
+    "review-d476df3af7432e808334b875",
+    "review-d4a448d7567746abd06df130",
+    "review-d5aea6035721bb835ebf7335",
+    "review-d604f868594ddfe527d176d5",
+    "review-da3e305bdd181a4c3036c9b8",
+    "review-db9a61b6e3cc00c52f38c1c8",
+    "review-dc7251bb7a4b3c0960d2819e",
+    "review-dd4f5f0ea2a38d3d6ab159b8",
+    "review-ded87b54701e6199fae5f82f",
+    "review-df5af1f71c9ce9e9590cbe44",
+    "review-e02b198638e26da0d4c26c1b",
+    "review-e112e69147389b2a2c56f46e",
+    "review-e1d711a66641a86809ea0b0f",
+    "review-e7220b6cdd2af5926898ef81",
+    "review-e722ce9d4d0cb9fd13688ae8",
+    "review-f0c991fcdafc403a7dbf039a",
+    "review-f2318d6c463ab079eb83dfe3",
+    "review-f2d5aa4286528348afa90b72",
+    "review-f2f9cd0996c66304a341cb7f",
+    "review-f50e67a89b3316914d83205e",
+    "review-f70eca4a38ee9d577f8d3136",
+    "review-fb7c26762ccc408c7c7ed02c",
+    "review-fbcf7fec6086a1fde46ae1ef"
+  ],
+  "no_majority": [
+    "review-008fa015433b8336de7d44c5",
+    "review-05a5ba5a010a4fede2f16d4c",
+    "review-0615977dc51ddb9e13a05282",
+    "review-0d2bd27645f0169a0e0dc03f",
+    "review-0ecbb19c518b3978f280b693",
+    "review-1264c40a5253f86441268103",
+    "review-13d6f0d09b38bfa2550f0ea6",
+    "review-186675791d0785830fb7d3d0",
+    "review-18827ee0c35beeea1ce1b7d6",
+    "review-1a85967104ee69c46e30d8d8",
+    "review-26f2e62ed0c04907d1924a38",
+    "review-2c3b01ac65e99e619b1ebf5b",
+    "review-33eff93477db715e095c2ff3",
+    "review-3f7a1f25729171fa20f256ae",
+    "review-42e31c0bcc51e3bc262550f0",
+    "review-4384e9378563dfaae2623607",
+    "review-44e41c0234ec12ad83d6504b",
+    "review-486263f870b32f356aba38c0",
+    "review-4a4f23c9cafe83c13434dd70",
+    "review-56252d3a3245fe6d3fab7c6e",
+    "review-5b0cc4b8f523eb8959b25c65",
+    "review-5ef9cc5d36a99a4fbff88d05",
+    "review-60a2b854fea4dd7144504df6",
+    "review-64fc34988d0420e251fec3ac",
+    "review-78fba2337d12d9254ad39237",
+    "review-8d08c171d32dcb1bfae81fcf",
+    "review-921307743f3605bf8ebac77d",
+    "review-9335edf1e7541793bad43eb4",
+    "review-9935c225f0d966e8c0488282",
+    "review-9ae0cc62e5a4890a0c583939",
+    "review-9e52f0b60de56dd5cde04a73",
+    "review-a308aa397d1e59318e9b1c6a",
+    "review-a948d846e4b6151efbfafe81",
+    "review-aa567fce9515ffcca9e93868",
+    "review-ab0f3d6873e52c74777d7265",
+    "review-b7a2a8d105db17f86507e8bc",
+    "review-bb1f942017264c22b24bb71d",
+    "review-c1431ac659435c306b3bec39",
+    "review-c193b7c5372da41915cf67a1",
+    "review-c4fed73a8e05e5fe0e5c5437",
+    "review-c9b60b9d533773bb060d516d",
+    "review-cb9c002f72c70023f4031af4",
+    "review-cf31651e9bc73bbd323c90c7",
+    "review-d1658da4baa9bb476d660079",
+    "review-d476df3af7432e808334b875",
+    "review-d4a448d7567746abd06df130",
+    "review-d604f868594ddfe527d176d5",
+    "review-db9a61b6e3cc00c52f38c1c8",
+    "review-dc7251bb7a4b3c0960d2819e",
+    "review-dd4f5f0ea2a38d3d6ab159b8",
+    "review-ded87b54701e6199fae5f82f",
+    "review-df5af1f71c9ce9e9590cbe44",
+    "review-e112e69147389b2a2c56f46e",
+    "review-e1d711a66641a86809ea0b0f",
+    "review-e7220b6cdd2af5926898ef81",
+    "review-e722ce9d4d0cb9fd13688ae8",
+    "review-f0c991fcdafc403a7dbf039a",
+    "review-f2318d6c463ab079eb83dfe3",
+    "review-f2f9cd0996c66304a341cb7f",
+    "review-f50e67a89b3316914d83205e",
+    "review-f70eca4a38ee9d577f8d3136",
+    "review-fb7c26762ccc408c7c7ed02c",
+    "review-fbcf7fec6086a1fde46ae1ef"
+  ],
+  "invalid_primaries": [
+    {
+      "packet_id": "review-1264c40a5253f86441268103",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-1f5a2c8445e463c4b9751e78",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-44c6e5e48ca4b20547a222f6",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-44c6e5e48ca4b20547a222f6",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-44c6e5e48ca4b20547a222f6",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-5a09f9e16b6c29cd2d7c29d2",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-5a09f9e16b6c29cd2d7c29d2",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-5a09f9e16b6c29cd2d7c29d2",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-627c562de27af3ce77e238d0",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-627c562de27af3ce77e238d0",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-627c562de27af3ce77e238d0",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-627ec8405e03b878f0496d32",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-627ec8405e03b878f0496d32",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-627ec8405e03b878f0496d32",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-65fb1609b8204d5bb2a1c8ee",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-70293b6bba9b56389f5571a8",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-70293b6bba9b56389f5571a8",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-70293b6bba9b56389f5571a8",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-9335edf1e7541793bad43eb4",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-ab0f3d6873e52c74777d7265",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-c0fa0eae347bdb3590a610bb",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-c0fa0eae347bdb3590a610bb",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-c0fa0eae347bdb3590a610bb",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-d5aea6035721bb835ebf7335",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-da3e305bdd181a4c3036c9b8",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-da3e305bdd181a4c3036c9b8",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-da3e305bdd181a4c3036c9b8",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-e1d711a66641a86809ea0b0f",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-f2318d6c463ab079eb83dfe3",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-f2d5aa4286528348afa90b72",
+      "slot": "A",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-f2d5aa4286528348afa90b72",
+      "slot": "B",
+      "error": "Missing or ungrounded fidelity evidence"
+    },
+    {
+      "packet_id": "review-f2d5aa4286528348afa90b72",
+      "slot": "C",
+      "error": "Missing or ungrounded fidelity evidence"
+    }
+  ],
+  "designated_hard": [
+    "review-008fa015433b8336de7d44c5",
+    "review-05a5ba5a010a4fede2f16d4c",
+    "review-13d6f0d09b38bfa2550f0ea6",
+    "review-1674f369b07f86fc690f7735",
+    "review-2e9e21f03b9ec06e65ff55e4",
+    "review-33eff93477db715e095c2ff3",
+    "review-370466c1cb383a925b79d2ce",
+    "review-3f7a1f25729171fa20f256ae",
+    "review-4384e9378563dfaae2623607",
+    "review-44e41c0234ec12ad83d6504b",
+    "review-486263f870b32f356aba38c0",
+    "review-5a09f9e16b6c29cd2d7c29d2",
+    "review-5b0cc4b8f523eb8959b25c65",
+    "review-5ef9cc5d36a99a4fbff88d05",
+    "review-60a2b854fea4dd7144504df6",
+    "review-64fc34988d0420e251fec3ac",
+    "review-6eff9502321969a5cb080237",
+    "review-71b0ad93fb956a7914912ade",
+    "review-78fba2337d12d9254ad39237",
+    "review-812e00c7c8749ecb972d12c9",
+    "review-921307743f3605bf8ebac77d",
+    "review-9231b4f8784082cecddb9737",
+    "review-a24f8dc97768789f8fe4d7d6",
+    "review-aa567fce9515ffcca9e93868",
+    "review-ad9a66c3e2e277f8cd47a320",
+    "review-b864c53147521b8e83abbfe3",
+    "review-bb1f942017264c22b24bb71d",
+    "review-bb7846abeb2b462fce2dab20",
+    "review-c1431ac659435c306b3bec39",
+    "review-c193b7c5372da41915cf67a1",
+    "review-c4fed73a8e05e5fe0e5c5437",
+    "review-c9b60b9d533773bb060d516d",
+    "review-cb9c002f72c70023f4031af4",
+    "review-d1658da4baa9bb476d660079",
+    "review-d4a448d7567746abd06df130",
+    "review-d5aea6035721bb835ebf7335",
+    "review-dc7251bb7a4b3c0960d2819e",
+    "review-dd4f5f0ea2a38d3d6ab159b8",
+    "review-e02b198638e26da0d4c26c1b",
+    "review-e112e69147389b2a2c56f46e",
+    "review-e7220b6cdd2af5926898ef81",
+    "review-e722ce9d4d0cb9fd13688ae8",
+    "review-f2318d6c463ab079eb83dfe3",
+    "review-f2f9cd0996c66304a341cb7f",
+    "review-f50e67a89b3316914d83205e",
+    "review-f70eca4a38ee9d577f8d3136",
+    "review-fb7c26762ccc408c7c7ed02c",
+    "review-fbcf7fec6086a1fde46ae1ef"
+  ]
+}

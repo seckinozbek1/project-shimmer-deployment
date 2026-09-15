@@ -1,0 +1,49 @@
+{
+  "packet_id": "review-60a2b854fea4dd7144504df6",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-B",
+  "reviewed_at": "2026-09-15T16:33:01.782372+00:00",
+  "input_sha256": "60a2b854fea4dd7144504df6dac6b98c9a761c07af13537f5b16083bf5ad9193",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "effective time missing"
+        ],
+        "uncertainty": [
+          "interpretation uncertain",
+          "CLM-C and CLM-D conflict; neither resolved"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "ambiguity": true,
+  "rationale": "Owned claim IDs and their references are retained per alias, together with stated information gaps and uncertainty. Context-only material is excluded. The conflicting assignments are both retained without deciding which is effective.",
+  "formatting_judgment": "not_assessed",
+  "original_sha256": "9a4455abff9e04e43031ff0a05221ce9a487d2de64bd6477448433af509752f2",
+  "repair_kind": "schema_only_judgment_enum",
+  "repair_attempt": 1
+}

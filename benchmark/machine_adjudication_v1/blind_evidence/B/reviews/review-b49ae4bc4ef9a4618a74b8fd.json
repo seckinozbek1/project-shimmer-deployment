@@ -1,0 +1,34 @@
+{
+  "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-B",
+  "reviewed_at": "2026-09-15T16:33:01.835370+00:00",
+  "input_sha256": "b49ae4bc4ef9a4618a74b8fd347014ba1af5764041e0c38589ca6d720ca7c79c",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "DIVERGENCE",
+        "ref_ids": [
+          "REF-1001"
+        ],
+        "reasoning": "CLM-A quantity changes from 71 to 72 while its entity and unit remain the same.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "DIVERGENCE",
+  "reason_components": [
+    "changed_quantity"
+  ],
+  "ambiguity": false,
+  "rationale": "CLM-A quantity changes from 71 to 72 while its entity and unit remain the same.",
+  "formatting_judgment": "not_assessed"
+}

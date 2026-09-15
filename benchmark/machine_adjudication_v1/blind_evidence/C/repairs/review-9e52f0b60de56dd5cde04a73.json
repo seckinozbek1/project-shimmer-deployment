@@ -1,0 +1,49 @@
+{
+  "packet_id": "review-9e52f0b60de56dd5cde04a73",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "C",
+  "provenance": "independent_machine_agent_review",
+  "run_id": "machine-agent-review-v1-C",
+  "reviewed_at": "2026-09-15T16:33:25.866978+00:00",
+  "input_sha256": "9e52f0b60de56dd5cde04a7355ba2eb1e07e63eb5a3a08b6fe7030cdddbc9902",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "effective time missing; when effective?"
+        ],
+        "uncertainty": [
+          "CLM-C and CLM-D conflict",
+          "interpretation uncertain"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "ambiguity": true,
+  "rationale": "Both explicit conflicting claim IDs are retained with the missing effective time and unresolved interpretation; context-only material is excluded.",
+  "formatting_judgment": "not_assessed",
+  "human": false,
+  "original_sha256": "7514b489be7506324fd4610dd4ddd18eaa03f30be4c43938f3ce8f772e2182ee",
+  "repair_kind": "schema_only_judgment_enum",
+  "repair_attempt": 1
+}

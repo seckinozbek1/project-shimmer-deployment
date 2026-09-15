@@ -1,0 +1,39 @@
+{
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "DIVERGENCE",
+        "ref_ids": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "reasoning": "Vendor 47 CLM-A changes from 35 to 36 pallets while CLM-B remains 40 and both gaps and uncertainty remain. Divergence is clear, but every candidate omits required REF-1002; the corrected target covers both required refs.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "DIVERGENCE",
+  "reason_components": [
+    "changed_quantity"
+  ],
+  "ambiguity": false,
+  "packet_id": "review-44c6e5e48ca4b20547a222f6",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "human": false,
+  "run_id": "machine-agent-adjudication-v1-D",
+  "reviewed_at": "2026-09-15T16:41:39.050719+00:00",
+  "input_sha256": "44c6e5e48ca4b20547a222f61f0c6bf113f86e538e6591e17b31baf98deaa32e",
+  "rationale": "Vendor 47 CLM-A changes from 35 to 36 pallets while CLM-B remains 40 and both gaps and uncertainty remain. Divergence is clear, but every candidate omits required REF-1002; the corrected target covers both required refs.",
+  "formatting_judgment": "valid",
+  "decision": "corrected",
+  "disagreement_causes": [
+    "evidence"
+  ]
+}

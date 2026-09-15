@@ -1,0 +1,8 @@
+{
+  "profile": "first-tuning-experiment-v1",
+  "population_adapter": "r06-non-train-v1",
+  "entrypoint": "benchmark/machine_adjudication_v1/checkpoint_metrics.py",
+  "thresholds_sha256": "8b70b096b128183707b2cc77c7577efebc8a5232336316a498f133306e3495da",
+  "scope": "Saved non-TRAIN DEV/TEST/public-adversarial outputs only. Human readiness untouched.",
+  "legacy_evaluator": "Preserved frozen historical implementation; use the maintained adapter for future scoring."
+}

@@ -1,0 +1,36 @@
+{
+  "packet_id": "review-1f5a2c8445e463c4b9751e78",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.298184Z",
+  "input_sha256": "1f5a2c8445e463c4b9751e786c0b28f63d8f2caf47b06b7c4c3a9a8765bb287f",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "DIVERGENCE",
+        "ref_ids": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "reasoning": "The source leaves the second entry interpretation unresolved; the extraction replaces that qualification with unsupported certainty.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "DIVERGENCE",
+  "reason_components": [
+    "uncertainty_omitted",
+    "added_claim"
+  ],
+  "ambiguity": false,
+  "rationale": "The source leaves the second entry interpretation unresolved; the extraction replaces that qualification with unsupported certainty.",
+  "formatting_judgment": "not_assessed"
+}

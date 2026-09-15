@@ -1,0 +1,55 @@
+{
+  "packet_id": "review-434359a9a74ec80193355b99",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.319185Z",
+  "input_sha256": "434359a9a74ec80193355b99f9ce8950fe6771978dfa1edcd7a22762e1dbd841",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      },
+      {
+        "span": "s22",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      },
+      {
+        "span": "s4c",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      },
+      {
+        "span": "s67",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "semantic_judgment": "MATCH",
+  "reason_components": [],
+  "ambiguity": false,
+  "rationale": "Every owned alias was examined. The divider, structural labels and end markers carry no extractable claim, information gap or uncertainty.",
+  "formatting_judgment": "not_assessed"
+}

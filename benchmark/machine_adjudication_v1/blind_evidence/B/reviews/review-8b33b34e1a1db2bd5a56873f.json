@@ -1,0 +1,35 @@
+{
+  "packet_id": "review-8b33b34e1a1db2bd5a56873f",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-B",
+  "reviewed_at": "2026-09-15T16:33:01.809370+00:00",
+  "input_sha256": "8b33b34e1a1db2bd5a56873faa89f4ed55f321a3572abdc29e8437e1b542235a",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "OMISSION",
+        "ref_ids": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "reasoning": "The extraction drops the stated missing date or effective period and the associated timing question, while retaining the substantive claims.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "OMISSION",
+  "reason_components": [
+    "gap_omitted"
+  ],
+  "ambiguity": false,
+  "rationale": "The extraction drops the stated missing date or effective period and the associated timing question, while retaining the substantive claims.",
+  "formatting_judgment": "not_assessed"
+}

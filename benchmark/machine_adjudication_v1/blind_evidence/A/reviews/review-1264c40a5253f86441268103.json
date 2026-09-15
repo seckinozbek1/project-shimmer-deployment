@@ -1,0 +1,36 @@
+{
+  "packet_id": "review-1264c40a5253f86441268103",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.286191Z",
+  "input_sha256": "1264c40a5253f8644126810341cb68247fb11cfc090495f9fdf9c05751d3adc2",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "OMISSION",
+        "ref_ids": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "reasoning": "The extraction drops the explicit missing amendment effective period and its follow-up question.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "OMISSION",
+  "reason_components": [
+    "preserved_claim",
+    "gap_omitted"
+  ],
+  "ambiguity": false,
+  "rationale": "The extraction drops the explicit missing amendment effective period and its follow-up question.",
+  "formatting_judgment": "not_assessed"
+}

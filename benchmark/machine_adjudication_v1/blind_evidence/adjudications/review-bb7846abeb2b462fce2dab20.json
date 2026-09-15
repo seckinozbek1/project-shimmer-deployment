@@ -1,0 +1,59 @@
+{
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      },
+      {
+        "span": "s22",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      },
+      {
+        "span": "s46",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      },
+      {
+        "span": "s61",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "semantic_judgment": "EMPTY",
+  "reason_components": [],
+  "ambiguity": false,
+  "packet_id": "review-bb7846abeb2b462fce2dab20",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "human": false,
+  "run_id": "machine-agent-adjudication-v1-D",
+  "reviewed_at": "2026-09-15T16:41:39.082645+00:00",
+  "input_sha256": "bb7846abeb2b462fce2dab2048e942faf369762b1864bb93f6c0b8a3a3e682a1",
+  "rationale": "All four aliases were examined: table heading, survey plot divider, no-entry row and end marker contain no explicit claim IDs, gaps or uncertainty. Four empty items correctly distinguish examined emptiness from omitted spans.",
+  "formatting_judgment": "valid",
+  "decision": "candidate_A",
+  "disagreement_causes": [
+    "none"
+  ]
+}

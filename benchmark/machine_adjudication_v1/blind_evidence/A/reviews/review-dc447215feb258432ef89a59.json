@@ -1,0 +1,34 @@
+{
+  "packet_id": "review-dc447215feb258432ef89a59",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.422248Z",
+  "input_sha256": "dc447215feb258432ef89a59ef3d014d3c67270ee942faa762d747ef6e7a72f9",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "DIVERGENCE",
+        "ref_ids": [
+          "REF-1001"
+        ],
+        "reasoning": "CLM-A quantity changes from 125 to 126 for the same entity and unit; the source does not support that change.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "DIVERGENCE",
+  "reason_components": [
+    "changed_quantity"
+  ],
+  "ambiguity": false,
+  "rationale": "CLM-A quantity changes from 125 to 126 for the same entity and unit; the source does not support that change.",
+  "formatting_judgment": "not_assessed"
+}

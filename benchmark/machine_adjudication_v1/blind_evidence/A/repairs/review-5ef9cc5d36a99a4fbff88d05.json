@@ -1,0 +1,49 @@
+{
+  "packet_id": "review-5ef9cc5d36a99a4fbff88d05",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.336182Z",
+  "input_sha256": "5ef9cc5d36a99a4fbff88d05fc54c1051541f4b6a97c481091ae0a6f6b7e283f",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "effective time missing"
+        ],
+        "uncertainty": [
+          "conflicting assignments remain unresolved",
+          "interpretation uncertain"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "ambiguity": true,
+  "rationale": "Both explicit assignment claims are retained with the missing effective time and the stated conflict and uncertainty. No resolution is inferred; neighboring context is excluded.",
+  "formatting_judgment": "not_assessed",
+  "original_sha256": "0c76b89b0130e2f3405ce9a35df868c062e850846a265468e33b965792c84303",
+  "repair_kind": "schema_only_judgment_enum",
+  "repair_attempt": 1
+}

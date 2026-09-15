@@ -1,0 +1,39 @@
+{
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "DIVERGENCE",
+        "ref_ids": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "reasoning": "Survey plot 86 recorded quantity changes from 152 to 153 quadrats; retained quantity 157 and both gaps survive. Candidates omit required REF-1002 despite the correct divergence; corrected evidence includes it.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "DIVERGENCE",
+  "reason_components": [
+    "changed_quantity"
+  ],
+  "ambiguity": false,
+  "packet_id": "review-627c562de27af3ce77e238d0",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "human": false,
+  "run_id": "machine-agent-adjudication-v1-D",
+  "reviewed_at": "2026-09-15T16:41:39.059377+00:00",
+  "input_sha256": "627c562de27af3ce77e238d0fee8d38dd774de243c10ad5fdfeff298e1d2df09",
+  "rationale": "Survey plot 86 recorded quantity changes from 152 to 153 quadrats; retained quantity 157 and both gaps survive. Candidates omit required REF-1002 despite the correct divergence; corrected evidence includes it.",
+  "formatting_judgment": "valid",
+  "decision": "corrected",
+  "disagreement_causes": [
+    "evidence"
+  ]
+}
