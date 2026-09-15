@@ -78,6 +78,11 @@ class SecurityChecks(unittest.TestCase):
         with self.assertRaises(InvalidPreparation) as caught:self.client.request('instances')
         self.assert_clean(str(caught.exception))
 
+    def test_inventory_discards_irrelevant_cpu_and_multigpu_rows(self):
+        raw=dict(cpu=dict(instance_type=dict(specs=dict(gpus=0),gpu_description='N/A',unexpected=self.mark)),
+                 cluster=dict(instance_type=dict(specs=dict(gpus=8),unexpected=self.mark)))
+        self.assertEqual(provider.project_response('instance-types',raw),[])
+
     def test_launch_and_inventory_response_allowlists(self):
         raw=dict(instance_ids=['a'*32],new_field=self.mark,instances=[self.raw])
         self.assert_clean(provider.project_response('instance-operations/launch',raw))
