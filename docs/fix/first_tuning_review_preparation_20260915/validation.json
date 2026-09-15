@@ -1,0 +1,18 @@
+{
+  "tests": 30,
+  "failures": 0,
+  "errors": 0,
+  "effect_proofs": [
+    "export filename allowlist",
+    "blank packet byte integrity"
+  ],
+  "criteria": 27,
+  "derived_hard_rule": "R07",
+  "catastrophic_zero_limits": 6,
+  "actual_human_submissions": 0,
+  "fake_human_submissions_executed": 0,
+  "model_generation": false,
+  "training": false,
+  "cloud": false,
+  "paid_api": false
+}

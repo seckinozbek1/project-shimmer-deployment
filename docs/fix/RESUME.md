@@ -1,3 +1,28 @@
+# First tuning experiment review preparation - 15 September 2026
+
+**FIRST_TUNING_EXPERIMENT_REVIEW_PENDING**.
+Implementation: `4d7645da2d4d896b6657f09ce5ba2b84d209e6d8`.
+See [FIRST_TUNING_EXPERIMENT_REVIEW_PREPARATION.md](FIRST_TUNING_EXPERIMENT_REVIEW_PREPARATION.md)
+and [administrative submission instructions](../../benchmark/first_tuning_experiment_v1/ADMIN_SUBMISSION.md).
+
+New frozen `first-tuning-experiment-v1`: 27 numeric thresholds plus derived R07;
+all six catastrophic zero limits unchanged. Selected 192 unique packets (96/96),
+all 72 held-out examples, ten domains, 16 templates, maximum 80 document families,
+114 unseen-template examples. Selected 48 second reviews (24/24; 48 families).
+Two blank packet-only ZIPs are ready. Never distribute admin mappings or labels.
+
+115 checks pass; six effect proofs; one existing optional skip. 482 files and 482
+archive members scanned, zero leakage/credential/privacy findings. Frozen v1/v2,
+106 historical evidence entries and four historical rejections preserved.
+Actual reviews 0/192 and 0/48; zero eligible training labels. Collect independent
+human reviews and adjudicate disagreements, then rebuild coverage. Do not require
+all 736 reviews for this first gate. Final acceptance still requires independent
+sealed material and external ACL; first review readiness does not.
+No cloud, paid API, model generation, training, LoRA/SFT, model/revision/quantization
+change, full pipeline, multi-round or push. User-owned root handoff/durable untouched.
+
+---
+
 # Domain-agnostic benchmark hardening implemented - 15 September 2026
 
 **DOMAIN_AGNOSTIC_TRAINING_EXPERIMENT_NOT_READY**.
