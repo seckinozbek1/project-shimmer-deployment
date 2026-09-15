@@ -1,0 +1,36 @@
+{
+  "reserve_selection": {
+    "implementation_defect": true,
+    "attempted_train_reserve": 16,
+    "permitted_substantive_train_reserve_maximum": 0,
+    "all_16_ineligible": true,
+    "repair": "Active selector now forbids easy-reserve fallback and refuses to overwrite a historical selection; frozen original selection is retained without reinterpretation."
+  },
+  "evidence_guard": {
+    "packets": 6,
+    "primaries": 18,
+    "adjudications": 6,
+    "source_condition": "Explicit non-submission of a second claim is not admitted by the frozen lexical gap-support guard.",
+    "policy_changed": false,
+    "semantic_error_proven": false
+  },
+  "legacy_projection": {
+    "packets": 24,
+    "condition": "Frozen legacy vocabulary/attribute projection cannot recognize a deictic recording-time question.",
+    "post_gold_synonyms_added": false
+  },
+  "semantic_disputes": {
+    "packets": 4,
+    "condition": "Fresh labels encode sequence inquiries as entry_order; frozen legacy projection uses entry_content with first/next relations.",
+    "legacy_automatically_authoritative": false,
+    "machine_automatically_authoritative": false
+  },
+  "classification_counts": {
+    "real_semantic_disagreement": 4,
+    "legacy_projection_limitation": 24,
+    "legacy_authored_target_under_specification": 0,
+    "machine_review_error": 0,
+    "unresolved": 28
+  },
+  "zero_machine_review_error_note": "No source-proven machine semantic error classified; 18 invalid primaries remain excluded, and are not called valid because this diagnostic category is zero."
+}

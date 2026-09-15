@@ -1,0 +1,50 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "packets": 80,
+  "splits": {
+    "dev": 32,
+    "train": 48
+  },
+  "primary_expected": 240,
+  "primary_completed": 240,
+  "valid_primaries": 222,
+  "invalid_primaries": 18,
+  "agreement": {
+    "unanimous": 67,
+    "no_majority": 1,
+    "majority": 12
+  },
+  "agreement_rates": {
+    "unanimous": 0.8375,
+    "no_majority": 0.0125,
+    "majority": 0.15
+  },
+  "semantic_unanimity": {
+    "claims": 80,
+    "gaps": 72,
+    "uncertainty": 80,
+    "evidence": 80,
+    "refusal": 80
+  },
+  "evidence_valid_triples": 74,
+  "adjudications": 26,
+  "unresolved_ambiguities": 0,
+  "candidates": {
+    "train": 20,
+    "dev": 16
+  },
+  "legacy": {
+    "claims": 80,
+    "evidence": 80,
+    "refusal": 80,
+    "typed_gaps": 52,
+    "typed_uncertainty": 80,
+    "canonical_output_difference": 64,
+    "agreement": 52,
+    "unresolved": 28,
+    "legacy_projection_limitation": 24,
+    "real_semantic_disagreement": 4
+  },
+  "human_reviewed": false,
+  "training_authorized": false
+}

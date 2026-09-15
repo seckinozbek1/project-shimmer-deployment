@@ -1,3 +1,24 @@
+# Producer coverage amendment V1 completed ? NOT_READY
+
+**PRODUCER_TUNING_COVERAGE_NOT_READY**.
+**BALANCED_AGENT_ADJUDICATED_TUNING_EXPERIMENT_NOT_READY**.
+**FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING** (0/0/0).
+
+Method `06dfa0f`; pre-gold evidence `6f12153`.
+Read [PRODUCER_TUNING_COVERAGE_AMENDMENT_V1.md](PRODUCER_TUNING_COVERAGE_AMENDMENT_V1.md).
+
+80 packets /240 fresh primaries;222 valid;26 adjudications;zero final annotation ambiguity.
+Producer candidates20 TRAIN/16 DEV;8 domains,7/8 attainable templates,36 families.
+Auditor V2 unchanged46 TRAIN/24 DEV;conceptual combined66 TRAIN/40 DEV;training unauthorized.
+Blockers: TRAIN20<32, templates7<8, plus recorded reserve-selection governance failure.
+The selector incorrectly filled16 TRAIN reserve slots with easy cases;all are excluded.
+Actual substantive maximum32 TRAIN/32 DEV. Preserve this attempted run; no label/normalizer retrofit.
+24 legacy projection limitations and4 order/content disputes remain unresolved;18 invalid primaries across6 packets retained.
+31 amendment tests/8 proofs pass;cohort30/4 and production85checks/4 proofs pass;R06 and V1/V2 preserved.
+No cloud, paid API, Shimmer execution, training, model change, full pipeline, multi-round or push.
+
+---
+
 # Machine review V2 completed ? 15 September 2026
 
 **AGENT_ADJUDICATED_TUNING_EXPERIMENT_READY** under registered M01?M07.

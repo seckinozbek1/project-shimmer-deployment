@@ -1,0 +1,9 @@
+{
+  "files_scanned": 958,
+  "credential_findings": 0,
+  "detected_gold_isolation_violations": 0,
+  "operator_content_used": false,
+  "source_privacy": "Existing synthetic packet files only; exact input hashes verified.",
+  "isolation": "Fresh contexts, folder-only instructions and attestations; shared filesystem and model family, procedural not OS isolation.",
+  "no_network_or_model_imports": true
+}

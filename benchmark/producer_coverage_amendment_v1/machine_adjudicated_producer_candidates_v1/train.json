@@ -1,0 +1,2322 @@
+[
+  {
+    "example_id": "train-catalogue-producer-extracted",
+    "packet_id": "producer-d3662213a33a75489b3ef507",
+    "split": "train",
+    "role": "producer",
+    "domain": "catalogue",
+    "template_family": "paired_register",
+    "document_family": "train-catalogue",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Collection Haze planned 24 catalogue entries (REF-0001); CLM-B: Collection Iris reported 31 catalogue entries (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s100",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "a9fe516f4b5882fba464bd06776e6cd78b8a5aa786239742d6926c4215375640",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "observation_date",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The observation date is unavailable. What is the observation date?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "entry:2",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation of the second entry remains unresolved."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Missing information: owned_record; observation_date; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "train-clinical-producer-extracted",
+    "packet_id": "producer-32b0476f0b32001fd73eec0c",
+    "split": "train",
+    "role": "producer",
+    "domain": "clinical",
+    "template_family": "paired_register",
+    "document_family": "train-clinical",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Case Alder planned 18 recorded observations (REF-0001); CLM-B: Case Birch reported 18 recorded observations (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sfe",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "f26818372a8e43eaae877e8c395b9c3125ad0b920a909617491f7e11b11d3dee",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "observation_date",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The observation date is unavailable. What is the observation date?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "entry:2",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation of the second entry remains unresolved."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Missing information: owned_record; observation_date; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "train-contracts-producer-extracted",
+    "packet_id": "producer-4240e853d27feb23e110b1f9",
+    "split": "train",
+    "role": "producer",
+    "domain": "contracts",
+    "template_family": "paired_register",
+    "document_family": "train-contracts",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Leto planned 14 delivery lots (REF-0001); CLM-B: Mira reported 14 delivery lots (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "se2",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "dbd93f828ba3696c3dc673ae0fe8375628d592c3cce1d3830412253057ff42ea",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "observation_date",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The observation date is unavailable. What is the observation date?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "entry:2",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation of the second entry remains unresolved."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Missing information: owned_record; observation_date; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "train-device-producer-extracted",
+    "packet_id": "producer-cda17bb25ad815886cab917c",
+    "split": "train",
+    "role": "producer",
+    "domain": "device",
+    "template_family": "paired_register",
+    "document_family": "train-device",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Module Cedar planned 20 signal cycles (REF-0001); CLM-B: Module Elm reported 27 signal cycles (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf0",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "56b420888d491a56ba26044f38d59d69a97197d846724140aabfc2ad100e467e",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "observation_date",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The observation date is unavailable. What is the observation date?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "entry:2",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation of the second entry remains unresolved."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Missing information: owned_record; observation_date; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "train-negotiation-producer-extracted",
+    "packet_id": "producer-e3e848499df4bc792268d7d5",
+    "split": "train",
+    "role": "producer",
+    "domain": "negotiation",
+    "template_family": "paired_register",
+    "document_family": "train-negotiation",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Orin planned 12 concessions (REF-0001); CLM-B: Vela reported 19 concessions (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sde",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "c5fe19f09562a9d4bc387593dbaf5b03e1f4c6daff284bb803f89dd196f32a54",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "observation_date",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The observation date is unavailable. What is the observation date?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "entry:2",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation of the second entry remains unresolved."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Missing information: owned_record; observation_date; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "train-nonsense-producer-extracted",
+    "packet_id": "producer-b16011b96fe6f78de462f95a",
+    "split": "train",
+    "role": "producer",
+    "domain": "nonsense",
+    "template_family": "paired_register",
+    "document_family": "train-nonsense",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Zorvit planned 26 quavels (REF-0001); CLM-B: Plenko reported 26 quavels (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sda",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "b11055c923ace4e83667d2b865eeba8effae81b14750c9159470c1d7f9b429c9",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "observation_date",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The observation date is unavailable. What is the observation date?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "entry:2",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation of the second entry remains unresolved."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Missing information: owned_record; observation_date; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "train-procurement-producer-extracted",
+    "packet_id": "producer-7c9a61a719aca85d2a911b99",
+    "split": "train",
+    "role": "producer",
+    "domain": "procurement",
+    "template_family": "paired_register",
+    "document_family": "train-procurement",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Bidder Flint planned 22 supply crates (REF-0001); CLM-B: Bidder Gale reported 22 supply crates (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf1",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "f7b6c1916658e60ea6b8bffb2bb3bf0a1214ed1be8d5f662179488e1611a5dc3",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "observation_date",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The observation date is unavailable. What is the observation date?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "entry:2",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation of the second entry remains unresolved."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Missing information: owned_record; observation_date; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "train-regulation-producer-extracted",
+    "packet_id": "producer-52ee7ec4bf4645fbb156b85b",
+    "split": "train",
+    "role": "producer",
+    "domain": "regulation",
+    "template_family": "paired_register",
+    "document_family": "train-regulation",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-A: Nera planned 16 filed notices (REF-0001); CLM-B: Sola reported 23 filed notices (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "se2",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "c7421d6bb26e88bf31709bb3d7a7646f57722e42365c48228db6ae9052f23ec6",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "observation_date",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The observation date is unavailable. What is the observation date?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "entry:2",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-0001",
+                "REF-0002"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation of the second entry remains unresolved."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-A",
+            "CLM-B"
+          ],
+          "questions": [
+            "Missing information: owned_record; observation_date; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: entry:2; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-0001",
+            "REF-0002"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-bullet_list-contracts-conflicting",
+    "packet_id": "producer-24b881666fef3ebca0317b70",
+    "split": "train",
+    "role": "producer",
+    "domain": "contracts",
+    "template_family": "v2-bullet_list",
+    "document_family": "v2-bullet_list-contracts",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-C: service desk 46 is assigned 32 delivery windows (REF-1003).\n- CLM-D: the same service desk 46 is assigned 34 delivery windows (REF-1004).\n- These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s110",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "b555a67566108c8ada98b8a7230b95082a5ef7e1574158c73ec051d48f7084f6",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-bullet_list-device-conflicting",
+    "packet_id": "producer-a27c1c7e73badc5230c9a62b",
+    "split": "train",
+    "role": "producer",
+    "domain": "device",
+    "template_family": "v2-bullet_list",
+    "document_family": "v2-bullet_list-device",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-C: sensor bank 48 is assigned 38 pulses (REF-1003).\n- CLM-D: the same sensor bank 48 is assigned 40 pulses (REF-1004).\n- These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sfa",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "d4cb5e81c52aeb8311d9a382bdc938ca6f173b0d511fe4e1a761d20912a027a3",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-bullet_list-negotiation-conflicting",
+    "packet_id": "producer-6f58b117aaa7a56fc87d031f",
+    "split": "train",
+    "role": "producer",
+    "domain": "negotiation",
+    "template_family": "v2-bullet_list",
+    "document_family": "v2-bullet_list-negotiation",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-C: delegation 45 is assigned 29 offered seats (REF-1003).\n- CLM-D: the same delegation 45 is assigned 31 offered seats (REF-1004).\n- These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s106",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "c6a75be80f0494437c1c732c7146606ad05c6439a6082befb246f842291dac40",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-bullet_list-procurement-conflicting",
+    "packet_id": "producer-18a5e1e9f5a4e5bf7ae39774",
+    "split": "train",
+    "role": "producer",
+    "domain": "procurement",
+    "template_family": "v2-bullet_list",
+    "document_family": "v2-bullet_list-procurement",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "- CLM-C: vendor 47 is assigned 35 pallets (REF-1003).\n- CLM-D: the same vendor 47 is assigned 37 pallets (REF-1004).\n- These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sf2",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "054969874da99cf52b782b041ce97a2b4912c46fe131d9b98136353fea1c8555",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-form_fields-contracts-conflicting",
+    "packet_id": "producer-b0e4c1ea3c2e79bc0e53f909",
+    "split": "train",
+    "role": "producer",
+    "domain": "contracts",
+    "template_family": "v2-form_fields",
+    "document_family": "v2-form_fields-contracts",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-C: service desk 50 is assigned 44 delivery windows (REF-1003).\nENTRY B = CLM-D: the same service desk 50 is assigned 46 delivery windows (REF-1004).\nFOLLOW-UP FIELD = These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s130",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "77fe412c8739d9f8eb95d53d76ebd7f1627b2f1b189a551cd2a89bd0681ebc36",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-form_fields-device-conflicting",
+    "packet_id": "producer-9140af935f36703b7e071634",
+    "split": "train",
+    "role": "producer",
+    "domain": "device",
+    "template_family": "v2-form_fields",
+    "document_family": "v2-form_fields-device",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-C: sensor bank 52 is assigned 50 pulses (REF-1003).\nENTRY B = CLM-D: the same sensor bank 52 is assigned 52 pulses (REF-1004).\nFOLLOW-UP FIELD = These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s11a",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "e4e25a5b5476d3fe56e35fd19348297809bc7ef5fcab5b5462a78d7ec5626c40",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-form_fields-negotiation-conflicting",
+    "packet_id": "producer-1e2c7b2307509d50e9e374d1",
+    "split": "train",
+    "role": "producer",
+    "domain": "negotiation",
+    "template_family": "v2-form_fields",
+    "document_family": "v2-form_fields-negotiation",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-C: delegation 49 is assigned 41 offered seats (REF-1003).\nENTRY B = CLM-D: the same delegation 49 is assigned 43 offered seats (REF-1004).\nFOLLOW-UP FIELD = These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s126",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "21601e88c4e8f7ed33255b4d2705932755b11cebe810d1894343f05e29b6c7f2",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-form_fields-procurement-conflicting",
+    "packet_id": "producer-2f1e4d83f4247f4096625c77",
+    "split": "train",
+    "role": "producer",
+    "domain": "procurement",
+    "template_family": "v2-form_fields",
+    "document_family": "v2-form_fields-procurement",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "ENTRY A = CLM-C: vendor 51 is assigned 47 pallets (REF-1003).\nENTRY B = CLM-D: the same vendor 51 is assigned 49 pallets (REF-1004).\nFOLLOW-UP FIELD = These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s112",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "67c46d17538c0bd037e9b9327bf63ff5a519ba36b4aff5eb2a8b2565987a0b6a",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-paragraph-contracts-conflicting",
+    "packet_id": "producer-36389afa4fa0f9f1b6f43576",
+    "split": "train",
+    "role": "producer",
+    "domain": "contracts",
+    "template_family": "v2-paragraph",
+    "document_family": "v2-paragraph-contracts",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-C: service desk 42 is assigned 20 delivery windows (REF-1003). In a separate statement, CLM-D: the same service desk 42 is assigned 22 delivery windows (REF-1004). Finally, These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s12c",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "9e47224af5299c16b8080f82bc6b8795024249e6dee4e5978c34b9663398a68f",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-paragraph-device-conflicting",
+    "packet_id": "producer-f4d67be0ec81bb3b823f66fb",
+    "split": "train",
+    "role": "producer",
+    "domain": "device",
+    "template_family": "v2-paragraph",
+    "document_family": "v2-paragraph-device",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-C: sensor bank 44 is assigned 26 pulses (REF-1003). In a separate statement, CLM-D: the same sensor bank 44 is assigned 28 pulses (REF-1004). Finally, These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s116",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "83f951f2388523dbe999f03d2087656b77d5c3f32117e9efd0033f8e06954c17",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-paragraph-negotiation-conflicting",
+    "packet_id": "producer-1800ccd7f5e08566872035b4",
+    "split": "train",
+    "role": "producer",
+    "domain": "negotiation",
+    "template_family": "v2-paragraph",
+    "document_family": "v2-paragraph-negotiation",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-C: delegation 41 is assigned 17 offered seats (REF-1003). In a separate statement, CLM-D: the same delegation 41 is assigned 19 offered seats (REF-1004). Finally, These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s122",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "3718e8fd097a1310094d472137406dc4476893d6492972ee5fba0c6f6158638a",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "example_id": "v2-paragraph-procurement-conflicting",
+    "packet_id": "producer-30bf1146cec8cf9917576b6c",
+    "split": "train",
+    "role": "producer",
+    "domain": "procurement",
+    "template_family": "v2-paragraph",
+    "document_family": "v2-paragraph-procurement",
+    "provenance": "machine_adjudicated_producer_candidate_v1",
+    "human_reviewed": false,
+    "policy": "producer-semantic-policy-v1",
+    "renderer": "producer-target-renderer-v1",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "CLM-C: vendor 43 is assigned 23 pallets (REF-1003). In a separate statement, CLM-D: the same vendor 43 is assigned 25 pallets (REF-1004). Finally, These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s10e",
+          "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-1003",
+        "REF-1004",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-1003",
+        "REF-1004"
+      ],
+      "routed_rules": []
+    },
+    "input_sha256": "93fa2de911f12a63e1e83b8b7d06479e736bb5d0aad25a4757496b90878a9667",
+    "typed_label": {
+      "status": "examined",
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ],
+          "gap_atoms": [
+            {
+              "kind": "gap",
+              "category": "missing_information",
+              "subject": "owned_record",
+              "attribute": "effective_time",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The effective time is missing. When does it take effect?"
+            }
+          ],
+          "uncertainty_atoms": [
+            {
+              "kind": "uncertainty",
+              "category": "unknown",
+              "subject": "owned_record",
+              "attribute": "interpretation",
+              "relation": null,
+              "scope": "owned_record",
+              "unit": null,
+              "span": "s0",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ],
+              "origin": "source_explicit",
+              "support": "The interpretation remains uncertain."
+            }
+          ]
+        }
+      ],
+      "source_uncertainty_present": true,
+      "review_ambiguity": false
+    },
+    "canonical_target": {
+      "items": [
+        {
+          "span": "s0",
+          "claims": [
+            "CLM-C",
+            "CLM-D"
+          ],
+          "questions": [
+            "Missing information: owned_record; effective_time; none; owned_record; none."
+          ],
+          "uncertainty": [
+            "Explicit unknown: owned_record; interpretation; none; owned_record; none."
+          ],
+          "status": "extracted",
+          "refs": [
+            "REF-1003",
+            "REF-1004"
+          ]
+        }
+      ]
+    }
+  }
+]

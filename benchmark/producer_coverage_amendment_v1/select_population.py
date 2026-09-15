@@ -23,6 +23,7 @@ def choose(rows,n,initial=()):
  return chosen
 
 def main():
+ if (s.HERE/'selection.json').exists():raise ValueError('Historical selection is immutable; do not rerun this amendment')
  freeze=s.read(s.HERE/'POLICY_FREEZE.json')
  for n,h in freeze['hashes'].items():
   if s.digest((s.HERE/n).read_bytes())!=h:raise ValueError('Policy drift before selection')
@@ -41,7 +42,7 @@ def main():
  selected=[];reserves=[];available={}
  for split in ('train','dev'):
   required=[r for r in base if r['split']==split];unused=[r for r in rows if r['split']==split and r['example_id'] not in current]
-  reserve=choose(unused,min(16,len(unused)),required);reserves+=reserve;selected+=required+reserve
+  reserve=choose([r for r in unused if r['features']['substantive']],min(16,len(unused)),required);reserves+=reserve;selected+=required+reserve
   available[split]=dict(total=len(required)+len(unused),unused=len(unused),reserve_selected=len(reserve))
  selected=sorted(selected,key=lambda r:r['example_id']);hard=[]
  for split in ('train','dev'):
