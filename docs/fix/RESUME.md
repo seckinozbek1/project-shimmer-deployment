@@ -1,3 +1,22 @@
+# Current handoff: first real tuning experiment completed
+
+`FIRST_TUNING_EXPERIMENT_COMPLETED`
+
+See `docs/fix/FIRST_DOMAIN_AGNOSTIC_TUNING_EXPERIMENT_RESULTS.md` and `docs/fix/first_real_tuning_20260916/RECOMPUTED_RESULTS.json`.
+
+- One Lambda A10, us-east-1, $1.29/hour; provider-confirmed terminated. Empty follow-up inventory. Conservative cost $0.7441 / 34.61 minutes.
+- Frozen model/config/quantization and source bundle unchanged. Producer 16/16 updates; auditor 24/24; all four fixed DEV checks completed.
+- Producer step 8: 10/32 contracts, score .24479, one truncation. Step 16: 31/32 contracts, score .70250, zero catastrophics. **PRODUCER_SELECTION_FAILED**; no relaxation or retry.
+- Auditor step 12: 23/24 contracts, score .35417. Step 24: 24/24, score .33333, selected under frozen gates; adapter identity `7e7d69cfe4b88200ccde7aa323e4c191a5069a0287de7527ced53a442463af05`. All 24 outputs refused, only 8 appropriate.
+- Both role selections did not freeze. Protected bundle/access/receipt/generations all absent. Original 114 non-TRAIN/R06 population and 27 criteria unchanged; protected criteria NOT MEASURED.
+- Producer signal `INDETERMINATE`; auditor signal `INDETERMINATE`; `BALANCED_TUNING_FOLLOWUP_RECOMMENDED=false`.
+- `FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING`; actual humans 0.
+- Downloaded archive hash `450f21fab7e1646c673ea2ea48b1465b521a7e7a44de00d898035aab30ed73ea`; 259,371,338 bytes. All checkpoint/DEV evidence preserved locally; raw large adapter/archive files intentionally stay out of Git, with hashes retained.
+- Local metric recomputation and adapter binding pass. No secrets, no protected leakage, no second instance, no paid inference, no full pipeline, no multi-round, no push.
+- Next: local failure analysis before proposing a separately authorized experiment. Do not automatically retrain or open protected data. This run's cloud authorization is consumed.
+
+---
+
 # Current handoff: first domain-agnostic tuning implementation
 
 `FIRST_TUNING_EXPERIMENT_IMPLEMENTATION_READY`

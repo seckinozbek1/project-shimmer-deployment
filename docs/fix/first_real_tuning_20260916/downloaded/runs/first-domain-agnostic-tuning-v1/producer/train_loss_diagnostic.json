@@ -1,0 +1,98 @@
+[
+  {
+    "step": 1,
+    "mean_loss": 0.934644415974617,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 2,
+    "mean_loss": 0.6958387494087219,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 3,
+    "mean_loss": 0.43822216987609863,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 4,
+    "mean_loss": 0.3194072097539902,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 5,
+    "mean_loss": 0.1928541585803032,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 6,
+    "mean_loss": 0.09115264378488064,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 7,
+    "mean_loss": 0.052518455311656,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 8,
+    "mean_loss": 0.03608919074758887,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 9,
+    "mean_loss": 0.02311193384230137,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 10,
+    "mean_loss": 0.020991912111639977,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 11,
+    "mean_loss": 0.07368908170610666,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 12,
+    "mean_loss": 0.020470527466386557,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 13,
+    "mean_loss": 0.036321532214060426,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 14,
+    "mean_loss": 0.0159744726261124,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 15,
+    "mean_loss": 0.008899377542547882,
+    "examples": 4,
+    "diagnostic_only": true
+  },
+  {
+    "step": 16,
+    "mean_loss": 0.0064192540012300014,
+    "examples": 4,
+    "diagnostic_only": true
+  }
+]
