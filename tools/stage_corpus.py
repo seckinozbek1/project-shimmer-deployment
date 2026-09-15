@@ -9,9 +9,9 @@ into a timestamped holding directory so nothing of the operator's is lost.
 This file carries no domain vocabulary and cannot: it copies whatever it is
 pointed at, and every name it handles comes from the filesystem at runtime.
 
-    py -3.9 -X utf8 tools/stage_corpus.py --list
-    py -3.9 -X utf8 tools/stage_corpus.py --corpus <name>
-    py -3.9 -X utf8 tools/stage_corpus.py --restore <holding-dir>
+    py -3.12 -X utf8 tools/stage_corpus.py --list
+    py -3.12 -X utf8 tools/stage_corpus.py --corpus <name>
+    py -3.12 -X utf8 tools/stage_corpus.py --restore <holding-dir>
 """
 from __future__ import annotations
 

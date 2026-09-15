@@ -347,6 +347,9 @@ def main():
     from cloud_run_common import require, write_json
     base = Path(__file__).resolve().parent
     root = base / 'project'
+    import runtime_contract as runtime
+    selected = runtime.assert_current('sealed_reference')
+    runtime.subprocess_check(selected, root)
     evidence = base / 'evidence'
     require(sys.platform == 'linux' and (base / 'REMOTE_SANITY_PASSED.json').is_file(), 'remote sanity required')
     require((base / 'RUN_CLAIMED').is_file() and not (evidence / 'events.jsonl').exists(), 'single-run claim missing or consumed')

@@ -61,7 +61,7 @@ exact recall on label + relation + figures, relation-only matches reported apart
 false positives for any record the key does not give, stray refusals for labels
 the key does not list, and the band irregularities with their attribution.
 
-    py -3.9 -X utf8 tools/score_corpus.py --corpus <name> --run output/runs/<run-dir>
+    py -3.12 -X utf8 tools/score_corpus.py --corpus <name> --run output/runs/<run-dir>
 """
 from __future__ import annotations
 

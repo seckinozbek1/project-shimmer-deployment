@@ -13,33 +13,32 @@ REM ===========================================================================
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
-REM --- 1. Find Python (py -3.9 preferred, then python) -----------------------
-set "PYTHON_CMD="
-py -3.9 --version >nul 2>&1 && set "PYTHON_CMD=py -3.9"
-if not defined PYTHON_CMD ( python --version >nul 2>&1 && set "PYTHON_CMD=python" )
-if not defined PYTHON_CMD (
-    echo.
-    echo Could not find Python 3.9 or newer on this machine.
-    echo Install it from https://www.python.org/downloads/ , make sure it is on
-    echo your PATH, then run this script again.
-    goto :end_fail
-)
+REM --- 1. Resolve the shared runtime contract ------------------------------
+call tools\resolve_python.bat
+if errorlevel 1 goto :end_fail
+set "PYTHON_CMD=!SHIMMER_PYTHON!"
 echo Using Python: !PYTHON_CMD!
 
 REM --- 2. Virtual environment (.venv in the repo root) -----------------------
 if not exist ".venv\Scripts\activate.bat" (
     echo Creating a local virtual environment in .venv ...
-    !PYTHON_CMD! -m venv .venv
+    "!PYTHON_CMD!" -m venv .venv
     if errorlevel 1 (
         echo Failed to create the virtual environment. See the error above.
         goto :end_fail
     )
 )
+REM An existing incompatible venv is refused, never silently reused/rebuilt.
+set "PYTHON_CMD="
+for /f "delims=" %%P in ('"!SHIMMER_PYTHON!" tools\runtime_contract.py --resolve --candidate "%CD%\.venv\Scripts\python.exe" --path-only') do set "PYTHON_CMD=%%P"
+if not defined PYTHON_CMD goto :end_fail
+"!PYTHON_CMD!" tools\runtime_contract.py --source .
+if errorlevel 1 goto :end_fail
 call ".venv\Scripts\activate.bat"
 
 REM --- 3. Dependencies -------------------------------------------------------
 echo Installing dependencies (this is quick after the first run) ...
-python -m pip install -r requirements.txt --quiet
+"!PYTHON_CMD!" -m pip install -r requirements.txt --quiet
 if errorlevel 1 (
     echo Dependency installation failed. See the error above.
     goto :end_fail
@@ -51,7 +50,7 @@ REM local Qwen redactor run on CPU (slow). If a CUDA GPU is physically present
 REM (nvidia-smi succeeds) but torch reports no CUDA, replace the CPU wheel with the
 REM CUDA build. Exit codes from the probe: 0 = CUDA already available (skip),
 REM 1 = torch present but CPU-only (swap if GPU present), 2 = torch absent (skip).
-python -c "import importlib.util,sys; sys.exit(2) if importlib.util.find_spec('torch') is None else sys.exit(0 if __import__('torch').cuda.is_available() else 1)"
+"!PYTHON_CMD!" -c "import importlib.util,sys; sys.exit(2) if importlib.util.find_spec('torch') is None else sys.exit(0 if __import__('torch').cuda.is_available() else 1)"
 set "TORCHRC=!errorlevel!"
 if "!TORCHRC!"=="1" (
     nvidia-smi >nul 2>&1
@@ -59,7 +58,7 @@ if "!TORCHRC!"=="1" (
         echo No NVIDIA GPU detected by nvidia-smi; keeping the CPU-only torch build.
     ) else (
         echo A CUDA GPU is present but torch is CPU-only. Installing the CUDA build ^(large download, one time^) ...
-        python -m pip install torch==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu121
+        "!PYTHON_CMD!" -m pip install torch==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu121
         if errorlevel 1 (
             echo CUDA torch install failed; continuing with CPU-only torch. Redaction will be slow.
         ) else (
@@ -97,7 +96,7 @@ REM   1 = some check FAILED (review the bill of health, then decide)
 REM   0 = ready
 echo.
 echo Running the readiness preflight ...
-python -X utf8 scripts\preflight.py --backend-profile !BACKEND_PROFILE!
+"!PYTHON_CMD!" -X utf8 scripts\preflight.py --backend-profile !BACKEND_PROFILE!
 set "PREFLIGHT_RC=!errorlevel!"
 if "!PREFLIGHT_RC!"=="2" (
     echo.
@@ -149,7 +148,7 @@ REM collects the run flags (mode, parallelism, caps). It writes the flags here;
 REM a non-zero exit means the operator cancelled, so no run happens.
 set "WIZ_FLAGS_FILE=%TEMP%\shimmer_review_flags.txt"
 if exist "%WIZ_FLAGS_FILE%" del "%WIZ_FLAGS_FILE%"
-python scripts\intake_wizard.py --emit-flags "%WIZ_FLAGS_FILE%"
+"!PYTHON_CMD!" scripts\intake_wizard.py --emit-flags "%WIZ_FLAGS_FILE%"
 if errorlevel 1 (
     echo Review setup cancelled. Returning to the menu.
     if exist "%WIZ_FLAGS_FILE%" del "%WIZ_FLAGS_FILE%"
@@ -163,7 +162,7 @@ echo Running the review ...
 echo (Add --help for all options.)
 REM The wizard already emitted --backend-profile into WIZ_FLAGS (from
 REM SHIMMER_BACKEND_PROFILE), so it is not repeated here.
-python scripts\pipeline.py !WIZ_FLAGS! %*
+"!PYTHON_CMD!" scripts\pipeline.py !WIZ_FLAGS! %*
 goto :menu
 
 :opt_draft
@@ -187,7 +186,7 @@ REM quote the same grounding corpus, so it is the same decision and it belongs
 REM to the operator.
 set "DRAFT_FLAGS_FILE=%TEMP%\shimmer_draft_flags.txt"
 if exist "!DRAFT_FLAGS_FILE!" del "!DRAFT_FLAGS_FILE!"
-python scripts\intake_wizard.py --mode-only --emit-flags "!DRAFT_FLAGS_FILE!"
+"!PYTHON_CMD!" scripts\intake_wizard.py --mode-only --emit-flags "!DRAFT_FLAGS_FILE!"
 if errorlevel 1 (
     echo Draft setup cancelled. Returning to the menu.
     if exist "!DRAFT_FLAGS_FILE!" del "!DRAFT_FLAGS_FILE!"
@@ -199,18 +198,18 @@ if exist "!DRAFT_FLAGS_FILE!" del "!DRAFT_FLAGS_FILE!"
 echo.
 echo Drafting a memo, then reviewing it ...
 echo (Add --help for all options.)
-python scripts\pipeline.py --task draft --question "!DRAFTQ!" !DRAFT_FLAGS! %*
+"!PYTHON_CMD!" scripts\pipeline.py --task draft --question "!DRAFTQ!" !DRAFT_FLAGS! %*
 goto :menu
 
 :opt_import
 echo.
-python scripts\intake_wizard.py --import-only
+"!PYTHON_CMD!" scripts\intake_wizard.py --import-only
 goto :menu
 
 :opt_chat
 echo.
 echo Opening the chat interface. Close its window to return here.
-python scripts\chat.py
+"!PYTHON_CMD!" scripts\chat.py
 goto :menu
 
 :opt_server
@@ -232,7 +231,7 @@ if "%SHIMMER_TOKEN_HASH%"=="" (
     echo.
     set "TOKEN_HASH_FILE=%TEMP%\shimmer_token_hash.txt"
     if exist "!TOKEN_HASH_FILE!" del "!TOKEN_HASH_FILE!"
-    python -c "import secrets, hashlib, sys; t=secrets.token_hex(32); h=hashlib.sha256(t.encode()).hexdigest(); open(sys.argv[1],'w').write(h); print('Access token (shown ONCE, keep it private):'); print(); print('   ', t); print(); print('Send this token in the Authorization header: Bearer <token>')" "!TOKEN_HASH_FILE!"
+    "!PYTHON_CMD!" -c "import secrets, hashlib, sys; t=secrets.token_hex(32); h=hashlib.sha256(t.encode()).hexdigest(); open(sys.argv[1],'w').write(h); print('Access token (shown ONCE, keep it private):'); print(); print('   ', t); print(); print('Send this token in the Authorization header: Bearer <token>')" "!TOKEN_HASH_FILE!"
     if errorlevel 1 (
         if exist "!TOKEN_HASH_FILE!" del "!TOKEN_HASH_FILE!"
         echo Could not generate a token. The server was not started.
@@ -253,13 +252,13 @@ echo   Console:  http://localhost:!SHIMMER_UI_PORT!/console
 echo   Health:   http://localhost:!SHIMMER_UI_PORT!/health   ^(the only route with no token^)
 echo   There is no page at / , the console is the entry point.
 echo Press Ctrl+C to stop it and return here.
-python scripts\server.py
+"!PYTHON_CMD!" scripts\server.py
 goto :menu
 
 :opt_gate
 echo.
 echo Running the verify gate ...
-python -X utf8 scripts\verify_session1.py
+"!PYTHON_CMD!" -X utf8 scripts\verify_session1.py
 goto :menu
 
 :end_ok

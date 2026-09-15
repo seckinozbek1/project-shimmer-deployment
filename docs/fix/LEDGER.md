@@ -2220,3 +2220,19 @@ upper bound $0.1219585353 / 340.349401 s. Temporary SSH identity cleaned up.
 17 deterministic recommendation checks passed; no model quality claim follows.
 Next launcher must explicitly select and prevalidate Python 3.12.3 before downloads.
 README/image behavior unchanged; no image rebuild or broad runtime refactor.
+
+
+## 2026-09-15: Close remote experiment runtime preparation defect
+
+Moved the existing sealed runtime definition to tools/cloud_run/runtime.json;
+separated 3.12.x source compatibility from exact 3.12.3 reference reproducibility.
+Runtime resolver, source compile/import gates, dependency refusal/recheck, bounded
+entry and pre-transfer cloud checks share that contract. Docker and active startup
+instructions no longer claim Python 3.9 compatibility. No production syntax was
+changed to accommodate Python 3.10. No dependency pins or model choices changed.
+148 deterministic unit tests passed; runtime/source neutralisations restore.
+Desktop live-server fixture is environment blocked by missing fastapi in the
+compatible local Python; its isolated child was collected. No install or rebuild.
+Historical remote evidence (32 hashes) and INDETERMINATE projection are unchanged.
+No cloud, provider, SSH/SCP, model/full-pipeline/multi-round execution or push.
+Details: REMOTE_RUNTIME_HARDENING.md. Next bounded retry needs operator cloud approval.

@@ -16,6 +16,7 @@ import sys
 import time
 
 from cloud_run_common import budget_deadlines, digest, require, safe_metadata, verify_bundle, verify_files, write_json
+from runtime_contract import load_contract, remote_resolver_command, compatible
 
 
 def host_value(value):
@@ -26,6 +27,12 @@ def host_value(value):
 
 def plan(bundle, host, running_epoch):
     ready = verify_bundle(bundle)
+    require(ready.get('runtime_source_preflight_passed') is True,
+            'bundle predates runtime/source preflight; reseal locally before provisioning')
+    require(ready.get('runtime_contract_sha256') == digest(Path(__file__).with_name('runtime_contract.py')) == digest(bundle / 'runtime_contract.py'),
+            'runtime preflight implementation changed; reseal locally')
+    require(json.loads((bundle / 'runtime.json').read_text()) == load_contract(),
+            'sealed runtime contract differs from current requirement')
     host_value(host)
     exp = json.loads((bundle / 'experiment.json').read_text())
     require(exp['max_runs'] == 1 and exp['source_commit'] == ready['source_commit'], 'invalid experiment identity')
@@ -34,8 +41,9 @@ def plan(bundle, host, running_epoch):
     limits = budget_deadlines(exp['hourly_rate_usd'], running_epoch)
     return {'host': host, 'remote_directory': remote, 'experiment_id': exp['experiment_id'], 'hourly_rate': exp['hourly_rate_usd'],
             'max_runs': 1, 'budget': limits, 'steps': ['arm independent local termination watchdog',
-            'verify manually provisioned instance identity and IP', 'first SSH success', 'create exclusive experiment directory',
-            'transfer sealed bundle', 'verify A100 identity/VRAM and Python', 'verify transfer/source hashes',
+            'verify manually provisioned instance identity and IP', 'first SSH success',
+            'resolve absolute compatible Python before transfer', 'verify A100 identity/VRAM', 'create exclusive experiment directory',
+            'transfer sealed bundle', 'verify transfer/source hashes', 'compile and import source before dependencies',
             'install offline hashed Linux wheels', 'minimal CUDA/PyTorch sanity',
             'concurrent fixed-revision hydration and model hashes', 'run immediately once', 'score and collect',
             'terminate and verify provider status']}
@@ -56,7 +64,7 @@ def upload_timeout(requested, terminate_epoch, now=None):
     return min(requested, remaining)
 
 
-def transport_plan(host, bundle, remote, identity_file=None, known_hosts=None, interactive=False):
+def transport_plan(host, bundle, remote, identity_file=None, known_hosts=None, interactive=False, python_executable=None):
     host_value(host)
     require(re.fullmatch(r'/home/ubuntu/shimmer_experiments/[a-z0-9][a-z0-9_-]{0,63}', remote), 'unsafe remote path')
     # Bound dead connections during both long runs and transfers. These options
@@ -68,16 +76,21 @@ def transport_plan(host, bundle, remote, identity_file=None, known_hosts=None, i
     if known_hosts is not None:
         options += ['-o', 'UserKnownHostsFile=' + Path(known_hosts).resolve().as_posix()]
     ssh = ['ssh', *options, host]
-    probe = ('import sys,subprocess,ensurepip,platform; assert sys.version.split()[0]=="3.12.3"; '
-             'assert ensurepip.version()=="24.0"; assert platform.machine()=="x86_64"; '
+    runtime = load_contract()
+    probe = ('import sys,subprocess,ensurepip,platform; assert sys.version.split()[0]==' + repr(runtime['python']) + '; '
+             'assert ensurepip.version()==' + repr(runtime['pip']) + '; assert platform.machine()=="x86_64"; '
              'assert tuple(map(int,platform.libc_ver()[1].split("."))) >= (2,35); '
              'r=subprocess.check_output(["nvidia-smi","--query-gpu=name,memory.total",'
              '"--format=csv,noheader,nounits"],text=True).strip().splitlines(); '
              'assert len(r)==1; n,m=r[0].split(","); '
              'assert n.strip()=="NVIDIA A100-SXM4-40GB" and float(m)>=40000')
     # No shell interprets the local command. Remote paths are validated and quoted.
+    if python_executable is not None:
+        require(python_executable.startswith('/') and '\n' not in python_executable, 'invalid resolved remote Python')
+    python_command = shlex.quote(python_executable) if python_executable else '"$SHIMMER_PYTHON"'
     return {'connect': ssh + ['true'],
-            'gpu_before_transfer': ssh + ['python3.12 -c ' + shlex.quote(probe)],
+            'resolve_python': ssh + [remote_resolver_command()],
+            'gpu_before_transfer': ssh + [python_command + ' -c ' + shlex.quote(probe)],
             'create': ssh + ['mkdir -p /home/ubuntu/shimmer_experiments && mkdir -- ' + shlex.quote(remote)],
             'upload': ['scp', *options, '-r', str(bundle) + '/.', host + ':' + remote + '/'],
             'ssh': ssh, 'options': options}
@@ -141,12 +154,23 @@ def execute(args, runner=subprocess.run, provider=None):
         deployment_start = time.time()
         write_json(local / 'lifecycle.json', {'instance_reported_running_epoch': epoch, 'first_ssh_success_epoch': first_ssh,
                                             'deployment_start_epoch': deployment_start})
+        try:
+            resolved_result = runner(transport['resolve_python'], check=True, capture_output=True, text=True, timeout=60)
+        except subprocess.CalledProcessError as exc:
+            write_json(local / 'runtime_resolution_failure.json', {
+                'required': load_contract()['python_profiles']['sealed_reference'],
+                'observed_versions': re.findall(r'observed ([0-9]+\.[0-9]+\.[0-9]+)', exc.stderr or '')})
+            raise
+        resolved = json.loads(resolved_result.stdout)
+        require(compatible(resolved['version'], profile='sealed_reference'), 'remote Python version mismatch')
+        write_json(local / 'resolved_remote_interpreter.json', resolved)
+        transport = transport_plan(args.host, bundle, remote, args.identity_file, local / 'known_hosts', interactive, resolved['executable'])
         run_transport(transport['gpu_before_transfer'], 60 if interactive else 30, runner, interactive)
         run_transport(transport['create'], 60 if interactive else 20, runner, interactive)
         run_transport(transport['upload'], upload_timeout(requested_upload_timeout, config['budget']['terminate_epoch']),
                       runner, interactive)
         require(watchdog.poll() is None, 'watchdog stopped')
-        command = ('cd -- ' + shlex.quote(remote) + ' && python3.12 cloud_run_remote.py --execute --running-epoch '
+        command = ('cd -- ' + shlex.quote(remote) + ' && ' + shlex.quote(resolved['executable']) + ' cloud_run_remote.py --execute --running-epoch '
                    + str(epoch) + ' --first-ssh-epoch ' + str(first_ssh) + ' --deployment-start-epoch ' + str(deployment_start))
         remaining = config['budget']['terminate_epoch'] - time.time()
         require(remaining > 120, 'insufficient remaining budget')

@@ -11,6 +11,8 @@ import sys
 
 
 def configure():
+    from runtime_contract import assert_current
+    assert_current()
     if 'torch' in sys.modules:
         raise RuntimeError('Select the runtime before importing torch')
     if os.environ.get('KMP_DUPLICATE_LIB_OK', '').lower() in ('true', '1', 'yes'):

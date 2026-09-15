@@ -1,0 +1,8 @@
+{
+  "historical_commit": "253cc7b",
+  "verdict": "CLOUD_FULL_RUN_INDETERMINATE",
+  "files_verified": 32,
+  "all_hashes_match": true,
+  "historical_artifacts_modified": false,
+  "inference_fields_populated": false
+}

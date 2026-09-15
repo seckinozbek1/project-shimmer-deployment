@@ -13,6 +13,7 @@ import sys
 import time
 
 from cloud_run_common import digest, extract_source, require, write_json
+import runtime_contract as python_runtime
 
 
 def event(base, name, epoch=None):
@@ -66,7 +67,12 @@ def main(argv=None):
     args = parser.parse_args(argv)
     require(args.execute and sys.platform == 'linux', 'remote execution must be explicit')
     base = Path(__file__).resolve().parent
+    contract = python_runtime.load_contract(base / 'runtime.json')
+    bootstrap = python_runtime.assert_current('sealed_reference', contract)
     if args.hydrate_only:
+        python_runtime.subprocess_check(bootstrap, base / 'project', contract_file=base / 'runtime.json')
+        deps = python_runtime.subprocess_check(bootstrap, base, dependencies=True, contract_file=base / 'runtime.json')
+        require(deps['dependencies_ready'], 'Dependencies unavailable; model acquisition refused')
         hydrate(base)
         return 0
     # Claim is atomic and permanent: failed setup never permits a second run.
@@ -80,7 +86,7 @@ def main(argv=None):
     event(base, 'first_ssh_success', args.first_ssh_epoch)
     event(base, 'deployment_start', args.deployment_start_epoch)
     runtime = json.loads((base / 'runtime.json').read_text())
-    require(sys.version.split()[0] == runtime['python'], 'target Python mismatch; terminate and prepare locally')
+    python_runtime.assert_current('sealed_reference', runtime)
     require(shutil.disk_usage(base).free >= runtime['minimum_free_disk_gib'] * 2**30, 'insufficient disk')
     gpu = gpu_sanity(runtime)
     # Only transfer integrity/options hashes are checked here. CPU audits ran locally.
@@ -89,17 +95,25 @@ def main(argv=None):
         require(digest(base / name) == sha, 'transferred bundle hash mismatch')
     extract_source(base / 'source.tar.gz', base / 'project', json.loads((base / 'source_manifest.json').read_text()))
     subprocess.run([sys.executable, '-m', 'venv', str(base / 'venv')], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    python = str(base / 'venv/bin/python')
+    selected = python_runtime.resolve([str(base / 'venv/bin/python')], profile='sealed_reference', contract=runtime)
+    python = selected['executable']
+    write_json(evidence / 'resolved_interpreter.json', selected)
+    preflight = python_runtime.subprocess_check(selected, base / 'project', contract_file=base / 'runtime.json')
+    write_json(evidence / 'source_preflight.json', preflight)
+    deps = python_runtime.subprocess_check(selected, base, dependencies=True, contract_file=base / 'runtime.json')
     clean = {k: v for k, v in os.environ.items() if not k.startswith(('PIP_', 'SHIMMER_', 'HF_')) and
              not any(x in k.upper() for x in ('TOKEN', 'SECRET', 'PASSWORD', 'API_KEY'))}
     clean.update(HF_HOME=str(base / 'hf_cache'), HF_HUB_CACHE=str(base / 'hf_cache/hub'),
                  HF_HUB_DISABLE_IMPLICIT_TOKEN='1', HF_HUB_DISABLE_TELEMETRY='1', PIP_CONFIG_FILE=os.devnull)
-    subprocess.run([python, '-m', 'pip', 'install', '--no-index', '--no-deps', '--only-binary=:all:',
+    if deps['missing']:
+        subprocess.run([python, '-m', 'pip', 'install', '--no-index', '--no-deps', '--only-binary=:all:',
                     '--require-hashes', '--find-links', str(base / 'wheels'), '-r', str(base / 'install.lock')],
                    env=clean, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    deps = python_runtime.subprocess_check(selected, base, dependencies=True, contract_file=base / 'runtime.json')
+    require(deps['dependencies_ready'], 'Dependencies unavailable after installation')
     event(base, 'dependencies_ready')
-    sanity = ('import torch; assert torch.__version__ == "2.5.1+cu121"; '
-              'assert torch.version.cuda == "12.1"; assert torch.cuda.is_available(); '
+    sanity = (f'import torch; assert torch.__version__ == {runtime['torch']!r}; '
+              f'assert torch.version.cuda == {runtime['cuda_runtime']!r}; assert torch.cuda.is_available(); '
               'assert torch.cuda.device_count() == 1; '
               'x=torch.ones(1,device="cuda:0"); assert x.item()==1; torch.cuda.synchronize()')
     subprocess.run([python, '-c', sanity], env=clean, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

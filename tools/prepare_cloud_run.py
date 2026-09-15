@@ -28,11 +28,9 @@ from cloud_run_watchdog import operator_preflight
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = Path(__file__).resolve().parent / 'cloud_run'
 BASELINE = '15d0721fbc24cd38fdaa6bc4969d7b18ad66387e'
-RUNTIME = {'python': '3.12.3', 'pip': '24.0', 'platform': 'linux_x86_64', 'glibc_min': '2.35',
-           'torch': '2.5.1+cu121', 'cuda_runtime': '12.1',
-           'gpu_name': 'NVIDIA A100-SXM4-40GB', 'gpu_count': 1, 'minimum_vram_mib': 40000,
-           'instance_class': 'gpu_1x_a100_sxm4', 'python_venv_required': True,
-           'minimum_free_disk_gib': 40}
+from runtime_contract import RuntimeContractError, assert_current, load_contract, resolve, subprocess_check
+RUNTIME = load_contract()
+
 TOPOLOGY = {'schema_version': 1, 'lanes': [{'name': 'primary', 'device': 'cuda:0', 'resident_limit': 2}]}
 ARGV = ['--backend-profile', 'local', '--activation-profile', 'dense', '--review-mode', 'paired',
         '--task', 'review', '--mode', 'standalone', '--non-interactive', '--skip-confirmation',
@@ -198,7 +196,8 @@ def validate_wheels(directory, locked):
     from packaging.specifiers import SpecifierSet
     from packaging.utils import canonicalize_name, parse_wheel_filename
     directory = Path(directory)
-    require(directory.is_dir(), 'Linux CPython 3.12 wheelhouse missing; build locally before provisioning')
+    target_tag = ''.join(RUNTIME['python'].split('.')[:2])
+    require(directory.is_dir(), 'Target Python wheelhouse missing; build locally before provisioning')
     found, metadata = {}, {}
     for path in sorted(directory.glob('*.whl')):
         name, version, _, tags = parse_wheel_filename(path.name)
@@ -210,9 +209,9 @@ def validate_wheels(directory, locked):
             if tag.platform.startswith('manylinux') and tag.platform.endswith('_x86_64'):
                 match = re.match(r'manylinux_(\d+)_(\d+)_x86_64', tag.platform)
                 platform_ok = bool(match and tuple(map(int, match.groups())) <= (2, 35)) or tag.platform.startswith(('manylinux1_', 'manylinux2010_', 'manylinux2014_'))
-            python_ok = tag.interpreter in ('py3', 'py312', 'cp312') and tag.abi in ('none', 'abi3', 'cp312')
+            python_ok = tag.interpreter in ('py3', 'py' + target_tag, 'cp' + target_tag) and tag.abi in ('none', 'abi3', 'cp' + target_tag)
             if tag.abi == 'abi3' and re.fullmatch(r'cp3\d+', tag.interpreter):
-                python_ok = int(tag.interpreter[3:]) <= 12
+                python_ok = int(tag.interpreter[3:]) <= RUNTIME['python_compatibility']['minor']
             compatible |= platform_ok and python_ok
         require(compatible, 'wheel is not compatible with target: ' + name)
         with zipfile.ZipFile(path) as archive:
@@ -220,13 +219,13 @@ def validate_wheels(directory, locked):
             require(len(names) == 1, 'wheel metadata missing')
             meta = BytesParser().parsebytes(archive.read(names[0]))
             require(canonicalize_name(meta['Name']) == name and meta['Version'] == str(version), 'wheel identity mismatch')
-            require(SpecifierSet(meta.get('Requires-Python', '')).contains('3.12.3'), 'wheel Python requirement mismatch')
+            require(SpecifierSet(meta.get('Requires-Python', '')).contains(RUNTIME['python']), 'wheel Python requirement mismatch')
             metadata[name] = meta.get_all('Requires-Dist', [])
         found[name] = {'filename': path.name, 'sha256': digest(path)}
     require(set(found) == set(locked), 'wheelhouse missing pinned packages: ' + ','.join(sorted(set(locked)-set(found))))
-    env = {'python_version': '3.12', 'python_full_version': '3.12.3', 'sys_platform': 'linux',
+    env = {'python_version': '.'.join(RUNTIME['python'].split('.')[:2]), 'python_full_version': RUNTIME['python'], 'sys_platform': 'linux',
            'os_name': 'posix', 'platform_machine': 'x86_64', 'platform_system': 'Linux',
-           'implementation_name': 'cpython', 'implementation_version': '3.12.3',
+           'implementation_name': 'cpython', 'implementation_version': RUNTIME['python'],
            'platform_python_implementation': 'CPython', 'extra': ''}
     for name, requirements in metadata.items():
         extras = ('', 'standard') if name == 'uvicorn' else ('',)
@@ -301,6 +300,7 @@ def copy_asset(source, target):
 
 
 def prepare(args):
+    assert_current()
     require(re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,63}', args.experiment_id), 'invalid experiment ID')
     from cloud_run_common import budget_deadlines
     budget_deadlines(args.hourly_rate, 1)
@@ -315,10 +315,15 @@ def prepare(args):
             return result
         except (InvalidPreparation, OSError, ValueError, subprocess.CalledProcessError) as exc:
             # Exception strings from external programs or files can contain secrets.
-            detail = str(exc) if isinstance(exc, InvalidPreparation) else type(exc).__name__
+            detail = str(exc) if isinstance(exc, (InvalidPreparation, RuntimeContractError)) else type(exc).__name__
             report['checks'][name] = {'passed': False, 'reason': detail}
             report['blockers'].append(name + ': ' + detail)
             return None
+    runtime_preflight = check('local_runtime_source_preflight', lambda: subprocess_check(
+        resolve(profile='experiment', root=ROOT), ROOT))
+    if runtime_preflight is None:
+        write_json(destination / 'PREPARATION_REPORT.json', report)
+        return destination, report
     source = check('repository', lambda: source_files(ROOT, args.expected_commit))
     if source is None:
         write_json(destination / 'PREPARATION_REPORT.json', report)
@@ -404,10 +409,13 @@ def prepare(args):
                 if item['delivery'] == 'bundled':
                     src = Path(args.model_cache) / ('models--' + model['model'].replace('/', '--')) / 'snapshots' / model['revision'] / name
                     copy_asset(src, destination / 'model_assets' / model['revision'] / name)
-    for name in ('cloud_run_common.py', 'cloud_run_observer.py', 'cloud_run_remote.py'):
+    for name in ('cloud_run_common.py', 'cloud_run_observer.py', 'cloud_run_remote.py', 'runtime_contract.py'):
         shutil.copyfile(ROOT / 'tools' / name, destination / name)
-    (destination / 'launch.sh').write_text('#!/bin/bash\nset -euo pipefail\ncd -- "$(dirname -- "$0")"\nexec venv/bin/python cloud_run_observer.py\n', encoding='utf-8')
-    (destination / 'score.sh').write_text('#!/bin/bash\nset -euo pipefail\ncd -- "$(dirname -- "$0")"\nexec venv/bin/python project/tools/score_corpus.py --corpus project/benchmark/corpora/clinical_reference --run evidence/run\n', encoding='utf-8')
+    shell_prefix = ('#!/bin/bash\nset -euo pipefail\ncd -- "$(dirname -- "$0")"\n'
+                    'PYTHON="$PWD/venv/bin/python"\n'
+                    '"$PYTHON" runtime_contract.py --profile sealed_reference --source "$PWD/project"\n')
+    (destination / 'launch.sh').write_text(shell_prefix + 'exec "$PYTHON" cloud_run_observer.py\n', encoding='utf-8')
+    (destination / 'score.sh').write_text(shell_prefix + 'exec "$PYTHON" project/tools/score_corpus.py --corpus project/benchmark/corpora/clinical_reference --run evidence/run\n', encoding='utf-8')
     write_json(destination / 'collection_manifest.json', {'roots': ['evidence'], 'exclude': ['project', 'venv', 'hf_cache', 'wheels'],
         'required': ['events.jsonl', 'lifecycle.jsonl', 'result.json', 'score.txt', 'metrics.json'],
         'run_artifacts': ['run/audit/execution_topology.json', 'run/audit/execution_topology.jsonl', 'run/audit/run_options.json'],
@@ -442,11 +450,18 @@ def prepare(args):
             'workload': 'clinical_reference', 'topology_mode': 'dependency_dag', 'agent_briefs': 'enabled',
             'input_language': 'auto', 'output_language': 'en', 'multi_round_inactive': True,
             'model_revisions': revisions, 'validation_results': report['checks'], 'expected_remote_runtime': RUNTIME,
+            'runtime_source_preflight_passed': runtime_preflight['source_preflight_passed'],
+            'runtime_contract_sha256': digest(destination / 'runtime_contract.py'),
             'bundle_manifest_sha256': digest(destination / 'bundle_manifest.json')})
     return destination, report
 
 
 def main(argv=None):
+    selected = resolve(root=ROOT)
+    if os.path.normcase(os.path.abspath(sys.executable)) != os.path.normcase(selected['executable']):
+        # Sealing parses repository ASTs in-process, so bootstrap must hand off too.
+        return subprocess.run([selected['executable'], '-B', str(Path(__file__).absolute()),
+                               *(sys.argv[1:] if argv is None else argv)], check=False).returncode
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--experiment-id', required=True)
     parser.add_argument('--expected-commit', required=True)
@@ -462,7 +477,7 @@ def main(argv=None):
         print(json.dumps({'bundle': str(destination), 'ready_to_provision': report['ready_to_provision'], 'blockers': report['blockers']}))
         return 0 if report['ready_to_provision'] else 2
     except (InvalidPreparation, OSError) as exc:
-        print(json.dumps({'ready_to_provision': False, 'error': str(exc) if isinstance(exc, InvalidPreparation) else type(exc).__name__}))
+        print(json.dumps({'ready_to_provision': False, 'error': str(exc) if isinstance(exc, (InvalidPreparation, RuntimeContractError)) else type(exc).__name__}))
         return 2
 
 

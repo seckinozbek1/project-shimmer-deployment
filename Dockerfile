@@ -1,51 +1,44 @@
-# Built in stages, proven before the next is written.
-# Stage 1 (below): base environment. Python, CUDA-enabled torch, and the rest
-# of requirements.txt install cleanly on top of a CUDA runtime image.
-# Stage 2 (further down): the model weights, behind --build-arg BAKE_WEIGHTS=true;
-# false (the default) leaves them to a mounted volume at run time. This stage
-# sits BEFORE the source stage on purpose (2026-09-11): a layer's cache key is
-# its parent chain, so with the weights last every edit under scripts/ threw
-# the three downloaded checkpoints away and pulled them again through the
-# Docker Desktop proxy that has already dropped TLS on them twice. With the
-# weights before the source, a source-only rebuild of the baked image reuses
-# the weight layers and copies the new source on top of them.
-# Stage 3 (further down still): source copied (scripts/, config/, tools/,
-# corpus_ingest/, the three root markdown files), import path set.
-# Stage 4 (last): the entry point (tools/entrypoint.sh),
-# serve/run/verify, verify by default.
+# The stdlib source-preflight stage must pass before dependency/model layers.
+# Its constant success marker preserves dependency/weight cache reuse for source
+# changes that still satisfy the runtime contract. Final source stays last.
+FROM nvidia/cuda:12.1.1-base-ubuntu22.04 AS runtime-base
 
-FROM nvidia/cuda:12.1.1-base-ubuntu22.04
-
-# py -3.9 is the interpreter this project pins to (CLAUDE.md, requirements.txt).
-# deadsnakes carries 3.9 for 22.04 (jammy), which Ubuntu's own repos do not.
-# DEBIAN_FRONTEND=noninteractive + TZ so tzdata (a transitive dep here) never
-# blocks the build on a timezone prompt; ENV, not a one-off RUN prefix, so it
-# holds for every apt-get in this and later stages.
+# Python compatibility and the sealed reference patch are declared once.
+# The distro Python only reads JSON; it never imports Shimmer source.
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
-
+COPY tools/cloud_run/runtime.json /tmp/shimmer-runtime.json
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        software-properties-common \
+        software-properties-common curl \
     && add-apt-repository -y ppa:deadsnakes/ppa \
-    && apt-get update && apt-get install -y --no-install-recommends \
-        python3.9 \
-        python3.9-distutils \
-        python3.9-tk \
-        python3-pip \
-        curl \
+    && apt-get update \
+    && minor=$(/usr/bin/python3 -c 'import json; c=json.load(open("/tmp/shimmer-runtime.json"))["python_compatibility"]; print(str(c["major"])+"."+str(c["minor"]))') \
+    && apt-get install -y --no-install-recommends "python${minor}" "python${minor}-venv" "python${minor}-tk" \
+    && "/usr/bin/python${minor}" -m venv /opt/shimmer-runtime \
     && rm -rf /var/lib/apt/lists/*
+ENV PATH=/opt/shimmer-runtime/bin:$PATH
+# Parse/import transferred source before any pip installation or model download.
+# This stage has no packages or models and only emits a success marker.
+FROM runtime-base AS source-preflight
+WORKDIR /app
+COPY scripts/ ./scripts/
+COPY tools/ ./tools/
+COPY corpus_ingest/ ./corpus_ingest/
+COPY config/ ./config/
+RUN /opt/shimmer-runtime/bin/python tools/runtime_contract.py --source /app \
+    && echo passed > /runtime-ready
 
-# Make `python3.9` the interpreter pip and later stages call as `python`.
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
+FROM runtime-base AS runtime
+COPY --from=source-preflight /runtime-ready /tmp/runtime-ready
 
 # torch pinned to the CUDA 12.1 wheel explicitly, from PyTorch's own index: the
 # default PyPI index resolves torch==2.5.1 to a CPU-only build on a base image
 # with no torch already present, which would silently defeat --gpus all.
-RUN python -m pip install --no-cache-dir \
+RUN /opt/shimmer-runtime/bin/python -m pip install --no-cache-dir \
         torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
 
 COPY requirements.txt /tmp/requirements.txt
-RUN python -m pip install --no-cache-dir -r /tmp/requirements.txt
+RUN /opt/shimmer-runtime/bin/python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Stage 2: the model weights, two build modes behind one build argument.
 #
@@ -89,7 +82,7 @@ ENV HF_HOME=/root/.cache/huggingface
 RUN if [ "$BAKE_WEIGHTS" = "true" ]; then \
         ok=0; \
         for i in 1 2 3 4 5; do \
-            python -c "from huggingface_hub import snapshot_download; snapshot_download('BAAI/bge-m3')" && { ok=1; break; }; \
+            /opt/shimmer-runtime/bin/python -c "from huggingface_hub import snapshot_download; snapshot_download('BAAI/bge-m3')" && { ok=1; break; }; \
             echo "bge-m3 download attempt $i failed, retrying..." >&2; \
             sleep $((i * 5)); \
         done; \
@@ -99,7 +92,7 @@ RUN if [ "$BAKE_WEIGHTS" = "true" ]; then \
 RUN if [ "$BAKE_WEIGHTS" = "true" ]; then \
         ok=0; \
         for i in 1 2 3 4 5; do \
-            python -c "from huggingface_hub import snapshot_download; snapshot_download('unsloth/Phi-3.5-mini-instruct-bnb-4bit')" && { ok=1; break; }; \
+            /opt/shimmer-runtime/bin/python -c "from huggingface_hub import snapshot_download; snapshot_download('unsloth/Phi-3.5-mini-instruct-bnb-4bit')" && { ok=1; break; }; \
             echo "Phi-3.5-mini download attempt $i failed, retrying..." >&2; \
             sleep $((i * 5)); \
         done; \
@@ -109,7 +102,7 @@ RUN if [ "$BAKE_WEIGHTS" = "true" ]; then \
 RUN if [ "$BAKE_WEIGHTS" = "true" ]; then \
         ok=0; \
         for i in 1 2 3 4 5; do \
-            python -c "from huggingface_hub import snapshot_download; snapshot_download('unsloth/Qwen2.5-7B-Instruct-bnb-4bit')" && { ok=1; break; }; \
+            /opt/shimmer-runtime/bin/python -c "from huggingface_hub import snapshot_download; snapshot_download('unsloth/Qwen2.5-7B-Instruct-bnb-4bit')" && { ok=1; break; }; \
             echo "Qwen2.5-7B download attempt $i failed, retrying..." >&2; \
             sleep $((i * 5)); \
         done; \
@@ -122,9 +115,9 @@ RUN if [ "$BAKE_WEIGHTS" = "true" ]; then \
 # not invalidate their cache. No model is changed and no inference runs here.
 COPY scripts/model_weights.py /tmp/shimmer_model_weights.py
 RUN if [ "$BAKE_WEIGHTS" = "true" ]; then \
-        python -m pip install --no-cache-dir --no-deps --target /tmp/shimmer_safe_torch \
+        /opt/shimmer-runtime/bin/python -m pip install --no-cache-dir --no-deps --target /tmp/shimmer_safe_torch \
             torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu \
-        && PYTHONPATH=/tmp/shimmer_safe_torch python /tmp/shimmer_model_weights.py --model BAAI/bge-m3 \
+        && PYTHONPATH=/tmp/shimmer_safe_torch /opt/shimmer-runtime/bin/python /tmp/shimmer_model_weights.py --model BAAI/bge-m3 \
         && rm -rf /tmp/shimmer_safe_torch; \
     fi
 
@@ -149,7 +142,7 @@ COPY docs/RUNTIME_REFERENCE.md ./docs/
 COPY requirements.txt ./
 
 # Refuse populated usage-derived stores in the image; never clear host state.
-RUN python scripts/ship_gate.py
+RUN /opt/shimmer-runtime/bin/python scripts/ship_gate.py
 
 # pipeline.py and server.py each insert scripts/ and the repo root onto
 # sys.path THEMSELVES once they are running (ROOT = parent.parent of their own

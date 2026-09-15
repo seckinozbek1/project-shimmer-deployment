@@ -325,7 +325,13 @@ outside source; this table contains no credentials.
 | Benchmark corpus and keys | Declared corpora/fixtures are separate from ignored answer keys and operator inputs. A missing key is not a zero score; isolated fixture success is not corpus quality. |
 | Image/cache | Docker images and local Hugging Face/build caches are local runtime artifacts, separate from a source checkout and run state. |
 
-A local installation needs Python 3.9 or later, compatible dependencies, a
+The authoritative Python requirement is [tools/cloud_run/runtime.json](../tools/cloud_run/runtime.json).
+It separates 3.12.x source compatibility from the sealed deployment
+reference's exact 3.12.3 pin. Experiment source compilation and critical imports
+must pass using the resolved absolute interpreter before dependency/model
+acquisition; see [cloud preparation](CLOUD_RUN_PREPARATION.md).
+
+A local installation needs Python 3.12.x, compatible dependencies, a
 CUDA-capable runtime and cached Qwen2.5-7B-Instruct, Phi-3.5-mini-instruct and bge-m3 assets.
 Read [requirements.txt](../requirements.txt), [Dockerfile](../Dockerfile) and
 [model_weights.py](../scripts/model_weights.py) before preparing another environment.

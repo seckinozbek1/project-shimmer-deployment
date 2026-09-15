@@ -15,6 +15,7 @@ import sys
 import tempfile
 
 from cloud_run_common import write_json
+from runtime_contract import load_contract, resolve, command
 from prepare_cloud_run import ASSETS, pins, validate_wheels
 
 
@@ -23,6 +24,9 @@ def main(argv=None):
     parser.add_argument('--output', type=Path, default=Path('output/cloud_wheels/linux_cp312'))
     parser.add_argument('--download', action='store_true')
     args = parser.parse_args(argv)
+    runtime = load_contract()
+    selected = resolve(root=Path(__file__).resolve().parents[1])
+    tag = ''.join(runtime['python'].split('.')[:2])
     locked = pins(ASSETS / 'runtime.lock')
     if not args.download:
         print(json.dumps({'download_started': False, 'packages': len(locked), 'output': str(args.output),
@@ -37,9 +41,9 @@ def main(argv=None):
     with tempfile.TemporaryDirectory(prefix='shimmer-wheels-') as tmp:
         requirements = Path(tmp) / 'download.lock'
         requirements.write_text(''.join(f'{name}=={version}\n' for name, version in sorted(locked.items()) if name != 'langdetect'))
-        command = [sys.executable, '-m', 'pip', '--disable-pip-version-check', 'download', '--no-cache-dir',
-                   '--no-deps', '--only-binary=:all:', '--python-version', '312', '--implementation', 'cp',
-                   '--abi', 'cp312', '--abi', 'abi3', '--abi', 'none', '--index-url', 'https://pypi.org/simple',
+        command = [selected['executable'], '-m', 'pip', '--disable-pip-version-check', 'download', '--no-cache-dir',
+                   '--no-deps', '--only-binary=:all:', '--python-version', tag, '--implementation', 'cp',
+                   '--abi', 'cp' + tag, '--abi', 'abi3', '--abi', 'none', '--index-url', 'https://pypi.org/simple',
                    '--extra-index-url', 'https://download.pytorch.org/whl/cu121', '--dest', str(args.output.resolve()),
                    '-r', str(requirements)]
         for platform in ['manylinux_2_35_x86_64', 'manylinux_2_34_x86_64', 'manylinux_2_31_x86_64',
@@ -59,7 +63,7 @@ def main(argv=None):
                        'network_failure': 'Connection' in messages or 'ProxyError' in messages, 'error_types': error_types})
             print(json.dumps({'ready': False, 'steps': steps, 'unavailable_exact_pins': missing, 'error_types': error_types}))
             return 2
-        result = subprocess.run([sys.executable, '-m', 'pip', '--disable-pip-version-check', 'wheel',
+        result = subprocess.run([selected['executable'], '-m', 'pip', '--disable-pip-version-check', 'wheel',
                     '--no-deps', '--no-build-isolation', '--no-cache-dir', '--index-url', 'https://pypi.org/simple',
                     '--wheel-dir', str(args.output.resolve()), 'langdetect==' + locked['langdetect']], env=env, capture_output=True)
         steps.append({'step': 'build_pure_python_langdetect_locally', 'exit_code': result.returncode})

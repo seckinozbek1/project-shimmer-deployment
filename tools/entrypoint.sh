@@ -15,6 +15,9 @@
 
 set -e
 
+SHIMMER_PYTHON=$(/opt/shimmer-runtime/bin/python tools/runtime_contract.py --resolve --candidate /opt/shimmer-runtime/bin/python --path-only)
+"$SHIMMER_PYTHON" tools/runtime_contract.py --source /app >/dev/null
+
 cmd="${1:-verify}"
 if [ "$#" -gt 0 ]; then
     shift
@@ -22,13 +25,13 @@ fi
 
 case "$cmd" in
     serve)
-        exec python scripts/server.py "$@"
+        exec "$SHIMMER_PYTHON" scripts/server.py "$@"
         ;;
     run)
-        exec python tools/run_local_demo.py "$@"
+        exec "$SHIMMER_PYTHON" tools/run_local_demo.py "$@"
         ;;
     verify)
-        exec python -X utf8 scripts/verify_session1.py --offline "$@"
+        exec "$SHIMMER_PYTHON" -X utf8 scripts/verify_session1.py --offline "$@"
         ;;
     *)
         echo "Unknown command: '$cmd'" >&2
