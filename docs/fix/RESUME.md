@@ -1,3 +1,38 @@
+# First tuning review cohort v2 correction - 15 September 2026
+
+**FIRST_TUNING_EXPERIMENT_REVIEW_PENDING**.
+Implementation: `befb46816efd66c51a301e037304bc187b1e3b90`.
+Read [FIRST_TUNING_REVIEW_COHORT_V2_CORRECTION.md](FIRST_TUNING_REVIEW_COHORT_V2_CORRECTION.md)
+and [the active submission workflow](../../benchmark/first_tuning_review_cohort_v2/ADMIN_SUBMISSION.md).
+
+Active revision `first-tuning-review-cohort-v2`; frozen acceptance profile remains
+`first-tuning-experiment-v1`, all 27 criteria + derived R07 + six catastrophic zeros
+unchanged. Old ZIPs are SUPERSEDED_BEFORE_HUMAN_REVIEW; preserve them for provenance,
+but distribute only ZIPs ending `_cohort_v2.zip`. Current binding/receipts are mandatory;
+old packet IDs and legacy journal imports cannot silently count.
+
+Approved cohort: 78 TRAIN + 40 DEV + 72 held-out + two required evaluation templates
+= 192. Exact 96 producer/96 auditor; 36 astronomy/36 ecology; ten domains, 16 templates,
+74 unseen-template cases, maximum 54 document families under this allocation.
+Refusal/gap/uncertainty: 30/72/60. Double subset: 48 (24/24), 48 families, all domains
+and templates, refusal/gap/uncertainty 18/19/19. Maximum accepted tuning-access pool
+118 (78 TRAIN + 40 DEV); current zero. DEV stays for validation, not automatically
+merged into gradient training. All 74 evaluation-only examples remain excluded.
+
+145 checks pass; ten effect proofs; one existing optional skip. New exports: 482
+files and 482 ZIP members scanned, zero leakage/credential/privacy findings. Frozen
+inputs and 106 historical evidence entries unchanged; four historical failures
+remain rejected. No real/fake human submissions. Next: collect 192 first and 48
+independent second reviews, adjudicate disagreement and rebuild bound coverage.
+Before future checkpoint scoring, reconcile the inherited evaluator's R06 TRAIN-family
+counting with its non-TRAIN output population without relaxing frozen criteria; this
+selection-only correction makes no performance verdict. See report for exact issue.
+
+No cloud, paid API, model generation, training, LoRA/SFT, model/revision/quantization
+change, full pipeline, multi-round or push. Root handoff/durable remain untouched.
+
+---
+
 # First tuning experiment review preparation - 15 September 2026
 
 **FIRST_TUNING_EXPERIMENT_REVIEW_PENDING**.

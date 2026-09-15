@@ -1,0 +1,60 @@
+{
+  "requested_allocation": {
+    "train": 80,
+    "dev": 40,
+    "held_out": 72,
+    "total": 192
+  },
+  "frozen_acceptance_sha256": "8b70b096b128183707b2cc77c7577efebc8a5232336316a498f133306e3495da",
+  "eligible_candidate_count": 440,
+  "maximum_template_coverage": 14,
+  "required_templates": 16,
+  "missing_templates": {
+    "attributed_dialogue": {
+      "candidate_count": 112,
+      "splits": [
+        "test"
+      ]
+    },
+    "scope_notice": {
+      "candidate_count": 112,
+      "splits": [
+        "sealed_adversarial"
+      ]
+    }
+  },
+  "maximum_document_families": 52,
+  "excluded_families": [
+    "sealed_adversarial-catalogue",
+    "sealed_adversarial-clinical",
+    "sealed_adversarial-contracts",
+    "sealed_adversarial-device",
+    "sealed_adversarial-negotiation",
+    "sealed_adversarial-nonsense",
+    "sealed_adversarial-procurement",
+    "sealed_adversarial-regulation",
+    "test-catalogue",
+    "test-clinical",
+    "test-contracts",
+    "test-device",
+    "test-negotiation",
+    "test-nonsense",
+    "test-procurement",
+    "test-regulation",
+    "v2-compact_table-device",
+    "v2-compact_table-negotiation",
+    "v2-machine_records-contracts",
+    "v2-machine_records-nonsense",
+    "v2-mixed_prose_table-device",
+    "v2-mixed_prose_table-negotiation",
+    "v2-multirow_table-device",
+    "v2-multirow_table-negotiation",
+    "v2-nested_provisions-contracts",
+    "v2-nested_provisions-nonsense",
+    "v2-transaction_register-contracts",
+    "v2-transaction_register-nonsense"
+  ],
+  "minimum_additional_evaluation_rows": 2,
+  "status": "AWAITING_OPERATOR_ALLOCATION_DECISION",
+  "frozen_files_unchanged": true
+}
