@@ -1,0 +1,33 @@
+{
+  "method_freeze_commit": "749c82c9595ec57f5217726df659bf89940b5873",
+  "fresh_context": true,
+  "fork_turns": "none",
+  "A": {
+    "reviews": 64,
+    "ambiguity": 0,
+    "workspace_only": true,
+    "no_targets": true
+  },
+  "B": {
+    "reviews": 64,
+    "ambiguity": 0,
+    "workspace_only": true,
+    "no_targets": true
+  },
+  "scope": "Machine curation only; agent self-attestations, not OS sandbox evidence; parent did not generate labels",
+  "C": {
+    "reviews": 64,
+    "ambiguity": 0,
+    "workspace_only": true,
+    "no_targets": true
+  },
+  "D": {
+    "adjudications": 16,
+    "ambiguity": 0,
+    "workspace_only": true,
+    "no_targets": true,
+    "decisions": {
+      "candidate_B": 16
+    }
+  }
+}

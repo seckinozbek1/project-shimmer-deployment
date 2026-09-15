@@ -1,0 +1,16 @@
+{
+  "packets": 64,
+  "primaries": 192,
+  "primary_valid": 192,
+  "primary_invalid": 0,
+  "unanimous": 64,
+  "majority": 0,
+  "no_majority": 0,
+  "valid_triple_rate": 1.0,
+  "adjudications": 16,
+  "adjudication_valid": 16,
+  "ambiguity": 0,
+  "human_reviews": 0,
+  "PRE_GOLD_SAFE_tests": 45,
+  "POST_GOLD_ONLY_tests": 0
+}

@@ -1,0 +1,39 @@
+{
+  "required_adjudication": [
+    "producer-v3-14c17c9192cdf588354a8fe2",
+    "producer-v3-17b7f2ea9a8a77b6da7234c0",
+    "producer-v3-3e88a51e16ef7eb49761141c",
+    "producer-v3-49ab243b4a76f8885768a3b3",
+    "producer-v3-688e80fd498f0a7ba869fd6b",
+    "producer-v3-6d37d8cff7701bf56ab2d29c",
+    "producer-v3-8971adec69bd4d724b4cf0c7",
+    "producer-v3-91995afb1d9d098b98690587",
+    "producer-v3-92cfb68203fdfe40ec3577eb",
+    "producer-v3-ab5f55a7888f56d181fde762",
+    "producer-v3-b546899ee591356aef64c87f",
+    "producer-v3-bed68ae91685e80efe6b3ca9",
+    "producer-v3-cc7495ca2d04fbee709521ac",
+    "producer-v3-d39916a4ea519346386e95dc",
+    "producer-v3-d9fb16daba4437a3c84626e4",
+    "producer-v3-fac0ffbd24cba64f589f4a16"
+  ],
+  "hard": [
+    "producer-v3-b546899ee591356aef64c87f",
+    "producer-v3-fac0ffbd24cba64f589f4a16",
+    "producer-v3-d39916a4ea519346386e95dc",
+    "producer-v3-ab5f55a7888f56d181fde762",
+    "producer-v3-3e88a51e16ef7eb49761141c",
+    "producer-v3-6d37d8cff7701bf56ab2d29c",
+    "producer-v3-49ab243b4a76f8885768a3b3",
+    "producer-v3-91995afb1d9d098b98690587",
+    "producer-v3-cc7495ca2d04fbee709521ac",
+    "producer-v3-14c17c9192cdf588354a8fe2",
+    "producer-v3-17b7f2ea9a8a77b6da7234c0",
+    "producer-v3-92cfb68203fdfe40ec3577eb",
+    "producer-v3-d9fb16daba4437a3c84626e4",
+    "producer-v3-bed68ae91685e80efe6b3ca9",
+    "producer-v3-688e80fd498f0a7ba869fd6b",
+    "producer-v3-8971adec69bd4d724b4cf0c7"
+  ],
+  "invalid_primaries": []
+}

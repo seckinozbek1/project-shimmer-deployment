@@ -1,0 +1,69 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-e072a08a20c3c39d31b47912",
+  "input_sha256": "6dde293634583bda5189c60f5a70adb5e3d4e29e7bec0860bb9d883dc8e49b56",
+  "slot": "B",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T19:25:43.917713+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "The date is absent. When was this recorded?",
+            "origin": "source_explicit"
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recorder",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "The recorder is unnamed. Who recorded it?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "The absent date is bound to recording time by its immediately following recording question. The recorder identity is missing and explicitly requested. Owned claims and refs are retained; structural labels and context-only material add no atoms."
+}

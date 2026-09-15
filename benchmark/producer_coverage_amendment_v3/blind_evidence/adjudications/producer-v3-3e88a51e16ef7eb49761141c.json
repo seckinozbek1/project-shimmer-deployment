@@ -1,0 +1,74 @@
+{
+    "protocol":  "producer-coverage-amendment-v3",
+    "policy":  "producer-semantic-policy-v3",
+    "evidence_kind":  "training_label_curation_evidence",
+    "use":  "curation_only",
+    "packet_id":  "producer-v3-3e88a51e16ef7eb49761141c",
+    "input_sha256":  "f26818372a8e43eaae877e8c395b9c3125ad0b920a909617491f7e11b11d3dee",
+    "slot":  "D",
+    "provenance":  "machine_agent_adjudication",
+    "reviewed_at":  "2026-09-15T19:28:19.6964941Z",
+    "label":  {
+                  "status":  "examined",
+                  "items":  [
+                                {
+                                    "span":  "s0",
+                                    "claims":  [
+                                                   "CLM-A",
+                                                   "CLM-B"
+                                               ],
+                                    "refs":  [
+                                                 "REF-0001",
+                                                 "REF-0002"
+                                             ],
+                                    "gap_atoms":  [
+                                                      {
+                                                          "kind":  "gap",
+                                                          "category":  "missing_information",
+                                                          "subject":  "owned_record",
+                                                          "attribute":  "observation_time",
+                                                          "ordinal":  null,
+                                                          "relation":  null,
+                                                          "state":  "unspecified",
+                                                          "scope":  "owned_record",
+                                                          "unit":  null,
+                                                          "span":  "s0",
+                                                          "refs":  [
+                                                                       "REF-0001",
+                                                                       "REF-0002"
+                                                                   ],
+                                                          "support":  "The observation date is unavailable. What is the observation date?",
+                                                          "origin":  "source_explicit"
+                                                      }
+                                                  ],
+                                    "uncertainty_atoms":  [
+                                                              {
+                                                                  "kind":  "uncertainty",
+                                                                  "category":  "unknown",
+                                                                  "subject":  "entry",
+                                                                  "attribute":  "interpretation",
+                                                                  "ordinal":  2,
+                                                                  "relation":  null,
+                                                                  "state":  "unknown",
+                                                                  "scope":  "owned_record",
+                                                                  "unit":  null,
+                                                                  "span":  "s0",
+                                                                  "refs":  [
+                                                                               "REF-0001",
+                                                                               "REF-0002"
+                                                                           ],
+                                                                  "support":  "The interpretation of the second entry remains unresolved.",
+                                                                  "origin":  "source_explicit"
+                                                              }
+                                                          ]
+                                }
+                            ],
+                  "source_uncertainty_present":  true,
+                  "review_ambiguity":  false
+              },
+    "decision":  "candidate_B",
+    "disagreement_causes":  [
+
+                            ],
+    "rationale":  "Both Case Alder and Case Birch claims remain owned regardless of their equal quantities. The unavailable observation date and its question express one observation_time gap. Unresolved interpretation explicitly belongs to entry ordinal 2. Both owned refs are retained; context REF-9999 is excluded. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+}

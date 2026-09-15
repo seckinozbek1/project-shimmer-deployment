@@ -1,0 +1,70 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-2e1b2932b598dd23eac4bbf0",
+  "input_sha256": "21601e88c4e8f7ed33255b4d2705932755b11cebe810d1894343f05e29b6c7f2",
+  "slot": "C",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T19:26:05.829358+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "effective_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "support": "The effective time is missing. When does it take effect?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "owned_record",
+            "attribute": "interpretation",
+            "ordinal": null,
+            "relation": null,
+            "state": "unknown",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "support": "The interpretation remains uncertain.",
+            "origin": "source_explicit"
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "The missing effective time and its question denote one effective_time gap; contradictory assertions are both retained. The record interpretation is explicitly uncertain. All owned CLM assertions and refs are retained; structural labels add no atoms. Context-only content is excluded."
+}

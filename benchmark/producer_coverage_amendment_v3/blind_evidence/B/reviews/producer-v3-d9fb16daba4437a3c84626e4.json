@@ -1,0 +1,70 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-d9fb16daba4437a3c84626e4",
+  "input_sha256": "93fa2de911f12a63e1e83b8b7d06479e736bb5d0aad25a4757496b90878a9667",
+  "slot": "B",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T19:25:43.916713+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "effective_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "support": "The effective time is missing. When does it take effect?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "owned_record",
+            "attribute": "interpretation",
+            "ordinal": null,
+            "relation": null,
+            "state": "unknown",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "support": "The interpretation remains uncertain.",
+            "origin": "source_explicit"
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Effective time is explicitly missing and requested; both conflicting CLM assertions are retained. The source explicitly leaves the record interpretation uncertain. Owned claims and refs are retained; structural labels and context-only material add no atoms."
+}

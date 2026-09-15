@@ -1,0 +1,110 @@
+{
+    "protocol":  "producer-coverage-amendment-v3",
+    "policy":  "producer-semantic-policy-v3",
+    "evidence_kind":  "training_label_curation_evidence",
+    "use":  "curation_only",
+    "packet_id":  "producer-v3-bed68ae91685e80efe6b3ca9",
+    "input_sha256":  "5bf5ceca9571bc7536c8717392abde62ddfd083dbd203f86ff2031d7c34ba6f1",
+    "slot":  "D",
+    "provenance":  "machine_agent_adjudication",
+    "reviewed_at":  "2026-09-15T19:28:19.8010632Z",
+    "label":  {
+                  "status":  "examined",
+                  "items":  [
+                                {
+                                    "span":  "s0",
+                                    "claims":  [
+                                                   "CLM-C",
+                                                   "CLM-D"
+                                               ],
+                                    "refs":  [
+                                                 "REF-1003",
+                                                 "REF-1004"
+                                             ],
+                                    "gap_atoms":  [
+                                                      {
+                                                          "kind":  "gap",
+                                                          "category":  "explicit_question",
+                                                          "subject":  "entry",
+                                                          "attribute":  "entry_content",
+                                                          "ordinal":  1,
+                                                          "relation":  null,
+                                                          "state":  "requested",
+                                                          "scope":  "owned_record",
+                                                          "unit":  null,
+                                                          "span":  "s0",
+                                                          "refs":  [
+                                                                       "REF-1003",
+                                                                       "REF-1004"
+                                                                   ],
+                                                          "support":  "What was entered first?",
+                                                          "origin":  "source_explicit"
+                                                      },
+                                                      {
+                                                          "kind":  "gap",
+                                                          "category":  "explicit_question",
+                                                          "subject":  "entry",
+                                                          "attribute":  "entry_order",
+                                                          "ordinal":  "next",
+                                                          "relation":  null,
+                                                          "state":  "requested",
+                                                          "scope":  "owned_record",
+                                                          "unit":  null,
+                                                          "span":  "s0",
+                                                          "refs":  [
+                                                                       "REF-1003",
+                                                                       "REF-1004"
+                                                                   ],
+                                                          "support":  "What followed?",
+                                                          "origin":  "source_explicit"
+                                                      },
+                                                      {
+                                                          "kind":  "gap",
+                                                          "category":  "missing_information",
+                                                          "subject":  "owned_record",
+                                                          "attribute":  "effective_time",
+                                                          "ordinal":  null,
+                                                          "relation":  null,
+                                                          "state":  "unspecified",
+                                                          "scope":  "owned_record",
+                                                          "unit":  null,
+                                                          "span":  "s0",
+                                                          "refs":  [
+                                                                       "REF-1003",
+                                                                       "REF-1004"
+                                                                   ],
+                                                          "support":  "The effective time is missing. When does it take effect?",
+                                                          "origin":  "source_explicit"
+                                                      }
+                                                  ],
+                                    "uncertainty_atoms":  [
+                                                              {
+                                                                  "kind":  "uncertainty",
+                                                                  "category":  "unknown",
+                                                                  "subject":  "owned_record",
+                                                                  "attribute":  "interpretation",
+                                                                  "ordinal":  null,
+                                                                  "relation":  null,
+                                                                  "state":  "unknown",
+                                                                  "scope":  "owned_record",
+                                                                  "unit":  null,
+                                                                  "span":  "s0",
+                                                                  "refs":  [
+                                                                               "REF-1003",
+                                                                               "REF-1004"
+                                                                           ],
+                                                                  "support":  "The interpretation remains uncertain.",
+                                                                  "origin":  "source_explicit"
+                                                              }
+                                                          ]
+                                }
+                            ],
+                  "source_uncertainty_present":  true,
+                  "review_ambiguity":  false
+              },
+    "decision":  "candidate_B",
+    "disagreement_causes":  [
+
+                            ],
+    "rationale":  "The collection answers retain both assertions and both explicit inquiries: entry_content ordinal 1 and entry_order ordinal next. The effective-time absence and matching question form one gap. Record interpretation uncertainty is explicit. Question, Answer and Clerk note labels add no semantics; context CLM-Z is excluded. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+}

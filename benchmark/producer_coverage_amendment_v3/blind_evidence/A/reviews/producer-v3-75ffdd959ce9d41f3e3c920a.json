@@ -1,0 +1,87 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-75ffdd959ce9d41f3e3c920a",
+  "input_sha256": "1a72a927533c3f224c508cfbb1d869fbec0802b25a87d1f85868b9d2117cca02",
+  "slot": "A",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T19:25:45.358307+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "explicit_question",
+            "subject": "entry",
+            "attribute": "entry_content",
+            "ordinal": 1,
+            "relation": null,
+            "state": "requested",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "What was entered first?",
+            "origin": "source_explicit"
+          },
+          {
+            "kind": "gap",
+            "category": "explicit_question",
+            "subject": "entry",
+            "attribute": "entry_order",
+            "ordinal": "next",
+            "relation": null,
+            "state": "requested",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "What followed?",
+            "origin": "source_explicit"
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "When was this recorded?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "The answered first-entry question requests entry content at ordinal 1. The answered follow-up question requests next-entry order. The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+}
