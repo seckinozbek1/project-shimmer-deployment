@@ -1,0 +1,10 @@
+{
+  "followup": "neither role negative/indeterminate, at least one positive, no catastrophic/integrity regression",
+  "frozen_before_launch": true,
+  "indeterminate": "incomplete/unavailable/invalid protected comparison",
+  "minimum_posthoc_effect_threshold": null,
+  "negative": "new per-example catastrophic failure, worse evidence, any lower contract rate, new truncation or lower exact semantic mean",
+  "neutral": "no regression and equal exact semantic mean",
+  "positive": "all tuned catastrophic counts zero; no contract, truncation or evidence regression; exact role semantic mean strictly greater",
+  "semantic_formula": "unchanged DEV role arithmetic score applied to protected outputs"
+}

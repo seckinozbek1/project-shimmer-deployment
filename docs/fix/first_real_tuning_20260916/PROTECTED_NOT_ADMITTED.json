@@ -1,0 +1,162 @@
+{
+  "admitted": false,
+  "reason": "PRODUCER_SELECTION_FAILED: neither fixed checkpoint has 100% valid DEV contracts",
+  "receipt_consumed": false,
+  "protected_bundle_created": false,
+  "protected_bundle_uploaded": false,
+  "registered_population_count": 114,
+  "registered_split_counts": {
+    "dev": 40,
+    "test": 37,
+    "sealed_adversarial": 37
+  },
+  "executed_population_count": 0,
+  "criteria": {
+    "P01": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P02": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P03": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P04": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P05": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P06": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P07": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P08": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P09": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P10": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "P11": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A01": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A02": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A03": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A04": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A05": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A06": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A07": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A08": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A09": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "A10": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "R01": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "R02": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "R03": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "R04": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "R05": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    },
+    "R06": {
+      "status": "NOT_MEASURED",
+      "measured": null,
+      "passed": null
+    }
+  },
+  "R06": {
+    "status": "NOT_MEASURED",
+    "original_population_preserved": true,
+    "training_examples_used": 0
+  },
+  "R07": {
+    "status": "NOT_MEASURED",
+    "six_catastrophic_limits_unchanged": true
+  },
+  "human_review_status": "PENDING",
+  "human_review_count": 0
+}

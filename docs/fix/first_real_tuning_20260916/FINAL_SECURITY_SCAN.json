@@ -1,0 +1,11 @@
+{
+  "files_hashed": 112,
+  "bytes_hashed": 542187667,
+  "credential_findings": 0,
+  "protected_leakage_findings": 0,
+  "compressed_archive_scanned_via_verified_extracted_members": true,
+  "frozen_training_source_unchanged": true,
+  "historical_tracked_changes_except_shared_handoff": 0,
+  "ephemeral_credentials_removed": true,
+  "real_instance_terminated": true
+}

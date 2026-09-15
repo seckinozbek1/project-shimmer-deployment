@@ -1,0 +1,15 @@
+{
+  "signal_policy_sha256": "7390826331edd18ca41d020729db0bd846a932e13686f41ef17ab36150a0d7a2",
+  "signal_policy_mtime_epoch": 1789507112.7274117,
+  "launch_epoch": 1789507151.4675763,
+  "policy_precedes_launch": true,
+  "training_bundle_sha256_unchanged": true,
+  "model_configs_unchanged": true,
+  "hyperparameters_unchanged": true,
+  "producer_updates": 16,
+  "auditor_updates": 24,
+  "protected_reads": 0,
+  "extra_model_calls": 0,
+  "selection_recomputation_pass": true,
+  "human_reviews": 0
+}

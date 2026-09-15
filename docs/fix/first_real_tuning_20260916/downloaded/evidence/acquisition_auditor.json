@@ -1,0 +1,45 @@
+{
+  "role": "auditor",
+  "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+  "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+  "start_epoch": 1789507772.596976,
+  "end_epoch": 1789507849.4314604,
+  "seconds": 76.83448505401611,
+  "files": {
+    "tokenizer.model": {
+      "bytes": 499723,
+      "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347"
+    },
+    "generation_config.json": {
+      "bytes": 140,
+      "sha256": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413"
+    },
+    "tokenizer.json": {
+      "bytes": 1844436,
+      "sha256": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7"
+    },
+    "added_tokens.json": {
+      "bytes": 293,
+      "sha256": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d"
+    },
+    "tokenizer_config.json": {
+      "bytes": 3367,
+      "sha256": "c98403fdcc8cf522d8f240f04123d79358dd81192f907c3bcac1b63080296ece"
+    },
+    "config.json": {
+      "bytes": 3808,
+      "sha256": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2"
+    },
+    "model.safetensors": {
+      "bytes": 2264298476,
+      "sha256": "e6c61d932846517fc3d5bf09abb69b8c6f657b673ff8380999b15fb20cfcb64a"
+    },
+    "special_tokens_map.json": {
+      "bytes": 571,
+      "sha256": "58433eb58121d4754c8457e7397f14462ead767281693d628fa59a4776533978"
+    }
+  },
+  "bytes": 2266650814,
+  "cache_state": "fresh isolated runtime snapshot acquisition",
+  "network_phase_closed": true
+}

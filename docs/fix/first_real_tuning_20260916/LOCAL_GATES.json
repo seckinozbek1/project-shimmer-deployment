@@ -1,0 +1,11 @@
+{
+  "pass": true,
+  "checks": [
+    "tuning/first_domain_agnostic_v1/dry_run.py",
+    "tools/lambda_metadata_checks.py",
+    "tools/runtime_contract_checks.py"
+  ],
+  "bundle_sha256": "155b6b539d9d924bc56d473fd5fcc34dcacab5379554c91b351fc4f535f48a70",
+  "freeze_sha256": "f65aaf808012357c1563299304dd274449164901e0fb1911e8d2798bb700c727",
+  "authorization_previously_consumed": false
+}

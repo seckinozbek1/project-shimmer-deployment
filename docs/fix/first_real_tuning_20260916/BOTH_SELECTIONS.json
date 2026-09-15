@@ -1,0 +1,7 @@
+{
+  "both": false,
+  "roles": {
+    "auditor": true,
+    "producer": false
+  }
+}

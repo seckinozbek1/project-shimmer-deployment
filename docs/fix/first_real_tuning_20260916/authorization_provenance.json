@@ -1,0 +1,19 @@
+{
+  "consumed": true,
+  "hashes": {
+    "protected_authorization.json": "cb5217b92b8af226ca0aab270661eaba6aaea059b7f278e4c6aae78e7bf313d9",
+    "training_authorization.json": "288bfcc549372dc8f766380a8ff004ecc1db592ed0b62406ef8a97336b5dba6e"
+  },
+  "operator_request_attachment": "3f71a5ae-a9e5-422a-b729-582035f6f794",
+  "runner_action_mapping": {
+    "first bounded tuning experiment": "train",
+    "one-shot protected evaluation": "protected_evaluation"
+  },
+  "instance_id": "43eba68e83e74ef7ae595a1c04918a51",
+  "training_roles_executed": [
+    "producer",
+    "auditor"
+  ],
+  "protected_authorization_consumed": false,
+  "authorization_reusable": false
+}

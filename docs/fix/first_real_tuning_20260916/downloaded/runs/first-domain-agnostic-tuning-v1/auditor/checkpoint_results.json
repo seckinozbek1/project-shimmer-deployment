@@ -1,0 +1,120 @@
+[
+  {
+    "identity": {
+      "experiment": "first-domain-agnostic-tuning-v1",
+      "role": "auditor",
+      "step": 12,
+      "base_model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+      "files": {
+        "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+        "adapter_model.safetensors": "755ebbdae468b021ba2a376a51c3ba998cf5462579e621a013853e36c009473c"
+      },
+      "sha256": "24e91a4faa59e472c9ac1a562f5a68f60acb09a5170c02f8952ed0cb7f56a5be"
+    },
+    "role": "auditor",
+    "step": 12,
+    "dev_ids": [
+      "dev-catalogue-auditor-insufficient_evidence",
+      "dev-clinical-auditor-insufficient_evidence",
+      "dev-contracts-auditor-insufficient_evidence",
+      "dev-device-auditor-insufficient_evidence",
+      "dev-device-auditor-unsupported_certainty",
+      "dev-negotiation-auditor-gap_omission",
+      "dev-negotiation-auditor-insufficient_evidence",
+      "dev-nonsense-auditor-insufficient_evidence",
+      "dev-nonsense-auditor-unsupported_addition",
+      "dev-procurement-auditor-insufficient_evidence",
+      "dev-regulation-auditor-insufficient_evidence",
+      "dev-regulation-auditor-match",
+      "v2-chronological_events-catalogue-changed",
+      "v2-chronological_events-clinical-changed",
+      "v2-chronological_events-nonsense-changed",
+      "v2-chronological_events-regulation-changed",
+      "v2-memo_sections-catalogue-changed",
+      "v2-memo_sections-clinical-changed",
+      "v2-memo_sections-nonsense-changed",
+      "v2-memo_sections-regulation-changed",
+      "v2-question_answer-catalogue-changed",
+      "v2-question_answer-clinical-changed",
+      "v2-question_answer-nonsense-changed",
+      "v2-question_answer-regulation-changed"
+    ],
+    "dataset_sha256": "fe6e0ea2b8b2ecaf1a1814db814b874d768f73a1551d471551cb21f512a61614",
+    "evidence_sha256": "728f9c0284ed5fe713cb2025b44b42136e51e9eb552b207d239efa7228e3438e",
+    "evidence_file": "dev-12.json",
+    "metrics": {
+      "catastrophic": {
+        "invented_evidence": 0,
+        "unrouted_rule_attribution": 0,
+        "confident_wrong_match_divergence": 0,
+        "truncation": 0,
+        "producer_source_copy": 0,
+        "governance_violations": 0
+      },
+      "catastrophic_pass": true,
+      "contract_rate": 0.9583333333333334,
+      "semantic_score": 0.3541666666666667,
+      "unassessed_reasons": 16
+    }
+  },
+  {
+    "identity": {
+      "experiment": "first-domain-agnostic-tuning-v1",
+      "role": "auditor",
+      "step": 24,
+      "base_model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+      "files": {
+        "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+        "adapter_model.safetensors": "68035e4fa1358e5639d00ee92e2e967d77221ecdb351b61be578f0363ec3aad6"
+      },
+      "sha256": "7e7d69cfe4b88200ccde7aa323e4c191a5069a0287de7527ced53a442463af05"
+    },
+    "role": "auditor",
+    "step": 24,
+    "dev_ids": [
+      "dev-catalogue-auditor-insufficient_evidence",
+      "dev-clinical-auditor-insufficient_evidence",
+      "dev-contracts-auditor-insufficient_evidence",
+      "dev-device-auditor-insufficient_evidence",
+      "dev-device-auditor-unsupported_certainty",
+      "dev-negotiation-auditor-gap_omission",
+      "dev-negotiation-auditor-insufficient_evidence",
+      "dev-nonsense-auditor-insufficient_evidence",
+      "dev-nonsense-auditor-unsupported_addition",
+      "dev-procurement-auditor-insufficient_evidence",
+      "dev-regulation-auditor-insufficient_evidence",
+      "dev-regulation-auditor-match",
+      "v2-chronological_events-catalogue-changed",
+      "v2-chronological_events-clinical-changed",
+      "v2-chronological_events-nonsense-changed",
+      "v2-chronological_events-regulation-changed",
+      "v2-memo_sections-catalogue-changed",
+      "v2-memo_sections-clinical-changed",
+      "v2-memo_sections-nonsense-changed",
+      "v2-memo_sections-regulation-changed",
+      "v2-question_answer-catalogue-changed",
+      "v2-question_answer-clinical-changed",
+      "v2-question_answer-nonsense-changed",
+      "v2-question_answer-regulation-changed"
+    ],
+    "dataset_sha256": "fe6e0ea2b8b2ecaf1a1814db814b874d768f73a1551d471551cb21f512a61614",
+    "evidence_sha256": "5ed399a72fb841526682a3174bee7609d1ef2bab69e31eba5023ebebde43ab17",
+    "evidence_file": "dev-24.json",
+    "metrics": {
+      "catastrophic": {
+        "invented_evidence": 0,
+        "unrouted_rule_attribution": 0,
+        "confident_wrong_match_divergence": 0,
+        "truncation": 0,
+        "producer_source_copy": 0,
+        "governance_violations": 0
+      },
+      "catastrophic_pass": true,
+      "contract_rate": 1.0,
+      "semantic_score": 0.3333333333333333,
+      "unassessed_reasons": 16
+    }
+  }
+]

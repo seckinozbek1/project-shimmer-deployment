@@ -1,0 +1,9 @@
+{
+  "python": "3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]",
+  "executable": "/home/ubuntu/shimmer-first-tuning-20260916/.venv/bin/python",
+  "torch": "2.5.1+cu121",
+  "cuda": "12.1",
+  "gpu": "NVIDIA A10",
+  "peak_vram": 3821079552,
+  "optimizer_updates": 24
+}

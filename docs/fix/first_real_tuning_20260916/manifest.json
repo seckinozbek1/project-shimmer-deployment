@@ -1,0 +1,33 @@
+{
+  "freeze_sha256": "f65aaf808012357c1563299304dd274449164901e0fb1911e8d2798bb700c727",
+  "frozen_source_commit": "a704fe8ca04032932981f32643aebad98ef2f619",
+  "hard_seconds": 8372.093023255815,
+  "hard_usd": 3,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-first-tuning-20260916",
+  "projected_cost_with_reserve": 1.9949850000000002,
+  "projected_minutes_with_reserve": 92.79,
+  "region": "us-east-1",
+  "reserve_seconds": 600,
+  "runtime_wrapper_sha256": "380f2ed64566a96a1d1a13e45fe03eef6216426f403d78e0905cd5939622d76d",
+  "soft_seconds": 5581.395348837209,
+  "soft_usd": 2,
+  "training_bundle_sha256": "155b6b539d9d924bc56d473fd5fcc34dcacab5379554c91b351fc4f535f48a70",
+  "workload_deadline_seconds": 7772.093023255815
+}

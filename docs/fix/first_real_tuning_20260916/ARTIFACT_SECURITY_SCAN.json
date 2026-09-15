@@ -1,0 +1,8 @@
+{
+  "files_scanned": 102,
+  "bytes_scanned": 282717841,
+  "credential_findings": 0,
+  "archive_hash_verified": true,
+  "archive_members_scanned_after_safe_extraction": true,
+  "sensitive_values_printed": false
+}

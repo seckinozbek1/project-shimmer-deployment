@@ -1,0 +1,11 @@
+{
+  "status": "PRODUCER_SELECTION_FAILED",
+  "role": "producer",
+  "utc": "2026-09-15T21:48:24.619977+00:00",
+  "seconds": 1050.587688922882,
+  "optimizer_steps": 16,
+  "peak_allocated_vram_bytes": 10943528960,
+  "peak_reserved_vram_bytes": 12461277184,
+  "network_execution_blocked": true,
+  "forward_backward_time_separately_available": false
+}

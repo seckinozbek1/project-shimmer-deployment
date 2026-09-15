@@ -1,0 +1,136 @@
+[
+  {
+    "identity": {
+      "experiment": "first-domain-agnostic-tuning-v1",
+      "role": "producer",
+      "step": 8,
+      "base_model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "d3154dce10c640f819611c2c49c10de6a6907cfc78f7fd6434119cdcb76f8c11"
+      },
+      "sha256": "4943951cb3e45bed673bc291887d8cc2d3c69837cdb375d4f8472658cdc7f0eb"
+    },
+    "role": "producer",
+    "step": 8,
+    "dev_ids": [
+      "dev-catalogue-producer-extracted",
+      "dev-clinical-producer-extracted",
+      "dev-contracts-producer-extracted",
+      "dev-device-producer-extracted",
+      "dev-negotiation-producer-extracted",
+      "dev-nonsense-producer-extracted",
+      "dev-procurement-producer-extracted",
+      "dev-regulation-producer-extracted",
+      "v2-chronological_events-catalogue-conflicting",
+      "v2-chronological_events-catalogue-primary",
+      "v2-chronological_events-clinical-conflicting",
+      "v2-chronological_events-clinical-primary",
+      "v2-chronological_events-nonsense-conflicting",
+      "v2-chronological_events-nonsense-primary",
+      "v2-chronological_events-regulation-conflicting",
+      "v2-chronological_events-regulation-primary",
+      "v2-memo_sections-catalogue-conflicting",
+      "v2-memo_sections-catalogue-primary",
+      "v2-memo_sections-clinical-conflicting",
+      "v2-memo_sections-clinical-primary",
+      "v2-memo_sections-nonsense-conflicting",
+      "v2-memo_sections-nonsense-primary",
+      "v2-memo_sections-regulation-conflicting",
+      "v2-memo_sections-regulation-primary",
+      "v2-question_answer-catalogue-conflicting",
+      "v2-question_answer-catalogue-primary",
+      "v2-question_answer-clinical-conflicting",
+      "v2-question_answer-clinical-primary",
+      "v2-question_answer-nonsense-conflicting",
+      "v2-question_answer-nonsense-primary",
+      "v2-question_answer-regulation-conflicting",
+      "v2-question_answer-regulation-primary"
+    ],
+    "dataset_sha256": "5e2c8056f67a4233fd1fda161e157fa5f247e1f905c969bc0507c73fc43bae30",
+    "evidence_sha256": "118ddaa20e11508dac73916e183ce0c556ccd9fb8ab6f77c6f82b4ac081835d7",
+    "evidence_file": "dev-8.json",
+    "metrics": {
+      "catastrophic": {
+        "invented_evidence": 0,
+        "unrouted_rule_attribution": 0,
+        "confident_wrong_match_divergence": 0,
+        "truncation": 1,
+        "producer_source_copy": 0,
+        "governance_violations": 0
+      },
+      "catastrophic_pass": false,
+      "contract_rate": 0.3125,
+      "semantic_score": 0.24479166666666666,
+      "unassessed_reasons": 0
+    }
+  },
+  {
+    "identity": {
+      "experiment": "first-domain-agnostic-tuning-v1",
+      "role": "producer",
+      "step": 16,
+      "base_model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "b0db3be3eda8ab5222faa390cdcd735d2215d647341077150e420c47ed7685da"
+      },
+      "sha256": "dfeb61ae7c31384202b0233c55d81b958848eb9200fd7875a51dc9ea936733d1"
+    },
+    "role": "producer",
+    "step": 16,
+    "dev_ids": [
+      "dev-catalogue-producer-extracted",
+      "dev-clinical-producer-extracted",
+      "dev-contracts-producer-extracted",
+      "dev-device-producer-extracted",
+      "dev-negotiation-producer-extracted",
+      "dev-nonsense-producer-extracted",
+      "dev-procurement-producer-extracted",
+      "dev-regulation-producer-extracted",
+      "v2-chronological_events-catalogue-conflicting",
+      "v2-chronological_events-catalogue-primary",
+      "v2-chronological_events-clinical-conflicting",
+      "v2-chronological_events-clinical-primary",
+      "v2-chronological_events-nonsense-conflicting",
+      "v2-chronological_events-nonsense-primary",
+      "v2-chronological_events-regulation-conflicting",
+      "v2-chronological_events-regulation-primary",
+      "v2-memo_sections-catalogue-conflicting",
+      "v2-memo_sections-catalogue-primary",
+      "v2-memo_sections-clinical-conflicting",
+      "v2-memo_sections-clinical-primary",
+      "v2-memo_sections-nonsense-conflicting",
+      "v2-memo_sections-nonsense-primary",
+      "v2-memo_sections-regulation-conflicting",
+      "v2-memo_sections-regulation-primary",
+      "v2-question_answer-catalogue-conflicting",
+      "v2-question_answer-catalogue-primary",
+      "v2-question_answer-clinical-conflicting",
+      "v2-question_answer-clinical-primary",
+      "v2-question_answer-nonsense-conflicting",
+      "v2-question_answer-nonsense-primary",
+      "v2-question_answer-regulation-conflicting",
+      "v2-question_answer-regulation-primary"
+    ],
+    "dataset_sha256": "5e2c8056f67a4233fd1fda161e157fa5f247e1f905c969bc0507c73fc43bae30",
+    "evidence_sha256": "74541f5fac519e9e9161bd316a3b1e23fd8547ae43b96801cd68cae21dc107f5",
+    "evidence_file": "dev-16.json",
+    "metrics": {
+      "catastrophic": {
+        "invented_evidence": 0,
+        "unrouted_rule_attribution": 0,
+        "confident_wrong_match_divergence": 0,
+        "truncation": 0,
+        "producer_source_copy": 0,
+        "governance_violations": 0
+      },
+      "catastrophic_pass": true,
+      "contract_rate": 0.96875,
+      "semantic_score": 0.7025,
+      "unassessed_reasons": 0
+    }
+  }
+]

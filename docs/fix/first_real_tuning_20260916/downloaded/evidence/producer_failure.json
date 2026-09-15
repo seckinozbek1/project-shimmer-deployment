@@ -1,0 +1,5 @@
+{
+  "type": "ValueError",
+  "message": "No checkpoint passes catastrophic and contract gates",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/ubuntu/shimmer-first-tuning-20260916/tools/first_tuning_remote.py\", line 126, in model_work\n    train.train(role,ROOT/'training_authorization.json')\n  File \"/home/ubuntu/shimmer-first-tuning-20260916/tuning/first_domain_agnostic_v1/train.py\", line 103, in train\n    freeze_selection(role,out,results,spec)\n  File \"/home/ubuntu/shimmer-first-tuning-20260916/tuning/first_domain_agnostic_v1/evaluation.py\", line 100, in freeze_selection\n    chosen=select(role,results,spec)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/shimmer-first-tuning-20260916/tuning/first_domain_agnostic_v1/evaluation.py\", line 94, in select\n    require(admitted,'No checkpoint passes catastrophic and contract gates')\n  File \"/home/ubuntu/shimmer-first-tuning-20260916/tuning/first_domain_agnostic_v1/common.py\", line 23, in require\n    raise ValueError(message)\nValueError: No checkpoint passes catastrophic and contract gates\n"
+}

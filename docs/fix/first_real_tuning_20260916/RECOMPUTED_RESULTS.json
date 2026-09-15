@@ -1,0 +1,417 @@
+{
+  "status": "FIRST_TUNING_EXPERIMENT_COMPLETED",
+  "roles": {
+    "producer": {
+      "status": "PRODUCER_SELECTION_FAILED",
+      "optimizer_steps": 16,
+      "load_seconds": 6.083701848983765,
+      "total_role_wall_seconds": 1050.587688922882,
+      "dev_generation_seconds": 955.3820820780006,
+      "non_generation_role_wall_seconds": 95.20560684488146,
+      "ordinary_training_step_wall_median": 5.467817306518555,
+      "ordinary_step_definition": "excludes first step initialization and step immediately after DEV; those intervals contain non-training work",
+      "optimizer_call_seconds": 0.15479207038879395,
+      "loss_start": 0.934644415974617,
+      "loss_end": 0.0064192540012300014,
+      "loss_entries": 16,
+      "source_train_examples": 64,
+      "module_count": 196,
+      "trainable_parameters": 20185088,
+      "lora_only": true,
+      "peak_allocated_vram_gib": 10.19195556640625,
+      "peak_reserved_vram_gib": 11.60546875,
+      "nvidia_peak_memory_mib": 12233.0,
+      "gpu_utilization_mean": 36.82295719844358,
+      "gpu_utilization_max": 100.0,
+      "peak_process_rss_gib": 4.454387664794922,
+      "peak_host_ram_used_gib": 5.1675567626953125,
+      "cpu_percent_mean": 108.07256809338521,
+      "cpu_percent_max": 2697.2,
+      "telemetry_samples": 1028,
+      "checkpoints": [
+        {
+          "step": 8,
+          "adapter_sha256": "4943951cb3e45bed673bc291887d8cc2d3c69837cdb375d4f8472658cdc7f0eb",
+          "catastrophic": {
+            "invented_evidence": 0,
+            "unrouted_rule_attribution": 0,
+            "confident_wrong_match_divergence": 0,
+            "truncation": 1,
+            "producer_source_copy": 0,
+            "governance_violations": 0
+          },
+          "catastrophic_pass": false,
+          "contract_rate": 0.3125,
+          "semantic_score": 0.24479166666666666,
+          "unassessed_reasons": 0,
+          "count": 32,
+          "contract_valid": 10,
+          "accepted_outcomes": 2,
+          "expected_refusals": 0,
+          "predicted_refusals": 0,
+          "refusal_correct": 32,
+          "relation_correct": 0,
+          "reason_correct": 0,
+          "semantic_completeness": 2,
+          "micro_metrics": {
+            "evidence": {
+              "tp": 34,
+              "fp": 2,
+              "fn": 27,
+              "precision": 0.9444444444444444,
+              "recall": 0.5573770491803278,
+              "f1": 0.7010309278350515
+            },
+            "claims": {
+              "tp": 19,
+              "fp": 15,
+              "fn": 42,
+              "precision": 0.5588235294117647,
+              "recall": 0.3114754098360656,
+              "f1": 0.4
+            },
+            "information_gaps": {
+              "tp": 6,
+              "fp": 17,
+              "fn": 49,
+              "precision": 0.2608695652173913,
+              "recall": 0.10909090909090909,
+              "f1": 0.15384615384615385
+            },
+            "uncertainty": {
+              "tp": 4,
+              "fp": 14,
+              "fn": 22,
+              "precision": 0.2222222222222222,
+              "recall": 0.15384615384615385,
+              "f1": 0.18181818181818182
+            }
+          },
+          "invalid_outputs": [
+            {
+              "example_id": "dev-catalogue-producer-extracted",
+              "reason": "Extra data: line 1 column 537 (char 536)"
+            },
+            {
+              "example_id": "dev-clinical-producer-extracted",
+              "reason": "Exact compact extraction fields required"
+            },
+            {
+              "example_id": "dev-contracts-producer-extracted",
+              "reason": "Extra data: line 1 column 537 (char 536)"
+            },
+            {
+              "example_id": "dev-device-producer-extracted",
+              "reason": "Extra data: line 1 column 537 (char 536)"
+            },
+            {
+              "example_id": "dev-negotiation-producer-extracted",
+              "reason": "Extra data: line 1 column 537 (char 536)"
+            },
+            {
+              "example_id": "dev-nonsense-producer-extracted",
+              "reason": "Exact compact extraction fields required"
+            },
+            {
+              "example_id": "dev-procurement-producer-extracted",
+              "reason": "Extra data: line 1 column 540 (char 539)"
+            },
+            {
+              "example_id": "dev-regulation-producer-extracted",
+              "reason": "Extra data: line 1 column 537 (char 536)"
+            },
+            {
+              "example_id": "v2-chronological_events-catalogue-conflicting",
+              "reason": "Extra data: line 1 column 535 (char 534)"
+            },
+            {
+              "example_id": "v2-chronological_events-catalogue-primary",
+              "reason": "Unterminated string starting at: line 1 column 1304 (char 1303)"
+            },
+            {
+              "example_id": "v2-chronological_events-clinical-conflicting",
+              "reason": "Exact compact extraction fields required"
+            },
+            {
+              "example_id": "v2-chronological_events-nonsense-conflicting",
+              "reason": "Extra data: line 1 column 547 (char 546)"
+            },
+            {
+              "example_id": "v2-chronological_events-regulation-conflicting",
+              "reason": "Extra data: line 1 column 535 (char 534)"
+            },
+            {
+              "example_id": "v2-memo_sections-catalogue-conflicting",
+              "reason": "Extra data: line 1 column 535 (char 534)"
+            },
+            {
+              "example_id": "v2-memo_sections-catalogue-primary",
+              "reason": "Exact compact extraction fields required"
+            },
+            {
+              "example_id": "v2-memo_sections-clinical-conflicting",
+              "reason": "Extra data: line 1 column 535 (char 534)"
+            },
+            {
+              "example_id": "v2-memo_sections-nonsense-conflicting",
+              "reason": "Exact compact extraction fields required"
+            },
+            {
+              "example_id": "v2-memo_sections-regulation-conflicting",
+              "reason": "Extra data: line 1 column 535 (char 534)"
+            },
+            {
+              "example_id": "v2-question_answer-catalogue-conflicting",
+              "reason": "Exact compact extraction fields required"
+            },
+            {
+              "example_id": "v2-question_answer-clinical-conflicting",
+              "reason": "Extra data: line 1 column 376 (char 375)"
+            },
+            {
+              "example_id": "v2-question_answer-nonsense-conflicting",
+              "reason": "Exact compact extraction fields required"
+            },
+            {
+              "example_id": "v2-question_answer-regulation-conflicting",
+              "reason": "Exact compact extraction fields required"
+            }
+          ],
+          "generation_seconds": 484.38006258899964,
+          "mean_generation_seconds": 15.136876955906239,
+          "output_tokens": 4287,
+          "output_tokens_per_second": 8.85048814165903,
+          "stop_reasons": {
+            "eos": 31,
+            "length": 1
+          }
+        },
+        {
+          "step": 16,
+          "adapter_sha256": "dfeb61ae7c31384202b0233c55d81b958848eb9200fd7875a51dc9ea936733d1",
+          "catastrophic": {
+            "invented_evidence": 0,
+            "unrouted_rule_attribution": 0,
+            "confident_wrong_match_divergence": 0,
+            "truncation": 0,
+            "producer_source_copy": 0,
+            "governance_violations": 0
+          },
+          "catastrophic_pass": true,
+          "contract_rate": 0.96875,
+          "semantic_score": 0.7025,
+          "unassessed_reasons": 0,
+          "count": 32,
+          "contract_valid": 31,
+          "accepted_outcomes": 10,
+          "expected_refusals": 0,
+          "predicted_refusals": 0,
+          "refusal_correct": 32,
+          "relation_correct": 0,
+          "reason_correct": 0,
+          "semantic_completeness": 10,
+          "micro_metrics": {
+            "evidence": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 1,
+              "precision": 1.0,
+              "recall": 0.9836065573770492,
+              "f1": 0.9917355371900827
+            },
+            "claims": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 1,
+              "precision": 1.0,
+              "recall": 0.9836065573770492,
+              "f1": 0.9917355371900827
+            },
+            "information_gaps": {
+              "tp": 18,
+              "fp": 19,
+              "fn": 37,
+              "precision": 0.4864864864864865,
+              "recall": 0.32727272727272727,
+              "f1": 0.391304347826087
+            },
+            "uncertainty": {
+              "tp": 23,
+              "fp": 5,
+              "fn": 3,
+              "precision": 0.8214285714285714,
+              "recall": 0.8846153846153846,
+              "f1": 0.8518518518518519
+            }
+          },
+          "invalid_outputs": [
+            {
+              "example_id": "v2-chronological_events-catalogue-primary",
+              "reason": "Extra data: line 1 column 1346 (char 1345)"
+            }
+          ],
+          "generation_seconds": 471.002019489001,
+          "mean_generation_seconds": 14.71881310903128,
+          "output_tokens": 4194,
+          "output_tokens_per_second": 8.904420419577288,
+          "stop_reasons": {
+            "eos": 32
+          }
+        }
+      ],
+      "selected_step": null,
+      "selected_adapter_sha256": null,
+      "tuning_signal": "INDETERMINATE"
+    },
+    "auditor": {
+      "status": "COMPLETED",
+      "optimizer_steps": 24,
+      "load_seconds": 4.8077921867370605,
+      "total_role_wall_seconds": 164.25425457954407,
+      "dev_generation_seconds": 79.33264973400014,
+      "non_generation_role_wall_seconds": 84.92160484554392,
+      "ordinary_training_step_wall_median": 3.4136942625045776,
+      "ordinary_step_definition": "excludes first step initialization and step immediately after DEV; those intervals contain non-training work",
+      "optimizer_call_seconds": 0.21437525749206543,
+      "loss_start": 2.8505499958992004,
+      "loss_end": 0.9683313071727753,
+      "loss_entries": 24,
+      "source_train_examples": 92,
+      "module_count": 224,
+      "trainable_parameters": 14942208,
+      "lora_only": true,
+      "peak_allocated_vram_gib": 3.558657646179199,
+      "peak_reserved_vram_gib": 3.90234375,
+      "nvidia_peak_memory_mib": 4345.0,
+      "gpu_utilization_mean": 65.83125,
+      "gpu_utilization_max": 100.0,
+      "peak_process_rss_gib": 1.4053268432617188,
+      "peak_host_ram_used_gib": 5.101207733154297,
+      "cpu_percent_mean": 143.90687499999999,
+      "cpu_percent_max": 2524.4,
+      "telemetry_samples": 160,
+      "checkpoints": [
+        {
+          "step": 12,
+          "adapter_sha256": "24e91a4faa59e472c9ac1a562f5a68f60acb09a5170c02f8952ed0cb7f56a5be",
+          "catastrophic": {
+            "invented_evidence": 0,
+            "unrouted_rule_attribution": 0,
+            "confident_wrong_match_divergence": 0,
+            "truncation": 0,
+            "producer_source_copy": 0,
+            "governance_violations": 0
+          },
+          "catastrophic_pass": true,
+          "contract_rate": 0.9583333333333334,
+          "semantic_score": 0.3541666666666667,
+          "unassessed_reasons": 16,
+          "count": 24,
+          "contract_valid": 23,
+          "accepted_outcomes": 8,
+          "expected_refusals": 8,
+          "predicted_refusals": 23,
+          "refusal_correct": 9,
+          "relation_correct": 0,
+          "reason_correct": 0,
+          "semantic_completeness": 0,
+          "micro_metrics": {
+            "evidence": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 27,
+              "precision": 1.0,
+              "recall": 0.06896551724137931,
+              "f1": 0.12903225806451613
+            }
+          },
+          "invalid_outputs": [
+            {
+              "example_id": "v2-question_answer-nonsense-changed",
+              "reason": "Invalid fidelity judgment"
+            }
+          ],
+          "generation_seconds": 42.542396401000815,
+          "mean_generation_seconds": 1.7725998500417006,
+          "output_tokens": 337,
+          "output_tokens_per_second": 7.9215095647990355,
+          "stop_reasons": {
+            "eos": 24
+          }
+        },
+        {
+          "step": 24,
+          "adapter_sha256": "7e7d69cfe4b88200ccde7aa323e4c191a5069a0287de7527ced53a442463af05",
+          "catastrophic": {
+            "invented_evidence": 0,
+            "unrouted_rule_attribution": 0,
+            "confident_wrong_match_divergence": 0,
+            "truncation": 0,
+            "producer_source_copy": 0,
+            "governance_violations": 0
+          },
+          "catastrophic_pass": true,
+          "contract_rate": 1.0,
+          "semantic_score": 0.3333333333333333,
+          "unassessed_reasons": 16,
+          "count": 24,
+          "contract_valid": 24,
+          "accepted_outcomes": 8,
+          "expected_refusals": 8,
+          "predicted_refusals": 24,
+          "refusal_correct": 8,
+          "relation_correct": 0,
+          "reason_correct": 0,
+          "semantic_completeness": 0,
+          "micro_metrics": {
+            "evidence": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 29,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "invalid_outputs": [],
+          "generation_seconds": 36.79025333299933,
+          "mean_generation_seconds": 1.5329272222083052,
+          "output_tokens": 288,
+          "output_tokens_per_second": 7.8281602845522125,
+          "stop_reasons": {
+            "eos": 24
+          }
+        }
+      ],
+      "selected_step": 24,
+      "selected_adapter_sha256": "7e7d69cfe4b88200ccde7aa323e4c191a5069a0287de7527ced53a442463af05",
+      "tuning_signal": "INDETERMINATE"
+    }
+  },
+  "protected_admitted": false,
+  "protected_receipt_consumed": false,
+  "protected_population_registered": 114,
+  "protected_population_executed": 0,
+  "protected_metrics": null,
+  "protected_R06": null,
+  "protected_acceptance_criteria": "NOT_MEASURED; 27 criteria unchanged, human criteria pending/zero",
+  "producer_signal": "INDETERMINATE",
+  "auditor_signal": "INDETERMINATE",
+  "BALANCED_TUNING_FOLLOWUP_RECOMMENDED": false,
+  "rationale": "Both bounded training plans and DEV evaluations completed. Producer has no contract-perfect checkpoint; protected evaluation was therefore not permitted. No BASE/tuned protected comparison exists.",
+  "human_review_status": "FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING",
+  "human_reviews": 0,
+  "billable_seconds_upper_bound": 2076.456869363785,
+  "cost_usd_upper_bound": 0.7440637115220229,
+  "instance_count": 1,
+  "provider_confirmed_terminated": true,
+  "remaining_instances": 0,
+  "no_second_instance": true,
+  "no_paid_inference": true,
+  "model_pin_quantization_changes": false,
+  "hyperparameter_changes": false,
+  "post_protected_training": false,
+  "full_pipeline": false,
+  "multi_round": false,
+  "push": false
+}
