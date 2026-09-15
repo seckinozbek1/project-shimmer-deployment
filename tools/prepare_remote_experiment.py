@@ -122,6 +122,7 @@ def main(argv=None, runner=subprocess.run):
     p.add_argument('--manifest', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--interpreter', action='append', help='Candidate absolute Python path; every candidate is queried')
+    p.add_argument('--contract-ab', action='store_true')
     p.add_argument('--execute', action='store_true', help='Requires separate cloud/model authorization')
     p.add_argument('--install-missing', action='store_true', help='Explicitly install missing core packages at declared pins')
     args = p.parse_args(argv)
@@ -137,7 +138,7 @@ def main(argv=None, runner=subprocess.run):
     def acquire(selected):
         runner(runtime.command(selected, root / 'tools/remote_experiment_models.py', '--execute', '--root', root, '--output', args.output.absolute() / 'model_acquisition.json'), check=True)
     def infer(selected):
-        runner(runtime.command(selected, root / 'tools/remote_short_burst_probe.py', '--execute', '--output', args.output.absolute() / 'probe'), check=True)
+        runner(runtime.command(selected, root / ('tools/remote_contract_ab_probe.py' if args.contract_ab else 'tools/remote_short_burst_probe.py'), '--execute', '--output', args.output.absolute() / 'probe'), check=True)
     # Checking locally cannot install even if --install-missing was accidentally supplied.
     report = prepare(root, manifest, args.output, candidate_commands=args.interpreter, runner=runner,
         install=install if args.execute and args.install_missing else None,

@@ -849,6 +849,7 @@ class AgentWrapper:
             "chat_template_applied": template_applied,
             "rendered_prompt_sha256": generation_observation.prompt_identity(prompt),
             "cap_hit": out_tokens >= max_new_tokens,
+            "terminal_token_id": last_token, "configured_eos_token_ids": eos_ids,
         })
         _record_cost(r); return r
 
@@ -919,6 +920,7 @@ class AgentWrapper:
             "chat_template_applied": template_applied,
             "rendered_prompt_sha256": generation_observation.prompt_identity(prompt),
             "cap_hit": out_tokens >= max_new_tokens,
+            "terminal_token_id": last_token, "configured_eos_token_ids": eos_ids,
         })
         _record_cost(r); return r
 

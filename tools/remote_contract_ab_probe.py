@@ -1,0 +1,205 @@
+"""Authorized bounded ordinary probe; no pipeline imports or provider inference."""
+import json, os, sys, time, threading, subprocess, socket, hashlib
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / 'output/remote_bounded_probe'
+OUTPUT_CREATED = False
+sys.path.insert(0, str(ROOT/'scripts'))
+def write(name, value):
+    (OUT/name).write_text(json.dumps(value, indent=2, default=str)+'\n')
+def serial_admitted(producer,auditor,decision):
+    return (producer['accepted'] and auditor['accepted'] and
+                  decision.get('producer_raw_sha256')==producer['raw_sha256'] and
+                  decision.get('auditor_raw_sha256')==auditor['raw_sha256'] and
+                  decision.get('producer_semantically_accepted') is True and
+                  decision.get('auditor_semantically_accepted') is True and
+                  auditor['usage'].get('finish_reason')=='eos' and not auditor['usage'].get('cap_hit'))
+
+
+def main():
+    global OUTPUT_CREATED
+    import runtime_contract as runtime
+    selected = runtime.resolve([sys.executable])
+    runtime.subprocess_check(selected, ROOT)
+    deps = runtime.subprocess_check(selected, ROOT, dependencies=True)
+    if not deps['dependencies_ready']:
+        raise runtime.RuntimeContractError('Probe dependencies are not ready')
+    OUT.mkdir(parents=True, exist_ok=False)
+    OUTPUT_CREATED = True
+    import torch, transformers, psutil
+    import agent_wrapper as aw, bounded_extraction as ex, execution_topology as et
+    import compact_contracts as cc
+    from contract_ab_prompts import OLD, EXPECTED_OLD_HASH, EXPECTED_NEW_HASH
+    from execution_scheduler import Lane, Task
+    from constitution import Constitution
+    from message_bus import MessageBus
+    from run_context import for_run_dir
+    def blocked(*args, **kwargs): raise RuntimeError('Network prohibited during inference')
+    socket.socket.connect = blocked
+    socket.socket.connect_ex = blocked
+    socket.create_connection = blocked
+    cfg=json.loads((ROOT/'config/local_models.json').read_text())
+    pins=json.loads((ROOT/'tools/cloud_run/models.json').read_text())
+    families={}
+    for role in ('active_producer','active_auditor'):
+        checkpoint=aw._local_checkpoint_path(cfg[role])
+        assert Path(checkpoint).name == pins[cfg[role]]
+        families[role]=transformers.AutoConfig.from_pretrained(checkpoint,local_files_only=True).model_type
+    assert len(set(families.values()))==2
+    data=dict(classification='BOUNDED_REMOTE_ORDINARY_NOT_BENCHMARK',multi_round=False,full_pipeline=False,
+              source_commit=os.environ.get('SHIMMER_EXPERIMENT_SOURCE_COMMIT', 'unrecorded'),families=families,calls=[],loads=[],bursts=[],
+              generation_policy=dict(max_new_tokens=384,max_time_seconds=25,do_sample=False,seed=7),
+              topology=dict(name='report_optimized',device='cuda:0',resident_limit=2,owners=1),
+              runtime=dict(torch=torch.__version__,transformers=transformers.__version__,cuda=torch.version.cuda))
+    write('probe.json',data)
+    rt=et.Runtime([Lane('primary',device='cuda:0',resident_limit=2,memory_gib=24)])
+    rt.optimized=True
+    rt.run_context=for_run_dir(ROOT,OUT/'wrapper')
+    bus=MessageBus.open(OUT/'wrapper/bus.jsonl')
+    constitution=Constitution.load(ROOT/'config/constitution.json')
+    contracts=json.loads((ROOT/'config/agent_contracts.json').read_text())['contracts']
+    stop=threading.Event(); samples=[]; phase=['readiness']; failure=[]
+    def sample():
+        while not stop.is_set():
+            mem=psutil.virtual_memory()
+            row=dict(epoch=time.time(),phase=phase[0],available_ram_gib=mem.available/2**30,
+                     ram_used_gib=mem.used/2**30,cpu_percent=psutil.cpu_percent(),rss_gib=psutil.Process().memory_info().rss/2**30)
+            try:
+                p=subprocess.run(['nvidia-smi','--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu','--format=csv,noheader,nounits'],capture_output=True,text=True,timeout=3)
+                util,used,total,temp=map(float,p.stdout.strip().split(','))
+                row.update(gpu_utilization_percent=util,vram_used_mib=used,vram_total_mib=total,temperature_c=temp)
+                if used/total>.94 or mem.available<3*2**30 or temp>=85:
+                    failure.append('resource_guard');write('resource_guard.json',row)
+            except Exception: row['gpu_sample_unavailable']=True
+            samples.append(row);write('resources.json',samples)
+            if failure: os._exit(3)
+            stop.wait(1)
+    thread=threading.Thread(target=sample,daemon=True);thread.start()
+    counter=[0]
+    def task(label,action,model=''):
+        counter[0]+=1
+        def owned(context):
+            et.WORK.context=context
+            phase[0]=label
+            try:return action()
+            finally:et.WORK.context=None
+        return Task('probe-%02d'%counter[0],owned,sequence=counter[0],model=model,phase=label)
+    def run_one(t):
+        result=rt.scheduler.run([t])[t.id];rt.write()
+        if result.exception:raise result.exception
+        if result.state!='completed':raise RuntimeError(result.state)
+        return result.value
+    def load(role):
+        def action():
+            ram_before=psutil.Process().memory_info().rss/2**30
+            vram_before=torch.cuda.memory_allocated()/2**20
+            begin=time.perf_counter();tok,model=aw._load_qwen(cfg[role])
+            model.generation_config.do_sample=False;model.generation_config.max_time=25.0
+            data['loads'].append(dict(role=role,seconds=time.perf_counter()-begin,device=str(model.device),
+                 device_map=model.hf_device_map,host_rss_before_gib=ram_before,host_rss_after_gib=psutil.Process().memory_info().rss/2**30,vram_before_mib=vram_before,cpu_offload=any(str(v) in ('cpu','disk') for v in model.hf_device_map.values()),allocated_mib=torch.cuda.memory_allocated()/2**20,
+                 residents=list(rt.scheduler.workers[0].residents)))
+            write('probe.json',data)
+        run_one(task('load_'+role,action,cfg[role]))
+    def wrapper(name,role):
+        w=aw.AgentWrapper(name,constitution,bus,{name:dict(backend='local_producer' if role=='active_producer' else 'local_auditor',model=cfg[role])},contracts,keys={'offline_probe':True},run_context=rt.run_context)
+        return rt.attach(w)
+    doc='bounded-local-fixture'
+    source=('CLM-001: Planned capacity is 120 units (REF-0001). '
+            'CLM-002: Reported capacity is 130 units (REF-0002). '
+            'The reporting date is not supplied.\n')
+    spans=ex.ledger(source,doc)
+    assert len(ex.partitions(spans))==1
+    def producer_prompt(w,compact):
+        instruction='Extract every explicit CLM-* claim id and missing information without inventing facts.\n'
+        if compact:return cc.producer_prompt(spans,spans,doc)
+        return instruction+w._output_contract_text()+'\nDocument id: '+doc+'\nReturn one item for the paragraph, section_id=paragraph-1, extraction_method=verbatim. Copy all source exactly into draft_text.\nSOURCE:\n'+source
+    fixture=dict(agent='PROCESSOR',doc_id=doc,items=[dict(draft_text=source,claims_referenced=['CLM-001','CLM-002'],open_questions=['What is the reporting date?'])])
+    def audit_prompt(w,parsed):
+        return cc.auditor_prompt(source,parsed,['REF-0001','REF-0002'])
+    def call_task(label,role,parsed=None,compact=True):
+        w=wrapper('PROCESSOR' if role=='active_producer' else 'VERIFIER',role)
+        if role=='active_producer':
+            if compact:cc.bind_producer(w,spans,doc)
+            else:w._source_adapter=lambda obj:ex.hydrate(obj,spans,doc)
+        if role=='active_auditor' and compact:cc.bind_auditor(w,doc,['REF-0001','REF-0002'])
+        role_name='producer' if role=='active_producer' else 'auditor'
+        prompt=(producer_prompt(w,True) if role=='active_producer' else audit_prompt(w,parsed)) if compact else OLD[role_name]
+        def action():
+            torch.manual_seed(7);begin=time.perf_counter()
+            result=w.dispatch(prompt,max_new_tokens=384)
+            row=dict(label=label,role=role,start_epoch=time.time()-(time.perf_counter()-begin),wall_seconds=time.perf_counter()-begin,usage=result.usage,raw_text=result.raw_text,backend_ok=result.ok)
+            row['prompt_version']='new' if compact else 'old'
+            row['model']=cfg[role];row['revision']=pins[cfg[role]]
+            row['raw_sha256']=hashlib.sha256(result.raw_text.encode()).hexdigest()
+            expected=(EXPECTED_NEW_HASH if compact else EXPECTED_OLD_HASH)[role_name]
+            if label!='serial_auditor':assert result.usage['rendered_prompt_sha256']==expected
+            row['output_tokens_per_second']=(result.usage.get('output_tokens',0)/result.usage['generation_seconds']) if result.usage.get('generation_seconds') else None
+            data['calls'].append(row);write('probe.json',data)
+            obj,missing=w.parse_contract_output(result.raw_text)
+            items=(obj or {}).get('items',[]) if isinstance(obj,dict) else []
+            if role=='active_producer':
+                reconstructed=''.join(x.get('draft_text','') for x in items)==source
+                claims={v for x in items for v in x.get('claims_referenced',[])}
+                questions=' '.join(v for x in items for v in x.get('open_questions',[])).lower()
+                refs={v for x in items for v in x.get('ref_ids',[])}
+                row['producer_fixture_checks']=dict(reconstructed=reconstructed,claims_preserved=claims=={'CLM-001','CLM-002'},date_question='date' in questions,refs_preserved={'REF-0001','REF-0002'}<=refs)
+                semantic=all(row['producer_fixture_checks'].values())
+            else:
+                reconstructed=None
+                checks=dict(typed_claim_correct=bool(items) and all(x.get('finding')=='MATCH' for x in items),reason_present=bool(items) and all(bool(x.get('reasoning','').strip()) for x in items),references_correct=bool(items) and all({'REF-0001','REF-0002'}<=set(x.get('ref_ids',[])) for x in items))
+                row['auditor_fixture_checks']=checks
+                semantic=all(checks.values())
+            row.update(parsed=obj,contract_valid=not missing,contract_missing=missing,accepted_items=len(items) if not missing else 0,
+                       source_reconstructed_exactly=reconstructed,semantic_fixture_checks=semantic,
+                       accepted=bool(result.ok and not missing and result.usage.get('truncated') is False and semantic))
+            write('probe.json',data)
+            return row
+        return task(label,action,cfg[role])
+    try:
+        load('active_producer')
+        run_one(call_task('producer_old','active_producer',compact=False))
+        producer=run_one(call_task('producer_new','active_producer'))
+        load('active_auditor')
+        run_one(call_task('auditor_old','active_auditor',fixture,compact=False))
+        auditor=run_one(call_task('auditor_new','active_auditor',fixture))
+        data['quality_gate']='awaiting_separate_semantic_adjudication'
+        write('probe.json',data)
+        # One deterministic draw per arm. No additional call without explicit
+        # review of these exact raw outputs, while preserving resident models.
+        deadline=time.time()+120
+        decision_path=OUT/'ADJUDICATION.json'
+        while not decision_path.exists() and time.time()<deadline:time.sleep(1)
+        decision=json.loads(decision_path.read_text()) if decision_path.exists() else {}
+        admitted=serial_admitted(producer,auditor,decision)
+        data['quality_gate']='admitted' if admitted else 'not_admitted'
+        if admitted:
+            # Reuse the actual accepted producer result, never the authored fixture.
+            begin=time.perf_counter()
+            a=run_one(call_task('serial_auditor','active_auditor',producer['parsed']))
+            data['serial_path']=dict(producer_label=producer['label'],producer_raw_sha256=producer['raw_sha256'],
+                producer_seconds=producer['wall_seconds'],auditor_seconds=a['wall_seconds'],
+                transition_and_dispatch_seconds=time.perf_counter()-begin-a['wall_seconds'],
+                service_critical_path_seconds=producer['wall_seconds']+time.perf_counter()-begin,
+                includes_operator_review_wait=False,semantic_review_required=True)
+        else:data['serial_path']=dict(status='not_admitted_quality_gate')
+        data['concurrency']='not_authorized_not_run'
+        data['residency_load_counts']=rt.scheduler.workers[0].loads
+        data['finished_epoch']=time.time()
+        write('probe.json',data)
+    finally:
+        rt.close();stop.set();thread.join(5);write('resources.json',samples)
+if __name__=='__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--execute', action='store_true')
+    parser.add_argument('--output', type=Path, default=OUT)
+    args = parser.parse_args()
+    if not args.execute:
+        parser.error('Explicit --execute and separate model/cloud authorization required')
+    OUT = args.output.absolute()
+    try:main()
+    except BaseException as e:
+        import traceback
+        if OUTPUT_CREATED:
+            write('failure.json',dict(type=type(e).__name__,traceback=traceback.format_exc()))
+        raise

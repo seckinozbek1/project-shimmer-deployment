@@ -56,7 +56,7 @@ def bundle(root, directory):
 
 def prepare(args):
     base=args.directory; base.mkdir(parents=True,exist_ok=False)
-    suites=('lambda_metadata_checks.py','runtime_contract_checks.py','cloud_run_checks.py',
+    suites=('contract_ab_checks.py','lambda_metadata_checks.py','runtime_contract_checks.py','cloud_run_checks.py',
             'cloud_run_transport_checks.py','cloud_run_transfer_checks.py')
     checks=[]
     for suite in suites:
@@ -65,6 +65,18 @@ def prepare(args):
         (base/(suite+'.log')).write_bytes(result.stdout+result.stderr)
         require(result.returncode==0,'local gate failed: '+suite)
         checks.append(dict(suite=suite,passed=True))
+    # Run the contract and cached-tokenizer gates into fresh experiment evidence,
+    # preserving the previously committed local readiness artifacts.
+    import shutil
+    shutil.copytree(ROOT/'docs/fix/compact_contract_ab',base/'compact_local')
+    for module,folder in [('compact_contract_no_generation_gate','scripts'),('compact_contract_budget','tools')]:
+        command='import sys;from pathlib import Path;sys.path.insert(0,'+repr(str(ROOT/folder))+');import '+module+' as g;g.OUT=Path('+repr(str(base/'compact_local'))+');raise SystemExit(g.main())'
+        result=subprocess.run([sys.executable,'-c',command],capture_output=True,timeout=120)
+        require(not credential_locations(result.stdout+result.stderr,module),'sensitive gate diagnostic')
+        (base/(module+'.log')).write_bytes(result.stdout+result.stderr)
+        require(result.returncode==0,'compact readiness gate failed: '+module)
+        checks.append(dict(suite=module,passed=True))
+    require(json.loads((base/'compact_local/readiness.json').read_text())['verdict']=='REMOTE_CONTRACT_AB_READY','readiness absent')
     selected=runtime.resolve(root=ROOT)
     preflight=runtime.subprocess_check(selected,ROOT)
     write_json(base/'local_source_preflight.json',preflight)
@@ -75,20 +87,22 @@ def prepare(args):
     provider=LambdaExperiment(args.credential_file)
     inventory=provider.request('instance-types')['data'];write_json(base/'inventory.json',inventory)
     images=provider.request('images')['data'];write_json(base/'images.json',images)
-    available=[x for x in inventory if x['metadata']['gpu_count']==1 and x['architecture']=='x86_64' and x['regions']]
+    suitable=('a10','a6000','rtx 6000','rtx6000','a100','h100','h200','b200','l4')
+    available=[x for x in inventory if x['metadata']['gpu_count']==1 and x['architecture']=='x86_64' and x['regions'] and any(kind in x['metadata'].get('gpu_type','').lower() for kind in suitable)]
+    require(bool(available),'no available suitable single-GPU inventory')
     choice=min(available,key=lambda x:x['metadata']['hourly_rate'])
-    require(choice['metadata']['hourly_rate']<=1.29,'no suitable instance within intended hourly price')
+    require(choice['metadata']['hourly_rate']>0,'invalid hourly price')
     region='us-east-1' if 'us-east-1' in choice['regions'] else choice['regions'][0]
     image=next(x for x in images if x['region']==region and x['family']=='lambda-stack-24-04' and x['architecture']=='x86_64')
     initial=provider.request('instances')['data'];write_json(base/'instances_before.json',initial)
     cfg=json.loads((ROOT/'config/local_models.json').read_text());pins=json.loads((ROOT/'tools/cloud_run/models.json').read_text())
     write_json(base/'manifest.json',dict(source_commit=head,git_status=status,bundle=reviewed,instance=choice['metadata'],region=region,image=image,
-        hourly_rate=choice['metadata']['hourly_rate'],soft_usd=1,hard_usd=2,reserve_seconds=180,
+        hourly_rate=choice['metadata']['hourly_rate'],soft_usd=0.5,hard_usd=1,reserve_seconds=180,
         name='shimmer-'+base.name,multi_round=False,full_pipeline=False,paid_inference_api=False,
         runtime_contract=runtime.load_contract(),runtime_profile='experiment',environment_policy='Explicit fresh isolated venv from verified image Python; all experiment Python uses final absolute venv executable',
         models={role:dict(id=cfg[role],revision=pins[cfg[role]]) for role in ('active_producer','active_auditor')},
-        generation=dict(max_new_tokens=384,max_time_seconds=25,seed=7,do_sample=False),maximum_calls=9,
-        probes=['readiness','producer load','one compact PROCESSOR partition','one source-copy comparison','one independent auditor','one required producer-auditor pair','two independent tasks serial/admitted2 only after quality gates','no capacity4 without useful real capacity2'],
+        generation=dict(max_new_tokens=384,max_time_seconds=25,seed=7,do_sample=False),maximum_calls=5,
+        probes=['readiness','producer old/new','auditor old/new','actual accepted producer to auditor only after semantic adjudication'],concurrency=False,
         hardware_policy='Cheapest available suitable x86_64 single GPU; prefer 24GB; no second instance'))
     write_json(base/'LOCAL_GATES.json',dict(REMOTE_RETRY_LOCAL_GATES_PASS=True,checks=checks,source_preflight=preflight,bundle=reviewed,source_commit=head))
     print(json.dumps(dict(REMOTE_RETRY_LOCAL_GATES_PASS=True,source_commit=head,bundle=reviewed,hardware=choice['metadata'])))
@@ -109,7 +123,7 @@ def termination(provider, iid, base, start, rate):
 def watch(args):
     base=args.directory; m=json.loads((base/'manifest.json').read_text());info=json.loads((base/'launch.json').read_text())
     iid=info['instance_id'];start=info['epoch'];rate=m['hourly_rate'];provider=LambdaExperiment(args.credential_file)
-    deadline=start+2/rate*3600-m['reserve_seconds']
+    deadline=start+m['hard_usd']/rate*3600-m['reserve_seconds']
     write_json(base/'WATCHDOG_ARMED.json',dict(pid=os.getpid(),instance_id=iid,deadline_epoch=deadline,utc=utc()))
     while not (base/'TERMINATION_VERIFIED.json').exists():
         write_json(base/'cost.json',dict(utc=utc(),estimated_usd=(time.time()-start)*rate/3600))
@@ -189,8 +203,8 @@ def execute(args):
         resolved=transport('final_interpreter',ssh+[prefix+shlex.quote(final)+' -B tools/runtime_contract.py --resolve --candidate '+shlex.quote(final)])
         selected=json.loads(resolved.stdout);require(selected['executable']==final,'final interpreter identity mismatch');write_json(base/'resolved_interpreter.json',selected)
         transport('hardware',ssh+['nvidia-smi; lscpu; free -b; df -B1 '+shlex.quote(remote)])
-        duration=min(2100,int(start+2/m['hourly_rate']*3600-300-time.time()));require(duration>0,'budget exhausted')
-        command=prefix+'SHIMMER_EXPERIMENT_SOURCE_COMMIT='+m['source_commit']+' HF_HUB_DISABLE_TELEMETRY=1 timeout --signal=TERM --kill-after=15 '+str(duration)+' '+shlex.quote(final)+' -B -u tools/prepare_remote_experiment.py --root '+shlex.quote(remote)+' --manifest source_layer.json --output '+shlex.quote(remote+'/evidence')+' --interpreter '+shlex.quote(final)+' --execute --install-missing'
+        duration=min(2100,int(start+m['hard_usd']/m['hourly_rate']*3600-300-time.time()));require(duration>0,'budget exhausted')
+        command=prefix+'SHIMMER_EXPERIMENT_SOURCE_COMMIT='+m['source_commit']+' HF_HUB_DISABLE_TELEMETRY=1 timeout --signal=TERM --kill-after=15 '+str(duration)+' '+shlex.quote(final)+' -B -u tools/prepare_remote_experiment.py --root '+shlex.quote(remote)+' --manifest source_layer.json --output '+shlex.quote(remote+'/evidence')+' --interpreter '+shlex.quote(final)+' --execute --install-missing --contract-ab'
         transport('maintained_preparation_probe',ssh+[command],duration+30)
     except Exception as exc:
         # Local errors may include subprocess command/output; never serialize str(exc).
@@ -203,11 +217,13 @@ def execute(args):
         if iid:
             if ssh:
                 try:
-                    transport('stop_workloads',ssh+['pkill -TERM -f "[t]ools/prepare_remote_experiment.py|[t]ools/remote_short_burst_probe.py|[t]ools/remote_experiment_models.py" || true'],required=False)
-                    transport('remote_process_final',ssh+['pgrep -af "[t]ools/prepare_remote_experiment.py|[t]ools/remote_short_burst_probe.py|[t]ools/remote_experiment_models.py" || true'],required=False)
+                    transport('stop_workloads',ssh+['pkill -TERM -f "[t]ools/prepare_remote_experiment.py|[t]ools/remote_short_burst_probe.py|[t]ools/remote_contract_ab_probe.py|[t]ools/remote_experiment_models.py" || true'],required=False)
+                    transport('remote_process_final',ssh+['pgrep -af "[t]ools/prepare_remote_experiment.py|[t]ools/remote_short_burst_probe.py|[t]ools/remote_contract_ab_probe.py|[t]ools/remote_experiment_models.py" || true'],required=False)
                     p=transport('pack_evidence',ssh+['cd '+shlex.quote(remote)+' && tar -czf evidence.tar.gz evidence'],required=False)
                     if p.returncode==0:
+                        transport('remote_archive_hash',ssh+['sha256sum '+shlex.quote(remote+'/evidence.tar.gz')])
                         transport('collect',['scp',*options,host+':'+remote+'/evidence.tar.gz',str(base/'evidence.tar.gz')],90)
+                        require((base/'remote_archive_hash.log').read_text().split()[0]==digest(base/'evidence.tar.gz'),'collected archive hash mismatch')
                         with tarfile.open(base/'evidence.tar.gz') as tar:tar.extractall(base,filter='data')
                         write_json(base/'collection_integrity.json',dict(sha256=digest(base/'evidence.tar.gz'),bytes=(base/'evidence.tar.gz').stat().st_size,tar_valid=True))
                 except Exception:write_json(base/'collection_failure.json',dict(message='collection failed; provider teardown still required'))
