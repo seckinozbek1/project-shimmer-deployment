@@ -1,0 +1,1 @@
+{"version": [3, 12, 3], "executable": "/home/ubuntu/shimmer-secure_burst_20260915b/.venv/bin/python", "profile": "experiment", "required": ">=3.12,<3.13", "observed": [{"candidate": "/home/ubuntu/shimmer-secure_burst_20260915b/.venv/bin/python", "version": "3.12.3"}]}

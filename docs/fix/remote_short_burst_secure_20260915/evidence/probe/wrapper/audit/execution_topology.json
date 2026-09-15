@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "execution_topology": "report_optimized",
+  "run_id": "wrapper",
+  "critical_path": [
+    "probe-05"
+  ],
+  "critical_path_service_s": 18.141606449999983,
+  "task_count": 6,
+  "states": {
+    "probe-01": "completed",
+    "probe-02": "completed",
+    "probe-03": "completed",
+    "probe-04": "completed",
+    "probe-05": "completed",
+    "probe-06": "completed"
+  },
+  "interpretation": "Observed task-service weighted dependency path, excludes queue gaps; not a speedup claim"
+}

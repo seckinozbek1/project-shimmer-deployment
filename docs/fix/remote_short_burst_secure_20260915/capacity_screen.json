@@ -1,0 +1,34 @@
+{
+  "classification": "CONDITIONAL_FAILED_ATTEMPT_CAPACITY_SCREEN_NOT_ACCEPTED_RUN_PROJECTION",
+  "producer_calls": 7,
+  "auditor_calls": 13,
+  "assumptions": [
+    "Each graph call hypothetically takes the current role fixture latency; other agent workloads are unmeasured.",
+    "Auditor latency ended at truncation, so this is not a complete accepted-service estimate.",
+    "One serialized worker; no unmeasured parallel gain credited.",
+    "Observed non-call elapsed time includes provisioning, preparation, hydration, collection, teardown and probe administration."
+  ],
+  "warm_attempt_seconds": [
+    320.71185260999994,
+    322.37962631900007
+  ],
+  "warm_attempt_cost_usd": [
+    0.11492174718524997,
+    0.1155193660976417
+  ],
+  "observed_non_call_elapsed_seconds": 451.79031672826574,
+  "one_instance_per_attempt_seconds": [
+    772.5021693382657,
+    774.1699430472659
+  ],
+  "one_instance_per_attempt_cost_usd": [
+    0.27681327734621186,
+    0.2774108962586036
+  ],
+  "ten_attempt_amortized_cost_usd": [
+    0.13111090020134616,
+    0.13170851911373788
+  ],
+  "marginal_cost_per_accepted_run": null,
+  "fully_loaded_cost_per_accepted_run": null
+}

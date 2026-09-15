@@ -2253,3 +2253,28 @@ CLOUD_FULL_RUN_INDETERMINATE. No new inference timings or accepted-run projectio
 Historical evidence unchanged. No full pipeline, multi-round, paid inference API,
 second instance or push. Next retry requires fresh cloud approval and tested
 provider-metadata sanitization before persistence/display.
+
+
+## 2026-09-15 ? Secure ordinary short-burst measurement completed: NOT ELIGIBLE
+
+6308374/c342033 close raw-provider metadata escape and add the maintained safe
+bounded controller. 135 local gates pass before one A10 launch ($1.29/h, us-east-1).
+Executed source c342033; source transfer 1,268,892 bytes/3.846s; Python 3.12.3,
+source/critical-import/dependency checkpoint green; real pinned models acquired.
+Four calls, one truncated, one structurally valid reference output, zero semantic
+acceptance. Compact producer 12.365 s/259 tokens (20.971 tok/s) disobeys source aliases
+and omits the missing-date question. Independent auditor 18.140 s/384 tokens
+(21.176 tok/s) truncates and judges the wrong comparison. Serial handoff and C2/C4
+not admitted. Models load 3.962 s/0.697 s, coexist, no offload or reload; VRAM peak
+10,375/23,028MiB. No useful GPU concurrency measurement claimed.
+CLOUD_FULL_RUN_NOT_ELIGIBLE; measurement roadmap item closed with negative result.
+Accepted-run projections stay unknown; conditional failed-attempt role screen
+321?322s/$0.115 is explicitly not an accepted-run forecast.
+Instance 4871e6caa9b44b4288be5932ea6bb6ea terminated 09:29:29.821609 UTC, verified
+absent again; cost upper $0.181719681/507.125 s; temporary SSH keys removed.
+545ca1d strips unnecessary pip report metadata; no provider/account credential
+was exposed. New artifact credential/auth-field scans zero; 55 historical hashes
+unchanged. Report REMOTE_SHORT_BURST_SECURE_FEASIBILITY.md and hashed evidence in
+remote_short_burst_secure_20260915/. No full pipeline, multi-round, paid inference
+API, second instance, new quantization, serving migration or push.
+Next: task-specific compact/auditor contract A/B after deterministic fixture proofs.

@@ -1,0 +1,115 @@
+{
+  "bundle": {
+    "bytes": 1268892,
+    "credentials_excluded": true,
+    "file_count": 165,
+    "manifest_sha256": "44e9808a650edb85365ae922d55184c54d447f22045e4aa3bebc3a5e08f5d414",
+    "operator_data_excluded": true,
+    "sha256": "33b205c4b2ceec9f3aef3c67abf2b27a56284ea3f94cdc6b5590dbb0e63d7b2d",
+    "tracked_only": true
+  },
+  "environment_policy": "Explicit fresh isolated venv from verified image Python; all experiment Python uses final absolute venv executable",
+  "full_pipeline": false,
+  "generation": {
+    "do_sample": false,
+    "max_new_tokens": 384,
+    "max_time_seconds": 25,
+    "seed": 7
+  },
+  "git_status": "?? SHIMMER_HANDOFF.md\n?? durable/\n",
+  "hard_usd": 2,
+  "hardware_policy": "Cheapest available suitable x86_64 single GPU; prefer 24GB; no second instance",
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "maximum_calls": 9,
+  "models": {
+    "active_auditor": {
+      "id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb"
+    },
+    "active_producer": {
+      "id": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d"
+    }
+  },
+  "multi_round": false,
+  "name": "shimmer-secure_burst_20260915b",
+  "paid_inference_api": false,
+  "probes": [
+    "readiness",
+    "producer load",
+    "one compact PROCESSOR partition",
+    "one source-copy comparison",
+    "one independent auditor",
+    "one required producer-auditor pair",
+    "two independent tasks serial/admitted2 only after quality gates",
+    "no capacity4 without useful real capacity2"
+  ],
+  "region": "us-east-1",
+  "reserve_seconds": 180,
+  "runtime_contract": {
+    "core_dependencies": {
+      "accelerate": "accelerate",
+      "bitsandbytes": "bitsandbytes",
+      "huggingface-hub": "huggingface_hub",
+      "psutil": "psutil",
+      "tokenizers": "tokenizers",
+      "torch": "torch",
+      "transformers": "transformers"
+    },
+    "critical_imports": [
+      "agent_wrapper",
+      "finding_record",
+      "bounded_extraction",
+      "execution_topology",
+      "execution_scheduler",
+      "constitution",
+      "message_bus",
+      "run_context"
+    ],
+    "cuda_runtime": "12.1",
+    "experiment_entrypoint_imports": [
+      "remote_short_burst_probe"
+    ],
+    "glibc_min": "2.35",
+    "gpu_count": 1,
+    "gpu_name": "NVIDIA A100-SXM4-40GB",
+    "instance_class": "gpu_1x_a100_sxm4",
+    "minimum_free_disk_gib": 40,
+    "minimum_vram_mib": 40000,
+    "pip": "24.0",
+    "platform": "linux_x86_64",
+    "python": "3.12.3",
+    "python_compatibility": {
+      "constraint": ">=3.12,<3.13",
+      "major": 3,
+      "minor": 12,
+      "reason": "Repository f-string grammar requires Python 3.12; later minor versions are not validated."
+    },
+    "python_profiles": {
+      "experiment": ">=3.12,<3.13",
+      "sealed_reference": "==3.12.3"
+    },
+    "python_venv_required": true,
+    "schema_version": 1,
+    "torch": "2.5.1+cu121"
+  },
+  "runtime_profile": "experiment",
+  "soft_usd": 1,
+  "source_commit": "c342033e5d09654cdbaaf283879a9ee37764146b"
+}

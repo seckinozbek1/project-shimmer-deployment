@@ -1,3 +1,39 @@
+# Ordinary remote feasibility measurement complete ? 2026-09-15
+
+CLOUD_FULL_RUN_NOT_ELIGIBLE. Read REMOTE_SHORT_BURST_SECURE_FEASIBILITY.md.
+The open remote ordinary short-burst measurement is complete with real negative
+quality/performance evidence; this was not another preparation-only attempt.
+
+Security/controller fixes: 6308374 and c342033. Executed source c342033.
+135 local checks passed before launch. Raw provider metadata now crosses only
+explicit allowlists, including the formerly raw public request() interface.
+Post-run commit 545ca1d projects pip reports to package names/versions only.
+
+One A10 in us-east-1 at $1.29/h; Python 3.12.3; Torch 2.5.1+cu121; Transformers 4.52.3.
+165-file source bundle: 1,268,892 bytes / 3.846s. Runtime, source and dependency
+gates passed before acquisition. Four real calls; one truncation; one structural
+contract-valid reference output; zero semantic acceptance. Compact producer
+12.365s / 259 tokens / 20.971 tok/s: ignored alias reconstruction and missing date.
+Auditor 18.140 s / 384 tokens / 21.176 tok/s: truncated, wrong comparison, ungrounded
+rule. Serial handoff and concurrency2/4 correctly not admitted after quality failure.
+Both models resident, each loaded once, no CPU offload; VRAM peak 10,375/23,028 MiB.
+
+Termination verified 09:29:29.821609 UTC; second safe query zero active instances.
+Upper bound 507.125 s / $0.181719681. Temporary SSH registration and keys removed.
+Safe evidence in remote_short_burst_secure_20260915/; no account/provider secret
+exposure. Artifact sweep zero credential/auth-field hits. Historical evidence
+and operator-owned SHIMMER_HANDOFF.md/durable untouched. No push.
+
+Next task: local deterministic fixture work, then a narrowly scoped compact
+extraction/auditor prompt-contract A/B at unchanged model pins and ceilings.
+Require alias hydration, missing-information completeness, correct MATCH task,
+reasoning and both references. Preserve observed auditor model_type=llama for
+the configured Phi repository; do not relabel it. No serving migration yet.
+No full pipeline, multi-round or paid inference API authorized. Any new cloud
+measurement requires separate authorization; do not provision another instance.
+
+## Previous handoff context
+
 # Remote retry stopped and terminated, 2026-09-15
 
 Latest result: CLOUD_FULL_RUN_INDETERMINATE. Read REMOTE_SHORT_BURST_RETRY.md.

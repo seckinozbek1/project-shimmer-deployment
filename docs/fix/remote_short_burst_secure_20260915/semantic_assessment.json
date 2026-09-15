@@ -1,0 +1,36 @@
+{
+  "fixture": "Two capacity claims and a missing reporting date; auditor compares exact original/extraction, expected MATCH",
+  "compact_producer": {
+    "claim_ids_retained": true,
+    "missing_date_question_retained": false,
+    "compact_alias_draft_text_obeyed": false,
+    "source_reconstruction_complete": false,
+    "semantically_accepted": false
+  },
+  "source_copy_reference": {
+    "contract_valid": true,
+    "missing_date_sentence_retained": false,
+    "missing_date_question_retained": false,
+    "semantically_accepted": false
+  },
+  "auditor": {
+    "truncated": true,
+    "contract_valid": false,
+    "typed_task_judgment_correct": false,
+    "reason_correct": false,
+    "evidence_complete": false,
+    "rule_attribution_grounded": false,
+    "observations": [
+      "Compared planned120 vs reported130 as irregular instead of checking extraction fidelity",
+      "Invented CONV-001 rule attribution",
+      "Only REF-0001 in completed fragment, missing REF-0002",
+      "Canonical envelope incomplete and no valid MATCH result"
+    ]
+  },
+  "backend_returns": 4,
+  "eos_complete_returns": 3,
+  "contract_valid_returns": 1,
+  "semantically_accepted_returns": 0,
+  "truncations": 1,
+  "valid_optimized_returns": 0
+}
