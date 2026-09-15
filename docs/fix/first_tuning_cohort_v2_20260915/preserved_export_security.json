@@ -1,0 +1,33 @@
+{
+  "exports": {
+    "reviewer_1_first_tuning_v1": {
+      "files": 385,
+      "packets": 192,
+      "gold_findings": 0,
+      "split_findings": 0,
+      "admin_findings": 0,
+      "historical_answer_findings": 0,
+      "credential_findings": 0,
+      "privacy_findings": 0,
+      "privacy_basis": "Byte-identical allowlisted packets from frozen public synthetic source; no operator or durable input access."
+    },
+    "reviewer_2_first_tuning_v1": {
+      "files": 97,
+      "packets": 48,
+      "gold_findings": 0,
+      "split_findings": 0,
+      "admin_findings": 0,
+      "historical_answer_findings": 0,
+      "credential_findings": 0,
+      "privacy_findings": 0,
+      "privacy_basis": "Byte-identical allowlisted packets from frozen public synthetic source; no operator or durable input access."
+    }
+  },
+  "files_scanned": 482,
+  "archive_members_scanned": 482,
+  "no_gold": true,
+  "no_split_metadata": true,
+  "no_admin_mapping": true,
+  "no_historical_answers": true,
+  "no_private_operator_data": true
+}

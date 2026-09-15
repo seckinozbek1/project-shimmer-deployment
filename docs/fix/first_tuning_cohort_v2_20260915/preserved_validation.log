@@ -1,0 +1,35 @@
+test_192_unique_mandatory_72 (first_review_checks.PreparationChecks.test_192_unique_mandatory_72) ... ok
+test_27_thresholds_evaluable_without_false_pass (first_review_checks.PreparationChecks.test_27_thresholds_evaluable_without_false_pass) ... ok
+test_archive_exact_file_set_and_bytes (first_review_checks.PreparationChecks.test_archive_exact_file_set_and_bytes) ... ok
+test_catastrophic_failure_count (first_review_checks.PreparationChecks.test_catastrophic_failure_count) ... ok
+test_empty_training_manifest (first_review_checks.PreparationChecks.test_empty_training_manifest) ... ok
+test_exact_27_and_derived_r07 (first_review_checks.PreparationChecks.test_exact_27_and_derived_r07) ... ok
+test_exact_operator_values (first_review_checks.PreparationChecks.test_exact_operator_values) ... ok
+test_export_effect_proofs (first_review_checks.PreparationChecks.test_export_effect_proofs) ... ok
+test_export_exact_blank_bytes (first_review_checks.PreparationChecks.test_export_exact_blank_bytes) ... ok
+test_export_rejects_admin_file (first_review_checks.PreparationChecks.test_export_rejects_admin_file) ... ok
+test_export_unknown_future_gold_field (first_review_checks.PreparationChecks.test_export_unknown_future_gold_field) ... ok
+test_frozen_input_and_profile (first_review_checks.PreparationChecks.test_frozen_input_and_profile) ... ok
+test_governance_equivalence (first_review_checks.PreparationChecks.test_governance_equivalence) ... ok
+test_hash_bound_journal_compatibility_without_submissions (first_review_checks.PreparationChecks.test_hash_bound_journal_compatibility_without_submissions) ... ok
+test_maximum_family_diversity (first_review_checks.PreparationChecks.test_maximum_family_diversity) ... ok
+test_metrics_gold_math_is_not_review_or_model_evidence (first_review_checks.PreparationChecks.test_metrics_gold_math_is_not_review_or_model_evidence) ... ok
+test_minimum_family_rule_and_no_exclusion_of_bad_family (first_review_checks.PreparationChecks.test_minimum_family_rule_and_no_exclusion_of_bad_family) ... ok
+test_no_human_submissions_no_ready (first_review_checks.PreparationChecks.test_no_human_submissions_no_ready) ... ok
+test_registration_tampering (first_review_checks.PreparationChecks.test_registration_tampering) ... ok
+test_remaining_packets_preserved (first_review_checks.PreparationChecks.test_remaining_packets_preserved) ... ok
+test_reviewer_two_never_first_answer (first_review_checks.PreparationChecks.test_reviewer_two_never_first_answer) ... ok
+test_role_balance_exact_feasible_optimum (first_review_checks.PreparationChecks.test_role_balance_exact_feasible_optimum) ... ok
+test_second_subset_and_semantic_strata (first_review_checks.PreparationChecks.test_second_subset_and_semantic_strata) ... ok
+test_selection_reproducible_order_independent (first_review_checks.PreparationChecks.test_selection_reproducible_order_independent) ... ok
+test_separate_first_final_decisions (first_review_checks.PreparationChecks.test_separate_first_final_decisions) ... ok
+test_six_zero_constraints_unchanged (first_review_checks.PreparationChecks.test_six_zero_constraints_unchanged) ... ok
+test_substantive_producer_priority (first_review_checks.PreparationChecks.test_substantive_producer_priority) ... ok
+test_template_domain_unseen_coverage (first_review_checks.PreparationChecks.test_template_domain_unseen_coverage) ... ok
+test_training_access_partition_math_not_human_review (first_review_checks.PreparationChecks.test_training_access_partition_math_not_human_review) ... ok
+test_training_export_initially_empty (first_review_checks.PreparationChecks.test_training_export_initially_empty) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 1.683s
+
+OK

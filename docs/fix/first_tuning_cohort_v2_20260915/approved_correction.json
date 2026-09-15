@@ -1,0 +1,17 @@
+{
+  "approved_allocation": {
+    "train": 78,
+    "dev": 40,
+    "held_out": 72,
+    "additional_evaluation": 2,
+    "total": 192
+  },
+  "previous_incompatible_allocation": {
+    "train": 80,
+    "dev": 40,
+    "held_out": 72
+  },
+  "approval": "Explicit operator follow-up; preserve 16/16 templates without modifying frozen criteria.",
+  "status": "IMPLEMENTED",
+  "implementation_commit": "befb46816efd66c51a301e037304bc187b1e3b90"
+}

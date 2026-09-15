@@ -1,0 +1,22 @@
+{
+  "profile": "first-tuning-experiment-v1",
+  "categories": {
+    "independently_reviewed_train": [],
+    "independently_reviewed_dev": [],
+    "authored_only": [],
+    "held_out_domain": [],
+    "test": [],
+    "public_adversarial": [],
+    "regression": []
+  },
+  "allowed_ids": [],
+  "sealed_final_ids": [],
+  "training_authorized": false,
+  "allowed_files": {
+    "train.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "dev.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+  },
+  "cohort_revision": "first-tuning-review-cohort-v2",
+  "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+  "dev_usage": "Validation and tuning decisions; not automatic gradient-training input."
+}

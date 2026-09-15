@@ -1,0 +1,80 @@
+{
+  "files_scanned": 18,
+  "credential_findings": 0,
+  "files": [
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/.gitattributes",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/actual_review_coverage.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/approved_correction.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/empty_training_access_manifest.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/export_security.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/historical_integrity.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/initial_allocation_incompatibility.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/preserved_export_security.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/preserved_historical_integrity.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/preserved_readiness.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/preserved_validation.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/preserved_validation.log",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/production_validation.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/production_validation.log",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/validation.json",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/first_tuning_cohort_v2_20260915/validation.log",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/FIRST_TUNING_REVIEW_COHORT_V2_CORRECTION.md",
+      "count": 0
+    },
+    {
+      "path": "docs/fix/RESUME.md",
+      "count": 0
+    }
+  ],
+  "export_scan": "export_security.json",
+  "operator_private_inputs_accessed": false
+}
