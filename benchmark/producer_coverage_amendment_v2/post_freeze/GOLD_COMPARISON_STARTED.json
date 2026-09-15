@@ -1,0 +1,7 @@
+{
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "started_at": "2026-09-15T18:51:40.027891+00:00",
+  "pre_gold_commit": "3f5d4f4520e85db40b42a5c075a7166cd349bd7a",
+  "freeze_sha256": "99a4224a79d9ad1ced4648eaa2e91f532ceb378b67a73710eaa817cfd61d7ad1"
+}

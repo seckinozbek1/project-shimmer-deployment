@@ -51,7 +51,7 @@ def main():
   else:
    gm=set(s.material_atoms(gaps+unc));mm=set(s.material_atoms(machine_gaps+machine_unc));extras=[a for a in machine_gaps+machine_unc if __import__('json').dumps(s.normalize(a),sort_keys=True) not in gm]
    if gm<mm and extras and entry['valid'] and all(entry['primary_valid'].values()) and all(source_settles_extra(a,packet) for a in extras):classification='legacy_authored_target_under_specification';resolved=True
-   elif not entry['valid']:classification='machine_review_error';resolved=False
+   elif not entry['valid']:classification='unresolved';resolved=False
    else:classification='real_semantic_disagreement';resolved=False
   result.update(classification=classification,material_dispute_resolved=resolved,eligible=False,evidence_kind='training_label_curation_evidence',use='curation_only',typed_machine_label=label,source_support_spans=[dict(span=a['span'],support=a['support'],refs=a['refs']) for a in machine_gaps+machine_unc],classification_basis='Exact claims/refs/refusal and finite typed source-context projection; source-grounded strict legacy subset only when three valid primaries and final label validate. Unsupported or different meanings stay unresolved.')
   reasons=[]
@@ -70,7 +70,7 @@ def main():
    (train if row['split']=='train' else dev).append(item);result['eligible']=True
   else:exclusions.append(dict(example_id=row['example_id'],packet_id=pid,split=row['split'],reasons=reasons))
   for k in ('claims','evidence','refusal','typed_gaps','typed_uncertainty','canonical_output_difference'):counters[k]+=result[k]
-  counters[classification]+=1;counters['unresolved']+=not resolved;comparisons[pid]=result
+  counters[classification]+=1;counters['unresolved']+=not resolved and classification!='unresolved';comparisons[pid]=result
  s.write(out/'legacy_comparison.json',comparisons);s.write(out/'legacy_summary.json',dict(evidence_kind='training_label_curation_evidence',use='curation_only',total=len(comparisons),**counters));s.write(out/'excluded_candidates.json',exclusions)
  access=s.HERE/'machine_adjudicated_producer_candidates_v2'
  for split,rows in [('train',train),('dev',dev)]:s.write(access/(split+'.json'),rows)

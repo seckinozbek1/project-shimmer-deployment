@@ -1,0 +1,14 @@
+{
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "total": 64,
+  "claims": 64,
+  "evidence": 64,
+  "refusal": 64,
+  "typed_gaps": 58,
+  "typed_uncertainty": 64,
+  "canonical_output_difference": 64,
+  "semantic_agreement": 58,
+  "unresolved": 1,
+  "legacy_authored_target_under_specification": 5
+}

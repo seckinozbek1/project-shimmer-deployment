@@ -1,0 +1,11 @@
+{
+  "frozen_files": {
+    "machine_adjudication_v1": 961,
+    "machine_adjudication_v2": 692,
+    "producer_coverage_amendment_v1": 406
+  },
+  "historical_files": 106,
+  "historical_rejections": 4,
+  "benchmark_acceptance_unchanged": true,
+  "r06_preserved": true
+}

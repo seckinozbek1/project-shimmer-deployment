@@ -1,3 +1,23 @@
+# Producer amendment V2 completed ? curation-only, quarantined
+
+**PRODUCER_TUNING_COVERAGE_NOT_READY**.
+**BALANCED_AGENT_ADJUDICATED_TUNING_EXPERIMENT_NOT_READY**.
+**FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING** (0/0/0).
+
+Method `1c50cff`; labels/timing-failure audit `3f5d4f4`.
+Read [PRODUCER_TUNING_COVERAGE_AMENDMENT_V2.md](PRODUCER_TUNING_COVERAGE_AMENDMENT_V2.md).
+
+Exactly32 TRAIN/32 DEV substantive packets;192 primaries,180 valid;64 unanimous;19 adjudications;zero annotation ambiguity.
+32 TRAIN/28 DEV otherwise qualify semantically (8 domains,8 templates,40 families) but ALL are quarantined.
+The parent ran a target-reading historical regression before label freeze. No targets were exposed to fresh reviewers, but strict access order failed.
+New eligible producer0/0. Auditor remains46/24; prior amendment-V1 producer20/16 remains historical and unchanged.
+Four DEV packets also fail frozen completeness parsing of a structural heading. Legacy comparison:58 agreements,5 under-specification,1 unresolved;no projection limitation or real semantic dispute.
+41 tests/9 proofs pass;cohort30/4 and production85checks/4 proofs pass. Historical timing error is not erased by passing tests.
+R06 and all prior artifacts preserved. Use the new post-label-commit regression guard; do not use quarantined labels for training.
+All results curation_only, NOT independent-test or model-quality evidence. No cloud/API/Shimmer execution/training/model change/full pipeline/multi-round/push.
+
+---
+
 # Producer coverage amendment V1 completed ? NOT_READY
 
 **PRODUCER_TUNING_COVERAGE_NOT_READY**.

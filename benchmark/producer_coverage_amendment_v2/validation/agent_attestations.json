@@ -1,0 +1,45 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "primaries": {
+    "A": {
+      "fresh_context": true,
+      "read_packets": 64,
+      "outputs": 64,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "network_used": false,
+      "prior_answers_used": false
+    },
+    "B": {
+      "fresh_context": true,
+      "read_packets": 64,
+      "outputs": 64,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "network_used": false,
+      "prior_answers_used": false
+    },
+    "C": {
+      "fresh_context": true,
+      "read_packets": 64,
+      "outputs": 64,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "network_used": false,
+      "prior_answers_used": false
+    }
+  },
+  "adjudicator": {
+    "fresh_context": true,
+    "cases": 19,
+    "outputs": 19,
+    "assigned_workspace_only_attested": true,
+    "decisions": {
+      "candidate_A": 19
+    },
+    "review_ambiguity": 0
+  },
+  "limitation": "Shared parent model and filesystem; procedural isolation. Parent historical-regression timing failure separately recorded; reviewers received no gold."
+}

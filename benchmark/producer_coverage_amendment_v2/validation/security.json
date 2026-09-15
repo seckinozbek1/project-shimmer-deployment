@@ -1,0 +1,10 @@
+{
+  "files_scanned": 771,
+  "credential_findings": 0,
+  "operator_content_used": false,
+  "reviewer_gold_exposure_detected": false,
+  "strict_target_access_order_pass": false,
+  "governance_pass": false,
+  "isolation": "Fresh contexts, exact synthetic packet hashes and access attestations; shared filesystem/model family. Historical harness target read before label freeze is a separately recorded timing violation.",
+  "network_and_model_imports_blocked": true
+}
