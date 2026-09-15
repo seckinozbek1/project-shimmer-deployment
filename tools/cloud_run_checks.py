@@ -43,9 +43,12 @@ class Checks(unittest.TestCase):
         root.mkdir()
         write_json(root / 'experiment.json', {'max_runs': 1, 'source_commit': 'a'*40, 'experiment_id': 'fixture', 'hourly_rate_usd': 1.99})
         write_json(root / 'operator_readiness.json', {'ssh_public_key_sha256': 'fixture'})
-        write_json(root / 'bundle_manifest.json', {name: digest(root / name) for name in ['experiment.json', 'operator_readiness.json']})
+        write_json(root / 'runtime.json', preparation.RUNTIME)
+        (root / 'runtime_contract.py').write_bytes((ROOT / 'tools/runtime_contract.py').read_bytes())
+        write_json(root / 'bundle_manifest.json', {name: digest(root / name) for name in ['experiment.json', 'operator_readiness.json', 'runtime.json', 'runtime_contract.py']})
         write_json(root / 'READY_TO_PROVISION.json', {'ready_to_provision': True, 'experiment_id': 'fixture',
-            'source_commit': 'a'*40, 'bundle_manifest_sha256': digest(root / 'bundle_manifest.json')})
+            'source_commit': 'a'*40, 'bundle_manifest_sha256': digest(root / 'bundle_manifest.json'),
+            'runtime_source_preflight_passed': True, 'runtime_contract_sha256': digest(root / 'runtime_contract.py')})
         return root
 
     def source_checkout(self):
@@ -296,6 +299,14 @@ class Checks(unittest.TestCase):
         with self.assertRaises(ValueError):
             transport_plan('ubuntu@203.0.113.1', self.root, '/tmp/;id')
 
+    def test_legacy_bundle_cannot_bypass_new_runtime_gate(self):
+        root = self.sealed()
+        ready = json.loads((root / 'READY_TO_PROVISION.json').read_text())
+        del ready['runtime_source_preflight_passed']
+        write_json(root / 'READY_TO_PROVISION.json', ready)
+        with self.assertRaisesRegex(ValueError, 'reseal locally'):
+            plan(root, 'ubuntu@203.0.113.1', 1000)
+
     def test_dry_run_performs_no_transport(self):
         args = SimpleNamespace(bundle=self.sealed(), host='ubuntu@203.0.113.1',
                                running_since='2026-09-14T00:00:00Z', execute=False)
@@ -318,7 +329,7 @@ class Checks(unittest.TestCase):
         with self.assertRaises(subprocess.TimeoutExpired):
             run_transport(['ssh'], 20, failure)
 
-    def mocked_deploy(self, fail_remote=False):
+    def mocked_deploy(self, fail_remote=False, fail_runtime=False):
         bundle = self.sealed()
         args = SimpleNamespace(bundle=bundle, host='ubuntu@203.0.113.1', execute=True,
             running_since=datetime.now(timezone.utc).isoformat(), hourly_rate=1.99,
@@ -331,6 +342,8 @@ class Checks(unittest.TestCase):
             return SimpleNamespace(poll=lambda: None)
         def runner(command, **kwargs):
             calls.append(command)
+            if 'for candidate in' in command[-1]:
+                return SimpleNamespace(stdout=json.dumps({'executable': '/usr/bin/python3.12', 'version': [3, 10, 12] if fail_runtime else [3, 12, 3]}))
             if 'cloud_run_remote.py' in command[-1] and fail_remote:
                 raise RuntimeError('authored SSH failure')
             if command[0] == 'scp' and command[-2].endswith('/evidence'):
@@ -357,6 +370,13 @@ class Checks(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertTrue(status['benchmark_valid'])
         self.assertEqual(sum('cloud_run_remote.py' in command[-1] for command in calls), 1)
+
+    def test_incompatible_mock_remote_runtime_never_transfers_source(self):
+        code, calls, status = self.mocked_deploy(fail_runtime=True)
+        self.assertEqual(code, 2)
+        self.assertTrue(status['termination_verified'])
+        self.assertFalse(any(command[0] == 'scp' for command in calls))
+        self.assertFalse(any('cloud_run_remote.py' in command[-1] for command in calls))
 
     def test_failed_mock_remote_run_terminates_as_non_benchmark(self):
         code, calls, status = self.mocked_deploy(fail_remote=True)
@@ -472,7 +492,9 @@ class Checks(unittest.TestCase):
                                hourly_rate=1.99, output=output, wheelhouse=wh, model_cache=self.root)
         mock_models = [{'model': n, 'revision': r, 'files': {}} for n, r in json.loads((preparation.ASSETS / 'models.json').read_text()).items()]
         test_result = SimpleNamespace(returncode=0, stdout=json.dumps({'passed': True, 'tests_run': 1}).encode())
-        with patch.object(preparation, 'source_files', return_value=(files, {'fixture': True})), \
+        with patch.object(preparation, 'resolve', return_value={'executable': sys.executable, 'profile': 'experiment'}), \
+             patch.object(preparation, 'subprocess_check', return_value={'source_preflight_passed': True}), \
+             patch.object(preparation, 'source_files', return_value=(files, {'fixture': True})), \
              patch.object(preparation, 'operator_preflight', return_value={'credential_loaded': True}), \
              patch.object(preparation, 'behavioral_proof', return_value={'options': {}}), \
              patch.object(preparation, 'model_manifest', return_value=mock_models), \

@@ -445,18 +445,18 @@ redaction gate whenever no operator redaction rule compiles, which is the case f
 shipped corpus. The launcher, the wizard and the server add both for a normal run.
 
 ```
-py -3.9 -X utf8 scripts/verify_session1.py        # verification gate (run every session)
-py -3.9 scripts/pipeline.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override
-py -3.9 scripts/pipeline.py --task draft --question "..."   # draft mode
-py -3.9 scripts/pipeline.py --review-mode paired --pairs-per-unit 3   # paired review
-py -3.9 -X utf8 tools/run_local_demo.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override
-py -3.9 -X utf8 scripts/harness/run_agent.py --agent NAME --profile local|api \
+py -3.12 -X utf8 scripts/verify_session1.py        # verification gate (run every session)
+py -3.12 scripts/pipeline.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override
+py -3.12 scripts/pipeline.py --task draft --question "..."   # draft mode
+py -3.12 scripts/pipeline.py --review-mode paired --pairs-per-unit 3   # paired review
+py -3.12 -X utf8 tools/run_local_demo.py --non-interactive --sensitivity-layer-inactive-override --no-redaction-override
+py -3.12 -X utf8 scripts/harness/run_agent.py --agent NAME --profile local|api \
     --unit-file U --unit-id u01 --rule-file R --rule-id CONV-001 --out results.json
-py -3.9 scripts/pipeline.py --list-snapshots      # list saved snapshots
-py -3.9 scripts/pipeline.py --save-snapshot NAME  # snapshot learned state
-py -3.9 scripts/pipeline.py --load-snapshot NAME  # restore a snapshot
-py -3.9 scripts/pipeline.py --reset-snapshot      # strip back to seed defaults
-py -3.9 scripts/bus_viewer.py --follow            # live bus and cost stream
+py -3.12 scripts/pipeline.py --list-snapshots      # list saved snapshots
+py -3.12 scripts/pipeline.py --save-snapshot NAME  # snapshot learned state
+py -3.12 scripts/pipeline.py --load-snapshot NAME  # restore a snapshot
+py -3.12 scripts/pipeline.py --reset-snapshot      # strip back to seed defaults
+py -3.12 scripts/bus_viewer.py --follow            # live bus and cost stream
 ```
 
 

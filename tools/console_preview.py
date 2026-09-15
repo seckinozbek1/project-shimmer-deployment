@@ -8,7 +8,7 @@ by anything, not covered by the verify gate, and safe to delete at any time.
 
 One command to start, one to stop:
 
-    py -3.9 -X utf8 tools/console_preview.py
+    py -3.12 -X utf8 tools/console_preview.py
     (Ctrl+C in the same terminal to stop; all state is thrown away)
 
 It starts a real server (scripts/server.py, unmodified) on 127.0.0.1:8731,

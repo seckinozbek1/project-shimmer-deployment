@@ -50,8 +50,13 @@ the loopback server and opens the console. Use its **Copy token** control to
 connect the browser session. Keep the starter open and use **Stop** to stop its
 server; closing the browser leaves the server running.
 
-A fresh checkout needs Python 3.9 or later and dependencies compatible with the
-chosen backend. Local Review also needs the configured Qwen, Phi and bge-m3 model
+A fresh checkout needs Python 3.12.x and dependencies compatible with the
+chosen backend. The authoritative constraint is in
+[tools/cloud_run/runtime.json](tools/cloud_run/runtime.json): Python 3.12.x for
+compatibility, exactly 3.12.3 for the sealed cloud reference profile. Launchers
+query candidates and retain an absolute compatible executable. Experiment source
+compilation/import checks precede dependency installation and model acquisition;
+the image-default `python` is not assumed compatible. Local Review also needs the configured Qwen, Phi and bge-m3 model
 assets and a compatible CUDA runtime. Readiness reports missing prerequisites;
 it does not install models or generate a sample review. See
 [requirements.txt](requirements.txt), the

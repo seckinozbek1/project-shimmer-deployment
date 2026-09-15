@@ -13,19 +13,14 @@
 set -u
 cd "$(dirname "$0")"
 
-# --- 1. Find Python (python3.9, then python3, then python) -----------------
+# --- 1. Bootstrap discovery only; the contract selects the executable ------
 PYTHON_CMD=""
-for cand in python3.9 python3 python; do
-    if command -v "$cand" >/dev/null 2>&1; then
-        PYTHON_CMD="$cand"
-        break
-    fi
+for bootstrap in python3 python; do
+    command -v "$bootstrap" >/dev/null 2>&1 || continue
+    PYTHON_CMD=$("$bootstrap" tools/runtime_contract.py --resolve --path-only) && break
 done
 if [ -z "$PYTHON_CMD" ]; then
-    echo
-    echo "Could not find Python 3.9 or newer on this machine."
-    echo "Install it from https://www.python.org/downloads/ (or your package"
-    echo "manager), make sure it is on your PATH, then run this script again."
+    echo "No compatible Python found. See tools/cloud_run/runtime.json." >&2
     exit 1
 fi
 echo "Using Python: $PYTHON_CMD"
@@ -38,6 +33,8 @@ if [ ! -f ".venv/bin/activate" ]; then
         exit 1
     fi
 fi
+PYTHON_CMD=$("$PYTHON_CMD" tools/runtime_contract.py --resolve --candidate "$PWD/.venv/bin/python" --path-only) || exit 1
+"$PYTHON_CMD" tools/runtime_contract.py --source . || exit 1
 # venv activate scripts can touch unset vars on older shells; relax nounset here.
 set +u
 # shellcheck disable=SC1091
@@ -46,7 +43,7 @@ set -u
 
 # --- 3. Dependencies -------------------------------------------------------
 echo "Installing dependencies (this is quick after the first run) ..."
-if ! python -m pip install -r requirements.txt --quiet; then
+if ! "$PYTHON_CMD" -m pip install -r requirements.txt --quiet; then
     echo "Dependency installation failed. See the error above."
     exit 1
 fi
@@ -58,11 +55,11 @@ fi
 # Probe exit codes: 0 = CUDA already available (skip), 1 = torch present but CPU-only
 # (swap if GPU present), 2 = torch absent (skip).
 torch_rc=0
-python -c "import importlib.util,sys; sys.exit(2) if importlib.util.find_spec('torch') is None else sys.exit(0 if __import__('torch').cuda.is_available() else 1)" || torch_rc=$?
+"$PYTHON_CMD" -c "import importlib.util,sys; sys.exit(2) if importlib.util.find_spec('torch') is None else sys.exit(0 if __import__('torch').cuda.is_available() else 1)" || torch_rc=$?
 if [ "$torch_rc" -eq 1 ]; then
     if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
         echo "A CUDA GPU is present but torch is CPU-only. Installing the CUDA build (large download, one time) ..."
-        if python -m pip install "torch==2.5.1+cu121" --index-url https://download.pytorch.org/whl/cu121; then
+        if "$PYTHON_CMD" -m pip install "torch==2.5.1+cu121" --index-url https://download.pytorch.org/whl/cu121; then
             echo "CUDA torch installed. The Qwen redactor will use the GPU."
         else
             echo "CUDA torch install failed; continuing with CPU-only torch. Redaction will be slow."
@@ -104,7 +101,7 @@ echo "Backend profile: $BACKEND_PROFILE"
 #   0 = ready
 echo
 echo "Running the readiness preflight ..."
-python -X utf8 scripts/preflight.py --backend-profile "$BACKEND_PROFILE"
+"$PYTHON_CMD" -X utf8 scripts/preflight.py --backend-profile "$BACKEND_PROFILE"
 PREFLIGHT_RC=$?
 if [ "$PREFLIGHT_RC" -eq 2 ]; then
     echo
@@ -135,7 +132,7 @@ _shimmer_start_server() {
     echo "  Health:   http://localhost:${_port}/health   (the only route with no token)"
     echo "  There is no page at / , the console is the entry point."
     echo "Press Ctrl+C to stop it and return here."
-    python scripts/server.py
+    "$PYTHON_CMD" scripts/server.py
 }
 
 # --- 6. Menu ---------------------------------------------------------------
@@ -176,7 +173,7 @@ while true; do
                         # decision and it belongs to the operator.
                         DRAFT_FLAGS_FILE="${TMPDIR:-/tmp}/shimmer_draft_flags.$$"
                         rm -f "$DRAFT_FLAGS_FILE"
-                        if python scripts/intake_wizard.py --mode-only \
+                        if "$PYTHON_CMD" scripts/intake_wizard.py --mode-only \
                                 --emit-flags "$DRAFT_FLAGS_FILE"; then
                             DRAFT_FLAGS=""
                             [ -f "$DRAFT_FLAGS_FILE" ] && DRAFT_FLAGS="$(cat "$DRAFT_FLAGS_FILE")"
@@ -186,7 +183,7 @@ while true; do
                             echo "(Add --help for all options.)"
                             # DRAFT_FLAGS word-splits into separate simple tokens.
                             # shellcheck disable=SC2086
-                            python scripts/pipeline.py --task draft --question "$draftq" \
+                            "$PYTHON_CMD" scripts/pipeline.py --task draft --question "$draftq" \
                                 $DRAFT_FLAGS "$@"
                         else
                             echo "Draft setup cancelled. Returning to the menu."
@@ -200,7 +197,7 @@ while true; do
                     # to a temp file; a non-zero exit means the operator cancelled, no run.
                     WIZ_FLAGS_FILE="${TMPDIR:-/tmp}/shimmer_review_flags.$$"
                     rm -f "$WIZ_FLAGS_FILE"
-                    if python scripts/intake_wizard.py --emit-flags "$WIZ_FLAGS_FILE"; then
+                    if "$PYTHON_CMD" scripts/intake_wizard.py --emit-flags "$WIZ_FLAGS_FILE"; then
                         WIZ_FLAGS=""
                         [ -f "$WIZ_FLAGS_FILE" ] && WIZ_FLAGS="$(cat "$WIZ_FLAGS_FILE")"
                         rm -f "$WIZ_FLAGS_FILE"
@@ -213,7 +210,7 @@ while true; do
                         # WIZ_FLAGS (from SHIMMER_BACKEND_PROFILE), so it is not
                         # repeated here.
                         # shellcheck disable=SC2086
-                        python scripts/pipeline.py $WIZ_FLAGS "$@"
+                        "$PYTHON_CMD" scripts/pipeline.py $WIZ_FLAGS "$@"
                     else
                         echo "Review setup cancelled. Returning to the menu."
                         rm -f "$WIZ_FLAGS_FILE"
@@ -224,7 +221,7 @@ while true; do
         2)
             echo
             echo "Opening the chat interface. Close its window to return here."
-            python scripts/chat.py
+            "$PYTHON_CMD" scripts/chat.py
             ;;
         3)
             echo
@@ -251,7 +248,7 @@ while true; do
                         # token is shown once and never stored.
                         TOKEN_HASH_FILE="${TMPDIR:-/tmp}/shimmer_token_hash.$$"
                         rm -f "$TOKEN_HASH_FILE"
-                        if python -c "import secrets, hashlib, sys; t=secrets.token_hex(32); h=hashlib.sha256(t.encode()).hexdigest(); open(sys.argv[1],'w').write(h); print('Access token (shown ONCE, keep it private):'); print(); print('   ', t); print(); print('Send this token in the Authorization header: Bearer <token>')" "$TOKEN_HASH_FILE"; then
+                        if "$PYTHON_CMD" -c "import secrets, hashlib, sys; t=secrets.token_hex(32); h=hashlib.sha256(t.encode()).hexdigest(); open(sys.argv[1],'w').write(h); print('Access token (shown ONCE, keep it private):'); print(); print('   ', t); print(); print('Send this token in the Authorization header: Bearer <token>')" "$TOKEN_HASH_FILE"; then
                             SHIMMER_TOKEN_HASH="$(cat "$TOKEN_HASH_FILE")"
                             export SHIMMER_TOKEN_HASH
                             rm -f "$TOKEN_HASH_FILE"
@@ -271,11 +268,11 @@ while true; do
         4)
             echo
             echo "Running the verify gate ..."
-            python -X utf8 scripts/verify_session1.py
+            "$PYTHON_CMD" -X utf8 scripts/verify_session1.py
             ;;
         5)
             echo
-            python scripts/intake_wizard.py --import-only
+            "$PYTHON_CMD" scripts/intake_wizard.py --import-only
             ;;
         q|Q)
             echo

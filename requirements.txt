@@ -1,4 +1,4 @@
-# Project Shimmer: external Python dependencies (py -3.9)
+# Project Shimmer: external Python dependencies (py -3.12)
 # Versions pinned to those currently installed in the working environment.
 # Standard-library modules and in-repo modules under scripts/ are excluded.
 

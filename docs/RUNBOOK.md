@@ -8,6 +8,16 @@ the [historical archive](history/RUNBOOK_PRE_ROUTING_AUDIT.md).
 
 ## Start Shimmer
 
+Python must match [the shared runtime contract](../tools/cloud_run/runtime.json):
+3.12.x for ordinary compatibility; 3.12.3 remains exact for the sealed cloud
+reference. Startup resolves a compatible executable, so a stale 3.9/3.10 venv
+cannot silently win. The shell setup launchers refuse an incompatible existing
+venv before installing dependencies. Repair the environment explicitly.
+
+Remote experiments additionally require source compile/import preflight before
+installation or model acquisition. See [the preparation order](CLOUD_RUN_PREPARATION.md#shared-runtime-contract-and-fail-fast-order).
+An image-default `python` is only a possible bootstrap, never compatibility proof.
+
 Run `start_shimmer.bat` from the configured Windows checkout. Keep the desktop
 starter open: it owns the local server and provides Stop. It selects the configured
 Python environment and checks packages, cached model assets and the requested
@@ -191,7 +201,7 @@ setting a standalone server mode alone does not select native intake. Direct
 server defaults bind all interfaces; the normal desktop path selects loopback.
 No tunnel or remote setup is part of ordinary startup.
 
-The offline host gate is `py -3.9 -B -X utf8 scripts/verify_session1.py --offline`.
+The offline host gate is `py -3.12 -B -X utf8 scripts/verify_session1.py --offline`.
 Read PASS/WARN/SKIP/FAIL counts and named limitations, not just exit status.
 Offline skips and missing corpus/input evidence do not become passes. Some gate
 checks load cached models; do not overlap them with another GPU workload. The

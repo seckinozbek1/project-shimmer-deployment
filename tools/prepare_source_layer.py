@@ -19,11 +19,16 @@ def manifest(root):
                 continue
             if not p.resolve().is_relative_to(root):raise ValueError("Source symlink escapes repository")
             data=p.read_bytes();files[p.relative_to(root).as_posix()]=dict(sha256=hashlib.sha256(data).hexdigest(),bytes=len(data))
+    # Immutable runtime requirements travel with the executable source layer.
+    for name in ("tools/cloud_run/runtime.json", "tools/cloud_run/runtime.lock", "tools/cloud_run/models.json"):
+        path=root/name
+        if path.is_file():
+            data=path.read_bytes();files[name]=dict(sha256=hashlib.sha256(data).hexdigest(),bytes=len(data))
     dependency=root/"requirements.txt"
     return dict(schema_version=1,source_files=files,source_bytes=sum(v["bytes"] for v in files.values()),
                 source_layer_sha256=hashlib.sha256(json.dumps(files,sort_keys=True).encode()).hexdigest(),
                 dependency_sha256=hashlib.sha256(dependency.read_bytes()).hexdigest(),
-                excluded=["weights","wheels","credentials","input","output","durable","runtime config"],
+                excluded=["weights","wheels","credentials","input","output","durable","mutable runtime config"],
                 complete_deployment_bundle=False,
                 model_cache_policy="preposition pinned checkpoints; verify separately; never include per-run source layer")
 
@@ -31,7 +36,13 @@ def manifest(root):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("--root",type=Path,default=Path(__file__).resolve().parent.parent)
     p.add_argument("--previous",type=Path);p.add_argument("--output",type=Path,required=True);a=p.parse_args()
+    from runtime_contract import resolve, subprocess_check, remote_resolver_command
+    selection=resolve(root=a.root)
+    preflight=subprocess_check(selection,a.root)
     current=manifest(a.root)
+    current["runtime_preflight"]=preflight
+    current["remote_interpreter_bootstrap"]=remote_resolver_command(profile="experiment")
+    current["remote_entrypoint"]="tools/prepare_remote_experiment.py"
     if a.previous:
         previous=json.loads(a.previous.read_text())["source_files"]
         current["changed_files"]=[k for k,v in current["source_files"].items() if previous.get(k)!=v]

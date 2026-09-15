@@ -28,15 +28,11 @@ if (-not (Test-Path $wrapper)) {
     throw "wrapper not found at $wrapper"
 }
 
-# Prefer the repository's own virtual environment, fall back to the launcher.
-$venvPython = Join-Path $root ".venv\Scripts\python.exe"
-if (Test-Path $venvPython) {
-    $python = $venvPython
-    $pythonArgs = @("-X", "utf8", $wrapper)
-} else {
-    $python = "py"
-    $pythonArgs = @("-3.9", "-X", "utf8", $wrapper)
-}
+# The bootstrap process only runs the stdlib resolver, not the pipeline.
+$runtimeResolver = Join-Path $PSScriptRoot "runtime_contract.py"
+$python = & python $runtimeResolver --resolve --path-only --root $root
+if ($LASTEXITCODE -ne 0 -or -not $python) { throw "No compatible Python; see tools/cloud_run/runtime.json" }
+$pythonArgs = @("-X", "utf8", $wrapper)
 
 Push-Location $root
 try {

@@ -16,7 +16,7 @@ What it adds over calling the entry point yourself:
   * Wall clock and the peaks printed at the end.
 
 Usage:
-    py -3.9 -X utf8 tools/run_local_demo.py --non-interactive [pipeline args...]
+    py -3.12 -X utf8 tools/run_local_demo.py --non-interactive [pipeline args...]
 
 Every argument is passed through to the pipeline unchanged. --backend-profile
 local is added if the caller did not name one, since that is what this wrapper

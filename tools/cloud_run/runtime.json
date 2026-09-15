@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "python_compatibility": {
+    "major": 3,
+    "minor": 12,
+    "constraint": ">=3.12,<3.13",
+    "reason": "Repository f-string grammar requires Python 3.12; later minor versions are not validated."
+  },
+  "python": "3.12.3",
+  "python_profiles": {
+    "experiment": ">=3.12,<3.13",
+    "sealed_reference": "==3.12.3"
+  },
+  "pip": "24.0",
+  "platform": "linux_x86_64",
+  "glibc_min": "2.35",
+  "torch": "2.5.1+cu121",
+  "cuda_runtime": "12.1",
+  "gpu_name": "NVIDIA A100-SXM4-40GB",
+  "gpu_count": 1,
+  "minimum_vram_mib": 40000,
+  "instance_class": "gpu_1x_a100_sxm4",
+  "python_venv_required": true,
+  "minimum_free_disk_gib": 40,
+  "critical_imports": [
+    "agent_wrapper", "finding_record", "bounded_extraction", "execution_topology",
+    "execution_scheduler", "constitution", "message_bus", "run_context"
+  ],
+  "experiment_entrypoint_imports": ["remote_short_burst_probe"],
+  "core_dependencies": {
+    "torch": "torch",
+    "transformers": "transformers",
+    "tokenizers": "tokenizers",
+    "accelerate": "accelerate",
+    "bitsandbytes": "bitsandbytes",
+    "huggingface-hub": "huggingface_hub",
+    "psutil": "psutil"
+  }
+}

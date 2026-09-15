@@ -1,0 +1,94 @@
+{
+  "local_only": true,
+  "provider_calls": 0,
+  "ssh_scp": 0,
+  "models_loaded": 0,
+  "generation_calls": 0,
+  "pipeline_runs": 0,
+  "multi_round_runs": 0,
+  "package_installations": 0,
+  "docker_builds": 0,
+  "suites": {
+    "runtime_contract": {
+      "passed": 25,
+      "failed": 0
+    },
+    "cloud_run": {
+      "passed": 83,
+      "failed": 0,
+      "network_blocked": true
+    },
+    "cloud_transport": {
+      "passed": 8,
+      "failed": 0
+    },
+    "cloud_transfer": {
+      "passed": 7,
+      "failed": 0
+    },
+    "report_recommendations": {
+      "passed": 17,
+      "failed": 0
+    },
+    "local_inference_runtime": {
+      "passed": 8,
+      "failed": 0
+    },
+    "startup_readiness": {
+      "status": "PASS"
+    },
+    "startup_launcher": {
+      "status": "ENVIRONMENT_BLOCKED",
+      "passed_sections": [
+        "session",
+        "session_mutations",
+        "port_lifetime",
+        "python_selection",
+        "gui",
+        "gui_mutations",
+        "batch_entry"
+      ],
+      "blocked_section": "live_server_check",
+      "diagnostic": "Compatible Python 3.12 lacks fastapi; the owned child exited and was collected. No package installation attempted."
+    }
+  },
+  "new_restoring_mutations": [
+    "version_compatibility_neutralise_fail_restore",
+    "source_preflight_neutralise_fail_restore"
+  ],
+  "real_local_python": "3.12.3",
+  "shell_syntax": {
+    "shimmer.sh": "PASS",
+    "entrypoint.sh": "PASS",
+    "run_local_demo.ps1": "PASS"
+  },
+  "source_preflight": {
+    "executable": "C:\\Users\\secki\\anaconda3\\python.exe",
+    "version": [
+      3,
+      12,
+      3
+    ],
+    "profile": "experiment",
+    "compiled_files": 145,
+    "imports": [
+      "agent_wrapper",
+      "finding_record",
+      "bounded_extraction",
+      "execution_topology",
+      "execution_scheduler",
+      "constitution",
+      "message_bus",
+      "run_context",
+      "remote_short_burst_probe"
+    ],
+    "source_preflight_passed": true
+  },
+  "unit_test_total_passed": 148,
+  "source_fingerprint": {
+    "sha256": "9f68c0b116fdccd3d1bb6264403f908beb48800b752af75dad5e52f84f2a4a28",
+    "bytes": 4298051,
+    "basis": "working source layer bytes; local validation only"
+  },
+  "source_preflight_site_packages_disabled": true
+}

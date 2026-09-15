@@ -33,13 +33,17 @@ class StartupFailure(RuntimeError):
 
 def _probe_python(python, names):
     """Check package locations in a candidate, without importing those packages."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    from runtime_contract import load_contract
+    contract = load_contract()["python_compatibility"]
     code = ("import importlib.util,json,sys\n"
             "missing=[]\n"
             "for name in json.loads(sys.argv[1]):\n"
             " try:\n"
             "  if importlib.util.find_spec(name) is None: missing.append(name)\n"
             " except (ImportError,ValueError,AttributeError): missing.append(name)\n"
-            "print(json.dumps({'supported':sys.version_info >= (3,9),'missing':missing}))\n")
+            "print(json.dumps({'supported':list(sys.version_info[:2]) == "
+            + repr([contract["major"], contract["minor"]]) + ",'missing':missing}))\n")
     try:
         result = subprocess.run([str(python), "-B", "-c", code, json.dumps(names)],
                                 capture_output=True, text=True, encoding="utf-8",
@@ -82,7 +86,7 @@ def select_python(profile, *, root=ROOT, current=None, probe=None):
         if missing is not None:
             usable.append((len(missing), len(usable), candidate))
     if not usable:
-        raise StartupFailure("No usable Python environment was found. Repair Python 3.9 or later and the prerequisites in docs/RUNBOOK.md (Start Shimmer), then retry.")
+        raise StartupFailure("No usable Python environment was found. Repair Python to match tools/cloud_run/runtime.json and the prerequisites in docs/RUNBOOK.md (Start Shimmer), then retry.")
     return min(usable)[2], reports
 
 

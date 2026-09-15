@@ -1,37 +1,39 @@
-# Remote bounded feasibility handoff, 2026-09-15
+# Remote runtime contract hardening, 2026-09-15
 
 Read this file first and continue without asking. Do not push.
 
-Latest result: CLOUD_FULL_RUN_INDETERMINATE. The single authorized remote
-short-burst pass tested source c514d5b68a13a18858608ee176f308d922236541 on a Lambda
-A10 at $1.29/hour. Its launcher incorrectly selected default Python 3.10.12;
-Shimmer imports require Python 3.12 syntax. Import failed before model hydration
-or generation. No producer/auditor, serial path, concurrency or semantic result
-was measured. No full pipeline or multi-round ran. No paid inference API ran.
+Closed the preparation defect behind the bounded remote attempt at 253cc7b.
+Authoritative runtime: tools/cloud_run/runtime.json. Source compatibility is
+>=3.12,<3.13; the sealed reference intentionally retains exact Python 3.12.3.
+Runtime resolution records a compatible absolute executable. Source integrity,
+actual compilation and critical imports precede dependency installation and
+model acquisition. Existing package mismatches fail without automatic upgrades.
+The Docker source-preflight stage is a prerequisite of package/model layers.
+No image was rebuilt and no package/environment installation was performed.
 
-Evidence and complete report: REMOTE_SHORT_BURST_FEASIBILITY.md and
-remote_short_burst_20260915/. Prior reports and 14 September evidence are intact.
-The existing projection engine ran with missing measurements explicitly null;
-no historical model timings were substituted. Ordinary latency and accepted-run
-costs remain unknown. The 20-node/five-wave graph is only a structural template.
+Maintained bounded entry: tools/prepare_remote_experiment.py. Its default is
+readiness checks only; --execute requires separate authorization. Historical
+output/remote_short_burst_20260915 and docs/fix/remote_short_burst_20260915 scripts
+remain evidence, not launch targets. Do not use their default-Python setup script.
+See REMOTE_RUNTIME_HARDENING.md and runtime_hardening_20260915/ for evidence.
 
-Instance 95bbd0c1a9e64361b80c0ff8011b84a3 was terminated and provider-confirmed
-absent at 2026-09-15T07:17:18.016016+00:00. Conservative estimated instance cost
-$0.1219585353 for at most 340.349401 seconds from launch request to confirmation.
-Source transfer: 1,264,923 bytes / 3.946 seconds. Provisioning to SSH: 198.446 s.
-Remote preparation: 29.277 s, including 10.279 s dependencies and 13.945 s model
-acquisition. Both checkpoints fetched at the existing pins, neither loaded.
-Temporary SSH registration and local key files were removed. No instance remains.
+Validation: 148 unit tests passed (25 runtime, 83 cloud preparation/controller,
+8 transport, 7 transfer, 17 recommendation/source-layer, 8 local-runtime tests).
+Two runtime/source guard neutralisations fail as expected and restore. Real
+Python 3.12.3 compiled 145 files and imported nine critical modules without a
+model stack. Startup-readiness and shell syntax checks passed. Desktop session,
+selection, GUI/mutations, port lifetime and real batch entry passed; the broader
+live-server fixture is blocked because compatible local Python lacks fastapi.
+Its child exited and was collected. No dependency repair was attempted.
 
-Next local preparation: explicitly preserve Python 3.12.3 in the bounded launcher
-and validate its actual dependency import graph before model acquisition. Do not
-change production code to accommodate the accidentally selected older Python.
-One GPU owner currently has one worker thread; real overlap needs a supported
-adapter and a separate bounded validation, not duplicate same-GPU model owners.
-No second instance was provisioned. The single-instance authorization was consumed;
-a later cloud attempt or full pipeline run needs its own operator authorization.
+Historical result remains CLOUD_FULL_RUN_INDETERMINATE. All 32 historical hashes
+match. No model inference evidence or missing projection field was fabricated.
+Instance 95bbd0c1a9e64361b80c0ff8011b84a3 was provider-confirmed absent at
+2026-09-15T07:17:18.016016+00:00 in the previous task, with conservative instance
+cost upper bound $0.1219585353. This task made no provider/cloud/SSH/SCP calls.
+No model load, full pipeline, multi-round or paid inference API; no push.
+Existing untracked SHIMMER_HANDOFF.md and durable/ were preserved.
 
-Local deterministic validation: 17 recommendation mechanism checks passed and
-authored fixture source reconstruction passed. These are not model quality proof.
-Production source was unchanged. Existing untracked SHIMMER_HANDOFF.md and durable/
-were preserved. No push. No benchmark answer-key contents were opened.
+Next task: repeat the remote short-burst feasibility measurement only after
+separate operator cloud approval, using a prepared compatible runtime and the
+maintained source/runtime gates. Do not initiate that retry from this handoff.

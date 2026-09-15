@@ -8,7 +8,7 @@ read back from the zip and its sha256 compared) before anything is emptied; a mi
 stops the tool with nothing removed.
 
 Usage:
-    py -3.9 -X utf8 tools/archive_ontology_stores.py [--stores DIR] [--out-dir DIR] [--dry-run]
+    py -3.12 -X utf8 tools/archive_ontology_stores.py [--stores DIR] [--out-dir DIR] [--dry-run]
 
 Defaults: stores = <repo>/ontology/stores, out-dir = <repo's parent>/shimmer-archives
 (outside the repository by construction). JSONL stores are truncated to zero bytes;
