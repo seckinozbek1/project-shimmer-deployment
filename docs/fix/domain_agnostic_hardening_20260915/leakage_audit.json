@@ -1,0 +1,12 @@
+{
+  "examples": 736,
+  "cross_split_findings": 0,
+  "ancestry_findings": 0,
+  "exact_duplicate_findings": 0,
+  "family_groups": 324,
+  "domain_holdout_findings": 0,
+  "tuning_access_findings": 0,
+  "blinded_packet_findings": 0,
+  "sealed_populated_examples": 0,
+  "blind_state": "Pending independent contribution; synthetic temporary access tests are not blind examples"
+}

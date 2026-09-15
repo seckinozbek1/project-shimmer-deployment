@@ -1,0 +1,17 @@
+{
+  "tests": 35,
+  "failures": 0,
+  "errors": 0,
+  "gold_outcomes": 736,
+  "negative_rejections": 1008,
+  "historical_rejections": 4,
+  "immutable_baseline_files_verified": 30,
+  "historical_entries_verified": 106,
+  "effect_proofs": [
+    "packet input allowlist",
+    "heldout domain exclusion",
+    "training file allowlist"
+  ],
+  "model_execution": false,
+  "network": false
+}

@@ -1,0 +1,21 @@
+{
+  "verdict": "DOMAIN_AGNOSTIC_TRAINING_EXPERIMENT_NOT_READY",
+  "blockers": [
+    "736 examples require independent human review; no actual reviewer submissions",
+    "Numeric quality, sample coverage and family/domain thresholds require prospective operator registration",
+    "Independent sealed-final material and external account/ACL provisioning remain pending"
+  ],
+  "infrastructure_implemented": true,
+  "training_authorized": false,
+  "implementation_commit": "fee042af676e2818ec6f7a7589deff0950e1f4fe",
+  "tests_total": 162,
+  "preexisting_optional_skips": 1,
+  "cloud": false,
+  "paid_api": false,
+  "training": false,
+  "lora_sft": false,
+  "models_changed": false,
+  "full_pipeline": false,
+  "multi_round": false,
+  "push": false
+}

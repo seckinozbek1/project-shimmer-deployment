@@ -1,3 +1,39 @@
+# Domain-agnostic benchmark hardening implemented - 15 September 2026
+
+**DOMAIN_AGNOSTIC_TRAINING_EXPERIMENT_NOT_READY**.
+Implementation: `fee042af676e2818ec6f7a7589deff0950e1f4fe`.
+Read [DOMAIN_AGNOSTIC_TUNING_BENCHMARK_HARDENING.md](DOMAIN_AGNOSTIC_TUNING_BENCHMARK_HARDENING.md)
+and [the v2 workflow README](../../benchmark/task_semantics_v2/README.md).
+
+New dataset/evaluation version `semantic-benchmark-v2`; production contract remains
+`semantic-task-v1`. All 30 v1 baseline-reference files and 106 historical A/B evidence
+entries verify unchanged. The expansion adds 288 rows and references 448 preserved
+rows: 736 total, 288 producer / 448 auditor, ten domains, 80 document families,
+16 versioned structural template families (12 new). Train/dev/test/public adversarial
+are 184 each. Tuning access is 368 rows; astronomy/ecology holdout is 72; unseen-template
+test/adversarial is 368. There are 96 new substantive producer cases.
+
+736 blinded JSON/Markdown packets ready, ZERO independent reviews, 736 pending,
+zero actual disagreements/final adjudications, ZERO genuinely blind examples populated.
+The new submission/resolution journal leaves authored labels frozen. Public adversarial
+material remains public. The sealed vault requires independent contribution plus an
+external operator-controlled account/ACL; application checks do not supply OS isolation.
+
+35 new + 42 preserved dataset tests + 85 production checks pass (162; one pre-existing
+optional skip). Ten total effect proofs. All 736 gold outcomes pass, all 1,008 negative
+candidates are rejected (576 old + 432 compound). Four historical failures reproduce.
+Zero detected leakage; credentials scanned clean. Evidence:
+[domain_agnostic_hardening_20260915](domain_agnostic_hardening_20260915/).
+
+Next: independent humans review the packet-only export; register and implement the
+27 unresolved quantitative acceptance rules prospectively; commission independently
+held final material in the protected external vault. Six zero catastrophic limits are
+frozen now. Do NOT train or treat pending review as approval. No cloud, paid API,
+training, LoRA/SFT, model/revision/quantization change, full pipeline, multi-round or push.
+Root SHIMMER_HANDOFF.md and durable/ remain user-owned and untouched.
+
+---
+
 # Domain-agnostic task dataset implemented - 15 September 2026
 
 **DOMAIN_AGNOSTIC_TUNING_DATA_READY** (infrastructure/seed readiness; no training authorization).
