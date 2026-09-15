@@ -1,0 +1,20 @@
+{
+  "version": "semantic-task-v1",
+  "hashes": {
+    "acceptance_registration.template.json": "00af87b9f91bdfd60a00ec27d1ce22646180cfe334e6dfc286835f416b53cc96",
+    "build_seed.py": "d39f1f44f83869e4cc09be44d4f2b2ce076ea6e4f3a128253599c31268448b96",
+    "checks.py": "5ab2ba653501b83d8f193db60bf557775e9d5103c2860223b9ea18537d3f2f5e",
+    "core.py": "b9858ab721a6e2b8912b15bfdf0ec11c960a7f2ab054150abc5318a5ba28d1a7",
+    "evaluate_outputs.py": "c07d007adad116943e32c52934cf7ba4b9fb1a698da8eaa6a4efb2fe92ccf930",
+    "family_ancestry.json": "4bc92d9ef0b765881a19a2f13c0d44331f6c7c1f0f78f7c750e5f1c405118b5d",
+    "negative_candidates.json": "772f7894fc163489df33c65cc62f1fffb7271e899b58a5c7bb664aa6485de74e",
+    "record.schema.json": "323997abbc797a2f577269ef86a44f8445990509cca9000bc7140fe700922401",
+    "run_gate.py": "77229ef4041e3f36dc9c7dd4a54aed6c1898f9458922b5bbb8eb7345bda0770b",
+    "seed.json": "003aefd37d40a8ca1c90dbcc2e6429195f015f0c669b6d95eea7df98b2649142",
+    "split_manifest.json": "e7f470ffd14a4ebc12999ee79105798b2f88602513ff876ce1567e26edd16e72",
+    "split_plan.json": "ea8f2f4d5d28648dec7323db0e33c312974652955727efefcebf8be1f30c90a6",
+    "transformations.json": "dc94b6c54c20e5768aae793eb96effc3c4e14404d2be002addb261fc8471705e"
+  },
+  "contract_manifest_sha256": "bb8247b10849297a3fb5718ddc2e25cc549f3460b209092b001016ef6741a9e5",
+  "notice": "Public seed freeze. A target, evaluator or split change requires explicit review and a new version before training."
+}

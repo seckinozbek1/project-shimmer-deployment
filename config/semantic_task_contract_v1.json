@@ -1,0 +1,86 @@
+{
+  "version": "semantic-task-v1",
+  "schema_version": "semantic-task-v1",
+  "prompt_task_version": "semantic-task-v1",
+  "adapter_version": "semantic-task-v1",
+  "validator_version": "semantic-task-v1",
+  "authority": "scripts/compact_contracts.py; scripts/bounded_extraction.py; config/agent_contracts.json",
+  "hashes": {
+    "scripts/compact_contracts.py": "0a54bf8af60444ed05c6eafe52f9150f9ab576a4057058b5e6277939d5705b49",
+    "scripts/bounded_extraction.py": "a605e9c6885e163951f5d73fd0f8d29bfea86f12757774d83f42a9e2a2b0608f",
+    "scripts/agent_wrapper.py": "628cd9022a1911b1c54bf48dc2e805cb2a9115689178749bb9bf81d805ec10b6",
+    "config/agent_contracts.json": "842895624108e7c39ae6857d15184944095741ab4bf491b14f584807fc6ec29f"
+  },
+  "prompt_hashes": {
+    "producer": "9dea3ff08198325476cd02bf53556e600521d1cceadb45119d95dcf0adf04980",
+    "auditor": "25dd9f82a4e68af9f67463ecaca354e02df9d82a7a34548638c3d780b684e3eb"
+  },
+  "model_owned": {
+    "producer": [
+      "span selection",
+      "claims",
+      "questions",
+      "uncertainty",
+      "status",
+      "refs"
+    ],
+    "auditor": [
+      "finding",
+      "ref_ids",
+      "reasoning",
+      "severity",
+      "confidence"
+    ]
+  },
+  "python_owned": [
+    "source text",
+    "source offsets",
+    "source order",
+    "document identity",
+    "provenance",
+    "agent identity",
+    "paragraph routing"
+  ],
+  "producer_semantics": {
+    "claims": "All explicit CLM identifiers, multiple per owned alias. No prose reconstruction.",
+    "questions": "Explicit questions and unavailable information as questions.",
+    "uncertainty": "Unresolved interpretation, never invented certainty.",
+    "status": "extracted iff semantic arrays populated, otherwise examined empty.",
+    "refs": "Exact supplied applicable evidence IDs only."
+  },
+  "auditor_semantics": {
+    "finding": "Fidelity MATCH/DIVERGENCE/OMISSION/ADDITION; unequal original values do not imply divergence.",
+    "reasoning": "Concise source/extraction comparison; no unsupported policy attribution.",
+    "ref_ids": "Every required reference selected from supplied set.",
+    "confidence": "CONFIDENT or UNCERTAIN",
+    "severity": "low/medium/high; MATCH requires low"
+  },
+  "refusal": {
+    "wire": {
+      "items": [],
+      "status": "refused"
+    },
+    "evaluation_state": "semantic_refusal",
+    "production_accepted": false
+  },
+  "completeness": "Every owned alias exactly once. Context excluded. Partial coverage and truncated output not accepted.",
+  "reconstruction": "Use existing bounded_extraction ledger/hydrate; exact original text and order.",
+  "routing": "Python stamps identity. Fidelity tasks route no policy rules.",
+  "statuses": {
+    "extracted": "accepted extraction; all owned aliases covered",
+    "examined_empty": "accepted examined-empty; never missing ownership",
+    "semantic_refusal": "recognized refusal wire; production acceptance remains false",
+    "incomplete": "not accepted; coverage or transport incomplete",
+    "malformed": "not accepted; technical/contract failure",
+    "fidelity": "accepted comparison; finding remains MATCH/DIVERGENCE/OMISSION/ADDITION"
+  },
+  "error_classes": [
+    "prompt_contract_defect",
+    "parser_adapter_defect",
+    "model_semantic_capability_error",
+    "evidence_selection_error",
+    "instruction_following_formatting_error",
+    "truncation_output_efficiency_error",
+    "unsupported_hallucination_attribution_error"
+  ]
+}
