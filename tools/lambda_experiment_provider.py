@@ -24,6 +24,8 @@ def project_response(endpoint, raw):
         result = []
         for value in raw.values():
             kind = value['instance_type']; specs = kind['specs']
+            if specs.get('gpus') != 1:
+                continue  # This controller can only rent a single-GPU instance.
             metadata = safe_metadata(dict(type=kind['name'], gpu_type=kind['gpu_description'],
                 gpu_count=specs['gpus'], cpu=specs['vcpus'], ram_gib=specs['memory_gib'],
                 storage_gib=specs['storage_gib'], hourly_rate=kind['price_cents_per_hour']/100))
@@ -54,6 +56,7 @@ class LambdaExperiment(LambdaTermination):
         if endpoint=='instance-operations/launch':
             require(isinstance(body,dict) and set(body)=={'region_name','instance_type_name','ssh_key_names','quantity','name','image'}
                     and body['quantity']==1 and len(body['ssh_key_names'])==1, 'exactly one bounded launch required')
+        stage='transport'
         try:
             executable=shutil.which('curl.exe') or shutil.which('curl')
             require(executable is not None, 'curl unavailable')
@@ -66,11 +69,13 @@ class LambdaExperiment(LambdaTermination):
             payload,sep,status=response.stdout.rpartition('\n')
             require(response.returncode==0 and sep and status in ('200','201','204'), 'provider request failed')
             if status=='204':return {'data': {}}
+            stage='response parsing'
             raw=json.loads(payload)
             require(isinstance(raw,dict) and 'data' in raw and 'error' not in raw, 'provider response failed')
+            stage='allowlist projection'
             projected=project_response(endpoint,raw['data'])
             del raw,payload,response
             return {'data':projected}
         except Exception:
             # Never propagate a library exception or a raw response through an error.
-            raise InvalidPreparation('provider experiment request failed') from None
+            raise InvalidPreparation('provider experiment request failed during '+stage) from None
