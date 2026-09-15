@@ -140,10 +140,9 @@ class RecommendationChecks(unittest.TestCase):
             raw=dynamic.split("## Work payload\n",1)[1]
             payload,_=json.JSONDecoder().raw_decode(raw)
             ids=[s["span_id"] for s in payload["source_spans"]]; counts.append(ids)
-            items=[dict(section_id=x,draft_text=x,extraction_method="source_span",claims_referenced=[],
-                        open_questions=[],ref="document-level",kind="extraction",confidence="UNCERTAIN") for x in ids]
+            items=[dict(span=x,claims=[],questions=[],uncertainty=[],status="empty",refs=[]) for x in ids]
             self.assertEqual(kwargs["max_new_tokens"],1536)
-            return self.fake_result(instance,dict(agent="PROCESSOR",doc_id="fixture",items=items),len(counts)==1)
+            return self.fake_result(instance,dict(items=items),len(counts)==1)
         state=topology.ACTIVE.set(runtime)
         try:
             with patch.object(AgentWrapper,"dispatch",dispatch):

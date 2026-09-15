@@ -201,10 +201,8 @@ async def execute_plans(plans):
             for owned in extraction.partitions(spans):
                 clone = runtime.attach(replace(w))
                 clone._bounded_output_budget = 1536
-                clone._source_adapter = lambda obj, o=owned, d=base.get("document_id", ""): extraction.hydrate(obj,o,d)
-                clone.contract = dict(clone.contract, directives=list(clone.contract.get("directives", [])) + [
-                    "For bounded_source_extraction, draft_text is the source span ID, not copied text. "
-                    "Always emit claims_referenced and open_questions arrays. Python restores the source."])
+                import compact_contracts
+                compact_contracts.bind_producer(clone, owned, base.get("document_id", ""))
                 calls.append((clone, dict(k, work_payload=extraction.payload(base,owned,spans))))
         else:
             calls.append((w,k))

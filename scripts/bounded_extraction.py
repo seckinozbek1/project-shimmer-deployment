@@ -82,15 +82,11 @@ def payload(base, owned, all_spans):
     return dict(task="bounded_source_extraction", document_id=base.get("document_id", ""),
                 document_name=base.get("document_name", ""),
                 structural_inventory=base.get("structural_inventory", []),
-                source_spans=[dict(span_id=wire_id(s), unit_id=s.unit_id, unit_index=s.unit_index,
-                                   start=s.start, end=s.end, text=s.text) for s in owned],
+                source_spans=[dict(span_id=wire_id(s), text=s.text) for s in owned],
                 boundary_context=[dict(span_id=wire_id(s), text=s.text[-400:] if indices[s.id]<first else s.text[:400],
                                        context_only=True) for s in context],
-                instructions="Return exactly one extraction item for EACH source_spans entry. "
-                "Set section_id and draft_text to its span_id. Python restores draft_text exactly. "
-                "Do not quote or rewrite the source. Keep semantic claims_referenced and open_questions, "
-                "uncertainty, extraction_method and supplied evidence references. Do not judge boundary_context. "
-                "Do not truncate reasoning or omit questions to fit: explicitly refuse if incomplete.")
+                instructions="Use the compact extraction contract. Every owned alias needs one item; "
+                "boundary_context is not owned. Python reconstructs source text.")
 
 
 def hydrate(obj, owned, document_id):

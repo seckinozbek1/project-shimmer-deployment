@@ -1,0 +1,8 @@
+<|user|>
+Compare ORIGINAL with EXTRACTION for fidelity, not one original figure against another. Preserve each figure's label and any missing-information statement. Different quantities in the original are not themselves extraction errors.
+MATCH means extraction preserves the original; DIVERGENCE means changed content; ADDITION means unsupported content; OMISSION means missing content. No policy rule or numeric threshold is supplied: do not attribute a rule or judge compliance.
+Return only {"items":[{"finding":"MATCH","ref_ids":["REF-0001","REF-0002"],"reasoning":"Concise evidence-based comparison","severity":"low","confidence":"CONFIDENT"}]}.
+Select evidence refs supporting the comparison, including every required ref. Explain what was preserved or changed, including information gaps. Do not copy the source. MATCH requires low severity. Use UNCERTAIN for uncertain interpretation; insufficient evidence or incomplete extraction requires {"items":[],"status":"refused"}. Empty items without refusal is allowed only when both inputs are empty.
+One routed comparison item; no extra fields. Python supplies agent/doc/paragraph identity. No finding_record, rule_id or invented citation. Complete the JSON before stopping.
+{"required_refs": ["REF-0001", "REF-0002"], "ORIGINAL": "CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.\n", "EXTRACTION": [{"draft_text": "CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.\n", "claims_referenced": ["CLM-001", "CLM-002"], "open_questions": ["What is the reporting date?"]}]}<|end|>
+<|assistant|>

@@ -1,0 +1,123 @@
+"""Task-scoped wire contracts; strict adaptation precedes canonical validation.
+
+Identity and source reconstruction are routing facts. Claims, gaps, uncertainty,
+judgments and selected evidence always come from the response, never from routing.
+"""
+import json
+import re
+
+import bounded_extraction as extraction
+
+PRODUCER = '''Return only one JSON object: {"items":[{"span":"s0","claims":[],"questions":[],"uncertainty":[],"status":"empty","refs":[]}]}.
+Exactly one item per owned source_spans alias; multiple observations belong in its arrays.
+claims: every explicit CLM-* id. questions: explicit questions and missing information as questions. uncertainty: unresolved interpretation, if any.
+status: extracted if any claims/questions/uncertainty, otherwise empty. Empty means examined, not omitted. If unable to complete use {"items":[],"status":"refused"}.
+refs: select supplied REF-* evidence for this span. Do not invent ids. Do not judge context-only spans.
+Python owns source, offsets, identity and order: return the alias once in span; never copy prose or emit draft_text/section_id. No other fields.'''
+
+AUDITOR = '''Compare ORIGINAL with EXTRACTION for fidelity, not one original figure against another. Preserve each figure's label and any missing-information statement. Different quantities in the original are not themselves extraction errors.
+MATCH means extraction preserves the original; DIVERGENCE means changed content; ADDITION means unsupported content; OMISSION means missing content. No policy rule or numeric threshold is supplied: do not attribute a rule or judge compliance.
+Return only {"items":[{"finding":"MATCH","ref_ids":["REF-0001","REF-0002"],"reasoning":"Concise evidence-based comparison","severity":"low","confidence":"CONFIDENT"}]}.
+Select evidence refs supporting the comparison, including every required ref. Explain what was preserved or changed, including information gaps. Do not copy the source. MATCH requires low severity. Use UNCERTAIN for uncertain interpretation; insufficient evidence or incomplete extraction requires {"items":[],"status":"refused"}. Empty items without refusal is allowed only when both inputs are empty.
+One routed comparison item; no extra fields. Python supplies agent/doc/paragraph identity. No finding_record, rule_id or invented citation. Complete the JSON before stopping.'''
+
+
+def arrays(item, fields):
+    for field in fields:
+        value = item.get(field)
+        if not isinstance(value, list) or any(not isinstance(x, str) or not x.strip() for x in value):
+            raise ValueError('Explicit string arrays required')
+        if len(set(value)) != len(value):
+            raise ValueError('Duplicate semantic observation')
+
+
+def envelope(obj):
+    if not isinstance(obj, dict) or set(obj) != {'items'} or not isinstance(obj['items'], list):
+        raise ValueError('Complete compact items envelope required; refusal is not acceptance')
+    return obj['items']
+
+
+def producer(obj, owned, doc):
+    items = envelope(obj)
+    by_alias = {extraction.wire_id(s): s for s in owned}
+    seen = set()
+    canonical = []
+    for item in items:
+        if not isinstance(item, dict) or set(item) != {'span','claims','questions','uncertainty','status','refs'}:
+            raise ValueError('Exact compact extraction fields required')
+        alias = item['span']
+        if not isinstance(alias, str) or alias not in by_alias or alias in seen:
+            raise ValueError('Invalid or duplicate owned alias')
+        seen.add(alias)
+        arrays(item, ('claims','questions','uncertainty','refs'))
+        span = by_alias[alias]
+        if not set(item['claims']) <= set(re.findall(r'\bCLM-[A-Za-z0-9-]+', span.text)):
+            raise ValueError('Ungrounded claim id')
+        if not set(item['refs']) <= set(re.findall(r'\bREF-\d{4,}\b', span.text)):
+            raise ValueError('Ungrounded extraction evidence')
+        semantic = any(item[k] for k in ('claims','questions','uncertainty'))
+        if item['status'] != ('extracted' if semantic else 'empty'):
+            raise ValueError('Explicit empty/extracted status mismatch')
+        canonical.append(dict(section_id=alias, draft_text=alias, extraction_method='source_span',
+                              claims_referenced=item['claims'], open_questions=item['questions'],
+                              uncertainty=item['uncertainty'], extraction_status=item['status'],
+                              ref_ids=item['refs'], ref=item['refs'][0] if item['refs'] else 'document-level',
+                              kind='extraction', confidence='UNCERTAIN'))
+    # The original hydration validator still enforces full coverage and order.
+    return extraction.hydrate(dict(agent='PROCESSOR', doc_id=doc, items=canonical), owned, doc)
+
+
+def auditor(obj, doc, required_refs, available_refs, *, paragraph=1, empty_input=False):
+    items = envelope(obj)
+    if len(items) != (0 if empty_input else 1):
+        raise ValueError('Incomplete routed comparison')
+    result = []
+    for item in items:
+        if not isinstance(item, dict) or set(item) != {'finding','ref_ids','reasoning','severity','confidence'}:
+            raise ValueError('Exact fidelity fields required; rule attribution is not routed')
+        arrays(item, ('ref_ids',))
+        if not set(required_refs) <= set(item['ref_ids']) <= set(available_refs):
+            raise ValueError('Missing or ungrounded fidelity evidence')
+        if item['finding'] not in {'MATCH','DIVERGENCE','ADDITION','OMISSION'}:
+            raise ValueError('Invalid fidelity judgment')
+        if item['confidence'] not in {'CONFIDENT','UNCERTAIN'} or item['severity'] not in {'low','medium','high'}:
+            raise ValueError('Invalid confidence or severity')
+        if item['finding'] == 'MATCH' and item['severity'] != 'low':
+            raise ValueError('MATCH severity mismatch')
+        if not isinstance(item['reasoning'], str) or not item['reasoning'].strip():
+            raise ValueError('Evidence comparison reason required')
+        if re.search(r'\bCONV-[A-Za-z0-9-]+', item['reasoning']):
+            raise ValueError('Ungrounded rule in fidelity reason')
+        if not set(re.findall(r'\bREF-\d{4,}\b', item['reasoning'])) <= set(item['ref_ids']):
+            raise ValueError('Unselected citation in fidelity reason')
+        result.append(dict(item, paragraph=paragraph, kind='finding',
+                           ref=item['ref_ids'][0] if item['ref_ids'] else 'document-level'))
+    return dict(agent='VERIFIER', doc_id=doc, items=result)
+
+
+def bind_producer(wrapper, owned, doc):
+    if wrapper.name != 'PROCESSOR':
+        raise ValueError('Extraction routing mismatch')
+    wrapper._compact_role = '- Extract semantic fields from owned source spans; Python reconstructs source.'
+    wrapper._compact_contract = PRODUCER
+    wrapper._source_adapter = lambda obj: producer(obj, owned, doc)
+
+
+def bind_auditor(wrapper, doc, refs, *, paragraph=1, empty_input=False):
+    if wrapper.name != 'VERIFIER':
+        raise ValueError('Fidelity routing mismatch')
+    wrapper._compact_role = '- Compare original content with extraction for fidelity only.'
+    wrapper._compact_contract = AUDITOR
+    wrapper._source_adapter = lambda obj: auditor(obj, doc, refs, refs, paragraph=paragraph, empty_input=empty_input)
+
+
+def producer_prompt(owned, all_spans, doc):
+    return PRODUCER + '\n' + json.dumps(extraction.payload(dict(document_id=doc), owned, all_spans))
+
+
+def auditor_prompt(source, parsed, refs):
+    # Retain semantic extraction fields and exact reconstructed source; omit only
+    # runtime identity/provenance already supplied by the routed comparison.
+    relevant = [{k: i[k] for k in ('draft_text','claims_referenced','open_questions','uncertainty') if k in i}
+                for i in parsed['items']]
+    return AUDITOR + '\n' + json.dumps(dict(required_refs=refs, ORIGINAL=source, EXTRACTION=relevant))
