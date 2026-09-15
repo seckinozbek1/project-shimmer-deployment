@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import time
 
 from cloud_run_common import digest, verify_files, write_json
 import runtime_contract as runtime
@@ -25,9 +26,15 @@ def prepare(root, manifest, output, *, candidate_commands=None, install=None,
     """
     root, output = Path(root).absolute(), Path(output).absolute()
     output.mkdir(parents=True, exist_ok=False)
-    evidence = {'ready': False, 'stages': [], 'multi_round': False}
+    evidence = {'ready': False, 'stages': [], 'stage_observations': [], 'multi_round': False}
     def stage(name, action):
-        value = action()
+        begin = time.time()
+        try:
+            value = action()
+        except Exception:
+            evidence['stage_observations'].append(dict(name=name, start_epoch=begin, seconds=time.time()-begin, passed=False))
+            raise
+        evidence['stage_observations'].append(dict(name=name, start_epoch=begin, seconds=time.time()-begin, passed=True, result=value))
         evidence['stages'].append(name)
         write_json(output / 'preparation.json', evidence)
         return value
@@ -53,6 +60,11 @@ def prepare(root, manifest, output, *, candidate_commands=None, install=None,
                 runtime.subprocess_check(selection, root, dependencies=True, runner=runner))
             if not dependencies['dependencies_ready']:
                 raise runtime.RuntimeContractError('Dependencies remain unavailable after explicit installation')
+        evidence['dependencies'] = dependencies
+        write_json(output / 'PRE_INFERENCE_CHECKPOINT.json', dict(
+            interpreter=selection, source_integrity_passed=True,
+            source_preflight=evidence['source_preflight'], dependencies=dependencies,
+            all_green=dependencies['dependencies_ready'], epoch=time.time(), multi_round=False))
         for name, action in (('model_acquisition', acquire), ('model_hydration', hydrate), ('bounded_inference', infer)):
             if action is not None:
                 stage(name, lambda action=action: action(selection))

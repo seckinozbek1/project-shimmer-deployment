@@ -52,6 +52,17 @@ class RuntimeChecks(unittest.TestCase):
             install=action('install'), acquire=action('download'),
             hydrate=action('hydrate'), infer=action('inference'), **kwargs)
 
+    def test_checkpoint_exists_before_acquisition_and_contains_dependency_proof(self):
+        def acquire(selected):
+            value = json.loads((self.root / 'result/PRE_INFERENCE_CHECKPOINT.json').read_text())
+            self.assertTrue(value['all_green'])
+            self.assertTrue(value['source_integrity_passed'])
+            self.assertTrue(value['source_preflight']['source_preflight_passed'])
+            self.assertTrue(value['dependencies']['dependencies_ready'])
+            self.assertEqual(value['interpreter']['executable'], selected['executable'])
+        preparation.prepare(self.root, self.manifest, self.root / 'result',
+            candidate_commands=[self.exe], runner=self.runner, acquire=acquire)
+
     def test_incompatible_interpreter_stops_every_expensive_stage(self):
         with self.assertRaisesRegex(runtime.RuntimeContractError, '3.10'):
             self.prepare(candidates=['python'])
