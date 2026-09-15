@@ -1,0 +1,20 @@
+{
+  "seed": "shimmer-first-review-20260915-v1",
+  "algorithm": "Deterministic lexicographic diversity selection, not first-N sampling.\n\n    Mandatory rows first; role caps are hard constraints. At each step maximize\n    new document family, new template, new domain, least represented family,\n    new semantic feature, then substantive producer coverage. SHA-256 of the\n    prospective seed+ID resolves ties. These priorities and seed are frozen.\n    ",
+  "source_benchmark": "semantic-benchmark-v2",
+  "source_freeze_sha256": "2f81ddc743f55a75d1a8eeb120406e828ab669da7bc0ff54903c626ded3e1814",
+  "unique_examples": 192,
+  "mandatory_held_out": 72,
+  "maximum_available_document_families": 80,
+  "achieved_document_families": 80,
+  "first_role_target": {
+    "producer": 96,
+    "auditor": 96
+  },
+  "double_role_target": {
+    "producer": 24,
+    "auditor": 24
+  },
+  "remaining_unselected": 544,
+  "independent_claim": "Families share templates and authored construction; family counts do not assert human independence."
+}

@@ -1,0 +1,57 @@
+# Independent semantic review
+
+Packet: review-f07710eac3fd1adc2f4d9a31
+
+Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.
+
+```json
+{
+  "role": "auditor",
+  "production_contract": "semantic-task-v1",
+  "source_spans": [
+    {
+      "alias": "s0",
+      "text": "Opening statement: CLM-A: sensor bank 76 recorded 122 pulses (REF-1001).\n\n| Supplement | Content |\n|---|---|\n"
+    },
+    {
+      "alias": "s6d",
+      "text": "| Detail | CLM-B: sensor bank 76 retained 127 pulses (REF-1002). |"
+    },
+    {
+      "alias": "saf",
+      "text": "\n\nClosing qualification: The date is absent. When was this recorded?"
+    }
+  ],
+  "context_only_spans": [],
+  "supplied_refs": [
+    "REF-1001",
+    "REF-1002"
+  ],
+  "required_refs": [
+    "REF-1001",
+    "REF-1002"
+  ],
+  "routed_rules": [],
+  "extraction": "Opening statement: CLM-A: sensor bank 76 recorded 122 pulses (REF-1001).\n\n| Supplement | Content |\n|---|---|\n| Detail | CLM-B: sensor bank 76 retained 127 pulses (REF-1002). |\n\nClosing qualification: The date is absent. When was this recorded? The entry was approved by an external director."
+}
+```
+
+## Response template (pending, not a submitted review)
+
+```json
+{
+  "packet_id": "review-f07710eac3fd1adc2f4d9a31",
+  "input_sha256": "f07710eac3fd1adc2f4d9a3197cca5380d0a2868b084f5a9c9382feeeef7a972",
+  "review_version": "semantic-benchmark-v2",
+  "reviewer_id": null,
+  "reviewer_kind": null,
+  "independence_attestation": false,
+  "reviewed_at": null,
+  "semantic_target": null,
+  "semantic_judgment": null,
+  "reason_components": [],
+  "rationale": null,
+  "ambiguity": null,
+  "formatting_judgment": "not_assessed"
+}
+```

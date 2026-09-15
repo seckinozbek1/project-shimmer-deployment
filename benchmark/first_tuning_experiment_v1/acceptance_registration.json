@@ -1,0 +1,266 @@
+{
+  "profile": "first-tuning-experiment-v1",
+  "decision": "FIRST_TUNING_EXPERIMENT",
+  "production_contract": "semantic-task-v1",
+  "benchmark": "semantic-benchmark-v2",
+  "status": "PROSPECTIVELY_REGISTERED",
+  "registered_before_any_tuning": true,
+  "authorization": "Operator request: local registration and reviewer preparation only; training is not authorized.",
+  "interpretation": "prospectively registered first-experiment decision thresholds; not universal constants, near-perfect or production acceptance",
+  "criteria": [
+    {
+      "id": "P01",
+      "scope": "producer",
+      "metric": "claim_precision",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "P02",
+      "scope": "producer",
+      "metric": "claim_recall",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "P03",
+      "scope": "producer",
+      "metric": "information_gap_precision",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "P04",
+      "scope": "producer",
+      "metric": "information_gap_recall",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "P05",
+      "scope": "producer",
+      "metric": "evidence_reference_precision",
+      "operator": "==",
+      "value": 1.0
+    },
+    {
+      "id": "P06",
+      "scope": "producer",
+      "metric": "evidence_reference_recall",
+      "operator": ">=",
+      "value": 0.98
+    },
+    {
+      "id": "P07",
+      "scope": "producer",
+      "metric": "refusal_precision",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "P08",
+      "scope": "producer",
+      "metric": "refusal_recall",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "P09",
+      "scope": "producer",
+      "metric": "semantic_completeness",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "P10",
+      "scope": "producer",
+      "metric": "contract_validity",
+      "operator": ">=",
+      "value": 0.99
+    },
+    {
+      "id": "P11",
+      "scope": "producer",
+      "metric": "uncertainty_preservation",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "A01",
+      "scope": "auditor",
+      "metric": "overall_relation_accuracy",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "A02",
+      "scope": "auditor",
+      "metric": "macro_relation_f1",
+      "operator": ">=",
+      "value": 0.93
+    },
+    {
+      "id": "A03",
+      "scope": "auditor",
+      "metric": "minimum_supported_relation_recall",
+      "operator": ">=",
+      "value": 0.9
+    },
+    {
+      "id": "A04",
+      "scope": "auditor",
+      "metric": "refusal_precision",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "A05",
+      "scope": "auditor",
+      "metric": "refusal_recall",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "A06",
+      "scope": "auditor",
+      "metric": "reason_correctness",
+      "operator": ">=",
+      "value": 0.9
+    },
+    {
+      "id": "A07",
+      "scope": "auditor",
+      "metric": "evidence_reference_precision",
+      "operator": "==",
+      "value": 1.0
+    },
+    {
+      "id": "A08",
+      "scope": "auditor",
+      "metric": "evidence_reference_recall",
+      "operator": ">=",
+      "value": 0.98
+    },
+    {
+      "id": "A09",
+      "scope": "auditor",
+      "metric": "contract_validity",
+      "operator": ">=",
+      "value": 0.99
+    },
+    {
+      "id": "A10",
+      "scope": "auditor",
+      "metric": "uncertainty_preservation",
+      "operator": ">=",
+      "value": 0.95
+    },
+    {
+      "id": "R01",
+      "scope": "review_generalization",
+      "metric": "independently_reviewed_fraction_of_selected_experimental_cohort",
+      "operator": "==",
+      "value": 1.0
+    },
+    {
+      "id": "R02",
+      "scope": "review_generalization",
+      "metric": "double_independent_review_fraction",
+      "operator": ">=",
+      "value": 0.25
+    },
+    {
+      "id": "R03",
+      "scope": "review_generalization",
+      "metric": "reviewed_structural_template_coverage",
+      "operator": "==",
+      "value": 1.0
+    },
+    {
+      "id": "R04",
+      "scope": "review_generalization",
+      "metric": "reviewed_held_out_domain_examples",
+      "operator": "==",
+      "value": 1.0
+    },
+    {
+      "id": "R05",
+      "scope": "review_generalization",
+      "metric": "reviewed_unseen_template_examples",
+      "operator": ">=",
+      "value": 64
+    },
+    {
+      "id": "R06",
+      "scope": "review_generalization",
+      "metric": "worst_sufficiently_sampled_family_accepted_outcome_rate",
+      "operator": ">=",
+      "value": 0.8
+    }
+  ],
+  "criteria_count": 27,
+  "derived_hard_gate": {
+    "id": "R07",
+    "metric": "catastrophic_failure_count",
+    "operator": "==",
+    "value": 0,
+    "interpretation": "Derived conjunction of six separately registered hard limits, not a 28th independent numeric threshold."
+  },
+  "catastrophic_limits": {
+    "invented_evidence": 0,
+    "unrouted_rule_attribution": 0,
+    "confident_wrong_match_divergence": 0,
+    "truncation": 0,
+    "producer_source_copy": 0,
+    "governance_violations": 0
+  },
+  "sufficiently_sampled_family": {
+    "unit": "document_family",
+    "minimum_independently_reviewed_examples": 4,
+    "insufficient_status": "insufficient_sample_for_family_gate",
+    "exclude_poor_performers": false
+  },
+  "denominators": {
+    "R01": 192,
+    "R02": 192,
+    "designated_second_reviews": 48,
+    "R03": 16,
+    "R04": 72,
+    "supported_relation": "at least one gold instance in the independently reviewed evaluation set",
+    "undefined_metric": "INSUFFICIENT_MEASUREMENT; never a pass"
+  },
+  "reviewer_verification": "Operator-verified independent human roster required. Operator, authors, LLMs and automated judges cannot count.",
+  "metric_interpretations": {
+    "P09": "Semantic completeness on non-refusal producer outcomes; refusals have P07/P08.",
+    "A01": "Five supported semantic relations including insufficiency; invalid/uncompleted outputs receive no relation credit.",
+    "A02": "Macro F1 across gold-supported relations; support counts must be reported.",
+    "A10": "Exact reviewed confidence/uncertainty status for non-refusal comparisons; source uncertainty truth is also assessed by A06 reason review.",
+    "A06": "Unassessed reasons count against truth coverage; correct refusals are scored separately."
+  },
+  "review_readiness_requirements": [
+    "192 valid independent first reviews",
+    "all designated 48 valid second reviews",
+    "material disagreements resolved",
+    "all 72 held-out examples reviewed",
+    "16 templates reviewed",
+    "at least 64 unseen-template examples reviewed",
+    "frozen registration",
+    "leakage/access/governance/evidence gates pass"
+  ],
+  "checkpoint_performance_requirements": "P01-P11, A01-A10, R06 and derived R07 apply to future saved outputs against reviewed labels; no outputs are required merely to prepare review.",
+  "evaluation_population": "All reviewed selected DEV/TEST/public-adversarial examples, excluding TRAIN; complete unique saved-output coverage required.",
+  "sealed_final_required_for_first_experiment": false,
+  "training_authorized": false,
+  "final_model_acceptance": {
+    "separate_profile": true,
+    "ready": false,
+    "genuine_independent_sealed_material_required": true,
+    "external_account_acl_required": true,
+    "blind_evaluation_required": true,
+    "stronger_adjudication_required": true,
+    "family_domain_generalization_required": true,
+    "governance_evidence_required": true,
+    "final_numeric_thresholds_unchanged": true,
+    "existing_specification_sha256": "8698936a61c539d9a68ef4c305e338034ea30a91507a1cd91e26963eddc1a61c"
+  }
+}

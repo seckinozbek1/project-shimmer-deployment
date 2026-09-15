@@ -1,0 +1,47 @@
+# Independent semantic review
+
+Packet: review-a8c8d786ce7c8c2fe1d4ed51
+
+Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.
+
+```json
+{
+  "role": "auditor",
+  "production_contract": "semantic-task-v1",
+  "source_spans": [
+    {
+      "alias": "s0",
+      "text": "ENTRY A = CLM-A: delegation 49 recorded 41 offered seats (REF-1001).\nENTRY B = No second claim was submitted.\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+    }
+  ],
+  "context_only_spans": [],
+  "supplied_refs": [
+    "REF-1001"
+  ],
+  "required_refs": [
+    "REF-1001"
+  ],
+  "routed_rules": [],
+  "extraction": "ENTRY A = CLM-A: delegation 49 recorded 41 offered seats (REF-1001).\nENTRY B = No second claim was submitted.\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain. The entry was approved by an external director."
+}
+```
+
+## Response template (pending, not a submitted review)
+
+```json
+{
+  "packet_id": "review-a8c8d786ce7c8c2fe1d4ed51",
+  "input_sha256": "a8c8d786ce7c8c2fe1d4ed51248c5644277769f79b077ddf2193f7a69d8ad202",
+  "review_version": "semantic-benchmark-v2",
+  "reviewer_id": null,
+  "reviewer_kind": null,
+  "independence_attestation": false,
+  "reviewed_at": null,
+  "semantic_target": null,
+  "semantic_judgment": null,
+  "reason_components": [],
+  "rationale": null,
+  "ambiguity": null,
+  "formatting_judgment": "not_assessed"
+}
+```
