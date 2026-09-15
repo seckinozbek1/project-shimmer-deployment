@@ -1,3 +1,23 @@
+# Current handoff: first domain-agnostic tuning implementation
+
+`FIRST_TUNING_EXPERIMENT_IMPLEMENTATION_READY`
+
+Implementation commit: `1225fc17924e86cd2883730b0447765cc0cc33d5`. See `docs/fix/FIRST_DOMAIN_AGNOSTIC_TUNING_EXPERIMENT_IMPLEMENTATION.md` and `tuning/first_domain_agnostic_v1/readiness.json`.
+
+- Frozen producer TRAIN/DEV 32/32; auditor 46/24; combined 78/56.
+- Actual architectures Qwen2 / Llama. Original pinned model IDs, revisions and quantization unchanged.
+- Rank 8, alpha 16, dropout .05, learning rate 1e-4, batch 1 x accumulation 4; producer steps 8/16, auditor 12/24.
+- Native-tokenizer audited ceilings 928 / 800; all 134 targets pass; no truncation or prompt-loss leakage.
+- 19 grouped dry-run checks and 9 counterfactual effects passed; real model generation and updates 0.
+- Training bundle 22 files / 88,146 bytes; no protected labels or credentials.
+- Static A10 projection: producer 11.76?16.76 GiB, auditor 6.35?10.85 GiB; 26.54?85.79 minutes, $0.57?$1.84 at prior $1.29/hour. Not measured training evidence.
+- DEV-only checkpoint selection; both selections freeze before one-shot protected evaluation. R06 remains 114 non-TRAIN IDs, including original 40 DEV.
+- `FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING`; actual humans 0. Prior V3 curation READY statuses remain intact.
+- Next action: operator review and separate explicit authorization of this exact plan before any cloud or real LoRA/SFT. No training is authorized by implementation readiness.
+- No cloud, paid API, model execution, training, full pipeline, multi-round or push occurred.
+
+---
+
 # Latest handoff: producer clean-run V3 ? COMPLETE
 
 `PRODUCER_TUNING_COVERAGE_READY`
