@@ -1,0 +1,27 @@
+{
+  "experiment": "first-domain-agnostic-tuning-v1",
+  "files": {
+    "benchmark/producer_coverage_amendment_v3/semantics.py": "837ecaf69551cb82d60579d7321441b2a81656a19fa8deb19c0f6479ce825a03",
+    "benchmark/producer_coverage_amendment_v3/structural.py": "54fa6b9d2ce15a58fe42bfab2ba208a395b1073f18c5c0a1110e557c7d747d59",
+    "benchmark/task_semantics/core.py": "b9858ab721a6e2b8912b15bfdf0ec11c960a7f2ab054150abc5318a5ba28d1a7",
+    "scripts/bounded_extraction.py": "a605e9c6885e163951f5d73fd0f8d29bfea86f12757774d83f42a9e2a2b0608f",
+    "scripts/compact_contracts.py": "0a54bf8af60444ed05c6eafe52f9150f9ab576a4057058b5e6277939d5705b49",
+    "scripts/finding_record.py": "4c8c96ce55779933e98a241b4cf6e79e0de273958d9ca90e72e98b6c269a6e4f",
+    "scripts/localization.py": "cce93c0d4569af8bd8ec775f89307bf14a9774c415c31c2b84a7200b6d53ec22",
+    "scripts/pairing_map.py": "4bd49177ed17c9265dd16efd9ffaa41e8d7ea547c90e7c4737cfa6a40e4072ab",
+    "tuning/first_domain_agnostic_v1/auditor/dataset.json": "fe6e0ea2b8b2ecaf1a1814db814b874d768f73a1551d471551cb21f512a61614",
+    "tuning/first_domain_agnostic_v1/auditor/dev.json": "ecb940a6a78a64fc82c09d214a9f924e53c02c0d3f6ae5c30348d556f3044dde",
+    "tuning/first_domain_agnostic_v1/auditor/experiment.json": "67a2e531ce71e2585cad795b00666a24d97d2fc68b6cf724283fc9ed404dd68c",
+    "tuning/first_domain_agnostic_v1/auditor/train.json": "fafc26605b291776f3f5374f35464b504fed0cc23925562d93d59ba512be0c2a",
+    "tuning/first_domain_agnostic_v1/common.py": "98ddb3547d632e0451a68db9584a9cc74d3d684784eb856b1863ea5da513468c",
+    "tuning/first_domain_agnostic_v1/dependency_lock.json": "0a2c630d67f02d2d28a8ebac91c6016907232b728e50706f450354097da1dde8",
+    "tuning/first_domain_agnostic_v1/evaluation.py": "26769b6f4b5c48dd6f90b8d91432bddeedb27170a20b64f6a8b0440c82e837ed",
+    "tuning/first_domain_agnostic_v1/experiment.json": "70f25204aea2b99ca6a9f0b3aca3e2ffe6c778f596946c9b4a3518dcfc459c93",
+    "tuning/first_domain_agnostic_v1/producer/dataset.json": "5e2c8056f67a4233fd1fda161e157fa5f247e1f905c969bc0507c73fc43bae30",
+    "tuning/first_domain_agnostic_v1/producer/dev.json": "7b9e18759f644b5196eb16c151004ebd188252638de26730615820ce10b423ce",
+    "tuning/first_domain_agnostic_v1/producer/experiment.json": "22c6115d8bcb36f215837477d1cd31c7e1e1f9314d1c2084db4d145be0ef8f1a",
+    "tuning/first_domain_agnostic_v1/producer/train.json": "40a9098b11916a43e874337f09e6847b49d73833dfb7472e64c56fb2bcf51b2e",
+    "tuning/first_domain_agnostic_v1/train.py": "2e791d956a13c4a709ca7fb4fd4c9b644912191769274f92acd613ebc2fd67da"
+  },
+  "data_scope": "Only exact approved role TRAIN/DEV; no protected labels or admin maps"
+}

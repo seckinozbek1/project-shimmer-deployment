@@ -1,0 +1,610 @@
+{
+  "rows": [
+    {
+      "example_id": "train-catalogue-producer-extracted",
+      "split": "train",
+      "raw_input": 184,
+      "rendered_prompt": 628,
+      "target": 129,
+      "total": 757
+    },
+    {
+      "example_id": "train-clinical-producer-extracted",
+      "split": "train",
+      "raw_input": 182,
+      "rendered_prompt": 626,
+      "target": 129,
+      "total": 755
+    },
+    {
+      "example_id": "train-contracts-producer-extracted",
+      "split": "train",
+      "raw_input": 181,
+      "rendered_prompt": 625,
+      "target": 129,
+      "total": 754
+    },
+    {
+      "example_id": "train-device-producer-extracted",
+      "split": "train",
+      "raw_input": 181,
+      "rendered_prompt": 625,
+      "target": 129,
+      "total": 754
+    },
+    {
+      "example_id": "train-negotiation-producer-extracted",
+      "split": "train",
+      "raw_input": 179,
+      "rendered_prompt": 623,
+      "target": 129,
+      "total": 752
+    },
+    {
+      "example_id": "train-nonsense-producer-extracted",
+      "split": "train",
+      "raw_input": 184,
+      "rendered_prompt": 628,
+      "target": 129,
+      "total": 757
+    },
+    {
+      "example_id": "train-procurement-producer-extracted",
+      "split": "train",
+      "raw_input": 183,
+      "rendered_prompt": 627,
+      "target": 129,
+      "total": 756
+    },
+    {
+      "example_id": "train-regulation-producer-extracted",
+      "split": "train",
+      "raw_input": 181,
+      "rendered_prompt": 625,
+      "target": 129,
+      "total": 754
+    },
+    {
+      "example_id": "v2-bullet_list-contracts-conflicting",
+      "split": "train",
+      "raw_input": 189,
+      "rendered_prompt": 633,
+      "target": 130,
+      "total": 763
+    },
+    {
+      "example_id": "v2-bullet_list-contracts-primary",
+      "split": "train",
+      "raw_input": 133,
+      "rendered_prompt": 577,
+      "target": 91,
+      "total": 668
+    },
+    {
+      "example_id": "v2-bullet_list-device-conflicting",
+      "split": "train",
+      "raw_input": 185,
+      "rendered_prompt": 629,
+      "target": 130,
+      "total": 759
+    },
+    {
+      "example_id": "v2-bullet_list-device-primary",
+      "split": "train",
+      "raw_input": 131,
+      "rendered_prompt": 575,
+      "target": 91,
+      "total": 666
+    },
+    {
+      "example_id": "v2-bullet_list-negotiation-conflicting",
+      "split": "train",
+      "raw_input": 187,
+      "rendered_prompt": 631,
+      "target": 130,
+      "total": 761
+    },
+    {
+      "example_id": "v2-bullet_list-negotiation-primary",
+      "split": "train",
+      "raw_input": 106,
+      "rendered_prompt": 550,
+      "target": 165,
+      "total": 715
+    },
+    {
+      "example_id": "v2-bullet_list-procurement-conflicting",
+      "split": "train",
+      "raw_input": 185,
+      "rendered_prompt": 629,
+      "target": 130,
+      "total": 759
+    },
+    {
+      "example_id": "v2-bullet_list-procurement-primary",
+      "split": "train",
+      "raw_input": 145,
+      "rendered_prompt": 589,
+      "target": 173,
+      "total": 762
+    },
+    {
+      "example_id": "v2-form_fields-contracts-conflicting",
+      "split": "train",
+      "raw_input": 198,
+      "rendered_prompt": 642,
+      "target": 130,
+      "total": 772
+    },
+    {
+      "example_id": "v2-form_fields-contracts-primary",
+      "split": "train",
+      "raw_input": 151,
+      "rendered_prompt": 595,
+      "target": 133,
+      "total": 728
+    },
+    {
+      "example_id": "v2-form_fields-device-conflicting",
+      "split": "train",
+      "raw_input": 196,
+      "rendered_prompt": 640,
+      "target": 130,
+      "total": 770
+    },
+    {
+      "example_id": "v2-form_fields-device-primary",
+      "split": "train",
+      "raw_input": 140,
+      "rendered_prompt": 584,
+      "target": 91,
+      "total": 675
+    },
+    {
+      "example_id": "v2-form_fields-negotiation-conflicting",
+      "split": "train",
+      "raw_input": 196,
+      "rendered_prompt": 640,
+      "target": 130,
+      "total": 770
+    },
+    {
+      "example_id": "v2-form_fields-negotiation-primary",
+      "split": "train",
+      "raw_input": 115,
+      "rendered_prompt": 559,
+      "target": 165,
+      "total": 724
+    },
+    {
+      "example_id": "v2-form_fields-procurement-conflicting",
+      "split": "train",
+      "raw_input": 196,
+      "rendered_prompt": 640,
+      "target": 130,
+      "total": 770
+    },
+    {
+      "example_id": "v2-form_fields-procurement-primary",
+      "split": "train",
+      "raw_input": 145,
+      "rendered_prompt": 589,
+      "target": 131,
+      "total": 720
+    },
+    {
+      "example_id": "v2-paragraph-contracts-conflicting",
+      "split": "train",
+      "raw_input": 191,
+      "rendered_prompt": 635,
+      "target": 130,
+      "total": 765
+    },
+    {
+      "example_id": "v2-paragraph-contracts-primary",
+      "split": "train",
+      "raw_input": 135,
+      "rendered_prompt": 579,
+      "target": 91,
+      "total": 670
+    },
+    {
+      "example_id": "v2-paragraph-device-conflicting",
+      "split": "train",
+      "raw_input": 189,
+      "rendered_prompt": 633,
+      "target": 130,
+      "total": 763
+    },
+    {
+      "example_id": "v2-paragraph-device-primary",
+      "split": "train",
+      "raw_input": 142,
+      "rendered_prompt": 586,
+      "target": 133,
+      "total": 719
+    },
+    {
+      "example_id": "v2-paragraph-negotiation-conflicting",
+      "split": "train",
+      "raw_input": 189,
+      "rendered_prompt": 633,
+      "target": 130,
+      "total": 763
+    },
+    {
+      "example_id": "v2-paragraph-negotiation-primary",
+      "split": "train",
+      "raw_input": 117,
+      "rendered_prompt": 561,
+      "target": 207,
+      "total": 768
+    },
+    {
+      "example_id": "v2-paragraph-procurement-conflicting",
+      "split": "train",
+      "raw_input": 189,
+      "rendered_prompt": 633,
+      "target": 130,
+      "total": 763
+    },
+    {
+      "example_id": "v2-paragraph-procurement-primary",
+      "split": "train",
+      "raw_input": 138,
+      "rendered_prompt": 582,
+      "target": 131,
+      "total": 713
+    },
+    {
+      "example_id": "dev-catalogue-producer-extracted",
+      "split": "dev",
+      "raw_input": 204,
+      "rendered_prompt": 648,
+      "target": 131,
+      "total": 779
+    },
+    {
+      "example_id": "dev-clinical-producer-extracted",
+      "split": "dev",
+      "raw_input": 204,
+      "rendered_prompt": 648,
+      "target": 131,
+      "total": 779
+    },
+    {
+      "example_id": "dev-contracts-producer-extracted",
+      "split": "dev",
+      "raw_input": 203,
+      "rendered_prompt": 647,
+      "target": 131,
+      "total": 778
+    },
+    {
+      "example_id": "dev-device-producer-extracted",
+      "split": "dev",
+      "raw_input": 203,
+      "rendered_prompt": 647,
+      "target": 131,
+      "total": 778
+    },
+    {
+      "example_id": "dev-negotiation-producer-extracted",
+      "split": "dev",
+      "raw_input": 202,
+      "rendered_prompt": 646,
+      "target": 131,
+      "total": 777
+    },
+    {
+      "example_id": "dev-nonsense-producer-extracted",
+      "split": "dev",
+      "raw_input": 212,
+      "rendered_prompt": 656,
+      "target": 131,
+      "total": 787
+    },
+    {
+      "example_id": "dev-procurement-producer-extracted",
+      "split": "dev",
+      "raw_input": 206,
+      "rendered_prompt": 650,
+      "target": 131,
+      "total": 781
+    },
+    {
+      "example_id": "dev-regulation-producer-extracted",
+      "split": "dev",
+      "raw_input": 203,
+      "rendered_prompt": 647,
+      "target": 131,
+      "total": 778
+    },
+    {
+      "example_id": "v2-chronological_events-catalogue-conflicting",
+      "split": "dev",
+      "raw_input": 206,
+      "rendered_prompt": 650,
+      "target": 130,
+      "total": 780
+    },
+    {
+      "example_id": "v2-chronological_events-catalogue-primary",
+      "split": "dev",
+      "raw_input": 135,
+      "rendered_prompt": 579,
+      "target": 207,
+      "total": 786
+    },
+    {
+      "example_id": "v2-chronological_events-clinical-conflicting",
+      "split": "dev",
+      "raw_input": 210,
+      "rendered_prompt": 654,
+      "target": 130,
+      "total": 784
+    },
+    {
+      "example_id": "v2-chronological_events-clinical-primary",
+      "split": "dev",
+      "raw_input": 159,
+      "rendered_prompt": 603,
+      "target": 131,
+      "total": 734
+    },
+    {
+      "example_id": "v2-chronological_events-nonsense-conflicting",
+      "split": "dev",
+      "raw_input": 216,
+      "rendered_prompt": 660,
+      "target": 130,
+      "total": 790
+    },
+    {
+      "example_id": "v2-chronological_events-nonsense-primary",
+      "split": "dev",
+      "raw_input": 169,
+      "rendered_prompt": 613,
+      "target": 133,
+      "total": 746
+    },
+    {
+      "example_id": "v2-chronological_events-regulation-conflicting",
+      "split": "dev",
+      "raw_input": 208,
+      "rendered_prompt": 652,
+      "target": 130,
+      "total": 782
+    },
+    {
+      "example_id": "v2-chronological_events-regulation-primary",
+      "split": "dev",
+      "raw_input": 152,
+      "rendered_prompt": 596,
+      "target": 91,
+      "total": 687
+    },
+    {
+      "example_id": "v2-memo_sections-catalogue-conflicting",
+      "split": "dev",
+      "raw_input": 203,
+      "rendered_prompt": 647,
+      "target": 130,
+      "total": 777
+    },
+    {
+      "example_id": "v2-memo_sections-catalogue-primary",
+      "split": "dev",
+      "raw_input": 123,
+      "rendered_prompt": 567,
+      "target": 165,
+      "total": 732
+    },
+    {
+      "example_id": "v2-memo_sections-clinical-conflicting",
+      "split": "dev",
+      "raw_input": 207,
+      "rendered_prompt": 651,
+      "target": 130,
+      "total": 781
+    },
+    {
+      "example_id": "v2-memo_sections-clinical-primary",
+      "split": "dev",
+      "raw_input": 156,
+      "rendered_prompt": 600,
+      "target": 131,
+      "total": 731
+    },
+    {
+      "example_id": "v2-memo_sections-nonsense-conflicting",
+      "split": "dev",
+      "raw_input": 213,
+      "rendered_prompt": 657,
+      "target": 130,
+      "total": 787
+    },
+    {
+      "example_id": "v2-memo_sections-nonsense-primary",
+      "split": "dev",
+      "raw_input": 157,
+      "rendered_prompt": 601,
+      "target": 91,
+      "total": 692
+    },
+    {
+      "example_id": "v2-memo_sections-regulation-conflicting",
+      "split": "dev",
+      "raw_input": 205,
+      "rendered_prompt": 649,
+      "target": 130,
+      "total": 779
+    },
+    {
+      "example_id": "v2-memo_sections-regulation-primary",
+      "split": "dev",
+      "raw_input": 158,
+      "rendered_prompt": 602,
+      "target": 133,
+      "total": 735
+    },
+    {
+      "example_id": "v2-question_answer-catalogue-conflicting",
+      "split": "dev",
+      "raw_input": 205,
+      "rendered_prompt": 649,
+      "target": 210,
+      "total": 859
+    },
+    {
+      "example_id": "v2-question_answer-catalogue-primary",
+      "split": "dev",
+      "raw_input": 125,
+      "rendered_prompt": 569,
+      "target": 245,
+      "total": 814
+    },
+    {
+      "example_id": "v2-question_answer-clinical-conflicting",
+      "split": "dev",
+      "raw_input": 209,
+      "rendered_prompt": 653,
+      "target": 210,
+      "total": 863
+    },
+    {
+      "example_id": "v2-question_answer-clinical-primary",
+      "split": "dev",
+      "raw_input": 167,
+      "rendered_prompt": 611,
+      "target": 253,
+      "total": 864
+    },
+    {
+      "example_id": "v2-question_answer-nonsense-conflicting",
+      "split": "dev",
+      "raw_input": 215,
+      "rendered_prompt": 659,
+      "target": 210,
+      "total": 869
+    },
+    {
+      "example_id": "v2-question_answer-nonsense-primary",
+      "split": "dev",
+      "raw_input": 159,
+      "rendered_prompt": 603,
+      "target": 171,
+      "total": 774
+    },
+    {
+      "example_id": "v2-question_answer-regulation-conflicting",
+      "split": "dev",
+      "raw_input": 207,
+      "rendered_prompt": 651,
+      "target": 210,
+      "total": 861
+    },
+    {
+      "example_id": "v2-question_answer-regulation-primary",
+      "split": "dev",
+      "raw_input": 151,
+      "rendered_prompt": 595,
+      "target": 171,
+      "total": 766
+    }
+  ],
+  "summary": {
+    "all": {
+      "raw_input": {
+        "min": 106,
+        "median": 184.5,
+        "p90": 208,
+        "p95": 212,
+        "max": 216
+      },
+      "rendered_prompt": {
+        "min": 550,
+        "median": 628.5,
+        "p90": 652,
+        "p95": 656,
+        "max": 660
+      },
+      "target": {
+        "min": 91,
+        "median": 130.0,
+        "p90": 207,
+        "p95": 210,
+        "max": 253
+      },
+      "total": {
+        "min": 666,
+        "median": 763.0,
+        "p90": 790,
+        "p95": 861,
+        "max": 869
+      }
+    },
+    "train": {
+      "raw_input": {
+        "min": 106,
+        "median": 181.5,
+        "p90": 196,
+        "p95": 196,
+        "max": 198
+      },
+      "rendered_prompt": {
+        "min": 550,
+        "median": 625.5,
+        "p90": 640,
+        "p95": 640,
+        "max": 642
+      },
+      "target": {
+        "min": 91,
+        "median": 130.0,
+        "p90": 165,
+        "p95": 173,
+        "max": 207
+      },
+      "total": {
+        "min": 666,
+        "median": 756.5,
+        "p90": 770,
+        "p95": 770,
+        "max": 772
+      }
+    },
+    "dev": {
+      "raw_input": {
+        "min": 123,
+        "median": 203.0,
+        "p90": 212,
+        "p95": 215,
+        "max": 216
+      },
+      "rendered_prompt": {
+        "min": 567,
+        "median": 647.0,
+        "p90": 656,
+        "p95": 659,
+        "max": 660
+      },
+      "target": {
+        "min": 91,
+        "median": 131.0,
+        "p90": 210,
+        "p95": 245,
+        "max": 253
+      },
+      "total": {
+        "min": 687,
+        "median": 779.0,
+        "p90": 861,
+        "p95": 864,
+        "max": 869
+      }
+    }
+  },
+  "max_seq_length": 928,
+  "truncated": 0
+}

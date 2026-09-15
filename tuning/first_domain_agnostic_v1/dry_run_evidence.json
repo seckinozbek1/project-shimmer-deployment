@@ -1,0 +1,140 @@
+{
+  "kind": "training_pipeline_dry_run",
+  "real_model_training": false,
+  "real_optimizer_updates": 0,
+  "real_generation_calls": 0,
+  "checks": [
+    "producer target contracts / native templates / lengths / masks",
+    "producer dynamic padding",
+    "producer canonical scoring",
+    "auditor target contracts / native templates / lengths / masks",
+    "auditor dynamic padding",
+    "auditor canonical scoring",
+    "exact disjoint 78 TRAIN / 56 DEV identities and model families",
+    "producer selection gates / earliest-step tie break",
+    "auditor selection gates / earliest-step tie break",
+    "synthetic producer training orchestration",
+    "synthetic auditor training orchestration",
+    "checkpoint identity / DEV evidence rescore / freeze verification",
+    "protected one-shot consumption",
+    "same-model BASE/TUNED adapter toggle interface",
+    "missing authorization rejects before runtime",
+    "unexpected module names fail closed",
+    "dataset mutation rejected",
+    "standalone extracted bundle: all 134 targets without repository access",
+    "27 criteria / six zero limits / R07 / exact 114 R06 membership"
+  ],
+  "check_count": 19,
+  "effects": [
+    {
+      "name": "DEV cannot enter gradient loader",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    },
+    {
+      "name": "held-out domain excluded",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    },
+    {
+      "name": "assistant target tokens trained",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    },
+    {
+      "name": "prompt excluded from loss",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    },
+    {
+      "name": "role separation",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    },
+    {
+      "name": "protected read denied before selection freezes",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    },
+    {
+      "name": "adapter identity binding",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    },
+    {
+      "name": "bundle rejects protected extras",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    },
+    {
+      "name": "R06 TRAIN exclusion",
+      "neutralized": "FAIL",
+      "restored": "PASS"
+    }
+  ],
+  "effect_count": 9,
+  "tokens": {
+    "producer": {
+      "rows": 64,
+      "contract_valid": 64,
+      "truncated": 0,
+      "target_mask_pass": true,
+      "prompt_loss_tokens": 0,
+      "terminal": "<|im_end|>\n",
+      "max_seq_length": 928,
+      "max_observed": 869,
+      "sample_boundary": {
+        "prompt_tokens": 628,
+        "prompt_tail": "99\"]}<|im_end|>\n<|im_start|>assistant\n",
+        "first_target_tokens": "{\"items\":[{\"claims\":[\"CLM-A",
+        "first_target_label": 4913,
+        "preceding_prompt_label": -100
+      }
+    },
+    "auditor": {
+      "rows": 70,
+      "contract_valid": 70,
+      "truncated": 0,
+      "target_mask_pass": true,
+      "prompt_loss_tokens": 0,
+      "terminal": "<|end|><|endoftext|>",
+      "max_seq_length": 800,
+      "max_observed": 750,
+      "sample_boundary": {
+        "prompt_tokens": 523,
+        "prompt_tail": "9999\"]}<|end|><|assistant|>",
+        "first_target_tokens": "{\"items\":[],\"status\":\"",
+        "first_target_label": 8853,
+        "preceding_prompt_label": -100
+      }
+    }
+  },
+  "synthetic_integration": [
+    {
+      "role": "producer",
+      "optimizer_steps": 16,
+      "forward_calls": 64,
+      "backward_calls": 64,
+      "saved": 2,
+      "real_optimizer_updates": 0,
+      "synthetic_only": true
+    },
+    {
+      "role": "auditor",
+      "optimizer_steps": 24,
+      "forward_calls": 92,
+      "backward_calls": 92,
+      "saved": 2,
+      "real_optimizer_updates": 0,
+      "synthetic_only": true
+    }
+  ],
+  "access": {
+    "protected_target_reads": 0,
+    "model_weight_reads": 0,
+    "network_calls": 0
+  },
+  "human_reviews": 0,
+  "status": "PASS",
+  "note": "Synthetic adapters/results are temporary and deleted; no measured model quality."
+}
