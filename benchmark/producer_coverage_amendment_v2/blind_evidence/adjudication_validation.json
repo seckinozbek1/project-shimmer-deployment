@@ -1,0 +1,78 @@
+{
+  "producer-v2-01656d1d2980f0fe2e9e0ca9": {
+    "valid": false,
+    "error": "Finite supported semantic coverage incomplete"
+  },
+  "producer-v2-05c7088f201d3b1241f0e116": {
+    "valid": false,
+    "error": "Finite supported semantic coverage incomplete"
+  },
+  "producer-v2-47d0c800a2510a4e425d7a7d": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-809a9f6d020e3d37bf8c8e77": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-881852e5b5a38506d9eff2cd": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-9065ffcd30b0d98f61b7c317": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-914a28dc32e752bffb42c648": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-9ac1b6031aa045a82549d150": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-a3256cb0ad06cfe8dfdd1d2a": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-abb461018d9583b383452fad": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-af4e7343acf0de84679c6f6c": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-b01e16ca930a1f2378644f79": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-cde26c035a6ffca8bbe593dd": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-d5a3daf70b8dbdf1a2b2d41a": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-f2e6fe79a07349874d75448d": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-f47a9c8a89130d071a9610b9": {
+    "valid": false,
+    "error": "Finite supported semantic coverage incomplete"
+  },
+  "producer-v2-f719c4f72e35e829d23c3538": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-f83f3f3496df21f095c8d41d": {
+    "valid": true,
+    "error": null
+  },
+  "producer-v2-f8591f206ef56810c7bedd3d": {
+    "valid": false,
+    "error": "Finite supported semantic coverage incomplete"
+  }
+}

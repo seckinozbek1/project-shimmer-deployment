@@ -1,0 +1,14 @@
+{
+  "recorded_at": "2026-09-15T18:49:52.480119+00:00",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "strict_target_access_order_pass": false,
+  "failure": "Historical cohort preservation gate was executed after method freeze but before label freeze; it loads authored seed/extension records internally. No target contents were output to fresh reviewers; new-label legacy comparison had not begun.",
+  "action": "benchmark/first_tuning_review_cohort_v2/gate.py --out output/producer_coverage_amendment_v2_cohort_gate",
+  "source_evidence": "gate.py calls historical_baseline(c.read(c.h.V1/seed.json)); its tests also load frozen dataset records.",
+  "reviewer_target_exposure_detected": false,
+  "aggregate_gate_output_only": true,
+  "method_freeze_before_target_access": true,
+  "governance_pass": false,
+  "remediation": "Preserve this run. Move any target-reading regression into post-label-commit phase in subsequent work; do not claim an unqualified clean pre-gold boundary for this run."
+}
