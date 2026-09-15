@@ -95,7 +95,13 @@ def install_missing(selected, missing, root, output, runner=subprocess.run):
     runner(runtime.command(selected, '-m', 'pip', 'install', '--dry-run', '--report', plan,
         '--only-binary=:all:', '--constraint', lock, *index,
         *[name+'=='+pins[name] for name in missing]), check=True)
-    proposed = json.loads(plan.read_text())['install']
+    raw_plan = json.loads(plan.read_text(encoding='utf-8'))
+    proposed = [dict(metadata=dict(name=item['metadata']['name'], version=item['metadata']['version']))
+                for item in raw_plan['install']]
+    # Package README descriptions can contain public badge query tokens. They
+    # are unnecessary evidence: retain only the installation decision fields.
+    write_json(plan, dict(install=proposed, projection='package names and versions only'))
+    del raw_plan
     # Query the selected environment, never the bootstrap environment.
     query = 'import importlib.metadata as m,json;print(json.dumps({d.metadata["Name"].lower().replace("_","-"):d.version for d in m.distributions()}))'
     current = runner(runtime.command(selected, '-I', '-c', query), capture_output=True, text=True, check=True)

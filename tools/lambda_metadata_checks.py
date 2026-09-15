@@ -121,9 +121,10 @@ class SecurityChecks(unittest.TestCase):
         def run(args,**kwargs):
             calls.append(args)
             if '--report' in args:
-                Path(args[args.index('--report')+1]).write_text(json.dumps(dict(install=[dict(metadata=dict(name='psutil',version='7.0.0')),dict(metadata=dict(name='packaging',version='25.0'))])))
+                Path(args[args.index('--report')+1]).write_text(json.dumps(dict(install=[dict(metadata=dict(name='psutil',version='7.0.0',description=self.mark)),dict(metadata=dict(name='packaging',version='25.0'))])))
             return SimpleNamespace(stdout=json.dumps(existing),returncode=0)
         preparation.install_missing(selected,['psutil'],root,root,run)
+        self.assertNotIn(self.mark,(root/'dependency_install_plan.json').read_text())
         self.assertIn('packaging==25.0',calls[-1]);self.assertIn('--no-deps',calls[-1])
         self.assertTrue(all(c[0]==selected['executable'] for c in calls))
         calls.clear();existing['packaging']='24.0'
