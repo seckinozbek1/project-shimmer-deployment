@@ -1,0 +1,42 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-4fd1163bad1a896f2cc94b30",
+  "input_sha256": "4fd1163bad1a896f2cc94b302ed23fd9a83ee1d093257eafadfe309f938fa701",
+  "input": {
+    "role": "auditor",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "ENTRY A = CLM-A: vendor 51 recorded 47 pallets (REF-1001).\nENTRY B = CLM-B: vendor 51 retained 52 pallets (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": [],
+    "extraction": "ENTRY A = CLM-A: vendor 51 recorded 47 pallets (REF-1001).\nENTRY B = CLM-B: vendor 51 retained 52 pallets (REF-1002).\nFOLLOW-UP FIELD = The date is absent. When was this recorded? The interpretation remains uncertain."
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-4fd1163bad1a896f2cc94b30",
+    "input_sha256": "4fd1163bad1a896f2cc94b302ed23fd9a83ee1d093257eafadfe309f938fa701",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}

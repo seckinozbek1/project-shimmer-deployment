@@ -1,0 +1,42 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-9f0c1cf54c65b7cf619ab969",
+  "input_sha256": "9f0c1cf54c65b7cf619ab969eb09226f6e4a141468f64b209fc2949a12bfc3ae",
+  "input": {
+    "role": "auditor",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "1. Scope\n  1(a) CLM-A: service desk 79 recorded 131 delivery windows (REF-1001).\n  1(b) Exceptions\n    (i) CLM-B: service desk 79 retained 136 delivery windows (REF-1002).\n    (ii) The date is absent. When was this recorded? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": [],
+    "extraction": "1. Scope\n  1(a) CLM-A: service desk 79 recorded 131 delivery windows (REF-1001).\n  1(b) Exceptions\n    (i) CLM-B: service desk 79 retained 136 delivery windows (REF-1002).\n    (ii) The date is absent. When was this recorded? The interpretation remains uncertain. The entry was approved by an external director."
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-9f0c1cf54c65b7cf619ab969",
+    "input_sha256": "9f0c1cf54c65b7cf619ab969eb09226f6e4a141468f64b209fc2949a12bfc3ae",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}
