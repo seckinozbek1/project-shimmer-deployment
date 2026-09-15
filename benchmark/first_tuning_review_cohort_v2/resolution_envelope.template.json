@@ -1,0 +1,9 @@
+{
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "exports_sha256": "03f73667cc70f3ff4594ab394bda767a97d9e6426b2b6ef61f4468e624ae230d"
+  },
+  "packet_id": null,
+  "resolution": {}
+}

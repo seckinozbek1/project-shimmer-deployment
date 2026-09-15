@@ -1,0 +1,56 @@
+# Independent semantic review
+
+Packet: review-109bd26d12f5a43fcf3eeb48
+
+Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.
+
+```json
+{
+  "role": "auditor",
+  "production_contract": "semantic-task-v1",
+  "source_spans": [
+    {
+      "alias": "s0",
+      "text": "CLM-A: vendor 43 recorded 23 pallets (REF-1001). In a separate statement, CLM-B: vendor 43 retained 28 pallets (REF-1002). Finally, The date is absent. When was this recorded? The interpretation remains uncertain."
+    }
+  ],
+  "context_only_spans": [],
+  "supplied_refs": [
+    "REF-1001",
+    "REF-1002"
+  ],
+  "required_refs": [
+    "REF-1001",
+    "REF-1002"
+  ],
+  "routed_rules": [],
+  "extraction": "CLM-A: vendor 43 recorded 23 pallets (REF-1001). In a separate statement, CLM-B: vendor 43 retained 28 pallets (REF-1002). Finally, The date is absent. When was this recorded? The interpretation remains uncertain."
+}
+```
+
+## Response template (pending, not a submitted review)
+
+```json
+{
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "review": {
+    "packet_id": "review-109bd26d12f5a43fcf3eeb48",
+    "input_sha256": "109bd26d12f5a43fcf3eeb4824ef6b7e0e773c6fedac532c335d8a690aad13d5",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}
+```

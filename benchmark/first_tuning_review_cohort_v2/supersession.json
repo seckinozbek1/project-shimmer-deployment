@@ -1,0 +1,15 @@
+{
+  "status": "SUPERSEDED_BEFORE_HUMAN_REVIEW",
+  "previous_cohort_sha256": "f080ab58c95d04cb00706092da0b2a557691793c98c1f74b4b93ffef2ee02865",
+  "previous_exports": {
+    "reviewer_1_first_tuning_v1": "48f9196ffc81cc52c9917bb92c705b00cb41d4321a2bacc2c5ce1421ad6dfabb",
+    "reviewer_2_first_tuning_v1": "106811c90f89b8e5a1bdaec547d2829f035479bf99e4884af3fed3ea40b7ad73"
+  },
+  "replacement_revision": "first-tuning-review-cohort-v2",
+  "replacement_cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+  "human_reviews_started": false,
+  "human_work_discarded": false,
+  "old_artifacts_preserved": true,
+  "old_submissions_accepted": false,
+  "instruction": "Distribute only cohort-v2 ZIPs. Legacy entry points are historical, not the active review workflow."
+}
