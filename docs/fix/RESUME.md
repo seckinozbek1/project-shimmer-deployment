@@ -1,3 +1,30 @@
+# Domain-agnostic task dataset implemented - 15 September 2026
+
+**DOMAIN_AGNOSTIC_TUNING_DATA_READY** (infrastructure/seed readiness; no training authorization).
+Implementation: `090b3d50129a71a6ad9bfe703464ea8120b17d91`.
+Read [DOMAIN_AGNOSTIC_TUNING_DATASET.md](DOMAIN_AGNOSTIC_TUNING_DATASET.md) and
+[benchmark/task_semantics/README.md](../../benchmark/task_semantics/README.md).
+
+Frozen `semantic-task-v1`: live compact adapters/production validators unchanged.
+448 authored examples: 96 producer / 352 auditor; eight balanced domains, 32 document
+families, four template families; train/dev/test/adversarial 112 each. 64 refusals.
+576 negative candidates across 18 transformations all rejected; 448 gold outcomes pass.
+42 new tests + 85 existing production checks pass, one pre-existing optional skip;
+seven total effect proofs. Four historical model rejections reproduced; all 106
+historical artifact hashes unchanged. Zero leakage findings or similarity warnings.
+
+The seed is single-authored English, with only four independent template groups.
+Its adversarial partition is PUBLIC, not a blind final test. No model-quality claim.
+Next: independent adjudication, more producer/template families, independently held
+final/adversarial material and prospective acceptance criteria; only then a separately
+authorized bounded task-tuning experiment. Do not start training from this handoff.
+
+No cloud, paid API, training, LoRA/SFT, model/revision/quantization change, full pipeline,
+multi-round or push. User-owned root handoff and durable state remain untouched.
+Evidence: [domain_agnostic_tuning_20260915](domain_agnostic_tuning_20260915/).
+
+---
+
 # Remote contract model A/B complete ? 15 September 2026
 
 **REMOTE_CONTRACT_MODEL_AB_FAIL**

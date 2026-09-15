@@ -1,0 +1,9 @@
+{
+  "examples": 448,
+  "cross_split_findings": 0,
+  "ancestry_findings": 0,
+  "exact_duplicate_findings": 0,
+  "family_groups": 108,
+  "near_duplicate_warnings": [],
+  "warning_interpretation": "Shared abstract facts and gap language produce similarity warnings; four public template families only. Manual independent review required before final held-out claims."
+}

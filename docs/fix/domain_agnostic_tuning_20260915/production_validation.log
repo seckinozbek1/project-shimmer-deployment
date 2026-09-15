@@ -1,0 +1,93 @@
+test_deduplicate_exact_but_refuse_conflicting_or_context_items (report_recommendations_checks.RecommendationChecks.test_deduplicate_exact_but_refuse_conflicting_or_context_items) ... ok
+test_deterministic_reuse_invalidates_on_source_identity_or_budget (report_recommendations_checks.RecommendationChecks.test_deterministic_reuse_invalidates_on_source_identity_or_budget) ... ok
+test_effect_proof_eos_boundary (report_recommendations_checks.RecommendationChecks.test_effect_proof_eos_boundary) ... ok
+test_effect_proof_rejects_lost_source_text (report_recommendations_checks.RecommendationChecks.test_effect_proof_rejects_lost_source_text) ... ok
+test_eos_at_cap_is_complete_unknown_is_unknown (report_recommendations_checks.RecommendationChecks.test_eos_at_cap_is_complete_unknown_is_unknown) ... ok
+test_exact_comparison_live_branch_emits_record_without_dispatch (report_recommendations_checks.RecommendationChecks.test_exact_comparison_live_branch_emits_record_without_dispatch) ... ok
+test_exact_comparison_requires_typed_unconditional_proof (report_recommendations_checks.RecommendationChecks.test_exact_comparison_requires_typed_unconditional_proof) ... ok
+test_family_separation_reads_model_configuration (report_recommendations_checks.RecommendationChecks.test_family_separation_reads_model_configuration) ... ok
+test_hydrate_requires_complete_coverage_and_correct_identity (report_recommendations_checks.RecommendationChecks.test_hydrate_requires_complete_coverage_and_correct_identity) ... ok
+test_incomplete_extraction_prevents_completed_status (report_recommendations_checks.RecommendationChecks.test_incomplete_extraction_prevents_completed_status) ... ok
+test_ledger_covers_preamble_tables_and_unicode (report_recommendations_checks.RecommendationChecks.test_ledger_covers_preamble_tables_and_unicode) ... ok
+test_live_wrapper_keeps_contract_valid_separate_from_complete (report_recommendations_checks.RecommendationChecks.test_live_wrapper_keeps_contract_valid_separate_from_complete) ... ok
+test_merge_order_and_incomplete_not_success (report_recommendations_checks.RecommendationChecks.test_merge_order_and_incomplete_not_success) ... ok
+test_native_template_and_eos_telemetry_on_local_call (report_recommendations_checks.RecommendationChecks.test_native_template_and_eos_telemetry_on_local_call) ... ok
+test_processor_live_adapter_merges_and_retries_only_failed_partition (report_recommendations_checks.RecommendationChecks.test_processor_live_adapter_merges_and_retries_only_failed_partition) ... ok
+test_projection_critical_path_capacity_and_missing_measurements (report_recommendations_checks.RecommendationChecks.test_projection_critical_path_capacity_and_missing_measurements) ... ok
+test_wave_overlaps_freezes_context_and_posts_in_order (report_recommendations_checks.RecommendationChecks.test_wave_overlaps_freezes_context_and_posts_in_order) ... ok
+test_lane_config_and_remote_stays_disabled (execution_topology_checks.AdapterChecks.test_lane_config_and_remote_stays_disabled) ... ok
+test_parser_independent_defaults (execution_topology_checks.AdapterChecks.test_parser_independent_defaults) ... ok
+test_phase_barrier_exception_and_distinct_artifact_names (execution_topology_checks.AdapterChecks.test_phase_barrier_exception_and_distinct_artifact_names) ... ok
+test_reference_ast_contract (execution_topology_checks.AdapterChecks.test_reference_ast_contract) ... ok
+test_reference_factory_is_identity_and_noop_mutation (execution_topology_checks.AdapterChecks.test_reference_factory_is_identity_and_noop_mutation) ... ok
+test_reference_prewarm_and_runtime_cleanup (execution_topology_checks.AdapterChecks.test_reference_prewarm_and_runtime_cleanup) ... ok
+test_resident_loader_fake_devices_precision_reuse_health (execution_topology_checks.AdapterChecks.test_resident_loader_fake_devices_precision_reuse_health) ... ok
+test_runtime_real_wrapper_evidence_and_rolling_bus (execution_topology_checks.AdapterChecks.test_runtime_real_wrapper_evidence_and_rolling_bus) ... cost_tracker: model 'fixture' (backend 'local_producer') matches no pricing row and no recognizable provider; costed at $0.00 (no known row to fall back to)
+cost_tracker: model 'fixture' (backend 'local_producer') matches no pricing row and no recognizable provider; costed at $0.00 (no known row to fall back to)
+ok
+test_shutdown_failure_cannot_leave_completed_evidence (execution_topology_checks.AdapterChecks.test_shutdown_failure_cannot_leave_completed_evidence) ... ok
+test_affinity_availability_memory_and_single_device (execution_topology_checks.SchedulerChecks.test_affinity_availability_memory_and_single_device) ... ok
+test_backpressure_cycle_missing_parent_and_duplicate (execution_topology_checks.SchedulerChecks.test_backpressure_cycle_missing_parent_and_duplicate) ... ok
+test_bus_latest_revision_and_single_post_under_reordered_completion (execution_topology_checks.SchedulerChecks.test_bus_latest_revision_and_single_post_under_reordered_completion) ... ok
+test_cancellation_timeout_drains_and_never_commits (execution_topology_checks.SchedulerChecks.test_cancellation_timeout_drains_and_never_commits) ... ok
+test_capacity_one_serial_and_synthetic_speedup (execution_topology_checks.SchedulerChecks.test_capacity_one_serial_and_synthetic_speedup) ... ok
+test_commit_failure_blocks_consumer (execution_topology_checks.SchedulerChecks.test_commit_failure_blocks_consumer) ... ok
+test_commit_order_attribution_no_duplicate_no_lost (execution_topology_checks.SchedulerChecks.test_commit_order_attribution_no_duplicate_no_lost) ... ok
+test_cpu_preparation_overlaps_generation_without_early_context (execution_topology_checks.SchedulerChecks.test_cpu_preparation_overlaps_generation_without_early_context) ... ok
+test_failure_refusal_and_completion_edges (execution_topology_checks.SchedulerChecks.test_failure_refusal_and_completion_edges) ... ok
+test_health_and_auxiliary_boundary (execution_topology_checks.SchedulerChecks.test_health_and_auxiliary_boundary) ... ok
+test_independent_overlap_dependencies_and_barrier (execution_topology_checks.SchedulerChecks.test_independent_overlap_dependencies_and_barrier) ... ok
+test_interruption_drains_and_future_admission_is_safe (execution_topology_checks.SchedulerChecks.test_interruption_drains_and_future_admission_is_safe) ... ok
+test_mutation_dependency_removal_fails_then_restores (execution_topology_checks.SchedulerChecks.test_mutation_dependency_removal_fails_then_restores) ... ok
+test_running_cancel_and_family_affinity (execution_topology_checks.SchedulerChecks.test_running_cancel_and_family_affinity) ... ok
+
+----------------------------------------------------------------------
+Ran 40 tests in 2.202s
+
+OK
+00 PASS ast.parse() ok on 116 modules
+01 SKIP local directory coverage unavailable for ['prompts', 'snapshots']; prompts/: optional local job-spec directory is not supplied by this source snapshot; snapshots/: optional saved-state directory exists only after a snapshot is saved; source directories and every present local tree were checked; loose root files (WARN): ['.dockerignore', '.gitattributes', 'CITATION.cff', 'compose.yaml', 'Dockerfile', 'LICENSE', 'SHIMMER_HANDOFF.md']
+02 PASS 7 seed laws, valid JSON
+03 PASS 18 agents with DOES/DOES NOT/model (18 incl. AMENDMENT_DRAFTER + EDITOR_CLERK + 5 board ranks)
+04 PASS 18 contracts including AMENDMENT_DRAFTER
+07 PASS post/read/query/summarize ok; rejected bogus type; rejected missing constitution_check
+21 PASS no hardcoded absolute paths in scripts/
+22 PASS config/domain_vocabulary.json declares no `previous_domain` terms: nothing to guard against here, and the mechanism (read the family, scan framework scripts/) is intact -- a planted term in the family still fails this check
+29 PASS CLAUDE.md points to genesis.md
+260 PASS all 18 runtime-reference roster entries and resolved Cloud/Local models, CLI dense default, canonical deliverable names and isolated regenerated harness match; omitted roster and changed harness rejected
+ORDINARY_SAFE_GATE {'PASS': 49, 'FAIL': 0, 'SKIP': 1}
+Full legacy/model gate and multi-round execution: NOT RUN
+test_authored_match_reason_both_refs (compact_contract_checks.AuditorChecks.test_authored_match_reason_both_refs) ... ok
+test_concise_complete_canonical (compact_contract_checks.AuditorChecks.test_concise_complete_canonical) ... ok
+test_insufficient_evidence_refused (compact_contract_checks.AuditorChecks.test_insufficient_evidence_refused) ... ok
+test_maintained_probe_uses_measured_prompt_builders (compact_contract_checks.AuditorChecks.test_maintained_probe_uses_measured_prompt_builders) ... ok
+test_malformed_envelope (compact_contract_checks.AuditorChecks.test_malformed_envelope) ... ok
+test_missing_reference (compact_contract_checks.AuditorChecks.test_missing_reference) ... ok
+test_old_remote_outputs_still_refused (compact_contract_checks.AuditorChecks.test_old_remote_outputs_still_refused) ... ok
+test_real_divergence (compact_contract_checks.AuditorChecks.test_real_divergence) ... ok
+test_truncated_or_prefix_never_recovered (compact_contract_checks.AuditorChecks.test_truncated_or_prefix_never_recovered) ... ok
+test_two_evidence_refs_preserved (compact_contract_checks.AuditorChecks.test_two_evidence_refs_preserved) ... ok
+test_ungrounded_rule (compact_contract_checks.AuditorChecks.test_ungrounded_rule) ... ok
+test_unknown_evidence_and_no_reason (compact_contract_checks.AuditorChecks.test_unknown_evidence_and_no_reason) ... ok
+test_valid_empty_only_for_empty_input (compact_contract_checks.AuditorChecks.test_valid_empty_only_for_empty_input) ... ok
+test_verbose_reason_no_validator_relaxation (compact_contract_checks.AuditorChecks.test_verbose_reason_no_validator_relaxation) ... ok
+test_copied_source_prose (compact_contract_checks.ProducerChecks.test_copied_source_prose) ... ok
+test_duplicate_ownership (compact_contract_checks.ProducerChecks.test_duplicate_ownership) ... ok
+test_duplicate_semantic_observation (compact_contract_checks.ProducerChecks.test_duplicate_semantic_observation) ... ok
+test_empty_cannot_hide_semantics (compact_contract_checks.ProducerChecks.test_empty_cannot_hide_semantics) ... ok
+test_explicit_empty_semantics (compact_contract_checks.ProducerChecks.test_explicit_empty_semantics) ... ok
+test_live_canonical_validator_and_prompt (compact_contract_checks.ProducerChecks.test_live_canonical_validator_and_prompt) ... ok
+test_malformed_alias (compact_contract_checks.ProducerChecks.test_malformed_alias) ... ok
+test_missing_date (compact_contract_checks.ProducerChecks.test_missing_date) ... ok
+test_normal_claim (compact_contract_checks.ProducerChecks.test_normal_claim) ... ok
+test_omitted_owned_span (compact_contract_checks.ProducerChecks.test_omitted_owned_span) ... ok
+test_outside_owned_alias (compact_contract_checks.ProducerChecks.test_outside_owned_alias) ... ok
+test_question_gap (compact_contract_checks.ProducerChecks.test_question_gap) ... ok
+test_refusal_and_incomplete_status (compact_contract_checks.ProducerChecks.test_refusal_and_incomplete_status) ... ok
+test_separate_spans_and_reverse_wire_order (compact_contract_checks.ProducerChecks.test_separate_spans_and_reverse_wire_order) ... ok
+test_unknown_claim_and_evidence (compact_contract_checks.ProducerChecks.test_unknown_claim_and_evidence) ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 0.031s
+
+OK

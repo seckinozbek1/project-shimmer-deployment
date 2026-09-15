@@ -1,0 +1,117 @@
+{
+  "role": {
+    "producer": 96,
+    "auditor": 352
+  },
+  "domain": {
+    "negotiation": 56,
+    "contracts": 56,
+    "regulation": 56,
+    "clinical": 56,
+    "device": 56,
+    "procurement": 56,
+    "catalogue": 56,
+    "nonsense": 56
+  },
+  "abstract_relation": {
+    "EXTRACTED": 32,
+    "MATCH": 32,
+    "DIVERGENCE": 160,
+    "OMISSION": 96,
+    "ADDITION": 32,
+    "INSUFFICIENT_EVIDENCE": 64,
+    "EMPTY": 32
+  },
+  "split": {
+    "train": 112,
+    "dev": 112,
+    "test": 112,
+    "sealed_adversarial": 112
+  },
+  "document_family": {
+    "train-negotiation": 14,
+    "train-contracts": 14,
+    "train-regulation": 14,
+    "train-clinical": 14,
+    "train-device": 14,
+    "train-procurement": 14,
+    "train-catalogue": 14,
+    "train-nonsense": 14,
+    "dev-negotiation": 14,
+    "dev-contracts": 14,
+    "dev-regulation": 14,
+    "dev-clinical": 14,
+    "dev-device": 14,
+    "dev-procurement": 14,
+    "dev-catalogue": 14,
+    "dev-nonsense": 14,
+    "test-negotiation": 14,
+    "test-contracts": 14,
+    "test-regulation": 14,
+    "test-clinical": 14,
+    "test-device": 14,
+    "test-procurement": 14,
+    "test-catalogue": 14,
+    "test-nonsense": 14,
+    "sealed_adversarial-negotiation": 14,
+    "sealed_adversarial-contracts": 14,
+    "sealed_adversarial-regulation": 14,
+    "sealed_adversarial-clinical": 14,
+    "sealed_adversarial-device": 14,
+    "sealed_adversarial-procurement": 14,
+    "sealed_adversarial-catalogue": 14,
+    "sealed_adversarial-nonsense": 14
+  },
+  "template_family": {
+    "paired_register": 112,
+    "revision_log": 112,
+    "attributed_dialogue": 112,
+    "scope_notice": 112
+  },
+  "language": {
+    "en": 448
+  },
+  "style": {
+    "register": 112,
+    "revision history": 112,
+    "attributed dialogue": 112,
+    "scope and exception note": 112
+  },
+  "examples": 448,
+  "refusals": 64,
+  "uncertainty": 32,
+  "adjudication": {
+    "authored_single": 448
+  },
+  "hard_negative_gold": {
+    "number_change": 32,
+    "label_swap": 32,
+    "unit_change": 32,
+    "entity_swap": 32,
+    "claim_omission": 32,
+    "gap_omission": 32,
+    "unsupported_addition": 32,
+    "uncertainty_removed": 32,
+    "unsupported_certainty": 32
+  },
+  "negative_candidates": {
+    "number_change": 32,
+    "label_swap": 32,
+    "unit_change": 32,
+    "entity_swap": 32,
+    "claim_omission": 32,
+    "gap_omission": 32,
+    "unsupported_addition": 32,
+    "irrelevant_ref": 32,
+    "missing_ref": 32,
+    "unrouted_rule": 32,
+    "duplicate_ownership": 32,
+    "context_ownership": 32,
+    "uncertainty_removed": 32,
+    "unsupported_certainty": 32,
+    "status_contradiction": 32,
+    "copied_prose": 32,
+    "trailing_prose": 32,
+    "code_fence": 32
+  }
+}
