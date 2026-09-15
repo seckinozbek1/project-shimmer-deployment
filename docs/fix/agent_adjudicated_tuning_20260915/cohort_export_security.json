@@ -1,0 +1,30 @@
+{
+  "exports": {
+    "reviewer_1_first_tuning_v1_cohort_v2": {
+      "files": 385,
+      "packets": 192,
+      "leakage_findings": 0,
+      "gold_findings": 0,
+      "admin_findings": 0,
+      "split_findings": 0,
+      "historical_answer_findings": 0,
+      "credential_findings": 0,
+      "privacy_findings": 0,
+      "privacy_basis": "Exact allowlist from frozen synthetic legitimate input and blank responses, plus opaque binding; no private input reads."
+    },
+    "reviewer_2_first_tuning_v1_cohort_v2": {
+      "files": 97,
+      "packets": 48,
+      "leakage_findings": 0,
+      "gold_findings": 0,
+      "admin_findings": 0,
+      "split_findings": 0,
+      "historical_answer_findings": 0,
+      "credential_findings": 0,
+      "privacy_findings": 0,
+      "privacy_basis": "Exact allowlist from frozen synthetic legitimate input and blank responses, plus opaque binding; no private input reads."
+    }
+  },
+  "files_scanned": 482,
+  "archive_members_scanned": 482
+}

@@ -1,3 +1,41 @@
+# Blinded machine-agent review completed - 15 September 2026
+
+**AGENT_ADJUDICATED_TUNING_EXPERIMENT_NOT_READY**.
+**FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING** (0 first/second/adjudications).
+Pre-gold freeze commit: `d151ae7a8b54e380cb528eefbc286be2a3ea93d9`.
+Read [AGENT_ADJUDICATED_TUNING_REVIEW.md](AGENT_ADJUDICATED_TUNING_REVIEW.md).
+
+Actually completed 192 x 3 = 576 fresh-context machine judgments and 87 adjudications,
+including all designated 48. Agreement: 81 unanimous, 48 majority-only, 63 no majority.
+11/24 majority-bearing adjudications overturned the majority. 18 explicit unresolved
+adjudications; 90 final labels carry ambiguity flags and are conservatively excluded.
+252 bounded producer enum repairs preserve originals and semantics. 35 remaining
+primary evidence failures across 17 packets leave M02 at 541/576, so NOT_READY.
+
+Machine labels were hash-frozen and committed before authored targets were opened for
+comparison. Exact producer agreement 24/96, claims/refs/refusal differences zero, gaps
+72 and uncertainty 60 differences (conservative wording disputes, not proven errors).
+Auditor relation/evidence/refusal agreement 96/96. No authored typed reason annotations;
+no machine/authored reason-component rate claimed. Same-model/context-isolated agents
+share filesystem access: procedural isolation, not OS enforcement or diverse models.
+
+Separate machine training-access candidates: 28 TRAIN + 11 DEV, 79 excluded from the
+118 candidate pool. All 72 held-out + two extra evaluation rows stay excluded. Human
+namespace unchanged/empty. No training authorization or final model acceptance.
+R06 fixed via maintained checkpoint_metrics.py adapter and active evaluation pointer:
+only non-TRAIN registered DEV/TEST/public-adversarial population, at most 114 examples;
+TRAIN cannot affect family samples/outcomes. Threshold >=0.80 and minimum four unchanged.
+All 27 criteria, R07, six catastrophic zeros, old artifacts and validators preserved.
+
+137 checks pass; 12 effect proofs; one existing optional skip. 106 historical hashes
+verify and four old failures remain rejected. No detected credential/privacy/gold leak.
+Next: separately authorize any methodology correction; do not retrofit frozen reviews
+or start tuning. No human claims, cloud GPU, paid inference API, Shimmer model execution,
+training, LoRA/SFT, model/revision/quantization change, full pipeline, multi-round or push.
+Root handoff/durable remain untouched.
+
+---
+
 # First tuning review cohort v2 correction - 15 September 2026
 
 **FIRST_TUNING_EXPERIMENT_REVIEW_PENDING**.

@@ -1,0 +1,478 @@
+[
+  {
+    "example_id": "dev-nonsense-auditor-unsupported_addition",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "1674f369b07f86fc690f7735e4b1bd6a852524a51ca00bf5f94ad1219ed6975c",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor or external director, which is not asserted anywhere in the owned evidence.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Institute of Nimbular Blenkets: CLM-A registers Zorvit proposed 26 quavels under REF-0001. The retained amendment, CLM-B, registers Plenko amended 26 quavels under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s16c",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "Revision history maintained by Institute of Nimbular Blenkets: CLM-A registers Zorvit proposed 26 quavels under REF-0001. The retained amendment, CLM-B, registers Plenko amended 26 quavels under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect? A supervisor approved both entries."
+    },
+    "packet_id": "review-1674f369b07f86fc690f7735"
+  },
+  {
+    "example_id": "dev-regulation-auditor-match",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "22cb9274777989eec42740e8e712e42a0811a7e88f517804c0407cd3f7a04728",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "MATCH",
+          "ref_ids": [
+            "REF-0001",
+            "REF-0002"
+          ],
+          "reasoning": "The extraction preserves the owned claims, entities, quantities, distinctions and stated information gaps and uncertainty.",
+          "severity": "low",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Revision history maintained by Registry Board: CLM-A registers Nera proposed 16 filed notices under REF-0001. The retained amendment, CLM-B, registers Sola amended 23 filed notices under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "s164",
+          "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+        }
+      ],
+      "supplied_refs": [
+        "REF-0001",
+        "REF-0002",
+        "REF-9999"
+      ],
+      "required_refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "routed_rules": [],
+      "extraction": "Revision history maintained by Registry Board: CLM-A registers Nera proposed 16 filed notices under REF-0001. The retained amendment, CLM-B, registers Sola amended 23 filed notices under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?"
+    },
+    "packet_id": "review-22cb9274777989eec42740e8"
+  },
+  {
+    "example_id": "v2-chronological_events-catalogue-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "3ddba1092be6bd584890d2ee5d7a0ce7e0cf7b0ae56a7436b8dc3f419db17be4",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "DIVERGENCE",
+          "ref_ids": [
+            "REF-1001"
+          ],
+          "reasoning": "CLM-A quantity changes from 53 to 54 for the same entity and unit; the source does not support that change.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-A: collection 53 recorded 53 entries (REF-1001).\n09:25 event amended: No second claim was submitted.\n11:40 follow-up: The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": [],
+      "extraction": "08:10 event opened: CLM-A: collection 53 recorded 54 entries (REF-1001).\n09:25 event amended: No second claim was submitted.\n11:40 follow-up: The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+    },
+    "packet_id": "review-3ddba1092be6bd584890d2ee"
+  },
+  {
+    "example_id": "v2-chronological_events-clinical-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "8606a60dcd53a968b46a74fd3b3056801f5a1f705cea6bf165f8fadab7510b68",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor or external director, which is not asserted anywhere in the owned evidence.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-A: fictional case 55 recorded 59 recorded events (REF-1001).\n09:25 event amended: CLM-B: fictional case 55 retained 64 recorded events (REF-1002).\n11:40 follow-up: The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "08:10 event opened: CLM-A: fictional case 55 recorded 59 recorded events (REF-1001).\n09:25 event amended: CLM-B: fictional case 55 retained 64 recorded events (REF-1002).\n11:40 follow-up: The date is absent. When was this recorded? The interpretation remains uncertain. The entry was approved by an external director."
+    },
+    "packet_id": "review-8606a60dcd53a968b46a74fd"
+  },
+  {
+    "example_id": "v2-chronological_events-regulation-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "4e91dd3b5e2fc1e7c4c111f80bc8c72142ae6f736083791e28e17472e30809bc",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction drops the stated missing date or effective period and the associated timing question, while retaining the substantive claims.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "08:10 event opened: CLM-A: filing office 54 recorded 56 notices (REF-1001).\n09:25 event amended: CLM-B: filing office 54 retained 61 notices (REF-1002).\n11:40 follow-up: The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "08:10 event opened: CLM-A: filing office 54 recorded 56 notices (REF-1001).\n09:25 event amended: CLM-B: filing office 54 retained 61 notices (REF-1002).\n11:40 follow-up: "
+    },
+    "packet_id": "review-4e91dd3b5e2fc1e7c4c111f8"
+  },
+  {
+    "example_id": "v2-memo_sections-catalogue-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "e02b198638e26da0d4c26c1bb1d751392182767c8268a48728dbec6c7dbd37c3",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-1001"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor or external director, which is not asserted anywhere in the owned evidence.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: collection 61 recorded 77 entries (REF-1001).\nSupporting entry: No second claim was submitted.\nUnresolved matters: The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": [],
+      "extraction": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: collection 61 recorded 77 entries (REF-1001).\nSupporting entry: No second claim was submitted.\nUnresolved matters: The date is absent. When was this recorded? The interpretation remains uncertain. The entry was approved by an external director."
+    },
+    "packet_id": "review-e02b198638e26da0d4c26c1b"
+  },
+  {
+    "example_id": "v2-memo_sections-clinical-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "864f172c0ce6dd35064ebb48820100072e563739cd6a592459d72f341f6eb649",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction removes the missing recording date and its question, together with the explicit interpretation uncertainty.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: fictional case 63 recorded 83 recorded events (REF-1001).\nSupporting entry: CLM-B: fictional case 63 retained 88 recorded events (REF-1002).\nUnresolved matters: The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: fictional case 63 recorded 83 recorded events (REF-1001).\nSupporting entry: CLM-B: fictional case 63 retained 88 recorded events (REF-1002).\nUnresolved matters: "
+    },
+    "packet_id": "review-864f172c0ce6dd35064ebb48"
+  },
+  {
+    "example_id": "v2-memo_sections-nonsense-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "7e4a43ae726eae8df3d0efed21fadcd71830a0be2c0c929974deec18e18545e4",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor or external director, which is not asserted anywhere in the owned evidence.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: vraxlet 64 recorded 86 flomquils (REF-1001).\nSupporting entry: CLM-B: vraxlet 64 retained 91 flomquils (REF-1002).\nUnresolved matters: The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-A: vraxlet 64 recorded 86 flomquils (REF-1001).\nSupporting entry: CLM-B: vraxlet 64 retained 91 flomquils (REF-1002).\nUnresolved matters: The date is absent. When was this recorded? The entry was approved by an external director."
+    },
+    "packet_id": "review-7e4a43ae726eae8df3d0efed"
+  },
+  {
+    "example_id": "v2-question_answer-catalogue-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "a8b53f2c92752b44a59b5ff250bdace8c680f581f6a6f58beba120150b387af7",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-1001"
+          ],
+          "reasoning": "The extraction removes the missing recording date and its question, together with the explicit interpretation uncertainty.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-A: collection 57 recorded 65 entries (REF-1001).\nQuestion: What followed?\nAnswer: No second claim was submitted.\nClerk note: The date is absent. When was this recorded? The interpretation remains uncertain."
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001"
+      ],
+      "required_refs": [
+        "REF-1001"
+      ],
+      "routed_rules": [],
+      "extraction": "Question: What was entered first?\nAnswer: CLM-A: collection 57 recorded 65 entries (REF-1001).\nQuestion: What followed?\nAnswer: No second claim was submitted.\nClerk note: "
+    },
+    "packet_id": "review-a8b53f2c92752b44a59b5ff2"
+  },
+  {
+    "example_id": "v2-question_answer-nonsense-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "ddf74dc2865967807742719e8ceb9805fa44f344116593d1bed640476ffd6eaa",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "OMISSION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction drops the stated missing date or effective period and the associated timing question, while retaining the substantive claims.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-A: vraxlet 60 recorded 74 flomquils (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: vraxlet 60 retained 79 flomquils (REF-1002).\nClerk note: The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "Question: What was entered first?\nAnswer: CLM-A: vraxlet 60 recorded 74 flomquils (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: vraxlet 60 retained 79 flomquils (REF-1002).\nClerk note: "
+    },
+    "packet_id": "review-ddf74dc2865967807742719e"
+  },
+  {
+    "example_id": "v2-question_answer-regulation-changed",
+    "split": "dev",
+    "provenance": "machine_adjudicated_training_candidate",
+    "human_reviewed": false,
+    "input_sha256": "dcd8d07c545f5560816344c2cad141fa79fc0e6aafa092040ad051c6ab816147",
+    "machine_target": {
+      "items": [
+        {
+          "finding": "ADDITION",
+          "ref_ids": [
+            "REF-1001",
+            "REF-1002"
+          ],
+          "reasoning": "The extraction adds approval by a supervisor or external director, which is not asserted anywhere in the owned evidence.",
+          "severity": "medium",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    },
+    "input": {
+      "role": "auditor",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Question: What was entered first?\nAnswer: CLM-A: filing office 58 recorded 68 notices (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: filing office 58 retained 73 notices (REF-1002).\nClerk note: The date is absent. When was this recorded?"
+        }
+      ],
+      "context_only_spans": [],
+      "supplied_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "required_refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "routed_rules": [],
+      "extraction": "Question: What was entered first?\nAnswer: CLM-A: filing office 58 recorded 68 notices (REF-1001).\nQuestion: What followed?\nAnswer: CLM-B: filing office 58 retained 73 notices (REF-1002).\nClerk note: The date is absent. When was this recorded? The entry was approved by an external director."
+    },
+    "packet_id": "review-dcd8d07c545f5560816344c2"
+  }
+]

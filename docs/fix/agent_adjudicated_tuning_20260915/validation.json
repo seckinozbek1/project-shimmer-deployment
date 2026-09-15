@@ -1,0 +1,24 @@
+{
+  "control_tests": 22,
+  "failures": 0,
+  "errors": 0,
+  "effect_proofs": [
+    "gold isolation",
+    "held-out training exclusion",
+    "R06 TRAIN exclusion",
+    "machine/human provenance separation"
+  ],
+  "primary_slots_complete": 576,
+  "valid_effective_primary": 541,
+  "invalid_effective_primary": 35,
+  "designated_adjudications": 48,
+  "all_adjudications": 87,
+  "all_adjudications_valid": true,
+  "machine_readiness": "AGENT_ADJUDICATED_TUNING_EXPERIMENT_NOT_READY",
+  "human_reviews": 0,
+  "shimmer_model_execution": false,
+  "paid_inference_api": false,
+  "cloud_gpu": false,
+  "training": false,
+  "multi_round": false
+}

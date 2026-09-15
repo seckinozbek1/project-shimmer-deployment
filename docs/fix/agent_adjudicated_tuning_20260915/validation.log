@@ -1,0 +1,27 @@
+test_dispute_ambiguity_invalid_exclusion (machine_checks.Controls.test_dispute_ambiguity_invalid_exclusion) ... ok
+test_duplicate_and_foreign_eval_rejected (machine_checks.Controls.test_duplicate_and_foreign_eval_rejected) ... ok
+test_gold_isolation_effect (machine_checks.Controls.test_gold_isolation_effect) ... ok
+test_held_out_training_effect (machine_checks.Controls.test_held_out_training_effect) ... ok
+test_machine_provenance_effect (machine_checks.Controls.test_machine_provenance_effect) ... ok
+test_material_agreement_is_not_rationale_similarity (machine_checks.Controls.test_material_agreement_is_not_rationale_similarity) ... ok
+test_missing_outputs_and_sparse_families (machine_checks.Controls.test_missing_outputs_and_sparse_families) ... ok
+test_pre_gold_hash_checkpoint (machine_checks.Controls.test_pre_gold_hash_checkpoint) ... ok
+test_r06_population (machine_checks.Controls.test_r06_population) ... ok
+test_train_cannot_improve_worst_family (machine_checks.Controls.test_train_cannot_improve_worst_family) ... ok
+test_train_exclusion_effect (machine_checks.Controls.test_train_exclusion_effect) ... ok
+test_576_unique_primaries_and_bounded_repairs (machine_completed_checks.CompletedChecks.test_576_unique_primaries_and_bounded_repairs) ... ok
+test_74_evaluation_labels_excluded (machine_completed_checks.CompletedChecks.test_74_evaluation_labels_excluded) ... ok
+test_actual_r06_population (machine_completed_checks.CompletedChecks.test_actual_r06_population) ... ok
+test_adapter_replaces_legacy_population_without_human_promotion (machine_completed_checks.CompletedChecks.test_adapter_replaces_legacy_population_without_human_promotion) ... ok
+test_all_required_and_hard_adjudications_completed (machine_completed_checks.CompletedChecks.test_all_required_and_hard_adjudications_completed) ... ok
+test_freeze_before_actual_gold_opening (machine_completed_checks.CompletedChecks.test_freeze_before_actual_gold_opening) ... ok
+test_invalid_disputed_ambiguous_never_training (machine_completed_checks.CompletedChecks.test_invalid_disputed_ambiguous_never_training) ... ok
+test_invalid_primaries_remain_a_readiness_blocker (machine_completed_checks.CompletedChecks.test_invalid_primaries_remain_a_readiness_blocker) ... ok
+test_machine_human_namespaces_separate (machine_completed_checks.CompletedChecks.test_machine_human_namespaces_separate) ... ok
+test_no_invented_refs_rules_in_accepted_labels (machine_completed_checks.CompletedChecks.test_no_invented_refs_rules_in_accepted_labels) ... ok
+test_training_namespace_has_only_allowed_files (machine_completed_checks.CompletedChecks.test_training_namespace_has_only_allowed_files) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.450s
+
+OK
