@@ -1,0 +1,37 @@
+{
+  "packet_id": "review-109bd26d12f5a43fcf3eeb48",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.284184Z",
+  "input_sha256": "109bd26d12f5a43fcf3eeb4824ef6b7e0e773c6fedac532c335d8a690aad13d5",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "MATCH",
+        "ref_ids": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "reasoning": "The extraction preserves the owned claims, entities, quantities, distinctions and stated information gaps and uncertainty.",
+        "severity": "low",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "MATCH",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "ambiguity": false,
+  "rationale": "The extraction preserves the owned claims, entities, quantities, distinctions and stated information gaps and uncertainty.",
+  "formatting_judgment": "not_assessed"
+}

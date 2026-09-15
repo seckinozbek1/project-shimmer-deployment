@@ -1,0 +1,37 @@
+{
+  "protocol": "machine-agent-review-v1",
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "required_output_fields": [
+    "packet_id",
+    "binding",
+    "slot",
+    "provenance",
+    "run_id",
+    "reviewed_at",
+    "input_sha256",
+    "semantic_target",
+    "semantic_judgment",
+    "reason_components",
+    "ambiguity",
+    "rationale"
+  ],
+  "semantic_target": "Use the semantic_target object format described by each packet. Preserve compact semantic fields, not verbatim source reconstruction.",
+  "reason_components": [
+    "preserved_claim",
+    "missing_claim",
+    "added_claim",
+    "changed_label",
+    "changed_quantity",
+    "changed_unit",
+    "gap_preserved",
+    "gap_omitted",
+    "evidence_insufficient",
+    "unsupported_attribution",
+    "ambiguity",
+    "uncertainty_preserved",
+    "uncertainty_omitted"
+  ],
+  "output": "One JSON file per packet under reviews/ named packet_id.json. Machine provenance only, never human. Do not invent refs or rule IDs."
+}

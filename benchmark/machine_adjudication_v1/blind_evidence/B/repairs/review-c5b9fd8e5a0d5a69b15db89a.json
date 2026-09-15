@@ -1,0 +1,48 @@
+{
+  "packet_id": "review-c5b9fd8e5a0d5a69b15db89a",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-B",
+  "reviewed_at": "2026-09-15T16:33:01.849378+00:00",
+  "input_sha256": "c5b9fd8e5a0d5a69b15db89a8c29bfcbf8bbfefb704edc76f40a2af69657d74d",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "observation date missing"
+        ],
+        "uncertainty": [
+          "second entry interpretation unresolved"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "ambiguity": true,
+  "rationale": "Owned claim IDs and their references are retained per alias, together with stated information gaps and uncertainty. Context-only material is excluded.",
+  "formatting_judgment": "not_assessed",
+  "original_sha256": "0087da4252ee9fe897b30816717708b7fddfc7e92cbe99afc6d5216dff0b1cba",
+  "repair_kind": "schema_only_judgment_enum",
+  "repair_attempt": 1
+}

@@ -1,0 +1,31 @@
+{
+  "packet_id": "review-d49391771e16df13656706bf",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.414250Z",
+  "input_sha256": "d49391771e16df13656706bfa5dc9f8daf9220e43cb1bf402417325c7e59ba29",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [],
+        "questions": [],
+        "uncertainty": [],
+        "status": "empty",
+        "refs": []
+      }
+    ]
+  },
+  "semantic_judgment": "MATCH",
+  "reason_components": [],
+  "ambiguity": false,
+  "rationale": "Every owned alias was examined. The divider, structural labels and end markers carry no extractable claim, information gap or uncertainty.",
+  "formatting_judgment": "not_assessed"
+}

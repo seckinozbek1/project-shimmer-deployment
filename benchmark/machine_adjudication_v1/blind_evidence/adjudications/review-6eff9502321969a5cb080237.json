@@ -1,0 +1,40 @@
+{
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "OMISSION",
+        "ref_ids": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "reasoning": "The extraction drops the explicit missing recording date and its follow-up question.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "OMISSION",
+  "reason_components": [
+    "preserved_claim",
+    "gap_omitted"
+  ],
+  "ambiguity": false,
+  "packet_id": "review-6eff9502321969a5cb080237",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "human": false,
+  "run_id": "machine-agent-adjudication-v1-D",
+  "reviewed_at": "2026-09-15T16:41:39.062924+00:00",
+  "input_sha256": "6eff9502321969a5cb080237636c125a9d7aabeae12047b0e4f6e4e37aad1b87",
+  "rationale": "Sensor bank 48 claims of 38 recorded and 43 retained pulses remain, but the absent date and its question are deleted. A identifies the gap omission and also records claim preservation with exact refs.",
+  "formatting_judgment": "valid",
+  "decision": "candidate_A",
+  "disagreement_causes": [
+    "reason_components"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "packet_id": "review-05a5ba5a010a4fede2f16d4c",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-B",
+  "reviewed_at": "2026-09-15T16:33:01.684831+00:00",
+  "input_sha256": "05a5ba5a010a4fede2f16d4cbac5df4dad6c10f96b32bf5860e1b97ebdf1a7a2",
+  "semantic_target": {
+    "items": [],
+    "status": "refused"
+  },
+  "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+  "reason_components": [
+    "evidence_insufficient",
+    "ambiguity"
+  ],
+  "ambiguity": true,
+  "rationale": "The supplied extraction is explicitly an incomplete placeholder, so an actual extracted account is unavailable for a supported fidelity comparison. The source itself is readable.",
+  "formatting_judgment": "not_assessed"
+}

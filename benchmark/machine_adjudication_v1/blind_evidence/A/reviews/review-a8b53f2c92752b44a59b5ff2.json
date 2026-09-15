@@ -1,0 +1,36 @@
+{
+  "packet_id": "review-a8b53f2c92752b44a59b5ff2",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.382249Z",
+  "input_sha256": "a8b53f2c92752b44a59b5ff250bdace8c680f581f6a6f58beba120150b387af7",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "OMISSION",
+        "ref_ids": [
+          "REF-1001"
+        ],
+        "reasoning": "The extraction drops the missing recording date, its follow-up question and the stated uncertainty of interpretation.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "OMISSION",
+  "reason_components": [
+    "preserved_claim",
+    "gap_omitted",
+    "uncertainty_omitted"
+  ],
+  "ambiguity": false,
+  "rationale": "The extraction drops the missing recording date, its follow-up question and the stated uncertainty of interpretation.",
+  "formatting_judgment": "not_assessed"
+}

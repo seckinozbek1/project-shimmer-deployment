@@ -1,0 +1,48 @@
+{
+  "packet_id": "review-0ecbb19c518b3978f280b693",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-B",
+  "reviewed_at": "2026-09-15T16:33:01.688830+00:00",
+  "input_sha256": "0ecbb19c518b3978f280b69308375ba590a8bc615940113291cfc19ec75b20a5",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "amendment effective period missing"
+        ],
+        "uncertainty": [
+          "amendment ratification uncertain"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "ambiguity": true,
+  "rationale": "Owned claim IDs and their references are retained per alias, together with stated information gaps and uncertainty. Context-only material is excluded. Original and amendment claims remain separate; ratification and effective period are unresolved.",
+  "formatting_judgment": "not_assessed",
+  "original_sha256": "945257374edcbae1227819a26dd6a59373b9b7947f6d78fc7ab7382b58aac6df",
+  "repair_kind": "schema_only_judgment_enum",
+  "repair_attempt": 1
+}

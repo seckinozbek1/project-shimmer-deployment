@@ -1,0 +1,48 @@
+{
+  "packet_id": "review-f55ed771ece107a7cec26b01",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "C",
+  "provenance": "independent_machine_agent_review",
+  "run_id": "machine-agent-review-v1-C",
+  "reviewed_at": "2026-09-15T16:33:25.930493+00:00",
+  "input_sha256": "f55ed771ece107a7cec26b019965c0d590651fdcade38b7bb300288adf46c951",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "observation date missing; what date?"
+        ],
+        "uncertainty": [
+          "second-entry interpretation unresolved"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "ambiguity": true,
+  "rationale": "Both differently labeled claim IDs are retained with the absent observation date and unresolved second-entry interpretation.",
+  "formatting_judgment": "not_assessed",
+  "human": false,
+  "original_sha256": "cb4828b63d8ac6a022c4e6dc2dddfa71dc27f39422e3e288fea1c2c8eaed15e1",
+  "repair_kind": "schema_only_judgment_enum",
+  "repair_attempt": 1
+}

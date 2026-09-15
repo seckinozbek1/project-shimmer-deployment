@@ -1,0 +1,39 @@
+{
+  "version": "machine-agent-review-v1",
+  "registered_at": "2026-09-15T16:35:57.306905+00:00",
+  "cohort_revision": "first-tuning-review-cohort-v2",
+  "primary_slots": [
+    "A",
+    "B",
+    "C"
+  ],
+  "expected_primary": 576,
+  "same_base_model": true,
+  "model_diversity_claimed": false,
+  "independence": "fresh contexts, no shared reasoning or reviews; shared filesystem is not OS isolation",
+  "consensus": "At least 2/3 materially exact structured agreement: set equality after whitespace-only normalization; no text similarity; confidence and ambiguity preserved. Invalid responses do not establish direct consensus.",
+  "mandatory_adjudication": "All designated 48 plus no clean majority plus any invalid primary. Separate fresh agent receives packets and neutral A/B/C candidates only.",
+  "repairs": "At most one schema-only enum repair; originals retained; no semantic evidence retries.",
+  "gold_comparison": "Only after append-only pre-gold label freeze; authored disputes quarantined, never automatically overwritten.",
+  "eligibility": "All three effective primary reviews valid, consensus/adjudication valid and unambiguous, no material authored dispute, TRAIN/DEV only in separate machine namespace.",
+  "machine_criteria": {
+    "M01": "192/192 machine packet coverage",
+    "M02": "576/576 valid triple slots",
+    "M03": "48/48 designated adjudications",
+    "M04": "All required adjudications complete; ambiguous candidates excluded",
+    "M05": "72/72 held-out reviewed and training-excluded"
+  },
+  "human_status": "PENDING",
+  "human_first_reviews": 0,
+  "human_second_reviews": 0,
+  "human_adjudications": 0,
+  "training_authorized": false,
+  "final_model_acceptance_ready": false,
+  "agent_sessions": {
+    "A": "/root/machine_a",
+    "B": "/root/machine_b",
+    "C": "/root/machine_c",
+    "adjudicator": "/root/machine_adjudicator"
+  },
+  "r06_adapter": "benchmark/machine_adjudication_v1/checkpoint_metrics.py"
+}

@@ -1,0 +1,45 @@
+{
+  "packet_id": "review-7b82adfd9e15e42dffd29c6f",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "run_id": "machine-agent-review-v1-A",
+  "reviewed_at": "2026-09-15T16:33:11.351182Z",
+  "input_sha256": "7b82adfd9e15e42dffd29c6f6ba99aff9fbc94e86358d601acf0d3880af3b989",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "recording date missing"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved"
+  ],
+  "ambiguity": false,
+  "rationale": "Each owned alias is represented. Explicit claims, absent information and any stated uncertainty are retained; structural-only spans are empty and no unsubmitted claim is invented.",
+  "formatting_judgment": "not_assessed",
+  "original_sha256": "924721756c49a54b93329004d22a45749ed9444d153694b2e0e92b81d18ae0a8",
+  "repair_kind": "schema_only_judgment_enum",
+  "repair_attempt": 1
+}

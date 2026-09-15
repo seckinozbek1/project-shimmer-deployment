@@ -1,0 +1,37 @@
+{
+  "packet_id": "review-22cb9274777989eec42740e8",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "C",
+  "provenance": "independent_machine_agent_review",
+  "run_id": "machine-agent-review-v1-C",
+  "reviewed_at": "2026-09-15T16:33:25.796394+00:00",
+  "input_sha256": "22cb9274777989eec42740e8e712e42a0811a7e88f517804c0407cd3f7a04728",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "MATCH",
+        "ref_ids": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "reasoning": "The extraction preserves the owned claims, their distinct entities, labels and quantities, and the stated information gaps. Source uncertainty is also retained.",
+        "severity": "low",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "MATCH",
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "ambiguity": false,
+  "rationale": "The extraction preserves the owned claims, their distinct entities, labels and quantities, and the stated information gaps. Source uncertainty is also retained.",
+  "formatting_judgment": "not_assessed",
+  "human": false
+}
