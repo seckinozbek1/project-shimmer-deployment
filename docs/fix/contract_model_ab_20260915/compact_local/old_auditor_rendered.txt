@@ -1,0 +1,38 @@
+<|user|>
+Compare original with producer extraction. Identify omission, addition or divergence; otherwise MATCH. Verify both figures and missing reporting date. Cite REF-0001 and REF-0002. Use paragraph=1, severity=low if MATCH and explain evidence. Do not certify incomplete extraction.
+## The typed finding record
+When a finding is a comparison of two figures, state it in FIELDS, not in a sentence. Another agent reads your fields; only a person reads your explanation. Set these on the item itself, flat, alongside the core fields:
+- rule_id: the CONV-* id of the rule this finding applies, exactly as it appears in the convention registry you were given
+- source_rule_id: the operator's own id for that same rule when the registry entry carries one, so the finding can be attributed to the rule as it was written
+- unit_id: copy this EXACTLY from your work payload's document_units list (the unit_id field of whichever entry this finding is about, matched by its title). Never invent your own identifier for the unit (not its own name, its own label, or any value written inside it): a downstream lookup joins on this string against the pipeline's own unit ids, and any other string silently fails that join. If document_units is absent from your payload, leave unit_id empty rather than writing your own id for it.
+- value_a: the figure the document states, as a number with no separators
+- unit_a: the unit of value_a, as a short string
+- value_b: the figure it is compared against, as a number: a stated total, a band bound, or the same field's figure in the earlier version of the document
+- unit_b: the unit of value_b
+- relation: what kind of comparison this is, one of the declared relations: a disagreement between two figures of this document, or (changed_from_prior, unchanged_from_prior, moved_toward, moved_away, absent_since_prior) a comparison of a field with the same field in an operator-declared earlier version of the document
+- record_verdict: ok when the unit satisfies the rule, irregular when it does not. This is the record's OWN verdict field and is separate from your agent verdict: keep setting `verdict` from your own contract's list as well. A comparison with the earlier version is always ok: movement is information, not an irregularity
+- source_refs: the REF-* or WEB-REF-* ids this finding rests on
+- explanation: one or two sentences for the person reading the review; no other agent reads this field
+- field_label: optional: the document's own label for the field value_a was read from, as words
+- delta: optional: value_a minus value_b, only when both carry the same unit
+- band_distance_change: optional: how far the field moved relative to the band the rule states, now minus the earlier version; negative is toward the band, positive away, zero unchanged; omit when no single band applies
+- provenance: optional: computed when the pipeline minted this record from figures it read itself; leave it unset when you write the record
+- quote: the exact words you are relying on, copied verbatim from the unit text you were shown. Required when you claim something is ABSENT: quote the line that should have carried it, or the line that shows it is missing. Python checks the quote appears in the unit, so a claim about text the unit does not contain is refused rather than published. Leave it out when the relation is not an absence claim.
+relation is one of ['sum_mismatch', 'above_band', 'below_band', 'missing_field', 'product_mismatch', 'ratio_out_of_range', 'date_window', 'licence_missing', 'changed_from_prior', 'unchanged_from_prior', 'moved_toward', 'moved_away', 'absent_since_prior']; record_verdict is one of ['ok', 'irregular']. Keep your own `verdict` field as your contract defines it: record_verdict is an additional field, not a replacement.
+Worked example: {"ref": "REF-0001", "kind": "finding", "confidence": "CONFIDENT", "rule_id": "CONV-001", "unit_id": "<the unit this is about>", "relation": "sum_mismatch", "record_verdict": "irregular", "verdict": "<your own contract's verdict value, unchanged>", "value_a": 12.5, "unit_a": "<unit>", "value_b": 13.0, "unit_b": "<unit>", "source_refs": ["REF-0001"], "explanation": "<one or two sentences for the person reading the review>", "ref_ids": ["REF-0001"]}
+A finding that is not a comparison of figures does not need these fields.
+
+## Output contract — return ONE JSON object (the canonical envelope), no markdown fences:
+{"agent": "VERIFIER", "doc_id": "<document id>", "items": [ ... ]}
+`items` is ALWAYS a list. Each item is FLAT: one level, values are scalars or arrays of scalars only — NO nested objects and NO arrays of objects (express structure as MORE items, e.g. one item per finding/element/redaction).
+Per item, supply the core fields: ref (the REF-*/segment id this item is about), kind, confidence (CONFIDENT|UNCERTAIN), verdict (only when you judge), ref_ids (flat array of all REF-* you cite; a search-discovered web reference is cited as a WEB-REF-* id, INFRA-042). Plus this agent's fields: {'paragraph': 'int', 'finding': 'MATCH | DIVERGENCE | ADDITION | OMISSION', 'original': 'string', 'output': 'string', 'severity': 'low | medium | high', 'reasoning': 'string', 'ref_ids': 'array of REF-* strings (required in convention review)', 'finding_record': 'OPTIONAL, and the preferred shape when this finding is a comparison of two figures: set relation, verdict, rule_id, unit_id, value_a/unit_a, value_b/unit_b, source_refs, explanation. See the top-level finding_record block. Emit it as ordinary item fields, not as a nested object.'}; required per item: ['paragraph', 'finding', 'severity', 'reasoning']. (item_id, revision, ts are stamped by the runtime — you may omit them.)
+Nothing to report -> {"agent": "VERIFIER", "doc_id": "<id>", "items": []}
+One item -> {"agent": "VERIFIER", "doc_id": "<id>", "items": [{"ref": "REF-0001", "kind": "finding", "confidence": "CONFIDENT", "ref_ids": ["REF-0001"]}]}
+
+Document id: bounded-local-fixture
+ORIGINAL:
+CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.
+
+PRODUCER:
+{"agent": "PROCESSOR", "doc_id": "bounded-local-fixture", "items": [{"draft_text": "CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.\n", "claims_referenced": ["CLM-001", "CLM-002"], "open_questions": ["What is the reporting date?"]}]}<|end|>
+<|assistant|>

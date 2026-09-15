@@ -1,0 +1,6 @@
+{
+  "files_scanned": 23,
+  "credential_hits": 0,
+  "scope": "New compact-contract prompt, tokenizer, fixture and validation artifacts",
+  "scanner": "prepare_cloud_run.credential_locations; no matched values emitted"
+}

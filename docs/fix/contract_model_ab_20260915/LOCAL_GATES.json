@@ -1,0 +1,69 @@
+{
+  "REMOTE_RETRY_LOCAL_GATES_PASS": true,
+  "bundle": {
+    "bytes": 1283791,
+    "credentials_excluded": true,
+    "file_count": 172,
+    "manifest_sha256": "0dbeb8f59ad9bffb2068258cbbdf0dfce8850e75c3c1eee2c6d918dfd466688a",
+    "operator_data_excluded": true,
+    "sha256": "8ddefc807e7fc6a3e7ed17047d66db20bd2f1c995a290ce7a920f849ebfad254",
+    "tracked_only": true
+  },
+  "checks": [
+    {
+      "passed": true,
+      "suite": "contract_ab_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "lambda_metadata_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "runtime_contract_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "cloud_run_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "cloud_run_transport_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "cloud_run_transfer_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "compact_contract_no_generation_gate"
+    },
+    {
+      "passed": true,
+      "suite": "compact_contract_budget"
+    }
+  ],
+  "source_commit": "54df6a48e8646cf721d6d2e2f2ecb60125a92bef",
+  "source_preflight": {
+    "compiled_files": 155,
+    "executable": "C:\\Users\\secki\\anaconda3\\python.exe",
+    "imports": [
+      "agent_wrapper",
+      "finding_record",
+      "bounded_extraction",
+      "execution_topology",
+      "execution_scheduler",
+      "constitution",
+      "message_bus",
+      "run_context",
+      "remote_short_burst_probe"
+    ],
+    "profile": "experiment",
+    "source_preflight_passed": true,
+    "version": [
+      3,
+      12,
+      3
+    ]
+  }
+}

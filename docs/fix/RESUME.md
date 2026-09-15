@@ -1,3 +1,48 @@
+# Remote contract model A/B complete ? 15 September 2026
+
+**REMOTE_CONTRACT_MODEL_AB_FAIL**
+**DOMAIN_AGNOSTIC_TUNING_RECOMMENDED=true ? producer and auditor.**
+Read [REMOTE_CONTRACT_MODEL_AB.md](REMOTE_CONTRACT_MODEL_AB.md) and
+[DOMAIN_AGNOSTIC_TASK_TUNING_DESIGN.md](DOMAIN_AGNOSTIC_TASK_TUNING_DESIGN.md).
+
+Tested source `54df6a48e8646cf721d6d2e2f2ecb60125a92bef`, after local readiness
+`1991060` / `9f2b275`. Four deterministic calls, unchanged models/revisions,
+seed 7, 384 tokens and 25 seconds. 224 local checks, four compact mutation proofs,
+and two tokenizer profiles passed before launch; one optional directory skip.
+
+One A10 in us-east-1 at $1.29/h. OLD/NEW producer: 610/333 input tokens,
+259/84 output tokens, 12.423/3.973 s. OLD/NEW auditor: 1875/488 input tokens,
+384/350 output tokens, 18.176/16.325 s. Exact old/new prompt hashes matched.
+All four responses contract-invalid and semantically unaccepted. One truncation
+(OLD auditor); both NEW calls reached EOS. NEW producer emits one correct alias,
+both claims and refs but omits the missing-date gap, sets empty despite claims,
+and uses fences. NEW auditor emits MATCH and both refs with no invented rule,
+but adds trailing prose and partly misattributes original missing information to
+extraction loss. Correct judgment alone is not correct reasoning or acceptance.
+
+Serial handoff was NOT admitted. No resampling or source/prompt revision on the
+paid instance. No concurrency, serving migration, full pipeline, full benchmark,
+multi-round, paid inference API or training. Each model loaded once; both resident,
+no offload/reload/swap. Peak 10315/23028 MiB VRAM; active GPU median 42%.
+
+Provider termination confirmed 10:52:20.890272 UTC. Independent final query at
+10:53:04.306875 UTC: experiment absent, zero active account instances. SSH
+registration/key pair removed. Billable upper bound 576.878 s / $0.20671457.
+Security scan: 107 files and 183 archive members, zero credential hits and zero
+sensitive provider fields. Evidence: contract_model_ab_20260915/; source/evidence
+archives verified; ARTIFACT_HASHES.json indexes retained artifacts. No push.
+
+The closed secure feasibility stage and deterministic local readiness remain
+historical evidence. Do not reopen infrastructure/hardware work or enter another
+prompt loop. Next recommended task is domain-diverse, grouped, held-out task-data
+and evaluation design/curation, with frozen compact/refusal contracts, hard negatives,
+evidence precision/recall, reason correctness, calibration and governance gates.
+The attached design does not authorize training, another instance or a model change.
+Cloud authorization for this experiment is consumed. Preserve operator-owned
+SHIMMER_HANDOFF.md and durable/; the operator pushes.
+
+## Prior local deterministic handoff (superseded by real-model measurement)
+
 # Compact extraction + auditor contract A/B complete ? local only
 
 **REMOTE_CONTRACT_AB_READY** (deterministic readiness, not measured model reliability).

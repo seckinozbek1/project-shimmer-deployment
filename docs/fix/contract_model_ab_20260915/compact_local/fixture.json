@@ -1,0 +1,20 @@
+{
+  "doc": "bounded-local-fixture",
+  "source": "CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.\n",
+  "extraction": {
+    "agent": "PROCESSOR",
+    "doc_id": "bounded-local-fixture",
+    "items": [
+      {
+        "draft_text": "CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.\n",
+        "claims_referenced": [
+          "CLM-001",
+          "CLM-002"
+        ],
+        "open_questions": [
+          "What is the reporting date?"
+        ]
+      }
+    ]
+  }
+}

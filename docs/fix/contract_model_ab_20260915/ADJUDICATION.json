@@ -1,0 +1,7 @@
+{
+  "producer_raw_sha256": "7b2bb54ffe56777ae1b0990d8f52813a3793214cc54d8b5956ba140685b2f9d3",
+  "auditor_raw_sha256": "492652920c11786aec6d0429e25f7602ad31c5f043e0b3b841cc022aac11a2ad",
+  "producer_semantically_accepted": false,
+  "auditor_semantically_accepted": false,
+  "reason": "Producer omits required gap and contradicts status semantics; auditor adds unauthorized trailing prose. No serial handoff or resampling."
+}

@@ -1,0 +1,67 @@
+{
+  "generation": false,
+  "network": false,
+  "transformers": "4.51.3",
+  "tokenizers": "0.21.1",
+  "ceiling": 384,
+  "max_time_seconds": 25,
+  "counts": {
+    "producer": {
+      "prompt_before": 610,
+      "prompt_after": 333,
+      "representative_before": 101,
+      "representative_after": 59,
+      "minimal_before": 65,
+      "minimal_after": 26,
+      "output_margin": 325,
+      "new_rendered_sha256": "b0cd3c1f6eb687992910475667fabed4ded130ca8cb06f443521ec52c45658a1",
+      "checkpoint": {
+        "model_type": "qwen2",
+        "config_class": "Qwen2Config",
+        "architectures": [
+          "Qwen2ForCausalLM"
+        ],
+        "tokenizer_class": "Qwen2TokenizerFast",
+        "metadata_sha256": {
+          "config.json": "c9b481809ae2e99227ac323b77a9da0b5387a0a21f46329327132273435fa3f7",
+          "tokenizer_config.json": "0553ada6e92b1a29b4431c72782c6e5e6ab675ef0b20ceb2833cd1074c7fb932",
+          "generation_config.json": "424e77633729a4c63a0810e0fa32e3344b03499cd3a0b2fc626bfae19e7eb923"
+        }
+      }
+    },
+    "auditor": {
+      "prompt_before": 1875,
+      "prompt_after": 488,
+      "representative_before": 107,
+      "representative_after": 71,
+      "minimal_before": 23,
+      "minimal_after": 5,
+      "output_margin": 313,
+      "new_rendered_sha256": "c9172df69079406656d40d2d753641d8179bbbc68c6690df39955290e11d0f7c",
+      "checkpoint": {
+        "model_type": "llama",
+        "config_class": "LlamaConfig",
+        "architectures": [
+          "LlamaForCausalLM"
+        ],
+        "tokenizer_class": "LlamaTokenizerFast",
+        "metadata_sha256": {
+          "config.json": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2",
+          "tokenizer_config.json": "c98403fdcc8cf522d8f240f04123d79358dd81192f907c3bcac1b63080296ece",
+          "generation_config.json": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413"
+        }
+      }
+    }
+  },
+  "assertions": [
+    "producer: exact old hash/count, smaller prompt/output, representative <256",
+    "auditor: exact old hash/count, smaller prompt/output, representative <256"
+  ],
+  "source_copy_reference": {
+    "input_tokens": 482,
+    "rendered_sha256": "dea857a71db6db817dce4af130762405a19858e6a2bda813d59cd3c0c17f4cb2"
+  },
+  "verbose_auditor_tokens": 335,
+  "readiness_capacity": "PASS"
+}
+None of PyTorch, TensorFlow >= 2.0, or Flax have been found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.

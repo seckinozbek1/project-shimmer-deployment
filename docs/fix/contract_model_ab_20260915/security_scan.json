@@ -1,0 +1,9 @@
+{
+  "files_scanned": 107,
+  "archive_members_scanned": 183,
+  "credential_hits": 0,
+  "sensitive_runtime_provider_fields": 0,
+  "private_key_files_remaining": false,
+  "values_displayed": false,
+  "classification": "Source security-test field names are inert code, not provider response data; no authentication values found"
+}
