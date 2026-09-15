@@ -1,0 +1,1404 @@
+{
+  "producer-v3-045ff67c17ef3b6efe38f660": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-0512c721d8c1157039c75186": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-v3-07024cd8500c4b31671b9713": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-v3-0c9fb5f63f203df36f0e3ed6": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-0db920a935bd1923e2e55efc": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-14c17c9192cdf588354a8fe2": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-v3-1601d18980580f5d434366e5": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-17b7f2ea9a8a77b6da7234c0": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-v3-1cc089fc0164844fbd299058": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-2a3408d237c392ef176ce6ac": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-2ceb5b08c06ceef3614231e1": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-2e1b2932b598dd23eac4bbf0": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-38ec8e4e32c5037b557e4734": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-3e88a51e16ef7eb49761141c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-42d619f75e66478df92da143": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-4574849d129153b0f2d55672": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-480d2836d50a4fbedce94188": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-4854bce048ac009171126de2": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-49ab243b4a76f8885768a3b3": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-4cd94ee8acec634d1fc68f39": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-4e1ebf1ca78e011a893f4dba": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-50581debd7197d1bd7353a0b": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-645734026558775fa160685f": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-6718fc2222bae474dcde4a6c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-688e80fd498f0a7ba869fd6b": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-6d37d8cff7701bf56ab2d29c": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-726b07d1a3ed2fb26f127531": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-75a631cbbfa308d7841d4f8d": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-75ffdd959ce9d41f3e3c920a": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-7f99d5e057670a8eb07b8088": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-864dd43797980216d0db4a63": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-8971adec69bd4d724b4cf0c7": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-8b0c3f3e1cd398cb6cbaa6d4": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-8c9175405939892332166624": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-91995afb1d9d098b98690587": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-92cfb68203fdfe40ec3577eb": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-9b73948b5cabaf1be3b6a00a": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-v3-a002314bfa689eda5a2571be": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-a7327a0b7b47c57018df1f19": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-ab1489413ec6c5968db664ec": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-ab5f55a7888f56d181fde762": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-b546899ee591356aef64c87f": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-b79f40bdf2e616f990759d7f": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-b8b17df073ddc5b78712b7c7": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-bed68ae91685e80efe6b3ca9": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-c51a91fe52d44d88c78d546b": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-c5f70f2e56cb2dda222fa62f": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-c7849d8f71c6ed351a0c1567": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-cb3516693b7b5307343fdbfa": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-cc7495ca2d04fbee709521ac": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-cd54bb50063141c38762dd5e": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-cfa789238e72c4194c7f7b33": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-d2a79b71d85d94c21a221758": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-d39916a4ea519346386e95dc": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-d46e74cce0a9945d064a5c5d": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-d6a0ea19c3394dc3f887ed6e": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-d87bd08e86200548ddba1d19": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-d9fb16daba4437a3c84626e4": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  },
+  "producer-v3-e072a08a20c3c39d31b47912": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-e488e0ce2fd11d62dcbbca07": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+          "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001"
+        ]
+      }
+    ]
+  },
+  "producer-v3-ea85203f2f0c13b6374eaa83": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-fa958243fbe6a2e71f22a243": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-fac0ffbd24cba64f589f4a16": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "producer-v3-fac8d5be1085af07123efd96": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "questions": [
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "uncertainty": [
+          "Uncertainty: {\"attribute\":\"interpretation\",\"category\":\"unknown\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ]
+      }
+    ]
+  }
+}

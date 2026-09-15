@@ -1,0 +1,100 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-0512c721d8c1157039c75186",
+  "input_sha256": "4d0906e0846124d5505d21c31d8eb8576a8a7474a230b045d951b12ccb13a4fb",
+  "slot": "A",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T19:25:45.333588+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A"
+        ],
+        "refs": [
+          "REF-1001"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "explicit_nonoccurrence",
+            "subject": "entry",
+            "attribute": "submission_occurrence",
+            "ordinal": 2,
+            "relation": null,
+            "state": "not_submitted",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "support": "No second claim was submitted.",
+            "origin": "source_explicit"
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "support": "When was this recorded?",
+            "origin": "source_explicit"
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recorder",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "support": "The recorder is unnamed.",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "owned_record",
+            "attribute": "interpretation",
+            "ordinal": null,
+            "relation": null,
+            "state": "unknown",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "support": "The interpretation remains uncertain.",
+            "origin": "source_explicit"
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "The second claim was not submitted: entry ordinal 2, submission nonoccurrence. The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+}

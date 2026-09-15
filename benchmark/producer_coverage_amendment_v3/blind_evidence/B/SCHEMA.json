@@ -1,0 +1,53 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "outer_required": [
+    "protocol",
+    "policy",
+    "evidence_kind",
+    "use",
+    "packet_id",
+    "input_sha256",
+    "slot",
+    "provenance",
+    "reviewed_at",
+    "label",
+    "rationale"
+  ],
+  "label_required": [
+    "status",
+    "items",
+    "source_uncertainty_present",
+    "review_ambiguity"
+  ],
+  "item_required": [
+    "span",
+    "claims",
+    "refs",
+    "gap_atoms",
+    "uncertainty_atoms"
+  ],
+  "atom_required": [
+    "kind",
+    "category",
+    "subject",
+    "attribute",
+    "ordinal",
+    "relation",
+    "state",
+    "scope",
+    "unit",
+    "span",
+    "refs",
+    "support",
+    "origin"
+  ],
+  "types": {
+    "source_uncertainty_present": "boolean",
+    "review_ambiguity": "boolean",
+    "ordinal": "null, integer 1/2/3, or next/previous/later",
+    "support": "exact owned source substring",
+    "refs": "all exact owned REF identifiers"
+  },
+  "ontology": "POLICY.md"
+}

@@ -1,0 +1,74 @@
+{
+    "protocol":  "producer-coverage-amendment-v3",
+    "policy":  "producer-semantic-policy-v3",
+    "evidence_kind":  "training_label_curation_evidence",
+    "use":  "curation_only",
+    "packet_id":  "producer-v3-d39916a4ea519346386e95dc",
+    "input_sha256":  "e4167c3bdb763f890da19fe186d71217dd417f1abd878eed722ca9f0108d9642",
+    "slot":  "D",
+    "provenance":  "machine_agent_adjudication",
+    "reviewed_at":  "2026-09-15T19:28:19.7550451Z",
+    "label":  {
+                  "status":  "examined",
+                  "items":  [
+                                {
+                                    "span":  "s0",
+                                    "claims":  [
+                                                   "CLM-A",
+                                                   "CLM-B"
+                                               ],
+                                    "refs":  [
+                                                 "REF-0001",
+                                                 "REF-0002"
+                                             ],
+                                    "gap_atoms":  [
+                                                      {
+                                                          "kind":  "gap",
+                                                          "category":  "missing_information",
+                                                          "subject":  "amendment",
+                                                          "attribute":  "effective_time",
+                                                          "ordinal":  null,
+                                                          "relation":  null,
+                                                          "state":  "unspecified",
+                                                          "scope":  "owned_record",
+                                                          "unit":  null,
+                                                          "span":  "s0",
+                                                          "refs":  [
+                                                                       "REF-0001",
+                                                                       "REF-0002"
+                                                                   ],
+                                                          "support":  "No effective period is specified. When does the amendment take effect?",
+                                                          "origin":  "source_explicit"
+                                                      }
+                                                  ],
+                                    "uncertainty_atoms":  [
+                                                              {
+                                                                  "kind":  "uncertainty",
+                                                                  "category":  "unknown",
+                                                                  "subject":  "amendment",
+                                                                  "attribute":  "ratification_status",
+                                                                  "ordinal":  null,
+                                                                  "relation":  null,
+                                                                  "state":  "unknown",
+                                                                  "scope":  "owned_record",
+                                                                  "unit":  null,
+                                                                  "span":  "s0",
+                                                                  "refs":  [
+                                                                               "REF-0001",
+                                                                               "REF-0002"
+                                                                           ],
+                                                                  "support":  "It is unclear whether the amendment was ratified.",
+                                                                  "origin":  "source_explicit"
+                                                              }
+                                                          ]
+                                }
+                            ],
+                  "source_uncertainty_present":  true,
+                  "review_ambiguity":  false
+              },
+    "decision":  "candidate_B",
+    "disagreement_causes":  [
+
+                            ],
+    "rationale":  "Both Purchasing Desk versions remain owned claims even with equal quantities. The amendment has explicit ratification uncertainty and missing effective_time, reinforced by its adjacent question. Revision-history wording supplies no extra uncertainty; both owned refs and no context ref apply. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+}

@@ -1,0 +1,5368 @@
+{
+  "producer-v3-045ff67c17ef3b6efe38f660": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-045ff67c17ef3b6efe38f660",
+      "input_sha256": "dbd93f828ba3696c3dc673ae0fe8375628d592c3cce1d3830412253057ff42ea",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.332558+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "observation_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The observation date is unavailable.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "entry",
+                "attribute": "interpretation",
+                "ordinal": 2,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The interpretation of the second entry remains unresolved.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The missing observation date and corresponding question concern observation time. The unresolved interpretation explicitly concerns the second entry. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-0512c721d8c1157039c75186": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-0512c721d8c1157039c75186",
+      "input_sha256": "4d0906e0846124d5505d21c31d8eb8576a8a7474a230b045d951b12ccb13a4fb",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.333588+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A"
+            ],
+            "refs": [
+              "REF-1001"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_nonoccurrence",
+                "subject": "entry",
+                "attribute": "submission_occurrence",
+                "ordinal": 2,
+                "relation": null,
+                "state": "not_submitted",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "No second claim was submitted.",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recorder",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The recorder is unnamed.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The second claim was not submitted: entry ordinal 2, submission nonoccurrence. The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-07024cd8500c4b31671b9713": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-07024cd8500c4b31671b9713",
+      "input_sha256": "418f96bd378c8002a513ec582b17481717fb614120d0dce93c8768b72cbd7224",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.334558+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A"
+            ],
+            "refs": [
+              "REF-1001"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_nonoccurrence",
+                "subject": "entry",
+                "attribute": "submission_occurrence",
+                "ordinal": 2,
+                "relation": null,
+                "state": "not_submitted",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "No second claim was submitted.",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The second claim was not submitted: entry ordinal 2, submission nonoccurrence. The adjacent recording question binds the absent date to recording time of the owned record. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-0c9fb5f63f203df36f0e3ed6": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-0c9fb5f63f203df36f0e3ed6",
+      "input_sha256": "a35dfc0be55ba19ab45cfbdb3d362fe26dc09d0aaa01a7353ce4ffc2647ee45d",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.336581+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recorder",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The recorder is unnamed.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-0db920a935bd1923e2e55efc": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-0db920a935bd1923e2e55efc",
+      "input_sha256": "e5af7d375862f8486e568330278780d73e7ff278e3d3951064daf6d64f1999bb",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.336581+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-14c17c9192cdf588354a8fe2": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-14c17c9192cdf588354a8fe2",
+      "input_sha256": "2376ae34731a04dd04795da8ab274162b1050ff7e9dd65c649846ae001119e35",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7700423Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A"
+            ],
+            "refs": [
+              "REF-1001"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_nonoccurrence",
+                "subject": "entry",
+                "attribute": "submission_occurrence",
+                "ordinal": 2,
+                "relation": null,
+                "state": "not_submitted",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "No second claim was submitted.",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The date is absent. When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "The ENTRY labels are structural. No second claim was submitted explicitly denotes entry ordinal 2 submission nonoccurrence, not absent information or unknown occurrence. The immediately adjacent recording question binds the absent date to owned-record recording_time. Interpretation uncertainty is explicit. CLM-A and REF-1001 are complete. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-1601d18980580f5d434366e5": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-1601d18980580f5d434366e5",
+      "input_sha256": "0257261f84f528826cc715465a19e9ef801b1c35b9f8e6320a38588e77f4b6a2",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.338564+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-17b7f2ea9a8a77b6da7234c0": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-17b7f2ea9a8a77b6da7234c0",
+      "input_sha256": "8fab95e1cedf9d0f6ebaecdbc842c32d6398a3b2020effed85d67eed27128ea9",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.8095727Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A"
+            ],
+            "refs": [
+              "REF-1001"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_nonoccurrence",
+                "subject": "entry",
+                "attribute": "submission_occurrence",
+                "ordinal": 2,
+                "relation": null,
+                "state": "not_submitted",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "No second claim was submitted.",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The date is absent. When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "MEMORANDUM, Subject, Decision recorded, Supporting entry and Unresolved matters are labels without finite propositions. Their bodies preserve CLM-A, entry ordinal 2 not_submitted, recording_time missing information bound by the adjacent question, and explicit record interpretation uncertainty. REF-1001 is the complete owned evidence. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-1cc089fc0164844fbd299058": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-1cc089fc0164844fbd299058",
+      "input_sha256": "b56fe629f55d066355fb13ca287ff955db65f946bb7815e72aa748ab9fe82b88",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.340574+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-2a3408d237c392ef176ce6ac": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-2a3408d237c392ef176ce6ac",
+      "input_sha256": "78c5b1e9eeb5386e4d83d27d55d10fecdaa9ca6c026c5befcb520f45cdd1a70c",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.341590+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-2ceb5b08c06ceef3614231e1": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-2ceb5b08c06ceef3614231e1",
+      "input_sha256": "054969874da99cf52b782b041ce97a2b4912c46fe131d9b98136353fea1c8555",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.341590+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-2e1b2932b598dd23eac4bbf0": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-2e1b2932b598dd23eac4bbf0",
+      "input_sha256": "21601e88c4e8f7ed33255b4d2705932755b11cebe810d1894343f05e29b6c7f2",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.342565+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-38ec8e4e32c5037b557e4734": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-38ec8e4e32c5037b557e4734",
+      "input_sha256": "2415b9dc3fb6517b371d30e39231d9f91c567e3648fe14fd9df78f746ed52c9d",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.343555+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_content",
+                "ordinal": 1,
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "What was entered first?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_order",
+                "ordinal": "next",
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "What followed?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The answered first-entry question requests entry content at ordinal 1. The answered follow-up question requests next-entry order. The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-3e88a51e16ef7eb49761141c": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-3e88a51e16ef7eb49761141c",
+      "input_sha256": "f26818372a8e43eaae877e8c395b9c3125ad0b920a909617491f7e11b11d3dee",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.6964941Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "observation_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The observation date is unavailable. What is the observation date?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "entry",
+                "attribute": "interpretation",
+                "ordinal": 2,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The interpretation of the second entry remains unresolved.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Both Case Alder and Case Birch claims remain owned regardless of their equal quantities. The unavailable observation date and its question express one observation_time gap. Unresolved interpretation explicitly belongs to entry ordinal 2. Both owned refs are retained; context REF-9999 is excluded. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-42d619f75e66478df92da143": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-42d619f75e66478df92da143",
+      "input_sha256": "c5fe19f09562a9d4bc387593dbaf5b03e1f4c6daff284bb803f89dd196f32a54",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.345549+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "observation_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The observation date is unavailable.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "entry",
+                "attribute": "interpretation",
+                "ordinal": 2,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The interpretation of the second entry remains unresolved.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The missing observation date and corresponding question concern observation time. The unresolved interpretation explicitly concerns the second entry. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-4574849d129153b0f2d55672": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-4574849d129153b0f2d55672",
+      "input_sha256": "b7e8334b54eebc3cc8e67141760c8bf2c0522b8a3a16a322ea0ae08f2cf4b46f",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.347199+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "amendment",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "When does the amendment take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "amendment",
+                "attribute": "ratification_status",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "It is unclear whether the amendment was ratified.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The amendment effective period is unspecified and its effective time is requested. Ratification uncertainty explicitly concerns the amendment. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-480d2836d50a4fbedce94188": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-480d2836d50a4fbedce94188",
+      "input_sha256": "befb87022d0b1a73604e37ac4fe43b4c4ba5fbdd99443436e4f4ca156786aa7e",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.347199+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_content",
+                "ordinal": 1,
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "What was entered first?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_order",
+                "ordinal": "next",
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "What followed?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The answered first-entry question requests entry content at ordinal 1. The answered follow-up question requests next-entry order. The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-4854bce048ac009171126de2": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-4854bce048ac009171126de2",
+      "input_sha256": "a75f540429341a942d963ae515de8aeabd081356b78478be76f2e82b20a5dac3",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.348302+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recorder",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The recorder is unnamed.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-49ab243b4a76f8885768a3b3": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-49ab243b4a76f8885768a3b3",
+      "input_sha256": "c7421d6bb26e88bf31709bb3d7a7646f57722e42365c48228db6ae9052f23ec6",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7780429Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "observation_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The observation date is unavailable. What is the observation date?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "entry",
+                "attribute": "interpretation",
+                "ordinal": 2,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The interpretation of the second entry remains unresolved.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Nera and Sola supply both owned claims and refs. The explicit observation-date absence and question normalize to observation_time missing information. Interpretation uncertainty belongs to the second entry, not the whole record. Context evidence is excluded. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-4cd94ee8acec634d1fc68f39": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-4cd94ee8acec634d1fc68f39",
+      "input_sha256": "311d2ec198674b018e079d657c4d0caa22cf177fd83b0b9ee9a6681b2380910f",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.350333+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "amendment",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "When does the amendment take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "amendment",
+                "attribute": "ratification_status",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "It is unclear whether the amendment was ratified.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The amendment effective period is unspecified and its effective time is requested. Ratification uncertainty explicitly concerns the amendment. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-4e1ebf1ca78e011a893f4dba": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-4e1ebf1ca78e011a893f4dba",
+      "input_sha256": "9e47224af5299c16b8080f82bc6b8795024249e6dee4e5978c34b9663398a68f",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.351310+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-50581debd7197d1bd7353a0b": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-50581debd7197d1bd7353a0b",
+      "input_sha256": "0af5c1a2a5c0c2d3626f79f92b825410ec8ba07ad9864e7dd428981b15e9261c",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.352306+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-645734026558775fa160685f": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-645734026558775fa160685f",
+      "input_sha256": "1f145af7ae4bc3affd14a0662198e1cdb7350527bf3a240008ed472c59807911",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.353303+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recorder",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The recorder is unnamed.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-6718fc2222bae474dcde4a6c": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-6718fc2222bae474dcde4a6c",
+      "input_sha256": "e4e25a5b5476d3fe56e35fd19348297809bc7ef5fcab5b5462a78d7ec5626c40",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.354322+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-688e80fd498f0a7ba869fd6b": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-688e80fd498f0a7ba869fd6b",
+      "input_sha256": "9ed056d6c7fbbb7e1dde9f19b82f66dbe166b27d8ac14b7e13dda20c4d077cbd",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7660430Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_content",
+                "ordinal": 1,
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "What was entered first?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_order",
+                "ordinal": "next",
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "What followed?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing. When does it take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Question and Answer are labels; their explicit inquiries remain content even though answered. First asks entry_content ordinal 1, followed asks entry_order ordinal next. Both conflicting vraxlet claims and their refs remain. Missing effective time and explicit interpretation uncertainty apply to the owned record. Conflict adds no independent uncertainty atom. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-6d37d8cff7701bf56ab2d29c": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-6d37d8cff7701bf56ab2d29c",
+      "input_sha256": "b11055c923ace4e83667d2b865eeba8effae81b14750c9159470c1d7f9b429c9",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7960507Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "observation_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The observation date is unavailable. What is the observation date?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "entry",
+                "attribute": "interpretation",
+                "ordinal": 2,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The interpretation of the second entry remains unresolved.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "The Zorvit and Plenko assertions are both retained with REF-0001 and REF-0002. Observation time is unavailable and requested; second-entry interpretation is explicitly unresolved. No context-only reference or claim is owned. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-726b07d1a3ed2fb26f127531": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-726b07d1a3ed2fb26f127531",
+      "input_sha256": "77fe412c8739d9f8eb95d53d76ebd7f1627b2f1b189a551cd2a89bd0681ebc36",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.356333+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-75a631cbbfa308d7841d4f8d": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-75a631cbbfa308d7841d4f8d",
+      "input_sha256": "3718e8fd097a1310094d472137406dc4476893d6492972ee5fba0c6f6158638a",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.357307+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-75ffdd959ce9d41f3e3c920a": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-75ffdd959ce9d41f3e3c920a",
+      "input_sha256": "1a72a927533c3f224c508cfbb1d869fbec0802b25a87d1f85868b9d2117cca02",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.358307+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_content",
+                "ordinal": 1,
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "What was entered first?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_order",
+                "ordinal": "next",
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "What followed?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The answered first-entry question requests entry content at ordinal 1. The answered follow-up question requests next-entry order. The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-7f99d5e057670a8eb07b8088": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-7f99d5e057670a8eb07b8088",
+      "input_sha256": "d4cb5e81c52aeb8311d9a382bdc938ca6f173b0d511fe4e1a761d20912a027a3",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.359306+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-864dd43797980216d0db4a63": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-864dd43797980216d0db4a63",
+      "input_sha256": "f8388e649190bcf9ba8ce0783c4b617f7fb433a046347565484f5d86f7607bb5",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.360305+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-8971adec69bd4d724b4cf0c7": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-8971adec69bd4d724b4cf0c7",
+      "input_sha256": "1ecb5ecd02e3e76a5ba7e3637354c9b90d93b9d3264d15a876809dd827811f1d",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7880578Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_content",
+                "ordinal": 1,
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "What was entered first?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_order",
+                "ordinal": "next",
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "What followed?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing. When does it take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "The filing-office answers do not remove the explicit first-entry content and next-entry order questions. Effective time is missing and requested, and record interpretation is explicitly uncertain. Both conflicting claims and both owned refs remain; context CLM-Z and REF-9999 are excluded. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-8b0c3f3e1cd398cb6cbaa6d4": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-8b0c3f3e1cd398cb6cbaa6d4",
+      "input_sha256": "f7b6c1916658e60ea6b8bffb2bb3bf0a1214ed1be8d5f662179488e1611a5dc3",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.361306+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "observation_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The observation date is unavailable.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "entry",
+                "attribute": "interpretation",
+                "ordinal": 2,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The interpretation of the second entry remains unresolved.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The missing observation date and corresponding question concern observation time. The unresolved interpretation explicitly concerns the second entry. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-8c9175405939892332166624": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-8c9175405939892332166624",
+      "input_sha256": "cadc3f74c51a7a2b07bd7f35775f8dac2b8204ec201904123e9481c743df49be",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.362319+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-91995afb1d9d098b98690587": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-91995afb1d9d098b98690587",
+      "input_sha256": "b555a67566108c8ada98b8a7230b95082a5ef7e1574158c73ec051d48f7084f6",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7920530Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing. When does it take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Bullet positions introduce no order questions. Both conflicting service-desk assertions and their refs remain. The effective-time absence and matching question supply one missing-information atom. Explicit interpretation uncertainty supplies the uncertainty atom, independently of conflict. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-92cfb68203fdfe40ec3577eb": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-92cfb68203fdfe40ec3577eb",
+      "input_sha256": "83f951f2388523dbe999f03d2087656b77d5c3f32117e9efd0033f8e06954c17",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.8040524Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing. When does it take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Both sensor-bank assertions remain despite their conflict. Separate-statement and Finally wording do not ask entry order or content. The owned record has a missing effective time and explicit interpretation uncertainty. Only REF-1003 and REF-1004 are owned. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-9b73948b5cabaf1be3b6a00a": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-9b73948b5cabaf1be3b6a00a",
+      "input_sha256": "6e86bc0c575db07788a42e3d25e69fbdfb27b8644312d60fd0fb0f5a37567d99",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.365269+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A"
+            ],
+            "refs": [
+              "REF-1001"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_content",
+                "ordinal": 1,
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "What was entered first?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_order",
+                "ordinal": "next",
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "What followed?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_nonoccurrence",
+                "subject": "entry",
+                "attribute": "submission_occurrence",
+                "ordinal": 2,
+                "relation": null,
+                "state": "not_submitted",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "No second claim was submitted.",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The answered first-entry question requests entry content at ordinal 1. The answered follow-up question requests next-entry order. The second claim was not submitted: entry ordinal 2, submission nonoccurrence. The adjacent recording question binds the absent date to recording time of the owned record. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-a002314bfa689eda5a2571be": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-a002314bfa689eda5a2571be",
+      "input_sha256": "56b420888d491a56ba26044f38d59d69a97197d846724140aabfc2ad100e467e",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.366303+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "observation_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The observation date is unavailable.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "entry",
+                "attribute": "interpretation",
+                "ordinal": 2,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The interpretation of the second entry remains unresolved.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The missing observation date and corresponding question concern observation time. The unresolved interpretation explicitly concerns the second entry. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-a7327a0b7b47c57018df1f19": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-a7327a0b7b47c57018df1f19",
+      "input_sha256": "c6a75be80f0494437c1c732c7146606ad05c6439a6082befb246f842291dac40",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.368298+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-ab1489413ec6c5968db664ec": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-ab1489413ec6c5968db664ec",
+      "input_sha256": "60cbb75d97f08656af3fbc6243f8d2fab42f572b9f33ec1ba411ef21242ac230",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.368298+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "amendment",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "When does the amendment take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "amendment",
+                "attribute": "ratification_status",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "It is unclear whether the amendment was ratified.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The amendment effective period is unspecified and its effective time is requested. Ratification uncertainty explicitly concerns the amendment. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-ab5f55a7888f56d181fde762": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-ab5f55a7888f56d181fde762",
+      "input_sha256": "a9fe516f4b5882fba464bd06776e6cd78b8a5aa786239742d6926c4215375640",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7620447Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "observation_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The observation date is unavailable. What is the observation date?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "entry",
+                "attribute": "interpretation",
+                "ordinal": 2,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "The interpretation of the second entry remains unresolved.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Both collection claims are retained. Observation-date absence and its explicit question denote one observation_time gap. The unresolved interpretation is explicitly entry ordinal 2. REF-0001 and REF-0002 belong to every atom; context-only REF-9999 does not. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-b546899ee591356aef64c87f": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-b546899ee591356aef64c87f",
+      "input_sha256": "d44aa67809dd3464888cbb25e06b7b36a1d47beae0556a9c049f347200b86f0e",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7500489Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "amendment",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "No effective period is specified. When does the amendment take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "amendment",
+                "attribute": "ratification_status",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "It is unclear whether the amendment was ratified.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "The revision-history prefix is structural and maintained is participial. Both Test Lab versions remain claims. Ratification uncertainty explicitly concerns the amendment; missing effective period and the adjacent amendment question concern its effective_time. Neither states that ratification failed. Only the two owned refs are retained. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-b79f40bdf2e616f990759d7f": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-b79f40bdf2e616f990759d7f",
+      "input_sha256": "bb7dfde6c777a7f3181bdc181d57de282c938b71b464b46b17cf2754e3acfdf4",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.372308+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-b8b17df073ddc5b78712b7c7": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-b8b17df073ddc5b78712b7c7",
+      "input_sha256": "9322f62ddcbbcdbf388dd5c4edfee4e7057b739bb4b98fcd6eb69017479fe64c",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.372308+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-bed68ae91685e80efe6b3ca9": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-bed68ae91685e80efe6b3ca9",
+      "input_sha256": "5bf5ceca9571bc7536c8717392abde62ddfd083dbd203f86ff2031d7c34ba6f1",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.8010632Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_content",
+                "ordinal": 1,
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "What was entered first?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_order",
+                "ordinal": "next",
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "What followed?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing. When does it take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "The collection answers retain both assertions and both explicit inquiries: entry_content ordinal 1 and entry_order ordinal next. The effective-time absence and matching question form one gap. Record interpretation uncertainty is explicit. Question, Answer and Clerk note labels add no semantics; context CLM-Z is excluded. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-c51a91fe52d44d88c78d546b": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-c51a91fe52d44d88c78d546b",
+      "input_sha256": "5aadadd19692d4de18304d5ccb23b4c19a80967c19aefc0678fe03a8aabb8ed2",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.374313+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-c5f70f2e56cb2dda222fa62f": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-c5f70f2e56cb2dda222fa62f",
+      "input_sha256": "c7b48a54ca9f416b43cfda1c60d67070c199487ce937bd2ec30f69b0fe496a9a",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.375326+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_content",
+                "ordinal": 1,
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "What was entered first?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "explicit_question",
+                "subject": "entry",
+                "attribute": "entry_order",
+                "ordinal": "next",
+                "relation": null,
+                "state": "requested",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "What followed?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recorder",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The recorder is unnamed.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The answered first-entry question requests entry content at ordinal 1. The answered follow-up question requests next-entry order. The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-c7849d8f71c6ed351a0c1567": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-c7849d8f71c6ed351a0c1567",
+      "input_sha256": "624532c8e73fa7e19fba013d8fbf3413239e4fe135c434e777a98667e102dd3d",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.376315+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-cb3516693b7b5307343fdbfa": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-cb3516693b7b5307343fdbfa",
+      "input_sha256": "26df5b3aac120c582b0588f8a7bb65e8a45ccecd4766e5cab85f8769683b94d6",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.377302+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-cc7495ca2d04fbee709521ac": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-cc7495ca2d04fbee709521ac",
+      "input_sha256": "1dcbd2283bb95f2af3a7fa4399cb7639c8a767af0544f20b34e4692df836f5b9",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7730634Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing. When does it take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "The timestamped event labels do not establish the effective time or ask entry-order questions. Both fictional-case assertions and refs remain. Effective time is explicitly missing and requested, and record interpretation remains explicitly uncertain. Context CLM-Z and REF-9999 are excluded. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-cd54bb50063141c38762dd5e": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-cd54bb50063141c38762dd5e",
+      "input_sha256": "67c46d17538c0bd037e9b9327bf63ff5a519ba36b4aff5eb2a8b2565987a0b6a",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.378300+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-cfa789238e72c4194c7f7b33": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-cfa789238e72c4194c7f7b33",
+      "input_sha256": "5e4b0ba6fec77337bde3d77098c9129fa65615ef4f7b80cc5f79a1cf21ff1bcc",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.379322+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-d2a79b71d85d94c21a221758": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-d2a79b71d85d94c21a221758",
+      "input_sha256": "9f1e4c6d21714cb695a09329df38ce03a310b276fd4394b0d32ec909263a8e7c",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.380300+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recorder",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The recorder is unnamed.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-d39916a4ea519346386e95dc": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-d39916a4ea519346386e95dc",
+      "input_sha256": "e4167c3bdb763f890da19fe186d71217dd417f1abd878eed722ca9f0108d9642",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7550451Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "amendment",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "No effective period is specified. When does the amendment take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "amendment",
+                "attribute": "ratification_status",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "It is unclear whether the amendment was ratified.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Both Purchasing Desk versions remain owned claims even with equal quantities. The amendment has explicit ratification uncertainty and missing effective_time, reinforced by its adjacent question. Revision-history wording supplies no extra uncertainty; both owned refs and no context ref apply. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-d46e74cce0a9945d064a5c5d": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-d46e74cce0a9945d064a5c5d",
+      "input_sha256": "2ac5990763bf066917ff621870be388c31c8d3783321290318644eb33fdf168e",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.382305+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "amendment",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "When does the amendment take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "amendment",
+                "attribute": "ratification_status",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "It is unclear whether the amendment was ratified.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The amendment effective period is unspecified and its effective time is requested. Ratification uncertainty explicitly concerns the amendment. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-d6a0ea19c3394dc3f887ed6e": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-d6a0ea19c3394dc3f887ed6e",
+      "input_sha256": "66c72eed2666403711a0df3527d84def2ded7a86859c2a9227139dd2caba1a18",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.383302+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-d87bd08e86200548ddba1d19": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-d87bd08e86200548ddba1d19",
+      "input_sha256": "f7f02abfcea6cd2c9d468eacd4723dcbe8a73a86978d092f57047077636b254c",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.384307+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-d9fb16daba4437a3c84626e4": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-d9fb16daba4437a3c84626e4",
+      "input_sha256": "93fa2de911f12a63e1e83b8b7d06479e736bb5d0aad25a4757496b90878a9667",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7580453Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing. When does it take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Both vendor assignments remain owned assertions. Conflict alone creates no uncertainty; the explicit uncertain-interpretation sentence does. Missing effective time and its question express one owned-record effective_time gap. Separate-statement prose is not an order inquiry. Owned refs exclude REF-9999. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-e072a08a20c3c39d31b47912": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-e072a08a20c3c39d31b47912",
+      "input_sha256": "6dde293634583bda5189c60f5a70adb5e3d4e29e7bec0860bb9d883dc8e49b56",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.386307+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recorder",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The recorder is unnamed.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": []
+          }
+        ],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-e488e0ce2fd11d62dcbbca07": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-e488e0ce2fd11d62dcbbca07",
+      "input_sha256": "9a2fbbab5ce7e6bc3b57f4f89bc05c5a306d096fd7cdbf8db80e69b13e18841d",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.387330+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A"
+            ],
+            "refs": [
+              "REF-1001"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "explicit_nonoccurrence",
+                "subject": "entry",
+                "attribute": "submission_occurrence",
+                "ordinal": 2,
+                "relation": null,
+                "state": "not_submitted",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "No second claim was submitted.",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              },
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recorder",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The recorder is unnamed.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The second claim was not submitted: entry ordinal 2, submission nonoccurrence. The adjacent recording question binds the absent date to recording time of the owned record. The recorder is explicitly unnamed and requested. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-ea85203f2f0c13b6374eaa83": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-ea85203f2f0c13b6374eaa83",
+      "input_sha256": "c69c01b161f0f7f4bdc25310c94fc46ed3759fb3c114b8be43c8bb7fd6e0dee2",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.388305+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "amendment",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "When does the amendment take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "amendment",
+                "attribute": "ratification_status",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "It is unclear whether the amendment was ratified.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The amendment effective period is unspecified and its effective time is requested. Ratification uncertainty explicitly concerns the amendment. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-fa958243fbe6a2e71f22a243": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-fa958243fbe6a2e71f22a243",
+      "input_sha256": "6d95e96a5bd52408fe98cc628d93762c903d2e74d9e314fa43f960d8c41be6aa",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.389309+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "recording_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "When was this recorded?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1001",
+                  "REF-1002"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The adjacent recording question binds the absent date to recording time of the owned record. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-fac0ffbd24cba64f589f4a16": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-fac0ffbd24cba64f589f4a16",
+      "input_sha256": "43f6ddd8db95f3799ac5ac18983f770eb09be3e3adf1bbd04d0dc856008d5102",
+      "slot": "D",
+      "provenance": "machine_agent_adjudication",
+      "reviewed_at": "2026-09-15T19:28:19.7830467Z",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-A",
+              "CLM-B"
+            ],
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "amendment",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "No effective period is specified. When does the amendment take effect?",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "amendment",
+                "attribute": "ratification_status",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-0001",
+                  "REF-0002"
+                ],
+                "support": "It is unclear whether the amendment was ratified.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "decision": "candidate_B",
+      "disagreement_causes": [],
+      "rationale": "Both Council of Talks versions and their refs remain owned. Unclear ratification is amendment ratification_status uncertainty, while the unspecified effective period and amendment question yield amendment effective_time missing information. The revision-history prefix is structural. No context evidence is retained. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  },
+  "producer-v3-fac8d5be1085af07123efd96": {
+    "review": {
+      "protocol": "producer-coverage-amendment-v3",
+      "policy": "producer-semantic-policy-v3",
+      "evidence_kind": "training_label_curation_evidence",
+      "use": "curation_only",
+      "packet_id": "producer-v3-fac8d5be1085af07123efd96",
+      "input_sha256": "b30af42fe8841605bfd1101bce6789e1f2c619bad81fbaf2651b78b3fa6dd492",
+      "slot": "A",
+      "provenance": "machine_agent_primary",
+      "reviewed_at": "2026-09-15T19:25:45.392216+00:00",
+      "label": {
+        "status": "examined",
+        "items": [
+          {
+            "span": "s0",
+            "claims": [
+              "CLM-C",
+              "CLM-D"
+            ],
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "gap_atoms": [
+              {
+                "kind": "gap",
+                "category": "missing_information",
+                "subject": "owned_record",
+                "attribute": "effective_time",
+                "ordinal": null,
+                "relation": null,
+                "state": "unspecified",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The effective time is missing.",
+                "origin": "source_explicit"
+              }
+            ],
+            "uncertainty_atoms": [
+              {
+                "kind": "uncertainty",
+                "category": "unknown",
+                "subject": "owned_record",
+                "attribute": "interpretation",
+                "ordinal": null,
+                "relation": null,
+                "state": "unknown",
+                "scope": "owned_record",
+                "unit": null,
+                "span": "s0",
+                "refs": [
+                  "REF-1003",
+                  "REF-1004"
+                ],
+                "support": "The interpretation remains uncertain.",
+                "origin": "source_explicit"
+              }
+            ]
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false
+      },
+      "rationale": "The record explicitly lacks an effective time and asks when it takes effect. Interpretation uncertainty is explicit; conflicting assertions alone add no uncertainty. All owned CLM assertions and refs are retained. Structural labels add no atoms; context-only evidence is excluded."
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "valid": true,
+    "human_reviewed": false
+  }
+}

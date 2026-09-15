@@ -1,0 +1,74 @@
+{
+    "protocol":  "producer-coverage-amendment-v3",
+    "policy":  "producer-semantic-policy-v3",
+    "evidence_kind":  "training_label_curation_evidence",
+    "use":  "curation_only",
+    "packet_id":  "producer-v3-92cfb68203fdfe40ec3577eb",
+    "input_sha256":  "83f951f2388523dbe999f03d2087656b77d5c3f32117e9efd0033f8e06954c17",
+    "slot":  "D",
+    "provenance":  "machine_agent_adjudication",
+    "reviewed_at":  "2026-09-15T19:28:19.8040524Z",
+    "label":  {
+                  "status":  "examined",
+                  "items":  [
+                                {
+                                    "span":  "s0",
+                                    "claims":  [
+                                                   "CLM-C",
+                                                   "CLM-D"
+                                               ],
+                                    "refs":  [
+                                                 "REF-1003",
+                                                 "REF-1004"
+                                             ],
+                                    "gap_atoms":  [
+                                                      {
+                                                          "kind":  "gap",
+                                                          "category":  "missing_information",
+                                                          "subject":  "owned_record",
+                                                          "attribute":  "effective_time",
+                                                          "ordinal":  null,
+                                                          "relation":  null,
+                                                          "state":  "unspecified",
+                                                          "scope":  "owned_record",
+                                                          "unit":  null,
+                                                          "span":  "s0",
+                                                          "refs":  [
+                                                                       "REF-1003",
+                                                                       "REF-1004"
+                                                                   ],
+                                                          "support":  "The effective time is missing. When does it take effect?",
+                                                          "origin":  "source_explicit"
+                                                      }
+                                                  ],
+                                    "uncertainty_atoms":  [
+                                                              {
+                                                                  "kind":  "uncertainty",
+                                                                  "category":  "unknown",
+                                                                  "subject":  "owned_record",
+                                                                  "attribute":  "interpretation",
+                                                                  "ordinal":  null,
+                                                                  "relation":  null,
+                                                                  "state":  "unknown",
+                                                                  "scope":  "owned_record",
+                                                                  "unit":  null,
+                                                                  "span":  "s0",
+                                                                  "refs":  [
+                                                                               "REF-1003",
+                                                                               "REF-1004"
+                                                                           ],
+                                                                  "support":  "The interpretation remains uncertain.",
+                                                                  "origin":  "source_explicit"
+                                                              }
+                                                          ]
+                                }
+                            ],
+                  "source_uncertainty_present":  true,
+                  "review_ambiguity":  false
+              },
+    "decision":  "candidate_B",
+    "disagreement_causes":  [
+
+                            ],
+    "rationale":  "Both sensor-bank assertions remain despite their conflict. Separate-statement and Finally wording do not ask entry order or content. The owned record has a missing effective time and explicit interpretation uncertainty. Only REF-1003 and REF-1004 are owned. All candidates agree in material semantics; support extent and atom ordering do not change the rendered meaning. Candidate B preserves exact complete supporting clauses. Every atom has the owned span and full owned refs, source_explicit origin, owned_record scope, and null relation/unit. The finite fields are renderable and no unresolved annotation ambiguity remains."
+}
