@@ -1,0 +1,32 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-4f82ee17dd2bfe5188b8ff0d",
+  "input_sha256": "b7e8334b54eebc3cc8e67141760c8bf2c0522b8a3a16a322ea0ae08f2cf4b46f",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "Revision history maintained by Registry Board: CLM-A registers Nera proposed 16 filed notices under REF-0001. The retained amendment, CLM-B, registers Sola amended 23 filed notices under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s164",
+        "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+      }
+    ],
+    "supplied_refs": [
+      "REF-0001",
+      "REF-0002",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-0001",
+      "REF-0002"
+    ],
+    "routed_rules": []
+  }
+}

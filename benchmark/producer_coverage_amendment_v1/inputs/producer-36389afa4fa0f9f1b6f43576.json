@@ -1,0 +1,32 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-36389afa4fa0f9f1b6f43576",
+  "input_sha256": "9e47224af5299c16b8080f82bc6b8795024249e6dee4e5978c34b9663398a68f",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "CLM-C: service desk 42 is assigned 20 delivery windows (REF-1003). In a separate statement, CLM-D: the same service desk 42 is assigned 22 delivery windows (REF-1004). Finally, These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s12c",
+        "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+      }
+    ],
+    "supplied_refs": [
+      "REF-1003",
+      "REF-1004",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-1003",
+      "REF-1004"
+    ],
+    "routed_rules": []
+  }
+}

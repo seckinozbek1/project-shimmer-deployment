@@ -1,0 +1,20 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-e33f7a8616f9d055fc1472cc",
+  "input_sha256": "f71ad7eea562e49457374f0adc1a92002cdd1fa32804bd2d3177770d23768bc2",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "Divider for delegation 41. In a separate statement, No semantic entry. Finally, End marker."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [],
+    "required_refs": [],
+    "routed_rules": []
+  }
+}

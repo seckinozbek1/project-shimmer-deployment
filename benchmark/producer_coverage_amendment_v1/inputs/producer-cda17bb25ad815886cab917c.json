@@ -1,0 +1,32 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-cda17bb25ad815886cab917c",
+  "input_sha256": "56b420888d491a56ba26044f38d59d69a97197d846724140aabfc2ad100e467e",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "CLM-A: Module Cedar planned 20 signal cycles (REF-0001); CLM-B: Module Elm reported 27 signal cycles (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "sf0",
+        "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+      }
+    ],
+    "supplied_refs": [
+      "REF-0001",
+      "REF-0002",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-0001",
+      "REF-0002"
+    ],
+    "routed_rules": []
+  }
+}

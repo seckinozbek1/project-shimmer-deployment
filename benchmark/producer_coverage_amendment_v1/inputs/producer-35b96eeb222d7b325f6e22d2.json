@@ -1,0 +1,26 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-35b96eeb222d7b325f6e22d2",
+  "input_sha256": "f8388e649190bcf9ba8ce0783c4b617f7fb433a046347565484f5d86f7607bb5",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "CLM-A: vendor 43 recorded 23 pallets (REF-1001). In a separate statement, CLM-B: vendor 43 retained 28 pallets (REF-1002). Finally, The date is absent. When was this recorded? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": []
+  }
+}

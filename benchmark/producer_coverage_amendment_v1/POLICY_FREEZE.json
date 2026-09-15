@@ -1,0 +1,19 @@
+{
+  "policy": "producer-semantic-policy-v1",
+  "protocol": "producer-coverage-amendment-v1",
+  "renderer": "producer-target-renderer-v1",
+  "frozen_at": "2026-09-15T18:10:48.751163+00:00",
+  "tests": 17,
+  "effect_proofs": 8,
+  "phase": "BEFORE_AMENDMENT_PACKET_OR_AUTHORED_TARGET_ACCESS",
+  "hashes": {
+    ".gitattributes": "53628631f02c7e369369c2efd12a62076bec4e44f2ecdf1216102be3e2c7e484",
+    "checks.py": "d7ab6f31349c8058703db065ed145f8cc6aedd86ed0a6b23147caecab3e3f019",
+    "legacy_projection.py": "791125c248aca5094c90eb43a5c88a30955c485fd64af17c776444fe17ad18e3",
+    "policy.md": "fb244526695e3127f9bcd60b996f2a5954787adbb12be0af0e95197040a8d2e0",
+    "pre_review_validation.log": "f3119b234612c16cd46ba82c8202cdd05f67440cc036545bd31de1849f955ff0",
+    "reviewer_instructions.md": "b77ec884f8ddb787b913266da0457688c00fec4706c359c0c21563fa3813db9a",
+    "schema.json": "5338ba8c8a42e8c24b32bd68c4408b1db668eb0f5402ee940adac759008fd5f6",
+    "semantics.py": "017186e6c87c7e292912c34ec0b30d20a1595ace5dc2f6965c5c49566fc7dc34"
+  }
+}

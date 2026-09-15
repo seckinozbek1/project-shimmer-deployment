@@ -1,0 +1,20 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-77f4b4477af1f2dfe0e18b9a",
+  "input_sha256": "4aec83afe7210b240b3ec8553c9656a6b9a8bf0f896eacf7eded7eeb7ca88bac",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "paired_register / Purchasing Desk: the owned text is an unreadable fragment; semantic content cannot be determined."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [],
+    "required_refs": [],
+    "routed_rules": []
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-0410db59da5bfbb5a932a6dc",
+  "input_sha256": "43f6ddd8db95f3799ac5ac18983f770eb09be3e3adf1bbd04d0dc856008d5102",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "Revision history maintained by Council of Talks: CLM-A registers Orin proposed 12 concessions under REF-0001. The retained amendment, CLM-B, registers Vela amended 19 concessions under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s162",
+        "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+      }
+    ],
+    "supplied_refs": [
+      "REF-0001",
+      "REF-0002",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-0001",
+      "REF-0002"
+    ],
+    "routed_rules": []
+  }
+}

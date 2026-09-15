@@ -1,0 +1,32 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-a27c1c7e73badc5230c9a62b",
+  "input_sha256": "d4cb5e81c52aeb8311d9a382bdc938ca6f173b0d511fe4e1a761d20912a027a3",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "- CLM-C: sensor bank 48 is assigned 38 pulses (REF-1003).\n- CLM-D: the same sensor bank 48 is assigned 40 pulses (REF-1004).\n- These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "sfa",
+        "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+      }
+    ],
+    "supplied_refs": [
+      "REF-1003",
+      "REF-1004",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-1003",
+      "REF-1004"
+    ],
+    "routed_rules": []
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "policy": "producer-semantic-policy-v1",
+  "packet_id": "producer-5d021839b35a787e8b17021c",
+  "input_sha256": "e4167c3bdb763f890da19fe186d71217dd417f1abd878eed722ca9f0108d9642",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "Revision history maintained by Purchasing Desk: CLM-A registers Bidder Flint proposed 22 supply crates under REF-0001. The retained amendment, CLM-B, registers Bidder Gale amended 22 supply crates under REF-0002. Both versions remain in the archive. It is unclear whether the amendment was ratified. No effective period is specified. When does the amendment take effect?\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s174",
+        "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+      }
+    ],
+    "supplied_refs": [
+      "REF-0001",
+      "REF-0002",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-0001",
+      "REF-0002"
+    ],
+    "routed_rules": []
+  }
+}
