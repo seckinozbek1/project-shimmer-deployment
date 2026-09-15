@@ -1,0 +1,189 @@
+{
+  "verdict": "REMOTE_CONTRACT_MODEL_AB_FAIL",
+  "DOMAIN_AGNOSTIC_TUNING_RECOMMENDED": true,
+  "tuning_roles": [
+    "producer",
+    "auditor"
+  ],
+  "calls": {
+    "producer_old": {
+      "input_tokens": 610,
+      "output_tokens": 259,
+      "generation_seconds": 12.408040009000018,
+      "wall_seconds": 12.422597622000012,
+      "tokens_per_second": 20.873562610383072,
+      "ttft_seconds": null,
+      "finish_reason": "eos",
+      "cap_hit": false,
+      "terminal_token_id": 151645,
+      "contract_valid": false,
+      "semantic_accepted": false,
+      "raw_both_refs": true,
+      "gpu_sample_count": 12,
+      "gpu_utilization_mean": 44.916666666666664,
+      "cpu_percent_mean": 3.775
+    },
+    "producer_new": {
+      "input_tokens": 333,
+      "output_tokens": 84,
+      "generation_seconds": 3.970458177000012,
+      "wall_seconds": 3.9733625759999995,
+      "tokens_per_second": 21.156248537408974,
+      "ttft_seconds": null,
+      "finish_reason": "eos",
+      "cap_hit": false,
+      "terminal_token_id": 151645,
+      "contract_valid": false,
+      "semantic_accepted": false,
+      "raw_both_refs": true,
+      "gpu_sample_count": 4,
+      "gpu_utilization_mean": 56.5,
+      "cpu_percent_mean": 3.4
+    },
+    "auditor_old": {
+      "input_tokens": 1875,
+      "output_tokens": 384,
+      "generation_seconds": 18.16874744200004,
+      "wall_seconds": 18.175794543999984,
+      "tokens_per_second": 21.135193894121784,
+      "ttft_seconds": null,
+      "finish_reason": "length",
+      "cap_hit": true,
+      "terminal_token_id": 29899,
+      "contract_valid": false,
+      "semantic_accepted": false,
+      "raw_both_refs": false,
+      "gpu_sample_count": 18,
+      "gpu_utilization_mean": 42.166666666666664,
+      "cpu_percent_mean": 3.4
+    },
+    "auditor_new": {
+      "input_tokens": 488,
+      "output_tokens": 350,
+      "generation_seconds": 16.322966930999996,
+      "wall_seconds": 16.324876874999973,
+      "tokens_per_second": 21.442180302117286,
+      "ttft_seconds": null,
+      "finish_reason": "eos",
+      "cap_hit": false,
+      "terminal_token_id": 32000,
+      "contract_valid": false,
+      "semantic_accepted": false,
+      "raw_both_refs": true,
+      "gpu_sample_count": 16,
+      "gpu_utilization_mean": 33.75,
+      "cpu_percent_mean": 3.4
+    }
+  },
+  "improvements": {
+    "producer": {
+      "input_tokens": {
+        "reduction": 277,
+        "reduction_percent": 45.40983606557377
+      },
+      "output_tokens": {
+        "reduction": 175,
+        "reduction_percent": 67.56756756756756
+      },
+      "wall_seconds": {
+        "reduction": 8.449235046000013,
+        "reduction_percent": 68.01504245003231
+      }
+    },
+    "auditor": {
+      "input_tokens": {
+        "reduction": 1387,
+        "reduction_percent": 73.97333333333333
+      },
+      "output_tokens": {
+        "reduction": 34,
+        "reduction_percent": 8.854166666666666
+      },
+      "wall_seconds": {
+        "reduction": 1.8509176690000118,
+        "reduction_percent": 10.183420947674712
+      }
+    }
+  },
+  "serial_admitted": false,
+  "accepted_serial_critical_path_seconds": null,
+  "counts": {
+    "calls": 4,
+    "truncations": 1,
+    "new_truncations": 0,
+    "contract_valid": 0,
+    "semantic_accepted": 0,
+    "new_both_refs_emitted": 2,
+    "new_rule_hallucinations": 0,
+    "old_rule_hallucinations": 1
+  },
+  "resources": {
+    "peak_vram_mib": 10315.0,
+    "vram_total_mib": 23028.0,
+    "active_gpu_median": 42.0,
+    "active_gpu_mean": 41.28,
+    "peak_process_rss_gib": 1.8292045593261719,
+    "peak_host_used_ram_gib": 4.058277130126953,
+    "active_cpu_mean": 3.4899999999999998,
+    "peak_host_cpu_percent": 16.1
+  },
+  "loads": [
+    {
+      "role": "active_producer",
+      "seconds": 4.038255951999986,
+      "device": "cuda:0",
+      "device_map": {
+        "": 0
+      },
+      "host_rss_before_gib": 0.3875312805175781,
+      "host_rss_after_gib": 0.7139320373535156,
+      "vram_before_mib": 0.0,
+      "cpu_offload": false,
+      "allocated_mib": 5290.65380859375,
+      "residents": [
+        "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
+      ]
+    },
+    {
+      "role": "active_auditor",
+      "seconds": 0.7233084300000314,
+      "device": "cuda:0",
+      "device_map": {
+        "": 0
+      },
+      "host_rss_before_gib": 1.2767410278320312,
+      "host_rss_after_gib": 1.3002548217773438,
+      "vram_before_mib": 5298.77880859375,
+      "cpu_offload": false,
+      "allocated_mib": 7458.22265625,
+      "residents": [
+        "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+        "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+      ]
+    }
+  ],
+  "load_counts": {
+    "unsloth/Qwen2.5-7B-Instruct-bnb-4bit": 1,
+    "unsloth/Phi-3.5-mini-instruct-bnb-4bit": 1
+  },
+  "timeline": {
+    "provisioning_seconds": 209.82757425308228,
+    "ssh_readiness_seconds": 1.8715105056762695,
+    "source_transfer_seconds": 3.936796188354492,
+    "dependency_install_seconds": 84.28382873535156,
+    "dependency_recheck_seconds": 5.339731931686401,
+    "model_acquisition_stage_seconds": 25.995017528533936,
+    "hydration_seconds": 4.761564382000017,
+    "sum_generation_seconds": 50.870212559000066,
+    "sum_call_wall_seconds": 50.89663161699997,
+    "launch_to_first_call_seconds": 361.2455024719238,
+    "first_to_last_call_window_seconds": 51.62779664993286,
+    "post_call_adjudication_wait_seconds": 72.01538014411926,
+    "finish_to_provider_termination_seconds": 91.98918867111206,
+    "termination_request_to_confirmation_seconds": 70.963449716568,
+    "total_billable_upper_seconds": 576.877867937088,
+    "estimated_cost_upper_usd": 0.20671456934412322
+  },
+  "training_run": false,
+  "concurrency_run": false
+}

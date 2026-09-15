@@ -1,0 +1,1 @@
+{"agent":"PROCESSOR","doc_id":"bounded-local-fixture","items":[{"section_id":"s0","draft_text":"s0","extraction_method":"source_span","claims_referenced":["CLM-001","CLM-002"],"open_questions":["What is the reporting date?"],"ref":"REF-0001","kind":"extraction","confidence":"UNCERTAIN","ref_ids":["REF-0001","REF-0002"]}]}

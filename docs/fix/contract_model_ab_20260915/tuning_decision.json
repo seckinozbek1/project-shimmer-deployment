@@ -1,0 +1,29 @@
+{
+  "DOMAIN_AGNOSTIC_TUNING_RECOMMENDED": true,
+  "roles": [
+    "producer",
+    "auditor"
+  ],
+  "target": "task semantics across domains",
+  "training_executed": false,
+  "reason": "Validated clear compact contracts still produced a missing-information omission and inconsistent status in producer; auditor violated JSON-only output and partly misattributed pre-existing missing information to extraction.",
+  "primary_errors": {
+    "producer": [
+      "information-gap omission",
+      "status/semantic inconsistency",
+      "markdown formatting"
+    ],
+    "auditor": [
+      "unsolicited trailing prose",
+      "partially incorrect fidelity reason",
+      "output inefficiency"
+    ]
+  },
+  "new_evidence_selection_failures": false,
+  "new_rule_hallucination": false,
+  "runtime_adapter_transport_explanation": false,
+  "insufficient_capacity_explanation": false,
+  "scope_limit": "One authored fixture and one deterministic draw per arm; recommendation is not proof of general capability limits or of training efficacy.",
+  "next_step": "Freeze compact/refusal contracts and design a grouped, domain-diverse, hard-negative training/evaluation dataset before any separately authorized training.",
+  "design": "DOMAIN_AGNOSTIC_TASK_TUNING_DESIGN.md"
+}

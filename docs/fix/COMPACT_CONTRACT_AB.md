@@ -240,3 +240,16 @@ or serving work is justified until producer, auditor and mandatory serial qualit
 **No cloud, paid API, full pipeline, multi-round, model/revision/quantization change,
 ceiling increase, serving-engine change, hidden benchmark key access or push occurred.**
 Historical remote evidence and operator-owned `SHIMMER_HANDOFF.md` / `durable/` are preserved.
+
+
+## Subsequent real-model A/B ? 15 September 2026
+
+The separately authorized measurement at `54df6a4` is complete:
+[REMOTE_CONTRACT_MODEL_AB.md](REMOTE_CONTRACT_MODEL_AB.md).
+**REMOTE_CONTRACT_MODEL_AB_FAIL**; both revised responses reached EOS but failed
+strict contracts and semantic acceptance. The serial handoff was withheld.
+**DOMAIN_AGNOSTIC_TUNING_RECOMMENDED=true** for both roles; see the bounded
+[future task-data/evaluation design](DOMAIN_AGNOSTIC_TASK_TUNING_DESIGN.md).
+One A10 was provider-confirmed terminated, cost upper estimate $0.20671457.
+No concurrency, model training, full pipeline, multi-round, paid inference API or push.
+This new evidence layer does not alter the historical results above.

@@ -1,0 +1,7 @@
+Return only one JSON object: {"items":[{"span":"s0","claims":[],"questions":[],"uncertainty":[],"status":"empty","refs":[]}]}.
+Exactly one item per owned source_spans alias; multiple observations belong in its arrays.
+claims: every explicit CLM-* id. questions: explicit questions and missing information as questions. uncertainty: unresolved interpretation, if any.
+status: extracted if any claims/questions/uncertainty, otherwise empty. Empty means examined, not omitted. If unable to complete use {"items":[],"status":"refused"}.
+refs: select supplied REF-* evidence for this span. Do not invent ids. Do not judge context-only spans.
+Python owns source, offsets, identity and order: return the alias once in span; never copy prose or emit draft_text/section_id. No other fields.
+{"task": "bounded_source_extraction", "document_id": "bounded-local-fixture", "document_name": "", "structural_inventory": [], "source_spans": [{"span_id": "s0", "text": "CLM-001: Planned capacity is 120 units (REF-0001). CLM-002: Reported capacity is 130 units (REF-0002). The reporting date is not supplied.\n"}], "boundary_context": [], "instructions": "Use the compact extraction contract. Every owned alias needs one item; boundary_context is not owned. Python reconstructs source text."}

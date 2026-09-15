@@ -1,0 +1,303 @@
+{
+  "classification": "BOUNDED_REMOTE_ORDINARY_NOT_BENCHMARK",
+  "multi_round": false,
+  "full_pipeline": false,
+  "source_commit": "54df6a48e8646cf721d6d2e2f2ecb60125a92bef",
+  "families": {
+    "active_producer": "qwen2",
+    "active_auditor": "llama"
+  },
+  "calls": [
+    {
+      "label": "producer_old",
+      "role": "active_producer",
+      "start_epoch": 1789469325.2579076,
+      "wall_seconds": 12.422597622000012,
+      "usage": {
+        "input_tokens": 610,
+        "output_tokens": 259,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 12.408040009000018,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "8e9e24361119625e6dad41616c38d8371794a1d79dfbd23ed5d49f64856d155e",
+        "cap_hit": false,
+        "terminal_token_id": 151645,
+        "configured_eos_token_ids": [
+          151645,
+          151643
+        ]
+      },
+      "raw_text": "```json\n{\n  \"agent\": \"PROCESSOR\",\n  \"doc_id\": \"bounded-local-fixture\",\n  \"items\": [\n    {\n      \"ref\": \"CLM-001\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"claims_referenced\": [\"CLM-001\"],\n      \"open_questions\": [],\n      \"section_id\": \"s0\",\n      \"draft_text\": \"CLM-001: Planned capacity is 120 units (REF-0001).\",\n      \"extraction_method\": \"direct_extraction\",\n      \"ref_ids\": [\"REF-0001\"]\n    },\n    {\n      \"ref\": \"CLM-002\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"claims_referenced\": [\"CLM-002\"],\n      \"open_questions\": [],\n      \"section_id\": \"s0\",\n      \"draft_text\": \"CLM-002: Reported capacity is 130 units (REF-0002).\",\n      \"extraction_method\": \"direct_extraction\",\n      \"ref_ids\": [\"REF-0002\"]\n    }\n  ]\n}\n```",
+      "backend_ok": true,
+      "prompt_version": "old",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+      "raw_sha256": "c6f0887d401cdae010b8c74a473448fc2abb7bca85f961d24c65daa25883572a",
+      "output_tokens_per_second": 20.873562610383072,
+      "producer_fixture_checks": {
+        "reconstructed": false,
+        "claims_preserved": true,
+        "date_question": false,
+        "refs_preserved": true
+      },
+      "parsed": {
+        "agent": "PROCESSOR",
+        "doc_id": "bounded-local-fixture",
+        "items": [
+          {
+            "ref": "CLM-001",
+            "kind": "finding",
+            "confidence": "CONFIDENT",
+            "claims_referenced": [
+              "CLM-001"
+            ],
+            "open_questions": [],
+            "section_id": "s0",
+            "draft_text": "CLM-001: Planned capacity is 120 units (REF-0001).",
+            "extraction_method": "direct_extraction",
+            "ref_ids": [
+              "REF-0001"
+            ]
+          },
+          {
+            "ref": "CLM-002",
+            "kind": "finding",
+            "confidence": "CONFIDENT",
+            "claims_referenced": [
+              "CLM-002"
+            ],
+            "open_questions": [],
+            "section_id": "s0",
+            "draft_text": "CLM-002: Reported capacity is 130 units (REF-0002).",
+            "extraction_method": "direct_extraction",
+            "ref_ids": [
+              "REF-0002"
+            ]
+          }
+        ]
+      },
+      "contract_valid": false,
+      "contract_missing": [
+        "Source span missing or context-only span claimed"
+      ],
+      "accepted_items": 0,
+      "source_reconstructed_exactly": false,
+      "semantic_fixture_checks": false,
+      "accepted": false
+    },
+    {
+      "label": "producer_new",
+      "role": "active_producer",
+      "start_epoch": 1789469337.6824086,
+      "wall_seconds": 3.9733625759999995,
+      "usage": {
+        "input_tokens": 333,
+        "output_tokens": 84,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 3.970458177000012,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "b0cd3c1f6eb687992910475667fabed4ded130ca8cb06f443521ec52c45658a1",
+        "cap_hit": false,
+        "terminal_token_id": 151645,
+        "configured_eos_token_ids": [
+          151645,
+          151643
+        ]
+      },
+      "raw_text": "```json\n{\n  \"items\": [\n    {\n      \"span\": \"s0\",\n      \"claims\": [\"CLM-001\", \"CLM-002\"],\n      \"questions\": [],\n      \"uncertainty\": [],\n      \"status\": \"empty\",\n      \"refs\": [\"REF-0001\", \"REF-0002\"]\n    }\n  ]\n}\n```",
+      "backend_ok": true,
+      "prompt_version": "new",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+      "raw_sha256": "7b2bb54ffe56777ae1b0990d8f52813a3793214cc54d8b5956ba140685b2f9d3",
+      "output_tokens_per_second": 21.156248537408974,
+      "producer_fixture_checks": {
+        "reconstructed": false,
+        "claims_preserved": false,
+        "date_question": false,
+        "refs_preserved": false
+      },
+      "parsed": null,
+      "contract_valid": false,
+      "contract_missing": [
+        "Complete compact JSON response required"
+      ],
+      "accepted_items": 0,
+      "source_reconstructed_exactly": false,
+      "semantic_fixture_checks": false,
+      "accepted": false
+    },
+    {
+      "label": "auditor_old",
+      "role": "active_auditor",
+      "start_epoch": 1789469342.3831782,
+      "wall_seconds": 18.175794543999984,
+      "usage": {
+        "input_tokens": 1875,
+        "output_tokens": 384,
+        "truncated": true,
+        "finish_reason": "length",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 18.16874744200004,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "9a77d7299564580be380f2b823bdde6f2b4413e2e3694bba128eb57dcc0ce57e",
+        "cap_hit": true,
+        "terminal_token_id": 29899,
+        "configured_eos_token_ids": 32000
+      },
+      "raw_text": "```json\n{\n  \"agent\": \"VERIFIER\",\n  \"doc_id\": \"bounded-local-fixture\",\n  \"items\": [\n    {\n      \"ref\": \"REF-0001\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"ref_ids\": [\"REF-0001\"],\n      \"relation\": \"moved_away\",\n      \"record_verdict\": \"irregular\",\n      \"value_a\": 120,\n      \"unit_a\": \"units\",\n      \"value_b\": 130,\n      \"unit_b\": \"units\",\n      \"source_refs\": [\"REF-0001\"],\n      \"explanation\": \"The reported capacity has increased from the planned capacity, indicating a discrep0n of 10 units.\",\n      \"field_label\": \"Planned capacity\",\n      \"delta\": -10\n    }\n  ],\n  \"finding_record\": {\n    \"rule_id\": \"CONV-001\",\n    \"source_rule_id\": \"\",\n    \"unit_id\": \"\",\n    \"value_a\": 120,\n    \"unit_a\": \"units\",\n    \"value_b\": 130,\n    \"unit_b\": \"units\",\n    \"relation\": \"moved_away\",\n    \"record_verdict\": \"irregular\",\n    \"verdict\": \"<your own contract's verdict value, unchanged>\",\n    \"quote\": \"CLM-001: Planned capacity is 120 units (REF-",
+      "backend_ok": true,
+      "prompt_version": "old",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+      "raw_sha256": "e7940ea05c52af007c614148595121277ce229ada4c5ef4d906350f29a2bf32f",
+      "output_tokens_per_second": 21.135193894121784,
+      "auditor_fixture_checks": {
+        "typed_claim_correct": false,
+        "reason_present": false,
+        "references_correct": false
+      },
+      "parsed": [
+        {
+          "ref": "REF-0001",
+          "kind": "finding",
+          "confidence": "CONFIDENT",
+          "ref_ids": [
+            "REF-0001"
+          ],
+          "relation": "moved_away",
+          "record_verdict": "irregular",
+          "value_a": 120,
+          "unit_a": "units",
+          "value_b": 130,
+          "unit_b": "units",
+          "source_refs": [
+            "REF-0001"
+          ],
+          "explanation": "The reported capacity has increased from the planned capacity, indicating a discrep0n of 10 units.",
+          "field_label": "Planned capacity",
+          "delta": -10
+        }
+      ],
+      "contract_valid": false,
+      "contract_missing": [
+        "not a canonical envelope {agent:str, doc_id:str, items:list}"
+      ],
+      "accepted_items": 0,
+      "source_reconstructed_exactly": null,
+      "semantic_fixture_checks": false,
+      "accepted": false
+    },
+    {
+      "label": "auditor_new",
+      "role": "active_auditor",
+      "start_epoch": 1789469360.5608275,
+      "wall_seconds": 16.324876874999973,
+      "usage": {
+        "input_tokens": 488,
+        "output_tokens": 350,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 16.322966930999996,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "c9172df69079406656d40d2d753641d8179bbbc68c6690df39955290e11d0f7c",
+        "cap_hit": false,
+        "terminal_token_id": 32000,
+        "configured_eos_token_ids": 32000
+      },
+      "raw_text": "{\"items\":[{\"finding\":\"MATCH\",\"ref_ids\":[\"REF-0001\",\"REF-0002\"],\"reasoning\":\"The extracted text accurately reflects the original text, preserving the planned and reported capacities as well as the reference IDs. The only discrepancy is the omission of the reporting date, which is noted as an open question in the extraction. This omission does not constitute an error in content but rather an incomplete piece of information that requires clarification. The comparison maintains a low severity as the core information is consistent, and the confidence in the match is high due to the direct correspondence between the original and extracted texts.\",\"severity\":\"low\",\"confidence\":\"CONFIDENT\"}]} The provided JSON response accurately reflects the comparison between the original and extracted text, identifying that the core information regarding planned and reported capacities and their corresponding reference IDs has been preserved. The mention of an open question regarding the reporting date indicates that while the extracted text is a faithful representation of the original, it acknowledges a gap in the information that was not addressed in the extraction process. This gap is not an error in the content but rather a missing piece of information that is crucial for a complete understanding of the context. The low severity rating is appropriate because the main content fidelity is high, and the confidence level is confident due to the direct and accurate representation of the original text in the extraction. The response is well-structured, with clear identification of the finding, reasoning, severity, and confidence, and it adheres to the instructions provided for the task.",
+      "backend_ok": true,
+      "prompt_version": "new",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+      "raw_sha256": "492652920c11786aec6d0429e25f7602ad31c5f043e0b3b841cc022aac11a2ad",
+      "output_tokens_per_second": 21.442180302117286,
+      "auditor_fixture_checks": {
+        "typed_claim_correct": false,
+        "reason_present": false,
+        "references_correct": false
+      },
+      "parsed": null,
+      "contract_valid": false,
+      "contract_missing": [
+        "Complete compact JSON response required"
+      ],
+      "accepted_items": 0,
+      "source_reconstructed_exactly": null,
+      "semantic_fixture_checks": false,
+      "accepted": false
+    }
+  ],
+  "loads": [
+    {
+      "role": "active_producer",
+      "seconds": 4.038255951999986,
+      "device": "cuda:0",
+      "device_map": {
+        "": 0
+      },
+      "host_rss_before_gib": 0.3875312805175781,
+      "host_rss_after_gib": 0.7139320373535156,
+      "vram_before_mib": 0.0,
+      "cpu_offload": false,
+      "allocated_mib": 5290.65380859375,
+      "residents": [
+        "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
+      ]
+    },
+    {
+      "role": "active_auditor",
+      "seconds": 0.7233084300000314,
+      "device": "cuda:0",
+      "device_map": {
+        "": 0
+      },
+      "host_rss_before_gib": 1.2767410278320312,
+      "host_rss_after_gib": 1.3002548217773438,
+      "vram_before_mib": 5298.77880859375,
+      "cpu_offload": false,
+      "allocated_mib": 7458.22265625,
+      "residents": [
+        "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+        "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+      ]
+    }
+  ],
+  "bursts": [],
+  "generation_policy": {
+    "max_new_tokens": 384,
+    "max_time_seconds": 25,
+    "do_sample": false,
+    "seed": 7
+  },
+  "topology": {
+    "name": "report_optimized",
+    "device": "cuda:0",
+    "resident_limit": 2,
+    "owners": 1
+  },
+  "runtime": {
+    "torch": "2.5.1+cu121",
+    "transformers": "4.52.3",
+    "cuda": "12.1"
+  },
+  "quality_gate": "not_admitted",
+  "serial_path": {
+    "status": "not_admitted_quality_gate"
+  },
+  "concurrency": "not_authorized_not_run",
+  "residency_load_counts": {
+    "unsloth/Qwen2.5-7B-Instruct-bnb-4bit": 1,
+    "unsloth/Phi-3.5-mini-instruct-bnb-4bit": 1
+  },
+  "finished_epoch": 1789469448.9010844
+}

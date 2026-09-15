@@ -1,0 +1,1 @@
+{"version": [3, 12, 3], "executable": "/home/ubuntu/shimmer-contract_model_ab_20260915/.venv/bin/python", "profile": "experiment", "required": ">=3.12,<3.13", "observed": [{"candidate": "/home/ubuntu/shimmer-contract_model_ab_20260915/.venv/bin/python", "version": "3.12.3"}]}

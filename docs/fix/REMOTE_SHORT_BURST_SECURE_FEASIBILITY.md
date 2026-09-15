@@ -273,3 +273,16 @@ producer ownership/reconstruction and scoped auditor fidelity contracts now pass
 Readiness is **REMOTE_CONTRACT_AB_READY**, not a model reliability or full-run verdict.
 The closed secure feasibility result remains **CLOUD_FULL_RUN_NOT_ELIGIBLE**.
 No new cloud, inference, full pipeline, multi-round, serving change or push occurred.
+
+
+## Subsequent real-model A/B ? 15 September 2026
+
+The separately authorized measurement at `54df6a4` is complete:
+[REMOTE_CONTRACT_MODEL_AB.md](REMOTE_CONTRACT_MODEL_AB.md).
+**REMOTE_CONTRACT_MODEL_AB_FAIL**; both revised responses reached EOS but failed
+strict contracts and semantic acceptance. The serial handoff was withheld.
+**DOMAIN_AGNOSTIC_TUNING_RECOMMENDED=true** for both roles; see the bounded
+[future task-data/evaluation design](DOMAIN_AGNOSTIC_TASK_TUNING_DESIGN.md).
+One A10 was provider-confirmed terminated, cost upper estimate $0.20671457.
+No concurrency, model training, full pipeline, multi-round, paid inference API or push.
+This new evidence layer does not alter the historical results above.

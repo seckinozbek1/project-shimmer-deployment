@@ -1,0 +1,575 @@
+{
+  "producer": {
+    "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+    "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+    "input_tokens": 610,
+    "rendered_sha256": "8e9e24361119625e6dad41616c38d8371794a1d79dfbd23ed5d49f64856d155e",
+    "config": {
+      "_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+      "architectures": [
+        "Qwen2ForCausalLM"
+      ],
+      "attention_dropout": 0.0,
+      "eos_token_id": 151645,
+      "hidden_act": "silu",
+      "hidden_size": 3584,
+      "initializer_range": 0.02,
+      "intermediate_size": 18944,
+      "max_position_embeddings": 32768,
+      "max_window_layers": 28,
+      "model_type": "qwen2",
+      "num_attention_heads": 28,
+      "num_hidden_layers": 28,
+      "num_key_value_heads": 4,
+      "pad_token_id": 151654,
+      "quantization_config": {
+        "_load_in_4bit": true,
+        "_load_in_8bit": false,
+        "bnb_4bit_compute_dtype": "bfloat16",
+        "bnb_4bit_quant_storage": "uint8",
+        "bnb_4bit_quant_type": "nf4",
+        "bnb_4bit_use_double_quant": true,
+        "llm_int8_enable_fp32_cpu_offload": false,
+        "llm_int8_has_fp16_weight": false,
+        "llm_int8_skip_modules": [
+          "lm_head",
+          "multi_modal_projector",
+          "merger",
+          "modality_projection"
+        ],
+        "llm_int8_threshold": 6.0,
+        "load_in_4bit": true,
+        "load_in_8bit": false,
+        "quant_method": "bitsandbytes"
+      },
+      "rms_norm_eps": 1e-06,
+      "rope_scaling": null,
+      "rope_theta": 1000000.0,
+      "sliding_window": null,
+      "tie_word_embeddings": false,
+      "torch_dtype": "bfloat16",
+      "transformers_version": "4.49.0.dev0",
+      "unsloth_fixed": true,
+      "use_cache": true,
+      "use_sliding_window": false,
+      "vocab_size": 152064
+    },
+    "tokenizer_config": {
+      "add_bos_token": false,
+      "add_prefix_space": false,
+      "added_tokens_decoder": {
+        "151643": {
+          "content": "<|endoftext|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151644": {
+          "content": "<|im_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151645": {
+          "content": "<|im_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151646": {
+          "content": "<|object_ref_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151647": {
+          "content": "<|object_ref_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151648": {
+          "content": "<|box_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151649": {
+          "content": "<|box_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151650": {
+          "content": "<|quad_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151651": {
+          "content": "<|quad_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151652": {
+          "content": "<|vision_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151653": {
+          "content": "<|vision_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151654": {
+          "content": "<|vision_pad|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151655": {
+          "content": "<|image_pad|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151656": {
+          "content": "<|video_pad|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151657": {
+          "content": "<tool_call>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151658": {
+          "content": "</tool_call>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151659": {
+          "content": "<|fim_prefix|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151660": {
+          "content": "<|fim_middle|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151661": {
+          "content": "<|fim_suffix|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151662": {
+          "content": "<|fim_pad|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151663": {
+          "content": "<|repo_name|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151664": {
+          "content": "<|file_sep|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        }
+      },
+      "additional_special_tokens": [
+        "<|im_start|>",
+        "<|im_end|>",
+        "<|object_ref_start|>",
+        "<|object_ref_end|>",
+        "<|box_start|>",
+        "<|box_end|>",
+        "<|quad_start|>",
+        "<|quad_end|>",
+        "<|vision_start|>",
+        "<|vision_end|>",
+        "<|vision_pad|>",
+        "<|image_pad|>",
+        "<|video_pad|>"
+      ],
+      "bos_token": null,
+      "chat_template": "{%- if tools %}\n    {{- '<|im_start|>system\\n' }}\n    {%- if messages[0]['role'] == 'system' %}\n        {{- messages[0]['content'] }}\n    {%- else %}\n        {{- 'You are Qwen, created by Alibaba Cloud. You are a helpful assistant.' }}\n    {%- endif %}\n    {{- \"\\n\\n# Tools\\n\\nYou may call one or more functions to assist with the user query.\\n\\nYou are provided with function signatures within <tools></tools> XML tags:\\n<tools>\" }}\n    {%- for tool in tools %}\n        {{- \"\\n\" }}\n        {{- tool | tojson }}\n    {%- endfor %}\n    {{- \"\\n</tools>\\n\\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\\n<tool_call>\\n{\\\"name\\\": <function-name>, \\\"arguments\\\": <args-json-object>}\\n</tool_call><|im_end|>\\n\" }}\n{%- else %}\n    {%- if messages[0]['role'] == 'system' %}\n        {{- '<|im_start|>system\\n' + messages[0]['content'] + '<|im_end|>\\n' }}\n    {%- else %}\n        {{- '<|im_start|>system\\nYou are Qwen, created by Alibaba Cloud. You are a helpful assistant.<|im_end|>\\n' }}\n    {%- endif %}\n{%- endif %}\n{%- for message in messages %}\n    {%- if (message.role == \"user\") or (message.role == \"system\" and not loop.first) or (message.role == \"assistant\" and not message.tool_calls) %}\n        {{- '<|im_start|>' + message.role + '\\n' + message.content + '<|im_end|>' + '\\n' }}\n    {%- elif message.role == \"assistant\" %}\n        {{- '<|im_start|>' + message.role }}\n        {%- if message.content %}\n            {{- '\\n' + message.content }}\n        {%- endif %}\n        {%- for tool_call in message.tool_calls %}\n            {%- if tool_call.function is defined %}\n                {%- set tool_call = tool_call.function %}\n            {%- endif %}\n            {{- '\\n<tool_call>\\n{\"name\": \"' }}\n            {{- tool_call.name }}\n            {{- '\", \"arguments\": ' }}\n            {{- tool_call.arguments | tojson }}\n            {{- '}\\n</tool_call>' }}\n        {%- endfor %}\n        {{- '<|im_end|>\\n' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if (loop.index0 == 0) or (messages[loop.index0 - 1].role != \"tool\") %}\n            {{- '<|im_start|>user' }}\n        {%- endif %}\n        {{- '\\n<tool_response>\\n' }}\n        {{- message.content }}\n        {{- '\\n</tool_response>' }}\n        {%- if loop.last or (messages[loop.index0 + 1].role != \"tool\") %}\n            {{- '<|im_end|>\\n' }}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- if add_generation_prompt %}\n    {{- '<|im_start|>assistant\\n' }}\n{%- endif %}\n",
+      "clean_up_tokenization_spaces": false,
+      "eos_token": "<|im_end|>",
+      "errors": "replace",
+      "extra_special_tokens": {},
+      "model_max_length": 32768,
+      "pad_token": "<|vision_pad|>",
+      "padding_side": "left",
+      "split_special_tokens": false,
+      "tokenizer_class": "Qwen2Tokenizer",
+      "unk_token": null
+    },
+    "generation_config": {
+      "bos_token_id": 151643,
+      "do_sample": true,
+      "eos_token_id": [
+        151645,
+        151643
+      ],
+      "max_length": 32768,
+      "pad_token_id": 151654,
+      "repetition_penalty": 1.05,
+      "temperature": 0.7,
+      "top_k": 20,
+      "top_p": 0.8,
+      "transformers_version": "4.49.0.dev0"
+    }
+  },
+  "auditor": {
+    "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+    "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+    "input_tokens": 1875,
+    "rendered_sha256": "9a77d7299564580be380f2b823bdde6f2b4413e2e3694bba128eb57dcc0ce57e",
+    "config": {
+      "_name_or_path": "unsloth/Phi-3.5-mini-instruct",
+      "architectures": [
+        "LlamaForCausalLM"
+      ],
+      "attention_bias": false,
+      "attention_dropout": 0.0,
+      "bos_token_id": 1,
+      "eos_token_id": 32000,
+      "hidden_act": "silu",
+      "hidden_size": 3072,
+      "initializer_range": 0.02,
+      "intermediate_size": 8192,
+      "max_position_embeddings": 131072,
+      "mlp_bias": false,
+      "model_type": "llama",
+      "num_attention_heads": 32,
+      "num_hidden_layers": 32,
+      "num_key_value_heads": 32,
+      "original_max_position_embeddings": 4096,
+      "pad_token_id": 32000,
+      "pretraining_tp": 1,
+      "quantization_config": {
+        "_load_in_4bit": true,
+        "_load_in_8bit": false,
+        "bnb_4bit_compute_dtype": "bfloat16",
+        "bnb_4bit_quant_storage": "uint8",
+        "bnb_4bit_quant_type": "nf4",
+        "bnb_4bit_use_double_quant": true,
+        "llm_int8_enable_fp32_cpu_offload": false,
+        "llm_int8_has_fp16_weight": false,
+        "llm_int8_skip_modules": null,
+        "llm_int8_threshold": 6.0,
+        "load_in_4bit": true,
+        "load_in_8bit": false,
+        "quant_method": "bitsandbytes"
+      },
+      "rms_norm_eps": 1e-05,
+      "rope_scaling": {
+        "factor": 32.0,
+        "long_factor": [
+          1.0800000429153442,
+          1.1100000143051147,
+          1.1399999856948853,
+          1.340000033378601,
+          1.5899999141693115,
+          1.600000023841858,
+          1.6200000047683716,
+          2.620000123977661,
+          3.2300000190734863,
+          3.2300000190734863,
+          4.789999961853027,
+          7.400000095367432,
+          7.700000286102295,
+          9.09000015258789,
+          12.199999809265137,
+          17.670000076293945,
+          24.46000099182129,
+          28.57000160217285,
+          30.420001983642578,
+          30.840002059936523,
+          32.590003967285156,
+          32.93000411987305,
+          42.320003509521484,
+          44.96000289916992,
+          50.340003967285156,
+          50.45000457763672,
+          57.55000305175781,
+          57.93000411987305,
+          58.21000289916992,
+          60.1400032043457,
+          62.61000442504883,
+          62.62000274658203,
+          62.71000289916992,
+          63.1400032043457,
+          63.1400032043457,
+          63.77000427246094,
+          63.93000411987305,
+          63.96000289916992,
+          63.970001220703125,
+          64.02999877929688,
+          64.06999969482422,
+          64.08000183105469,
+          64.12000274658203,
+          64.41000366210938,
+          64.4800033569336,
+          64.51000213623047,
+          64.52999877929688,
+          64.83999633789062
+        ],
+        "rope_type": "longrope",
+        "short_factor": [
+          1.0,
+          1.0199999809265137,
+          1.0299999713897705,
+          1.0299999713897705,
+          1.0499999523162842,
+          1.0499999523162842,
+          1.0499999523162842,
+          1.0499999523162842,
+          1.0499999523162842,
+          1.0699999332427979,
+          1.0999999046325684,
+          1.1099998950958252,
+          1.1599998474121094,
+          1.1599998474121094,
+          1.1699998378753662,
+          1.2899998426437378,
+          1.339999794960022,
+          1.679999828338623,
+          1.7899998426437378,
+          1.8199998140335083,
+          1.8499997854232788,
+          1.8799997568130493,
+          1.9099997282028198,
+          1.9399996995925903,
+          1.9899996519088745,
+          2.0199997425079346,
+          2.0199997425079346,
+          2.0199997425079346,
+          2.0199997425079346,
+          2.0199997425079346,
+          2.0199997425079346,
+          2.0299997329711914,
+          2.0299997329711914,
+          2.0299997329711914,
+          2.0299997329711914,
+          2.0299997329711914,
+          2.0299997329711914,
+          2.0299997329711914,
+          2.0299997329711914,
+          2.0299997329711914,
+          2.0799996852874756,
+          2.0899996757507324,
+          2.189999580383301,
+          2.2199995517730713,
+          2.5899994373321533,
+          2.729999542236328,
+          2.749999523162842,
+          2.8399994373321533
+        ]
+      },
+      "rope_theta": 10000.0,
+      "tie_word_embeddings": false,
+      "torch_dtype": "bfloat16",
+      "transformers_version": "4.44.1",
+      "use_cache": true,
+      "vocab_size": 32064
+    },
+    "tokenizer_config": {
+      "add_bos_token": false,
+      "add_eos_token": false,
+      "add_prefix_space": null,
+      "added_tokens_decoder": {
+        "0": {
+          "content": "<unk>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "1": {
+          "content": "<s>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "2": {
+          "content": "</s>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": false
+        },
+        "32000": {
+          "content": "<|endoftext|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "32001": {
+          "content": "<|assistant|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32002": {
+          "content": "<|placeholder1|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32003": {
+          "content": "<|placeholder2|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32004": {
+          "content": "<|placeholder3|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32005": {
+          "content": "<|placeholder4|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32006": {
+          "content": "<|system|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32007": {
+          "content": "<|end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32008": {
+          "content": "<|placeholder5|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32009": {
+          "content": "<|placeholder6|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        },
+        "32010": {
+          "content": "<|user|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": true,
+          "single_word": false,
+          "special": true
+        }
+      },
+      "bos_token": "<s>",
+      "chat_template": "{% for message in messages %}{% if message['role'] == 'system' and message['content'] %}{{'<|system|>\n' + message['content'] + '<|end|>\n'}}{% elif message['role'] == 'user' %}{{'<|user|>\n' + message['content'] + '<|end|>\n'}}{% elif message['role'] == 'assistant' %}{{'<|assistant|>\n' + message['content'] + '<|end|>\n'}}{% endif %}{% endfor %}{% if add_generation_prompt %}{{ '<|assistant|>\n' }}{% else %}{{ eos_token }}{% endif %}",
+      "clean_up_tokenization_spaces": false,
+      "eos_token": "<|endoftext|>",
+      "legacy": false,
+      "model_max_length": 131072,
+      "pad_token": "<|placeholder6|>",
+      "padding_side": "left",
+      "sp_model_kwargs": {},
+      "tokenizer_class": "LlamaTokenizer",
+      "unk_token": "<unk>",
+      "use_default_system_prompt": false
+    },
+    "generation_config": {
+      "_from_model_config": true,
+      "bos_token_id": 1,
+      "eos_token_id": 32000,
+      "pad_token_id": 32000,
+      "transformers_version": "4.44.1"
+    }
+  }
+}

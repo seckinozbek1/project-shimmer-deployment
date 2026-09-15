@@ -1,0 +1,55 @@
+[
+  {
+    "role": "active_producer",
+    "task_type": "bounded_owned_extraction",
+    "fixture_id": "bounded-local-fixture",
+    "expected_abstract_behavior": "Preserve claims and information gaps, emit only complete compact JSON with consistent status and supplied refs",
+    "actual_abstract_behavior": "One correct alias, both claims and both refs are visible in the raw response. It uses markdown fences, omits the explicit missing-date gap, and sets status=empty despite populated claims. Strict JSON rejects the response; even its displayed fields contradict the validated extracted/empty rule. No post-generation repair or acceptance.",
+    "contract_valid": false,
+    "semantic_correct": false,
+    "judgment_correct": false,
+    "reason_correct": null,
+    "evidence_complete": true,
+    "hallucinated_attribution": false,
+    "truncation": false,
+    "prompt_version": "new",
+    "prompt_hash": "b0cd3c1f6eb687992910475667fabed4ded130ca8cb06f443521ec52c45658a1",
+    "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+    "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+    "error_classes": [
+      "model_semantic_capability_error",
+      "instruction_following_formatting_error"
+    ],
+    "parser_adapter_defect_demonstrated": false,
+    "runtime_or_missing_evidence_defect": false,
+    "insufficient_token_capacity": false,
+    "source_correction_retried": false
+  },
+  {
+    "role": "active_auditor",
+    "task_type": "extraction_fidelity",
+    "fixture_id": "bounded-local-fixture",
+    "expected_abstract_behavior": "Compare original with extraction, preserve both refs, explain fidelity and existing information absence correctly, emit exactly one compact JSON object",
+    "actual_abstract_behavior": "MATCH and both refs are present, and its opening fidelity statement is correct. However it calls the already-absent reporting date an extraction discrepancy/omission and says the gap was not addressed in extraction, although the extraction preserves the absence and adds an open question. Reason correctness is therefore partial, not passed. A long unsolicited explanation follows the complete JSON prefix, violating the one-object/no-extra-output contract. Reached configured EOS 32000 before cap; not a stop-configuration or transport failure.",
+    "contract_valid": false,
+    "semantic_correct": false,
+    "judgment_correct": true,
+    "reason_correct": false,
+    "evidence_complete": true,
+    "hallucinated_attribution": false,
+    "truncation": false,
+    "prompt_version": "new",
+    "prompt_hash": "c9172df69079406656d40d2d753641d8179bbbc68c6690df39955290e11d0f7c",
+    "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+    "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+    "error_classes": [
+      "model_semantic_capability_error",
+      "instruction_following_formatting_error",
+      "truncation_output_efficiency_error"
+    ],
+    "parser_adapter_defect_demonstrated": false,
+    "runtime_or_missing_evidence_defect": false,
+    "insufficient_token_capacity": false,
+    "source_correction_retried": false
+  }
+]
