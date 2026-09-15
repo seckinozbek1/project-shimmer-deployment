@@ -1,0 +1,19 @@
+{
+  "tests": 30,
+  "failures": 0,
+  "errors": 0,
+  "effect_proofs": [
+    "held-out exclusion",
+    "superseded binding rejection",
+    "export filename allowlist",
+    "blank response byte integrity"
+  ],
+  "actual_human_submissions": 0,
+  "fake_human_submissions": 0,
+  "acceptance_unchanged": true,
+  "old_cohort_rejection_verified": true,
+  "model_generation": false,
+  "training": false,
+  "cloud": false,
+  "paid_api": false
+}

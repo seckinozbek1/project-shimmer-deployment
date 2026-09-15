@@ -1,0 +1,118 @@
+{
+  "policy": "producer-semantic-policy-v1",
+  "protocol": "producer-coverage-amendment-v1",
+  "renderer": "producer-target-renderer-v1",
+  "coverage": {
+    "train": {
+      "count": 20,
+      "substantive": 20,
+      "gap": 20,
+      "uncertainty": 20,
+      "multi_claim": 20,
+      "evidence_selection": 20
+    },
+    "dev": {
+      "count": 16,
+      "substantive": 16,
+      "gap": 16,
+      "uncertainty": 16,
+      "multi_claim": 16,
+      "evidence_selection": 16
+    },
+    "domains": [
+      "catalogue",
+      "clinical",
+      "contracts",
+      "device",
+      "negotiation",
+      "nonsense",
+      "procurement",
+      "regulation"
+    ],
+    "templates": [
+      "paired_register",
+      "revision_log",
+      "v2-bullet_list",
+      "v2-chronological_events",
+      "v2-form_fields",
+      "v2-memo_sections",
+      "v2-paragraph"
+    ],
+    "document_families": [
+      "dev-catalogue",
+      "dev-clinical",
+      "dev-contracts",
+      "dev-device",
+      "dev-negotiation",
+      "dev-nonsense",
+      "dev-procurement",
+      "dev-regulation",
+      "train-catalogue",
+      "train-clinical",
+      "train-contracts",
+      "train-device",
+      "train-negotiation",
+      "train-nonsense",
+      "train-procurement",
+      "train-regulation",
+      "v2-bullet_list-contracts",
+      "v2-bullet_list-device",
+      "v2-bullet_list-negotiation",
+      "v2-bullet_list-procurement",
+      "v2-chronological_events-catalogue",
+      "v2-chronological_events-clinical",
+      "v2-chronological_events-nonsense",
+      "v2-chronological_events-regulation",
+      "v2-form_fields-contracts",
+      "v2-form_fields-device",
+      "v2-form_fields-negotiation",
+      "v2-form_fields-procurement",
+      "v2-memo_sections-catalogue",
+      "v2-memo_sections-clinical",
+      "v2-memo_sections-nonsense",
+      "v2-memo_sections-regulation",
+      "v2-paragraph-contracts",
+      "v2-paragraph-device",
+      "v2-paragraph-negotiation",
+      "v2-paragraph-procurement"
+    ]
+  },
+  "criteria": {
+    "train_minimum": false,
+    "dev_minimum": true,
+    "domain_coverage": true,
+    "template_coverage": false,
+    "substantive_dominates": true,
+    "gaps_both_splits": true,
+    "uncertainty_both_splits": true,
+    "multi_claim": true,
+    "evidence_selection": true,
+    "no_evaluation_leakage": true,
+    "no_review_ambiguity": true,
+    "canonical_contract_valid": true
+  },
+  "selection_governance_pass": false,
+  "producer_status": "PRODUCER_TUNING_COVERAGE_NOT_READY",
+  "balanced_status": "BALANCED_AGENT_ADJUDICATED_TUNING_EXPERIMENT_NOT_READY",
+  "human_status": "FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING",
+  "human_first_reviews": 0,
+  "human_second_reviews": 0,
+  "human_adjudications": 0,
+  "preserved_auditor": {
+    "train": 46,
+    "dev": 24
+  },
+  "combined_conceptual": {
+    "train": 66,
+    "dev": 40
+  },
+  "training_authorized": false,
+  "balanced_execution_manifests_created": false,
+  "local_tests": 31,
+  "effect_proofs": 8,
+  "failed_criteria": [
+    "train_minimum",
+    "template_coverage"
+  ],
+  "next_action": "New prospectively frozen producer amendment must address source-support cue completeness and gap/order projection on generic fixtures, and select only substantive reserves; no mutation of this release."
+}

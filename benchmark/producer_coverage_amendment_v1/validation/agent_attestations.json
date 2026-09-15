@@ -1,0 +1,39 @@
+{
+  "protocol": "producer-coverage-amendment-v1",
+  "primaries": {
+    "A": {
+      "fresh_context": true,
+      "reviewed_packets": 80,
+      "original_outputs": 80,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "network_used": false,
+      "external_answers_read": false
+    },
+    "B": {
+      "fresh_context": true,
+      "reviewed_packets": 80,
+      "original_outputs": 80,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "network_used": false,
+      "external_answers_read": false
+    },
+    "C": {
+      "fresh_context": true,
+      "reviewed_packets": 80,
+      "original_outputs": 80,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "network_used": false,
+      "external_answers_read": false
+    }
+  },
+  "adjudicator": {
+    "fresh_context": true,
+    "cases": 26,
+    "original_outputs": 26,
+    "assigned_workspace_only_attested": true
+  },
+  "limitation": "Common parent model family and shared filesystem; procedural access restrictions, not OS isolation or cross-model independence."
+}

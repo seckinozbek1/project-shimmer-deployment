@@ -1,0 +1,13 @@
+{
+  "total": 80,
+  "claims": 80,
+  "evidence": 80,
+  "refusal": 80,
+  "typed_gaps": 52,
+  "typed_uncertainty": 80,
+  "canonical_output_difference": 64,
+  "agreement": 52,
+  "unresolved": 28,
+  "legacy_projection_limitation": 24,
+  "real_semantic_disagreement": 4
+}

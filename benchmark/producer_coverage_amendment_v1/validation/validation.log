@@ -1,0 +1,36 @@
+test_canonical_roundtrip (producer_checks.Checks.test_canonical_roundtrip) ... ok
+test_claim_conflict_not_epistemic (producer_checks.Checks.test_claim_conflict_not_epistemic) ... ok
+test_distinct_semantics (producer_checks.Checks.test_distinct_semantics) ... ok
+test_effect_conflict_uncertainty (producer_checks.Checks.test_effect_conflict_uncertainty) ... ok
+test_effect_evaluation_exclusion (producer_checks.Checks.test_effect_evaluation_exclusion) ... ok
+test_effect_evidence (producer_checks.Checks.test_effect_evidence) ... ok
+test_effect_gap_difference (producer_checks.Checks.test_effect_gap_difference) ... ok
+test_effect_gap_equivalence (producer_checks.Checks.test_effect_gap_equivalence) ... ok
+test_effect_isolation (producer_checks.Checks.test_effect_isolation) ... ok
+test_effect_r06 (producer_checks.Checks.test_effect_r06) ... ok
+test_effect_rendering (producer_checks.Checks.test_effect_rendering) ... ok
+test_empty_and_refusal (producer_checks.Checks.test_empty_and_refusal) ... ok
+test_equivalence_and_generic_projection (producer_checks.Checks.test_equivalence_and_generic_projection) ... ok
+test_evidence_ownership (producer_checks.Checks.test_evidence_ownership) ... ok
+test_renderer_equivalent_and_existing_contract (producer_checks.Checks.test_renderer_equivalent_and_existing_contract) ... ok
+test_sequence_and_state_qualifiers (producer_checks.Checks.test_sequence_and_state_qualifiers) ... ok
+test_unknown_qualifiers_fail_closed (producer_checks.Checks.test_unknown_qualifiers_fail_closed) ... ok
+test_auditor_unchanged_and_human_pending (producer_completed_checks.Completed.test_auditor_unchanged_and_human_pending) ... ok
+test_candidates_only_resolved_valid_machine_labels (producer_completed_checks.Completed.test_candidates_only_resolved_valid_machine_labels) ... ok
+test_canonical_bindings (producer_completed_checks.Completed.test_canonical_bindings) ... ok
+test_consensus_recomputed (producer_completed_checks.Completed.test_consensus_recomputed) ... ok
+test_historical_selection_cannot_be_overwritten (producer_completed_checks.Completed.test_historical_selection_cannot_be_overwritten) ... ok
+test_method_and_packet_freezes (producer_completed_checks.Completed.test_method_and_packet_freezes) ... ok
+test_no_diagnostic_or_admin_in_candidate_directory (producer_completed_checks.Completed.test_no_diagnostic_or_admin_in_candidate_directory) ... ok
+test_noncompliant_reserve_fail_closed (producer_completed_checks.Completed.test_noncompliant_reserve_fail_closed) ... ok
+test_population_train_dev_and_no_evaluation (producer_completed_checks.Completed.test_population_train_dev_and_no_evaluation) ... ok
+test_primary_slots_and_actual_validity (producer_completed_checks.Completed.test_primary_slots_and_actual_validity) ... ok
+test_r06_actual_population_invariant (producer_completed_checks.Completed.test_r06_actual_population_invariant) ... ok
+test_required_adjudication (producer_completed_checks.Completed.test_required_adjudication) ... ok
+test_reserve_selection_reproducibility (producer_completed_checks.Completed.test_reserve_selection_reproducibility) ... ok
+test_v2_v1_acceptance_immutable (producer_completed_checks.Completed.test_v2_v1_acceptance_immutable) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 1.373s
+
+OK
