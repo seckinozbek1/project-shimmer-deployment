@@ -1,0 +1,27 @@
+{
+  "verdict": "REMOTE_CONTRACT_AB_READY",
+  "base_source_commit": "1aa4696ab2ea95c6757db0eb18d94cd0c0ba6662",
+  "historical_remote_source": "c342033e5d09654cdbaaf283879a9ee37764146b",
+  "passed_checks": 85,
+  "mutation_proofs": 4,
+  "tokenizer_profiles": 2,
+  "optional_directory_coverage_skips": 1,
+  "model_semantic_reliability": "UNMEASURED",
+  "generation": false,
+  "cloud": false,
+  "paid_api": false,
+  "full_pipeline": false,
+  "multi_round": false,
+  "source_normalized_sha256": {
+    "scripts\\agent_wrapper.py": "6026354337aa2f8807050e9150c00cffbd34f4b500806cf98a124ddbf1431c5f",
+    "scripts\\bounded_extraction.py": "590faaec3c13c90c2caac4e5dfea70e789772f19417dd3b8a17c213a30e46598",
+    "scripts\\report_recommendations_checks.py": "d7ff2b10f5f03b209b4e8e79e82c10862b77884d51193c0f69ea3b5357187dbc",
+    "scripts\\semantic_waves.py": "10177292c5227ef21e88367d281e89d1da4cb067bbfeb5c91dc1e5577b67026f",
+    "tools\\local_inference_probe.py": "31cbd14ac613db50c2f9eaf0f8c4bac6a2602046f7494bb555cf68f64bbff966",
+    "tools\\remote_short_burst_probe.py": "94ef0c940750e60ccb190c605f5889cb46ab5aa652eacec6842a7d65f759d495",
+    "scripts\\compact_contracts.py": "826125685d69cb05e655669cdfef5247fb0557fe3f3c7399f02d2c0eb6527f0e",
+    "scripts\\compact_contract_checks.py": "0d6f1bdc306cd75be15222a44ad326f37898623eebb6dacad53f4c1695036dd0",
+    "scripts\\compact_contract_no_generation_gate.py": "32914d4afdeb207cd7c8297654942bf55dcee12785256b7fb047ca14834fc893",
+    "tools\\compact_contract_budget.py": "6969eaf7c75d06657f59e81244577d0a67b20f5ea0ed719a71198464db615214"
+  }
+}

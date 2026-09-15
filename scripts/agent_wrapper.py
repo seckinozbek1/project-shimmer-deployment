@@ -1008,6 +1008,16 @@ class AgentWrapper:
         The scan records what it did in self.last_parse_trace, which run_task
         returns and posts to the bus, so a post-mortem can see that a hold was
         chosen over content rather than having to infer it."""
+        if getattr(self, "_compact_contract", None):
+            # Task-scoped compact output must be one complete JSON response.
+            # Never recover a valid prefix from a truncated or trailing envelope.
+            try:
+                obj = json.loads(raw)
+            except (json.JSONDecodeError, TypeError):
+                return None, ["Complete compact JSON response required"]
+            self.last_parse_trace = {"path": "strict_compact", "candidates_scanned": 1,
+                                     "chosen_index": 0, "empty_valid_skipped": 0}
+            return self._finalize_envelope(obj)
         text = raw.strip()
         if text.startswith("```"):
             text = text.strip("`")
@@ -1140,6 +1150,8 @@ class AgentWrapper:
         """The CANONICAL ENVELOPE output instruction (INFRA-037), shared by
         prompt_template and _stable_agent_block so the two never drift. Instructs
         the wrapper with a 'nothing to report' example and a one-item example."""
+        if getattr(self, "_compact_contract", None):
+            return self._compact_contract
         cf = self.contract.get("fields", {}); required = self.contract.get("required", [])
         # structure H2b: the declared field forms are PREPENDED, so every existing
         # line of the output contract below is byte-identical to what it was and an
@@ -1309,6 +1321,8 @@ class AgentWrapper:
         item_kind/required (already read above), not the static, mostly-generic
         _worked_item_example renderer, so it is non-empty, concrete, and still
         contract-derived rather than hand-written."""
+        if getattr(self, "_compact_contract", None):
+            return "\nComplete the task-specific compact JSON contract above.\n"
         does = self.spec.get("does") or []
         job = does[0] if does else "carry out this run's assigned task"
         item_kind = self.contract.get("item_kind", "finding")
@@ -1329,7 +1343,7 @@ class AgentWrapper:
         )
 
     def prompt_template(self, context_text, work):
-        does = "\n".join(f"- {d}" for d in self.spec.get("does", []))
+        does = getattr(self, "_compact_role", None) or "\n".join(f"- {d}" for d in self.spec.get("does", []))
         does_not = "\n".join(f"- {d}" for d in self.spec.get("does_not", []))
         directives = self.contract.get("directives") or []
         work_str = work if isinstance(work, str) else json.dumps(work, ensure_ascii=False, indent=2)
@@ -1352,7 +1366,7 @@ class AgentWrapper:
         output contract. Identical across this agent's calls within a run; carries
         no per-call/dynamic content. Same text as the corresponding parts of
         prompt_template (only relocated to the front for caching)."""
-        does = "\n".join(f"- {d}" for d in self.spec.get("does", []))
+        does = getattr(self, "_compact_role", None) or "\n".join(f"- {d}" for d in self.spec.get("does", []))
         does_not = "\n".join(f"- {d}" for d in self.spec.get("does_not", []))
         directives = self.contract.get("directives") or []
         directives_block = ""

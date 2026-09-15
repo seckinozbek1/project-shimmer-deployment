@@ -19,6 +19,7 @@ def main():
     OUTPUT_CREATED = True
     import torch, transformers, psutil
     import agent_wrapper as aw, bounded_extraction as ex, execution_topology as et
+    import compact_contracts as cc
     from execution_scheduler import Lane, Task
     from constitution import Constitution
     from message_bus import MessageBus
@@ -100,14 +101,15 @@ def main():
     assert len(ex.partitions(spans))==1
     def producer_prompt(w,compact):
         instruction='Extract every explicit CLM-* claim id and missing information without inventing facts.\n'
-        if compact:return instruction+w._output_contract_text()+'\n'+json.dumps(ex.payload(dict(document_id=doc),spans,spans))
+        if compact:return cc.producer_prompt(spans,spans,doc)
         return instruction+w._output_contract_text()+'\nDocument id: '+doc+'\nReturn one item for the paragraph, section_id=paragraph-1, extraction_method=verbatim. Copy all source exactly into draft_text.\nSOURCE:\n'+source
     fixture=dict(agent='PROCESSOR',doc_id=doc,items=[dict(draft_text=source,claims_referenced=['CLM-001','CLM-002'],open_questions=['What is the reporting date?'])])
     def audit_prompt(w,parsed):
-        return ('Compare original with producer extraction. Identify omission, addition or divergence; otherwise MATCH. Verify both figures and missing reporting date. Cite REF-0001 and REF-0002. Use paragraph=1, severity=low if MATCH and explain evidence. Do not certify incomplete extraction.\n'+w._output_contract_text()+'\nDocument id: '+doc+'\nORIGINAL:\n'+source+'\nPRODUCER:\n'+json.dumps(parsed))
+        return cc.auditor_prompt(source,parsed,['REF-0001','REF-0002'])
     def call_task(label,role,parsed=None,compact=True):
         w=wrapper('PROCESSOR' if role=='active_producer' else 'VERIFIER',role)
-        if role=='active_producer' and compact:w._source_adapter=lambda obj:ex.hydrate(obj,spans,doc)
+        if role=='active_producer' and compact:cc.bind_producer(w,spans,doc)
+        if role=='active_auditor':cc.bind_auditor(w,doc,['REF-0001','REF-0002'])
         prompt=producer_prompt(w,compact) if role=='active_producer' else audit_prompt(w,parsed)
         def action():
             torch.manual_seed(7);begin=time.perf_counter()

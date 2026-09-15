@@ -84,9 +84,14 @@ def worker(out, auditor_only=False):
         phase('generate_' + label)
         w._optimized_semantics = native
         if compact:
-            w._source_adapter = lambda obj: ex.hydrate(obj, spans, DOC)
-        elif hasattr(w, '_source_adapter'):
-            del w._source_adapter
+            import compact_contracts as cc
+            cc.bind_producer(w, spans, DOC)
+        elif w.name == 'VERIFIER':
+            import compact_contracts as cc
+            cc.bind_auditor(w, DOC, ['REF-0001','REF-0002'])
+        else:
+            for attr in ('_source_adapter','_compact_contract','_compact_role'):
+                if hasattr(w, attr):delattr(w, attr)
         torch.manual_seed(7)
         start = time.perf_counter()
         result = w.call_local(prompt, max_new_tokens=384)
@@ -116,8 +121,8 @@ def worker(out, auditor_only=False):
               'Set extraction_method=verbatim. Copy all source text exactly into draft_text. '
               'Set section_id=paragraph-1.\n' + producer._output_contract_text() +
               '\nDocument id: ' + DOC + '\nSOURCE:\n' + SOURCE)
-    compact_prompt = ('Extract every explicit CLM-* claim id and missing information without inventing facts.\n' +
-        producer._output_contract_text() + '\n' + json.dumps(ex.payload(dict(document_id=DOC), spans, spans)))
+    import compact_contracts as cc
+    compact_prompt = cc.producer_prompt(spans, spans, DOC)
     if auditor_only:
         data['producer_status'] = 'not_loaded_in_this_probe'
         data['producer_auditor_path_measured'] = False
@@ -137,14 +142,14 @@ def worker(out, auditor_only=False):
     data['concurrency'] = dict(tested_capacity=1, capacity_2_status='not_admitted',
         capacity_4_status='not_admitted', reason='pending_quality_and_resource_admission',
         duplicate_model_copies=0)
+    if not auditor_only and not compact.get('accepted_semantic_output'):
+        data['auditor_status'] = 'blocked_incomplete_producer'
+        write(out/'real_model_probe.json', data)
+        phase('complete')
+        return
     load('active_auditor')
     auditor = wrapper('VERIFIER', 'active_auditor')
-    audit_prompt = ('Compare the original with the producer extraction below. Identify any omission, addition, '
-        'or divergence; otherwise MATCH. Verify both capacity figures and the missing reporting date. '
-        'Cite REF-0001 and REF-0002. Use paragraph=1, severity=low if MATCH, and explain the evidence. '
-        'Do not certify an incomplete or refused producer output.\n' + auditor._output_contract_text() +
-        '\nDocument id: ' + DOC + '\nORIGINAL:\n' + SOURCE +
-        '\nPRODUCER:\n' + json.dumps(compact['parsed'], ensure_ascii=False))
+    audit_prompt = cc.auditor_prompt(SOURCE, compact['parsed'], ['REF-0001','REF-0002'])
     call(auditor, 'independent_verifier', audit_prompt, True)
     phase('complete')
 
