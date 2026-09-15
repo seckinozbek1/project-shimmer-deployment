@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-09-15T18:44:18.276877+00:00",
+  "before_population_source_access": true,
+  "tests": 26,
+  "effect_proofs": 9,
+  "hashes": {
+    ".gitattributes": "53628631f02c7e369369c2efd12a62076bec4e44f2ecdf1216102be3e2c7e484",
+    "checks.py": "9bf875783e9549cbe16fc52ca9b0005b57dd2f7690e405d0a37329e04966b690",
+    "legacy_projection.py": "f7a7351b878172c92c022ed524baa2931aaa9509e72a4e7c53de6d88f1f5f8c7",
+    "policy.md": "c320ff8d0d603460fa9fc41e40f16ca2195502236a9e3654f8d9add7e707c6b0",
+    "population.py": "857d833db25817959f34f70fb6797c726fe66491029072c3a59ddff91b55b18d",
+    "pre_review_validation.log": "3f88475a48b27c4c5d8478cd0cf908712ffab548fe4fc6e6cf6b3661c4f7af9b",
+    "reviewer_instructions.md": "49dfdeb66ab8b4fa5e4e203a2a8c7298bc8acd1e03f02f9c7e46e00c3d72d0e7",
+    "schema.json": "b13af6cecf99e3079344923a8dfb7fc1131e3e6ee0ebe710d31ea2e07b66056c",
+    "semantics.py": "7aff000329e6b64dba114adc793925114d464791007be408c8ca5199ed5e9f6c"
+  }
+}

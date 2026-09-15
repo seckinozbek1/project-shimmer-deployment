@@ -1,0 +1,94 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "policy": "producer-semantic-policy-v2",
+  "renderer": "producer-target-renderer-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "outer_fields": [
+    "protocol",
+    "policy",
+    "evidence_kind",
+    "use",
+    "packet_id",
+    "input_sha256",
+    "slot",
+    "provenance",
+    "reviewed_at",
+    "label",
+    "rationale"
+  ],
+  "atom_fields": [
+    "attribute",
+    "category",
+    "kind",
+    "ordinal",
+    "origin",
+    "refs",
+    "relation",
+    "scope",
+    "span",
+    "state",
+    "subject",
+    "support",
+    "unit"
+  ],
+  "attributes": [
+    "authorization_time",
+    "date_unspecified",
+    "effective_time",
+    "entry_content",
+    "entry_order",
+    "entry_presence",
+    "event_occurrence",
+    "event_time",
+    "interpretation",
+    "observation_time",
+    "ratification_status",
+    "recorder",
+    "recording_occurrence",
+    "recording_time",
+    "reporting_time",
+    "submission_occurrence",
+    "submission_time"
+  ],
+  "categories": {
+    "gap": [
+      "missing_information",
+      "explicit_nonoccurrence",
+      "explicit_question"
+    ],
+    "uncertainty": [
+      "unknown"
+    ]
+  },
+  "subjects": [
+    "owned_record",
+    "entry",
+    "submission",
+    "amendment",
+    "event"
+  ],
+  "ordinal": [
+    null,
+    1,
+    2,
+    3,
+    "next",
+    "previous",
+    "later"
+  ],
+  "state": [
+    "unspecified",
+    "requested",
+    "absent",
+    "not_recorded",
+    "not_submitted",
+    "did_not_occur",
+    "unknown"
+  ],
+  "relation": null,
+  "scope": "owned_record",
+  "unit": null,
+  "origin": "source_explicit",
+  "training_authorized": false
+}
