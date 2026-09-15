@@ -1,0 +1,70 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "policy": "producer-semantic-policy-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v2-f719c4f72e35e829d23c3538",
+  "input_sha256": "b11055c923ace4e83667d2b865eeba8effae81b14750c9159470c1d7f9b429c9",
+  "slot": "C",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:47:28.639229+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "observation_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "support": "The observation date is unavailable. What is the observation date?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "entry",
+            "attribute": "interpretation",
+            "ordinal": 2,
+            "relation": null,
+            "state": "unknown",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "support": "The interpretation of the second entry remains unresolved.",
+            "origin": "source_explicit"
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Retained all explicit owned claims and refs. Observation-time information is absent; interpretation uncertainty explicitly concerns second entry."
+}

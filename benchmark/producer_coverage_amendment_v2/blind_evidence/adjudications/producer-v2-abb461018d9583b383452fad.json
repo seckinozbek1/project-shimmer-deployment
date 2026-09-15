@@ -1,0 +1,72 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "policy": "producer-semantic-policy-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v2-abb461018d9583b383452fad",
+  "input_sha256": "f26818372a8e43eaae877e8c395b9c3125ad0b920a909617491f7e11b11d3dee",
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "reviewed_at": "2026-09-15T18:49:57.310498+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "observation_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "support": "The observation date is unavailable. What is the observation date?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "entry",
+            "attribute": "interpretation",
+            "ordinal": 2,
+            "relation": null,
+            "state": "unknown",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-0001",
+              "REF-0002"
+            ],
+            "support": "The interpretation of the second entry remains unresolved.",
+            "origin": "source_explicit"
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Observation date absence binds observation_time, and interpretation uncertainty specifically concerns entry 2. Both claims and owned refs remain. Equal quantities do not alter the stated semantics. Candidate A matches this source judgment; B and C materially agree.",
+  "decision": "candidate_A",
+  "disagreement_causes": []
+}

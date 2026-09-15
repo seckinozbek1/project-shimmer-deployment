@@ -1,0 +1,51 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "policy": "producer-semantic-policy-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v2-05c7088f201d3b1241f0e116",
+  "input_sha256": "0257261f84f528826cc715465a19e9ef801b1c35b9f8e6320a38588e77f4b6a2",
+  "slot": "C",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:47:28.592764+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "The date is absent. When was this recorded?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Retained all explicit owned claims and refs. Immediately following recording question binds absent date to recording time of the record."
+}

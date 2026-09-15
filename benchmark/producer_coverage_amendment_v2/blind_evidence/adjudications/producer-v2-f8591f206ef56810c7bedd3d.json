@@ -1,0 +1,71 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "policy": "producer-semantic-policy-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v2-f8591f206ef56810c7bedd3d",
+  "input_sha256": "a35dfc0be55ba19ab45cfbdb3d362fe26dc09d0aaa01a7353ce4ffc2647ee45d",
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "reviewed_at": "2026-09-15T18:49:57.319504+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "The date is absent. When was this recorded?",
+            "origin": "source_explicit"
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recorder",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "The recorder is unnamed. Who recorded it?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "The absent date binds to recording_time through the immediately following recording question. Unnamed recorder and its question give recorder missing information. Both claims and refs remain, with no explicit uncertainty. Candidate A matches this source judgment; B and C materially agree.",
+  "decision": "candidate_A",
+  "disagreement_causes": []
+}

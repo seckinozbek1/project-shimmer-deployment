@@ -1,0 +1,106 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "policy": "producer-semantic-policy-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v2-f2e6fe79a07349874d75448d",
+  "input_sha256": "9ed056d6c7fbbb7e1dde9f19b82f66dbe166b27d8ac14b7e13dda20c4d077cbd",
+  "slot": "C",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:47:28.637226+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C",
+          "CLM-D"
+        ],
+        "refs": [
+          "REF-1003",
+          "REF-1004"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "explicit_question",
+            "subject": "entry",
+            "attribute": "entry_content",
+            "ordinal": 1,
+            "relation": null,
+            "state": "requested",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "support": "What was entered first?",
+            "origin": "source_explicit"
+          },
+          {
+            "kind": "gap",
+            "category": "explicit_question",
+            "subject": "entry",
+            "attribute": "entry_order",
+            "ordinal": "next",
+            "relation": null,
+            "state": "requested",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "support": "What followed?",
+            "origin": "source_explicit"
+          },
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "effective_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "support": "The effective time is missing. When does it take effect?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "kind": "uncertainty",
+            "category": "unknown",
+            "subject": "owned_record",
+            "attribute": "interpretation",
+            "ordinal": null,
+            "relation": null,
+            "state": "unknown",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "support": "The interpretation remains uncertain.",
+            "origin": "source_explicit"
+          }
+        ]
+      }
+    ],
+    "source_uncertainty_present": true,
+    "review_ambiguity": false
+  },
+  "rationale": "Retained all explicit owned claims and refs. Both conflicting assertions remain claims; only explicit interpretation uncertainty is annotated. Effective-time absence and its question share one atom. Answered questions still request first-entry content and next-entry order."
+}

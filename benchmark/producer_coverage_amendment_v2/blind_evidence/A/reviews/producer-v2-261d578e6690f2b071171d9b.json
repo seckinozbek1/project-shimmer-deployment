@@ -1,0 +1,51 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "policy": "producer-semantic-policy-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v2-261d578e6690f2b071171d9b",
+  "input_sha256": "66c72eed2666403711a0df3527d84def2ded7a86859c2a9227139dd2caba1a18",
+  "slot": "A",
+  "provenance": "machine_agent_primary",
+  "reviewed_at": "2026-09-15T18:47:17.422144+00:00",
+  "label": {
+    "status": "examined",
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "gap_atoms": [
+          {
+            "kind": "gap",
+            "category": "missing_information",
+            "subject": "owned_record",
+            "attribute": "recording_time",
+            "ordinal": null,
+            "relation": null,
+            "state": "unspecified",
+            "scope": "owned_record",
+            "unit": null,
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "support": "The date is absent. When was this recorded?",
+            "origin": "source_explicit"
+          }
+        ],
+        "uncertainty_atoms": []
+      }
+    ],
+    "source_uncertainty_present": false,
+    "review_ambiguity": false
+  },
+  "rationale": "Read the complete owned record; preserve every explicit claim and owned reference. recording_time (owned_record). Explicit uncertainty is retained only where stated; contextual distractors are excluded."
+}
