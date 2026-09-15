@@ -1,0 +1,65 @@
+{
+  "utc": "2026-09-15T08:52:16.983381+00:00",
+  "instance": {
+    "id": "c981f11ebc5849928826f716f72c6149",
+    "name": "shimmer-retry-20260915",
+    "ip": "150.136.247.226",
+    "private_ip": "10.19.92.67",
+    "status": "active",
+    "ssh_key_names": [
+      "shimmer-retry-20260915"
+    ],
+    "file_system_names": [],
+    "region": {
+      "name": "us-east-1",
+      "description": "Virginia, USA"
+    },
+    "instance_type": {
+      "name": "gpu_1x_a10",
+      "description": "1x A10 (24 GB PCIe)",
+      "gpu_description": "A10 (24 GB PCIe)",
+      "price_cents_per_hour": 129,
+      "specs": {
+        "vcpus": 30,
+        "memory_gib": 200,
+        "storage_gib": 1400,
+        "gpus": 1
+      },
+      "architecture": "x86_64"
+    },
+    "workspace_id": "60bee98119704a128dfc36ddfb09cb67",
+    "image": {
+      "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+      "family": "lambda-stack-24-04"
+    },
+    "hostname": "150-136-247-226",
+    "is_reserved": false,
+    "actions": {
+      "migrate": {
+        "available": true
+      },
+      "rebuild": {
+        "available": true
+      },
+      "restart": {
+        "available": true
+      },
+      "cold_reboot": {
+        "available": true
+      },
+      "power_cycle": {
+        "available": true
+      },
+      "terminate": {
+        "available": true
+      }
+    },
+    "tags": [],
+    "firewall_rulesets": []
+  },
+  "provisioning_seconds": 209.1771171092987,
+  "sensitive_provider_fields_removed": [
+    "jupyter_token",
+    "jupyter_url"
+  ]
+}

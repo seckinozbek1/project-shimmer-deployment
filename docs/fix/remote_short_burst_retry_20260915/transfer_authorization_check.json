@@ -1,0 +1,26 @@
+{
+  "files": 162,
+  "bytes": 1258520,
+  "sha256": "01f00461de26912e2fc0f3fa3ed3c4111ef033e7b130ee0001ef3f2caa88e53b",
+  "all_payload_files_tracked_except_generated_hash_manifest": true,
+  "credential_scan_passed": true,
+  "configuration_allowlist": [
+    "local_models.json",
+    "constitution.json",
+    "agent_contracts.json"
+  ],
+  "excluded": [
+    "input",
+    "output",
+    "durable",
+    "operator handoff",
+    "api key config",
+    "SSH private key",
+    "environment files",
+    "model weights",
+    "user documents",
+    "convention_registry.json"
+  ],
+  "authorization": "User explicitly requires source-layer/content-addressed transfer to the rented instance, citing prior 1.26 MB transfer; Lambda is the prior and current provider for the authorized retry",
+  "launch_not_attempted": true
+}

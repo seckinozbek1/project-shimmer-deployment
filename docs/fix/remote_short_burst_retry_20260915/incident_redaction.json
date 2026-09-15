@@ -1,0 +1,15 @@
+{
+  "incident": "Temporary instance Jupyter access token accidentally displayed from unsanitized provider metadata",
+  "location": "instance_state.json:36 before redaction",
+  "redacted_files": [
+    "instance_state.json"
+  ],
+  "local_occurrence_check_passed": true,
+  "token_value_in_report": false,
+  "provider_api_key_exposed": false,
+  "termination_verified": true,
+  "user_authorized_redaction": true,
+  "conversation_output_cannot_be_retracted": true,
+  "experiment_stopped": true,
+  "no_second_instance": true
+}

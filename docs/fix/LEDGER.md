@@ -2236,3 +2236,20 @@ compatible local Python; its isolated child was collected. No install or rebuild
 Historical remote evidence (32 hashes) and INDETERMINATE projection are unchanged.
 No cloud, provider, SSH/SCP, model/full-pipeline/multi-round execution or push.
 Details: REMOTE_RUNTIME_HARDENING.md. Next bounded retry needs operator cloud approval.
+
+
+## 2026-09-15 ? Runtime-gated retry, emergency stop before SSH readiness
+
+Source d3ebb06 adds persisted stage/checkpoint evidence to runtime-hardening base
+60a55af; 26 runtime and 83 cloud tests pass. One Lambda A10 in us-east-1 used an
+explicit Python3.12 image family at $1.29/hour. A temporary Jupyter token was
+accidentally displayed from raw provider metadata; stopped and terminated before
+SSH readiness, source transfer, runtime gates or model work. Operator approved
+local redaction and reporting without another instance. Termination verified at
+08:55:04.019863 UTC, second query zero active; upper bound $0.1348098731 for
+376.213599 seconds. SSH key/registration removed. Redacted evidence and hashes in
+remote_short_burst_retry_20260915/; report REMOTE_SHORT_BURST_RETRY.md.
+CLOUD_FULL_RUN_INDETERMINATE. No new inference timings or accepted-run projections.
+Historical evidence unchanged. No full pipeline, multi-round, paid inference API,
+second instance or push. Next retry requires fresh cloud approval and tested
+provider-metadata sanitization before persistence/display.

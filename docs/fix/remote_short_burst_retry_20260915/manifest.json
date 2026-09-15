@@ -1,0 +1,107 @@
+{
+  "utc": "2026-09-15T08:47:08.380127+00:00",
+  "source_commit": "d3ebb060b14333fb2e0a54e7a134c54463bfc73b",
+  "git_status": "?? SHIMMER_HANDOFF.md\n?? durable/\n",
+  "multi_round": false,
+  "full_pipeline": false,
+  "paid_inference_api": false,
+  "soft_usd": 1,
+  "hard_usd": 2,
+  "termination_reserve_seconds": 180,
+  "hourly_rate": 1.29,
+  "instance_type": "gpu_1x_a10",
+  "region": "us-east-1",
+  "image": {
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "created_time": "2026-03-05T20:27:48.094498Z",
+    "updated_time": "2026-03-06T01:17:06.660270Z",
+    "name": "Lambda Stack 24.04",
+    "description": "AI ready GPU image with CUDA, Docker, and ML frameworks",
+    "family": "lambda-stack-24-04",
+    "version": "24.4.4-2141",
+    "architecture": "x86_64",
+    "region": {
+      "name": "us-east-1",
+      "description": "Virginia, USA"
+    }
+  },
+  "hardware_policy": "Cheapest available x86_64 single GPU, prefer 24 GiB; explicit Python3.12 image; no second instance",
+  "runtime_contract": {
+    "schema_version": 1,
+    "python_compatibility": {
+      "major": 3,
+      "minor": 12,
+      "constraint": ">=3.12,<3.13",
+      "reason": "Repository f-string grammar requires Python 3.12; later minor versions are not validated."
+    },
+    "python": "3.12.3",
+    "python_profiles": {
+      "experiment": ">=3.12,<3.13",
+      "sealed_reference": "==3.12.3"
+    },
+    "pip": "24.0",
+    "platform": "linux_x86_64",
+    "glibc_min": "2.35",
+    "torch": "2.5.1+cu121",
+    "cuda_runtime": "12.1",
+    "gpu_name": "NVIDIA A100-SXM4-40GB",
+    "gpu_count": 1,
+    "minimum_vram_mib": 40000,
+    "instance_class": "gpu_1x_a100_sxm4",
+    "python_venv_required": true,
+    "minimum_free_disk_gib": 40,
+    "critical_imports": [
+      "agent_wrapper",
+      "finding_record",
+      "bounded_extraction",
+      "execution_topology",
+      "execution_scheduler",
+      "constitution",
+      "message_bus",
+      "run_context"
+    ],
+    "experiment_entrypoint_imports": [
+      "remote_short_burst_probe"
+    ],
+    "core_dependencies": {
+      "torch": "torch",
+      "transformers": "transformers",
+      "tokenizers": "tokenizers",
+      "accelerate": "accelerate",
+      "bitsandbytes": "bitsandbytes",
+      "huggingface-hub": "huggingface_hub",
+      "psutil": "psutil"
+    }
+  },
+  "runtime_profile": "experiment",
+  "models": {
+    "active_producer": {
+      "id": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d"
+    },
+    "active_auditor": {
+      "id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb"
+    }
+  },
+  "generation_limits": {
+    "max_new_tokens": 384,
+    "max_time_seconds": 25,
+    "seed": 7,
+    "do_sample": false
+  },
+  "maximum_calls": 9,
+  "probe_definitions": [
+    "hardware readiness",
+    "producer cold load",
+    "one compact PROCESSOR partition",
+    "at most one source-copy reference",
+    "one independent auditor fixture",
+    "one mandatory producer-auditor pair",
+    "two independent calls serial and jointly admitted only if valid",
+    "capacity4 not admitted without real capacity2 overlap"
+  ],
+  "maintained_entrypoint": "tools/prepare_remote_experiment.py",
+  "source_bytes": 1258520,
+  "source_archive_sha256": "01f00461de26912e2fc0f3fa3ed3c4111ef033e7b130ee0001ef3f2caa88e53b"
+}

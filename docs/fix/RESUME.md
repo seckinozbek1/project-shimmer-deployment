@@ -1,3 +1,28 @@
+# Remote retry stopped and terminated, 2026-09-15
+
+Latest result: CLOUD_FULL_RUN_INDETERMINATE. Read REMOTE_SHORT_BURST_RETRY.md.
+
+One explicitly authorized Lambda A10 (c981f11ebc5849928826f716f72c6149) was launched
+with Lambda Stack 24.04 at $1.29/hour. SSH readiness did not complete. No source
+transfer, remote runtime gate, model download/load, or inference occurred.
+Raw provider metadata accidentally exposed a temporary Jupyter access token.
+Emergency termination was verified at 08:55:04.019863 UTC; second provider query
+found zero active instances. Cost upper bound $0.1348098731 / 376.213599 seconds.
+The operator authorized redaction and reporting, explicitly without a new instance.
+Local redaction is verified; temporary SSH registration/key pair removed.
+
+Local source fix d3ebb06 persists stage evidence and the hard pre-inference
+checkpoint. 26 runtime tests and 83 cloud tests passed. New report/evidence live
+in REMOTE_SHORT_BURST_RETRY.md and remote_short_burst_retry_20260915/.
+The preserved controller_executed.txt is incident evidence, not a retry launcher.
+Before another separately approved bounded cloud experiment, enforce the existing
+safe_metadata allowlist before all provider-data persistence/display and test it.
+Do not infer cloud eligibility or run the full pipeline. No second instance,
+full pipeline, multi-round, paid inference API, or push. Historical evidence and
+operator-owned SHIMMER_HANDOFF.md/durable are unchanged.
+
+## Prior runtime-hardening handoff (preserved context)
+
 # Remote runtime contract hardening, 2026-09-15
 
 Read this file first and continue without asking. Do not push.
