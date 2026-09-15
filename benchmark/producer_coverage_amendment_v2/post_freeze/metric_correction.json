@@ -1,0 +1,15 @@
+{
+  "reason": "Unresolved classification and unresolved total shared a counter key and double-counted the sole unresolved case. Counter fixed; labels/comparison/classifications/policy unchanged.",
+  "files": {
+    "summary.json": {
+      "original_sha256": "55c1b379afd2461d0e71110d51b4036511c87f052932933bc2df9262b11f3624",
+      "previous_unresolved": 2,
+      "corrected_unresolved": 1
+    },
+    "legacy_summary.json": {
+      "original_sha256": "1adf102df76400e3f4098d27c232f6efdc63fc92475603e9c602455c4ffdad2d",
+      "previous_unresolved": 2,
+      "corrected_unresolved": 1
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "policy": "producer-semantic-policy-v2",
+  "protocol": "producer-coverage-amendment-v2",
+  "provenance": "machine_adjudicated_producer_candidate_v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "human_reviewed": false,
+  "training_authorized": false,
+  "train": 0,
+  "dev": 0,
+  "allowed_ids": [],
+  "files": {
+    "train.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "dev.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+  },
+  "evaluation_data_included": false
+}

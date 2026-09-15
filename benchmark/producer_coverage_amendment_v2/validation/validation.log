@@ -1,0 +1,46 @@
+test_absence_unknown_second_distinct (curation_checks.Checks.test_absence_unknown_second_distinct) ... ok
+test_canonical_determinism_distinction_and_contract (curation_checks.Checks.test_canonical_determinism_distinction_and_contract) ... ok
+test_context_temporal_resolution (curation_checks.Checks.test_context_temporal_resolution) ... ok
+test_cropped_negation_does_not_reverse (curation_checks.Checks.test_cropped_negation_does_not_reverse) ... ok
+test_effect_absence_support (curation_checks.Checks.test_effect_absence_support) ... ok
+test_effect_absence_unknown (curation_checks.Checks.test_effect_absence_unknown) ... ok
+test_effect_deictic_resolution (curation_checks.Checks.test_effect_deictic_resolution) ... ok
+test_effect_evaluation_exclusion (curation_checks.Checks.test_effect_evaluation_exclusion) ... ok
+test_effect_exact_support (curation_checks.Checks.test_effect_exact_support) ... ok
+test_effect_isolation (curation_checks.Checks.test_effect_isolation) ... ok
+test_effect_order_content (curation_checks.Checks.test_effect_order_content) ... ok
+test_effect_r06_train_exclusion (curation_checks.Checks.test_effect_r06_train_exclusion) ... ok
+test_effect_recording_event (curation_checks.Checks.test_effect_recording_event) ... ok
+test_exact_support_refs_and_owner (curation_checks.Checks.test_exact_support_refs_and_owner) ... ok
+test_generic_absence_forms (curation_checks.Checks.test_generic_absence_forms) ... ok
+test_missing_vs_unknown_time (curation_checks.Checks.test_missing_vs_unknown_time) ... ok
+test_named_deictic_and_unrelated_context (curation_checks.Checks.test_named_deictic_and_unrelated_context) ... ok
+test_negation_scope_and_embedding (curation_checks.Checks.test_negation_scope_and_embedding) ... ok
+test_no_unsupported_gaps_or_uncertainty (curation_checks.Checks.test_no_unsupported_gaps_or_uncertainty) ... ok
+test_nonoccurrence_not_missing_information_or_unknown (curation_checks.Checks.test_nonoccurrence_not_missing_information_or_unknown) ... ok
+test_order_content (curation_checks.Checks.test_order_content) ... ok
+test_prospective_legacy_projection (curation_checks.Checks.test_prospective_legacy_projection) ... ok
+test_schema_types_and_missing_atoms (curation_checks.Checks.test_schema_types_and_missing_atoms) ... ok
+test_temporal_roles_positive_and_distinct (curation_checks.Checks.test_temporal_roles_positive_and_distinct) ... ok
+test_temporal_uncertainty_and_ordinal_submission (curation_checks.Checks.test_temporal_uncertainty_and_ordinal_submission) ... ok
+test_unambiguous_and_ambiguous_deictics (curation_checks.Checks.test_unambiguous_and_ambiguous_deictics) ... ok
+test_actual_consensus (curation_completed_checks.Completed.test_actual_consensus) ... ok
+test_all_history_and_acceptance_immutable (curation_completed_checks.Completed.test_all_history_and_acceptance_immutable) ... ok
+test_all_primary_slots_and_recomputed_validation (curation_completed_checks.Completed.test_all_primary_slots_and_recomputed_validation) ... ok
+test_all_required_adjudications_preserve_invalid_results (curation_completed_checks.Completed.test_all_required_adjudications_preserve_invalid_results) ... ok
+test_auditors_and_humans_unchanged (curation_completed_checks.Completed.test_auditors_and_humans_unchanged) ... ok
+test_canonical_targets_and_exact_support (curation_completed_checks.Completed.test_canonical_targets_and_exact_support) ... ok
+test_curation_only_every_primary_and_adjudication (curation_completed_checks.Completed.test_curation_only_every_primary_and_adjudication) ... ok
+test_eligible_namespace_empty_and_separate (curation_completed_checks.Completed.test_eligible_namespace_empty_and_separate) ... ok
+test_exact_substantive_population_and_hard_selection (curation_completed_checks.Completed.test_exact_substantive_population_and_hard_selection) ... ok
+test_governance_failure_not_hidden (curation_completed_checks.Completed.test_governance_failure_not_hidden) ... ok
+test_method_population_label_chronology (curation_completed_checks.Completed.test_method_population_label_chronology) ... ok
+test_post_freeze_diagnostic_counts (curation_completed_checks.Completed.test_post_freeze_diagnostic_counts) ... ok
+test_quarantine_supported_but_not_training (curation_completed_checks.Completed.test_quarantine_supported_but_not_training) ... ok
+test_real_r06_population_train_injection (curation_completed_checks.Completed.test_real_r06_population_train_injection) ... ok
+test_regression_phase_guard_before_authored_access (curation_completed_checks.Completed.test_regression_phase_guard_before_authored_access) ... ok
+
+----------------------------------------------------------------------
+Ran 41 tests in 24.440s
+
+OK

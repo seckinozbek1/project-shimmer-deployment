@@ -1,0 +1,54 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "independent_generalization_evidence": false,
+  "blind_final_evaluation": false,
+  "packets": 64,
+  "splits": {
+    "dev": 32,
+    "train": 32
+  },
+  "primary_expected": 192,
+  "primary_completed": 192,
+  "valid_primaries": 180,
+  "invalid_primaries": 12,
+  "agreement": {
+    "unanimous": 64
+  },
+  "agreement_rates": {
+    "unanimous": 1.0
+  },
+  "semantic_unanimity": {
+    "claims": 64,
+    "gaps": 64,
+    "uncertainty": 64,
+    "evidence": 64,
+    "refusal": 64
+  },
+  "evidence_valid_triples": 60,
+  "adjudications": 19,
+  "unresolved_ambiguities": 0,
+  "candidates": {
+    "train": 0,
+    "dev": 0
+  },
+  "quarantined_semantically_qualified": {
+    "dev": 28,
+    "train": 32
+  },
+  "governance_pass": false,
+  "legacy": {
+    "claims": 64,
+    "evidence": 64,
+    "refusal": 64,
+    "typed_gaps": 58,
+    "typed_uncertainty": 64,
+    "canonical_output_difference": 64,
+    "semantic_agreement": 58,
+    "unresolved": 1,
+    "legacy_authored_target_under_specification": 5
+  },
+  "human_reviewed": false,
+  "training_authorized": false
+}
