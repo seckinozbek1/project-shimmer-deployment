@@ -1,0 +1,34 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-fac8d5be1085af07123efd96",
+  "input_sha256": "b30af42fe8841605bfd1101bce6789e1f2c619bad81fbaf2651b78b3fa6dd492",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "MEMORANDUM\nSubject: retained observations\nDecision recorded: CLM-C: vraxlet 64 is assigned 86 flomquils (REF-1003).\nSupporting entry: CLM-D: the same vraxlet 64 is assigned 88 flomquils (REF-1004).\nUnresolved matters: These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s155",
+        "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+      }
+    ],
+    "supplied_refs": [
+      "REF-1003",
+      "REF-1004",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-1003",
+      "REF-1004"
+    ],
+    "routed_rules": []
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-2ceb5b08c06ceef3614231e1",
+  "input_sha256": "054969874da99cf52b782b041ce97a2b4912c46fe131d9b98136353fea1c8555",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "- CLM-C: vendor 47 is assigned 35 pallets (REF-1003).\n- CLM-D: the same vendor 47 is assigned 37 pallets (REF-1004).\n- These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "sf2",
+        "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+      }
+    ],
+    "supplied_refs": [
+      "REF-1003",
+      "REF-1004",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-1003",
+      "REF-1004"
+    ],
+    "routed_rules": []
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "authored_target_reads": 0,
+  "successful_target_reads": 0,
+  "strict_target_access_order_pass": true,
+  "governance_pass": true,
+  "reviewer_target_exposure_detected": false,
+  "created_at": "2026-09-15T19:22:47.591878+00:00",
+  "guard_logs": [
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-11168-1789500167047263800.json",
+      "sha256": "7d632314d1f35af04790cf7d27779930543e84c3afaecf34da54102d81466e74",
+      "successful_target_reads": 0,
+      "blocked_reads": 9
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-17060-1789499809541088500.json",
+      "sha256": "0066b50f412634f8f3be3f22d69f3cc70cccc401b382f87a8924428eb292aa25",
+      "successful_target_reads": 0,
+      "blocked_reads": 10
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-18464-1789500022553400300.json",
+      "sha256": "19ddc09033ec9ca0d18e78e6aca120cbe1498ddbe83c2f0d019a96a0498b0ef2",
+      "successful_target_reads": 0,
+      "blocked_reads": 9
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-22836-1789499778478030500.json",
+      "sha256": "e20cb717953d47352da1ded2f16d305a0bbbee9dd41577765320770f01c96e26",
+      "successful_target_reads": 0,
+      "blocked_reads": 10
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-26128-1789500035030834200.json",
+      "sha256": "7c43647cb497724dcb888971e6851537fdb3456a339635ec1ce841ebefc9b5e8",
+      "successful_target_reads": 0,
+      "blocked_reads": 10
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-26368-1789499973062923000.json",
+      "sha256": "81fd1f3a3b291ca1d1b0b0de1a9f24759e7cf07dc04bedc0f64556e1d6d6c499",
+      "successful_target_reads": 0,
+      "blocked_reads": 10
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-26660-1789499890935745300.json",
+      "sha256": "58b57694eeb08e195d89c2a8c9d5564105d06f4af98464b6243d43b8b437a672",
+      "successful_target_reads": 0,
+      "blocked_reads": 8
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-28220-1789499855711586900.json",
+      "sha256": "8a637d69f845684592018f7aabd972a0406ac27655277291adc50de8a27ec63d",
+      "successful_target_reads": 0,
+      "blocked_reads": 9
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-29452-1789499748247008100.json",
+      "sha256": "54a96eb93c7274a240bb8e6715c10e1271a84d02e3c8b1a2eac345c966f160e5",
+      "successful_target_reads": 0,
+      "blocked_reads": 0
+    },
+    {
+      "path": "output/producer_coverage_amendment_v3/access_logs/access-6724-1789499996499124000.json",
+      "sha256": "86e42b6acb7b6a27bdff11a497c51c801ba1eba2dd9316e0714663f25265cebb",
+      "successful_target_reads": 0,
+      "blocked_reads": 7
+    }
+  ],
+  "bootstrap": "Source-only method/controller reads, generic policy/schema creation, git metadata and staged secret scans before hook installation; no authored targets or historical labels opened.",
+  "limitations": "Hooks cover maintained invoked Python entry points, not hostile code or all computer tools. Fresh agent folder-only attestations are procedural; shared filesystem and parent historical aggregate knowledge remain. No parent-authored review labels."
+}

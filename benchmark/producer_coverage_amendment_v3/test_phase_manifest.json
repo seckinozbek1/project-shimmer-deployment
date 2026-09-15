@@ -1,0 +1,61 @@
+{
+  "default": "POST_GOLD_ONLY",
+  "pre_gold_safe": [
+    {
+      "command": "phase_runner.py checks",
+      "tests": 33,
+      "inputs": "generic fixtures only; R06 removed"
+    },
+    {
+      "command": "phase_runner.py guard_checks",
+      "tests": 12,
+      "inputs": "synthetic committed-manifest fixtures only"
+    },
+    {
+      "command": "phase_runner.py population",
+      "inputs": "source-only packets and administrative population mappings"
+    },
+    {
+      "command": "phase_runner.py collect",
+      "inputs": "current blinded packets and fresh primaries"
+    },
+    {
+      "command": "phase_runner.py freeze",
+      "inputs": "current blinded reviews, adjudications and method hashes"
+    },
+    {
+      "command": "phase_runner.py workspaces",
+      "inputs": "frozen clean packet copy and generic instructions"
+    },
+    {
+      "command": "phase_runner.py method_freeze",
+      "inputs": "new method files, gold-free test results and access logs"
+    }
+  ],
+  "post_gold_only": [
+    {
+      "command": "authored comparison",
+      "reason": "seed and extension targets"
+    },
+    {
+      "command": "cohort-v2 broad gate",
+      "reason": "internally opens authored targets"
+    },
+    {
+      "command": "production compact no-generation gate",
+      "reason": "historical fixtures conservatively protected"
+    },
+    {
+      "command": "historical release integrity",
+      "reason": "hashes target-bearing historical files"
+    },
+    {
+      "command": "R06 effect/regression",
+      "reason": "historical population and outputs"
+    },
+    {
+      "command": "candidate readiness",
+      "reason": "requires post-freeze diagnostics"
+    }
+  ]
+}

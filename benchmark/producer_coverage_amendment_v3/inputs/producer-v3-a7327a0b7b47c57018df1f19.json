@@ -1,0 +1,34 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-a7327a0b7b47c57018df1f19",
+  "input_sha256": "c6a75be80f0494437c1c732c7146606ad05c6439a6082befb246f842291dac40",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "- CLM-C: delegation 45 is assigned 29 offered seats (REF-1003).\n- CLM-D: the same delegation 45 is assigned 31 offered seats (REF-1004).\n- These statements conflict. The effective time is missing. When does it take effect? The interpretation remains uncertain.\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "s106",
+        "text": "CONTEXT ONLY: CLM-Z: an unrelated neighbor lists a separate observation (REF-9999)."
+      }
+    ],
+    "supplied_refs": [
+      "REF-1003",
+      "REF-1004",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-1003",
+      "REF-1004"
+    ],
+    "routed_rules": []
+  }
+}

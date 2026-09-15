@@ -1,0 +1,34 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-3e88a51e16ef7eb49761141c",
+  "input_sha256": "f26818372a8e43eaae877e8c395b9c3125ad0b920a909617491f7e11b11d3dee",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "CLM-A: Case Alder planned 18 recorded observations (REF-0001); CLM-B: Case Birch reported 18 recorded observations (REF-0002). The observation date is unavailable. What is the observation date? The interpretation of the second entry remains unresolved.\n\n"
+      }
+    ],
+    "context_only_spans": [
+      {
+        "alias": "sfe",
+        "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+      }
+    ],
+    "supplied_refs": [
+      "REF-0001",
+      "REF-0002",
+      "REF-9999"
+    ],
+    "required_refs": [
+      "REF-0001",
+      "REF-0002"
+    ],
+    "routed_rules": []
+  }
+}

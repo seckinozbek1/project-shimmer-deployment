@@ -1,0 +1,7 @@
+{
+  "policy_id": "producer-semantic-policy-v3",
+  "release_id": "producer-coverage-amendment-v3",
+  "renderer_id": "producer-target-renderer-v3",
+  "use": "curation_only",
+  "training_authorized": false
+}

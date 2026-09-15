@@ -1,0 +1,26 @@
+{
+  "protocol": "producer-coverage-amendment-v3",
+  "policy": "producer-semantic-policy-v3",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v3-07024cd8500c4b31671b9713",
+  "input_sha256": "418f96bd378c8002a513ec582b17481717fb614120d0dce93c8768b72cbd7224",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "- CLM-A: delegation 45 recorded 29 offered seats (REF-1001).\n- No second claim was submitted.\n- The date is absent. When was this recorded? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001"
+    ],
+    "required_refs": [
+      "REF-1001"
+    ],
+    "routed_rules": []
+  }
+}

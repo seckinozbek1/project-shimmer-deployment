@@ -1,0 +1,9 @@
+{
+  "semantic_generic_tests": 33,
+  "guard_tests": 12,
+  "PRE_GOLD_SAFE": 45,
+  "population_integrity": true,
+  "hard_audit_features": true,
+  "packet_isolation": true,
+  "POST_GOLD_ONLY_executed": 0
+}
