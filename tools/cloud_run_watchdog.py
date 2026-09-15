@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import time
 
-from cloud_run_common import budget_deadlines, require, safe_metadata, write_json
+from cloud_run_common import budget_deadlines, require, safe_metadata, write_json, provider_instance
 
 
 def load_credential(credential_file=None):
@@ -114,24 +114,22 @@ class LambdaTermination:
             raise InvalidPreparation('invalid provider JSON response') from None
         require(isinstance(value, dict) and 'data' in value and 'error' not in value,
                 'invalid provider response')
-        return value
+        if path == 'instances':
+            try:
+                return {'data': [provider_instance(item) for item in value['data']]}
+            except Exception:
+                from cloud_run_common import InvalidPreparation
+                raise InvalidPreparation('invalid provider instance list') from None
+        return {'data': {}}
 
     def instance(self, instance_id):
         values = self.request('instances')['data']
         require(isinstance(values, list), 'invalid provider instance list')
-        items = [item for item in values if item.get('id') == instance_id]
+        items = [item for item in values if item.get('instance_id') == instance_id]
         require(len(items) <= 1, 'ambiguous provider instance identity')
         if not items:
             return {'instance_id': instance_id, 'status': 'terminated'}
-        item = items[0]
-        kind = item.get('instance_type', {})
-        specs = kind.get('specs', {})
-        value = {'instance_id': item['id'], 'name': item.get('name'), 'type': kind.get('name'),
-                 'gpu_type': kind.get('gpu_description'), 'gpu_count': specs.get('gpus'),
-                 'region': item.get('region', {}).get('name'), 'status': item.get('status'),
-                 'public_ip': item.get('ip'), 'hourly_rate': kind.get('price_cents_per_hour', 0) / 100,
-                 'cpu': specs.get('vcpus'), 'ram_gib': specs.get('memory_gib'), 'storage_gib': specs.get('storage_gib')}
-        return safe_metadata({k: v for k, v in value.items() if v is not None})
+        return safe_metadata(items[0])
 
     def terminate(self, instance_id):
         # Deliberately discard the full termination response.
