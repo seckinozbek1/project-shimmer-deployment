@@ -1,0 +1,5431 @@
+[
+  {
+    "example_id": "sealed_adversarial-nonsense-auditor-insufficient_evidence",
+    "packet_id": "review-05a5ba5a010a4fede2f16d4c",
+    "held_out": false,
+    "label": {
+      "packet_id": "review-05a5ba5a010a4fede2f16d4c",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-05a5ba5a010a4fede2f16d4c",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.217088+00:00",
+        "input_sha256": "05a5ba5a010a4fede2f16d4cbac5df4dad6c10f96b32bf5860e1b97ebdf1a7a2",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The only supplied extraction is scope_notice / Institute of Nimbular Blenkets: [extraction incomplete]. Its explicit incompleteness prevents a full fidelity comparison; no unseen continuation can be assumed. The owned source explicitly contains uncertainty, independently of this determinate insufficient-evidence refusal. All candidates support the refusal and empty target.",
+        "decision": "candidate_A",
+        "disagreement_causes": []
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "test-nonsense-auditor-insufficient_evidence",
+    "packet_id": "review-64fc34988d0420e251fec3ac",
+    "held_out": false,
+    "label": {
+      "packet_id": "review-64fc34988d0420e251fec3ac",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-64fc34988d0420e251fec3ac",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.221195+00:00",
+        "input_sha256": "64fc34988d0420e251fec3acd87a07b44cc083d6184649c6403749ff2bbff1a6",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The only supplied extraction is attributed_dialogue / Institute of Nimbular Blenkets: [extraction incomplete]. Its explicit incompleteness prevents a full fidelity comparison; no unseen continuation can be assumed. The owned source explicitly contains uncertainty, independently of this determinate insufficient-evidence refusal. All candidates support the refusal and empty target.",
+        "decision": "candidate_A",
+        "disagreement_causes": []
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-astronomy-changed",
+    "packet_id": "review-ad9a66c3e2e277f8cd47a320",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-ad9a66c3e2e277f8cd47a320",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-ad9a66c3e2e277f8cd47a320",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.223199+00:00",
+        "input_sha256": "ad9a66c3e2e277f8cd47a320971d81064290613c8d68091dd6fb50da9f7a8d95",
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "DIVERGENCE",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The station recorded 89 exposures in the source but 90 in the extraction; date and recorder gaps and uncertainty remain.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "DIVERGENCE",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "changed_quantity",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "rationale": "Direct comparison: The station recorded 89 exposures in the source but 90 in the extraction; date and recorder gaps and uncertainty remain. All required packet references are owned and included. The comparison is determinate; source uncertainty is assessed from the source independently. C gives a specific evidence-based description of the supported relation.",
+        "decision": "candidate_C",
+        "disagreement_causes": [
+          {
+            "type": "reason_component_coverage",
+            "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+          }
+        ]
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-astronomy-conflicting",
+    "packet_id": "review-8d08c171d32dcb1bfae81fcf",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-8d08c171d32dcb1bfae81fcf",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-8d08c171d32dcb1bfae81fcf",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.234385+00:00",
+        "input_sha256": "8d08c171d32dcb1bfae81fcfa4ca0b1be1e866cc6b60c833050fb76b3856f53d",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-compact_table-astronomy-empty",
+    "packet_id": "review-e255b907f1d9a598b4b602f9",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-e255b907f1d9a598b4b602f9",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-e255b907f1d9a598b4b602f9",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.243382+00:00",
+        "input_sha256": "e255b907f1d9a598b4b602f95fd364d6c36fc567b62276b46021fa16a3635644",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s1e",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s4e",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-astronomy-match",
+    "packet_id": "review-78438f79548ebb7d23c69bdf",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-78438f79548ebb7d23c69bdf",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-78438f79548ebb7d23c69bdf",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.232383+00:00",
+        "input_sha256": "78438f79548ebb7d23c69bdffa147049eca41b5bca654107c321d1bceb051194",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-astronomy-primary",
+    "packet_id": "review-fd76873f0357685aed0c98a2",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-fd76873f0357685aed0c98a2",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-fd76873f0357685aed0c98a2",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.244384+00:00",
+        "input_sha256": "fd76873f0357685aed0c98a21db5048692c347c15a205863db89fe9f3775eed3",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s6a",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          },
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recorder",
+            "scope": "owned_record",
+            "span": "s6a",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "Who recorded it?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s6a",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s1e",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            },
+            {
+              "span": "s6a",
+              "claims": [],
+              "questions": [
+                "When was this recorded?",
+                "Who recorded it?"
+              ],
+              "uncertainty": [
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-astronomy-refusal",
+    "packet_id": "review-e54d067d66e5052d2b3f7974",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-e54d067d66e5052d2b3f7974",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-e54d067d66e5052d2b3f7974",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.243382+00:00",
+        "input_sha256": "e54d067d66e5052d2b3f79741afa9d477cab2154ce4ea4864d93fec15f9e8377",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source is explicitly unreadable and unrecoverable; its semantic content cannot be established."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-ecology-changed",
+    "packet_id": "review-2f1a4341acf8d2d641e08841",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-2f1a4341acf8d2d641e08841",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-2f1a4341acf8d2d641e08841",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.226369+00:00",
+        "input_sha256": "2f1a4341acf8d2d641e088418e964c47bce916450892b3107529490b8e97195b",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_omitted"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "OMISSION",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The recording-date gap and question are omitted. The owned claims remain.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "OMISSION",
+        "rationale": "The recording-date gap and question are omitted. The owned claims remain."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-ecology-conflicting",
+    "packet_id": "review-0d2bd27645f0169a0e0dc03f",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-0d2bd27645f0169a0e0dc03f",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-0d2bd27645f0169a0e0dc03f",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.223460+00:00",
+        "input_sha256": "0d2bd27645f0169a0e0dc03f44addb2d68048bbd084805843fb0c6b2bb913962",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-compact_table-ecology-empty",
+    "packet_id": "review-eb3a399eceda8ef53b4aaf96",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-eb3a399eceda8ef53b4aaf96",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-eb3a399eceda8ef53b4aaf96",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.243382+00:00",
+        "input_sha256": "eb3a399eceda8ef53b4aaf963518f19a359a6b54dfdf9f8f53c9b3124c45dd6d",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s1e",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s48",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-ecology-match",
+    "packet_id": "review-f63c3a6431ab0a64e2626b77",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-f63c3a6431ab0a64e2626b77",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-f63c3a6431ab0a64e2626b77",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.244384+00:00",
+        "input_sha256": "f63c3a6431ab0a64e2626b7720655d73fdeb42851da962e129b86166298bba3c",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-ecology-primary",
+    "packet_id": "review-7d6e7b9f85be4bc7973db4a8",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-7d6e7b9f85be4bc7973db4a8",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-7d6e7b9f85be4bc7973db4a8",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.232383+00:00",
+        "input_sha256": "7d6e7b9f85be4bc7973db4a872862fa6f9812367af81bef5af1494523d400454",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s63",
+            "refs": [
+              "REF-1002"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s1e",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            },
+            {
+              "span": "s63",
+              "claims": [
+                "CLM-B"
+              ],
+              "questions": [
+                "When was this recorded?"
+              ],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1002"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-compact_table-ecology-refusal",
+    "packet_id": "review-71b0ad93fb956a7914912ade",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-71b0ad93fb956a7914912ade",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-71b0ad93fb956a7914912ade",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.221195+00:00",
+        "input_sha256": "71b0ad93fb956a7914912ade80cefd74a11540ce2cc86b745fce7bfa189e9a08",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source expressly labels the entry unreadable, includes an unrecoverable fragment, and says semantic content cannot be established. A confident refusal with no fabricated items, claims, citations or uncertainty atoms is supported; refusal itself is not an ambiguous annotation.",
+        "decision": "candidate_A",
+        "disagreement_causes": []
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-astronomy-changed",
+    "packet_id": "review-3c5498af06642cdd8d552218",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-3c5498af06642cdd8d552218",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-3c5498af06642cdd8d552218",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.226369+00:00",
+        "input_sha256": "3c5498af06642cdd8d55221823e2cd498feeb834165ec1806979795235ea5017",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "added_claim",
+          "unsupported_attribution",
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "ADDITION",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "ADDITION",
+        "rationale": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-astronomy-conflicting",
+    "packet_id": "review-9935c225f0d966e8c0488282",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-9935c225f0d966e8c0488282",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-9935c225f0d966e8c0488282",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.235383+00:00",
+        "input_sha256": "9935c225f0d966e8c0488282496c427f315eee6d50e3d3bd3410b40e7d3adace",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-machine_records-astronomy-empty",
+    "packet_id": "review-87a9e540c30c94a2639114cd",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-87a9e540c30c94a2639114cd",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-87a9e540c30c94a2639114cd",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.234385+00:00",
+        "input_sha256": "87a9e540c30c94a2639114cd4c003b58808160e7cd60b33346b98f92357e0025",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-astronomy-match",
+    "packet_id": "review-9bb1d6874c1de5d7428bd600",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-9bb1d6874c1de5d7428bd600",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-9bb1d6874c1de5d7428bd600",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.235383+00:00",
+        "input_sha256": "9bb1d6874c1de5d7428bd600f98423a067515ec4ed58111fb3c96411effeaefe",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-astronomy-primary",
+    "packet_id": "review-f2efc3227729d23ac7f513a0",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-f2efc3227729d23ac7f513a0",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-f2efc3227729d23ac7f513a0",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.244384+00:00",
+        "input_sha256": "f2efc3227729d23ac7f513a0a4175933f14f313d21d6bf1afd79da14d782aa02",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [
+                "When was this recorded?"
+              ],
+              "uncertainty": [
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-astronomy-refusal",
+    "packet_id": "review-2e9e21f03b9ec06e65ff55e4",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-2e9e21f03b9ec06e65ff55e4",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-2e9e21f03b9ec06e65ff55e4",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.218146+00:00",
+        "input_sha256": "2e9e21f03b9ec06e65ff55e48a60a890f52a116d82e5ff4386c8af4c99fca175",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source expressly labels the entry unreadable, includes an unrecoverable fragment, and says semantic content cannot be established. A confident refusal with no fabricated items, claims, citations or uncertainty atoms is supported; refusal itself is not an ambiguous annotation.",
+        "decision": "candidate_A",
+        "disagreement_causes": []
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-ecology-changed",
+    "packet_id": "review-627c562de27af3ce77e238d0",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-627c562de27af3ce77e238d0",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-627c562de27af3ce77e238d0",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.220212+00:00",
+        "input_sha256": "627c562de27af3ce77e238d0fee8d38dd774de243c10ad5fdfeff298e1d2df09",
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "DIVERGENCE",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The recorded quadrat quantity changes from 152 to 153; retained 157 and the date and recorder gaps remain.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "DIVERGENCE",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "changed_quantity",
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "rationale": "Direct comparison: The recorded quadrat quantity changes from 152 to 153; retained 157 and the date and recorder gaps remain. All required packet references are owned and included. The comparison is determinate; source uncertainty is assessed from the source independently. C gives a specific evidence-based description of the supported relation.",
+        "decision": "candidate_C",
+        "disagreement_causes": [
+          {
+            "type": "reason_component_coverage",
+            "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+          }
+        ]
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-ecology-conflicting",
+    "packet_id": "review-56252d3a3245fe6d3fab7c6e",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-56252d3a3245fe6d3fab7c6e",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-56252d3a3245fe6d3fab7c6e",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.229368+00:00",
+        "input_sha256": "56252d3a3245fe6d3fab7c6efb4938d2a13dd62538659fef8ed376564271767c",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-machine_records-ecology-empty",
+    "packet_id": "review-4f695de7ab0ab6748329c60c",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-4f695de7ab0ab6748329c60c",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-4f695de7ab0ab6748329c60c",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.229368+00:00",
+        "input_sha256": "4f695de7ab0ab6748329c60cc96ea39abf2a57b4e17d53ba155043dd63b56941",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-ecology-match",
+    "packet_id": "review-c9ba40e04dc27d0b92235870",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-c9ba40e04dc27d0b92235870",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-c9ba40e04dc27d0b92235870",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.239415+00:00",
+        "input_sha256": "c9ba40e04dc27d0b92235870a528566032eb76c77388477629cd5a761e26556b",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-ecology-primary",
+    "packet_id": "review-3fb22dbabb9ad628b0f04740",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-3fb22dbabb9ad628b0f04740",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-3fb22dbabb9ad628b0f04740",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.227372+00:00",
+        "input_sha256": "3fb22dbabb9ad628b0f04740f8f68a4f772e3589fbcb683bd5a25e242e3062c2",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          },
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recorder",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "Who recorded it?"
+          }
+        ],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-A",
+                "CLM-B"
+              ],
+              "questions": [
+                "When was this recorded?",
+                "Who recorded it?"
+              ],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-machine_records-ecology-refusal",
+    "packet_id": "review-822bffb7dbde687a4fc3115b",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-822bffb7dbde687a4fc3115b",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-822bffb7dbde687a4fc3115b",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.233383+00:00",
+        "input_sha256": "822bffb7dbde687a4fc3115bd3e21dcef9af8925b1e759678d3cd9c85adf70a4",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source is explicitly unreadable and unrecoverable; its semantic content cannot be established."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-astronomy-changed",
+    "packet_id": "review-5f8e1ea9473f25272c2bb17c",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-5f8e1ea9473f25272c2bb17c",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-5f8e1ea9473f25272c2bb17c",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.230369+00:00",
+        "input_sha256": "5f8e1ea9473f25272c2bb17cb32dba4b8d1885d8683ac657b23cc77580821edf",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "added_claim",
+          "unsupported_attribution",
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "ADDITION",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "ADDITION",
+        "rationale": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-astronomy-conflicting",
+    "packet_id": "review-f2f9cd0996c66304a341cb7f",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-f2f9cd0996c66304a341cb7f",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-f2f9cd0996c66304a341cb7f",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.228188+00:00",
+        "input_sha256": "f2f9cd0996c66304a341cb7fbccbce6da6b8c841023be3defdaa948925b00d29",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "sd0",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "sd0",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "sd0",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1003"
+              ]
+            },
+            {
+              "span": "s56",
+              "claims": [
+                "CLM-D"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1004"
+              ]
+            },
+            {
+              "span": "sd0",
+              "claims": [],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Direct source review supports s0: CLM-C; s56: CLM-D. Retain both assertions, one effective-time gap, explicit conflict and uncertain interpretation. The source does not explicitly limit the effective-time gap to an amendment. Each item and atom uses only its owned alias references; context REF-9999 is excluded. Source uncertainty is explicit, but the extraction annotation is determinate. A provides the supported typed reason components. The standalone sd0 qualification owns no references, so its atoms correctly have empty refs.",
+        "decision": "candidate_A",
+        "disagreement_causes": [
+          {
+            "type": "reason_component_coverage",
+            "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+          },
+          {
+            "type": "wording_only",
+            "detail": "These statements conflict and The source statements conflict denote the same explicit conflict; typed atoms agree."
+          }
+        ]
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-mixed_prose_table-astronomy-empty",
+    "packet_id": "review-9d5b77330106d28eb173fd68",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-9d5b77330106d28eb173fd68",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-9d5b77330106d28eb173fd68",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.235383+00:00",
+        "input_sha256": "9d5b77330106d28eb173fd68959493e4bf34082f95cf7b47e0107588fd37f573",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s59",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s78",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-astronomy-match",
+    "packet_id": "review-ae08ec92eca403a07d0d2f69",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-ae08ec92eca403a07d0d2f69",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-ae08ec92eca403a07d0d2f69",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.237383+00:00",
+        "input_sha256": "ae08ec92eca403a07d0d2f69fb9645fb8a81c1fbe75b524de9cd76390c7adb5d",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-astronomy-primary",
+    "packet_id": "review-41b2df2240e3de387df0e78d",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-41b2df2240e3de387df0e78d",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-41b2df2240e3de387df0e78d",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.227372+00:00",
+        "input_sha256": "41b2df2240e3de387df0e78de7a2b7f95242698f1d62d843a6dfe6cdf036df9a",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "sa1",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "sa1",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            },
+            {
+              "span": "s76",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "sa1",
+              "claims": [],
+              "questions": [
+                "When was this recorded?"
+              ],
+              "uncertainty": [
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-astronomy-refusal",
+    "packet_id": "review-537aa1b0f7d4c861c917b5df",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-537aa1b0f7d4c861c917b5df",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-537aa1b0f7d4c861c917b5df",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.229368+00:00",
+        "input_sha256": "537aa1b0f7d4c861c917b5dfba99a2bb8a691ce78ad3d35a1d564fdc524e74a3",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source is explicitly unreadable and unrecoverable; its semantic content cannot be established."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-ecology-changed",
+    "packet_id": "review-627ec8405e03b878f0496d32",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-627ec8405e03b878f0496d32",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-627ec8405e03b878f0496d32",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.221195+00:00",
+        "input_sha256": "627ec8405e03b878f0496d323bf6e337d75bd5ce20cb288c36b2a694c6c4edee",
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "DIVERGENCE",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The recorded quadrat quantity changes from 116 to 117; retained 121 and the date and recorder gaps remain.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "DIVERGENCE",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "changed_quantity",
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "rationale": "Direct comparison: The recorded quadrat quantity changes from 116 to 117; retained 121 and the date and recorder gaps remain. All required packet references are owned and included. The comparison is determinate; source uncertainty is assessed from the source independently. C gives a specific evidence-based description of the supported relation.",
+        "decision": "candidate_C",
+        "disagreement_causes": [
+          {
+            "type": "reason_component_coverage",
+            "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+          }
+        ]
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-ecology-conflicting",
+    "packet_id": "review-1a85967104ee69c46e30d8d8",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-1a85967104ee69c46e30d8d8",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-1a85967104ee69c46e30d8d8",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.225450+00:00",
+        "input_sha256": "1a85967104ee69c46e30d8d8efec9b476b34edcf674730439691630350e4b7fd",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "sc2",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "sc2",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "sc2",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1003"
+              ]
+            },
+            {
+              "span": "s4f",
+              "claims": [
+                "CLM-D"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1004"
+              ]
+            },
+            {
+              "span": "sc2",
+              "claims": [],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-mixed_prose_table-ecology-empty",
+    "packet_id": "review-c843e056e941a11f3e444cf1",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-c843e056e941a11f3e444cf1",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-c843e056e941a11f3e444cf1",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.239415+00:00",
+        "input_sha256": "c843e056e941a11f3e444cf11f2b5064e3290e932cabccbb41dbd4713102169b",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s53",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s72",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-ecology-match",
+    "packet_id": "review-0e531d2b62d73338f6af9c6f",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-0e531d2b62d73338f6af9c6f",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-0e531d2b62d73338f6af9c6f",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.223460+00:00",
+        "input_sha256": "0e531d2b62d73338f6af9c6fe7a46883ccb73279e042291877eef0f2a6a1bfa0",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-ecology-primary",
+    "packet_id": "review-2455e0af6840aa90eeeea829",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-2455e0af6840aa90eeeea829",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-2455e0af6840aa90eeeea829",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.225450+00:00",
+        "input_sha256": "2455e0af6840aa90eeeea82932132576ddc7c3f613f72ef20af9a5a3d3cb23fa",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "sb3",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          },
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recorder",
+            "scope": "owned_record",
+            "span": "sb3",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "Who recorded it?"
+          }
+        ],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            },
+            {
+              "span": "s6f",
+              "claims": [
+                "CLM-B"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1002"
+              ]
+            },
+            {
+              "span": "sb3",
+              "claims": [],
+              "questions": [
+                "When was this recorded?",
+                "Who recorded it?"
+              ],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-mixed_prose_table-ecology-refusal",
+    "packet_id": "review-370466c1cb383a925b79d2ce",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-370466c1cb383a925b79d2ce",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-370466c1cb383a925b79d2ce",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.218146+00:00",
+        "input_sha256": "370466c1cb383a925b79d2ced76d509609d69e6a01ceb9ff9910fcf88bffb800",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source expressly labels the entry unreadable, includes an unrecoverable fragment, and says semantic content cannot be established. A confident refusal with no fabricated items, claims, citations or uncertainty atoms is supported; refusal itself is not an ambiguous annotation.",
+        "decision": "candidate_A",
+        "disagreement_causes": []
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-astronomy-changed",
+    "packet_id": "review-a5b3647ec31b0ec905c59d1d",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-a5b3647ec31b0ec905c59d1d",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-a5b3647ec31b0ec905c59d1d",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.236384+00:00",
+        "input_sha256": "a5b3647ec31b0ec905c59d1d56df013cf5c56f0e866c15adea74718b1dbddb9a",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_omitted",
+          "uncertainty_omitted"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "OMISSION",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction retains the owned claims but removes both the recording-date gap and the explicit uncertain interpretation.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "OMISSION",
+        "rationale": "The extraction retains the owned claims but removes both the recording-date gap and the explicit uncertain interpretation."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-astronomy-conflicting",
+    "packet_id": "review-a948d846e4b6151efbfafe81",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-a948d846e4b6151efbfafe81",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-a948d846e4b6151efbfafe81",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.236384+00:00",
+        "input_sha256": "a948d846e4b6151efbfafe8116d66fb843494e9ec6de60c344b4e029750aa4d8",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-multirow_table-astronomy-empty",
+    "packet_id": "review-434359a9a74ec80193355b99",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-434359a9a74ec80193355b99",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-434359a9a74ec80193355b99",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.227372+00:00",
+        "input_sha256": "434359a9a74ec80193355b99f9ce8950fe6771978dfa1edcd7a22762e1dbd841",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s22",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s4c",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s67",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-astronomy-match",
+    "packet_id": "review-d2002a50d5b6c1199db30e6c",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-d2002a50d5b6c1199db30e6c",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-d2002a50d5b6c1199db30e6c",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.240382+00:00",
+        "input_sha256": "d2002a50d5b6c1199db30e6cf1fc92b0acffaa74a8d1351ea35202cb459d408b",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-astronomy-primary",
+    "packet_id": "review-c710b5e50ae2f810ff8e2291",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-c710b5e50ae2f810ff8e2291",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-c710b5e50ae2f810ff8e2291",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.239415+00:00",
+        "input_sha256": "c710b5e50ae2f810ff8e2291e9a705038519870e3f62d1724785ef87c87331b9",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s90",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s90",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s22",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            },
+            {
+              "span": "s69",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s90",
+              "claims": [],
+              "questions": [
+                "When was this recorded?"
+              ],
+              "uncertainty": [
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-astronomy-refusal",
+    "packet_id": "review-9231b4f8784082cecddb9737",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-9231b4f8784082cecddb9737",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-9231b4f8784082cecddb9737",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.222095+00:00",
+        "input_sha256": "9231b4f8784082cecddb973770753368a54e8f766f4538f164d89f834cb2fa1e",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source expressly labels the entry unreadable, includes an unrecoverable fragment, and says semantic content cannot be established. A confident refusal with no fabricated items, claims, citations or uncertainty atoms is supported; refusal itself is not an ambiguous annotation.",
+        "decision": "candidate_A",
+        "disagreement_causes": []
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-ecology-changed",
+    "packet_id": "review-1e5213e5c19690e8ff8442a1",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-1e5213e5c19690e8ff8442a1",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-1e5213e5c19690e8ff8442a1",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.225450+00:00",
+        "input_sha256": "1e5213e5c19690e8ff8442a119f01cfaed00f17e6b1ddcea551f7db65e82ca8c",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "added_claim",
+          "unsupported_attribution",
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "ADDITION",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "ADDITION",
+        "rationale": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-ecology-conflicting",
+    "packet_id": "review-42e31c0bcc51e3bc262550f0",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-42e31c0bcc51e3bc262550f0",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-42e31c0bcc51e3bc262550f0",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.227372+00:00",
+        "input_sha256": "42e31c0bcc51e3bc262550f0c9c10dd6e625a3700cf9e2d7ef1f1e5b052fef3d",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-multirow_table-ecology-empty",
+    "packet_id": "review-bb7846abeb2b462fce2dab20",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-bb7846abeb2b462fce2dab20",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-bb7846abeb2b462fce2dab20",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.224197+00:00",
+        "input_sha256": "bb7846abeb2b462fce2dab2048e942faf369762b1864bb93f6c0b8a3a3e682a1",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s22",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s46",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s61",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "The four owned aliases contain the table heading, a divider, an explicit No semantic entry statement and an end marker. These are structural content without claims or qualifications: retain one empty item per alias. This is EMPTY, with neither source uncertainty nor review ambiguity.",
+        "decision": "candidate_A",
+        "disagreement_causes": []
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-ecology-match",
+    "packet_id": "review-fce5256dd3a5b0e61d63ef27",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-fce5256dd3a5b0e61d63ef27",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-fce5256dd3a5b0e61d63ef27",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.244384+00:00",
+        "input_sha256": "fce5256dd3a5b0e61d63ef2755dafeea9b842e170a497289ae1c257c2f9efa54",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-ecology-primary",
+    "packet_id": "review-85218b2bac49fd06e75fb4f5",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-85218b2bac49fd06e75fb4f5",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-85218b2bac49fd06e75fb4f5",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.233383+00:00",
+        "input_sha256": "85218b2bac49fd06e75fb4f5c7a6551acc3df7c9414c10ccd516e3670c1191d4",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "sa2",
+            "refs": [],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            },
+            {
+              "span": "s22",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            },
+            {
+              "span": "s62",
+              "claims": [
+                "CLM-B"
+              ],
+              "questions": [],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1002"
+              ]
+            },
+            {
+              "span": "sa2",
+              "claims": [],
+              "questions": [
+                "When was this recorded?"
+              ],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-multirow_table-ecology-refusal",
+    "packet_id": "review-0163c3bfa87be6d1b72cd327",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-0163c3bfa87be6d1b72cd327",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-0163c3bfa87be6d1b72cd327",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.222485+00:00",
+        "input_sha256": "0163c3bfa87be6d1b72cd3277a18a7519d7ab935d0c5ae940aee88a605844abf",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source is explicitly unreadable and unrecoverable; its semantic content cannot be established."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-astronomy-changed",
+    "packet_id": "review-dc447215feb258432ef89a59",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-dc447215feb258432ef89a59",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-dc447215feb258432ef89a59",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.241382+00:00",
+        "input_sha256": "dc447215feb258432ef89a59ef3d014d3c67270ee942faa762d747ef6e7a72f9",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "changed_quantity",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "DIVERGENCE",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "CLM-A changes observing station 77 from 125 to 126 exposures. The remaining source qualifications are retained.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "DIVERGENCE",
+        "rationale": "CLM-A changes observing station 77 from 125 to 126 exposures. The remaining source qualifications are retained."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-astronomy-conflicting",
+    "packet_id": "review-5ef9cc5d36a99a4fbff88d05",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-5ef9cc5d36a99a4fbff88d05",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-5ef9cc5d36a99a4fbff88d05",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.220212+00:00",
+        "input_sha256": "5ef9cc5d36a99a4fbff88d05fc54c1051541f4b6a97c481091ae0a6f6b7e283f",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Direct source review supports s0: CLM-C, CLM-D. Retain both assertions, one effective-time gap, explicit conflict and uncertain interpretation. The source does not explicitly limit the effective-time gap to an amendment. Each item and atom uses only its owned alias references; context REF-9999 is excluded. Source uncertainty is explicit, but the extraction annotation is determinate. A provides the supported typed reason components.",
+        "decision": "candidate_A",
+        "disagreement_causes": [
+          {
+            "type": "reason_component_coverage",
+            "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+          },
+          {
+            "type": "wording_only",
+            "detail": "These statements conflict and The source statements conflict denote the same explicit conflict; typed atoms agree."
+          }
+        ]
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-nested_provisions-astronomy-empty",
+    "packet_id": "review-8595c9a0686c5774de1b5dbb",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-8595c9a0686c5774de1b5dbb",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-8595c9a0686c5774de1b5dbb",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.233383+00:00",
+        "input_sha256": "8595c9a0686c5774de1b5dbb241fe5f93d2bc9d31a4d5bc8ea6c64a9fbeaedbd",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-astronomy-match",
+    "packet_id": "review-cbc27d1040376cacb0c49c8b",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-cbc27d1040376cacb0c49c8b",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-cbc27d1040376cacb0c49c8b",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.240382+00:00",
+        "input_sha256": "cbc27d1040376cacb0c49c8bd7a2dfcf9d09d7e240029cbc32301aef03a6edde",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-astronomy-primary",
+    "packet_id": "review-af8b0e9ecbfb49fdfe4a63ef",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-af8b0e9ecbfb49fdfe4a63ef",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-af8b0e9ecbfb49fdfe4a63ef",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.237383+00:00",
+        "input_sha256": "af8b0e9ecbfb49fdfe4a63ef9b18934c661a7c5fc53a901e3528d55c3dcc54d4",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          },
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recorder",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "Who recorded it?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [
+                "When was this recorded?",
+                "Who recorded it?"
+              ],
+              "uncertainty": [
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-astronomy-refusal",
+    "packet_id": "review-7633bb9a4cdef70a499e4981",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-7633bb9a4cdef70a499e4981",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-7633bb9a4cdef70a499e4981",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.231384+00:00",
+        "input_sha256": "7633bb9a4cdef70a499e4981a538beec3865bcbbf360d0965ac9c736f13c77cc",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source is explicitly unreadable and unrecoverable; its semantic content cannot be established."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-ecology-changed",
+    "packet_id": "review-a24f8dc97768789f8fe4d7d6",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-a24f8dc97768789f8fe4d7d6",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-a24f8dc97768789f8fe4d7d6",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.222095+00:00",
+        "input_sha256": "a24f8dc97768789f8fe4d7d6da074828d260a1ed5ae8c72ef729a1c4abce5d8c",
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "OMISSION",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "Recorded 128 and retained 133 quadrats remain, but the recording-date absence and question are deleted.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "OMISSION",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_omitted"
+        ],
+        "rationale": "Direct comparison: Recorded 128 and retained 133 quadrats remain, but the recording-date absence and question are deleted. All required packet references are owned and included. The comparison is determinate; source uncertainty is assessed from the source independently. C gives a specific evidence-based description of the supported relation.",
+        "decision": "candidate_C",
+        "disagreement_causes": [
+          {
+            "type": "rationale_specificity",
+            "detail": "The selected description names the actual missing date referent or actual added approving actor; broader candidate alternatives are unnecessary."
+          }
+        ]
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-ecology-conflicting",
+    "packet_id": "review-ded87b54701e6199fae5f82f",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-ded87b54701e6199fae5f82f",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-ded87b54701e6199fae5f82f",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.242385+00:00",
+        "input_sha256": "ded87b54701e6199fae5f82f25883c80a127466a7f8aa3023e9b4a34bf4bc87a",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-nested_provisions-ecology-empty",
+    "packet_id": "review-d49391771e16df13656706bf",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-d49391771e16df13656706bf",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-d49391771e16df13656706bf",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.240382+00:00",
+        "input_sha256": "d49391771e16df13656706bfa5dc9f8daf9220e43cb1bf402417325c7e59ba29",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-ecology-match",
+    "packet_id": "review-8426fbfa1f7b8afb4c793317",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-8426fbfa1f7b8afb4c793317",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-8426fbfa1f7b8afb4c793317",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.233383+00:00",
+        "input_sha256": "8426fbfa1f7b8afb4c793317532a94dc2686f5702b27dc19c2a52d4e200266e5",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-ecology-primary",
+    "packet_id": "review-7b82adfd9e15e42dffd29c6f",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-7b82adfd9e15e42dffd29c6f",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-7b82adfd9e15e42dffd29c6f",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.232383+00:00",
+        "input_sha256": "7b82adfd9e15e42dffd29c6f6ba99aff9fbc94e86358d601acf0d3880af3b989",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-A",
+                "CLM-B"
+              ],
+              "questions": [
+                "When was this recorded?"
+              ],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-nested_provisions-ecology-refusal",
+    "packet_id": "review-ddd00cb66465153df2d67c29",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-ddd00cb66465153df2d67c29",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-ddd00cb66465153df2d67c29",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.242385+00:00",
+        "input_sha256": "ddd00cb66465153df2d67c298ac98ea92c32f7aebf50c08a5abf95e3ac507cc8",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source is explicitly unreadable and unrecoverable; its semantic content cannot be established."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-astronomy-changed",
+    "packet_id": "review-a2960345881a1660acda6389",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-a2960345881a1660acda6389",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-a2960345881a1660acda6389",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.235383+00:00",
+        "input_sha256": "a2960345881a1660acda6389eb327a37fcf245904d18d4b6c37bc64127b81a07",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_omitted",
+          "uncertainty_omitted"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "OMISSION",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction retains the owned claims but removes both the recording-date gap and the explicit uncertain interpretation.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "OMISSION",
+        "rationale": "The extraction retains the owned claims but removes both the recording-date gap and the explicit uncertain interpretation."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-astronomy-conflicting",
+    "packet_id": "review-186675791d0785830fb7d3d0",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-186675791d0785830fb7d3d0",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-186675791d0785830fb7d3d0",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.224386+00:00",
+        "input_sha256": "186675791d0785830fb7d3d0c667eea73cc0878be7fa802f77298d61d4358143",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-transaction_register-astronomy-empty",
+    "packet_id": "review-5da488605d15c28816eb85ee",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-5da488605d15c28816eb85ee",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-5da488605d15c28816eb85ee",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.230369+00:00",
+        "input_sha256": "5da488605d15c28816eb85eefffe8285aa7a721c5b254d58ca488bc4c5dcc77f",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-astronomy-match",
+    "packet_id": "review-5ff41c12ea05af09d46c6011",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-5ff41c12ea05af09d46c6011",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-5ff41c12ea05af09d46c6011",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.230369+00:00",
+        "input_sha256": "5ff41c12ea05af09d46c601179a3e70dbebafb777e9580a60e886df6d96b5f39",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps and source uncertainty."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-astronomy-primary",
+    "packet_id": "review-bcb5e8f9e56d447c3f92b1b2",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-bcb5e8f9e56d447c3f92b1b2",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-bcb5e8f9e56d447c3f92b1b2",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.238385+00:00",
+        "input_sha256": "bcb5e8f9e56d447c3f92b1b25a391ba13e17ae0f6d7c186eadda41bfdc311cf4",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-A"
+              ],
+              "questions": [
+                "When was this recorded?"
+              ],
+              "uncertainty": [
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1001"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-astronomy-refusal",
+    "packet_id": "review-cf861305c1aca1d608e922a7",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-cf861305c1aca1d608e922a7",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-cf861305c1aca1d608e922a7",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.240382+00:00",
+        "input_sha256": "cf861305c1aca1d608e922a73ff704fec9a262b3507a246829b8ff836b61a6d9",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source is explicitly unreadable and unrecoverable; its semantic content cannot be established."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-ecology-changed",
+    "packet_id": "review-8e168bd9df1a0d49ab927390",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-8e168bd9df1a0d49ab927390",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-8e168bd9df1a0d49ab927390",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.234385+00:00",
+        "input_sha256": "8e168bd9df1a0d49ab92739008bd5075537c84076d4ada1fb14d300e85ade988",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "added_claim",
+          "unsupported_attribution",
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "ADDITION",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain.",
+              "severity": "medium",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "ADDITION",
+        "rationale": "The extraction adds approval by an external director without support in the owned source; the original claims and qualifications remain."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-ecology-conflicting",
+    "packet_id": "review-dc7251bb7a4b3c0960d2819e",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-dc7251bb7a4b3c0960d2819e",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-dc7251bb7a4b3c0960d2819e",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "D",
+        "provenance": "machine_agent_adjudication",
+        "run_id": "machine-agent-review-v2-D",
+        "reviewed_at": "2026-09-15T17:14:19.226144+00:00",
+        "input_sha256": "dc7251bb7a4b3c0960d2819ed2de20a1ca32028c437cd56a17a5249061fa1055",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "effective_time",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When does it take effect?"
+          }
+        ],
+        "uncertainty_atoms": [
+          {
+            "type": "conflicting",
+            "subject": "owned_record",
+            "target": "assertions",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The source statements conflict."
+          },
+          {
+            "type": "unknown",
+            "subject": "owned_record",
+            "target": "interpretation",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1003",
+              "REF-1004"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "The interpretation remains uncertain."
+          }
+        ],
+        "source_uncertainty_present": true,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved",
+          "uncertainty_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-C",
+                "CLM-D"
+              ],
+              "questions": [
+                "When does it take effect?"
+              ],
+              "uncertainty": [
+                "The source statements conflict.",
+                "The interpretation remains uncertain."
+              ],
+              "status": "extracted",
+              "refs": [
+                "REF-1003",
+                "REF-1004"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Direct source review supports s0: CLM-C, CLM-D. Retain both assertions, one effective-time gap, explicit conflict and uncertain interpretation. The source does not explicitly limit the effective-time gap to an amendment. Each item and atom uses only its owned alias references; context REF-9999 is excluded. Source uncertainty is explicit, but the extraction annotation is determinate. A provides the supported typed reason components.",
+        "decision": "candidate_A",
+        "disagreement_causes": [
+          {
+            "type": "reason_component_coverage",
+            "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+          },
+          {
+            "type": "wording_only",
+            "detail": "These statements conflict and The source statements conflict denote the same explicit conflict; typed atoms agree."
+          }
+        ]
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_adjudication",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": true,
+      "adjudicator_agrees_with_majority": true
+    },
+    "semantic_dispute": true
+  },
+  {
+    "example_id": "v2-transaction_register-ecology-empty",
+    "packet_id": "review-ce2f34d784fa497c9f827a08",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-ce2f34d784fa497c9f827a08",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-ce2f34d784fa497c9f827a08",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.240382+00:00",
+        "input_sha256": "ce2f34d784fa497c9f827a084b1819edfe7842e47e231ba2349be8f15bc16000",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [],
+              "questions": [],
+              "uncertainty": [],
+              "status": "empty",
+              "refs": []
+            }
+          ]
+        },
+        "semantic_judgment": "EMPTY",
+        "rationale": "Owned aliases contain only structural markers and explicitly no semantic entry."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-ecology-match",
+    "packet_id": "review-86d8458b322d34cf1c231362",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-86d8458b322d34cf1c231362",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-86d8458b322d34cf1c231362",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.233383+00:00",
+        "input_sha256": "86d8458b322d34cf1c231362ec3b3a44052c1239bf4499d5c067beab358df53b",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "finding": "MATCH",
+              "ref_ids": [
+                "REF-1001",
+                "REF-1002"
+              ],
+              "reasoning": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps.",
+              "severity": "low",
+              "confidence": "CONFIDENT"
+            }
+          ]
+        },
+        "semantic_judgment": "MATCH",
+        "rationale": "The extraction preserves the owned claims with their distinct entities, labels, quantities and units, and retains the explicit information gaps."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-ecology-primary",
+    "packet_id": "review-444a32d3325d5b3a415e684e",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-444a32d3325d5b3a415e684e",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-444a32d3325d5b3a415e684e",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.228373+00:00",
+        "input_sha256": "444a32d3325d5b3a415e684ee2dee9ae543dba6b74447b956a00df6fa3155e46",
+        "gap_atoms": [
+          {
+            "type": "missing_information",
+            "subject": "owned_record",
+            "target": "recording_date",
+            "scope": "owned_record",
+            "span": "s0",
+            "refs": [
+              "REF-1001",
+              "REF-1002"
+            ],
+            "origin": "source_explicit",
+            "unit": null,
+            "wording": "When was this recorded?"
+          }
+        ],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "preserved_claim",
+          "gap_preserved"
+        ],
+        "semantic_target": {
+          "items": [
+            {
+              "span": "s0",
+              "claims": [
+                "CLM-A",
+                "CLM-B"
+              ],
+              "questions": [
+                "When was this recorded?"
+              ],
+              "uncertainty": [],
+              "status": "extracted",
+              "refs": [
+                "REF-1001",
+                "REF-1002"
+              ]
+            }
+          ]
+        },
+        "semantic_judgment": "EXTRACTED",
+        "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  },
+  {
+    "example_id": "v2-transaction_register-ecology-refusal",
+    "packet_id": "review-15d975c52f36eff8bc2c7992",
+    "held_out": true,
+    "label": {
+      "packet_id": "review-15d975c52f36eff8bc2c7992",
+      "review": {
+        "protocol": "machine-agent-review-v2",
+        "packet_id": "review-15d975c52f36eff8bc2c7992",
+        "binding": {
+          "revision": "first-tuning-review-cohort-v2",
+          "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+          "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+        },
+        "slot": "A",
+        "provenance": "independent_machine_agent_review",
+        "run_id": "machine-agent-review-v2-A",
+        "reviewed_at": "2026-09-15T17:07:57.224386+00:00",
+        "input_sha256": "15d975c52f36eff8bc2c7992ad32d7708fa2fb18c1fe73dfdc73a810a32f7dcb",
+        "gap_atoms": [],
+        "uncertainty_atoms": [],
+        "source_uncertainty_present": false,
+        "review_ambiguity": false,
+        "reason_components": [
+          "evidence_insufficient"
+        ],
+        "semantic_target": {
+          "items": [],
+          "status": "refused"
+        },
+        "semantic_judgment": "INSUFFICIENT_EVIDENCE",
+        "rationale": "The owned source is explicitly unreadable and unrecoverable; its semantic content cannot be established."
+      },
+      "valid": true,
+      "primary_valid": {
+        "A": true,
+        "B": true,
+        "C": true
+      },
+      "provenance": "machine_agent_consensus",
+      "human_reviewed": false,
+      "review_ambiguity": false,
+      "source_uncertainty_present": false,
+      "adjudicator_agrees_with_majority": null
+    },
+    "semantic_dispute": false
+  }
+]

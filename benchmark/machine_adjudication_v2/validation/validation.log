@@ -1,0 +1,34 @@
+test_evidence_validation_effect (v2_normalizer_checks.NormalizerChecks.test_evidence_validation_effect) ... ok
+test_gap_normalization_effect (v2_normalizer_checks.NormalizerChecks.test_gap_normalization_effect) ... ok
+test_gold_isolation_effect (v2_normalizer_checks.NormalizerChecks.test_gold_isolation_effect) ... ok
+test_held_out_exclusion_effect (v2_normalizer_checks.NormalizerChecks.test_held_out_exclusion_effect) ... ok
+test_missing_date_paraphrases (v2_normalizer_checks.NormalizerChecks.test_missing_date_paraphrases) ... ok
+test_preserved_r06_train_exclusion_effect (v2_normalizer_checks.NormalizerChecks.test_preserved_r06_train_exclusion_effect) ... ok
+test_real_semantic_differences_preserved (v2_normalizer_checks.NormalizerChecks.test_real_semantic_differences_preserved) ... ok
+test_review_ambiguity_separation_effect (v2_normalizer_checks.NormalizerChecks.test_review_ambiguity_separation_effect) ... ok
+test_unavailability_synonyms (v2_normalizer_checks.NormalizerChecks.test_unavailability_synonyms) ... ok
+test_uncertainty_normalization_effect (v2_normalizer_checks.NormalizerChecks.test_uncertainty_normalization_effect) ... ok
+test_uncertainty_synonyms (v2_normalizer_checks.NormalizerChecks.test_uncertainty_synonyms) ... ok
+test_unsupported_paraphrases_and_inference_rejected (v2_normalizer_checks.NormalizerChecks.test_unsupported_paraphrases_and_inference_rejected) ... ok
+test_no_extra_uncertainty (v2_projection_checks.ProjectionChecks.test_no_extra_uncertainty) ... ok
+test_recorder_is_not_recording_date (v2_projection_checks.ProjectionChecks.test_recorder_is_not_recording_date) ... ok
+test_supported_synonyms (v2_projection_checks.ProjectionChecks.test_supported_synonyms) ... ok
+test_unknown_referent_and_unit_not_discarded (v2_projection_checks.ProjectionChecks.test_unknown_referent_and_unit_not_discarded) ... ok
+test_adjudication_union_and_decision_consistency (v2_completed_checks.CompletedChecks.test_adjudication_union_and_decision_consistency) ... ok
+test_candidate_namespace_and_provenance (v2_completed_checks.CompletedChecks.test_candidate_namespace_and_provenance) ... ok
+test_comparison_uses_review_pipeline_without_model_imports (v2_completed_checks.CompletedChecks.test_comparison_uses_review_pipeline_without_model_imports) ... ok
+test_consensus_recomputed_from_frozen_primaries (v2_completed_checks.CompletedChecks.test_consensus_recomputed_from_frozen_primaries) ... ok
+test_eligibility_and_source_uncertainty_separation (v2_completed_checks.CompletedChecks.test_eligibility_and_source_uncertainty_separation) ... ok
+test_evaluation_exclusion_and_coverage (v2_completed_checks.CompletedChecks.test_evaluation_exclusion_and_coverage) ... ok
+test_evidence_negative_behavior_on_real_packets (v2_completed_checks.CompletedChecks.test_evidence_negative_behavior_on_real_packets) ... ok
+test_final_labels_valid_and_bound (v2_completed_checks.CompletedChecks.test_final_labels_valid_and_bound) ... ok
+test_freezes_and_order (v2_completed_checks.CompletedChecks.test_freezes_and_order) ... ok
+test_human_status_remains_pending (v2_completed_checks.CompletedChecks.test_human_status_remains_pending) ... ok
+test_primary_coverage_validity_and_immutability (v2_completed_checks.CompletedChecks.test_primary_coverage_validity_and_immutability) ... ok
+test_r06_registered_population_preserved (v2_completed_checks.CompletedChecks.test_r06_registered_population_preserved) ... ok
+test_v1_release_and_acceptance_unchanged (v2_completed_checks.CompletedChecks.test_v1_release_and_acceptance_unchanged) ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 1.127s
+
+OK

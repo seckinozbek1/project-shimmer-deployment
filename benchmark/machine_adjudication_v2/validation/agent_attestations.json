@@ -1,0 +1,37 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "slots": {
+    "A": {
+      "fresh_context": true,
+      "packets_reviewed": 192,
+      "primary_outputs_written": 192,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "gold_or_v1_answers_read": false
+    },
+    "B": {
+      "fresh_context": true,
+      "packets_reviewed": 192,
+      "primary_outputs_written": 192,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "gold_or_v1_answers_read": false
+    },
+    "C": {
+      "fresh_context": true,
+      "packets_reviewed": 192,
+      "primary_outputs_written": 192,
+      "repairs": 0,
+      "assigned_workspace_only_attested": true,
+      "gold_or_v1_answers_read": false
+    }
+  },
+  "adjudicator": {
+    "fresh_context": true,
+    "cases_reviewed": 56,
+    "outputs": 56,
+    "assigned_workspace_only_attested": true,
+    "gold_or_v1_answers_read": false
+  },
+  "isolation": "Procedural fresh contexts and exact input hashes. Shared filesystem and parent model family; correlated errors remain possible."
+}

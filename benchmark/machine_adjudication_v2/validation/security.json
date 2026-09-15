@@ -1,0 +1,8 @@
+{
+  "files_scanned": 1964,
+  "credential_findings": 0,
+  "detected_gold_isolation_violations": 0,
+  "privacy_basis": "Exact synthetic packet hashes, clean assigned workspaces and agent access attestations; no operator/durable input used.",
+  "isolation_limit": "Shared filesystem and parent model family; procedural isolation, not OS ACL or cross-model independence.",
+  "no_network_or_model_imports": true
+}

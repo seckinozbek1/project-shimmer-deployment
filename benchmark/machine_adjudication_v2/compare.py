@@ -3,6 +3,7 @@ from collections import Counter,defaultdict
 from datetime import datetime,timezone
 import argparse
 import review as m
+m.sys.path.insert(0,str(m.HERE))
 import pipeline
 import projection
 import atoms

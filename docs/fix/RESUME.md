@@ -1,3 +1,22 @@
+# Machine review V2 completed ? 15 September 2026
+
+**AGENT_ADJUDICATED_TUNING_EXPERIMENT_READY** under registered M01?M07.
+**FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING**, human counts 0/0/0.
+
+Method commit `9b0086e`; committed pre-gold freeze `b22c856`.
+Read [AGENT_ADJUDICATED_TUNING_REVIEW_V2.md](AGENT_ADJUDICATED_TUNING_REVIEW_V2.md).
+
+576 fresh valid primaries, zero repairs/evidence failures, 56 adjudications, zero unresolved review ambiguities.
+Typed agreement: 154 unanimous, 29 majority-only, nine no majority. All hard48 adjudicated.
+Separate V2 pool: 58 TRAIN +24 DEV; 36 disputes excluded; all74 evaluation examples excluded.
+Pool limitation: 12 producer TRAIN but zero producer DEV. This is not training authorization.
+Producer claim/ref/refusal agreement96/96; gaps92/96; uncertainty48/96, with conservative projection limits retained.
+All M01?M07 pass; 29 V2 tests/seven effect proofs, 30 cohort tests/four proofs, production85checks/four proofs pass.
+V1's961 files, historical106 hashes/four rejections and R06 TRAIN exclusion preserved.
+No cloud, paid API, Shimmer execution, training, model change, full pipeline, multi-round or push.
+
+---
+
 # Blinded machine-agent review completed - 15 September 2026
 
 **AGENT_ADJUDICATED_TUNING_EXPERIMENT_NOT_READY**.

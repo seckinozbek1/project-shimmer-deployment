@@ -1,0 +1,9 @@
+test_no_extra_uncertainty (projection_checks.ProjectionChecks.test_no_extra_uncertainty) ... ok
+test_recorder_is_not_recording_date (projection_checks.ProjectionChecks.test_recorder_is_not_recording_date) ... ok
+test_supported_synonyms (projection_checks.ProjectionChecks.test_supported_synonyms) ... ok
+test_unknown_referent_and_unit_not_discarded (projection_checks.ProjectionChecks.test_unknown_referent_and_unit_not_discarded) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
