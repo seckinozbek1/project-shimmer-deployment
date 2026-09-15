@@ -1,0 +1,46 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "packet_id": "review-627ec8405e03b878f0496d32",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "run_id": "machine-agent-review-v2-D",
+  "reviewed_at": "2026-09-15T17:14:19.221195+00:00",
+  "input_sha256": "627ec8405e03b878f0496d323bf6e337d75bd5ce20cb288c36b2a694c6c4edee",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "DIVERGENCE",
+        "ref_ids": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "reasoning": "The recorded quadrat quantity changes from 116 to 117; retained 121 and the date and recorder gaps remain.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "DIVERGENCE",
+  "gap_atoms": [],
+  "uncertainty_atoms": [],
+  "source_uncertainty_present": false,
+  "review_ambiguity": false,
+  "reason_components": [
+    "changed_quantity",
+    "preserved_claim",
+    "gap_preserved"
+  ],
+  "rationale": "Direct comparison: The recorded quadrat quantity changes from 116 to 117; retained 121 and the date and recorder gaps remain. All required packet references are owned and included. The comparison is determinate; source uncertainty is assessed from the source independently. C gives a specific evidence-based description of the supported relation.",
+  "decision": "candidate_C",
+  "disagreement_causes": [
+    {
+      "type": "reason_component_coverage",
+      "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+    }
+  ]
+}

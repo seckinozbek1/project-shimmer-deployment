@@ -1,0 +1,73 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "packet_id": "review-1472ca98fe6ae9552d4500e6",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "run_id": "machine-agent-review-v2-B",
+  "reviewed_at": "2026-09-15T17:08:10.826774+00:00",
+  "input_sha256": "1472ca98fe6ae9552d4500e675879650d5129cc66afa54893418ef0b5f9970c9",
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "When was this recorded?"
+        ],
+        "uncertainty": [
+          "The interpretation remains uncertain."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-1001",
+          "REF-1002"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "gap_atoms": [
+    {
+      "type": "missing_information",
+      "subject": "owned_record",
+      "target": "recording_date",
+      "scope": "owned_record",
+      "span": "s0",
+      "refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "origin": "source_explicit",
+      "unit": null,
+      "wording": "When was this recorded?"
+    }
+  ],
+  "uncertainty_atoms": [
+    {
+      "type": "unknown",
+      "subject": "owned_record",
+      "target": "interpretation",
+      "scope": "owned_record",
+      "span": "s0",
+      "refs": [
+        "REF-1001",
+        "REF-1002"
+      ],
+      "origin": "source_explicit",
+      "unit": null,
+      "wording": "The interpretation remains uncertain."
+    }
+  ],
+  "source_uncertainty_present": true,
+  "review_ambiguity": false,
+  "reason_components": [],
+  "rationale": "Retain the explicit claim IDs and source qualifications at their owned aliases, without resolving uncertainty or supplying missing information."
+}

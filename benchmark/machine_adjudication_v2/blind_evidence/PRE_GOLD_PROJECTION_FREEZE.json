@@ -1,0 +1,12 @@
+{
+  "phase": "LEGACY_WORDING_PROJECTION_VALIDATED_BEFORE_GOLD",
+  "frozen_at": "2026-09-15T17:12:51.837560+00:00",
+  "tests": 4,
+  "reviewer_normalizer_unchanged": true,
+  "purpose": "Closed vocabulary for legacy authored prose; rejects unknown qualifiers and distinguishes who recorded from when recorded. No targets consulted.",
+  "hashes": {
+    "projection.py": "55d93b020c5e07790f3deb69e0812deb3eebdd6258b33ebb14bfa08f62d3e6fa",
+    "projection_checks.py": "830ee98d976b39fa593fac3dd75b6a05211ae7849a02a432958a5751c4fbd30a",
+    "projection_validation.log": "4094a2f238f01f49ab82ac6ad6a8945776e086a9d00a1f840358db9517e5f14e"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "packet_id": "review-80683ce4a821a195cd591943",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "A",
+  "provenance": "independent_machine_agent_review",
+  "run_id": "machine-agent-review-v2-A",
+  "reviewed_at": "2026-09-15T17:07:57.232383+00:00",
+  "input_sha256": "80683ce4a821a195cd5919435791e692686d85a25f0c9715dbeebd88d0b9810a",
+  "gap_atoms": [
+    {
+      "type": "missing_information",
+      "subject": "owned_record",
+      "target": "observation_date",
+      "scope": "owned_record",
+      "span": "s0",
+      "refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "origin": "source_explicit",
+      "unit": null,
+      "wording": "What is the observation date?"
+    }
+  ],
+  "uncertainty_atoms": [
+    {
+      "type": "unknown",
+      "subject": "second_entry",
+      "target": "interpretation",
+      "scope": "owned_record",
+      "span": "s0",
+      "refs": [
+        "REF-0001",
+        "REF-0002"
+      ],
+      "origin": "source_explicit",
+      "unit": null,
+      "wording": "The interpretation of the second entry remains unresolved."
+    }
+  ],
+  "source_uncertainty_present": true,
+  "review_ambiguity": false,
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-A",
+          "CLM-B"
+        ],
+        "questions": [
+          "What is the observation date?"
+        ],
+        "uncertainty": [
+          "The interpretation of the second entry remains unresolved."
+        ],
+        "status": "extracted",
+        "refs": [
+          "REF-0001",
+          "REF-0002"
+        ]
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "rationale": "Preserve the explicit owned claim IDs and each stated gap or qualification at its source alias; references are limited to those cited in that alias."
+}

@@ -1,0 +1,47 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "run_id": "machine-agent-review-v2-D",
+  "reviewed_at": "2026-09-15T17:14:19.223199+00:00",
+  "input_sha256": "b49ae4bc4ef9a4618a74b8fd347014ba1af5764041e0c38589ca6d720ca7c79c",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "DIVERGENCE",
+        "ref_ids": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "reasoning": "CLM-A changes from 71 to 72 recorded events. The retained 76 and the date, recorder and uncertainty qualifications remain.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "DIVERGENCE",
+  "gap_atoms": [],
+  "uncertainty_atoms": [],
+  "source_uncertainty_present": true,
+  "review_ambiguity": false,
+  "reason_components": [
+    "changed_quantity",
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "rationale": "Direct comparison: CLM-A changes from 71 to 72 recorded events. The retained 76 and the date, recorder and uncertainty qualifications remain. All required packet references are owned and included. The comparison is determinate; source uncertainty is assessed from the source independently. C gives a specific evidence-based description of the supported relation.",
+  "decision": "candidate_C",
+  "disagreement_causes": [
+    {
+      "type": "reason_component_coverage",
+      "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+    }
+  ]
+}

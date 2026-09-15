@@ -1,0 +1,37 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "packet_id": "review-627ec8405e03b878f0496d32",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "run_id": "machine-agent-review-v2-B",
+  "reviewed_at": "2026-09-15T17:08:10.872979+00:00",
+  "input_sha256": "627ec8405e03b878f0496d323bf6e337d75bd5ce20cb288c36b2a694c6c4edee",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "DIVERGENCE",
+        "ref_ids": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "reasoning": "The extraction changes the quantity attached to CLM-A while retaining its claim identity.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "DIVERGENCE",
+  "gap_atoms": [],
+  "uncertainty_atoms": [],
+  "source_uncertainty_present": false,
+  "review_ambiguity": false,
+  "reason_components": [
+    "changed_quantity"
+  ],
+  "rationale": "The extraction changes the quantity attached to CLM-A while retaining its claim identity."
+}

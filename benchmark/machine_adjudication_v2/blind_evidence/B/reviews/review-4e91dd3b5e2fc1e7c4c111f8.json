@@ -1,0 +1,38 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "packet_id": "review-4e91dd3b5e2fc1e7c4c111f8",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "run_id": "machine-agent-review-v2-B",
+  "reviewed_at": "2026-09-15T17:08:10.856779+00:00",
+  "input_sha256": "4e91dd3b5e2fc1e7c4c111f80bc8c72142ae6f736083791e28e17472e30809bc",
+  "semantic_target": {
+    "items": [
+      {
+        "finding": "OMISSION",
+        "ref_ids": [
+          "REF-1001",
+          "REF-1002"
+        ],
+        "reasoning": "The extraction retains the claims but removes the explicit missing date or effective-time qualification and question.",
+        "severity": "medium",
+        "confidence": "CONFIDENT"
+      }
+    ]
+  },
+  "semantic_judgment": "OMISSION",
+  "gap_atoms": [],
+  "uncertainty_atoms": [],
+  "source_uncertainty_present": false,
+  "review_ambiguity": false,
+  "reason_components": [
+    "preserved_claim",
+    "gap_omitted"
+  ],
+  "rationale": "The extraction retains the claims but removes the explicit missing date or effective-time qualification and question."
+}
