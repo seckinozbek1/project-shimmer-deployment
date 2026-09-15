@@ -1,0 +1,9 @@
+{
+  "auditor_packets": 96,
+  "machine_unanimous_reason_component_sets": 60,
+  "authored_typed_reason_components_available": false,
+  "machine_authored_reason_component_agreement": null,
+  "canonical_rationale_exact_matches": 18,
+  "canonical_rationale_exact_match_denominator": 96,
+  "limitation": "Exact prose equality is not semantic reason correctness. No post-gold agent relabeling or invented typed gold annotation."
+}

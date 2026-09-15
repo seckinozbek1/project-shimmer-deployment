@@ -1,0 +1,24 @@
+{
+  "producer": {
+    "total": 96,
+    "structured_agreement": 24,
+    "refusal_disagreement": 0,
+    "claims_disagreement": 0,
+    "questions_disagreement": 72,
+    "uncertainty_disagreement": 60,
+    "refs_disagreement": 0
+  },
+  "auditor": {
+    "total": 96,
+    "structured_agreement": 96,
+    "refusal_disagreement": 0,
+    "relation_agreement": 96,
+    "evidence_disagreement": 0,
+    "confidence_disagreement": 0,
+    "rationale_exact_match": 18
+  },
+  "auditor_relation_disagreements": [],
+  "reason_component_agreement": null,
+  "reason_component_limitation": "No authored typed component annotations; no invented comparison statistic.",
+  "disputes": 72
+}

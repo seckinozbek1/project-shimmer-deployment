@@ -1,0 +1,9 @@
+{
+  "files_scanned": 978,
+  "credential_findings": 0,
+  "privacy_findings": 0,
+  "detected_gold_isolation_violations": 0,
+  "isolation_limitation": "Fresh contexts and allowlisted workspaces, shared filesystem; no OS isolation claim.",
+  "human_reviews_falsely_claimed": 0,
+  "evaluation_labels_in_training": 0
+}

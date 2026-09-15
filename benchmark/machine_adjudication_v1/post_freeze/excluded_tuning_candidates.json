@@ -1,0 +1,634 @@
+[
+  {
+    "example_id": "dev-catalogue-auditor-insufficient_evidence",
+    "packet_id": "review-d4a448d7567746abd06df130",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-catalogue-producer-extracted",
+    "packet_id": "review-4a4f23c9cafe83c13434dd70",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-clinical-auditor-insufficient_evidence",
+    "packet_id": "review-d1658da4baa9bb476d660079",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-clinical-producer-extracted",
+    "packet_id": "review-2c3b01ac65e99e619b1ebf5b",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-contracts-auditor-insufficient_evidence",
+    "packet_id": "review-13d6f0d09b38bfa2550f0ea6",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-contracts-producer-extracted",
+    "packet_id": "review-18827ee0c35beeea1ce1b7d6",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-device-auditor-insufficient_evidence",
+    "packet_id": "review-f50e67a89b3316914d83205e",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-device-auditor-unsupported_certainty",
+    "packet_id": "review-65fb1609b8204d5bb2a1c8ee",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "dev-negotiation-auditor-gap_omission",
+    "packet_id": "review-1264c40a5253f86441268103",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "dev-negotiation-auditor-insufficient_evidence",
+    "packet_id": "review-4384e9378563dfaae2623607",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-nonsense-auditor-insufficient_evidence",
+    "packet_id": "review-d604f868594ddfe527d176d5",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-procurement-auditor-insufficient_evidence",
+    "packet_id": "review-44e41c0234ec12ad83d6504b",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-procurement-producer-extracted",
+    "packet_id": "review-0ecbb19c518b3978f280b693",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "dev-regulation-auditor-insufficient_evidence",
+    "packet_id": "review-cb9c002f72c70023f4031af4",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-catalogue-auditor-insufficient_evidence",
+    "packet_id": "review-f0c991fcdafc403a7dbf039a",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-catalogue-auditor-unsupported_certainty",
+    "packet_id": "review-d5aea6035721bb835ebf7335",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "train-catalogue-producer-extracted",
+    "packet_id": "review-c5b9fd8e5a0d5a69b15db89a",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-clinical-auditor-insufficient_evidence",
+    "packet_id": "review-e7220b6cdd2af5926898ef81",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-clinical-auditor-number_change",
+    "packet_id": "review-70293b6bba9b56389f5571a8",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "train-clinical-producer-extracted",
+    "packet_id": "review-4f4bba1707b4fa5a653a34fd",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-contracts-auditor-insufficient_evidence",
+    "packet_id": "review-486263f870b32f356aba38c0",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-contracts-auditor-uncertainty_removed",
+    "packet_id": "review-9335edf1e7541793bad43eb4",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "train-contracts-auditor-unsupported_certainty",
+    "packet_id": "review-1f5a2c8445e463c4b9751e78",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "train-contracts-producer-extracted",
+    "packet_id": "review-3e51ff37b23702fd2990acc6",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-device-auditor-insufficient_evidence",
+    "packet_id": "review-b7a2a8d105db17f86507e8bc",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-device-auditor-uncertainty_removed",
+    "packet_id": "review-f2318d6c463ab079eb83dfe3",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "train-device-producer-extracted",
+    "packet_id": "review-584f0b819b47559a44a3cd5e",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-negotiation-auditor-insufficient_evidence",
+    "packet_id": "review-3f7a1f25729171fa20f256ae",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-negotiation-auditor-uncertainty_removed",
+    "packet_id": "review-e1d711a66641a86809ea0b0f",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "train-negotiation-producer-extracted",
+    "packet_id": "review-f55ed771ece107a7cec26b01",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-nonsense-auditor-insufficient_evidence",
+    "packet_id": "review-33eff93477db715e095c2ff3",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-nonsense-auditor-uncertainty_removed",
+    "packet_id": "review-ab0f3d6873e52c74777d7265",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "train-nonsense-producer-extracted",
+    "packet_id": "review-525bcbd64c0a907e92071cd2",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-procurement-auditor-insufficient_evidence",
+    "packet_id": "review-c1431ac659435c306b3bec39",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-procurement-producer-extracted",
+    "packet_id": "review-0ed8b8320704b2a1dfe99322",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-regulation-auditor-insufficient_evidence",
+    "packet_id": "review-26f2e62ed0c04907d1924a38",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "train-regulation-producer-extracted",
+    "packet_id": "review-80683ce4a821a195cd591943",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-bullet_list-contracts-conflicting",
+    "packet_id": "review-60a2b854fea4dd7144504df6",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-bullet_list-contracts-primary",
+    "packet_id": "review-b2b0e4347840cc781a4ed74a",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": false,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-bullet_list-device-conflicting",
+    "packet_id": "review-d476df3af7432e808334b875",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-bullet_list-device-primary",
+    "packet_id": "review-c49b480fd12c5d1f8e5c9178",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": false,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-bullet_list-negotiation-conflicting",
+    "packet_id": "review-c9b60b9d533773bb060d516d",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-bullet_list-negotiation-primary",
+    "packet_id": "review-d936b42744d9c914ac79c0dc",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-bullet_list-procurement-changed",
+    "packet_id": "review-44c6e5e48ca4b20547a222f6",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "v2-bullet_list-procurement-conflicting",
+    "packet_id": "review-e722ce9d4d0cb9fd13688ae8",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-bullet_list-procurement-primary",
+    "packet_id": "review-36b003f92ad5bf5fd665b690",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-chronological_events-catalogue-conflicting",
+    "packet_id": "review-aa567fce9515ffcca9e93868",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-chronological_events-clinical-conflicting",
+    "packet_id": "review-cf31651e9bc73bbd323c90c7",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-chronological_events-nonsense-changed",
+    "packet_id": "review-da3e305bdd181a4c3036c9b8",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "v2-chronological_events-nonsense-conflicting",
+    "packet_id": "review-0615977dc51ddb9e13a05282",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-chronological_events-regulation-conflicting",
+    "packet_id": "review-008fa015433b8336de7d44c5",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-form_fields-contracts-changed",
+    "packet_id": "review-c0fa0eae347bdb3590a610bb",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "v2-form_fields-contracts-conflicting",
+    "packet_id": "review-fbcf7fec6086a1fde46ae1ef",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-form_fields-contracts-primary",
+    "packet_id": "review-ae968e422dc344e0847f40d4",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": false,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-form_fields-device-conflicting",
+    "packet_id": "review-db9a61b6e3cc00c52f38c1c8",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-form_fields-device-primary",
+    "packet_id": "review-661467bc91f332c478b007c7",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": false,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-form_fields-negotiation-conflicting",
+    "packet_id": "review-c193b7c5372da41915cf67a1",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-form_fields-negotiation-primary",
+    "packet_id": "review-50b9be05e3af1c22a2a6470e",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-form_fields-procurement-conflicting",
+    "packet_id": "review-fb7c26762ccc408c7c7ed02c",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-form_fields-procurement-primary",
+    "packet_id": "review-1472ca98fe6ae9552d4500e6",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-memo_sections-catalogue-conflicting",
+    "packet_id": "review-9ae0cc62e5a4890a0c583939",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-memo_sections-clinical-conflicting",
+    "packet_id": "review-f70eca4a38ee9d577f8d3136",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-memo_sections-nonsense-conflicting",
+    "packet_id": "review-df5af1f71c9ce9e9590cbe44",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-memo_sections-regulation-changed",
+    "packet_id": "review-5a09f9e16b6c29cd2d7c29d2",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "v2-memo_sections-regulation-conflicting",
+    "packet_id": "review-a308aa397d1e59318e9b1c6a",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-paragraph-contracts-conflicting",
+    "packet_id": "review-bb1f942017264c22b24bb71d",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-paragraph-contracts-primary",
+    "packet_id": "review-4bf3f298cce56706d7e96404",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": false,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-paragraph-device-changed",
+    "packet_id": "review-f2d5aa4286528348afa90b72",
+    "split": "train",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "v2-paragraph-device-conflicting",
+    "packet_id": "review-e112e69147389b2a2c56f46e",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-paragraph-device-primary",
+    "packet_id": "review-702d9057771af3d882369a9a",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": false,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-paragraph-negotiation-conflicting",
+    "packet_id": "review-dd4f5f0ea2a38d3d6ab159b8",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-paragraph-negotiation-primary",
+    "packet_id": "review-d630c401eb08541e270fcf36",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-paragraph-procurement-conflicting",
+    "packet_id": "review-921307743f3605bf8ebac77d",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-paragraph-procurement-primary",
+    "packet_id": "review-d71a2ee17660b66c502a5528",
+    "split": "train",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-question_answer-catalogue-conflicting",
+    "packet_id": "review-78fba2337d12d9254ad39237",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-question_answer-clinical-changed",
+    "packet_id": "review-b49ae4bc4ef9a4618a74b8fd",
+    "split": "dev",
+    "disputed": false,
+    "ambiguous": false,
+    "invalid_primary": true
+  },
+  {
+    "example_id": "v2-question_answer-clinical-conflicting",
+    "packet_id": "review-5b0cc4b8f523eb8959b25c65",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-question_answer-nonsense-conflicting",
+    "packet_id": "review-9e52f0b60de56dd5cde04a73",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  },
+  {
+    "example_id": "v2-question_answer-regulation-conflicting",
+    "packet_id": "review-c4fed73a8e05e5fe0e5c5437",
+    "split": "dev",
+    "disputed": true,
+    "ambiguous": true,
+    "invalid_primary": false
+  }
+]

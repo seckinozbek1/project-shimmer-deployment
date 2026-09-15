@@ -1,0 +1,34 @@
+{
+  "criteria": {
+    "M01": {
+      "measured": 576,
+      "required": 576,
+      "passed": true
+    },
+    "M02": {
+      "measured": 541,
+      "required": 576,
+      "passed": false
+    },
+    "M03": {
+      "measured": 48,
+      "required": 48,
+      "passed": true
+    },
+    "M04": {
+      "required_adjudications": 87,
+      "completed": 87,
+      "ambiguous_used": 0,
+      "passed": true
+    },
+    "M05": {
+      "measured": 72,
+      "required": 72,
+      "passed": true
+    }
+  },
+  "controls_pass": true,
+  "human_R01_R02_unchanged": true,
+  "training_authorized": false,
+  "machine_status": "AGENT_ADJUDICATED_TUNING_EXPERIMENT_NOT_READY"
+}

@@ -1,0 +1,10 @@
+{
+  "files_scanned": 960,
+  "credential_findings": 0,
+  "privacy_findings": 0,
+  "detected_gold_isolation_violations": 0,
+  "isolation_basis": "Exact original packet hashes, fresh agent contexts, explicit folder-only access and agent attestations; not enforced OS isolation.",
+  "human_provenance_false": true,
+  "evaluation_labels_in_machine_training": 0,
+  "machine_input_privacy": "Frozen synthetic packets only; no operator/durable state read."
+}

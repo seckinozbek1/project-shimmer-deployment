@@ -1,0 +1,24 @@
+{
+  "machine_status": "AGENT_ADJUDICATED_TUNING_EXPERIMENT_NOT_READY",
+  "human_status": "FIRST_TUNING_EXPERIMENT_HUMAN_REVIEW_STATUS=PENDING",
+  "human_first_reviews": 0,
+  "human_second_reviews": 0,
+  "human_adjudications": 0,
+  "primary_judgments": 576,
+  "valid_effective_primary": 541,
+  "invalid_effective_primary": 35,
+  "designated_adjudications": 48,
+  "all_adjudications": 87,
+  "train_candidates": 28,
+  "dev_candidates": 11,
+  "excluded_tuning_candidates": 79,
+  "unresolved_packet_labels": 90,
+  "held_out_reviewed": 72,
+  "held_out_training_excluded": true,
+  "r06_fixed": true,
+  "training_authorized": false,
+  "final_model_acceptance_ready": false,
+  "blockers": [
+    "Not all 576 primary reviews satisfy evidence constraints."
+  ]
+}
