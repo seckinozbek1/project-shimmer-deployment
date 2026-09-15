@@ -1,0 +1,39 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-d630c401eb08541e270fcf36",
+  "input_sha256": "d630c401eb08541e270fcf360a512bdd90fd2e2b7b910a8d7598085a163735cf",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "CLM-A: delegation 41 recorded 17 offered seats (REF-1001). In a separate statement, No second claim was submitted. Finally, The date is absent. When was this recorded? The recorder is unnamed. Who recorded it? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001"
+    ],
+    "required_refs": [
+      "REF-1001"
+    ],
+    "routed_rules": []
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-d630c401eb08541e270fcf36",
+    "input_sha256": "d630c401eb08541e270fcf360a512bdd90fd2e2b7b910a8d7598085a163735cf",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}

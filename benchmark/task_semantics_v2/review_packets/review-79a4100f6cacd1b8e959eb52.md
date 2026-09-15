@@ -1,0 +1,55 @@
+# Independent semantic review
+
+Packet: review-79a4100f6cacd1b8e959eb52
+
+Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.
+
+```json
+{
+  "role": "auditor",
+  "production_contract": "semantic-task-v1",
+  "source_spans": [
+    {
+      "alias": "s0",
+      "text": "Exception notice: the Registry Board inventory separates authorization from storage. CLM-A assigns Nera authorized 16 filed notices [REF-0001]; CLM-B assigns Sola stored 23 filed notices [REF-0002]. Neither classification implies the other. The storage location has not been supplied. Where are these objects located? The scope of the authorization is ambiguous.\n\n"
+    }
+  ],
+  "context_only_spans": [
+    {
+      "alias": "s16c",
+      "text": "CONTEXT ONLY: neighboring record has REF-9999 and CONV-DISTRACTOR; neither is routed evidence or a policy for this task."
+    }
+  ],
+  "supplied_refs": [
+    "REF-0001",
+    "REF-0002",
+    "REF-9999"
+  ],
+  "required_refs": [
+    "REF-0001",
+    "REF-0002"
+  ],
+  "routed_rules": [],
+  "extraction": "Exception notice: the Registry Board inventory separates authorization from storage. CLM-A assigns Nera authorized 16 filed notices [REF-0001]; CLM-B assigns Sola stored 23 filed notices [REF-0002]. Neither classification implies the other. The storage location has not been supplied. Where are these objects located? The matter is certain."
+}
+```
+
+## Response template (pending, not a submitted review)
+
+```json
+{
+  "packet_id": "review-79a4100f6cacd1b8e959eb52",
+  "input_sha256": "79a4100f6cacd1b8e959eb52f98b1549e06a8f67b7c8a5fe6d0b55ebcb81384a",
+  "review_version": "semantic-benchmark-v2",
+  "reviewer_id": null,
+  "reviewer_kind": null,
+  "independence_attestation": false,
+  "reviewed_at": null,
+  "semantic_target": null,
+  "semantic_judgment": null,
+  "reason_components": [],
+  "rationale": null,
+  "ambiguity": null,
+  "formatting_judgment": "not_assessed"
+}
+```

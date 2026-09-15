@@ -1,0 +1,11 @@
+{
+  "version": "semantic-benchmark-v2",
+  "state": "PENDING_INDEPENDENT_CONTRIBUTION",
+  "populated_examples": 0,
+  "labels_sha256": null,
+  "storage": "external_operator_controlled_vault_required",
+  "normal_development_access": false,
+  "final_mode_required": true,
+  "results_append_only": true,
+  "warning": "Repository application controls are not OS isolation. Operator must use a separate account/ACL for real labels."
+}

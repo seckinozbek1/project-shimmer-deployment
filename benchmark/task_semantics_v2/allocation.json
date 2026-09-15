@@ -1,0 +1,294 @@
+{
+  "version": "semantic-benchmark-v2",
+  "order": "before variants",
+  "families": [
+    {
+      "family": "v2-paragraph-negotiation",
+      "template": "paragraph",
+      "split": "train",
+      "domain": "negotiation"
+    },
+    {
+      "family": "v2-paragraph-contracts",
+      "template": "paragraph",
+      "split": "train",
+      "domain": "contracts"
+    },
+    {
+      "family": "v2-paragraph-procurement",
+      "template": "paragraph",
+      "split": "train",
+      "domain": "procurement"
+    },
+    {
+      "family": "v2-paragraph-device",
+      "template": "paragraph",
+      "split": "train",
+      "domain": "device"
+    },
+    {
+      "family": "v2-bullet_list-negotiation",
+      "template": "bullet_list",
+      "split": "train",
+      "domain": "negotiation"
+    },
+    {
+      "family": "v2-bullet_list-contracts",
+      "template": "bullet_list",
+      "split": "train",
+      "domain": "contracts"
+    },
+    {
+      "family": "v2-bullet_list-procurement",
+      "template": "bullet_list",
+      "split": "train",
+      "domain": "procurement"
+    },
+    {
+      "family": "v2-bullet_list-device",
+      "template": "bullet_list",
+      "split": "train",
+      "domain": "device"
+    },
+    {
+      "family": "v2-form_fields-negotiation",
+      "template": "form_fields",
+      "split": "train",
+      "domain": "negotiation"
+    },
+    {
+      "family": "v2-form_fields-contracts",
+      "template": "form_fields",
+      "split": "train",
+      "domain": "contracts"
+    },
+    {
+      "family": "v2-form_fields-procurement",
+      "template": "form_fields",
+      "split": "train",
+      "domain": "procurement"
+    },
+    {
+      "family": "v2-form_fields-device",
+      "template": "form_fields",
+      "split": "train",
+      "domain": "device"
+    },
+    {
+      "family": "v2-chronological_events-catalogue",
+      "template": "chronological_events",
+      "split": "dev",
+      "domain": "catalogue"
+    },
+    {
+      "family": "v2-chronological_events-regulation",
+      "template": "chronological_events",
+      "split": "dev",
+      "domain": "regulation"
+    },
+    {
+      "family": "v2-chronological_events-clinical",
+      "template": "chronological_events",
+      "split": "dev",
+      "domain": "clinical"
+    },
+    {
+      "family": "v2-chronological_events-nonsense",
+      "template": "chronological_events",
+      "split": "dev",
+      "domain": "nonsense"
+    },
+    {
+      "family": "v2-question_answer-catalogue",
+      "template": "question_answer",
+      "split": "dev",
+      "domain": "catalogue"
+    },
+    {
+      "family": "v2-question_answer-regulation",
+      "template": "question_answer",
+      "split": "dev",
+      "domain": "regulation"
+    },
+    {
+      "family": "v2-question_answer-clinical",
+      "template": "question_answer",
+      "split": "dev",
+      "domain": "clinical"
+    },
+    {
+      "family": "v2-question_answer-nonsense",
+      "template": "question_answer",
+      "split": "dev",
+      "domain": "nonsense"
+    },
+    {
+      "family": "v2-memo_sections-catalogue",
+      "template": "memo_sections",
+      "split": "dev",
+      "domain": "catalogue"
+    },
+    {
+      "family": "v2-memo_sections-regulation",
+      "template": "memo_sections",
+      "split": "dev",
+      "domain": "regulation"
+    },
+    {
+      "family": "v2-memo_sections-clinical",
+      "template": "memo_sections",
+      "split": "dev",
+      "domain": "clinical"
+    },
+    {
+      "family": "v2-memo_sections-nonsense",
+      "template": "memo_sections",
+      "split": "dev",
+      "domain": "nonsense"
+    },
+    {
+      "family": "v2-compact_table-astronomy",
+      "template": "compact_table",
+      "split": "test",
+      "domain": "astronomy"
+    },
+    {
+      "family": "v2-compact_table-ecology",
+      "template": "compact_table",
+      "split": "test",
+      "domain": "ecology"
+    },
+    {
+      "family": "v2-compact_table-negotiation",
+      "template": "compact_table",
+      "split": "test",
+      "domain": "negotiation"
+    },
+    {
+      "family": "v2-compact_table-device",
+      "template": "compact_table",
+      "split": "test",
+      "domain": "device"
+    },
+    {
+      "family": "v2-multirow_table-astronomy",
+      "template": "multirow_table",
+      "split": "test",
+      "domain": "astronomy"
+    },
+    {
+      "family": "v2-multirow_table-ecology",
+      "template": "multirow_table",
+      "split": "test",
+      "domain": "ecology"
+    },
+    {
+      "family": "v2-multirow_table-negotiation",
+      "template": "multirow_table",
+      "split": "test",
+      "domain": "negotiation"
+    },
+    {
+      "family": "v2-multirow_table-device",
+      "template": "multirow_table",
+      "split": "test",
+      "domain": "device"
+    },
+    {
+      "family": "v2-mixed_prose_table-astronomy",
+      "template": "mixed_prose_table",
+      "split": "test",
+      "domain": "astronomy"
+    },
+    {
+      "family": "v2-mixed_prose_table-ecology",
+      "template": "mixed_prose_table",
+      "split": "test",
+      "domain": "ecology"
+    },
+    {
+      "family": "v2-mixed_prose_table-negotiation",
+      "template": "mixed_prose_table",
+      "split": "test",
+      "domain": "negotiation"
+    },
+    {
+      "family": "v2-mixed_prose_table-device",
+      "template": "mixed_prose_table",
+      "split": "test",
+      "domain": "device"
+    },
+    {
+      "family": "v2-nested_provisions-astronomy",
+      "template": "nested_provisions",
+      "split": "sealed_adversarial",
+      "domain": "astronomy"
+    },
+    {
+      "family": "v2-nested_provisions-ecology",
+      "template": "nested_provisions",
+      "split": "sealed_adversarial",
+      "domain": "ecology"
+    },
+    {
+      "family": "v2-nested_provisions-contracts",
+      "template": "nested_provisions",
+      "split": "sealed_adversarial",
+      "domain": "contracts"
+    },
+    {
+      "family": "v2-nested_provisions-nonsense",
+      "template": "nested_provisions",
+      "split": "sealed_adversarial",
+      "domain": "nonsense"
+    },
+    {
+      "family": "v2-transaction_register-astronomy",
+      "template": "transaction_register",
+      "split": "sealed_adversarial",
+      "domain": "astronomy"
+    },
+    {
+      "family": "v2-transaction_register-ecology",
+      "template": "transaction_register",
+      "split": "sealed_adversarial",
+      "domain": "ecology"
+    },
+    {
+      "family": "v2-transaction_register-contracts",
+      "template": "transaction_register",
+      "split": "sealed_adversarial",
+      "domain": "contracts"
+    },
+    {
+      "family": "v2-transaction_register-nonsense",
+      "template": "transaction_register",
+      "split": "sealed_adversarial",
+      "domain": "nonsense"
+    },
+    {
+      "family": "v2-machine_records-astronomy",
+      "template": "machine_records",
+      "split": "sealed_adversarial",
+      "domain": "astronomy"
+    },
+    {
+      "family": "v2-machine_records-ecology",
+      "template": "machine_records",
+      "split": "sealed_adversarial",
+      "domain": "ecology"
+    },
+    {
+      "family": "v2-machine_records-contracts",
+      "template": "machine_records",
+      "split": "sealed_adversarial",
+      "domain": "contracts"
+    },
+    {
+      "family": "v2-machine_records-nonsense",
+      "template": "machine_records",
+      "split": "sealed_adversarial",
+      "domain": "nonsense"
+    }
+  ]
+}

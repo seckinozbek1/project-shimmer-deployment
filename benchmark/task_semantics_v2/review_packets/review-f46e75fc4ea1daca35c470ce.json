@@ -1,0 +1,35 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-f46e75fc4ea1daca35c470ce",
+  "input_sha256": "f46e75fc4ea1daca35c470ce6ee695aafc86e1a9ed0ffe04731f1fdc70cbfac4",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "scope_notice / Synthetic Clinic: divider only."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [],
+    "required_refs": [],
+    "routed_rules": []
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-f46e75fc4ea1daca35c470ce",
+    "input_sha256": "f46e75fc4ea1daca35c470ce6ee695aafc86e1a9ed0ffe04731f1fdc70cbfac4",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}

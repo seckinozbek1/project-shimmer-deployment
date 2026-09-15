@@ -1,0 +1,20 @@
+{
+  "version": "semantic-benchmark-v2",
+  "components": [
+    "preserved_claim",
+    "missing_claim",
+    "added_claim",
+    "changed_label",
+    "changed_quantity",
+    "changed_unit",
+    "gap_preserved",
+    "gap_omitted",
+    "evidence_insufficient",
+    "unsupported_attribution",
+    "ambiguity",
+    "uncertainty_preserved",
+    "uncertainty_omitted"
+  ],
+  "rule": "Components describe source/extraction facts, not fluency. Alternate wording requires independent input+output-bound review.",
+  "evidence": "Each reviewer selects exact supplied refs and explains the observed change/preservation; formatting is separate."
+}

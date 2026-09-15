@@ -1,0 +1,35 @@
+{
+  "packet_version": "semantic-benchmark-v2",
+  "packet_id": "review-f3d8bb02d234b6139649c0e4",
+  "input_sha256": "f3d8bb02d234b6139649c0e4997c5b673a3051d0e6cf2d927d74badd735bbd2f",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "attributed_dialogue / Institute of Nimbular Blenkets: the owned text is an unreadable fragment; semantic content cannot be determined."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [],
+    "required_refs": [],
+    "routed_rules": []
+  },
+  "instructions": "Review independently without consulting authored labels, split files, or transformation metadata. Return semantic judgment, exact evidence, concise reason and ambiguity/refusal separately from formatting judgment. Producer item fields: span, claims, questions, uncertainty, status, refs; one per owned alias. Auditor item fields: finding, ref_ids, reasoning, severity, confidence. Use MATCH/DIVERGENCE/OMISSION/ADDITION for fidelity; refuse with items=[] and status=refused for insufficient evidence.",
+  "response_template": {
+    "packet_id": "review-f3d8bb02d234b6139649c0e4",
+    "input_sha256": "f3d8bb02d234b6139649c0e4997c5b673a3051d0e6cf2d927d74badd735bbd2f",
+    "review_version": "semantic-benchmark-v2",
+    "reviewer_id": null,
+    "reviewer_kind": null,
+    "independence_attestation": false,
+    "reviewed_at": null,
+    "semantic_target": null,
+    "semantic_judgment": null,
+    "reason_components": [],
+    "rationale": null,
+    "ambiguity": null,
+    "formatting_judgment": "not_assessed"
+  }
+}
