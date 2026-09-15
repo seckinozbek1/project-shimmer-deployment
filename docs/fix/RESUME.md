@@ -1,3 +1,44 @@
+# Compact extraction + auditor contract A/B complete ? local only
+
+**REMOTE_CONTRACT_AB_READY** (deterministic readiness, not measured model reliability).
+Read [COMPACT_CONTRACT_AB.md](COMPACT_CONTRACT_AB.md).
+Implementation/evidence: `19910604c00b7d132ae04cad492a8320dd6a73c3`.
+
+The secure remote feasibility stage stays CLOSED / CLOUD_FULL_RUN_NOT_ELIGIBLE.
+Do not reopen infrastructure/security/runtime/hardware work. No cloud is authorized
+by this local follow-up. No full pipeline, multi-round, paid API, model/pin change,
+quantization change, serving/concurrency optimization, ceiling increase or push.
+
+Exact old rendered hashes and counts reproduced: producer 610, source-copy 482,
+auditor 1875. The auditor is LlamaConfig/LlamaForCausalLM with Phi-style chat markers
+at the unchanged configured Phi repository/revision. No local weights were loaded.
+
+Scoped compact producer removes copied source/duplicate alias fields; Python uses
+the existing ledger to reconstruct exactly. Scoped fidelity auditor compares original
+with extraction, carries no invented numeric rule, and requires both selected refs.
+Complete JSON precedes strict canonical validation; truncated prefixes stay invalid.
+Normal Finding-record governance and unbound agent contracts remain unchanged.
+
+Tokens (old ? new): producer prompt 610 ? 333, authored valid output 101 ? 59;
+auditor prompt 1875 ? 488, authored valid output 107 ? 71. These are tokenizer
+capacity measurements, not successful generated responses. MATCH reason, both refs,
+missing-date question and exact source reconstruction pass authored fixtures.
+
+Validation: 85 checks + 4 mutation/effect proofs + 2 pinned-tokenizer profiles pass.
+One pre-existing optional-directory coverage skip (prompts/snapshots absent).
+New evidence: compact_contract_ab/; zero credential hits in 23 scanned artifacts,
+24 hash-manifest entries. Source and artifact integrity verified. Operator-owned
+SHIMMER_HANDOFF.md and durable/ remain untouched. No push.
+
+Next, only with separate authorization: bounded old/new producer and auditor A/B at
+384 tokens / 25 seconds, measure actual semantic correctness, evidence, EOS/truncation,
+latency and accepted producer ? independent auditor serial path. Human reason
+adjudication remains required; nonempty reason is not semantic correctness. The
+checkpoint's turn-end marker differs from its configured EOS: retain terminal-token
+evidence rather than changing stop policy speculatively. No concurrency work yet.
+
+## Previous secure feasibility handoff (closed stage)
+
 # Ordinary remote feasibility measurement complete ? 2026-09-15
 
 CLOUD_FULL_RUN_NOT_ELIGIBLE. Read REMOTE_SHORT_BURST_SECURE_FEASIBILITY.md.

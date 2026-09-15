@@ -261,3 +261,15 @@ failures. Any later cloud measurement needs its own authorization.
 **Full pipeline NOT run. Multi-round NOT run. Paid inference API NOT used.
 Instance terminated and provider-confirmed. No secrets retained in new artifacts.
 No push.** Operator-owned `SHIMMER_HANDOFF.md` and `durable/` were preserved.
+
+
+## Local compact-contract follow-up ? 15 September 2026
+
+The local-only correction after `1aa4696` is complete in implementation/evidence
+commit `1991060`. See [Compact extraction and auditor contract A/B](COMPACT_CONTRACT_AB.md)
+and [current handoff](RESUME.md). Exact remote prompt hashes are reproduced; compact
+producer ownership/reconstruction and scoped auditor fidelity contracts now pass
+85 deterministic checks, 4 mutation proofs and both pinned-tokenizer budget profiles.
+Readiness is **REMOTE_CONTRACT_AB_READY**, not a model reliability or full-run verdict.
+The closed secure feasibility result remains **CLOUD_FULL_RUN_NOT_ELIGIBLE**.
+No new cloud, inference, full pipeline, multi-round, serving change or push occurred.
