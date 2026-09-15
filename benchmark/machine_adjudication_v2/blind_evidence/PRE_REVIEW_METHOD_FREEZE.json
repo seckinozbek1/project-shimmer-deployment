@@ -1,0 +1,15 @@
+{
+  "phase": "NORMALIZER_VALIDATED_BEFORE_FRESH_REVIEW",
+  "frozen_at": "2026-09-15T17:05:01.987387+00:00",
+  "tests": 12,
+  "effect_proofs": 7,
+  "hashes": {
+    ".gitattributes": "53628631f02c7e369369c2efd12a62076bec4e44f2ecdf1216102be3e2c7e484",
+    "atoms.py": "df20a4e98ac9ca868b4d56f338ec509f86a5bdc8b5f93540f018ae68297ce226",
+    "normalizer_checks.py": "1d3cdda323cb14cdaa07cc950f7a8e623fbff492964aa6ef152008c41d847bf0",
+    "pre_review_validation.log": "edbc56ddb14610bc997ffb2916c3693e5ad040ce1ec21e8d755e813bc690bce5",
+    "protocol.json": "3f68ebdbd265ba32ee5c699c1690039bb949873690e6c4b4089fe756cf8524e6",
+    "review.py": "8a248f2dab5be1192badb8f8b52c032f882f159b7023e01c76e6f362db0e5def",
+    "reviewer_instructions.md": "7984bb0608538ccdd652538daf2428b5fb1a4375d6c891cfc56fc95310e5506a"
+  }
+}

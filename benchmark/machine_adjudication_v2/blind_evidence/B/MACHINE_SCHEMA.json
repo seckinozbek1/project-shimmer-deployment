@@ -1,0 +1,26 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "slot": "B",
+  "provenance": "independent_machine_agent_review",
+  "human": false,
+  "fields": [
+    "protocol",
+    "packet_id",
+    "binding",
+    "slot",
+    "provenance",
+    "run_id",
+    "reviewed_at",
+    "input_sha256",
+    "semantic_target",
+    "semantic_judgment",
+    "gap_atoms",
+    "uncertainty_atoms",
+    "source_uncertainty_present",
+    "review_ambiguity",
+    "reason_components",
+    "rationale"
+  ],
+  "output": "One reviews/<packet_id>.json; preserve originals. No legacy ambiguity or human fields.",
+  "run_id": "machine-agent-review-v2-B"
+}

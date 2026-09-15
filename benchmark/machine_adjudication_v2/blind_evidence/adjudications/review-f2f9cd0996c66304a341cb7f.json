@@ -1,0 +1,112 @@
+{
+  "protocol": "machine-agent-review-v2",
+  "packet_id": "review-f2f9cd0996c66304a341cb7f",
+  "binding": {
+    "revision": "first-tuning-review-cohort-v2",
+    "cohort_sha256": "7006edd3f293ca2a6cdcebe071a05d05ac02c9bd58259d7c07110de4bd45bb8d",
+    "payload_sha256": "5f64f06e23c69aaab87ed4f4f517471bf3d81387bb58f99c848d6077ecae37d6"
+  },
+  "slot": "D",
+  "provenance": "machine_agent_adjudication",
+  "run_id": "machine-agent-review-v2-D",
+  "reviewed_at": "2026-09-15T17:14:19.228188+00:00",
+  "input_sha256": "f2f9cd0996c66304a341cb7fbccbce6da6b8c841023be3defdaa948925b00d29",
+  "gap_atoms": [
+    {
+      "type": "missing_information",
+      "subject": "owned_record",
+      "target": "effective_time",
+      "scope": "owned_record",
+      "span": "sd0",
+      "refs": [],
+      "origin": "source_explicit",
+      "unit": null,
+      "wording": "When does it take effect?"
+    }
+  ],
+  "uncertainty_atoms": [
+    {
+      "type": "conflicting",
+      "subject": "owned_record",
+      "target": "assertions",
+      "scope": "owned_record",
+      "span": "sd0",
+      "refs": [],
+      "origin": "source_explicit",
+      "unit": null,
+      "wording": "The source statements conflict."
+    },
+    {
+      "type": "unknown",
+      "subject": "owned_record",
+      "target": "interpretation",
+      "scope": "owned_record",
+      "span": "sd0",
+      "refs": [],
+      "origin": "source_explicit",
+      "unit": null,
+      "wording": "The interpretation remains uncertain."
+    }
+  ],
+  "source_uncertainty_present": true,
+  "review_ambiguity": false,
+  "reason_components": [
+    "preserved_claim",
+    "gap_preserved",
+    "uncertainty_preserved"
+  ],
+  "semantic_target": {
+    "items": [
+      {
+        "span": "s0",
+        "claims": [
+          "CLM-C"
+        ],
+        "questions": [],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1003"
+        ]
+      },
+      {
+        "span": "s56",
+        "claims": [
+          "CLM-D"
+        ],
+        "questions": [],
+        "uncertainty": [],
+        "status": "extracted",
+        "refs": [
+          "REF-1004"
+        ]
+      },
+      {
+        "span": "sd0",
+        "claims": [],
+        "questions": [
+          "When does it take effect?"
+        ],
+        "uncertainty": [
+          "The source statements conflict.",
+          "The interpretation remains uncertain."
+        ],
+        "status": "extracted",
+        "refs": []
+      }
+    ]
+  },
+  "semantic_judgment": "EXTRACTED",
+  "rationale": "Direct source review supports s0: CLM-C; s56: CLM-D. Retain both assertions, one effective-time gap, explicit conflict and uncertain interpretation. The source does not explicitly limit the effective-time gap to an amendment. Each item and atom uses only its owned alias references; context REF-9999 is excluded. Source uncertainty is explicit, but the extraction annotation is determinate. A provides the supported typed reason components. The standalone sd0 qualification owns no references, so its atoms correctly have empty refs.",
+  "decision": "candidate_A",
+  "disagreement_causes": [
+    {
+      "type": "reason_component_coverage",
+      "detail": "Candidates differ in enumeration of supported preserved claims or qualifications; the selected candidate includes the source-supported components."
+    },
+    {
+      "type": "wording_only",
+      "detail": "These statements conflict and The source statements conflict denote the same explicit conflict; typed atoms agree."
+    }
+  ]
+}

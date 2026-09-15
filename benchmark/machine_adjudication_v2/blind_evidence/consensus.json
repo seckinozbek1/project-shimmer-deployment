@@ -1,0 +1,3777 @@
+{
+  "review-008fa015433b8336de7d44c5": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-0163c3bfa87be6d1b72cd327": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-05a5ba5a010a4fede2f16d4c": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-0615977dc51ddb9e13a05282": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-0a9f233869223583287b2e04": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "7fa2e93894ea4a095b581bdf76987665d428603bfdf006f6093fe60ec2434e56",
+      "B": "9504aceafcc072676328c1b6a8d3894dc345bc032ec41671ad7bae38f3244c22",
+      "C": "7fa2e93894ea4a095b581bdf76987665d428603bfdf006f6093fe60ec2434e56"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-0d2bd27645f0169a0e0dc03f": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-0e531d2b62d73338f6af9c6f": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-0ecbb19c518b3978f280b693": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994",
+      "B": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994",
+      "C": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-0ed8b8320704b2a1dfe99322": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "B": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "C": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-109bd26d12f5a43fcf3eeb48": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "42528c7d9a1a7e0151a5834fb45b1aeff865a20338c47bd9d659667ff6706b96",
+      "B": "42528c7d9a1a7e0151a5834fb45b1aeff865a20338c47bd9d659667ff6706b96",
+      "C": "42528c7d9a1a7e0151a5834fb45b1aeff865a20338c47bd9d659667ff6706b96"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-1264c40a5253f86441268103": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "94448a7be73e12d8b026cb18803e4ac8a70ff808b6735cac54d625fa980c9fbc",
+      "B": "c3dd30c05f7cb613bb09b187443dfb50b392b7928386cbea2fe842615a7a2bf0",
+      "C": "94448a7be73e12d8b026cb18803e4ac8a70ff808b6735cac54d625fa980c9fbc"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-13d6f0d09b38bfa2550f0ea6": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-1472ca98fe6ae9552d4500e6": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "64fae0bdb5ad4dbdfc9f0a4c291c57c0f955a2900c069b201a65ab27d160c424",
+      "B": "64fae0bdb5ad4dbdfc9f0a4c291c57c0f955a2900c069b201a65ab27d160c424",
+      "C": "64fae0bdb5ad4dbdfc9f0a4c291c57c0f955a2900c069b201a65ab27d160c424"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-15d975c52f36eff8bc2c7992": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-1674f369b07f86fc690f7735": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6",
+      "B": "cbc1b2b9c49bafa3037df8d7ecbe19491a9a4d8ff5f622f4fbba4672e9899ce4",
+      "C": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-186675791d0785830fb7d3d0": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-18827ee0c35beeea1ce1b7d6": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994",
+      "B": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994",
+      "C": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-1a85967104ee69c46e30d8d8": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "bfa8c3043c38460df817a719ca5488a00fdd76ebb99672b097a1bfc6112c22d2",
+      "B": "bfa8c3043c38460df817a719ca5488a00fdd76ebb99672b097a1bfc6112c22d2",
+      "C": "bfa8c3043c38460df817a719ca5488a00fdd76ebb99672b097a1bfc6112c22d2"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-1dd991bdf76c1e688b844629": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "B": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "C": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-1e5213e5c19690e8ff8442a1": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de",
+      "B": "546803ddb542c13c37a5e6ed4371159d850ff2422f6035d058949a98b8aa6bda",
+      "C": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-1f5a2c8445e463c4b9751e78": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5ec33a93859e08aeafb491a650aa57eeb6ac8e6839179648988df26f731b3ff2",
+      "B": "f983fc22fe8b5fd0768b9859ef4738f6a64f3e247b3e7d6eb8a3fedfebb0094b",
+      "C": "5ec33a93859e08aeafb491a650aa57eeb6ac8e6839179648988df26f731b3ff2"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-21a4f1bdff383e55659a2f90": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-2263d5c69fe76ee445f3eb6d": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d",
+      "B": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d",
+      "C": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-22cb9274777989eec42740e8": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c147259f43700bf4a20abc4137646c3cba7308ceb7bcb79713c817a0ee25deda",
+      "B": "c147259f43700bf4a20abc4137646c3cba7308ceb7bcb79713c817a0ee25deda",
+      "C": "c147259f43700bf4a20abc4137646c3cba7308ceb7bcb79713c817a0ee25deda"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-2455e0af6840aa90eeeea829": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "bec71417a72bc0b0ea7cb02dd62e9a56f366dd798792d67fefd04ef33b31291d",
+      "B": "bec71417a72bc0b0ea7cb02dd62e9a56f366dd798792d67fefd04ef33b31291d",
+      "C": "bec71417a72bc0b0ea7cb02dd62e9a56f366dd798792d67fefd04ef33b31291d"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-26f2e62ed0c04907d1924a38": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-2c3b01ac65e99e619b1ebf5b": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994",
+      "B": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994",
+      "C": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-2e9e21f03b9ec06e65ff55e4": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-2f1a4341acf8d2d641e08841": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "B": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "C": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-33eff93477db715e095c2ff3": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-36b003f92ad5bf5fd665b690": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8a1d1429bcfc8c0ff10c65357c24e2a6dd138e24dd601bd6aaa8c6daa857174a",
+      "B": "8a1d1429bcfc8c0ff10c65357c24e2a6dd138e24dd601bd6aaa8c6daa857174a",
+      "C": "8a1d1429bcfc8c0ff10c65357c24e2a6dd138e24dd601bd6aaa8c6daa857174a"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-370466c1cb383a925b79d2ce": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-3c5498af06642cdd8d552218": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "302b4d9c34ac60ccbe3fba7ed4ac88649de0f05a0c25fc9b3ee3119195ee4b68",
+      "B": "9cd15a93689971ec248c7d169a1b3a3c03bf9552c734d5a40fa8e5901111600d",
+      "C": "302b4d9c34ac60ccbe3fba7ed4ac88649de0f05a0c25fc9b3ee3119195ee4b68"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-3ddba1092be6bd584890d2ee": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "7fa2e93894ea4a095b581bdf76987665d428603bfdf006f6093fe60ec2434e56",
+      "B": "9504aceafcc072676328c1b6a8d3894dc345bc032ec41671ad7bae38f3244c22",
+      "C": "7fa2e93894ea4a095b581bdf76987665d428603bfdf006f6093fe60ec2434e56"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-3e51ff37b23702fd2990acc6": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "B": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "C": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-3f7a1f25729171fa20f256ae": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-3fa635a732046e21ce52e81f": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "B": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "C": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-3fb22dbabb9ad628b0f04740": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f",
+      "B": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f",
+      "C": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-41b2df2240e3de387df0e78d": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "b46e47c0a07466c693019493f8e789d05b99f997704268fcbb711e01c2ce0e66",
+      "B": "b46e47c0a07466c693019493f8e789d05b99f997704268fcbb711e01c2ce0e66",
+      "C": "b46e47c0a07466c693019493f8e789d05b99f997704268fcbb711e01c2ce0e66"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-42e31c0bcc51e3bc262550f0": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-434359a9a74ec80193355b99": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "3a0ea4eabff6346492be3663644442b79def2cbd258117eff60708195037fed4",
+      "B": "3a0ea4eabff6346492be3663644442b79def2cbd258117eff60708195037fed4",
+      "C": "3a0ea4eabff6346492be3663644442b79def2cbd258117eff60708195037fed4"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-4384e9378563dfaae2623607": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-444a32d3325d5b3a415e684e": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "B": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "C": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-44c6e5e48ca4b20547a222f6": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "c3cf49bcb9d705a46e996b3cd406a2cd7e4f96a9b06e5ed22004755640ea88f3",
+      "B": "72fb57614a8a323eab03ceb7722952588abd0ab0e22d0d72fccc82af4e818755",
+      "C": "418653690a49175419156ca94230f8444dde55a8f7a17d2ef44a4696dc70aaf2"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-44e41c0234ec12ad83d6504b": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-486263f870b32f356aba38c0": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-4a4f23c9cafe83c13434dd70": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994",
+      "B": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994",
+      "C": "17c87d7d163f0e2a441ec7bcd6a5ace33bceb2de7b8c76b97580e61d63626994"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-4bf3f298cce56706d7e96404": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "B": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "C": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-4e91dd3b5e2fc1e7c4c111f8": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "B": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "C": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-4f4bba1707b4fa5a653a34fd": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "B": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "C": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-4f695de7ab0ab6748329c60c": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "B": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "C": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-4fd1163bad1a896f2cc94b30": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "42528c7d9a1a7e0151a5834fb45b1aeff865a20338c47bd9d659667ff6706b96",
+      "B": "42528c7d9a1a7e0151a5834fb45b1aeff865a20338c47bd9d659667ff6706b96",
+      "C": "42528c7d9a1a7e0151a5834fb45b1aeff865a20338c47bd9d659667ff6706b96"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-50b9be05e3af1c22a2a6470e": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82",
+      "B": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82",
+      "C": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-525bcbd64c0a907e92071cd2": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "B": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "C": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-537aa1b0f7d4c861c917b5df": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-56252d3a3245fe6d3fab7c6e": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-584f0b819b47559a44a3cd5e": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "B": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "C": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-5a09f9e16b6c29cd2d7c29d2": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "efd6603bbfe795e959f20b3920b309e1a11c7217b5eb95457ffd783784e510f8",
+      "B": "d398d9571cc6d7f9584249ff54296196f1943ac8c0c459857d2daf38908122b2",
+      "C": "de1edb6096e908d3d3f717fa4d03a702c5901a46c6b597f132288b79ca549e83"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-5b0cc4b8f523eb8959b25c65": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-5da488605d15c28816eb85ee": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "B": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "C": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-5ef9cc5d36a99a4fbff88d05": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-5f8e1ea9473f25272c2bb17c": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "302b4d9c34ac60ccbe3fba7ed4ac88649de0f05a0c25fc9b3ee3119195ee4b68",
+      "B": "9cd15a93689971ec248c7d169a1b3a3c03bf9552c734d5a40fa8e5901111600d",
+      "C": "302b4d9c34ac60ccbe3fba7ed4ac88649de0f05a0c25fc9b3ee3119195ee4b68"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-5fefb844e8675f4c8e952ae8": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "cab7fdd4aae5436dcd20f166a8069cac4106cf55cb674b72225c4c0ef28a4226",
+      "B": "51883a0c97741d75c753c3232e964e2af3e7b94457d8808422f70ce9103f8c29",
+      "C": "cab7fdd4aae5436dcd20f166a8069cac4106cf55cb674b72225c4c0ef28a4226"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-5ff41c12ea05af09d46c6011": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "B": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "C": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-60a2b854fea4dd7144504df6": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-627c562de27af3ce77e238d0": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "efd6603bbfe795e959f20b3920b309e1a11c7217b5eb95457ffd783784e510f8",
+      "B": "d398d9571cc6d7f9584249ff54296196f1943ac8c0c459857d2daf38908122b2",
+      "C": "de1edb6096e908d3d3f717fa4d03a702c5901a46c6b597f132288b79ca549e83"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-627ec8405e03b878f0496d32": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "efd6603bbfe795e959f20b3920b309e1a11c7217b5eb95457ffd783784e510f8",
+      "B": "d398d9571cc6d7f9584249ff54296196f1943ac8c0c459857d2daf38908122b2",
+      "C": "de1edb6096e908d3d3f717fa4d03a702c5901a46c6b597f132288b79ca549e83"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-64fc34988d0420e251fec3ac": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-65fb1609b8204d5bb2a1c8ee": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5ec33a93859e08aeafb491a650aa57eeb6ac8e6839179648988df26f731b3ff2",
+      "B": "f983fc22fe8b5fd0768b9859ef4738f6a64f3e247b3e7d6eb8a3fedfebb0094b",
+      "C": "5ec33a93859e08aeafb491a650aa57eeb6ac8e6839179648988df26f731b3ff2"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-661467bc91f332c478b007c7": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "B": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "C": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-6eff9502321969a5cb080237": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "B": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "C": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-70293b6bba9b56389f5571a8": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "1ebba996ff8d6ed8d8dda7b82d3bbb2627962e988a56b472e0a7a41db73a865c",
+      "B": "e4e55a49282c880e041e329579d9bbd53f6d137ac42ff44d1d2c7228b8b04e33",
+      "C": "41c193cf33057a9ff2826783fe30fcdb45a1b0551b31f0cd09ce414497fbc034"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-702d9057771af3d882369a9a": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f",
+      "B": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f",
+      "C": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-71b0ad93fb956a7914912ade": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-7633bb9a4cdef70a499e4981": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-78438f79548ebb7d23c69bdf": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "B": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "C": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-78fba2337d12d9254ad39237": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-7b82adfd9e15e42dffd29c6f": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "B": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "C": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-7c56f16c2ed6b3c3f22d3a8b": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "91c868d49384edf7660616adc06ef99c408ce8adb57096ddc9e65e8b22e2012c",
+      "B": "6e5e28d11a51afc1f0503474344f3a631a312a44da8e75d4d71121fd38ca3ca7",
+      "C": "91c868d49384edf7660616adc06ef99c408ce8adb57096ddc9e65e8b22e2012c"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-7d6e7b9f85be4bc7973db4a8": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "04547b2c79b13a36c09fb076ef7403dbd44bc47dc9877a39c109f9b77901351e",
+      "B": "04547b2c79b13a36c09fb076ef7403dbd44bc47dc9877a39c109f9b77901351e",
+      "C": "04547b2c79b13a36c09fb076ef7403dbd44bc47dc9877a39c109f9b77901351e"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-7d93033d1694d0e0bfbf1765": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6",
+      "B": "cbc1b2b9c49bafa3037df8d7ecbe19491a9a4d8ff5f622f4fbba4672e9899ce4",
+      "C": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-7e4a43ae726eae8df3d0efed": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de",
+      "B": "546803ddb542c13c37a5e6ed4371159d850ff2422f6035d058949a98b8aa6bda",
+      "C": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-7ef0bc944fb8ce3de62c3887": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6",
+      "B": "cbc1b2b9c49bafa3037df8d7ecbe19491a9a4d8ff5f622f4fbba4672e9899ce4",
+      "C": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-80683ce4a821a195cd591943": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "B": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "C": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-812e00c7c8749ecb972d12c9": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c147259f43700bf4a20abc4137646c3cba7308ceb7bcb79713c817a0ee25deda",
+      "B": "c147259f43700bf4a20abc4137646c3cba7308ceb7bcb79713c817a0ee25deda",
+      "C": "c147259f43700bf4a20abc4137646c3cba7308ceb7bcb79713c817a0ee25deda"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-822bffb7dbde687a4fc3115b": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-8426fbfa1f7b8afb4c793317": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-85218b2bac49fd06e75fb4f5": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "d4fb9b8187412e0aad3c8b199e6eb2496ff9429826933d8c5a72c06c1578d504",
+      "B": "d4fb9b8187412e0aad3c8b199e6eb2496ff9429826933d8c5a72c06c1578d504",
+      "C": "d4fb9b8187412e0aad3c8b199e6eb2496ff9429826933d8c5a72c06c1578d504"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-8595c9a0686c5774de1b5dbb": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "B": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "C": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-8606a60dcd53a968b46a74fd": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "cab7fdd4aae5436dcd20f166a8069cac4106cf55cb674b72225c4c0ef28a4226",
+      "B": "51883a0c97741d75c753c3232e964e2af3e7b94457d8808422f70ce9103f8c29",
+      "C": "cab7fdd4aae5436dcd20f166a8069cac4106cf55cb674b72225c4c0ef28a4226"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-864f172c0ce6dd35064ebb48": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "56b1e790852f23668b5366175584f08c77bfa1907b41f44ed0367cda4a5db1d6",
+      "B": "56b1e790852f23668b5366175584f08c77bfa1907b41f44ed0367cda4a5db1d6",
+      "C": "56b1e790852f23668b5366175584f08c77bfa1907b41f44ed0367cda4a5db1d6"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-86d8458b322d34cf1c231362": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-87a9e540c30c94a2639114cd": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "B": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "C": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-8b33b34e1a1db2bd5a56873f": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "94448a7be73e12d8b026cb18803e4ac8a70ff808b6735cac54d625fa980c9fbc",
+      "B": "c3dd30c05f7cb613bb09b187443dfb50b392b7928386cbea2fe842615a7a2bf0",
+      "C": "94448a7be73e12d8b026cb18803e4ac8a70ff808b6735cac54d625fa980c9fbc"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-8bb5f009ff43c5a50e042844": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6",
+      "B": "cbc1b2b9c49bafa3037df8d7ecbe19491a9a4d8ff5f622f4fbba4672e9899ce4",
+      "C": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-8d08c171d32dcb1bfae81fcf": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-8e168bd9df1a0d49ab927390": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de",
+      "B": "546803ddb542c13c37a5e6ed4371159d850ff2422f6035d058949a98b8aa6bda",
+      "C": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-8ea6604004ebf13f495decef": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6",
+      "B": "cbc1b2b9c49bafa3037df8d7ecbe19491a9a4d8ff5f622f4fbba4672e9899ce4",
+      "C": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-921307743f3605bf8ebac77d": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-9231b4f8784082cecddb9737": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-9335edf1e7541793bad43eb4": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b",
+      "B": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b",
+      "C": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-94297c8c6c72d65a25fabce7": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-94a1115658fb32fc79f7d356": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-9935c225f0d966e8c0488282": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-9ae0cc62e5a4890a0c583939": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-9bb1d6874c1de5d7428bd600": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "B": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "C": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-9d5b77330106d28eb173fd68": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "aa0b0e2673ab70e824e711fd6ce8f812fa10cea06a1ed57913472f2ce25ca468",
+      "B": "aa0b0e2673ab70e824e711fd6ce8f812fa10cea06a1ed57913472f2ce25ca468",
+      "C": "aa0b0e2673ab70e824e711fd6ce8f812fa10cea06a1ed57913472f2ce25ca468"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-9e52f0b60de56dd5cde04a73": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-a24f8dc97768789f8fe4d7d6": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "B": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "C": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-a2960345881a1660acda6389": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d",
+      "B": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d",
+      "C": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-a308aa397d1e59318e9b1c6a": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-a5b3647ec31b0ec905c59d1d": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d",
+      "B": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d",
+      "C": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-a7d8662d6f1ccf9b860dea3c": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de",
+      "B": "546803ddb542c13c37a5e6ed4371159d850ff2422f6035d058949a98b8aa6bda",
+      "C": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-a8b53f2c92752b44a59b5ff2": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d",
+      "B": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d",
+      "C": "455b85720d08d28f72985df50c2a604ae97c9d2957ed16cc8ca9f21c1a1cd99d"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-a8c8d786ce7c8c2fe1d4ed51": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "302b4d9c34ac60ccbe3fba7ed4ac88649de0f05a0c25fc9b3ee3119195ee4b68",
+      "B": "9cd15a93689971ec248c7d169a1b3a3c03bf9552c734d5a40fa8e5901111600d",
+      "C": "302b4d9c34ac60ccbe3fba7ed4ac88649de0f05a0c25fc9b3ee3119195ee4b68"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-a948d846e4b6151efbfafe81": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-aa567fce9515ffcca9e93868": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-ab0f3d6873e52c74777d7265": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b",
+      "B": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b",
+      "C": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-ad9a66c3e2e277f8cd47a320": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "7fa2e93894ea4a095b581bdf76987665d428603bfdf006f6093fe60ec2434e56",
+      "B": "9504aceafcc072676328c1b6a8d3894dc345bc032ec41671ad7bae38f3244c22",
+      "C": "7fa2e93894ea4a095b581bdf76987665d428603bfdf006f6093fe60ec2434e56"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-ae08ec92eca403a07d0d2f69": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "B": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "C": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-ae968e422dc344e0847f40d4": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f",
+      "B": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f",
+      "C": "592cac5ce48f0e4caf906dd48f210bd1fc58f8f3dc293fab6851a9c3eecc2c4f"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-af8b0e9ecbfb49fdfe4a63ef": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "67ce4b4e61e7349fb80262641c6aa24502a96f334e224bc2fb0d817e46860cdf",
+      "B": "67ce4b4e61e7349fb80262641c6aa24502a96f334e224bc2fb0d817e46860cdf",
+      "C": "67ce4b4e61e7349fb80262641c6aa24502a96f334e224bc2fb0d817e46860cdf"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-b2b0e4347840cc781a4ed74a": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "B": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "C": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-b455637a9669a70c59d8d7eb": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "B": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "C": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-b49ae4bc4ef9a4618a74b8fd": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "c3cf49bcb9d705a46e996b3cd406a2cd7e4f96a9b06e5ed22004755640ea88f3",
+      "B": "72fb57614a8a323eab03ceb7722952588abd0ab0e22d0d72fccc82af4e818755",
+      "C": "418653690a49175419156ca94230f8444dde55a8f7a17d2ef44a4696dc70aaf2"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-b56b8281a0da821b0b503e4f": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "91c868d49384edf7660616adc06ef99c408ce8adb57096ddc9e65e8b22e2012c",
+      "B": "6e5e28d11a51afc1f0503474344f3a631a312a44da8e75d4d71121fd38ca3ca7",
+      "C": "91c868d49384edf7660616adc06ef99c408ce8adb57096ddc9e65e8b22e2012c"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-b7a2a8d105db17f86507e8bc": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-b864c53147521b8e83abbfe3": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de",
+      "B": "546803ddb542c13c37a5e6ed4371159d850ff2422f6035d058949a98b8aa6bda",
+      "C": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-b96a51de7b010e643defadc8": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-ba7e12d4a02062ca3a441fd9": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-bb1f942017264c22b24bb71d": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-bb7846abeb2b462fce2dab20": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "86cd101fc4c5c0ef2f052806b0c01b3ac50b59ca96739fd77717d1cd03b97e90",
+      "B": "86cd101fc4c5c0ef2f052806b0c01b3ac50b59ca96739fd77717d1cd03b97e90",
+      "C": "86cd101fc4c5c0ef2f052806b0c01b3ac50b59ca96739fd77717d1cd03b97e90"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-bcb5e8f9e56d447c3f92b1b2": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82",
+      "B": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82",
+      "C": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-c0fa0eae347bdb3590a610bb": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "efd6603bbfe795e959f20b3920b309e1a11c7217b5eb95457ffd783784e510f8",
+      "B": "d398d9571cc6d7f9584249ff54296196f1943ac8c0c459857d2daf38908122b2",
+      "C": "de1edb6096e908d3d3f717fa4d03a702c5901a46c6b597f132288b79ca549e83"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-c1431ac659435c306b3bec39": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-c193b7c5372da41915cf67a1": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-c49b480fd12c5d1f8e5c9178": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "B": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c",
+      "C": "391c727a5b6504852c34ce69c15567c3323fd04c74f2063cbb90ae60789aa92c"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-c4fed73a8e05e5fe0e5c5437": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-c5b9fd8e5a0d5a69b15db89a": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "B": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "C": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-c710b5e50ae2f810ff8e2291": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "bb712e59c12441ae7b92a56d96662a02099036dd3649d298cc3a6ce3482d95aa",
+      "B": "bb712e59c12441ae7b92a56d96662a02099036dd3649d298cc3a6ce3482d95aa",
+      "C": "bb712e59c12441ae7b92a56d96662a02099036dd3649d298cc3a6ce3482d95aa"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-c843e056e941a11f3e444cf1": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "f936f7cd08ab31c554af65a0a01364965bcbc3bc4bfae2cb4dd9ae270226d568",
+      "B": "f936f7cd08ab31c554af65a0a01364965bcbc3bc4bfae2cb4dd9ae270226d568",
+      "C": "f936f7cd08ab31c554af65a0a01364965bcbc3bc4bfae2cb4dd9ae270226d568"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-c879e622c91d5c4787c15735": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "56b1e790852f23668b5366175584f08c77bfa1907b41f44ed0367cda4a5db1d6",
+      "B": "56b1e790852f23668b5366175584f08c77bfa1907b41f44ed0367cda4a5db1d6",
+      "C": "56b1e790852f23668b5366175584f08c77bfa1907b41f44ed0367cda4a5db1d6"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-c9b60b9d533773bb060d516d": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-c9ba40e04dc27d0b92235870": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-cb9c002f72c70023f4031af4": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-cbc27d1040376cacb0c49c8b": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "B": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "C": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-ce2f34d784fa497c9f827a08": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "B": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "C": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-cf31651e9bc73bbd323c90c7": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-cf861305c1aca1d608e922a7": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-d1658da4baa9bb476d660079": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-d2002a50d5b6c1199db30e6c": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "B": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39",
+      "C": "1f917a001a969fb61fbfd4c74967f17c809ee96fde2ae2b908fd596fc2a9eb39"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-d476df3af7432e808334b875": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-d49391771e16df13656706bf": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "B": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8",
+      "C": "8f53c4ce2fc0be9d7650d826a5b631097d253227b0723fbc8eaf3b9607d10cf8"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-d4a448d7567746abd06df130": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-d5aea6035721bb835ebf7335": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5ec33a93859e08aeafb491a650aa57eeb6ac8e6839179648988df26f731b3ff2",
+      "B": "f983fc22fe8b5fd0768b9859ef4738f6a64f3e247b3e7d6eb8a3fedfebb0094b",
+      "C": "5ec33a93859e08aeafb491a650aa57eeb6ac8e6839179648988df26f731b3ff2"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-d604f868594ddfe527d176d5": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-d630c401eb08541e270fcf36": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "67ce4b4e61e7349fb80262641c6aa24502a96f334e224bc2fb0d817e46860cdf",
+      "B": "67ce4b4e61e7349fb80262641c6aa24502a96f334e224bc2fb0d817e46860cdf",
+      "C": "67ce4b4e61e7349fb80262641c6aa24502a96f334e224bc2fb0d817e46860cdf"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-d71a2ee17660b66c502a5528": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "64fae0bdb5ad4dbdfc9f0a4c291c57c0f955a2900c069b201a65ab27d160c424",
+      "B": "64fae0bdb5ad4dbdfc9f0a4c291c57c0f955a2900c069b201a65ab27d160c424",
+      "C": "64fae0bdb5ad4dbdfc9f0a4c291c57c0f955a2900c069b201a65ab27d160c424"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-d936b42744d9c914ac79c0dc": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82",
+      "B": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82",
+      "C": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-da3e305bdd181a4c3036c9b8": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "efd6603bbfe795e959f20b3920b309e1a11c7217b5eb95457ffd783784e510f8",
+      "B": "d398d9571cc6d7f9584249ff54296196f1943ac8c0c459857d2daf38908122b2",
+      "C": "de1edb6096e908d3d3f717fa4d03a702c5901a46c6b597f132288b79ca549e83"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-db9a61b6e3cc00c52f38c1c8": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-dc447215feb258432ef89a59": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "7fa2e93894ea4a095b581bdf76987665d428603bfdf006f6093fe60ec2434e56",
+      "B": "9504aceafcc072676328c1b6a8d3894dc345bc032ec41671ad7bae38f3244c22",
+      "C": "7fa2e93894ea4a095b581bdf76987665d428603bfdf006f6093fe60ec2434e56"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-dc7251bb7a4b3c0960d2819e": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-dcd8d07c545f5560816344c2": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de",
+      "B": "546803ddb542c13c37a5e6ed4371159d850ff2422f6035d058949a98b8aa6bda",
+      "C": "8dfe1bdcd870e8e6d87a5ba98217f08b2bbc069cc7ee765167f0aec89ffba7de"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-dd4f5f0ea2a38d3d6ab159b8": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-ddd00cb66465153df2d67c29": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-ddf74dc2865967807742719e": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "B": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a",
+      "C": "c3231d440339765f710ef92c5dd06e59197367ce474b59b8fcbcca6cf5e7529a"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-ded67d6feeb7245dbb262b43": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6",
+      "B": "cbc1b2b9c49bafa3037df8d7ecbe19491a9a4d8ff5f622f4fbba4672e9899ce4",
+      "C": "055c8606f4e3daea91964ed09ea502e5edfd4f052ee387921449858367eb5bf6"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-ded87b54701e6199fae5f82f": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-df5af1f71c9ce9e9590cbe44": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-e02b198638e26da0d4c26c1b": {
+    "state": "majority",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "302b4d9c34ac60ccbe3fba7ed4ac88649de0f05a0c25fc9b3ee3119195ee4b68",
+      "B": "9cd15a93689971ec248c7d169a1b3a3c03bf9552c734d5a40fa8e5901111600d",
+      "C": "302b4d9c34ac60ccbe3fba7ed4ac88649de0f05a0c25fc9b3ee3119195ee4b68"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-e112e69147389b2a2c56f46e": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-e1d711a66641a86809ea0b0f": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b",
+      "B": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b",
+      "C": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-e255b907f1d9a598b4b602f9": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "790d4f1ed11b7a1b9d9ea661e61ef01fb316c0c213aa9586f6755eaa929ef44a",
+      "B": "790d4f1ed11b7a1b9d9ea661e61ef01fb316c0c213aa9586f6755eaa929ef44a",
+      "C": "790d4f1ed11b7a1b9d9ea661e61ef01fb316c0c213aa9586f6755eaa929ef44a"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-e54d067d66e5052d2b3f7974": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "B": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529",
+      "C": "35b4ad5ee0c62e683ec502cc0da9173ed07dfdd5a5f918000809ec220d7b9529"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-e7220b6cdd2af5926898ef81": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-e722ce9d4d0cb9fd13688ae8": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-eb3a399eceda8ef53b4aaf96": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "e395e0db033da60f7c3ab39315ee6e342a5a221dfa22f29d61840606aba266b2",
+      "B": "e395e0db033da60f7c3ab39315ee6e342a5a221dfa22f29d61840606aba266b2",
+      "C": "e395e0db033da60f7c3ab39315ee6e342a5a221dfa22f29d61840606aba266b2"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-ec7bb37954530227e9fb35b0": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-f0c991fcdafc403a7dbf039a": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-f2318d6c463ab079eb83dfe3": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b",
+      "B": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b",
+      "C": "2143b76c2954a9425a4684cbc677c5dffc168aca80ee3cfecf2d2ca016d4b68b"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-f2d5aa4286528348afa90b72": {
+    "state": "no_majority",
+    "selected_slot": null,
+    "agreeing_slots": [],
+    "material_hashes": {
+      "A": "efd6603bbfe795e959f20b3920b309e1a11c7217b5eb95457ffd783784e510f8",
+      "B": "d398d9571cc6d7f9584249ff54296196f1943ac8c0c459857d2daf38908122b2",
+      "C": "de1edb6096e908d3d3f717fa4d03a702c5901a46c6b597f132288b79ca549e83"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-f2efc3227729d23ac7f513a0": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82",
+      "B": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82",
+      "C": "6e63e849d089f16d69eabd3e6eaf2fa581d8c021975dde564f45e3ebe96aad82"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-f2f9cd0996c66304a341cb7f": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "7d00d06baf803888802fb8b2adfb176cb7f08a3df04e9c975dc3b7494f464e6b",
+      "B": "7d00d06baf803888802fb8b2adfb176cb7f08a3df04e9c975dc3b7494f464e6b",
+      "C": "7d00d06baf803888802fb8b2adfb176cb7f08a3df04e9c975dc3b7494f464e6b"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-f50e67a89b3316914d83205e": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "B": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310",
+      "C": "5bd45b90e53ebaa51b27a32d10ad9fedbb9bfaeaf25e41d646f3d6cb7f885310"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-f55ed771ece107a7cec26b01": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "B": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad",
+      "C": "ecb928fca37c74ba2a3c1292a74fcba1b39fbc954e53596a7b7e13aed4601cad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-f63c3a6431ab0a64e2626b77": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-f70eca4a38ee9d577f8d3136": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-fb7c26762ccc408c7c7ed02c": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-fbcf7fec6086a1fde46ae1ef": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "B": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01",
+      "C": "c8cc1be0cb6f0a17237660f3174198bff7555b27c8bc3407f3c1519f3f790a01"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": true
+  },
+  "review-fce5256dd3a5b0e61d63ef27": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "B": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad",
+      "C": "4753daf6e43e5c6bdd8a9158a4e8c925c1010f06fa9d3c7546eb8e7338a291ad"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  },
+  "review-fd76873f0357685aed0c98a2": {
+    "state": "unanimous",
+    "selected_slot": "A",
+    "agreeing_slots": [
+      "A",
+      "B",
+      "C"
+    ],
+    "material_hashes": {
+      "A": "05c65bd92159f0e0bcf8f5e3298ff4e6c0379bf831df5a35d4043a0d68738555",
+      "B": "05c65bd92159f0e0bcf8f5e3298ff4e6c0379bf831df5a35d4043a0d68738555",
+      "C": "05c65bd92159f0e0bcf8f5e3298ff4e6c0379bf831df5a35d4043a0d68738555"
+    },
+    "primary_valid": {
+      "A": true,
+      "B": true,
+      "C": true
+    },
+    "designated_hard": false
+  }
+}
