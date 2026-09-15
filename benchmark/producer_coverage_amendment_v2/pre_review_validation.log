@@ -1,0 +1,31 @@
+test_absence_unknown_second_distinct (checks.Checks.test_absence_unknown_second_distinct) ... ok
+test_canonical_determinism_distinction_and_contract (checks.Checks.test_canonical_determinism_distinction_and_contract) ... ok
+test_context_temporal_resolution (checks.Checks.test_context_temporal_resolution) ... ok
+test_cropped_negation_does_not_reverse (checks.Checks.test_cropped_negation_does_not_reverse) ... ok
+test_effect_absence_support (checks.Checks.test_effect_absence_support) ... ok
+test_effect_absence_unknown (checks.Checks.test_effect_absence_unknown) ... ok
+test_effect_deictic_resolution (checks.Checks.test_effect_deictic_resolution) ... ok
+test_effect_evaluation_exclusion (checks.Checks.test_effect_evaluation_exclusion) ... ok
+test_effect_exact_support (checks.Checks.test_effect_exact_support) ... ok
+test_effect_isolation (checks.Checks.test_effect_isolation) ... ok
+test_effect_order_content (checks.Checks.test_effect_order_content) ... ok
+test_effect_r06_train_exclusion (checks.Checks.test_effect_r06_train_exclusion) ... ok
+test_effect_recording_event (checks.Checks.test_effect_recording_event) ... ok
+test_exact_support_refs_and_owner (checks.Checks.test_exact_support_refs_and_owner) ... ok
+test_generic_absence_forms (checks.Checks.test_generic_absence_forms) ... ok
+test_missing_vs_unknown_time (checks.Checks.test_missing_vs_unknown_time) ... ok
+test_named_deictic_and_unrelated_context (checks.Checks.test_named_deictic_and_unrelated_context) ... ok
+test_negation_scope_and_embedding (checks.Checks.test_negation_scope_and_embedding) ... ok
+test_no_unsupported_gaps_or_uncertainty (checks.Checks.test_no_unsupported_gaps_or_uncertainty) ... ok
+test_nonoccurrence_not_missing_information_or_unknown (checks.Checks.test_nonoccurrence_not_missing_information_or_unknown) ... ok
+test_order_content (checks.Checks.test_order_content) ... ok
+test_prospective_legacy_projection (checks.Checks.test_prospective_legacy_projection) ... ok
+test_schema_types_and_missing_atoms (checks.Checks.test_schema_types_and_missing_atoms) ... ok
+test_temporal_roles_positive_and_distinct (checks.Checks.test_temporal_roles_positive_and_distinct) ... ok
+test_temporal_uncertainty_and_ordinal_submission (checks.Checks.test_temporal_uncertainty_and_ordinal_submission) ... ok
+test_unambiguous_and_ambiguous_deictics (checks.Checks.test_unambiguous_and_ambiguous_deictics) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 0.019s
+
+OK

@@ -1,0 +1,28 @@
+{
+  "protocol": "producer-coverage-amendment-v2",
+  "policy": "producer-semantic-policy-v2",
+  "evidence_kind": "training_label_curation_evidence",
+  "use": "curation_only",
+  "packet_id": "producer-v2-431b470e0ee445a6097619ad",
+  "input_sha256": "6d95e96a5bd52408fe98cc628d93762c903d2e74d9e314fa43f960d8c41be6aa",
+  "input": {
+    "role": "producer",
+    "production_contract": "semantic-task-v1",
+    "source_spans": [
+      {
+        "alias": "s0",
+        "text": "08:10 event opened: CLM-A: fictional case 55 recorded 59 recorded events (REF-1001).\n09:25 event amended: CLM-B: fictional case 55 retained 64 recorded events (REF-1002).\n11:40 follow-up: The date is absent. When was this recorded? The interpretation remains uncertain."
+      }
+    ],
+    "context_only_spans": [],
+    "supplied_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "required_refs": [
+      "REF-1001",
+      "REF-1002"
+    ],
+    "routed_rules": []
+  }
+}
