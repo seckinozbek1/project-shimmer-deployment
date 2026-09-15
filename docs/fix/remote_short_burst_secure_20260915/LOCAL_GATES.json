@@ -1,0 +1,57 @@
+{
+  "REMOTE_RETRY_LOCAL_GATES_PASS": true,
+  "bundle": {
+    "bytes": 1268892,
+    "credentials_excluded": true,
+    "file_count": 165,
+    "manifest_sha256": "44e9808a650edb85365ae922d55184c54d447f22045e4aa3bebc3a5e08f5d414",
+    "operator_data_excluded": true,
+    "sha256": "33b205c4b2ceec9f3aef3c67abf2b27a56284ea3f94cdc6b5590dbb0e63d7b2d",
+    "tracked_only": true
+  },
+  "checks": [
+    {
+      "passed": true,
+      "suite": "lambda_metadata_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "runtime_contract_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "cloud_run_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "cloud_run_transport_checks.py"
+    },
+    {
+      "passed": true,
+      "suite": "cloud_run_transfer_checks.py"
+    }
+  ],
+  "source_commit": "c342033e5d09654cdbaaf283879a9ee37764146b",
+  "source_preflight": {
+    "compiled_files": 148,
+    "executable": "C:\\Users\\secki\\anaconda3\\python.exe",
+    "imports": [
+      "agent_wrapper",
+      "finding_record",
+      "bounded_extraction",
+      "execution_topology",
+      "execution_scheduler",
+      "constitution",
+      "message_bus",
+      "run_context",
+      "remote_short_burst_probe"
+    ],
+    "profile": "experiment",
+    "source_preflight_passed": true,
+    "version": [
+      3,
+      12,
+      3
+    ]
+  }
+}

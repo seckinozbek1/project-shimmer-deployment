@@ -1,0 +1,148 @@
+{
+  "stages": [
+    "resolve_runtime",
+    "source_integrity",
+    "source_compile_import",
+    "dependency_check",
+    "install_missing_dependencies",
+    "dependency_recheck",
+    "model_acquisition",
+    "bounded_inference"
+  ],
+  "failed_stage": null,
+  "preparation_error": null,
+  "checkpoint": true,
+  "acquired": [
+    {
+      "role": "active_producer",
+      "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+      "cache_present_before": false,
+      "seconds": 12.449797630310059,
+      "snapshot_bytes": 5563135394
+    },
+    {
+      "role": "active_auditor",
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+      "cache_present_before": false,
+      "seconds": 6.40060567855835,
+      "snapshot_bytes": 2266650814
+    }
+  ],
+  "loads": [
+    {
+      "role": "active_producer",
+      "seconds": 3.961644973999995,
+      "device": "cuda:0",
+      "device_map": {
+        "": 0
+      },
+      "host_rss_before_gib": 0.3871726989746094,
+      "host_rss_after_gib": 0.7136573791503906,
+      "vram_before_mib": 0.0,
+      "cpu_offload": false,
+      "allocated_mib": 5290.65380859375,
+      "residents": [
+        "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
+      ]
+    },
+    {
+      "role": "active_auditor",
+      "seconds": 0.6971862930000157,
+      "device": "cuda:0",
+      "device_map": {
+        "": 0
+      },
+      "host_rss_before_gib": 1.2878952026367188,
+      "host_rss_after_gib": 1.3091812133789062,
+      "vram_before_mib": 5298.77880859375,
+      "cpu_offload": false,
+      "allocated_mib": 7458.22265625,
+      "residents": [
+        "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+        "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+      ]
+    }
+  ],
+  "calls": [
+    {
+      "label": "compact_processor",
+      "wall_seconds": 12.36497096299999,
+      "contract_valid": false,
+      "accepted": false,
+      "usage": {
+        "input_tokens": 610,
+        "output_tokens": 259,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 12.350485236999987,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "8e9e24361119625e6dad41616c38d8371794a1d79dfbd23ed5d49f64856d155e",
+        "cap_hit": false
+      },
+      "output_tokens_per_second": 20.970835965544037
+    },
+    {
+      "label": "source_copy_reference",
+      "wall_seconds": 12.702313521000036,
+      "contract_valid": true,
+      "accepted": false,
+      "usage": {
+        "input_tokens": 482,
+        "output_tokens": 273,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 12.698089827000018,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "dea857a71db6db817dce4af130762405a19858e6a2bda813d59cd3c0c17f4cb2",
+        "cap_hit": false
+      },
+      "output_tokens_per_second": 21.499296643776972
+    },
+    {
+      "label": "independent_auditor",
+      "wall_seconds": 18.140371506000008,
+      "contract_valid": false,
+      "accepted": false,
+      "usage": {
+        "input_tokens": 1875,
+        "output_tokens": 384,
+        "truncated": true,
+        "finish_reason": "length",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 18.133620344000008,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "9a77d7299564580be380f2b823bdde6f2b4413e2e3694bba128eb57dcc0ce57e",
+        "cap_hit": true
+      },
+      "output_tokens_per_second": 21.176135416723703
+    },
+    {
+      "label": "serial_producer",
+      "wall_seconds": 12.126717575999976,
+      "contract_valid": false,
+      "accepted": false,
+      "usage": {
+        "input_tokens": 610,
+        "output_tokens": 259,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 12.122189573000014,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "8e9e24361119625e6dad41616c38d8371794a1d79dfbd23ed5d49f64856d155e",
+        "cap_hit": false
+      },
+      "output_tokens_per_second": 21.36577706859788
+    }
+  ],
+  "failure_type": null,
+  "finished": 1789464462.416997
+}

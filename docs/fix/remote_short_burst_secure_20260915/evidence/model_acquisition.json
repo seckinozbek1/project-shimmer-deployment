@@ -1,0 +1,18 @@
+[
+  {
+    "role": "active_producer",
+    "model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+    "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+    "cache_present_before": false,
+    "seconds": 12.449797630310059,
+    "snapshot_bytes": 5563135394
+  },
+  {
+    "role": "active_auditor",
+    "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+    "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+    "cache_present_before": false,
+    "seconds": 6.40060567855835,
+    "snapshot_bytes": 2266650814
+  }
+]

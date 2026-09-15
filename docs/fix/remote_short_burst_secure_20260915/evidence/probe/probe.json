@@ -1,0 +1,331 @@
+{
+  "classification": "BOUNDED_REMOTE_ORDINARY_NOT_BENCHMARK",
+  "multi_round": false,
+  "full_pipeline": false,
+  "source_commit": "c342033e5d09654cdbaaf283879a9ee37764146b",
+  "families": {
+    "active_producer": "qwen2",
+    "active_auditor": "llama"
+  },
+  "calls": [
+    {
+      "label": "compact_processor",
+      "role": "active_producer",
+      "start_epoch": 1789464406.3769314,
+      "wall_seconds": 12.36497096299999,
+      "usage": {
+        "input_tokens": 610,
+        "output_tokens": 259,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 12.350485236999987,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "8e9e24361119625e6dad41616c38d8371794a1d79dfbd23ed5d49f64856d155e",
+        "cap_hit": false
+      },
+      "raw_text": "```json\n{\n  \"agent\": \"PROCESSOR\",\n  \"doc_id\": \"bounded-local-fixture\",\n  \"items\": [\n    {\n      \"ref\": \"CLM-001\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"claims_referenced\": [\"CLM-001\"],\n      \"open_questions\": [],\n      \"section_id\": \"s0\",\n      \"draft_text\": \"CLM-001: Planned capacity is 120 units (REF-0001).\",\n      \"extraction_method\": \"direct_extraction\",\n      \"ref_ids\": [\"REF-0001\"]\n    },\n    {\n      \"ref\": \"CLM-002\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"claims_referenced\": [\"CLM-002\"],\n      \"open_questions\": [],\n      \"section_id\": \"s0\",\n      \"draft_text\": \"CLM-002: Reported capacity is 130 units (REF-0002).\",\n      \"extraction_method\": \"direct_extraction\",\n      \"ref_ids\": [\"REF-0002\"]\n    }\n  ]\n}\n```",
+      "backend_ok": true,
+      "output_tokens_per_second": 20.970835965544037,
+      "parsed": {
+        "agent": "PROCESSOR",
+        "doc_id": "bounded-local-fixture",
+        "items": [
+          {
+            "ref": "CLM-001",
+            "kind": "finding",
+            "confidence": "CONFIDENT",
+            "claims_referenced": [
+              "CLM-001"
+            ],
+            "open_questions": [],
+            "section_id": "s0",
+            "draft_text": "CLM-001: Planned capacity is 120 units (REF-0001).",
+            "extraction_method": "direct_extraction",
+            "ref_ids": [
+              "REF-0001"
+            ]
+          },
+          {
+            "ref": "CLM-002",
+            "kind": "finding",
+            "confidence": "CONFIDENT",
+            "claims_referenced": [
+              "CLM-002"
+            ],
+            "open_questions": [],
+            "section_id": "s0",
+            "draft_text": "CLM-002: Reported capacity is 130 units (REF-0002).",
+            "extraction_method": "direct_extraction",
+            "ref_ids": [
+              "REF-0002"
+            ]
+          }
+        ]
+      },
+      "contract_valid": false,
+      "contract_missing": [
+        "Source span missing or context-only span claimed"
+      ],
+      "accepted_items": 0,
+      "source_reconstructed_exactly": false,
+      "semantic_fixture_checks": false,
+      "accepted": false
+    },
+    {
+      "label": "source_copy_reference",
+      "role": "active_producer",
+      "start_epoch": 1789464418.743512,
+      "wall_seconds": 12.702313521000036,
+      "usage": {
+        "input_tokens": 482,
+        "output_tokens": 273,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 12.698089827000018,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "dea857a71db6db817dce4af130762405a19858e6a2bda813d59cd3c0c17f4cb2",
+        "cap_hit": false
+      },
+      "raw_text": "```json\n{\n  \"agent\": \"PROCESSOR\",\n  \"doc_id\": \"bounded-local-fixture\",\n  \"items\": [\n    {\n      \"ref\": \"REF-0001\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"verdict\": null,\n      \"ref_ids\": [\"REF-0001\"],\n      \"section_id\": \"paragraph-1\",\n      \"draft_text\": \"CLM-001: Planned capacity is 120 units (REF-0001).\",\n      \"extraction_method\": \"verbatim\",\n      \"claims_referenced\": [\"CLM-001\"],\n      \"open_questions\": []\n    },\n    {\n      \"ref\": \"REF-0002\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"verdict\": null,\n      \"ref_ids\": [\"REF-0002\"],\n      \"section_id\": \"paragraph-1\",\n      \"draft_text\": \"CLM-002: Reported capacity is 130 units (REF-0002).\",\n      \"extraction_method\": \"verbatim\",\n      \"claims_referenced\": [\"CLM-002\"],\n      \"open_questions\": []\n    }\n  ]\n}\n```",
+      "backend_ok": true,
+      "output_tokens_per_second": 21.499296643776972,
+      "parsed": {
+        "agent": "PROCESSOR",
+        "doc_id": "bounded-local-fixture",
+        "items": [
+          {
+            "ref": "REF-0001",
+            "kind": "finding",
+            "confidence": "CONFIDENT",
+            "verdict": null,
+            "ref_ids": [
+              "REF-0001"
+            ],
+            "section_id": "paragraph-1",
+            "draft_text": "CLM-001: Planned capacity is 120 units (REF-0001).",
+            "extraction_method": "verbatim",
+            "claims_referenced": [
+              "CLM-001"
+            ],
+            "open_questions": [],
+            "ts": "2026-09-15T09:27:11.446195+00:00",
+            "revision": 1,
+            "item_id": "PROCESSOR:finding:REF-0001:0"
+          },
+          {
+            "ref": "REF-0002",
+            "kind": "finding",
+            "confidence": "CONFIDENT",
+            "verdict": null,
+            "ref_ids": [
+              "REF-0002"
+            ],
+            "section_id": "paragraph-1",
+            "draft_text": "CLM-002: Reported capacity is 130 units (REF-0002).",
+            "extraction_method": "verbatim",
+            "claims_referenced": [
+              "CLM-002"
+            ],
+            "open_questions": [],
+            "ts": "2026-09-15T09:27:11.446207+00:00",
+            "revision": 1,
+            "item_id": "PROCESSOR:finding:REF-0002:1"
+          }
+        ]
+      },
+      "contract_valid": true,
+      "contract_missing": [],
+      "accepted_items": 2,
+      "source_reconstructed_exactly": false,
+      "semantic_fixture_checks": false,
+      "accepted": false
+    },
+    {
+      "label": "independent_auditor",
+      "role": "active_auditor",
+      "start_epoch": 1789464432.1464486,
+      "wall_seconds": 18.140371506000008,
+      "usage": {
+        "input_tokens": 1875,
+        "output_tokens": 384,
+        "truncated": true,
+        "finish_reason": "length",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 18.133620344000008,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "9a77d7299564580be380f2b823bdde6f2b4413e2e3694bba128eb57dcc0ce57e",
+        "cap_hit": true
+      },
+      "raw_text": "```json\n{\n  \"agent\": \"VERIFIER\",\n  \"doc_id\": \"bounded-local-fixture\",\n  \"items\": [\n    {\n      \"ref\": \"REF-0001\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"ref_ids\": [\"REF-0001\"],\n      \"relation\": \"moved_away\",\n      \"record_verdict\": \"irregular\",\n      \"value_a\": 120,\n      \"unit_a\": \"units\",\n      \"value_b\": 130,\n      \"unit_b\": \"units\",\n      \"source_refs\": [\"REF-0001\"],\n      \"explanation\": \"The reported capacity has increased from the planned capacity, indicating a discrep0n of 10 units.\",\n      \"field_label\": \"Planned capacity\",\n      \"delta\": -10\n    }\n  ],\n  \"finding_record\": {\n    \"rule_id\": \"CONV-001\",\n    \"source_rule_id\": \"\",\n    \"unit_id\": \"\",\n    \"value_a\": 120,\n    \"unit_a\": \"units\",\n    \"value_b\": 130,\n    \"unit_b\": \"units\",\n    \"relation\": \"moved_away\",\n    \"record_verdict\": \"irregular\",\n    \"verdict\": \"<your own contract's verdict value, unchanged>\",\n    \"quote\": \"CLM-001: Planned capacity is 120 units (REF-",
+      "backend_ok": true,
+      "output_tokens_per_second": 21.176135416723703,
+      "auditor_fixture_checks": {
+        "typed_claim_correct": false,
+        "reason_present": false,
+        "references_correct": false
+      },
+      "parsed": [
+        {
+          "ref": "REF-0001",
+          "kind": "finding",
+          "confidence": "CONFIDENT",
+          "ref_ids": [
+            "REF-0001"
+          ],
+          "relation": "moved_away",
+          "record_verdict": "irregular",
+          "value_a": 120,
+          "unit_a": "units",
+          "value_b": 130,
+          "unit_b": "units",
+          "source_refs": [
+            "REF-0001"
+          ],
+          "explanation": "The reported capacity has increased from the planned capacity, indicating a discrep0n of 10 units.",
+          "field_label": "Planned capacity",
+          "delta": -10
+        }
+      ],
+      "contract_valid": false,
+      "contract_missing": [
+        "not a canonical envelope {agent:str, doc_id:str, items:list}"
+      ],
+      "accepted_items": 0,
+      "source_reconstructed_exactly": null,
+      "semantic_fixture_checks": false,
+      "accepted": false
+    },
+    {
+      "label": "serial_producer",
+      "role": "active_producer",
+      "start_epoch": 1789464450.288792,
+      "wall_seconds": 12.126717575999976,
+      "usage": {
+        "input_tokens": 610,
+        "output_tokens": 259,
+        "truncated": false,
+        "finish_reason": "eos",
+        "requested_max_output_tokens": 384,
+        "generation_seconds": 12.122189573000014,
+        "time_to_first_token_seconds": null,
+        "chat_template_applied": true,
+        "rendered_prompt_sha256": "8e9e24361119625e6dad41616c38d8371794a1d79dfbd23ed5d49f64856d155e",
+        "cap_hit": false
+      },
+      "raw_text": "```json\n{\n  \"agent\": \"PROCESSOR\",\n  \"doc_id\": \"bounded-local-fixture\",\n  \"items\": [\n    {\n      \"ref\": \"CLM-001\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"claims_referenced\": [\"CLM-001\"],\n      \"open_questions\": [],\n      \"section_id\": \"s0\",\n      \"draft_text\": \"CLM-001: Planned capacity is 120 units (REF-0001).\",\n      \"extraction_method\": \"direct_extraction\",\n      \"ref_ids\": [\"REF-0001\"]\n    },\n    {\n      \"ref\": \"CLM-002\",\n      \"kind\": \"finding\",\n      \"confidence\": \"CONFIDENT\",\n      \"claims_referenced\": [\"CLM-002\"],\n      \"open_questions\": [],\n      \"section_id\": \"s0\",\n      \"draft_text\": \"CLM-002: Reported capacity is 130 units (REF-0002).\",\n      \"extraction_method\": \"direct_extraction\",\n      \"ref_ids\": [\"REF-0002\"]\n    }\n  ]\n}\n```",
+      "backend_ok": true,
+      "output_tokens_per_second": 21.36577706859788,
+      "parsed": {
+        "agent": "PROCESSOR",
+        "doc_id": "bounded-local-fixture",
+        "items": [
+          {
+            "ref": "CLM-001",
+            "kind": "finding",
+            "confidence": "CONFIDENT",
+            "claims_referenced": [
+              "CLM-001"
+            ],
+            "open_questions": [],
+            "section_id": "s0",
+            "draft_text": "CLM-001: Planned capacity is 120 units (REF-0001).",
+            "extraction_method": "direct_extraction",
+            "ref_ids": [
+              "REF-0001"
+            ]
+          },
+          {
+            "ref": "CLM-002",
+            "kind": "finding",
+            "confidence": "CONFIDENT",
+            "claims_referenced": [
+              "CLM-002"
+            ],
+            "open_questions": [],
+            "section_id": "s0",
+            "draft_text": "CLM-002: Reported capacity is 130 units (REF-0002).",
+            "extraction_method": "direct_extraction",
+            "ref_ids": [
+              "REF-0002"
+            ]
+          }
+        ]
+      },
+      "contract_valid": false,
+      "contract_missing": [
+        "Source span missing or context-only span claimed"
+      ],
+      "accepted_items": 0,
+      "source_reconstructed_exactly": false,
+      "semantic_fixture_checks": false,
+      "accepted": false
+    }
+  ],
+  "loads": [
+    {
+      "role": "active_producer",
+      "seconds": 3.961644973999995,
+      "device": "cuda:0",
+      "device_map": {
+        "": 0
+      },
+      "host_rss_before_gib": 0.3871726989746094,
+      "host_rss_after_gib": 0.7136573791503906,
+      "vram_before_mib": 0.0,
+      "cpu_offload": false,
+      "allocated_mib": 5290.65380859375,
+      "residents": [
+        "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
+      ]
+    },
+    {
+      "role": "active_auditor",
+      "seconds": 0.6971862930000157,
+      "device": "cuda:0",
+      "device_map": {
+        "": 0
+      },
+      "host_rss_before_gib": 1.2878952026367188,
+      "host_rss_after_gib": 1.3091812133789062,
+      "vram_before_mib": 5298.77880859375,
+      "cpu_offload": false,
+      "allocated_mib": 7458.22265625,
+      "residents": [
+        "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+        "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+      ]
+    }
+  ],
+  "bursts": [],
+  "generation_policy": {
+    "max_new_tokens": 384,
+    "max_time_seconds": 25,
+    "do_sample": false,
+    "seed": 7
+  },
+  "topology": {
+    "name": "report_optimized",
+    "device": "cuda:0",
+    "resident_limit": 2,
+    "owners": 1
+  },
+  "runtime": {
+    "torch": "2.5.1+cu121",
+    "transformers": "4.52.3",
+    "cuda": "12.1"
+  },
+  "serial_path": {
+    "status": "blocked_producer_not_accepted"
+  },
+  "concurrency4": "not_admitted: one device owner has one execution thread; no real capacity 2",
+  "residency_load_counts": {
+    "unsloth/Qwen2.5-7B-Instruct-bnb-4bit": 1,
+    "unsloth/Phi-3.5-mini-instruct-bnb-4bit": 1
+  },
+  "finished_epoch": 1789464462.416997
+}

@@ -1,0 +1,12 @@
+{
+  "credential_pattern_hits": 0,
+  "forbidden_authentication_field_hits": 0,
+  "synthetic_sentinel_hits": 0,
+  "provider_metadata_allowlisted": true,
+  "temporary_private_material_removed": true,
+  "files_scanned": 79,
+  "historical_artifacts_verified": 55,
+  "historical_artifacts_modified": false,
+  "package_description_projection": "Unneeded public coverage-badge URL removed; no provider/account credential was exposed",
+  "archive_projection_record": "artifact_projection.json"
+}

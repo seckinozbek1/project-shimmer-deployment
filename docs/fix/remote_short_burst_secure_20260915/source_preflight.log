@@ -1,0 +1,1 @@
+{"executable": "/usr/bin/python3.12", "version": [3, 12, 3], "profile": "experiment", "compiled_files": 148, "imports": ["agent_wrapper", "finding_record", "bounded_extraction", "execution_topology", "execution_scheduler", "constitution", "message_bus", "run_context", "remote_short_burst_probe"], "source_preflight_passed": true}

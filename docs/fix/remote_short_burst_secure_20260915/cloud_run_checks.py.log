@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "tests_run": 83,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "network_blocked": true,
+  "model_generation": false,
+  "gpu_workload": false,
+  "failure_test_ids": []
+}

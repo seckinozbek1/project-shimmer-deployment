@@ -1,0 +1,8 @@
+{
+  "classification": "Public Codecov coverage-badge query in third-party package README; not provider/account credential",
+  "unneeded_metadata_removed": true,
+  "original_collected_archive_sha256": "ef533170edd8ba675824185e91fa3c07f034d968da92fd0440940e7e04c49d67",
+  "retained_sanitized_archive_sha256": "3e00ed542fdb394c54a9efe9c03a3cba2e0718c1820288505d3fe1ad34e96eaf",
+  "remote_measurements_unchanged": true,
+  "package_versions_unchanged": true
+}
