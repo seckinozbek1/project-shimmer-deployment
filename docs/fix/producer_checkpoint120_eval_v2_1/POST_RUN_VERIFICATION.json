@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "raw_rows_recomputed": 74,
+  "control_pairs_verified": 6,
+  "full_rows_verified": 60,
+  "failed_gates": [
+    {
+      "gate": "typed_gaps_f1",
+      "actual": 0.7601809954751131,
+      "minimum": 0.8
+    },
+    {
+      "gate": "semantic_completeness",
+      "actual": 0.5833333333333334,
+      "minimum": 0.75
+    },
+    {
+      "gate": "refusal_precision",
+      "actual": 0.5714285714285714,
+      "minimum": 0.9
+    },
+    {
+      "gate": "accepted_semantic_outcomes",
+      "actual": 0.5833333333333334,
+      "minimum": 0.75
+    },
+    {
+      "gate": "over_refusal_rate",
+      "actual": 0.05357142857142857,
+      "maximum": 0.05
+    }
+  ],
+  "credential_files_scanned": 112,
+  "credential_findings": 0,
+  "zero_instances": true,
+  "archive_hash_verified": true
+}

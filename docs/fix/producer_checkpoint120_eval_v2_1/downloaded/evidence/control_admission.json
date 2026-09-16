@@ -1,0 +1,12 @@
+{
+  "pass_gate": true,
+  "token_identity": true,
+  "metric_identity": true,
+  "prompt_identity": true,
+  "reference_tokens_per_second": 1.9313571307213064,
+  "optimized_tokens_per_second": 8.941981838717481,
+  "paired_speedup": 4.6298955778198865,
+  "no_go_action": "Stop and preserve evidence; no full DEV, protocol changes, rescue or retraining",
+  "decoded_identity": true,
+  "stop_identity": true
+}

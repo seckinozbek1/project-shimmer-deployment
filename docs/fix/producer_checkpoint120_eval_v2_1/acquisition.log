@@ -1,0 +1,3 @@
+Fetching 9 files:   0%|          | 0/9 [00:00<?, ?it/s]Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+Fetching 9 files:  89%|████████▉ | 8/9 [00:00<00:00, 13.96it/s]Fetching 9 files:  89%|████████▉ | 8/9 [00:20<00:02,  2.50s/it]Fetching 9 files: 100%|██████████| 9/9 [03:22<00:00, 22.47s/it]Fetching 9 files: 100%|██████████| 9/9 [03:22<00:00, 22.47s/it]

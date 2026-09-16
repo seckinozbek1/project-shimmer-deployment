@@ -1,0 +1,496 @@
+{
+  "name": "REAL_RUNTIME_CONTEXT_PREFLIGHT",
+  "passed": true,
+  "owned_config_fields": [
+    {
+      "module_index": 2,
+      "attribute": "config",
+      "index": 0,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2,
+      "attribute": "generation_config",
+      "index": 1,
+      "type": "transformers.generation.configuration_utils.GenerationConfig",
+      "is_none": false,
+      "identity_group": 1
+    },
+    {
+      "module_index": 3,
+      "attribute": "config",
+      "index": 2,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 3,
+      "attribute": "generation_config",
+      "index": 3,
+      "type": "builtins.NoneType",
+      "is_none": true,
+      "identity_group": 3
+    },
+    {
+      "module_index": 7,
+      "attribute": "config",
+      "index": 4,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 52,
+      "attribute": "config",
+      "index": 5,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 90,
+      "attribute": "config",
+      "index": 6,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 135,
+      "attribute": "config",
+      "index": 7,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 173,
+      "attribute": "config",
+      "index": 8,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 218,
+      "attribute": "config",
+      "index": 9,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 256,
+      "attribute": "config",
+      "index": 10,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 301,
+      "attribute": "config",
+      "index": 11,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 339,
+      "attribute": "config",
+      "index": 12,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 384,
+      "attribute": "config",
+      "index": 13,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 422,
+      "attribute": "config",
+      "index": 14,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 467,
+      "attribute": "config",
+      "index": 15,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 505,
+      "attribute": "config",
+      "index": 16,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 550,
+      "attribute": "config",
+      "index": 17,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 588,
+      "attribute": "config",
+      "index": 18,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 633,
+      "attribute": "config",
+      "index": 19,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 671,
+      "attribute": "config",
+      "index": 20,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 716,
+      "attribute": "config",
+      "index": 21,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 754,
+      "attribute": "config",
+      "index": 22,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 799,
+      "attribute": "config",
+      "index": 23,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 837,
+      "attribute": "config",
+      "index": 24,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 882,
+      "attribute": "config",
+      "index": 25,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 920,
+      "attribute": "config",
+      "index": 26,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 965,
+      "attribute": "config",
+      "index": 27,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1003,
+      "attribute": "config",
+      "index": 28,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1048,
+      "attribute": "config",
+      "index": 29,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1086,
+      "attribute": "config",
+      "index": 30,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1131,
+      "attribute": "config",
+      "index": 31,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1169,
+      "attribute": "config",
+      "index": 32,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1214,
+      "attribute": "config",
+      "index": 33,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1252,
+      "attribute": "config",
+      "index": 34,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1297,
+      "attribute": "config",
+      "index": 35,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1335,
+      "attribute": "config",
+      "index": 36,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1380,
+      "attribute": "config",
+      "index": 37,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1418,
+      "attribute": "config",
+      "index": 38,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1463,
+      "attribute": "config",
+      "index": 39,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1501,
+      "attribute": "config",
+      "index": 40,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1546,
+      "attribute": "config",
+      "index": 41,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1584,
+      "attribute": "config",
+      "index": 42,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1629,
+      "attribute": "config",
+      "index": 43,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1667,
+      "attribute": "config",
+      "index": 44,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1712,
+      "attribute": "config",
+      "index": 45,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1750,
+      "attribute": "config",
+      "index": 46,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1795,
+      "attribute": "config",
+      "index": 47,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1833,
+      "attribute": "config",
+      "index": 48,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1878,
+      "attribute": "config",
+      "index": 49,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1916,
+      "attribute": "config",
+      "index": 50,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1961,
+      "attribute": "config",
+      "index": 51,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 1999,
+      "attribute": "config",
+      "index": 52,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2044,
+      "attribute": "config",
+      "index": 53,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2082,
+      "attribute": "config",
+      "index": 54,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2127,
+      "attribute": "config",
+      "index": 55,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2165,
+      "attribute": "config",
+      "index": 56,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2210,
+      "attribute": "config",
+      "index": 57,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2248,
+      "attribute": "config",
+      "index": 58,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2293,
+      "attribute": "config",
+      "index": 59,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    },
+    {
+      "module_index": 2331,
+      "attribute": "config",
+      "index": 60,
+      "type": "transformers.models.qwen2.configuration_qwen2.Qwen2Config",
+      "is_none": false,
+      "identity_group": 0
+    }
+  ],
+  "state_restored": true,
+  "generation_calls": 0
+}
