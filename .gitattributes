@@ -9,3 +9,4 @@ tools/entrypoint.sh text eol=lf
 tuning/second_domain_agnostic_v2/** -text
 docs/fix/SECOND_TUNING_DATA_AND_FAILURE_AUDIT.md -text
 docs/fix/SECOND_TUNING_EXPERIMENT_IMPLEMENTATION.md -text
+docs/fix/second_tuning_canonical_pilot/** -text

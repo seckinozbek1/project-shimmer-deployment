@@ -1,0 +1,2434 @@
+{
+  "method": "Reconstructed from saved event timestamps and fixed provider rate, measured from launch request; estimates, not invoices or historical watchdog samples",
+  "hourly_rate": 1.29,
+  "events": [
+    {
+      "epoch": 1789548941.3976605,
+      "kind": "LAUNCH_INTENT.json",
+      "estimated_cost_upper_bound_usd": 0.0
+    },
+    {
+      "epoch": 1789549452.7690516,
+      "kind": "model_load",
+      "role": "producer",
+      "step": null,
+      "estimated_cost_upper_bound_usd": 0.18324141512910527
+    },
+    {
+      "epoch": 1789549458.4679444,
+      "kind": "trainable_parameters",
+      "role": "producer",
+      "step": null,
+      "estimated_cost_upper_bound_usd": 0.18528351839383445
+    },
+    {
+      "epoch": 1789549467.228014,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 1,
+      "estimated_cost_upper_bound_usd": 0.18842254333694777
+    },
+    {
+      "epoch": 1789549467.2359357,
+      "kind": "loss",
+      "role": "producer",
+      "step": 1,
+      "estimated_cost_upper_bound_usd": 0.18842538194457692
+    },
+    {
+      "epoch": 1789549475.3382497,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 2,
+      "estimated_cost_upper_bound_usd": 0.19132871112624805
+    },
+    {
+      "epoch": 1789549475.3487656,
+      "kind": "loss",
+      "role": "producer",
+      "step": 2,
+      "estimated_cost_upper_bound_usd": 0.1913324793338776
+    },
+    {
+      "epoch": 1789549483.5214956,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 3,
+      "estimated_cost_upper_bound_usd": 0.1942610409061114
+    },
+    {
+      "epoch": 1789549483.5344348,
+      "kind": "loss",
+      "role": "producer",
+      "step": 3,
+      "estimated_cost_upper_bound_usd": 0.19426567745804785
+    },
+    {
+      "epoch": 1789549491.5356927,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 4,
+      "estimated_cost_upper_bound_usd": 0.1971327948709329
+    },
+    {
+      "epoch": 1789549491.5512104,
+      "kind": "loss",
+      "role": "producer",
+      "step": 4,
+      "estimated_cost_upper_bound_usd": 0.19713835538427035
+    },
+    {
+      "epoch": 1789549499.1544778,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 5,
+      "estimated_cost_upper_bound_usd": 0.19986285954713823
+    },
+    {
+      "epoch": 1789549499.1726608,
+      "kind": "loss",
+      "role": "producer",
+      "step": 5,
+      "estimated_cost_upper_bound_usd": 0.19986937511960665
+    },
+    {
+      "epoch": 1789549507.1129868,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 6,
+      "estimated_cost_upper_bound_usd": 0.20271465859413149
+    },
+    {
+      "epoch": 1789549507.1336045,
+      "kind": "loss",
+      "role": "producer",
+      "step": 6,
+      "estimated_cost_upper_bound_usd": 0.20272204661170642
+    },
+    {
+      "epoch": 1789549514.8556883,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 7,
+      "estimated_cost_upper_bound_usd": 0.20548912664254507
+    },
+    {
+      "epoch": 1789549514.8790877,
+      "kind": "loss",
+      "role": "producer",
+      "step": 7,
+      "estimated_cost_upper_bound_usd": 0.2054975114107132
+    },
+    {
+      "epoch": 1789549522.816293,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 8,
+      "estimated_cost_upper_bound_usd": 0.20834167664845785
+    },
+    {
+      "epoch": 1789549522.8421268,
+      "kind": "loss",
+      "role": "producer",
+      "step": 8,
+      "estimated_cost_upper_bound_usd": 0.20835093377629915
+    },
+    {
+      "epoch": 1789549530.5175285,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 9,
+      "estimated_cost_upper_bound_usd": 0.2111012860476971
+    },
+    {
+      "epoch": 1789549530.545915,
+      "kind": "loss",
+      "role": "producer",
+      "step": 9,
+      "estimated_cost_upper_bound_usd": 0.21111145782470706
+    },
+    {
+      "epoch": 1789549538.3725855,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 10,
+      "estimated_cost_upper_bound_usd": 0.21391601480642955
+    },
+    {
+      "epoch": 1789549538.4042935,
+      "kind": "loss",
+      "role": "producer",
+      "step": 10,
+      "estimated_cost_upper_bound_usd": 0.21392737684051197
+    },
+    {
+      "epoch": 1789549546.239556,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 11,
+      "estimated_cost_upper_bound_usd": 0.2167350125829379
+    },
+    {
+      "epoch": 1789549546.2734962,
+      "kind": "loss",
+      "role": "producer",
+      "step": 11,
+      "estimated_cost_upper_bound_usd": 0.21674717444380123
+    },
+    {
+      "epoch": 1789549554.0927672,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 12,
+      "estimated_cost_upper_bound_usd": 0.21954907991687456
+    },
+    {
+      "epoch": 1789549554.1292279,
+      "kind": "loss",
+      "role": "producer",
+      "step": 12,
+      "estimated_cost_upper_bound_usd": 0.21956214497884113
+    },
+    {
+      "epoch": 1789549562.1139987,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 13,
+      "estimated_cost_upper_bound_usd": 0.22242335450649262
+    },
+    {
+      "epoch": 1789549562.1524436,
+      "kind": "loss",
+      "role": "producer",
+      "step": 13,
+      "estimated_cost_upper_bound_usd": 0.22243713063001633
+    },
+    {
+      "epoch": 1789549569.9678226,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 14,
+      "estimated_cost_upper_bound_usd": 0.22523764140407246
+    },
+    {
+      "epoch": 1789549570.0087888,
+      "kind": "loss",
+      "role": "producer",
+      "step": 14,
+      "estimated_cost_upper_bound_usd": 0.22525232098499934
+    },
+    {
+      "epoch": 1789549577.4391444,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 15,
+      "estimated_cost_upper_bound_usd": 0.2279148650566737
+    },
+    {
+      "epoch": 1789549577.4831145,
+      "kind": "loss",
+      "role": "producer",
+      "step": 15,
+      "estimated_cost_upper_bound_usd": 0.2279306210120519
+    },
+    {
+      "epoch": 1789549585.6874375,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 16,
+      "estimated_cost_upper_bound_usd": 0.23087050343950588
+    },
+    {
+      "epoch": 1789549585.7336822,
+      "kind": "loss",
+      "role": "producer",
+      "step": 16,
+      "estimated_cost_upper_bound_usd": 0.23088707442879677
+    },
+    {
+      "epoch": 1789549593.468655,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 17,
+      "estimated_cost_upper_bound_usd": 0.2336587730705738
+    },
+    {
+      "epoch": 1789549593.517955,
+      "kind": "loss",
+      "role": "producer",
+      "step": 17,
+      "estimated_cost_upper_bound_usd": 0.23367643888791403
+    },
+    {
+      "epoch": 1789549601.1837337,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 18,
+      "estimated_cost_upper_bound_usd": 0.23642334289948144
+    },
+    {
+      "epoch": 1789549601.2353938,
+      "kind": "loss",
+      "role": "producer",
+      "step": 18,
+      "estimated_cost_upper_bound_usd": 0.23644185442129773
+    },
+    {
+      "epoch": 1789549608.9910192,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 19,
+      "estimated_cost_upper_bound_usd": 0.23922095355391504
+    },
+    {
+      "epoch": 1789549609.045484,
+      "kind": "loss",
+      "role": "producer",
+      "step": 19,
+      "estimated_cost_upper_bound_usd": 0.23924047011335692
+    },
+    {
+      "epoch": 1789549616.8738606,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 20,
+      "estimated_cost_upper_bound_usd": 0.2420456383705139
+    },
+    {
+      "epoch": 1789549616.9318802,
+      "kind": "loss",
+      "role": "producer",
+      "step": 20,
+      "estimated_cost_upper_bound_usd": 0.24206642874081932
+    },
+    {
+      "epoch": 1789549624.7999506,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 21,
+      "estimated_cost_upper_bound_usd": 0.24488582062125208
+    },
+    {
+      "epoch": 1789549624.859347,
+      "kind": "loss",
+      "role": "producer",
+      "step": 21,
+      "estimated_cost_upper_bound_usd": 0.24490710436900456
+    },
+    {
+      "epoch": 1789549632.4323153,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 22,
+      "estimated_cost_upper_bound_usd": 0.2476207513233026
+    },
+    {
+      "epoch": 1789549632.494153,
+      "kind": "loss",
+      "role": "producer",
+      "step": 22,
+      "estimated_cost_upper_bound_usd": 0.24764290982286136
+    },
+    {
+      "epoch": 1789549640.1561766,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 23,
+      "estimated_cost_upper_bound_usd": 0.250388468259573
+    },
+    {
+      "epoch": 1789549640.220815,
+      "kind": "loss",
+      "role": "producer",
+      "step": 23,
+      "estimated_cost_upper_bound_usd": 0.25041163034439085
+    },
+    {
+      "epoch": 1789549647.9636953,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 24,
+      "estimated_cost_upper_bound_usd": 0.2531861624677976
+    },
+    {
+      "epoch": 1789549648.0299494,
+      "kind": "loss",
+      "role": "producer",
+      "step": 24,
+      "estimated_cost_upper_bound_usd": 0.25320990353425343
+    },
+    {
+      "epoch": 1789549655.84185,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 25,
+      "estimated_cost_upper_bound_usd": 0.2560091679215431
+    },
+    {
+      "epoch": 1789549655.912028,
+      "kind": "loss",
+      "role": "producer",
+      "step": 25,
+      "estimated_cost_upper_bound_usd": 0.2560343150496483
+    },
+    {
+      "epoch": 1789549664.077111,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 26,
+      "estimated_cost_upper_bound_usd": 0.25896013643344246
+    },
+    {
+      "epoch": 1789549664.1488056,
+      "kind": "loss",
+      "role": "producer",
+      "step": 26,
+      "estimated_cost_upper_bound_usd": 0.2589858270029227
+    },
+    {
+      "epoch": 1789549672.4406748,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 27,
+      "estimated_cost_upper_bound_usd": 0.26195708011984825
+    },
+    {
+      "epoch": 1789549672.5178266,
+      "kind": "loss",
+      "role": "producer",
+      "step": 27,
+      "estimated_cost_upper_bound_usd": 0.26198472617268564
+    },
+    {
+      "epoch": 1789549680.1842012,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 28,
+      "estimated_cost_upper_bound_usd": 0.26473184376756353
+    },
+    {
+      "epoch": 1789549680.2606518,
+      "kind": "loss",
+      "role": "producer",
+      "step": 28,
+      "estimated_cost_upper_bound_usd": 0.2647592385609945
+    },
+    {
+      "epoch": 1789549688.2250044,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 29,
+      "estimated_cost_upper_bound_usd": 0.2676131315787634
+    },
+    {
+      "epoch": 1789549688.305338,
+      "kind": "loss",
+      "role": "producer",
+      "step": 29,
+      "estimated_cost_upper_bound_usd": 0.26764191773931184
+    },
+    {
+      "epoch": 1789549696.469051,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 30,
+      "estimated_cost_upper_bound_usd": 0.27056724822322525
+    },
+    {
+      "epoch": 1789549696.553115,
+      "kind": "loss",
+      "role": "producer",
+      "step": 30,
+      "estimated_cost_upper_bound_usd": 0.27059737115899724
+    },
+    {
+      "epoch": 1789549704.436195,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 31,
+      "estimated_cost_upper_bound_usd": 0.2734221414943536
+    },
+    {
+      "epoch": 1789549704.5213885,
+      "kind": "loss",
+      "role": "producer",
+      "step": 31,
+      "estimated_cost_upper_bound_usd": 0.27345266921321554
+    },
+    {
+      "epoch": 1789549712.0278935,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 32,
+      "estimated_cost_upper_bound_usd": 0.2761425001760324
+    },
+    {
+      "epoch": 1789549712.1151028,
+      "kind": "loss",
+      "role": "producer",
+      "step": 32,
+      "estimated_cost_upper_bound_usd": 0.2761737501482169
+    },
+    {
+      "epoch": 1789549720.1721723,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 33,
+      "estimated_cost_upper_bound_usd": 0.2790608667333921
+    },
+    {
+      "epoch": 1789549720.2625158,
+      "kind": "loss",
+      "role": "producer",
+      "step": 33,
+      "estimated_cost_upper_bound_usd": 0.2790932398120562
+    },
+    {
+      "epoch": 1789549727.8662171,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 34,
+      "estimated_cost_upper_bound_usd": 0.2818178994635741
+    },
+    {
+      "epoch": 1789549727.9585521,
+      "kind": "loss",
+      "role": "producer",
+      "step": 34,
+      "estimated_cost_upper_bound_usd": 0.2818509861667951
+    },
+    {
+      "epoch": 1789549736.139779,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 35,
+      "estimated_cost_upper_bound_usd": 0.28478259249726934
+    },
+    {
+      "epoch": 1789549736.2346714,
+      "kind": "loss",
+      "role": "producer",
+      "step": 35,
+      "estimated_cost_upper_bound_usd": 0.28481659555832545
+    },
+    {
+      "epoch": 1789549744.0825343,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 36,
+      "estimated_cost_upper_bound_usd": 0.28762874645193415
+    },
+    {
+      "epoch": 1789549744.1804461,
+      "kind": "loss",
+      "role": "producer",
+      "step": 36,
+      "estimated_cost_upper_bound_usd": 0.287663831526041
+    },
+    {
+      "epoch": 1789549752.095255,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 37,
+      "estimated_cost_upper_bound_usd": 0.29049997132817906
+    },
+    {
+      "epoch": 1789549752.1955526,
+      "kind": "loss",
+      "role": "producer",
+      "step": 37,
+      "estimated_cost_upper_bound_usd": 0.29053591133356094
+    },
+    {
+      "epoch": 1789549759.8885765,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 38,
+      "estimated_cost_upper_bound_usd": 0.29329257823824884
+    },
+    {
+      "epoch": 1789549759.99126,
+      "kind": "loss",
+      "role": "producer",
+      "step": 38,
+      "estimated_cost_upper_bound_usd": 0.29332937317490576
+    },
+    {
+      "epoch": 1789549768.112776,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 39,
+      "estimated_cost_upper_bound_usd": 0.2962395830710729
+    },
+    {
+      "epoch": 1789549768.2183306,
+      "kind": "loss",
+      "role": "producer",
+      "step": 39,
+      "estimated_cost_upper_bound_usd": 0.2962774067958196
+    },
+    {
+      "epoch": 1789549775.9551759,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 40,
+      "estimated_cost_upper_bound_usd": 0.2990497763454914
+    },
+    {
+      "epoch": 1789549776.064645,
+      "kind": "loss",
+      "role": "producer",
+      "step": 40,
+      "estimated_cost_upper_bound_usd": 0.2990890027999878
+    },
+    {
+      "epoch": 1789549783.7323785,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 41,
+      "estimated_cost_upper_bound_usd": 0.30183660727938016
+    },
+    {
+      "epoch": 1789549783.8443382,
+      "kind": "loss",
+      "role": "producer",
+      "step": 41,
+      "estimated_cost_upper_bound_usd": 0.3018767261703809
+    },
+    {
+      "epoch": 1789549791.9374766,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 42,
+      "estimated_cost_upper_bound_usd": 0.30477676745057103
+    },
+    {
+      "epoch": 1789549792.0517714,
+      "kind": "loss",
+      "role": "producer",
+      "step": 42,
+      "estimated_cost_upper_bound_usd": 0.30481772307554883
+    },
+    {
+      "epoch": 1789549799.9691827,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 43,
+      "estimated_cost_upper_bound_usd": 0.30765479546785357
+    },
+    {
+      "epoch": 1789549800.0853865,
+      "kind": "loss",
+      "role": "producer",
+      "step": 43,
+      "estimated_cost_upper_bound_usd": 0.30769643515745804
+    },
+    {
+      "epoch": 1789549808.0103977,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 44,
+      "estimated_cost_upper_bound_usd": 0.3105362308224042
+    },
+    {
+      "epoch": 1789549808.1289916,
+      "kind": "loss",
+      "role": "producer",
+      "step": 44,
+      "estimated_cost_upper_bound_usd": 0.3105787269810836
+    },
+    {
+      "epoch": 1789549815.922004,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 45,
+      "estimated_cost_upper_bound_usd": 0.31337122308413184
+    },
+    {
+      "epoch": 1789549816.0430143,
+      "kind": "loss",
+      "role": "producer",
+      "step": 45,
+      "estimated_cost_upper_bound_usd": 0.3134145851095517
+    },
+    {
+      "epoch": 1789549824.063147,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 46,
+      "estimated_cost_upper_bound_usd": 0.31628846602241195
+    },
+    {
+      "epoch": 1789549824.1882389,
+      "kind": "loss",
+      "role": "producer",
+      "step": 46,
+      "estimated_cost_upper_bound_usd": 0.3163332905809084
+    },
+    {
+      "epoch": 1789549831.697689,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 47,
+      "estimated_cost_upper_bound_usd": 0.3190241769015789
+    },
+    {
+      "epoch": 1789549831.8248696,
+      "kind": "loss",
+      "role": "producer",
+      "step": 47,
+      "estimated_cost_upper_bound_usd": 0.3190697499414285
+    },
+    {
+      "epoch": 1789549839.4455822,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 48,
+      "estimated_cost_upper_bound_usd": 0.3218005052606265
+    },
+    {
+      "epoch": 1789549839.5743623,
+      "kind": "loss",
+      "role": "producer",
+      "step": 48,
+      "estimated_cost_upper_bound_usd": 0.32184665147264796
+    },
+    {
+      "epoch": 1789549847.6161933,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 49,
+      "estimated_cost_upper_bound_usd": 0.32472830758690835
+    },
+    {
+      "epoch": 1789549847.7481904,
+      "kind": "loss",
+      "role": "producer",
+      "step": 49,
+      "estimated_cost_upper_bound_usd": 0.324775606550773
+    },
+    {
+      "epoch": 1789549855.5337977,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 50,
+      "estimated_cost_upper_bound_usd": 0.32756544918020564
+    },
+    {
+      "epoch": 1789549855.6673822,
+      "kind": "loss",
+      "role": "producer",
+      "step": 50,
+      "estimated_cost_upper_bound_usd": 0.3276133169591427
+    },
+    {
+      "epoch": 1789549863.823728,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 51,
+      "estimated_cost_upper_bound_usd": 0.330536007553339
+    },
+    {
+      "epoch": 1789549863.9598515,
+      "kind": "loss",
+      "role": "producer",
+      "step": 51,
+      "estimated_cost_upper_bound_usd": 0.3305847851117452
+    },
+    {
+      "epoch": 1789549871.8377585,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 52,
+      "estimated_cost_upper_bound_usd": 0.3334077018002669
+    },
+    {
+      "epoch": 1789549871.9782255,
+      "kind": "loss",
+      "role": "producer",
+      "step": 52,
+      "estimated_cost_upper_bound_usd": 0.333458035782973
+    },
+    {
+      "epoch": 1789549880.3789349,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 53,
+      "estimated_cost_upper_bound_usd": 0.33646828998128575
+    },
+    {
+      "epoch": 1789549880.5227275,
+      "kind": "loss",
+      "role": "producer",
+      "step": 53,
+      "estimated_cost_upper_bound_usd": 0.33651981567343076
+    },
+    {
+      "epoch": 1789549888.60185,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 54,
+      "estimated_cost_upper_bound_usd": 0.3394148345847925
+    },
+    {
+      "epoch": 1789549888.744363,
+      "kind": "loss",
+      "role": "producer",
+      "step": 54,
+      "estimated_cost_upper_bound_usd": 0.33946590175628666
+    },
+    {
+      "epoch": 1789549896.622925,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 55,
+      "estimated_cost_upper_bound_usd": 0.34228905313014985
+    },
+    {
+      "epoch": 1789549896.770006,
+      "kind": "loss",
+      "role": "producer",
+      "step": 55,
+      "estimated_cost_upper_bound_usd": 0.34234175711870196
+    },
+    {
+      "epoch": 1789549904.9627173,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 56,
+      "estimated_cost_upper_bound_usd": 0.3452774786869685
+    },
+    {
+      "epoch": 1789549905.1125321,
+      "kind": "loss",
+      "role": "producer",
+      "step": 56,
+      "estimated_cost_upper_bound_usd": 0.34533116233944894
+    },
+    {
+      "epoch": 1789549912.7888124,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 57,
+      "estimated_cost_upper_bound_usd": 0.34808182943264643
+    },
+    {
+      "epoch": 1789549912.9407248,
+      "kind": "loss",
+      "role": "producer",
+      "step": 57,
+      "estimated_cost_upper_bound_usd": 0.348136264727513
+    },
+    {
+      "epoch": 1789549920.6409395,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 58,
+      "estimated_cost_upper_bound_usd": 0.3508955083012581
+    },
+    {
+      "epoch": 1789549920.7981873,
+      "kind": "loss",
+      "role": "producer",
+      "step": 58,
+      "estimated_cost_upper_bound_usd": 0.3509518554230531
+    },
+    {
+      "epoch": 1789549928.5524101,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 59,
+      "estimated_cost_upper_bound_usd": 0.35373045195142433
+    },
+    {
+      "epoch": 1789549928.709627,
+      "kind": "loss",
+      "role": "producer",
+      "step": 59,
+      "estimated_cost_upper_bound_usd": 0.3537867879668871
+    },
+    {
+      "epoch": 1789549936.8918364,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.3567187463680903
+    },
+    {
+      "epoch": 1789549937.0514252,
+      "kind": "loss",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.35677593235969546
+    },
+    {
+      "epoch": 1789549944.3520262,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.35939198105335235
+    },
+    {
+      "epoch": 1789549949.9541063,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.3613993930915992
+    },
+    {
+      "epoch": 1789549955.473763,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.36337727006077764
+    },
+    {
+      "epoch": 1789549960.996943,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.36535640956362087
+    },
+    {
+      "epoch": 1789549966.5337243,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.36734042286674184
+    },
+    {
+      "epoch": 1789549972.061441,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.3693211879948775
+    },
+    {
+      "epoch": 1789549977.6202087,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.3713130797882875
+    },
+    {
+      "epoch": 1789549983.1718066,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.37330240234533946
+    },
+    {
+      "epoch": 1789550080.584659,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.40820867450038595
+    },
+    {
+      "epoch": 1789550086.150177,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.4102029850820701
+    },
+    {
+      "epoch": 1789550091.690071,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.41218811380267145
+    },
+    {
+      "epoch": 1789550097.2701867,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.41418765521049505
+    },
+    {
+      "epoch": 1789550102.8207314,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.4161766004085541
+    },
+    {
+      "epoch": 1789550117.3216643,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.4213727680424849
+    },
+    {
+      "epoch": 1789550122.8713243,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.423361396197478
+    },
+    {
+      "epoch": 1789550128.4165435,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.4253484330713749
+    },
+    {
+      "epoch": 1789550133.9847941,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.42734372288982075
+    },
+    {
+      "epoch": 1789550139.5276337,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.42932990705370905
+    },
+    {
+      "epoch": 1789550145.0896108,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.4313229488650958
+    },
+    {
+      "epoch": 1789550150.670898,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.43332291009227436
+    },
+    {
+      "epoch": 1789550256.7107897,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.4713205379585425
+    },
+    {
+      "epoch": 1789550334.7011108,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.4992670697073142
+    },
+    {
+      "epoch": 1789550340.2841716,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5012676664729914
+    },
+    {
+      "epoch": 1789550345.8517995,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5032627331395945
+    },
+    {
+      "epoch": 1789550351.4076083,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.505253564620018
+    },
+    {
+      "epoch": 1789550449.6955159,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.540473398176829
+    },
+    {
+      "epoch": 1789550455.2678645,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5424701564232508
+    },
+    {
+      "epoch": 1789550460.838563,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.544466323385636
+    },
+    {
+      "epoch": 1789550475.4406235,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5496987284183502
+    },
+    {
+      "epoch": 1789550481.04031,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5517052827060223
+    },
+    {
+      "epoch": 1789550486.6432154,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5537129905144373
+    },
+    {
+      "epoch": 1789550562.9468627,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5810551307896773
+    },
+    {
+      "epoch": 1789550568.5830288,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5830747569739819
+    },
+    {
+      "epoch": 1789550574.1987123,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5850870435814063
+    },
+    {
+      "epoch": 1789550579.825311,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.5871032414118449
+    },
+    {
+      "epoch": 1789550657.3218973,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6148728515108427
+    },
+    {
+      "epoch": 1789550662.944085,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6168874687393506
+    },
+    {
+      "epoch": 1789550668.5714598,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6189039447406928
+    },
+    {
+      "epoch": 1789550674.2279675,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6209308600107829
+    },
+    {
+      "epoch": 1789550774.396772,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6568246815900008
+    },
+    {
+      "epoch": 1789550780.0347106,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6588449429710707
+    },
+    {
+      "epoch": 1789550785.691558,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6608719798982143
+    },
+    {
+      "epoch": 1789550791.3417587,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.66289663520058
+    },
+    {
+      "epoch": 1789550806.0056195,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6681511853198211
+    },
+    {
+      "epoch": 1789550811.6634753,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6701785836299261
+    },
+    {
+      "epoch": 1789550817.3079019,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6722011698226134
+    },
+    {
+      "epoch": 1789550822.958927,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6742261204679807
+    },
+    {
+      "epoch": 1789550828.5866656,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6762427268405756
+    },
+    {
+      "epoch": 1789550834.254613,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.678273741286993
+    },
+    {
+      "epoch": 1789550839.888083,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6802924013912678
+    },
+    {
+      "epoch": 1789550845.5478995,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6823205023050308
+    },
+    {
+      "epoch": 1789550851.196975,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6843447543621063
+    },
+    {
+      "epoch": 1789550856.847838,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6863696469128131
+    },
+    {
+      "epoch": 1789550862.478682,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6883873660544555
+    },
+    {
+      "epoch": 1789550868.1183956,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6904082634011904
+    },
+    {
+      "epoch": 1789550873.7371554,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6924216523547967
+    },
+    {
+      "epoch": 1789550879.3741055,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6944415594438712
+    },
+    {
+      "epoch": 1789550885.0641556,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.6964804940720399
+    },
+    {
+      "epoch": 1789550899.7883346,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.7017566582242648
+    },
+    {
+      "epoch": 1789550905.4699616,
+      "kind": "generation",
+      "role": "producer",
+      "step": 60,
+      "estimated_cost_upper_bound_usd": 0.7037925745785236
+    },
+    {
+      "epoch": 1789550915.0993392,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 61,
+      "estimated_cost_upper_bound_usd": 0.7072431015531222
+    },
+    {
+      "epoch": 1789550915.361069,
+      "kind": "loss",
+      "role": "producer",
+      "step": 61,
+      "estimated_cost_upper_bound_usd": 0.7073368880351385
+    },
+    {
+      "epoch": 1789550923.1007519,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 62,
+      "estimated_cost_upper_bound_usd": 0.7101102744122347
+    },
+    {
+      "epoch": 1789550923.36474,
+      "kind": "loss",
+      "role": "producer",
+      "step": 62,
+      "estimated_cost_upper_bound_usd": 0.7102048701186976
+    },
+    {
+      "epoch": 1789550931.166537,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 63,
+      "estimated_cost_upper_bound_usd": 0.7130005140980085
+    },
+    {
+      "epoch": 1789550931.433436,
+      "kind": "loss",
+      "role": "producer",
+      "step": 63,
+      "estimated_cost_upper_bound_usd": 0.7130961528599262
+    },
+    {
+      "epoch": 1789550939.5249248,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 64,
+      "estimated_cost_upper_bound_usd": 0.7159956030269464
+    },
+    {
+      "epoch": 1789550939.7951255,
+      "kind": "loss",
+      "role": "producer",
+      "step": 64,
+      "estimated_cost_upper_bound_usd": 0.7160924249549706
+    },
+    {
+      "epoch": 1789550947.2746992,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 65,
+      "estimated_cost_upper_bound_usd": 0.718772605540355
+    },
+    {
+      "epoch": 1789550947.5502589,
+      "kind": "loss",
+      "role": "producer",
+      "step": 65,
+      "estimated_cost_upper_bound_usd": 0.7188713477532069
+    },
+    {
+      "epoch": 1789550955.6626408,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 66,
+      "estimated_cost_upper_bound_usd": 0.7217782846132914
+    },
+    {
+      "epoch": 1789550955.9410274,
+      "kind": "loss",
+      "role": "producer",
+      "step": 66,
+      "estimated_cost_upper_bound_usd": 0.7218780398090681
+    },
+    {
+      "epoch": 1789550963.8602357,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 67,
+      "estimated_cost_upper_bound_usd": 0.7247157561123371
+    },
+    {
+      "epoch": 1789550964.142356,
+      "kind": "loss",
+      "role": "producer",
+      "step": 67,
+      "estimated_cost_upper_bound_usd": 0.7248168491939704
+    },
+    {
+      "epoch": 1789550971.985902,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 68,
+      "estimated_cost_upper_bound_usd": 0.7276274532318115
+    },
+    {
+      "epoch": 1789550972.267367,
+      "kind": "loss",
+      "role": "producer",
+      "step": 68,
+      "estimated_cost_upper_bound_usd": 0.7277283114572366
+    },
+    {
+      "epoch": 1789550979.9230661,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 69,
+      "estimated_cost_upper_bound_usd": 0.7304716036895911
+    },
+    {
+      "epoch": 1789550980.205385,
+      "kind": "loss",
+      "role": "producer",
+      "step": 69,
+      "estimated_cost_upper_bound_usd": 0.7305727679371834
+    },
+    {
+      "epoch": 1789550988.1178677,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 70,
+      "estimated_cost_upper_bound_usd": 0.7334080742518108
+    },
+    {
+      "epoch": 1789550988.4033172,
+      "kind": "loss",
+      "role": "producer",
+      "step": 70,
+      "estimated_cost_upper_bound_usd": 0.7335103603243828
+    },
+    {
+      "epoch": 1789550995.8025475,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 71,
+      "estimated_cost_upper_bound_usd": 0.736161751161019
+    },
+    {
+      "epoch": 1789550996.0926647,
+      "kind": "loss",
+      "role": "producer",
+      "step": 71,
+      "estimated_cost_upper_bound_usd": 0.7362657098472118
+    },
+    {
+      "epoch": 1789551004.407565,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 72,
+      "estimated_cost_upper_bound_usd": 0.7392452158232531
+    },
+    {
+      "epoch": 1789551004.6992056,
+      "kind": "loss",
+      "role": "producer",
+      "step": 72,
+      "estimated_cost_upper_bound_usd": 0.7393497203429541
+    },
+    {
+      "epoch": 1789551012.3386672,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 73,
+      "estimated_cost_upper_bound_usd": 0.742087194053332
+    },
+    {
+      "epoch": 1789551012.6377757,
+      "kind": "loss",
+      "role": "producer",
+      "step": 73,
+      "estimated_cost_upper_bound_usd": 0.7421943746010462
+    },
+    {
+      "epoch": 1789551020.482344,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 74,
+      "estimated_cost_upper_bound_usd": 0.7450053448915481
+    },
+    {
+      "epoch": 1789551020.7796445,
+      "kind": "loss",
+      "role": "producer",
+      "step": 74,
+      "estimated_cost_upper_bound_usd": 0.7451118775983652
+    },
+    {
+      "epoch": 1789551028.5360284,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 75,
+      "estimated_cost_upper_bound_usd": 0.7478912484943867
+    },
+    {
+      "epoch": 1789551028.8330958,
+      "kind": "loss",
+      "role": "producer",
+      "step": 75,
+      "estimated_cost_upper_bound_usd": 0.7479976976474126
+    },
+    {
+      "epoch": 1789551037.0391788,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 76,
+      "estimated_cost_upper_bound_usd": 0.7509382107436657
+    },
+    {
+      "epoch": 1789551037.342188,
+      "kind": "loss",
+      "role": "producer",
+      "step": 76,
+      "estimated_cost_upper_bound_usd": 0.7510467889805635
+    },
+    {
+      "epoch": 1789551045.2701392,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 77,
+      "estimated_cost_upper_bound_usd": 0.7538876382092635
+    },
+    {
+      "epoch": 1789551045.573838,
+      "kind": "loss",
+      "role": "producer",
+      "step": 77,
+      "estimated_cost_upper_bound_usd": 0.7539964636047681
+    },
+    {
+      "epoch": 1789551053.8256342,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 78,
+      "estimated_cost_upper_bound_usd": 0.7569533572594325
+    },
+    {
+      "epoch": 1789551054.1312382,
+      "kind": "loss",
+      "role": "producer",
+      "step": 78,
+      "estimated_cost_upper_bound_usd": 0.7570628653526307
+    },
+    {
+      "epoch": 1789551061.4655364,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 79,
+      "estimated_cost_upper_bound_usd": 0.7596909888505936
+    },
+    {
+      "epoch": 1789551061.780223,
+      "kind": "loss",
+      "role": "producer",
+      "step": 79,
+      "estimated_cost_upper_bound_usd": 0.7598037515262763
+    },
+    {
+      "epoch": 1789551069.8017862,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 80,
+      "estimated_cost_upper_bound_usd": 0.7626781450390816
+    },
+    {
+      "epoch": 1789551070.121396,
+      "kind": "loss",
+      "role": "producer",
+      "step": 80,
+      "estimated_cost_upper_bound_usd": 0.7627926719129086
+    },
+    {
+      "epoch": 1789551078.0077116,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 81,
+      "estimated_cost_upper_bound_usd": 0.7656186016639074
+    },
+    {
+      "epoch": 1789551078.322395,
+      "kind": "loss",
+      "role": "producer",
+      "step": 81,
+      "estimated_cost_upper_bound_usd": 0.7657313632289569
+    },
+    {
+      "epoch": 1789551085.9972298,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 82,
+      "estimated_cost_upper_bound_usd": 0.7684815123399099
+    },
+    {
+      "epoch": 1789551086.3121324,
+      "kind": "loss",
+      "role": "producer",
+      "step": 82,
+      "estimated_cost_upper_bound_usd": 0.7685943524181843
+    },
+    {
+      "epoch": 1789551094.6801128,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 83,
+      "estimated_cost_upper_bound_usd": 0.7715928787569205
+    },
+    {
+      "epoch": 1789551094.9991,
+      "kind": "loss",
+      "role": "producer",
+      "step": 83,
+      "estimated_cost_upper_bound_usd": 0.7717071824789048
+    },
+    {
+      "epoch": 1789551102.6313806,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 84,
+      "estimated_cost_upper_bound_usd": 0.7744420830229918
+    },
+    {
+      "epoch": 1789551102.9523983,
+      "kind": "loss",
+      "role": "producer",
+      "step": 84,
+      "estimated_cost_upper_bound_usd": 0.774557114380598
+    },
+    {
+      "epoch": 1789551110.6480603,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 85,
+      "estimated_cost_upper_bound_usd": 0.777314726605018
+    },
+    {
+      "epoch": 1789551110.9747033,
+      "kind": "loss",
+      "role": "producer",
+      "step": 85,
+      "estimated_cost_upper_bound_usd": 0.7774317736764749
+    },
+    {
+      "epoch": 1789551118.2998288,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 86,
+      "estimated_cost_upper_bound_usd": 0.7800566102981568
+    },
+    {
+      "epoch": 1789551118.628194,
+      "kind": "loss",
+      "role": "producer",
+      "step": 86,
+      "estimated_cost_upper_bound_usd": 0.7801742745399476
+    },
+    {
+      "epoch": 1789551126.6783302,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 87,
+      "estimated_cost_upper_bound_usd": 0.7830589066386223
+    },
+    {
+      "epoch": 1789551127.005726,
+      "kind": "loss",
+      "role": "producer",
+      "step": 87,
+      "estimated_cost_upper_bound_usd": 0.7831762235085169
+    },
+    {
+      "epoch": 1789551134.855787,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 88,
+      "estimated_cost_upper_bound_usd": 0.7859891620119412
+    },
+    {
+      "epoch": 1789551135.1887307,
+      "kind": "loss",
+      "role": "producer",
+      "step": 88,
+      "estimated_cost_upper_bound_usd": 0.7861084668298562
+    },
+    {
+      "epoch": 1789551143.4191706,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 89,
+      "estimated_cost_upper_bound_usd": 0.7890577077945073
+    },
+    {
+      "epoch": 1789551143.7605891,
+      "kind": "loss",
+      "role": "producer",
+      "step": 89,
+      "estimated_cost_upper_bound_usd": 0.7891800494253635
+    },
+    {
+      "epoch": 1789551152.195658,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 90,
+      "estimated_cost_upper_bound_usd": 0.792202615761757
+    },
+    {
+      "epoch": 1789551152.5310102,
+      "kind": "loss",
+      "role": "producer",
+      "step": 90,
+      "estimated_cost_upper_bound_usd": 0.7923227836271127
+    },
+    {
+      "epoch": 1789551160.412483,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 91,
+      "estimated_cost_upper_bound_usd": 0.7951469780564309
+    },
+    {
+      "epoch": 1789551160.7530608,
+      "kind": "loss",
+      "role": "producer",
+      "step": 91,
+      "estimated_cost_upper_bound_usd": 0.7952690184493859
+    },
+    {
+      "epoch": 1789551168.6403954,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 92,
+      "estimated_cost_upper_bound_usd": 0.7980953133424122
+    },
+    {
+      "epoch": 1789551168.9893513,
+      "kind": "loss",
+      "role": "producer",
+      "step": 92,
+      "estimated_cost_upper_bound_usd": 0.798220355862379
+    },
+    {
+      "epoch": 1789551177.3097227,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 93,
+      "estimated_cost_upper_bound_usd": 0.8012018222769102
+    },
+    {
+      "epoch": 1789551177.6563566,
+      "kind": "loss",
+      "role": "producer",
+      "step": 93,
+      "estimated_cost_upper_bound_usd": 0.8013260327617328
+    },
+    {
+      "epoch": 1789551185.4117303,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 94,
+      "estimated_cost_upper_bound_usd": 0.8041050416767597
+    },
+    {
+      "epoch": 1789551185.7603235,
+      "kind": "loss",
+      "role": "producer",
+      "step": 94,
+      "estimated_cost_upper_bound_usd": 0.8042299542526404
+    },
+    {
+      "epoch": 1789551193.7025404,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 95,
+      "estimated_cost_upper_bound_usd": 0.8070759152988592
+    },
+    {
+      "epoch": 1789551194.0502496,
+      "kind": "loss",
+      "role": "producer",
+      "step": 95,
+      "estimated_cost_upper_bound_usd": 0.807200511087974
+    },
+    {
+      "epoch": 1789551201.7250435,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 96,
+      "estimated_cost_upper_bound_usd": 0.8099506455898285
+    },
+    {
+      "epoch": 1789551202.0765219,
+      "kind": "loss",
+      "role": "producer",
+      "step": 96,
+      "estimated_cost_upper_bound_usd": 0.810076591994365
+    },
+    {
+      "epoch": 1789551209.925309,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 97,
+      "estimated_cost_upper_bound_usd": 0.8128890740275383
+    },
+    {
+      "epoch": 1789551210.2783487,
+      "kind": "loss",
+      "role": "producer",
+      "step": 97,
+      "estimated_cost_upper_bound_usd": 0.8130155799349149
+    },
+    {
+      "epoch": 1789551218.2121959,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 98,
+      "estimated_cost_upper_bound_usd": 0.8158585418442885
+    },
+    {
+      "epoch": 1789551218.5678508,
+      "kind": "loss",
+      "role": "producer",
+      "step": 98,
+      "estimated_cost_upper_bound_usd": 0.815985984869798
+    },
+    {
+      "epoch": 1789551226.5521913,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 99,
+      "estimated_cost_upper_bound_usd": 0.8188470401902993
+    },
+    {
+      "epoch": 1789551226.9141426,
+      "kind": "loss",
+      "role": "producer",
+      "step": 99,
+      "estimated_cost_upper_bound_usd": 0.8189767394244671
+    },
+    {
+      "epoch": 1789551235.1420705,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 100,
+      "estimated_cost_upper_bound_usd": 0.8219250802636147
+    },
+    {
+      "epoch": 1789551235.506309,
+      "kind": "loss",
+      "role": "producer",
+      "step": 100,
+      "estimated_cost_upper_bound_usd": 0.8220555990596612
+    },
+    {
+      "epoch": 1789551243.6426597,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 101,
+      "estimated_cost_upper_bound_usd": 0.8249711247026921
+    },
+    {
+      "epoch": 1789551244.0067844,
+      "kind": "loss",
+      "role": "producer",
+      "step": 101,
+      "estimated_cost_upper_bound_usd": 0.825101602747043
+    },
+    {
+      "epoch": 1789551251.7289107,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 102,
+      "estimated_cost_upper_bound_usd": 0.8278686979850133
+    },
+    {
+      "epoch": 1789551252.1018813,
+      "kind": "loss",
+      "role": "producer",
+      "step": 102,
+      "estimated_cost_upper_bound_usd": 0.828002345776558
+    },
+    {
+      "epoch": 1789551259.894336,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 103,
+      "estimated_cost_upper_bound_usd": 0.830794642051061
+    },
+    {
+      "epoch": 1789551260.2732925,
+      "kind": "loss",
+      "role": "producer",
+      "step": 103,
+      "estimated_cost_upper_bound_usd": 0.8309304348170757
+    },
+    {
+      "epoch": 1789551267.958861,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 104,
+      "estimated_cost_upper_bound_usd": 0.8336844302217166
+    },
+    {
+      "epoch": 1789551268.3291912,
+      "kind": "loss",
+      "role": "producer",
+      "step": 104,
+      "estimated_cost_upper_bound_usd": 0.8338171318391959
+    },
+    {
+      "epoch": 1789551276.1762495,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 105,
+      "estimated_cost_upper_bound_usd": 0.8366289943953356
+    },
+    {
+      "epoch": 1789551276.5559702,
+      "kind": "loss",
+      "role": "producer",
+      "step": 105,
+      "estimated_cost_upper_bound_usd": 0.8367650609751542
+    },
+    {
+      "epoch": 1789551284.4565682,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 106,
+      "estimated_cost_upper_bound_usd": 0.839596108609438
+    },
+    {
+      "epoch": 1789551284.8342454,
+      "kind": "loss",
+      "role": "producer",
+      "step": 106,
+      "estimated_cost_upper_bound_usd": 0.8397314429402352
+    },
+    {
+      "epoch": 1789551292.960117,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 107,
+      "estimated_cost_upper_bound_usd": 0.8426432136178017
+    },
+    {
+      "epoch": 1789551293.3427477,
+      "kind": "loss",
+      "role": "producer",
+      "step": 107,
+      "estimated_cost_upper_bound_usd": 0.842780322911342
+    },
+    {
+      "epoch": 1789551301.2451305,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 108,
+      "estimated_cost_upper_bound_usd": 0.8456120100994905
+    },
+    {
+      "epoch": 1789551301.637302,
+      "kind": "loss",
+      "role": "producer",
+      "step": 108,
+      "estimated_cost_upper_bound_usd": 0.8457525381783645
+    },
+    {
+      "epoch": 1789551309.6913671,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 109,
+      "estimated_cost_upper_bound_usd": 0.8486385782182216
+    },
+    {
+      "epoch": 1789551310.0777657,
+      "kind": "loss",
+      "role": "producer",
+      "step": 109,
+      "estimated_cost_upper_bound_usd": 0.8487770377000173
+    },
+    {
+      "epoch": 1789551318.0359352,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 110,
+      "estimated_cost_upper_bound_usd": 0.851628715089957
+    },
+    {
+      "epoch": 1789551318.4276886,
+      "kind": "loss",
+      "role": "producer",
+      "step": 110,
+      "estimated_cost_upper_bound_usd": 0.8517690934042136
+    },
+    {
+      "epoch": 1789551326.201019,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 111,
+      "estimated_cost_upper_bound_usd": 0.8545545368154844
+    },
+    {
+      "epoch": 1789551326.595309,
+      "kind": "loss",
+      "role": "producer",
+      "step": 111,
+      "estimated_cost_upper_bound_usd": 0.854695824054877
+    },
+    {
+      "epoch": 1789551334.078897,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 112,
+      "estimated_cost_upper_bound_usd": 0.8573774430811405
+    },
+    {
+      "epoch": 1789551334.4729583,
+      "kind": "loss",
+      "role": "producer",
+      "step": 112,
+      "estimated_cost_upper_bound_usd": 0.8575186483899753
+    },
+    {
+      "epoch": 1789551341.788564,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 113,
+      "estimated_cost_upper_bound_usd": 0.860140073744456
+    },
+    {
+      "epoch": 1789551342.1976683,
+      "kind": "loss",
+      "role": "producer",
+      "step": 113,
+      "estimated_cost_upper_bound_usd": 0.8602866694688798
+    },
+    {
+      "epoch": 1789551349.559142,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 114,
+      "estimated_cost_upper_bound_usd": 0.8629245309134325
+    },
+    {
+      "epoch": 1789551349.9580472,
+      "kind": "loss",
+      "role": "producer",
+      "step": 114,
+      "estimated_cost_upper_bound_usd": 0.8630674718856811
+    },
+    {
+      "epoch": 1789551358.240786,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 115,
+      "estimated_cost_upper_bound_usd": 0.8660354533334573
+    },
+    {
+      "epoch": 1789551358.6447875,
+      "kind": "loss",
+      "role": "producer",
+      "step": 115,
+      "estimated_cost_upper_bound_usd": 0.8661802205284437
+    },
+    {
+      "epoch": 1789551366.8324926,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 116,
+      "estimated_cost_upper_bound_usd": 0.8691141481677692
+    },
+    {
+      "epoch": 1789551367.2353387,
+      "kind": "loss",
+      "role": "producer",
+      "step": 116,
+      "estimated_cost_upper_bound_usd": 0.8692585013528665
+    },
+    {
+      "epoch": 1789551374.9925148,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 117,
+      "estimated_cost_upper_bound_usd": 0.8720381561438243
+    },
+    {
+      "epoch": 1789551375.3981357,
+      "kind": "loss",
+      "role": "producer",
+      "step": 117,
+      "estimated_cost_upper_bound_usd": 0.8721835036019484
+    },
+    {
+      "epoch": 1789551383.5061188,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 118,
+      "estimated_cost_upper_bound_usd": 0.8750888642172019
+    },
+    {
+      "epoch": 1789551383.9145715,
+      "kind": "loss",
+      "role": "producer",
+      "step": 118,
+      "estimated_cost_upper_bound_usd": 0.8752352264523506
+    },
+    {
+      "epoch": 1789551391.9481323,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 119,
+      "estimated_cost_upper_bound_usd": 0.8781139190554619
+    },
+    {
+      "epoch": 1789551392.3601062,
+      "kind": "loss",
+      "role": "producer",
+      "step": 119,
+      "estimated_cost_upper_bound_usd": 0.8782615430553754
+    },
+    {
+      "epoch": 1789551400.2348359,
+      "kind": "optimizer_step",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 0.8810833211739858
+    },
+    {
+      "epoch": 1789551400.6495922,
+      "kind": "loss",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 0.8812319421807925
+    },
+    {
+      "epoch": 1789551479.881472,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 0.9096233658293883
+    },
+    {
+      "epoch": 1789551574.0005279,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 0.9433493608057498
+    },
+    {
+      "epoch": 1789551660.173579,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 0.9742280374566714
+    },
+    {
+      "epoch": 1789551744.0441895,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.0042816728770734
+    },
+    {
+      "epoch": 1789551844.9392846,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.0404357486248017
+    },
+    {
+      "epoch": 1789551940.7265513,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.074759519203504
+    },
+    {
+      "epoch": 1789552004.6211243,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.097655074518919
+    },
+    {
+      "epoch": 1789552109.7391598,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.135322370592753
+    },
+    {
+      "epoch": 1789552207.280312,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.1702746168116729
+    },
+    {
+      "epoch": 1789552213.1300442,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.1723707708358764
+    },
+    {
+      "epoch": 1789552297.844766,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.2027268794377644
+    },
+    {
+      "epoch": 1789552403.1961088,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.2404777773161728
+    },
+    {
+      "epoch": 1789552479.3292334,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.267758813627561
+    },
+    {
+      "epoch": 1789552494.216236,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.2730933229307333
+    },
+    {
+      "epoch": 1789552500.0879216,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.2751973435699941
+    },
+    {
+      "epoch": 1789552564.3115969,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.298210827201605
+    },
+    {
+      "epoch": 1789552669.0707014,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.335749506310622
+    },
+    {
+      "epoch": 1789552766.5314894,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.3706729553480945
+    },
+    {
+      "epoch": 1789552772.3769836,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.3727675907949606
+    },
+    {
+      "epoch": 1789552859.8225017,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.4041022347509862
+    },
+    {
+      "epoch": 1789552966.4013686,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.4422929954111576
+    },
+    {
+      "epoch": 1789553044.9727654,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.4704477459410827
+    },
+    {
+      "epoch": 1789553139.3850212,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.5042788042565187
+    },
+    {
+      "epoch": 1789553225.6584437,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.5351934473117195
+    },
+    {
+      "epoch": 1789553309.69863,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.5653078474402429
+    },
+    {
+      "epoch": 1789553387.5958703,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.5932210251649221
+    },
+    {
+      "epoch": 1789553481.7833576,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.6269715414702892
+    },
+    {
+      "epoch": 1789553548.8351293,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.6509984263082347
+    },
+    {
+      "epoch": 1789553563.733206,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.6563369038184486
+    },
+    {
+      "epoch": 1789553569.6063852,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.658441459697485
+    },
+    {
+      "epoch": 1789553677.9024892,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.697247563614448
+    },
+    {
+      "epoch": 1789553778.6568549,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.7333512113173803
+    },
+    {
+      "epoch": 1789553784.5452864,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.7354612326224645
+    },
+    {
+      "epoch": 1789553870.9684353,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.7664295276343824
+    },
+    {
+      "epoch": 1789553977.2865484,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.8045268514911335
+    },
+    {
+      "epoch": 1789554055.15819,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.8324308564106624
+    },
+    {
+      "epoch": 1789554148.7837126,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.8659800020138424
+    },
+    {
+      "epoch": 1789554238.0171869,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.8979553302884102
+    },
+    {
+      "epoch": 1789554324.8294148,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.9290630453089872
+    },
+    {
+      "epoch": 1789554425.5675588,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.965160880213976
+    },
+    {
+      "epoch": 1789554519.5770009,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 1.9988475969632467
+    },
+    {
+      "epoch": 1789554555.8046727,
+      "kind": "SOFT_BUDGET_ASSESSMENT.json",
+      "estimated_cost_upper_bound_usd": 2.0118291793803373
+    },
+    {
+      "epoch": 1789554583.6014678,
+      "kind": "generation",
+      "role": "producer",
+      "step": 120,
+      "estimated_cost_upper_bound_usd": 2.021789697635174
+    },
+    {
+      "epoch": 1789554609.5082338,
+      "kind": "OPERATOR_BUDGET_STOP.json",
+      "estimated_cost_upper_bound_usd": 2.031072955429554
+    },
+    {
+      "epoch": 1789554760.406623,
+      "kind": "TERMINATION_VERIFIED.json",
+      "estimated_cost_upper_bound_usd": 2.085144878190756
+    }
+  ]
+}

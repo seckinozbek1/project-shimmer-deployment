@@ -1,0 +1,21 @@
+{
+  "evidence\\acquisition_auditor.json": "3a9f690e9f60c8371aad1ad0cd9020f8498155677b783d1f849534a8de8cf28c",
+  "evidence\\acquisition_producer.json": "ae9a60451d607635baa19828a4c3c179ef2985832097577201187b6513defeb5",
+  "evidence\\PRE_ACQUISITION_CHECKPOINT.json": "352c7ae6c44b8ba1bfcdccec4833e0a1d6628a86ddc271c49e91a5f21a489d26",
+  "evidence\\producer_events.json": "c8d75bd7f353f9b9b7775fa864d82b37b2f6b4cf384b7594973132ab24446a73",
+  "evidence\\producer_raw_dev.jsonl": "d5b8b8c36a66139691074735e7a27cf5dfa127a71f6ddb7f4bfe9188e71be3c2",
+  "evidence\\producer_telemetry.jsonl": "13996fb8c42795dbcd8b6c90595d066d8dc5dcfbc14044d37a598c94157535ba",
+  "evidence\\progress.json": "0d5c06377327e5dd52b54ba2b77913f0eb4e783218f787e20126a1e42709ac00",
+  "tools\\second_tuning_remote.py": "dfb7184adc951444c4c069bcf80cd7339989af6174e602826a935d4c2ce19860",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\checkpoint_metrics.json": "58d788df482a204e3c37b96284b3f405d3e84e6afe58b362e0d86c44af17ffb1",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\loss_diagnostics.json": "90fa3c57d137d7208c6c15cfb01f6317ef3c1040623b6b89e3b0e9b7d108f9af",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\RUN_BINDING.json": "2ef6a5e332b211e95ff5b82fb6ba42eac6be3eb9f06b87f13c86b9a290e99044",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\validation-60.json": "b3618c44ef643cbc69101b6a98bd8606f2c3eea48ae3a81698aa6fba678e597e",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\checkpoint-120\\adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\checkpoint-120\\adapter_model.safetensors": "3f1e12d107f1206641902565b28ea6217d70ff2768c321a216227dbc21b702a6",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\checkpoint-120\\README.md": "7573c8266227833fc396b42b4ff9790b6e14f77357d06db325e2e9275faa87a3",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\checkpoint-60\\adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\checkpoint-60\\adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8",
+  "runs\\second-domain-agnostic-v2\\canonical\\producer\\checkpoint-60\\README.md": "7573c8266227833fc396b42b4ff9790b6e14f77357d06db325e2e9275faa87a3",
+  "tuning\\second_domain_agnostic_v2\\freeze.json": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d"
+}
