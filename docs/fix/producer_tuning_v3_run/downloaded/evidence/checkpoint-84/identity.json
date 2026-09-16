@@ -1,0 +1,8 @@
+{
+  "experiment": "producer-targeted-v3",
+  "step": 84,
+  "files": {
+    "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+    "adapter_model.safetensors": "ddb2a0ba6e8687be573fafabb4f6d37a899142d5d9877c2c22ea06acc217816b"
+  }
+}

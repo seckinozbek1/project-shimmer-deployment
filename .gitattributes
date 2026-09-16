@@ -23,3 +23,5 @@ docs/fix/PRODUCER_CHECKPOINT120_EVAL_V2_1_RESULTS.md -text
 
 tuning/producer_v3/** -text
 docs/fix/PRODUCER_TUNING_V3_DESIGN.md -text
+docs/fix/producer_tuning_v3_run/** -text
+docs/fix/PRODUCER_TUNING_V3_RESULTS.md -text

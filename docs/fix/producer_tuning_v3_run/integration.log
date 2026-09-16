@@ -1,0 +1,11 @@
+test_checkpoint_restore_order (__main__.Checks.test_checkpoint_restore_order) ... ok
+test_each_pass_not_combined (__main__.Checks.test_each_pass_not_combined) ... ok
+test_frozen_schedule (__main__.Checks.test_frozen_schedule) ... ok
+test_no_old_adapter_or_ambient_trace (__main__.Checks.test_no_old_adapter_or_ambient_trace) ... ok
+test_sources_compile (__main__.Checks.test_sources_compile) ... ok
+test_state_restoration_without_generation (__main__.Checks.test_state_restoration_without_generation) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.032s
+
+OK

@@ -1,0 +1,2090 @@
+{
+  "optimizer_schedule": [
+    {
+      "step": 1,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-243",
+        "shimmer2-producer-document-073",
+        "shimmer2-producer-document-217",
+        "shimmer2-producer-document-178"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 2,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-130",
+        "shimmer2-producer-document-009",
+        "shimmer2-producer-document-085",
+        "shimmer2-producer-document-238"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 3,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-008",
+        "shimmer2-producer-document-264",
+        "shimmer2-producer-document-261",
+        "producer-v3-document-001-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 4,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-040",
+        "shimmer2-producer-document-065",
+        "producer-v3-document-036-extract",
+        "producer-v3-document-030-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 5,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-036",
+        "shimmer2-producer-document-177",
+        "shimmer2-producer-document-256",
+        "producer-v3-document-031-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 6,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-087-extract",
+        "shimmer2-producer-document-208",
+        "shimmer2-producer-document-221",
+        "producer-v3-document-017-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 7,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-196",
+        "shimmer2-producer-document-293",
+        "producer-v3-document-040-extract",
+        "shimmer2-producer-document-004"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 8,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-265",
+        "producer-v3-document-057-extract",
+        "producer-v3-document-002-extract",
+        "shimmer2-producer-document-100"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 9,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-034",
+        "shimmer2-producer-document-091",
+        "shimmer2-producer-document-090",
+        "shimmer2-producer-document-252"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 10,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-069",
+        "shimmer2-producer-document-027",
+        "producer-v3-document-052-extract",
+        "shimmer2-producer-document-194"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 11,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-005-extract",
+        "shimmer2-producer-document-089",
+        "shimmer2-producer-document-007",
+        "shimmer2-producer-document-098"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 12,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-101",
+        "shimmer2-producer-document-062",
+        "shimmer2-producer-document-022",
+        "shimmer2-producer-document-190"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 13,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-041-refuse",
+        "shimmer2-producer-document-237",
+        "producer-v3-document-089-extract",
+        "shimmer2-producer-document-134"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 14,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-071",
+        "shimmer2-producer-document-204",
+        "shimmer2-producer-document-173",
+        "shimmer2-producer-document-012"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 15,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-004-extract",
+        "shimmer2-producer-document-167",
+        "shimmer2-producer-document-180",
+        "shimmer2-producer-document-170"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 16,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-081-refuse",
+        "shimmer2-producer-document-297",
+        "shimmer2-producer-document-126",
+        "shimmer2-producer-document-080"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 17,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-072",
+        "producer-v3-document-086-extract",
+        "shimmer2-producer-document-288",
+        "producer-v3-document-094-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 18,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-020-extract",
+        "shimmer2-producer-document-239",
+        "shimmer2-producer-document-236",
+        "shimmer2-producer-document-114"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 19,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-211",
+        "producer-v3-document-000-refuse",
+        "shimmer2-producer-document-233",
+        "shimmer2-producer-document-183"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 20,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-257",
+        "shimmer2-producer-document-066",
+        "producer-v3-document-050-extract",
+        "producer-v3-document-096-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 21,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-093",
+        "shimmer2-producer-document-206",
+        "shimmer2-producer-document-209",
+        "shimmer2-producer-document-244"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 22,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-175",
+        "shimmer2-producer-document-199",
+        "producer-v3-document-049-extract",
+        "shimmer2-producer-document-287"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 23,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-227",
+        "shimmer2-producer-document-266",
+        "shimmer2-producer-document-118",
+        "shimmer2-producer-document-214"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 24,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-008-extract",
+        "producer-v3-document-002-refuse",
+        "shimmer2-producer-document-011",
+        "shimmer2-producer-document-097"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 25,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-207",
+        "shimmer2-producer-document-119",
+        "shimmer2-producer-document-231",
+        "producer-v3-document-003-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 26,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-296",
+        "producer-v3-document-088-extract",
+        "shimmer2-producer-document-132",
+        "shimmer2-producer-document-290"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 27,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-218",
+        "shimmer2-producer-document-186",
+        "shimmer2-producer-document-002",
+        "shimmer2-producer-document-081"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 28,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-245",
+        "shimmer2-producer-document-174",
+        "shimmer2-producer-document-250",
+        "shimmer2-producer-document-165"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 29,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-251",
+        "shimmer2-producer-document-212",
+        "producer-v3-document-019-extract",
+        "shimmer2-producer-document-110"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 30,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-022-refuse",
+        "shimmer2-producer-document-179",
+        "shimmer2-producer-document-010",
+        "producer-v3-document-011-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 31,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-246",
+        "shimmer2-producer-document-076",
+        "shimmer2-producer-document-294",
+        "shimmer2-producer-document-077"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 32,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-123",
+        "shimmer2-producer-document-014",
+        "producer-v3-document-016-extract",
+        "shimmer2-producer-document-295"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 33,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-021-refuse",
+        "producer-v3-document-033-extract",
+        "shimmer2-producer-document-079",
+        "shimmer2-producer-document-184"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 34,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-041-extract",
+        "shimmer2-producer-document-286",
+        "shimmer2-producer-document-018",
+        "shimmer2-producer-document-006"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 35,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-108",
+        "producer-v3-document-053-extract",
+        "shimmer2-producer-document-182",
+        "shimmer2-producer-document-226"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 36,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-000",
+        "producer-v3-document-023-refuse",
+        "producer-v3-document-039-extract",
+        "producer-v3-document-003-refuse"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 37,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-028",
+        "producer-v3-document-082-extract",
+        "shimmer2-producer-document-127",
+        "shimmer2-producer-document-068"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 38,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-299",
+        "producer-v3-document-093-extract",
+        "producer-v3-document-014-extract",
+        "shimmer2-producer-document-200"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 39,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-083-extract",
+        "shimmer2-producer-document-026",
+        "producer-v3-document-043-extract",
+        "shimmer2-producer-document-242"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 40,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-054-extract",
+        "producer-v3-document-007-extract",
+        "shimmer2-producer-document-188",
+        "producer-v3-document-000-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 41,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-013",
+        "shimmer2-producer-document-203",
+        "shimmer2-producer-document-176",
+        "producer-v3-document-042-refuse"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 42,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-096",
+        "shimmer2-producer-document-189",
+        "shimmer2-producer-document-258",
+        "shimmer2-producer-document-109"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 43,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-181",
+        "shimmer2-producer-document-122",
+        "producer-v3-document-020-refuse",
+        "shimmer2-producer-document-001"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 44,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-085-extract",
+        "shimmer2-producer-document-082",
+        "producer-v3-document-082-refuse",
+        "shimmer2-producer-document-195"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 45,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-025-extract",
+        "shimmer2-producer-document-003",
+        "producer-v3-document-080-refuse",
+        "shimmer2-producer-document-213"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 46,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-029-extract",
+        "shimmer2-producer-document-229",
+        "shimmer2-producer-document-060",
+        "shimmer2-producer-document-021"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 47,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-038",
+        "shimmer2-producer-document-074",
+        "shimmer2-producer-document-112",
+        "shimmer2-producer-document-285"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 48,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-106",
+        "shimmer2-producer-document-121",
+        "shimmer2-producer-document-225",
+        "producer-v3-document-035-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 49,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-253",
+        "shimmer2-producer-document-125",
+        "producer-v3-document-083-refuse",
+        "shimmer2-producer-document-086"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 50,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-185",
+        "shimmer2-producer-document-117",
+        "shimmer2-producer-document-268",
+        "shimmer2-producer-document-042"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 51,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-012-extract",
+        "producer-v3-document-001-refuse",
+        "shimmer2-producer-document-115",
+        "shimmer2-producer-document-116"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 52,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-080-extract",
+        "shimmer2-producer-document-234",
+        "shimmer2-producer-document-033",
+        "producer-v3-document-058-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 53,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-241",
+        "shimmer2-producer-document-070",
+        "shimmer2-producer-document-291",
+        "shimmer2-producer-document-171"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 54,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-090-extract",
+        "shimmer2-producer-document-201",
+        "shimmer2-producer-document-043",
+        "shimmer2-producer-document-105"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 55,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-133",
+        "shimmer2-producer-document-005",
+        "shimmer2-producer-document-103",
+        "shimmer2-producer-document-216"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 56,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-113",
+        "shimmer2-producer-document-228",
+        "shimmer2-producer-document-087",
+        "producer-v3-document-059-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 57,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-255",
+        "shimmer2-producer-document-219",
+        "producer-v3-document-021-extract",
+        "producer-v3-document-099-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 58,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-094",
+        "shimmer2-producer-document-224",
+        "producer-v3-document-092-extract",
+        "shimmer2-producer-document-015"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 59,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-016",
+        "shimmer2-producer-document-215",
+        "shimmer2-producer-document-223",
+        "shimmer2-producer-document-166"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 60,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-084",
+        "producer-v3-document-051-extract",
+        "producer-v3-document-013-extract",
+        "shimmer2-producer-document-017"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 61,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-131",
+        "shimmer2-producer-document-249",
+        "producer-v3-document-048-extract",
+        "producer-v3-document-027-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 62,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-197",
+        "shimmer2-producer-document-104",
+        "shimmer2-producer-document-222",
+        "shimmer2-producer-document-102"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 63,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-095",
+        "shimmer2-producer-document-254",
+        "shimmer2-producer-document-269",
+        "producer-v3-document-097-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 64,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-191",
+        "shimmer2-producer-document-187",
+        "shimmer2-producer-document-240",
+        "shimmer2-producer-document-039"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 65,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-020",
+        "shimmer2-producer-document-260",
+        "producer-v3-document-006-extract",
+        "producer-v3-document-098-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 66,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-023-extract",
+        "shimmer2-producer-document-099",
+        "producer-v3-document-055-extract",
+        "producer-v3-document-018-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 67,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-044-extract",
+        "producer-v3-document-095-extract",
+        "shimmer2-producer-document-192",
+        "shimmer2-producer-document-289"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 68,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-220",
+        "producer-v3-document-009-extract",
+        "producer-v3-document-022-extract",
+        "producer-v3-document-045-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 69,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-041",
+        "shimmer2-producer-document-169",
+        "producer-v3-document-056-extract",
+        "shimmer2-producer-document-172"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 70,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-198",
+        "shimmer2-producer-document-230",
+        "shimmer2-producer-document-292",
+        "shimmer2-producer-document-298"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 71,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-205",
+        "shimmer2-producer-document-263",
+        "producer-v3-document-024-extract",
+        "producer-v3-document-010-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 72,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-120",
+        "producer-v3-document-081-extract",
+        "shimmer2-producer-document-032",
+        "producer-v3-document-032-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 73,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-064",
+        "shimmer2-producer-document-235",
+        "shimmer2-producer-document-111",
+        "shimmer2-producer-document-067"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 74,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-107",
+        "producer-v3-document-038-extract",
+        "shimmer2-producer-document-202",
+        "producer-v3-document-042-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 75,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-075",
+        "producer-v3-document-028-extract",
+        "shimmer2-producer-document-088",
+        "producer-v3-document-084-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 76,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-193",
+        "shimmer2-producer-document-083",
+        "producer-v3-document-037-extract",
+        "shimmer2-producer-document-023"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 77,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-128",
+        "shimmer2-producer-document-025",
+        "shimmer2-producer-document-248",
+        "producer-v3-document-047-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 78,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-043-refuse",
+        "shimmer2-producer-document-031",
+        "producer-v3-document-091-extract",
+        "shimmer2-producer-document-129"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 79,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-078",
+        "producer-v3-document-040-refuse",
+        "shimmer2-producer-document-030",
+        "shimmer2-producer-document-262"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 80,
+      "epoch": 1,
+      "example_ids": [
+        "producer-v3-document-034-extract",
+        "shimmer2-producer-document-061",
+        "shimmer2-producer-document-168",
+        "shimmer2-producer-document-035"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 81,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-259",
+        "shimmer2-producer-document-267",
+        "shimmer2-producer-document-044",
+        "shimmer2-producer-document-019"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 82,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-124",
+        "producer-v3-document-015-extract",
+        "shimmer2-producer-document-029",
+        "producer-v3-document-046-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 83,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-232",
+        "shimmer2-producer-document-063",
+        "producer-v3-document-026-extract",
+        "shimmer2-producer-document-037"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 84,
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-producer-document-024",
+        "shimmer2-producer-document-247",
+        "shimmer2-producer-document-092",
+        "shimmer2-producer-document-210"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 85,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-080-extract",
+        "shimmer2-producer-document-286",
+        "shimmer2-producer-document-075",
+        "shimmer2-producer-document-132"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 86,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-100",
+        "shimmer2-producer-document-260",
+        "producer-v3-document-089-extract",
+        "shimmer2-producer-document-067"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 87,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-246",
+        "shimmer2-producer-document-257",
+        "producer-v3-document-084-extract",
+        "producer-v3-document-035-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 88,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-030-extract",
+        "producer-v3-document-025-extract",
+        "producer-v3-document-043-extract",
+        "shimmer2-producer-document-175"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 89,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-094-extract",
+        "producer-v3-document-041-refuse",
+        "shimmer2-producer-document-076",
+        "producer-v3-document-055-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 90,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-038-extract",
+        "shimmer2-producer-document-011",
+        "producer-v3-document-040-extract",
+        "producer-v3-document-054-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 91,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-103",
+        "shimmer2-producer-document-018",
+        "shimmer2-producer-document-009",
+        "producer-v3-document-056-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 92,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-097-extract",
+        "shimmer2-producer-document-215",
+        "producer-v3-document-047-extract",
+        "producer-v3-document-014-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 93,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-262",
+        "shimmer2-producer-document-296",
+        "shimmer2-producer-document-201",
+        "producer-v3-document-022-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 94,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-039-extract",
+        "shimmer2-producer-document-002",
+        "shimmer2-producer-document-187",
+        "producer-v3-document-020-refuse"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 95,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-232",
+        "shimmer2-producer-document-184",
+        "shimmer2-producer-document-256",
+        "shimmer2-producer-document-007"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 96,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-000-refuse",
+        "shimmer2-producer-document-206",
+        "shimmer2-producer-document-200",
+        "shimmer2-producer-document-285"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 97,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-033",
+        "shimmer2-producer-document-299",
+        "producer-v3-document-031-extract",
+        "shimmer2-producer-document-094"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 98,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-036-extract",
+        "shimmer2-producer-document-182",
+        "shimmer2-producer-document-202",
+        "shimmer2-producer-document-231"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 99,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-204",
+        "shimmer2-producer-document-268",
+        "producer-v3-document-012-extract",
+        "shimmer2-producer-document-224"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 100,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-106",
+        "shimmer2-producer-document-040",
+        "shimmer2-producer-document-071",
+        "shimmer2-producer-document-120"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 101,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-086",
+        "shimmer2-producer-document-099",
+        "shimmer2-producer-document-083",
+        "shimmer2-producer-document-105"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 102,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-048-extract",
+        "shimmer2-producer-document-014",
+        "shimmer2-producer-document-269",
+        "producer-v3-document-037-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 103,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-078",
+        "shimmer2-producer-document-222",
+        "shimmer2-producer-document-261",
+        "shimmer2-producer-document-034"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 104,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-216",
+        "producer-v3-document-096-extract",
+        "producer-v3-document-045-extract",
+        "producer-v3-document-008-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 105,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-207",
+        "shimmer2-producer-document-186",
+        "shimmer2-producer-document-061",
+        "shimmer2-producer-document-183"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 106,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-092",
+        "shimmer2-producer-document-117",
+        "shimmer2-producer-document-082",
+        "producer-v3-document-029-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 107,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-170",
+        "producer-v3-document-052-extract",
+        "producer-v3-document-002-extract",
+        "shimmer2-producer-document-026"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 108,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-208",
+        "shimmer2-producer-document-089",
+        "producer-v3-document-081-refuse",
+        "shimmer2-producer-document-124"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 109,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-077",
+        "shimmer2-producer-document-025",
+        "shimmer2-producer-document-192",
+        "shimmer2-producer-document-230"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 110,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-197",
+        "producer-v3-document-082-refuse",
+        "shimmer2-producer-document-219",
+        "shimmer2-producer-document-223"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 111,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-243",
+        "shimmer2-producer-document-081",
+        "shimmer2-producer-document-198",
+        "shimmer2-producer-document-109"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 112,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-118",
+        "shimmer2-producer-document-062",
+        "shimmer2-producer-document-209",
+        "producer-v3-document-085-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 113,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-092-extract",
+        "shimmer2-producer-document-167",
+        "shimmer2-producer-document-245",
+        "shimmer2-producer-document-095"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 114,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-188",
+        "producer-v3-document-088-extract",
+        "shimmer2-producer-document-168",
+        "shimmer2-producer-document-133"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 115,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-086-extract",
+        "shimmer2-producer-document-110",
+        "producer-v3-document-059-extract",
+        "shimmer2-producer-document-194"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 116,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-091-extract",
+        "shimmer2-producer-document-093",
+        "shimmer2-producer-document-037",
+        "shimmer2-producer-document-185"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 117,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-098-extract",
+        "shimmer2-producer-document-236",
+        "shimmer2-producer-document-097",
+        "producer-v3-document-053-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 118,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-249",
+        "shimmer2-producer-document-235",
+        "shimmer2-producer-document-173",
+        "shimmer2-producer-document-212"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 119,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-180",
+        "shimmer2-producer-document-217",
+        "shimmer2-producer-document-229",
+        "shimmer2-producer-document-005"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 120,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-001",
+        "shimmer2-producer-document-069",
+        "producer-v3-document-027-extract",
+        "shimmer2-producer-document-028"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 121,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-264",
+        "shimmer2-producer-document-012",
+        "shimmer2-producer-document-065",
+        "shimmer2-producer-document-013"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 122,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-211",
+        "producer-v3-document-099-extract",
+        "shimmer2-producer-document-291",
+        "shimmer2-producer-document-115"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 123,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-265",
+        "producer-v3-document-044-extract",
+        "shimmer2-producer-document-023",
+        "shimmer2-producer-document-176"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 124,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-040-refuse",
+        "producer-v3-document-041-extract",
+        "shimmer2-producer-document-130",
+        "producer-v3-document-018-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 125,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-252",
+        "shimmer2-producer-document-031",
+        "shimmer2-producer-document-289",
+        "shimmer2-producer-document-247"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 126,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-166",
+        "producer-v3-document-083-refuse",
+        "shimmer2-producer-document-072",
+        "producer-v3-document-049-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 127,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-297",
+        "shimmer2-producer-document-254",
+        "shimmer2-producer-document-233",
+        "shimmer2-producer-document-128"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 128,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-125",
+        "shimmer2-producer-document-101",
+        "producer-v3-document-081-extract",
+        "producer-v3-document-003-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 129,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-193",
+        "shimmer2-producer-document-255",
+        "producer-v3-document-023-extract",
+        "producer-v3-document-087-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 130,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-068",
+        "shimmer2-producer-document-172",
+        "shimmer2-producer-document-210",
+        "shimmer2-producer-document-000"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 131,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-108",
+        "shimmer2-producer-document-098",
+        "shimmer2-producer-document-104",
+        "shimmer2-producer-document-294"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 132,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-030",
+        "producer-v3-document-034-extract",
+        "producer-v3-document-002-refuse",
+        "producer-v3-document-082-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 133,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-080-refuse",
+        "shimmer2-producer-document-267",
+        "shimmer2-producer-document-004",
+        "shimmer2-producer-document-063"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 134,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-016",
+        "shimmer2-producer-document-199",
+        "shimmer2-producer-document-038",
+        "shimmer2-producer-document-226"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 135,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-057-extract",
+        "shimmer2-producer-document-174",
+        "shimmer2-producer-document-039",
+        "shimmer2-producer-document-107"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 136,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-179",
+        "shimmer2-producer-document-178",
+        "shimmer2-producer-document-290",
+        "shimmer2-producer-document-027"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 137,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-000-extract",
+        "shimmer2-producer-document-021",
+        "shimmer2-producer-document-008",
+        "shimmer2-producer-document-024"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 138,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-228",
+        "shimmer2-producer-document-088",
+        "producer-v3-document-011-extract",
+        "shimmer2-producer-document-195"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 139,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-020",
+        "producer-v3-document-003-refuse",
+        "shimmer2-producer-document-266",
+        "shimmer2-producer-document-129"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 140,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-189",
+        "shimmer2-producer-document-119",
+        "shimmer2-producer-document-035",
+        "shimmer2-producer-document-074"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 141,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-126",
+        "producer-v3-document-021-refuse",
+        "producer-v3-document-093-extract",
+        "shimmer2-producer-document-259"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 142,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-102",
+        "shimmer2-producer-document-112",
+        "shimmer2-producer-document-240",
+        "shimmer2-producer-document-248"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 143,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-003",
+        "producer-v3-document-001-refuse",
+        "producer-v3-document-007-extract",
+        "shimmer2-producer-document-041"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 144,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-241",
+        "shimmer2-producer-document-066",
+        "producer-v3-document-016-extract",
+        "producer-v3-document-032-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 145,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-214",
+        "shimmer2-producer-document-298",
+        "shimmer2-producer-document-042",
+        "producer-v3-document-046-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 146,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-023-refuse",
+        "shimmer2-producer-document-213",
+        "producer-v3-document-043-refuse",
+        "producer-v3-document-042-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 147,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-288",
+        "shimmer2-producer-document-225",
+        "shimmer2-producer-document-258",
+        "producer-v3-document-022-refuse"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 148,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-111",
+        "shimmer2-producer-document-080",
+        "shimmer2-producer-document-123",
+        "shimmer2-producer-document-017"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 149,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-058-extract",
+        "producer-v3-document-019-extract",
+        "shimmer2-producer-document-220",
+        "shimmer2-producer-document-196"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 150,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-006",
+        "shimmer2-producer-document-169",
+        "shimmer2-producer-document-221",
+        "shimmer2-producer-document-127"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 151,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-090-extract",
+        "shimmer2-producer-document-036",
+        "producer-v3-document-017-extract",
+        "shimmer2-producer-document-190"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 152,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-026-extract",
+        "shimmer2-producer-document-091",
+        "shimmer2-producer-document-203",
+        "shimmer2-producer-document-116"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 153,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-013-extract",
+        "producer-v3-document-083-extract",
+        "producer-v3-document-033-extract",
+        "shimmer2-producer-document-205"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 154,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-024-extract",
+        "producer-v3-document-051-extract",
+        "shimmer2-producer-document-096",
+        "shimmer2-producer-document-084"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 155,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-263",
+        "shimmer2-producer-document-227",
+        "shimmer2-producer-document-191",
+        "shimmer2-producer-document-287"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 156,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-293",
+        "shimmer2-producer-document-090",
+        "shimmer2-producer-document-114",
+        "producer-v3-document-006-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 157,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-019",
+        "producer-v3-document-028-extract",
+        "producer-v3-document-050-extract",
+        "shimmer2-producer-document-087"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 158,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-121",
+        "producer-v3-document-020-extract",
+        "producer-v3-document-010-extract",
+        "shimmer2-producer-document-044"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 159,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-165",
+        "shimmer2-producer-document-218",
+        "shimmer2-producer-document-029",
+        "shimmer2-producer-document-070"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 160,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-238",
+        "shimmer2-producer-document-242",
+        "shimmer2-producer-document-032",
+        "shimmer2-producer-document-064"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 161,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-177",
+        "shimmer2-producer-document-073",
+        "shimmer2-producer-document-239",
+        "producer-v3-document-001-extract"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 162,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-253",
+        "producer-v3-document-021-extract",
+        "shimmer2-producer-document-181",
+        "shimmer2-producer-document-010"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 163,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-134",
+        "producer-v3-document-004-extract",
+        "shimmer2-producer-document-060",
+        "shimmer2-producer-document-251"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 164,
+      "epoch": 2,
+      "example_ids": [
+        "producer-v3-document-095-extract",
+        "producer-v3-document-042-refuse",
+        "producer-v3-document-009-extract",
+        "shimmer2-producer-document-244"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 165,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-292",
+        "producer-v3-document-005-extract",
+        "shimmer2-producer-document-295",
+        "shimmer2-producer-document-015"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 166,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-250",
+        "shimmer2-producer-document-122",
+        "producer-v3-document-015-extract",
+        "shimmer2-producer-document-171"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 167,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-085",
+        "shimmer2-producer-document-043",
+        "shimmer2-producer-document-022",
+        "shimmer2-producer-document-113"
+      ],
+      "loss_divisor": 4
+    },
+    {
+      "step": 168,
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-producer-document-079",
+        "shimmer2-producer-document-237",
+        "shimmer2-producer-document-234",
+        "shimmer2-producer-document-131"
+      ],
+      "loss_divisor": 4
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint": 84,
+      "dev_ids": [
+        "shimmer2-producer-document-045",
+        "shimmer2-producer-document-046",
+        "shimmer2-producer-document-047",
+        "shimmer2-producer-document-048",
+        "shimmer2-producer-document-049",
+        "shimmer2-producer-document-050",
+        "shimmer2-producer-document-051",
+        "shimmer2-producer-document-052",
+        "shimmer2-producer-document-053",
+        "shimmer2-producer-document-054",
+        "shimmer2-producer-document-055",
+        "shimmer2-producer-document-056",
+        "shimmer2-producer-document-057",
+        "shimmer2-producer-document-058",
+        "shimmer2-producer-document-059",
+        "shimmer2-producer-document-135",
+        "shimmer2-producer-document-136",
+        "shimmer2-producer-document-137",
+        "shimmer2-producer-document-138",
+        "shimmer2-producer-document-139",
+        "shimmer2-producer-document-140",
+        "shimmer2-producer-document-141",
+        "shimmer2-producer-document-142",
+        "shimmer2-producer-document-143",
+        "shimmer2-producer-document-144",
+        "shimmer2-producer-document-145",
+        "shimmer2-producer-document-146",
+        "shimmer2-producer-document-147",
+        "shimmer2-producer-document-148",
+        "shimmer2-producer-document-149",
+        "shimmer2-producer-document-150",
+        "shimmer2-producer-document-151",
+        "shimmer2-producer-document-152",
+        "shimmer2-producer-document-153",
+        "shimmer2-producer-document-154",
+        "shimmer2-producer-document-155",
+        "shimmer2-producer-document-156",
+        "shimmer2-producer-document-157",
+        "shimmer2-producer-document-158",
+        "shimmer2-producer-document-159",
+        "shimmer2-producer-document-160",
+        "shimmer2-producer-document-161",
+        "shimmer2-producer-document-162",
+        "shimmer2-producer-document-163",
+        "shimmer2-producer-document-164",
+        "shimmer2-producer-document-270",
+        "shimmer2-producer-document-271",
+        "shimmer2-producer-document-272",
+        "shimmer2-producer-document-273",
+        "shimmer2-producer-document-274",
+        "shimmer2-producer-document-275",
+        "shimmer2-producer-document-276",
+        "shimmer2-producer-document-277",
+        "shimmer2-producer-document-278",
+        "shimmer2-producer-document-279",
+        "shimmer2-producer-document-280",
+        "shimmer2-producer-document-281",
+        "shimmer2-producer-document-282",
+        "shimmer2-producer-document-283",
+        "shimmer2-producer-document-284",
+        "producer-v3-document-060-extract",
+        "producer-v3-document-060-refuse",
+        "producer-v3-document-061-extract",
+        "producer-v3-document-061-refuse",
+        "producer-v3-document-062-extract",
+        "producer-v3-document-062-refuse",
+        "producer-v3-document-063-extract",
+        "producer-v3-document-063-refuse",
+        "producer-v3-document-064-extract",
+        "producer-v3-document-065-extract",
+        "producer-v3-document-066-extract",
+        "producer-v3-document-067-extract",
+        "producer-v3-document-068-extract",
+        "producer-v3-document-069-extract",
+        "producer-v3-document-070-extract",
+        "producer-v3-document-071-extract",
+        "producer-v3-document-072-extract",
+        "producer-v3-document-073-extract",
+        "producer-v3-document-074-extract",
+        "producer-v3-document-075-extract",
+        "producer-v3-document-076-extract",
+        "producer-v3-document-077-extract",
+        "producer-v3-document-078-extract",
+        "producer-v3-document-079-extract"
+      ],
+      "control_ids": [
+        "shimmer2-producer-document-045",
+        "shimmer2-producer-document-059",
+        "shimmer2-producer-document-148",
+        "shimmer2-producer-document-162",
+        "shimmer2-producer-document-281",
+        "producer-v3-document-066-extract"
+      ],
+      "generation_kwargs": {
+        "do_sample": false,
+        "num_beams": 1,
+        "use_cache": true,
+        "max_new_tokens": 288,
+        "eos_token_id": [
+          151645
+        ],
+        "pad_token_id": 151654
+      },
+      "context_function": "eval_runtime.real_runtime_context_preflight",
+      "evaluation_state_function": "eval_runtime.evaluation_state",
+      "stages": [
+        "verified checkpoint identity",
+        "context preflight without generation",
+        "cache probe first two forwards",
+        "six fixed optimized duplicate controls with exact token/decoded/semantic/stop identity",
+        "full fresh 84-row DEV"
+      ],
+      "model_execution_authorized": false
+    },
+    {
+      "checkpoint": 168,
+      "dev_ids": [
+        "shimmer2-producer-document-045",
+        "shimmer2-producer-document-046",
+        "shimmer2-producer-document-047",
+        "shimmer2-producer-document-048",
+        "shimmer2-producer-document-049",
+        "shimmer2-producer-document-050",
+        "shimmer2-producer-document-051",
+        "shimmer2-producer-document-052",
+        "shimmer2-producer-document-053",
+        "shimmer2-producer-document-054",
+        "shimmer2-producer-document-055",
+        "shimmer2-producer-document-056",
+        "shimmer2-producer-document-057",
+        "shimmer2-producer-document-058",
+        "shimmer2-producer-document-059",
+        "shimmer2-producer-document-135",
+        "shimmer2-producer-document-136",
+        "shimmer2-producer-document-137",
+        "shimmer2-producer-document-138",
+        "shimmer2-producer-document-139",
+        "shimmer2-producer-document-140",
+        "shimmer2-producer-document-141",
+        "shimmer2-producer-document-142",
+        "shimmer2-producer-document-143",
+        "shimmer2-producer-document-144",
+        "shimmer2-producer-document-145",
+        "shimmer2-producer-document-146",
+        "shimmer2-producer-document-147",
+        "shimmer2-producer-document-148",
+        "shimmer2-producer-document-149",
+        "shimmer2-producer-document-150",
+        "shimmer2-producer-document-151",
+        "shimmer2-producer-document-152",
+        "shimmer2-producer-document-153",
+        "shimmer2-producer-document-154",
+        "shimmer2-producer-document-155",
+        "shimmer2-producer-document-156",
+        "shimmer2-producer-document-157",
+        "shimmer2-producer-document-158",
+        "shimmer2-producer-document-159",
+        "shimmer2-producer-document-160",
+        "shimmer2-producer-document-161",
+        "shimmer2-producer-document-162",
+        "shimmer2-producer-document-163",
+        "shimmer2-producer-document-164",
+        "shimmer2-producer-document-270",
+        "shimmer2-producer-document-271",
+        "shimmer2-producer-document-272",
+        "shimmer2-producer-document-273",
+        "shimmer2-producer-document-274",
+        "shimmer2-producer-document-275",
+        "shimmer2-producer-document-276",
+        "shimmer2-producer-document-277",
+        "shimmer2-producer-document-278",
+        "shimmer2-producer-document-279",
+        "shimmer2-producer-document-280",
+        "shimmer2-producer-document-281",
+        "shimmer2-producer-document-282",
+        "shimmer2-producer-document-283",
+        "shimmer2-producer-document-284",
+        "producer-v3-document-060-extract",
+        "producer-v3-document-060-refuse",
+        "producer-v3-document-061-extract",
+        "producer-v3-document-061-refuse",
+        "producer-v3-document-062-extract",
+        "producer-v3-document-062-refuse",
+        "producer-v3-document-063-extract",
+        "producer-v3-document-063-refuse",
+        "producer-v3-document-064-extract",
+        "producer-v3-document-065-extract",
+        "producer-v3-document-066-extract",
+        "producer-v3-document-067-extract",
+        "producer-v3-document-068-extract",
+        "producer-v3-document-069-extract",
+        "producer-v3-document-070-extract",
+        "producer-v3-document-071-extract",
+        "producer-v3-document-072-extract",
+        "producer-v3-document-073-extract",
+        "producer-v3-document-074-extract",
+        "producer-v3-document-075-extract",
+        "producer-v3-document-076-extract",
+        "producer-v3-document-077-extract",
+        "producer-v3-document-078-extract",
+        "producer-v3-document-079-extract"
+      ],
+      "control_ids": [
+        "shimmer2-producer-document-045",
+        "shimmer2-producer-document-059",
+        "shimmer2-producer-document-148",
+        "shimmer2-producer-document-162",
+        "shimmer2-producer-document-281",
+        "producer-v3-document-066-extract"
+      ],
+      "generation_kwargs": {
+        "do_sample": false,
+        "num_beams": 1,
+        "use_cache": true,
+        "max_new_tokens": 288,
+        "eos_token_id": [
+          151645
+        ],
+        "pad_token_id": 151654
+      },
+      "context_function": "eval_runtime.real_runtime_context_preflight",
+      "evaluation_state_function": "eval_runtime.evaluation_state",
+      "stages": [
+        "verified checkpoint identity",
+        "context preflight without generation",
+        "cache probe first two forwards",
+        "six fixed optimized duplicate controls with exact token/decoded/semantic/stop identity",
+        "full fresh 84-row DEV"
+      ],
+      "model_execution_authorized": false
+    }
+  ],
+  "training_authorized": false,
+  "model_execution_performed": false
+}

@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "optimized_passes": [
+    [
+      {
+        "input_length": 711,
+        "use_cache": true,
+        "training": false,
+        "grad_enabled": false,
+        "incoming_cache_length": 0,
+        "returned_cache_length": 711
+      },
+      {
+        "input_length": 1,
+        "use_cache": true,
+        "training": false,
+        "grad_enabled": false,
+        "incoming_cache_length": 711,
+        "returned_cache_length": 712
+      }
+    ],
+    [
+      {
+        "input_length": 711,
+        "use_cache": true,
+        "training": false,
+        "grad_enabled": false,
+        "incoming_cache_length": 0,
+        "returned_cache_length": 711
+      },
+      {
+        "input_length": 1,
+        "use_cache": true,
+        "training": false,
+        "grad_enabled": false,
+        "incoming_cache_length": 711,
+        "returned_cache_length": 712
+      }
+    ]
+  ],
+  "tracing": false
+}

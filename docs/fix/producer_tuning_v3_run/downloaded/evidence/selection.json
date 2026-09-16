@@ -1,0 +1,4 @@
+{
+  "verdict": "PRODUCER_V3_FAIL",
+  "action": "If no complete V3 checkpoint passes every frozen gate, stop Producer LoRA branch; no automatic V4. Return to architecture/model choice under separate authorization."
+}

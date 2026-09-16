@@ -1,0 +1,33 @@
+{
+  "bundle_sha256": "0dbcee39db13eabd57688da700ccf11a30692e1853f93bd2d99f2b32e7059bc6",
+  "hard_seconds": 16744.18604651163,
+  "hard_usd": 6,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-producer-v3",
+  "projected_cost": 5.396803143297062,
+  "projected_seconds_with_reserve": 15060.845981294126,
+  "region": "us-east-1",
+  "release_sha256": "68afb77a9a5ff7c9360075c2699e6cb1d4cc57e1828728496a6648c49a3b7850",
+  "reserve_seconds": 600,
+  "soft_seconds": 8372.093023255815,
+  "soft_usd": 3,
+  "source_commit": "668a9fa8e0bfe1a25736d241cd63c5ade290ba53",
+  "watchdog_deadline_seconds": 16684.18604651163,
+  "workload_deadline_seconds": 16144.18604651163
+}

@@ -1,0 +1,566 @@
+{
+  "binary_storage": "Preserved locally, excluded from git; copy separately when migrating",
+  "credential_files_scanned": 137,
+  "credential_findings": 0,
+  "duplicate_bundle_check_excluded": true,
+  "local_only_binaries": {
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-0/adapter_model.safetensors": {
+      "bytes": 80792096,
+      "sha256": "61e13e0871378a204aa94d2ba4873e9e53cf37a5244aaa5c01c452aefc95e0e9"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/adapter_model.safetensors": {
+      "bytes": 80792096,
+      "sha256": "8354d6545272399ea6771f1a6b560309e882fd7348f5c2be9cbd1bab01160703"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/adapter_model.safetensors": {
+      "bytes": 80792096,
+      "sha256": "ddb2a0ba6e8687be573fafabb4f6d37a899142d5d9877c2c22ea06acc217816b"
+    },
+    "docs/fix/producer_tuning_v3_run/evidence.tar.gz": {
+      "bytes": 182859528,
+      "sha256": "2c60cf6fbeffccee33f3d70ef927934c6f9490ceea1f9a8f4ddfb3978fca314d"
+    },
+    "docs/fix/producer_tuning_v3_run/runtime_bundle.zip": {
+      "bytes": 222125,
+      "sha256": "0dbcee39db13eabd57688da700ccf11a30692e1853f93bd2d99f2b32e7059bc6"
+    }
+  },
+  "text_files": {
+    "docs/fix/PRODUCER_TUNING_V3_RESULTS.md": {
+      "bytes": 13349,
+      "sha256": "b822e4bee6b15d57ea22afecf576c75dd600ba4f0dd1f3fd8ff079a2a1d867a9"
+    },
+    "docs/fix/producer_tuning_v3_run/CURRENT_PHASE.json": {
+      "bytes": 107,
+      "sha256": "eb2a1304b153fa7ccf0bef4c0c3e746d0f7558d6f2af2a051eb7a35fa4edb982"
+    },
+    "docs/fix/producer_tuning_v3_run/HANDOFF.md": {
+      "bytes": 1098,
+      "sha256": "46ea39d22347e2428a3c3467b84c60baacfcb0f9b39468e2f1f43af0a503b691"
+    },
+    "docs/fix/producer_tuning_v3_run/LAUNCH_INTENT.json": {
+      "bytes": 124,
+      "sha256": "6680ddde30884e9c9ace149df9671b544a4a79006225d8c9beb4fa1f0b18037e"
+    },
+    "docs/fix/producer_tuning_v3_run/LOCAL_GATES.json": {
+      "bytes": 4400,
+      "sha256": "9b373ac8c422a759c3f8a2536a0979dd2544c0063a66c4955fed0432b54182d6"
+    },
+    "docs/fix/producer_tuning_v3_run/MANDATORY_WORK_FINISHED.json": {
+      "bytes": 60,
+      "sha256": "2b796940b3d61df2962da6b2e394b0facbd5f660138cc2e6ebb2ccf0860134b2"
+    },
+    "docs/fix/producer_tuning_v3_run/POST_RUN_VERIFICATION.json": {
+      "bytes": 526,
+      "sha256": "a5ffe4619a598f5c7dfafd366ba49310c49f3e6558b5b06e4b14a23df1c00729"
+    },
+    "docs/fix/producer_tuning_v3_run/RECOMPUTED_PER_ROW.json": {
+      "bytes": 285851,
+      "sha256": "2e51909130b50448d91b1410b82d6eca0c3a57bfc236326e11faca9c84657c86"
+    },
+    "docs/fix/producer_tuning_v3_run/RECOMPUTED_RESULTS.json": {
+      "bytes": 36977,
+      "sha256": "0234c6b401564863c2d4d45a44ed4c7fb3d28ffa19e5215ae027841f6e4d4e5d"
+    },
+    "docs/fix/producer_tuning_v3_run/TERMINATE_REQUEST": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/TERMINATION_VERIFIED.json": {
+      "bytes": 353,
+      "sha256": "3513d9953612e2f2d71951588c2f69f240dc6ccd0bca4a61a2121bf1eee96eff"
+    },
+    "docs/fix/producer_tuning_v3_run/WATCHDOG_ARMED.json": {
+      "bytes": 59,
+      "sha256": "9092b825ebda997642c2ffb42c1e03e18a5c5f4b62ace4bef1e78cdab8aa37d2"
+    },
+    "docs/fix/producer_tuning_v3_run/acquisition.log": {
+      "bytes": 1111,
+      "sha256": "2301cf1d36f78d639ce5c1184c5d0c45bc80070b5709c7e1c22bba6f83a90846"
+    },
+    "docs/fix/producer_tuning_v3_run/acquisition_timing.json": {
+      "bytes": 92,
+      "sha256": "228647a4a8243ef69e7227f9c03127936d9c5cb6baf2c938f5286739f95b301f"
+    },
+    "docs/fix/producer_tuning_v3_run/activation.json": {
+      "bytes": 399,
+      "sha256": "6578e161ad220aaf07a20c443b22f1d76302f107125585933319a378b0cc1358"
+    },
+    "docs/fix/producer_tuning_v3_run/budget.json": {
+      "bytes": 185,
+      "sha256": "267b5f7f7cf762e14bf83ee31cb5d77f8d2e54f8d155d832f9aea657e49084cc"
+    },
+    "docs/fix/producer_tuning_v3_run/budget_transfer.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/budget_transfer_timing.json": {
+      "bytes": 90,
+      "sha256": "25fa6ebc7ba5eb9d77081d0f8dd49a5d2fcd53be1886776a038eb5d5609969f9"
+    },
+    "docs/fix/producer_tuning_v3_run/bundle_check.log": {
+      "bytes": 69,
+      "sha256": "69f05e8ace625f2f1eeed06b4f39facb5846e452f2467458eb3fa62c41511f87"
+    },
+    "docs/fix/producer_tuning_v3_run/bundle_check_results.json": {
+      "bytes": 38,
+      "sha256": "34b3f2c1bc42d913a44a2ef7f931d6a80b6786543def800881d3532356a132f0"
+    },
+    "docs/fix/producer_tuning_v3_run/cleanup.json": {
+      "bytes": 112,
+      "sha256": "fde6245805a136864f02de2f19a1bdb6fba2a09f792dc5c33316faa107cd5d5b"
+    },
+    "docs/fix/producer_tuning_v3_run/collection_integrity.json": {
+      "bytes": 105,
+      "sha256": "307d9a6b1a14176affe07d4da0e7610a739103e6c3d6204498f1a04640360868"
+    },
+    "docs/fix/producer_tuning_v3_run/cost.json": {
+      "bytes": 72,
+      "sha256": "eb4b22276a4a3878932b8ed25d99b9d96906577a65b0d4e28e959c4bbb2b331c"
+    },
+    "docs/fix/producer_tuning_v3_run/dependencies_install.log": {
+      "bytes": 11363,
+      "sha256": "e6e9825025210522d575d79dc48006c38e11f7a9d3479595803e9ee29daf0fcf"
+    },
+    "docs/fix/producer_tuning_v3_run/dependencies_install_timing.json": {
+      "bytes": 90,
+      "sha256": "b85d738960111f044929ceb553037476efb765a1890c584fdcde1b62ae5b34da"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/budget.json": {
+      "bytes": 185,
+      "sha256": "267b5f7f7cf762e14bf83ee31cb5d77f8d2e54f8d155d832f9aea657e49084cc"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/TRAINING_ATTEMPTED": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/acquisition.json": {
+      "bytes": 1053,
+      "sha256": "01090a4277b8993b354ed70030c554cecaab651c7d2d620a96e92f70cfda4a9b"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/budget_timeline.jsonl": {
+      "bytes": 67259,
+      "sha256": "fdf9e2f1c56890e07381a6ade8d36088240be87884cc953d53476e24fce704a5"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-0/README.md": {
+      "bytes": 5206,
+      "sha256": "7573c8266227833fc396b42b4ff9790b6e14f77357d06db325e2e9275faa87a3"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-0/adapter_config.json": {
+      "bytes": 906,
+      "sha256": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-0/identity.json": {
+      "bytes": 269,
+      "sha256": "cbac9d9aa7228c18e9a36afdb004b87e949bd3f3abf90f2c29483fddae3f1c5c"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/README.md": {
+      "bytes": 5206,
+      "sha256": "7573c8266227833fc396b42b4ff9790b6e14f77357d06db325e2e9275faa87a3"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/adapter_config.json": {
+      "bytes": 906,
+      "sha256": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/cache_1.jsonl": {
+      "bytes": 12759,
+      "sha256": "c3e475ffd53648307f9807d6417a42fa04de131d2bab800b3e9302c65479db98"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/cache_1_scored.json": {
+      "bytes": 23385,
+      "sha256": "0be90b916168623760a895c2fdfe262e4972e7788aaddf9ac45c6a5a87c64660"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/cache_2.jsonl": {
+      "bytes": 12758,
+      "sha256": "e4d49ba88153bd57f6eed6d3cf6a36355bc4d9f4f78a34dfafd2b27a70818e45"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/cache_2_scored.json": {
+      "bytes": 23384,
+      "sha256": "c09a0bfcdb413ceb27cdbaf049f8085ffcbc8c4feddd4a926bde37be239eb800"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/cache_admission.json": {
+      "bytes": 909,
+      "sha256": "b1214807add2238abad0b2c2a059437e3d5efbc82687711891a353dcd95cfa1f"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/context_preflight.json": {
+      "bytes": 13135,
+      "sha256": "fd6392f7d1925b76c4abb7ea5595efa13852350552ba8c1bff6553f003e6e1e1"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/control_admission.json": {
+      "bytes": 240,
+      "sha256": "90698e474a9b8977624f4748690c69eabdf61ea8e324f6bf72983ee035ca78ba"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/controls_1.jsonl": {
+      "bytes": 71583,
+      "sha256": "7142026beb2c0c25ed7faee519c97e9e3339a825a04eb22309b9ba431cd29d33"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/controls_1_scored.json": {
+      "bytes": 129786,
+      "sha256": "10477d33f40e7deb0f2a92e060d57d19bfdad58d3d575286ddd1df9eb20591cb"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/controls_2.jsonl": {
+      "bytes": 71583,
+      "sha256": "5a0678bf6f61f1056b3a3206921c67f758896bb879d3564cc83afd9d192d9903"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/controls_2_scored.json": {
+      "bytes": 129786,
+      "sha256": "1bf846c60c5701df0bf180d87b0bb39db657abb2771e73a809a604ef429b833d"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/full_dev.jsonl": {
+      "bytes": 1038132,
+      "sha256": "debed88ce67f14c70ea7736403779f26f0868170f0a79e1302360217d1f1d5ba"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/full_dev_scored.json": {
+      "bytes": 1863513,
+      "sha256": "6833c4709ec0459ea5a4ddc3b44d551c021aa1268250a3899fdbb4088f6a5e25"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/identity.json": {
+      "bytes": 271,
+      "sha256": "7f71035e16231169789b50e0310e190fc0dcf02282c899efdd46dd0bf2b43db3"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/metrics.json": {
+      "bytes": 3834,
+      "sha256": "e60c927db6aa5e54e1d594ffc5714ee6dd6a5e59ae3e2f0618a711580baea75c"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/state_restoration.json": {
+      "bytes": 267911,
+      "sha256": "7d7f75049a381707d1921dadbe9c744a939d93789c64507348d3dc5956e40dde"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/status.json": {
+      "bytes": 56,
+      "sha256": "53ab66a4269e9ff57142b5153052cce756feeed8d1d707e275aaf2983e8d7828"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/README.md": {
+      "bytes": 5206,
+      "sha256": "7573c8266227833fc396b42b4ff9790b6e14f77357d06db325e2e9275faa87a3"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/adapter_config.json": {
+      "bytes": 906,
+      "sha256": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/cache_1.jsonl": {
+      "bytes": 12757,
+      "sha256": "f04640440b9dc02a036e87b46bec368394d46053becbdc6e212b1ab7752aca7a"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/cache_1_scored.json": {
+      "bytes": 23383,
+      "sha256": "0f8d64346253708710f7aee9c34c42d20a99f66d548c2bc21248f4940b0d7893"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/cache_2.jsonl": {
+      "bytes": 12755,
+      "sha256": "163c3f1d72642c549f153b53fc1d171061309ab989a35049be125208a9f0aeda"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/cache_2_scored.json": {
+      "bytes": 23381,
+      "sha256": "e583fb95834d528a1b8e92132aa0631e7f2066cbe314a4967d8025f2344c2b88"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/cache_admission.json": {
+      "bytes": 909,
+      "sha256": "b1214807add2238abad0b2c2a059437e3d5efbc82687711891a353dcd95cfa1f"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/context_preflight.json": {
+      "bytes": 13135,
+      "sha256": "fd6392f7d1925b76c4abb7ea5595efa13852350552ba8c1bff6553f003e6e1e1"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/control_admission.json": {
+      "bytes": 239,
+      "sha256": "d4ea245edbd98993cefac7ba38a4f36715893e59b0ac19e79b556d1ba0ca365a"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/controls_1.jsonl": {
+      "bytes": 68055,
+      "sha256": "735e74636d55b76751cc9f039b9b7f6cc4b1a3a20de74a9edaed167e2b17deb5"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/controls_1_scored.json": {
+      "bytes": 125090,
+      "sha256": "0786f3c413914012fb9a091b864c79ed639fb49081caf83f371f85d615b6168b"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/controls_2.jsonl": {
+      "bytes": 68059,
+      "sha256": "2950ec1cf7113bfa8e024725d1310a744cd1a019a364bdd6889f4c83d25db380"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/controls_2_scored.json": {
+      "bytes": 125094,
+      "sha256": "4001956fe535c2ad1e672f5b3aa81df1764848eda916c5ef866ecba18d9da6d7"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/full_dev.jsonl": {
+      "bytes": 1009712,
+      "sha256": "9c30abb81125546c819595f29d40af97398c5e5f67601a8b9ae28f2f9f93ea5a"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/full_dev_scored.json": {
+      "bytes": 1825762,
+      "sha256": "087ca55d0a2586be682bfa39451ccbc0c3454549bf9df1bd3efd7242c07da445"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/identity.json": {
+      "bytes": 270,
+      "sha256": "56be6dfc56cee8fcb008cfd99e64f130ace62cd375f157f40685a41e5aa40ca7"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/metrics.json": {
+      "bytes": 3892,
+      "sha256": "ce8a47e5a7741da0a8d529593c0fe49d12046aac1cdf5984ed2d22fb03db8ef4"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/state_restoration.json": {
+      "bytes": 267125,
+      "sha256": "94bc3a0fcf7024daa11756028ea539a39f16025f4f66aa06993b70b8455c8251"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-84/status.json": {
+      "bytes": 56,
+      "sha256": "53ab66a4269e9ff57142b5153052cce756feeed8d1d707e275aaf2983e8d7828"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoints.json": {
+      "bytes": 9445,
+      "sha256": "61c9839d8a4f7a099cb323fdd9797e537823c6ecc6d6dcb1f26eaeb4cbee28b6"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/initialization.json": {
+      "bytes": 472,
+      "sha256": "9dda8230e1ab79a6181b65a0deebb4143a06008d3cac8b3c4cf75d7577e2d95d"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/optimizer_config.json": {
+      "bytes": 47093,
+      "sha256": "98b59243e348713bd20965a2c8903ad6fc9ec9c959189cc50e1892338147a420"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/preflight.json": {
+      "bytes": 435,
+      "sha256": "c16e73da3edc30d75143c613a8615aa6dfbb843745c76f1bab7436efa0220555"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/progress.json": {
+      "bytes": 318,
+      "sha256": "b0683c10e79abe2b2c5618bdea04a58c1f682016f6582afc13b86f5f4487b579"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/selection.json": {
+      "bytes": 216,
+      "sha256": "bc540f4eb7205eb1566bba385fa175a19376c207ed231ee3e82474a0d555de64"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/status.json": {
+      "bytes": 405,
+      "sha256": "aae0278b944b3d771abe99d62d7fd29b500c04da72dc99f6fdfe5169ee820866"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/telemetry.jsonl": {
+      "bytes": 497621,
+      "sha256": "a554a3dea1274a78d6c8036cce6a0c5f95fa29bf35c6eb0d1fe0014a7e5d69c7"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/telemetry.stop": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/training.jsonl": {
+      "bytes": 95688,
+      "sha256": "e176819745c36f658fb1eb739a70059dc81ac864bd66064f3a6ca241b18f376c"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/execution_manifest.json": {
+      "bytes": 3355,
+      "sha256": "1ebf0976b7e9d51c60fefe056c2c71ac3ecd2bf1e57d8d3389bab81e3bf9196f"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/tools/producer_v3_remote.py": {
+      "bytes": 22267,
+      "sha256": "2879fb1e76b228082c204551651fa931d6f01d3921d0a133fd614452ad7d5ebd"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/training_authorization.json": {
+      "bytes": 802,
+      "sha256": "1f888224a212888136ff6e9abaef002e63e657ed2d63f767749ffd15276a9822"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/tuning/producer_v3/execution_plan.json": {
+      "bytes": 57573,
+      "sha256": "1c781015e6a73dfe4b28b9b99f2468e514e0cb2d952bb061e3095600b7e35f58"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/tuning/producer_v3/experiment.json": {
+      "bytes": 13232,
+      "sha256": "18792467607081f2291a0c1bc0f69b9eae56dea128b8636967286194dbb3692f"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/tuning/producer_v3/freeze.json": {
+      "bytes": 6704,
+      "sha256": "68afb77a9a5ff7c9360075c2699e6cb1d4cc57e1828728496a6648c49a3b7850"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/tuning/producer_v3/split.json": {
+      "bytes": 16924,
+      "sha256": "8bf55a18879304bbe55b73c4b32cca65a98f5b640f19c8dbd011f82de8c78bd5"
+    },
+    "docs/fix/producer_tuning_v3_run/downloaded/tuning/second_tuning_eval_runtime_v2_1/freeze.json": {
+      "bytes": 6267,
+      "sha256": "8d1fd41d1ab059e47b1297c1c39cd29711acd8fa5446a60780f9a97faef1d1fa"
+    },
+    "docs/fix/producer_tuning_v3_run/dry_run.log": {
+      "bytes": 1583,
+      "sha256": "510a6c1bbba0c906af93b0a27a788616ad848d594bc6145c06f30a403c08aa67"
+    },
+    "docs/fix/producer_tuning_v3_run/evidence_download.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/evidence_download_timing.json": {
+      "bytes": 92,
+      "sha256": "e02ff6c518e4e7921ba3d7255afa961221287dacba85c3637814eda8f77abc4b"
+    },
+    "docs/fix/producer_tuning_v3_run/evidence_hash.log": {
+      "bytes": 115,
+      "sha256": "978911ab3d804975f862b25fa78ef71ef6be0a3d4af2a84a72743bb1f92e5dc5"
+    },
+    "docs/fix/producer_tuning_v3_run/evidence_hash_timing.json": {
+      "bytes": 92,
+      "sha256": "62b00d4254916cfb6d46f1c1949666f047a3b3bb6fff66f854bbdb61fcaa3311"
+    },
+    "docs/fix/producer_tuning_v3_run/execution_manifest.json": {
+      "bytes": 3355,
+      "sha256": "92d200893e6175e76c32b71c6ef5f3b546fc6d249e75045a0a501f4d77b1804f"
+    },
+    "docs/fix/producer_tuning_v3_run/final_inventory_confirmation.json": {
+      "bytes": 172,
+      "sha256": "c84d50f975d063ee73fa5383263fa2d7ea031eda10c05676e844f8d8abc1d7fe"
+    },
+    "docs/fix/producer_tuning_v3_run/images.json": {
+      "bytes": 47071,
+      "sha256": "d41f0e642b5e7295ca58cfdaa67e29f14311fd32ce01037e68ff8cea2b0f382d"
+    },
+    "docs/fix/producer_tuning_v3_run/instance-types.json": {
+      "bytes": 2566,
+      "sha256": "b3985eb3acc064156c0fb441c91a193d57263a7e817bbe3a576a54692907a1e5"
+    },
+    "docs/fix/producer_tuning_v3_run/instance_state.json": {
+      "bytes": 151,
+      "sha256": "5d1defaba1f66645f19f5454afe83e60df2e4862603115253a09087635c79d0b"
+    },
+    "docs/fix/producer_tuning_v3_run/instances.json": {
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "docs/fix/producer_tuning_v3_run/instances_after.json": {
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "docs/fix/producer_tuning_v3_run/integration.log": {
+      "bytes": 617,
+      "sha256": "98dd80d77e6ec983a2d1791b63c3aab70226d089baf9827bb6f959a5c9ec2a44"
+    },
+    "docs/fix/producer_tuning_v3_run/launch.json": {
+      "bytes": 87,
+      "sha256": "aa5b4411429eabadebd4171b0d0634e608ea438897a21b6bdb417d0e282a9991"
+    },
+    "docs/fix/producer_tuning_v3_run/leakage.log": {
+      "bytes": 891,
+      "sha256": "134705e95bdc8a152543ae7dc89fab19a0c600f99ae82a3b77a6b9e2c27d1a89"
+    },
+    "docs/fix/producer_tuning_v3_run/manifest.json": {
+      "bytes": 1028,
+      "sha256": "12c0acd63946e4f2cfe5a9a41430b47d29de2f10f20b490a6a2ffdc70f06e667"
+    },
+    "docs/fix/producer_tuning_v3_run/mkdir.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/mkdir_timing.json": {
+      "bytes": 92,
+      "sha256": "0f6b17b05ad16e3fdf91f6513687dddf3ff3063f8abb8acb0504a36e2c84430e"
+    },
+    "docs/fix/producer_tuning_v3_run/pack_evidence.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/pack_evidence_timing.json": {
+      "bytes": 92,
+      "sha256": "1cd1479434c7de70a57d92c16037cc47c761ca6e37580ebd519258aa6261c059"
+    },
+    "docs/fix/producer_tuning_v3_run/pre_acquisition.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/pre_acquisition_timing.json": {
+      "bytes": 91,
+      "sha256": "df0a93b2ce572dda04f569e4ab5a156fc67797439a43aabc088ead429830dfde"
+    },
+    "docs/fix/producer_tuning_v3_run/process_final.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/process_final_timing.json": {
+      "bytes": 91,
+      "sha256": "32d0ebeedf0e90f1137d3895b4414ac15f0aa59d6c0612b9ac419079c10e84b6"
+    },
+    "docs/fix/producer_tuning_v3_run/producer_training.log": {
+      "bytes": 1736,
+      "sha256": "57cf0455d8be8995b5aaec9736916b168f983f48ceff2cf68f35679da6d55d2a"
+    },
+    "docs/fix/producer_tuning_v3_run/producer_training_timing.json": {
+      "bytes": 90,
+      "sha256": "8a0c56b7153a926279ac779f04b4eb6676ed536558e6b7b76d854763dff5a0e5"
+    },
+    "docs/fix/producer_tuning_v3_run/python_gate.log": {
+      "bytes": 50,
+      "sha256": "0b113da3ac02c2045dd8a4aeea1877f3838788d0454d61f851e2050547e3c84b"
+    },
+    "docs/fix/producer_tuning_v3_run/python_gate_timing.json": {
+      "bytes": 92,
+      "sha256": "ffd4c24c7ec36848e4c65858eb75a5c13b80cad7469195198a3bacc08b1000ee"
+    },
+    "docs/fix/producer_tuning_v3_run/release_after.log": {
+      "bytes": 198,
+      "sha256": "df1043949131c8ea4cd1205a38aa5f115a7e46757c92ee9f9c47c96d303ac309"
+    },
+    "docs/fix/producer_tuning_v3_run/release_before.log": {
+      "bytes": 198,
+      "sha256": "df1043949131c8ea4cd1205a38aa5f115a7e46757c92ee9f9c47c96d303ac309"
+    },
+    "docs/fix/producer_tuning_v3_run/release_post_run.log": {
+      "bytes": 198,
+      "sha256": "df1043949131c8ea4cd1205a38aa5f115a7e46757c92ee9f9c47c96d303ac309"
+    },
+    "docs/fix/producer_tuning_v3_run/runtime_transfer.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/runtime_transfer_timing.json": {
+      "bytes": 91,
+      "sha256": "508d6d1b084c06bf4f92a96cf62727675985d41eddea84ef269fa05486a679e0"
+    },
+    "docs/fix/producer_tuning_v3_run/ssh_ready_0.log": {
+      "bytes": 83,
+      "sha256": "a52e5d549cf49dbb740bb725966787060fe1fba0f0c9d011005726dba2ef46dd"
+    },
+    "docs/fix/producer_tuning_v3_run/ssh_ready_0_timing.json": {
+      "bytes": 92,
+      "sha256": "e435dd01dbe41153c2e3dcbfbb36018a1017987a4f87dc741c88835fd43bc2d4"
+    },
+    "docs/fix/producer_tuning_v3_run/ssh_registration.json": {
+      "bytes": 80,
+      "sha256": "ed27d4b3bb2c2b0d0b9462fffa81f78ffbe1509876325311b8023d649f1c6124"
+    },
+    "docs/fix/producer_tuning_v3_run/stop_workloads.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/stop_workloads_timing.json": {
+      "bytes": 92,
+      "sha256": "4e9e614d0a5f9f5b21d1171175e9a7fcb10090d6be8d9ff9e1d363272d5613ba"
+    },
+    "docs/fix/producer_tuning_v3_run/termination_requested.json": {
+      "bytes": 132,
+      "sha256": "eaa798491a068a8515f0516d4050d7eca1c5930d4f8ef05093ddd794bbd7429a"
+    },
+    "docs/fix/producer_tuning_v3_run/torch_install.log": {
+      "bytes": 9089,
+      "sha256": "ff889e124f42145ca7d09a658eb7beca79ab6e23856d88f5a9ef4ed7cf96a08c"
+    },
+    "docs/fix/producer_tuning_v3_run/torch_install_timing.json": {
+      "bytes": 90,
+      "sha256": "dd7036b5a933802276456fe3bfad0971acc016dace8e5db9f106193166f1d30d"
+    },
+    "docs/fix/producer_tuning_v3_run/training_authorization.json": {
+      "bytes": 802,
+      "sha256": "1f888224a212888136ff6e9abaef002e63e657ed2d63f767749ffd15276a9822"
+    },
+    "docs/fix/producer_tuning_v3_run/unpack.log": {
+      "bytes": 23,
+      "sha256": "d66d35fe3d2ec09868155a3f7875181c19f93a558ba49f3005c655e00224b545"
+    },
+    "docs/fix/producer_tuning_v3_run/unpack_timing.json": {
+      "bytes": 92,
+      "sha256": "16df384f1534a011c5c5f461b637c7765eb8eda7c7171e9e051c0a4d9f37d02e"
+    },
+    "docs/fix/producer_tuning_v3_run/venv.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/producer_tuning_v3_run/venv_timing.json": {
+      "bytes": 91,
+      "sha256": "90215447b125635aa28f8c96676b713e2dddec5fb77d4b6a7ac7b80ffd4de763"
+    }
+  }
+}
