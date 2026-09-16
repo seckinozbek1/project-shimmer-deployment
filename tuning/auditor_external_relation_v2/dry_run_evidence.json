@@ -1,0 +1,27 @@
+{
+  "cloud": false,
+  "deterministic_reversed_pool_rebuild": true,
+  "historical_train_rows_unchanged": true,
+  "holdout_consumed": false,
+  "human_labels_only": true,
+  "mechanical_checks_passed": true,
+  "model_inference": false,
+  "preservation": {
+    "auditor_canonical_tuning_run": 143,
+    "auditor_linear_probe_run": 106,
+    "producer_tuning_v3_run": 134,
+    "v1_freeze_sha256": "04b0fa27014822e2f965820908dfa1a420851f68abc1f02397af51fcabee6e31",
+    "v1_verified_files": 38
+  },
+  "prohibited_runtime_paths_guarded": true,
+  "protected_access": false,
+  "provenance_roundtrip_rows": 2000,
+  "source_shortcut_gate_pass": false,
+  "training": false,
+  "upstream_paws_dev_labels_read": false,
+  "upstream_paws_test_labels_read": false,
+  "v1_rows_used": 0,
+  "verdict": "AUDITOR_EXTERNAL_RELATION_DATA_V2_NOT_READY",
+  "weights_opened": false,
+  "word_sign_gate_pass": true
+}

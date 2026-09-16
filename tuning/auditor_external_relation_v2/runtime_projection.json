@@ -1,0 +1,22 @@
+{
+  "assumptions": "Historical feature throughput 227276 tokens / 86.103619569s. Head scaling from .462147746s / 240 rows / 200 updates. No explanation or refusal generation. Setup and transfers uncertain; historical price is not a current quote.",
+  "expected_peak_GPU_GiB": [
+    3.56,
+    4.5
+  ],
+  "external_dev_feature_seconds": 39.96228419301966,
+  "feature_seconds": 431.2246539374465,
+  "head_seconds": 2.760562536106667,
+  "historical_dev_feature_seconds": 14.610747250154018,
+  "historical_hourly_usd": 1.29,
+  "label": "Projection only; no compute authorized",
+  "planning_A10_minutes": [
+    15,
+    30
+  ],
+  "planning_A10_usd": [
+    0.3225,
+    0.645
+  ],
+  "train_feature_seconds": 376.6516224942728
+}

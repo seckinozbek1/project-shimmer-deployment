@@ -1,0 +1,14 @@
+{
+  "ceiling": 1056,
+  "overflow": 0,
+  "statistics": {
+    "count": 2000,
+    "max": 631,
+    "mean": 529.015,
+    "median": 528.0,
+    "min": 489,
+    "p95": 564,
+    "p99": 581
+  },
+  "truncation": false
+}
