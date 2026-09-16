@@ -1,0 +1,9 @@
+{
+  "state_sha256": "ac0fee8719f665e544a5e201c756b294981ad9645642b38d144357b76eddc931",
+  "trainable_backbone_parameters": 0,
+  "trainable_lora_parameters": 0,
+  "architecture": [
+    "LlamaForCausalLM"
+  ],
+  "hidden_size": 3072
+}

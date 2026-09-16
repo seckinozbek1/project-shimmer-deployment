@@ -1,0 +1,8 @@
+{
+  "alias_rows": 300,
+  "experiment_training": false,
+  "model_generation": false,
+  "passed": true,
+  "prefix_rows": 60,
+  "tests": 11
+}

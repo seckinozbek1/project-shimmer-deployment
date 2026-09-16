@@ -1,0 +1,13 @@
+{
+  "backbone_lora_unchanged": true,
+  "control_pairs": 5,
+  "dev_rows": 60,
+  "features": 300,
+  "head_parameters": 15365,
+  "head_sha256": "040bef09af89ba255d859645bbc13c76e9f8a53bf8e7c795c29e01afbe6b7c23",
+  "head_updates": 200,
+  "history_unchanged": true,
+  "passed": true,
+  "raw_rows": 70,
+  "train_only": true
+}

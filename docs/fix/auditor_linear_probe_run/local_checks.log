@@ -1,0 +1,17 @@
+None of PyTorch, TensorFlow >= 2.0, or Flax have been found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+test_200_update_protocol_with_standins (__main__.Checks.test_200_update_protocol_with_standins) ... ok
+test_alias_invariance_all_300 (__main__.Checks.test_alias_invariance_all_300) ... ok
+test_contract_cap_and_routing (__main__.Checks.test_contract_cap_and_routing) ... ok
+test_durability_and_watchdog_static (__main__.Checks.test_durability_and_watchdog_static) ... ok
+test_feature_position_and_frozen_forward (__main__.Checks.test_feature_position_and_frozen_forward) ... ok
+test_leakage_rejected (__main__.Checks.test_leakage_rejected) ... ok
+test_provider_watchdog_with_standins (__main__.Checks.test_provider_watchdog_with_standins) ... ok
+test_reason_parser (__main__.Checks.test_reason_parser) ... ok
+test_saved_prefixes_60_and_fail_closed (__main__.Checks.test_saved_prefixes_60_and_fail_closed) ... ok
+test_train_only_statistics (__main__.Checks.test_train_only_statistics) ... ok
+test_training_contract_static (__main__.Checks.test_training_contract_static) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 6.946s
+
+OK

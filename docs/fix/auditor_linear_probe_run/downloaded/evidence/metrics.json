@@ -1,0 +1,179 @@
+{
+  "raw_head": {
+    "count": 60,
+    "confusion": {
+      "MATCH": {
+        "MATCH": 5,
+        "DIVERGENCE": 0,
+        "OMISSION": 1,
+        "ADDITION": 6,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "DIVERGENCE": {
+        "MATCH": 0,
+        "DIVERGENCE": 7,
+        "OMISSION": 1,
+        "ADDITION": 4,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "OMISSION": {
+        "MATCH": 0,
+        "DIVERGENCE": 2,
+        "OMISSION": 5,
+        "ADDITION": 5,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "ADDITION": {
+        "MATCH": 0,
+        "DIVERGENCE": 0,
+        "OMISSION": 0,
+        "ADDITION": 12,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "INSUFFICIENT_EVIDENCE": {
+        "MATCH": 0,
+        "DIVERGENCE": 0,
+        "OMISSION": 0,
+        "ADDITION": 0,
+        "INSUFFICIENT_EVIDENCE": 12
+      }
+    },
+    "per_class": {
+      "MATCH": {
+        "precision": 1.0,
+        "recall": 0.4166666666666667,
+        "f1": 0.5882352941176471,
+        "support": 12,
+        "predicted": 5
+      },
+      "DIVERGENCE": {
+        "precision": 0.7777777777777778,
+        "recall": 0.5833333333333334,
+        "f1": 0.6666666666666666,
+        "support": 12,
+        "predicted": 9
+      },
+      "OMISSION": {
+        "precision": 0.7142857142857143,
+        "recall": 0.4166666666666667,
+        "f1": 0.5263157894736842,
+        "support": 12,
+        "predicted": 7
+      },
+      "ADDITION": {
+        "precision": 0.4444444444444444,
+        "recall": 1.0,
+        "f1": 0.6153846153846154,
+        "support": 12,
+        "predicted": 27
+      },
+      "INSUFFICIENT_EVIDENCE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 12,
+        "predicted": 12
+      }
+    },
+    "accuracy": 0.6833333333333333,
+    "macro_precision": 0.7873015873015874,
+    "macro_recall": 0.6833333333333333,
+    "macro_f1": 0.6793204731285226
+  },
+  "final_auditor": {
+    "count": 60,
+    "contract_validity": 0.9666666666666667,
+    "accepted_semantic_outcomes": 0.5333333333333333,
+    "refusal_precision": 1.0,
+    "refusal_recall": 1.0,
+    "over_refusal_rate": 0.0,
+    "substantive_non_refusal_coverage": 0.9583333333333334,
+    "catastrophic": {
+      "invented_evidence": 0,
+      "invented_rule": 0,
+      "confident_wrong_match_divergence": 2,
+      "truncation": 0,
+      "producer_source_copy": 0,
+      "governance_violations": 0
+    },
+    "evidence_f1": 1.0,
+    "relation_accuracy": 0.6833333333333333,
+    "per_class_recall": {
+      "MATCH": 0.4166666666666667,
+      "DIVERGENCE": 0.5833333333333334,
+      "OMISSION": 0.4166666666666667,
+      "ADDITION": 1.0,
+      "INSUFFICIENT_EVIDENCE": 1.0
+    },
+    "macro_relation_f1": 0.6793204731285226,
+    "family_accepted_rates": {
+      "shimmer2-auditor-document-045": 0,
+      "shimmer2-auditor-document-046": 0,
+      "shimmer2-auditor-document-047": 0,
+      "shimmer2-auditor-document-048": 1,
+      "shimmer2-auditor-document-049": 1,
+      "shimmer2-auditor-document-050": 0,
+      "shimmer2-auditor-document-051": 1,
+      "shimmer2-auditor-document-052": 0,
+      "shimmer2-auditor-document-053": 1,
+      "shimmer2-auditor-document-054": 1,
+      "shimmer2-auditor-document-055": 0,
+      "shimmer2-auditor-document-056": 0,
+      "shimmer2-auditor-document-057": 0,
+      "shimmer2-auditor-document-058": 1,
+      "shimmer2-auditor-document-059": 1,
+      "shimmer2-auditor-document-135": 0,
+      "shimmer2-auditor-document-136": 0,
+      "shimmer2-auditor-document-137": 0,
+      "shimmer2-auditor-document-138": 1,
+      "shimmer2-auditor-document-139": 1,
+      "shimmer2-auditor-document-140": 1,
+      "shimmer2-auditor-document-141": 1,
+      "shimmer2-auditor-document-142": 0,
+      "shimmer2-auditor-document-143": 1,
+      "shimmer2-auditor-document-144": 1,
+      "shimmer2-auditor-document-145": 1,
+      "shimmer2-auditor-document-146": 0,
+      "shimmer2-auditor-document-147": 0,
+      "shimmer2-auditor-document-148": 1,
+      "shimmer2-auditor-document-149": 1,
+      "shimmer2-auditor-document-150": 1,
+      "shimmer2-auditor-document-151": 1,
+      "shimmer2-auditor-document-152": 1,
+      "shimmer2-auditor-document-153": 1,
+      "shimmer2-auditor-document-154": 1,
+      "shimmer2-auditor-document-155": 0,
+      "shimmer2-auditor-document-156": 0,
+      "shimmer2-auditor-document-157": 0,
+      "shimmer2-auditor-document-158": 1,
+      "shimmer2-auditor-document-159": 1,
+      "shimmer2-auditor-document-160": 0,
+      "shimmer2-auditor-document-161": 0,
+      "shimmer2-auditor-document-162": 0,
+      "shimmer2-auditor-document-163": 1,
+      "shimmer2-auditor-document-164": 1,
+      "shimmer2-auditor-document-270": 0,
+      "shimmer2-auditor-document-271": 0,
+      "shimmer2-auditor-document-272": 0,
+      "shimmer2-auditor-document-273": 1,
+      "shimmer2-auditor-document-274": 1,
+      "shimmer2-auditor-document-275": 0,
+      "shimmer2-auditor-document-276": 0,
+      "shimmer2-auditor-document-277": 0,
+      "shimmer2-auditor-document-278": 1,
+      "shimmer2-auditor-document-279": 1,
+      "shimmer2-auditor-document-280": 0,
+      "shimmer2-auditor-document-281": 1,
+      "shimmer2-auditor-document-282": 0,
+      "shimmer2-auditor-document-283": 1,
+      "shimmer2-auditor-document-284": 1
+    }
+  },
+  "nonregression": {
+    "evidence_f1": true,
+    "refusal_precision": true,
+    "refusal_recall": true,
+    "over_refusal_rate": true,
+    "substantive_non_refusal_coverage": false
+  }
+}

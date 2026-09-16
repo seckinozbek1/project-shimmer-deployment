@@ -1,0 +1,8 @@
+{
+  "phase": "full_dev",
+  "features": 300,
+  "outputs": 69,
+  "reason_tokens": 2260,
+  "reason_seconds": 330.2459698299999,
+  "projected_remaining_seconds": 88.5
+}

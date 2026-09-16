@@ -1,0 +1,15 @@
+{
+  "verdict": "AUDITOR_LINEAR_PROBE_FAIL",
+  "updates": 200,
+  "features": 300,
+  "dev_rows": 60,
+  "feature_seconds": 86.10361956900056,
+  "feature_input_tokens": 227276,
+  "head_seconds": 0.462147745999971,
+  "full_dev_seconds": 366.428520425,
+  "reason_seconds": 330.2459698299999,
+  "reason_generated_tokens": 2260,
+  "probe_seconds": 79.82188523399981,
+  "head_sha256": "040bef09af89ba255d859645bbc13c76e9f8a53bf8e7c795c29e01afbe6b7c23",
+  "final_frozen_weights_sha256": "ac0fee8719f665e544a5e201c756b294981ad9645642b38d144357b76eddc931"
+}
