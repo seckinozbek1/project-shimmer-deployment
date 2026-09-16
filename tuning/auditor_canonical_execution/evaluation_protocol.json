@@ -1,0 +1,331 @@
+{
+  "control_ids": [
+    "shimmer2-auditor-document-045",
+    "shimmer2-auditor-document-046",
+    "shimmer2-auditor-document-047",
+    "shimmer2-auditor-document-048",
+    "shimmer2-auditor-document-049"
+  ],
+  "control_rule": "First canonical DEV ID of each frozen relation class in class order; two optimized passes per checkpoint, exact prompt/token/decoded/semantic/stop identity. No historical Auditor controls existed.",
+  "controls_per_pass": 5,
+  "dev_ids": [
+    "shimmer2-auditor-document-045",
+    "shimmer2-auditor-document-046",
+    "shimmer2-auditor-document-047",
+    "shimmer2-auditor-document-048",
+    "shimmer2-auditor-document-049",
+    "shimmer2-auditor-document-050",
+    "shimmer2-auditor-document-051",
+    "shimmer2-auditor-document-052",
+    "shimmer2-auditor-document-053",
+    "shimmer2-auditor-document-054",
+    "shimmer2-auditor-document-055",
+    "shimmer2-auditor-document-056",
+    "shimmer2-auditor-document-057",
+    "shimmer2-auditor-document-058",
+    "shimmer2-auditor-document-059",
+    "shimmer2-auditor-document-135",
+    "shimmer2-auditor-document-136",
+    "shimmer2-auditor-document-137",
+    "shimmer2-auditor-document-138",
+    "shimmer2-auditor-document-139",
+    "shimmer2-auditor-document-140",
+    "shimmer2-auditor-document-141",
+    "shimmer2-auditor-document-142",
+    "shimmer2-auditor-document-143",
+    "shimmer2-auditor-document-144",
+    "shimmer2-auditor-document-145",
+    "shimmer2-auditor-document-146",
+    "shimmer2-auditor-document-147",
+    "shimmer2-auditor-document-148",
+    "shimmer2-auditor-document-149",
+    "shimmer2-auditor-document-150",
+    "shimmer2-auditor-document-151",
+    "shimmer2-auditor-document-152",
+    "shimmer2-auditor-document-153",
+    "shimmer2-auditor-document-154",
+    "shimmer2-auditor-document-155",
+    "shimmer2-auditor-document-156",
+    "shimmer2-auditor-document-157",
+    "shimmer2-auditor-document-158",
+    "shimmer2-auditor-document-159",
+    "shimmer2-auditor-document-160",
+    "shimmer2-auditor-document-161",
+    "shimmer2-auditor-document-162",
+    "shimmer2-auditor-document-163",
+    "shimmer2-auditor-document-164",
+    "shimmer2-auditor-document-270",
+    "shimmer2-auditor-document-271",
+    "shimmer2-auditor-document-272",
+    "shimmer2-auditor-document-273",
+    "shimmer2-auditor-document-274",
+    "shimmer2-auditor-document-275",
+    "shimmer2-auditor-document-276",
+    "shimmer2-auditor-document-277",
+    "shimmer2-auditor-document-278",
+    "shimmer2-auditor-document-279",
+    "shimmer2-auditor-document-280",
+    "shimmer2-auditor-document-281",
+    "shimmer2-auditor-document-282",
+    "shimmer2-auditor-document-283",
+    "shimmer2-auditor-document-284"
+  ],
+  "generation_kwargs": {
+    "do_sample": false,
+    "eos_token_id": [
+      32000,
+      32007
+    ],
+    "max_new_tokens": 192,
+    "num_beams": 1,
+    "pad_token_id": 32009,
+    "use_cache": true
+  },
+  "minimum_planning_tokens_per_second": 6.0,
+  "prompt_bindings": {
+    "shimmer2-auditor-document-045": {
+      "input_ids_sha256": "9641bfa0a3328d420ce5a23901ae2dbca68df4d767ec9f488809fc7f96f9b44d",
+      "prompt_sha256": "c057928a304011fdac908f4c929f28d17ccbc2a4876d392eaa57dc046c72255a"
+    },
+    "shimmer2-auditor-document-046": {
+      "input_ids_sha256": "b005d4b5df6322c3002ff9b467a1b48dd841a2f02a5d2afc5d51c693bb7b703f",
+      "prompt_sha256": "20a400cde3ba4eb8a4a404e071c16d040df74a19c06510f66ed9ed2588de9aff"
+    },
+    "shimmer2-auditor-document-047": {
+      "input_ids_sha256": "e5890e43da82bcac88cdde0bac73a7c9734b01dcb5bd3914032cdf73511a7c8f",
+      "prompt_sha256": "769d813d1a198a26160ed187576b4ed7f3fd18762c95f644a302f0c99c63d088"
+    },
+    "shimmer2-auditor-document-048": {
+      "input_ids_sha256": "753b49bf08560a336091305f1b3a7fb07f11472a49722653d384ec3eb41cc79e",
+      "prompt_sha256": "3b4e47c1ecf15a5aad7aa9c0f4981ea7d9b9edf1fbe9373ec087c0300a8c15c7"
+    },
+    "shimmer2-auditor-document-049": {
+      "input_ids_sha256": "fea65aafa3b321e60010848dd04bfc287b6d53f6030326d65f822f532296df8a",
+      "prompt_sha256": "869558e575a05aa60419dc983deadbc6fad40330689974741263ea5e935b1365"
+    },
+    "shimmer2-auditor-document-050": {
+      "input_ids_sha256": "413818dbf6ae16099eeb33ba8ad88ab5d4879f1a56a9d7b0eb7238277bd168de",
+      "prompt_sha256": "dabf9e6d43b4b59b79e18c47ffe65fa273c0e0f4fbd7b57a7ec5014adc1a4ff9"
+    },
+    "shimmer2-auditor-document-051": {
+      "input_ids_sha256": "bbc2d66a7c23dd368e6a2b23edf5051ff075e210bc5608c729abf49e341f3d85",
+      "prompt_sha256": "63cb8a56446e9efa17e4fcc492cb8395bb3f74a22b300abc672bf33d04cd4b01"
+    },
+    "shimmer2-auditor-document-052": {
+      "input_ids_sha256": "87e6f65ea7699c9abcb0b67e177f9c6f80d09a7c045f2314ba03b05cf53031e8",
+      "prompt_sha256": "2462feed1a0d261dca5af1e9a54726f8000da3cc42d8a96fb658b1d982c9b0e3"
+    },
+    "shimmer2-auditor-document-053": {
+      "input_ids_sha256": "bcd93ba1f80d5c09a104ea37ca766f530b9b06854abfb33eac4c89fd75f6363a",
+      "prompt_sha256": "f20a141eb393335d37a6e9728c80f1d29337555655824cbc059869be0049acb0"
+    },
+    "shimmer2-auditor-document-054": {
+      "input_ids_sha256": "2ef19467886e008cfe1c64cf710a877128731cd6c0cfa56a022ddf46c8d563df",
+      "prompt_sha256": "deaf74ae243bba0dab2f19cf9db16e22f179d412e44cf362f164441150d00a5f"
+    },
+    "shimmer2-auditor-document-055": {
+      "input_ids_sha256": "1e7a0c8f71469d19aa0d7580f54b7d77286bf017f100c7ace762e5e7ec12d4d8",
+      "prompt_sha256": "591fedc11a0ed71144137c6d8ff71c58b81bfef03a0e8fd8ee9fbb62bb9df80f"
+    },
+    "shimmer2-auditor-document-056": {
+      "input_ids_sha256": "c235cc87abaa89949fbb32611f97011f588e0675352dcca0fdf61ad5aac9f11c",
+      "prompt_sha256": "df2ec631b063950eab802c03fa5c11a63e9fe805202887a5d0910720944b9c64"
+    },
+    "shimmer2-auditor-document-057": {
+      "input_ids_sha256": "3a3f0d7a490a7f8080a089050049857f44b8cc9c81744427056e5bd6caa4a41f",
+      "prompt_sha256": "13992d2ebf1a9ac332be793083e90f82742b130097fe37bad6896e4a1822d128"
+    },
+    "shimmer2-auditor-document-058": {
+      "input_ids_sha256": "8567da2836f91da6d32c5157d356c423eca15dc111793ae73d37c40a39fc48f5",
+      "prompt_sha256": "85b7122149cea02dd0680d2982cd06b92ab2e7f5eded5f3f1fda732c5a43407f"
+    },
+    "shimmer2-auditor-document-059": {
+      "input_ids_sha256": "e25270a80e5c7333505b3e16c614ae2b76b8044b9267caacdd875ece5cf2d560",
+      "prompt_sha256": "4e1a8197f1956afb6c5a933441ec8642cbc6af8295ed77babe7d8bca2ca413d6"
+    },
+    "shimmer2-auditor-document-135": {
+      "input_ids_sha256": "84b48beeeda81128959e529d621024532a58e615781a465f8179907b10bd796a",
+      "prompt_sha256": "b2934a63186640c117295ff7281b925b2dab640e06091d2068a2766e936a17cd"
+    },
+    "shimmer2-auditor-document-136": {
+      "input_ids_sha256": "f5f0663ad2b5f7db80fbe92acc1e6078825c350315beac484acc29daa2674ef0",
+      "prompt_sha256": "5bf63fe12c3d265904f9d12b2f925cb24597913117622cb4375dbeab5b1bd2f4"
+    },
+    "shimmer2-auditor-document-137": {
+      "input_ids_sha256": "ddea2fdd2691acebd229005eaba4459f25059a8549399ac634aab584b3d6f279",
+      "prompt_sha256": "cc7c27de3743edce69cceedec7a186acaa5c5b752c78ef1c8c53acf9fd75d635"
+    },
+    "shimmer2-auditor-document-138": {
+      "input_ids_sha256": "b1d89e770ef37fa27f7dfdfdc13bdd5554cf19d12dfd2ed18e83997d29b691ea",
+      "prompt_sha256": "3aaa67b15f9c9ee086a34779e64b26698e59997c55d6a1e8685adc8ee1e8f419"
+    },
+    "shimmer2-auditor-document-139": {
+      "input_ids_sha256": "0be7b76364f643a87d42c1af08c1d198c287b40d0f31036559fc2edf62cf73a3",
+      "prompt_sha256": "b668f29ac4c817916d69c74621ecc93834da06997836bcef167af51c6541642f"
+    },
+    "shimmer2-auditor-document-140": {
+      "input_ids_sha256": "9b555fcdf93d247ac383f24cefb82c9fffe9ea50b2ef20fcaaec48e0553f1216",
+      "prompt_sha256": "5384f099d5ccd4dfee096f5ea3dd93e9e8045e2b8cb4c428aac6c0908ac6953b"
+    },
+    "shimmer2-auditor-document-141": {
+      "input_ids_sha256": "bc9f29ce63196f37aba536685f275855a2e4a1f6705a52ec6eb4bc1282fbefcc",
+      "prompt_sha256": "345e15323443abb314924cd511611d5d3ba13b1771f167c399da1711d760d955"
+    },
+    "shimmer2-auditor-document-142": {
+      "input_ids_sha256": "a65b4e147238734a10af72e815656bd347952da856d5010ce24b6a02830ab03c",
+      "prompt_sha256": "9c258ecef37a8427681151a7d27a679fa1dcb7d6e16a08be3c1acd8ea8efdefd"
+    },
+    "shimmer2-auditor-document-143": {
+      "input_ids_sha256": "68d8cff838d3920bd7f8c7fb0347e1d1a9b981eb505aae14a66acac4d3fe5681",
+      "prompt_sha256": "3abeb8a1155a7696daba3d1c010b2eb50dc12ca830c7ecfc2ff568355ee04292"
+    },
+    "shimmer2-auditor-document-144": {
+      "input_ids_sha256": "f7b5978597e6eb9cdb03e24a40820f907e809edd8b96ada71cd70e6db841a5eb",
+      "prompt_sha256": "ce53da1e0fe5baf63f78308b44a679880ed5c48fea333222bb58bd578af192b5"
+    },
+    "shimmer2-auditor-document-145": {
+      "input_ids_sha256": "f01d005aad745bce3d1559c07ba63a2941b1a77f1b079e3bd5fcb41717ef8445",
+      "prompt_sha256": "a7f44e8e0b046b586021c5acc02973f2167752a2618cdb3131a455c16cf1f616"
+    },
+    "shimmer2-auditor-document-146": {
+      "input_ids_sha256": "fe9de81a2bed7c9de5087c79883d79c29967695080baa5dffc26cc89d1d1c6a5",
+      "prompt_sha256": "5ee5910414a2cc5f5270205433d882d8f0bc6f3c8b8f9f3d8fe3f25b9ac762d8"
+    },
+    "shimmer2-auditor-document-147": {
+      "input_ids_sha256": "355ceb0f3441a69e969ad1b8024bf9aa03ac4d8ec264118648a942b1f5e52ad2",
+      "prompt_sha256": "32c6327a09e8430363fb33708ef11035665ac9a0349843b8da42d44bc5e90039"
+    },
+    "shimmer2-auditor-document-148": {
+      "input_ids_sha256": "66ad3d96596125f4da7f82ce4a13430047a85e393845904230dc2286f443e85d",
+      "prompt_sha256": "970008dcc6bee27584922f843f58c1040badb886da63a6d4fab55a2e4acd7f98"
+    },
+    "shimmer2-auditor-document-149": {
+      "input_ids_sha256": "fd79ba7d51bd4756102915b557c12c5f893b32b6919727bdceeeb80de0ca9a8b",
+      "prompt_sha256": "5bbc6b0306c0ae5456cfa86ad8949d1eb483ea767e95acecd4bd8020ab508893"
+    },
+    "shimmer2-auditor-document-150": {
+      "input_ids_sha256": "23e75c99e033edfccfe15f0cbfe801aa4f70f7328381ec8351eea2e5f4a459c2",
+      "prompt_sha256": "e6c484f312c82345bf9447410ab7edaf113807cc893d2cd35ee1d77015bb13a6"
+    },
+    "shimmer2-auditor-document-151": {
+      "input_ids_sha256": "229540fb6b696c97ccbd371ef809047fccfe5c74a88fc5dce555a2f94e6f3be6",
+      "prompt_sha256": "8183931fc8c69a0c41412784165800ed110bc817cce52704e915fb305a6e34c2"
+    },
+    "shimmer2-auditor-document-152": {
+      "input_ids_sha256": "279ce0059bbbe0205e8f7f30486a89ef7cf851c181cff5586e4be7d72a9e685e",
+      "prompt_sha256": "80869ba4b76415d179620abd2f58734c8dedf8278556c194489fbad4a1860c7b"
+    },
+    "shimmer2-auditor-document-153": {
+      "input_ids_sha256": "e013cabe2aa90b7c474e4033c69a5b6e7eec92cfd3bc0b5bdcf94f740a9a1c48",
+      "prompt_sha256": "16dd2df82050a86675dd04ef01f59984444bc1850ef8d0f25c361df0fefe8b3f"
+    },
+    "shimmer2-auditor-document-154": {
+      "input_ids_sha256": "898d8ef7dfd0a0f7966b011a98b943b8b1e0cce6adf767ffd881c10678d3b5bf",
+      "prompt_sha256": "631dcd329150b50588923d8fac277d2a46ed364733c2f631d61cd83cad2edb4e"
+    },
+    "shimmer2-auditor-document-155": {
+      "input_ids_sha256": "d9cc172c023093293c0e6cf632b39850a87149a7451386ebaebdfa7509e8ad25",
+      "prompt_sha256": "64b283860629d34b6ef9d21d04fd50afc6ce3237618015a58fc82901d303714e"
+    },
+    "shimmer2-auditor-document-156": {
+      "input_ids_sha256": "3936aa03640cb9bde8ad305d07a4450c4ecab6b20d44eea1ad9730c80e5043c7",
+      "prompt_sha256": "41e2c1eba56d6192234351326298dfb0a9b809f0cb351a81f33a523b3b91938f"
+    },
+    "shimmer2-auditor-document-157": {
+      "input_ids_sha256": "55ddb6c6fe9877faac7d6fc8b48c53f289b8f8dbbb1f987d6486aad8b8094daa",
+      "prompt_sha256": "3978b1ba994206b077eb66d2ea72c138bae2e784ad6c9a2e792b71f3fa998e85"
+    },
+    "shimmer2-auditor-document-158": {
+      "input_ids_sha256": "5cfe29baa92099195bc33bf33573d61bbe1ad9da369117dbc385a36c0d827e80",
+      "prompt_sha256": "9949da82f1b5786241bef04c197c6f1036f84f19574a1764403bc9493a485d5d"
+    },
+    "shimmer2-auditor-document-159": {
+      "input_ids_sha256": "6e2c76212709b655fe0d7f7ef41e6f515fd709bf65660182ef0546a7cdc53699",
+      "prompt_sha256": "68eb4404e7b8347bd8db117fd8c6a9f4ca8e48f15eee84db05ef071fd8e13937"
+    },
+    "shimmer2-auditor-document-160": {
+      "input_ids_sha256": "db395a2027680546e2374dd9bb286ff76fbe497631cfd85c18a4f3129a337823",
+      "prompt_sha256": "95696fb8e78e0fc3d6184e252d7593f4b56a201c23bffee275a3a253c13b124d"
+    },
+    "shimmer2-auditor-document-161": {
+      "input_ids_sha256": "298f8b61c00f5e044dffc2bee0f9c4d1c60f33f722f507a891fb61b4c37dc502",
+      "prompt_sha256": "a5109ae5a0c8acea90285864f79202b32136ef183b0d33ca335919efa4aba6f9"
+    },
+    "shimmer2-auditor-document-162": {
+      "input_ids_sha256": "8d76638faf18652328893f03d7603de5879d597e5855c67653e37ddba01294bc",
+      "prompt_sha256": "d7646983eaeeb4484370f593eecff94f9d8ace182960035ae9199d892ad8ecfd"
+    },
+    "shimmer2-auditor-document-163": {
+      "input_ids_sha256": "90f59ecd8e84123b115dd08bae248fd296247d1cda162d2bd238b805d8bd9fed",
+      "prompt_sha256": "29dbe70c3fc62c0d65fe53a79d0b75546e436b0a2435c2b1f5dc4c4c451d2adb"
+    },
+    "shimmer2-auditor-document-164": {
+      "input_ids_sha256": "7c5c62825892c641036fe5159c7b1f6e5d99043783c2f2f2574a40e5514145f9",
+      "prompt_sha256": "820f80fd9756ea487f2389df067af852a2dc457e340392bc92e4567a0890d6a8"
+    },
+    "shimmer2-auditor-document-270": {
+      "input_ids_sha256": "10577024d4e5c283e0b802580ef8a95ba3253172ea120dd5ec5b5b6667afb2bb",
+      "prompt_sha256": "ca315f16c408a9f4ee18a6a497ae3dfba391b1d414aa74b9b67f69a365fec430"
+    },
+    "shimmer2-auditor-document-271": {
+      "input_ids_sha256": "837413d6950aff32cadce065d21a0405ac6ba9bac4ffef92a3744d1bec475ae4",
+      "prompt_sha256": "4b3dd70b432736fe9b54f49cee1e81ae04ae38f1b21af0a7445da04ff932d721"
+    },
+    "shimmer2-auditor-document-272": {
+      "input_ids_sha256": "2518ca0629cb9c2ab1a6c9192c9c5d89091fef384bcca8dff89a39283a1cf59d",
+      "prompt_sha256": "1e33c221e8f9d1613a61e230109ceff4846f58822bb3b84f5df633b850cbad38"
+    },
+    "shimmer2-auditor-document-273": {
+      "input_ids_sha256": "50a155677c7693eb4859fb3983f5ef67fe40063832b5828c04202dc4fd727be5",
+      "prompt_sha256": "7d392be202a1f0eeeb3a80d4ba5691181f54075375ea22e3c08e75192d7a358c"
+    },
+    "shimmer2-auditor-document-274": {
+      "input_ids_sha256": "d12abf8990d2920470a92f4ee2007509185ada25e37b6f0df35ae8086c82f7ea",
+      "prompt_sha256": "397f930047973b7c614e7270bb9986bf97f159d2264aff254a9337a5efd2edef"
+    },
+    "shimmer2-auditor-document-275": {
+      "input_ids_sha256": "85ee97203231f5e05749bc46273c407c23b65816d3ecd64aa988c73144735d04",
+      "prompt_sha256": "1852750b06fa1fb058f671d85cac35bb167a926acd489e2799a84940c3147062"
+    },
+    "shimmer2-auditor-document-276": {
+      "input_ids_sha256": "c3c2f16a1be3c609cb4088a5c503ca1b454a22e9130d29250e3f308d5747bc54",
+      "prompt_sha256": "d5a4c72be0f10bcf2efc561f1d86791935c16cf0f3b9f129b8682d64f5fdb18b"
+    },
+    "shimmer2-auditor-document-277": {
+      "input_ids_sha256": "36241fef595db14f755270bd4db05a118a7045ad1f2c960cd14d56ebb126af40",
+      "prompt_sha256": "382b486e293440c4917bbf18ccd2440fb2f2c9805d5b015ccb09ea54f2d29725"
+    },
+    "shimmer2-auditor-document-278": {
+      "input_ids_sha256": "cd45722bab25a871d3201c763ff6d52d45cecd9aaf9610682cdf40bbd16929bb",
+      "prompt_sha256": "362c76880d97370547e23b0ccc97e8b97c9cbb063b27c24337d355eb2a4de8fc"
+    },
+    "shimmer2-auditor-document-279": {
+      "input_ids_sha256": "610c11f5f4cd28ea0c6cf85de26e56c8613271bdaeb3fee09f1dab53221efc62",
+      "prompt_sha256": "58cb06867638c4ad04ffafe03305954d4827370cead2e22d9951701f44e5ebc4"
+    },
+    "shimmer2-auditor-document-280": {
+      "input_ids_sha256": "afcd92ad8e284a1d0024459403f1cc6ce9b1f6696388ad8340ce019c7886e666",
+      "prompt_sha256": "7a5eaff2bc0497b1ea45c77d0aa3248c3f8e23f527e4dfe62fce3e68995c9b22"
+    },
+    "shimmer2-auditor-document-281": {
+      "input_ids_sha256": "e3006061c99644735c32e1cde2e690601f2b2c836ab5757d1c0211859032ef73",
+      "prompt_sha256": "d0f849c875f718fe00f019ebf6fd18fbc36065e179b088f44fe316df8fd2cc0a"
+    },
+    "shimmer2-auditor-document-282": {
+      "input_ids_sha256": "0cdae1e81456acc70c1720995500b40ad889e9d374c9b0ff6ed7cd715a41a0c4",
+      "prompt_sha256": "1c64483bf804c612ccdfe877fd58fd5b5459f9f2493c5751745cb925367e1fe1"
+    },
+    "shimmer2-auditor-document-283": {
+      "input_ids_sha256": "cb42fe750e4164b448bd9c7814d05c4fed66b8bad7cdc7fded10b5f528d8fe51",
+      "prompt_sha256": "09517cfe0e3c20113d8b729f81eee4715ef14e314d0d52b2e1f2079c615e6d39"
+    },
+    "shimmer2-auditor-document-284": {
+      "input_ids_sha256": "8bea9a5dc150dd001eec9262b8bad3963ac6ccf54d8d4abd1e175b4c50e15853",
+      "prompt_sha256": "87e6588050f44795ffdc50a93d2b9b3f541e4c9e3ef58a3ee552f4bca177b6db"
+    }
+  },
+  "raw_before_score": true,
+  "runtime": "auditor-canonical-scoped-v1",
+  "speed_policy": "No inherited Producer speed/ratio quality gate. Positive finite timing and measured remaining-work budget admission are required.",
+  "total_generation_calls": 144
+}
