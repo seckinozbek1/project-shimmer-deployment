@@ -1,0 +1,11 @@
+{
+  "phase": "checkpoint-168:DEV-84",
+  "step": 168,
+  "eval_outputs": 196,
+  "epoch": 1789577402.342543,
+  "training_seconds": 982.2212675060024,
+  "remaining_updates": 0,
+  "remaining_generations": 0,
+  "measured_seconds_per_update": 5.879709472499826,
+  "measured_generation_tokens_per_second": 8.876543755229784
+}

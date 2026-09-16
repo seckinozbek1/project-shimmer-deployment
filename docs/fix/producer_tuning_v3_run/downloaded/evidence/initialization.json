@@ -1,0 +1,16 @@
+{
+  "seed": 7,
+  "fresh_lora": true,
+  "old_adapter_loaded": false,
+  "lora_B_all_zero": true,
+  "adapter": {
+    "experiment": "producer-targeted-v3",
+    "step": 0,
+    "files": {
+      "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+      "adapter_model.safetensors": "61e13e0871378a204aa94d2ba4873e9e53cf37a5244aaa5c01c452aefc95e0e9"
+    }
+  },
+  "model_load_seconds": 7.298473119735718,
+  "trainable_parameters": 20185088
+}

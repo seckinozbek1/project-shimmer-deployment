@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "group_intersections": {
+    "document_family": [],
+    "template_family": [],
+    "derivation_group": [],
+    "paraphrase_family": [],
+    "renamed_family": [],
+    "leakage_group": []
+  },
+  "semantic_signature_intersection_count": 0,
+  "old_dev_membership_preserved": 60,
+  "contrast_pairs": 20,
+  "contrast_pairs_crossing_split": 0,
+  "max_new_to_old_dev_fivegram_jaccard": 0.05970149253731343,
+  "interpretation": "All old canonical memberships and ancestry groups preserved. No exact source/input or normalized semantic sibling crossing. Lexical screen is descriptive; no numerical screen proves absence of conceptual leakage. New rows were authored from abstract error classes, not DEV packet paraphrases.",
+  "benchmark_status": "Development corpus after failure-informed design; not an independent final benchmark or protected evaluation."
+}
