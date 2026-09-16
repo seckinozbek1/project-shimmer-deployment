@@ -1,0 +1,55 @@
+test_01_historical_files_preserved (__main__.RuntimeChecks.test_01_historical_files_preserved) ... ok
+test_02_adapter_binding (__main__.RuntimeChecks.test_02_adapter_binding) ... ok
+test_03_dev_population_order (__main__.RuntimeChecks.test_03_dev_population_order) ... ok
+test_04_prompt_mutation_denied (__main__.RuntimeChecks.test_04_prompt_mutation_denied) ... ok
+test_05_token_mutation_denied (__main__.RuntimeChecks.test_05_token_mutation_denied) ... ok
+test_06_generation_identity (__main__.RuntimeChecks.test_06_generation_identity) ... ok
+test_07_normal_restoration (__main__.RuntimeChecks.test_07_normal_restoration) ... ok
+test_08_exception_restoration (__main__.RuntimeChecks.test_08_exception_restoration) ... ok
+test_09_early_termination_restoration (__main__.RuntimeChecks.test_09_early_termination_restoration) ... ok
+test_10_inference_effect (__main__.RuntimeChecks.test_10_inference_effect) ... ok
+test_11_cache_lifecycle (__main__.RuntimeChecks.test_11_cache_lifecycle) ... ok
+test_12_checkpoint_flags_kept_inactive_then_restored (__main__.RuntimeChecks.test_12_checkpoint_flags_kept_inactive_then_restored) ... ok
+test_13_shared_config_identity_restoration (__main__.RuntimeChecks.test_13_shared_config_identity_restoration) ... ok
+test_14_raw_precedes_scoring (__main__.RuntimeChecks.test_14_raw_precedes_scoring) ... ok
+test_15_raw_survives_scoring_error (__main__.RuntimeChecks.test_15_raw_survives_scoring_error) ... ok
+test_16_no_global_trace_in_optimized_path (__main__.RuntimeChecks.test_16_no_global_trace_in_optimized_path) ... ok
+test_17_boundary_sync_count (__main__.RuntimeChecks.test_17_boundary_sync_count) ... ok
+test_18_durable_single_row (__main__.RuntimeChecks.test_18_durable_single_row) ... ok
+test_19_quantiles (__main__.RuntimeChecks.test_19_quantiles) ... ok
+test_20_efficiency_exact_counts (__main__.RuntimeChecks.test_20_efficiency_exact_counts) ... ok
+test_21_refusal_not_rewarded_as_content_atom (__main__.RuntimeChecks.test_21_refusal_not_rewarded_as_content_atom) ... ok
+test_22_trailing_prose (__main__.RuntimeChecks.test_22_trailing_prose) ... ok
+test_23_second_json (__main__.RuntimeChecks.test_23_second_json) ... ok
+test_24_fences_and_prefix (__main__.RuntimeChecks.test_24_fences_and_prefix) ... ok
+test_25_duplicate_exact_and_canonical (__main__.RuntimeChecks.test_25_duplicate_exact_and_canonical) ... ok
+test_26_different_span_not_duplicate (__main__.RuntimeChecks.test_26_different_span_not_duplicate) ... ok
+test_27_paired_only_shared_prefix (__main__.RuntimeChecks.test_27_paired_only_shared_prefix) ... ok
+test_28_saved_output_counts (__main__.RuntimeChecks.test_28_saved_output_counts) ... ok
+test_29_authorization_fail_closed (__main__.RuntimeChecks.test_29_authorization_fail_closed) ... ok
+test_30_auditor_and_fold_effect_denial (__main__.RuntimeChecks.test_30_auditor_and_fold_effect_denial) ... ok
+test_31_speed_gate_pass_and_failure (__main__.RuntimeChecks.test_31_speed_gate_pass_and_failure) ... ok
+test_32_missing_control_denied (__main__.RuntimeChecks.test_32_missing_control_denied) ... ok
+test_33_exact_historical_trace_reaches_foreign_calls (__main__.RuntimeChecks.test_33_exact_historical_trace_reaches_foreign_calls) ... ok
+test_34_pinned_qwen_cache_branches_effect (__main__.RuntimeChecks.test_34_pinned_qwen_cache_branches_effect) ... ok
+test_35_protected_read_denial (__main__.RuntimeChecks.test_35_protected_read_denial) ... ok
+test_36_auditor_read_denial (__main__.RuntimeChecks.test_36_auditor_read_denial) ... ok
+test_37_weight_open_denial (__main__.RuntimeChecks.test_37_weight_open_denial) ... ok
+test_38_network_denial (__main__.RuntimeChecks.test_38_network_denial) ... ok
+test_39_historical_write_denial (__main__.RuntimeChecks.test_39_historical_write_denial) ... ok
+test_40_telemetry_separate_process (__main__.RuntimeChecks.test_40_telemetry_separate_process) ... ok
+test_41_saved_historical_metric_equality (__main__.RuntimeChecks.test_41_saved_historical_metric_equality) ... ok
+test_42_cache_kwarg_reaches_standin (__main__.RuntimeChecks.test_42_cache_kwarg_reaches_standin) ... ok
+test_43_cache_observation_failure_is_no_go (__main__.RuntimeChecks.test_43_cache_observation_failure_is_no_go) ... ok
+test_44_session_cannot_generate_without_controls (__main__.RuntimeChecks.test_44_session_cannot_generate_without_controls) ... ok
+test_45_session_denies_stitching_and_resume (__main__.RuntimeChecks.test_45_session_denies_stitching_and_resume) ... ok
+test_46_session_denies_protocol_drift (__main__.RuntimeChecks.test_46_session_denies_protocol_drift) ... ok
+test_47_controls_require_actual_bound_identity (__main__.RuntimeChecks.test_47_controls_require_actual_bound_identity) ... ok
+test_48_cache_hooks_removed_on_exception (__main__.RuntimeChecks.test_48_cache_hooks_removed_on_exception) ... ok
+test_49_cache_probe_observes_real_hook_arguments (__main__.RuntimeChecks.test_49_cache_probe_observes_real_hook_arguments) ... ok
+test_50_memory_counters_preserved_outside_timer (__main__.RuntimeChecks.test_50_memory_counters_preserved_outside_timer) ... ok
+
+----------------------------------------------------------------------
+Ran 50 tests in 2.585s
+
+OK

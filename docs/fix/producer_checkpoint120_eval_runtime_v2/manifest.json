@@ -1,0 +1,33 @@
+{
+  "bundle_sha256": "c3d216100e1a254f41667b2580120ed39d5239ea7ce688628ac05cb444e4afdb",
+  "hard_seconds": 8372.093023255815,
+  "hard_usd": 3,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-checkpoint120-eval",
+  "projected_cost": 2.3720630725,
+  "projected_seconds_with_reserve": 6619.7109,
+  "region": "us-east-1",
+  "release_sha256": "4f0005934ed09593c2ca1dcefe3c6295924d9cbcac6e0e180b3fb05abdd17d49",
+  "reserve_seconds": 600,
+  "soft_seconds": 6976.7441860465115,
+  "soft_usd": 2.5,
+  "source_commit": "bee77af53576249fc889020ac44e969777433de7",
+  "watchdog_deadline_seconds": 8312.093023255815,
+  "workload_deadline_seconds": 7772.093023255815
+}
