@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "rows": 120,
+  "differences": [],
+  "review_sha256": "ced3eb102ab6e5a92d4644021d203349b1ccd65aa888b497d316c02a22e7c292",
+  "human_reviewed": false,
+  "independent_final_benchmark": false,
+  "method": "Fresh input-only agent, opaque IDs, independently specified clause mapping; shared ontology, shared filesystem, no OS isolation claim"
+}

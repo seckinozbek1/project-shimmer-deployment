@@ -1,0 +1,3390 @@
+{
+  "rows": [
+    {
+      "example_id": "shimmer2-producer-document-000",
+      "prompt": 558,
+      "target": 71,
+      "sequence": 629,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-001",
+      "prompt": 598,
+      "target": 120,
+      "sequence": 718,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-002",
+      "prompt": 655,
+      "target": 157,
+      "sequence": 812,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-003",
+      "prompt": 674,
+      "target": 104,
+      "sequence": 778,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-004",
+      "prompt": 564,
+      "target": 110,
+      "sequence": 674,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-005",
+      "prompt": 600,
+      "target": 120,
+      "sequence": 720,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-006",
+      "prompt": 650,
+      "target": 117,
+      "sequence": 767,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-007",
+      "prompt": 681,
+      "target": 143,
+      "sequence": 824,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-008",
+      "prompt": 564,
+      "target": 108,
+      "sequence": 672,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-009",
+      "prompt": 593,
+      "target": 78,
+      "sequence": 671,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-010",
+      "prompt": 655,
+      "target": 155,
+      "sequence": 810,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-011",
+      "prompt": 670,
+      "target": 142,
+      "sequence": 812,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-012",
+      "prompt": 558,
+      "target": 73,
+      "sequence": 631,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-013",
+      "prompt": 553,
+      "target": 28,
+      "sequence": 581,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-014",
+      "prompt": 564,
+      "target": 11,
+      "sequence": 575,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-015",
+      "prompt": 603,
+      "target": 125,
+      "sequence": 728,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-016",
+      "prompt": 662,
+      "target": 160,
+      "sequence": 822,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-017",
+      "prompt": 680,
+      "target": 105,
+      "sequence": 785,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-018",
+      "prompt": 569,
+      "target": 112,
+      "sequence": 681,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-019",
+      "prompt": 608,
+      "target": 120,
+      "sequence": 728,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-020",
+      "prompt": 655,
+      "target": 116,
+      "sequence": 771,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-021",
+      "prompt": 688,
+      "target": 141,
+      "sequence": 829,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-022",
+      "prompt": 566,
+      "target": 109,
+      "sequence": 675,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-023",
+      "prompt": 597,
+      "target": 83,
+      "sequence": 680,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-024",
+      "prompt": 661,
+      "target": 158,
+      "sequence": 819,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-025",
+      "prompt": 688,
+      "target": 188,
+      "sequence": 876,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-026",
+      "prompt": 566,
+      "target": 112,
+      "sequence": 678,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-027",
+      "prompt": 613,
+      "target": 163,
+      "sequence": 776,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-028",
+      "prompt": 558,
+      "target": 28,
+      "sequence": 586,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-029",
+      "prompt": 568,
+      "target": 11,
+      "sequence": 579,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-030",
+      "prompt": 683,
+      "target": 199,
+      "sequence": 882,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-031",
+      "prompt": 704,
+      "target": 148,
+      "sequence": 852,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-032",
+      "prompt": 603,
+      "target": 178,
+      "sequence": 781,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-033",
+      "prompt": 624,
+      "target": 163,
+      "sequence": 787,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-034",
+      "prompt": 672,
+      "target": 158,
+      "sequence": 830,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-035",
+      "prompt": 715,
+      "target": 185,
+      "sequence": 900,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-036",
+      "prompt": 603,
+      "target": 177,
+      "sequence": 780,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-037",
+      "prompt": 613,
+      "target": 121,
+      "sequence": 734,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-038",
+      "prompt": 685,
+      "target": 204,
+      "sequence": 889,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-039",
+      "prompt": 708,
+      "target": 190,
+      "sequence": 898,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-040",
+      "prompt": 572,
+      "target": 117,
+      "sequence": 689,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-041",
+      "prompt": 624,
+      "target": 165,
+      "sequence": 789,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-042",
+      "prompt": 686,
+      "target": 201,
+      "sequence": 887,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-043",
+      "prompt": 568,
+      "target": 28,
+      "sequence": 596,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-044",
+      "prompt": 574,
+      "target": 11,
+      "sequence": 585,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-045",
+      "prompt": 711,
+      "target": 147,
+      "sequence": 858,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-046",
+      "prompt": 605,
+      "target": 177,
+      "sequence": 782,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-047",
+      "prompt": 627,
+      "target": 162,
+      "sequence": 789,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-048",
+      "prompt": 676,
+      "target": 158,
+      "sequence": 834,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-049",
+      "prompt": 721,
+      "target": 190,
+      "sequence": 911,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-050",
+      "prompt": 607,
+      "target": 181,
+      "sequence": 788,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-051",
+      "prompt": 617,
+      "target": 121,
+      "sequence": 738,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-052",
+      "prompt": 691,
+      "target": 199,
+      "sequence": 890,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-053",
+      "prompt": 711,
+      "target": 185,
+      "sequence": 896,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-054",
+      "prompt": 574,
+      "target": 113,
+      "sequence": 687,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-055",
+      "prompt": 631,
+      "target": 161,
+      "sequence": 792,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-056",
+      "prompt": 687,
+      "target": 199,
+      "sequence": 886,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-057",
+      "prompt": 709,
+      "target": 144,
+      "sequence": 853,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-058",
+      "prompt": 571,
+      "target": 28,
+      "sequence": 599,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-059",
+      "prompt": 577,
+      "target": 11,
+      "sequence": 588,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-060",
+      "prompt": 612,
+      "target": 176,
+      "sequence": 788,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-061",
+      "prompt": 640,
+      "target": 160,
+      "sequence": 800,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-062",
+      "prompt": 688,
+      "target": 157,
+      "sequence": 845,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-063",
+      "prompt": 739,
+      "target": 190,
+      "sequence": 929,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-064",
+      "prompt": 619,
+      "target": 181,
+      "sequence": 800,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-065",
+      "prompt": 626,
+      "target": 126,
+      "sequence": 752,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-066",
+      "prompt": 705,
+      "target": 201,
+      "sequence": 906,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-067",
+      "prompt": 732,
+      "target": 187,
+      "sequence": 919,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-068",
+      "prompt": 582,
+      "target": 112,
+      "sequence": 694,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-069",
+      "prompt": 642,
+      "target": 160,
+      "sequence": 802,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-070",
+      "prompt": 701,
+      "target": 198,
+      "sequence": 899,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-071",
+      "prompt": 724,
+      "target": 144,
+      "sequence": 868,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-072",
+      "prompt": 614,
+      "target": 181,
+      "sequence": 795,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-073",
+      "prompt": 580,
+      "target": 28,
+      "sequence": 608,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-074",
+      "prompt": 583,
+      "target": 11,
+      "sequence": 594,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-075",
+      "prompt": 617,
+      "target": 164,
+      "sequence": 781,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-076",
+      "prompt": 677,
+      "target": 158,
+      "sequence": 835,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-077",
+      "prompt": 700,
+      "target": 185,
+      "sequence": 885,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-078",
+      "prompt": 609,
+      "target": 177,
+      "sequence": 786,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-079",
+      "prompt": 611,
+      "target": 121,
+      "sequence": 732,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-080",
+      "prompt": 683,
+      "target": 197,
+      "sequence": 880,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-081",
+      "prompt": 689,
+      "target": 183,
+      "sequence": 872,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-082",
+      "prompt": 572,
+      "target": 109,
+      "sequence": 681,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-083",
+      "prompt": 616,
+      "target": 159,
+      "sequence": 775,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-084",
+      "prompt": 684,
+      "target": 196,
+      "sequence": 880,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-085",
+      "prompt": 694,
+      "target": 148,
+      "sequence": 842,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-086",
+      "prompt": 611,
+      "target": 182,
+      "sequence": 793,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-087",
+      "prompt": 621,
+      "target": 164,
+      "sequence": 785,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-088",
+      "prompt": 565,
+      "target": 28,
+      "sequence": 593,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-089",
+      "prompt": 575,
+      "target": 11,
+      "sequence": 586,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-090",
+      "prompt": 686,
+      "target": 159,
+      "sequence": 845,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-091",
+      "prompt": 705,
+      "target": 187,
+      "sequence": 892,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-092",
+      "prompt": 626,
+      "target": 177,
+      "sequence": 803,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-093",
+      "prompt": 618,
+      "target": 120,
+      "sequence": 738,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-094",
+      "prompt": 693,
+      "target": 195,
+      "sequence": 888,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-095",
+      "prompt": 690,
+      "target": 184,
+      "sequence": 874,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-096",
+      "prompt": 579,
+      "target": 114,
+      "sequence": 693,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-097",
+      "prompt": 620,
+      "target": 162,
+      "sequence": 782,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-098",
+      "prompt": 693,
+      "target": 200,
+      "sequence": 893,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-099",
+      "prompt": 697,
+      "target": 147,
+      "sequence": 844,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-100",
+      "prompt": 623,
+      "target": 178,
+      "sequence": 801,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-101",
+      "prompt": 623,
+      "target": 161,
+      "sequence": 784,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-102",
+      "prompt": 688,
+      "target": 157,
+      "sequence": 845,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-103",
+      "prompt": 570,
+      "target": 28,
+      "sequence": 598,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-104",
+      "prompt": 582,
+      "target": 11,
+      "sequence": 593,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-105",
+      "prompt": 734,
+      "target": 183,
+      "sequence": 917,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-106",
+      "prompt": 629,
+      "target": 176,
+      "sequence": 805,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-107",
+      "prompt": 628,
+      "target": 120,
+      "sequence": 748,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-108",
+      "prompt": 716,
+      "target": 202,
+      "sequence": 918,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-109",
+      "prompt": 725,
+      "target": 190,
+      "sequence": 915,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-110",
+      "prompt": 586,
+      "target": 116,
+      "sequence": 702,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-111",
+      "prompt": 638,
+      "target": 164,
+      "sequence": 802,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-112",
+      "prompt": 716,
+      "target": 199,
+      "sequence": 915,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-113",
+      "prompt": 724,
+      "target": 146,
+      "sequence": 870,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-114",
+      "prompt": 632,
+      "target": 178,
+      "sequence": 810,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-115",
+      "prompt": 643,
+      "target": 160,
+      "sequence": 803,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-116",
+      "prompt": 702,
+      "target": 157,
+      "sequence": 859,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-117",
+      "prompt": 730,
+      "target": 188,
+      "sequence": 918,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-118",
+      "prompt": 584,
+      "target": 28,
+      "sequence": 612,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-119",
+      "prompt": 585,
+      "target": 11,
+      "sequence": 596,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-120",
+      "prompt": 603,
+      "target": 180,
+      "sequence": 783,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-121",
+      "prompt": 616,
+      "target": 123,
+      "sequence": 739,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-122",
+      "prompt": 688,
+      "target": 199,
+      "sequence": 887,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-123",
+      "prompt": 709,
+      "target": 187,
+      "sequence": 896,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-124",
+      "prompt": 572,
+      "target": 110,
+      "sequence": 682,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-125",
+      "prompt": 626,
+      "target": 160,
+      "sequence": 786,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-126",
+      "prompt": 683,
+      "target": 196,
+      "sequence": 879,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-127",
+      "prompt": 707,
+      "target": 144,
+      "sequence": 851,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-128",
+      "prompt": 606,
+      "target": 180,
+      "sequence": 786,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-129",
+      "prompt": 630,
+      "target": 166,
+      "sequence": 796,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-130",
+      "prompt": 677,
+      "target": 163,
+      "sequence": 840,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-131",
+      "prompt": 716,
+      "target": 187,
+      "sequence": 903,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-132",
+      "prompt": 608,
+      "target": 179,
+      "sequence": 787,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-133",
+      "prompt": 569,
+      "target": 28,
+      "sequence": 597,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-134",
+      "prompt": 573,
+      "target": 11,
+      "sequence": 584,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-135",
+      "prompt": 628,
+      "target": 122,
+      "sequence": 750,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-136",
+      "prompt": 706,
+      "target": 199,
+      "sequence": 905,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-137",
+      "prompt": 730,
+      "target": 183,
+      "sequence": 913,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-138",
+      "prompt": 579,
+      "target": 110,
+      "sequence": 689,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-139",
+      "prompt": 641,
+      "target": 166,
+      "sequence": 807,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-140",
+      "prompt": 703,
+      "target": 200,
+      "sequence": 903,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-141",
+      "prompt": 726,
+      "target": 147,
+      "sequence": 873,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-142",
+      "prompt": 613,
+      "target": 178,
+      "sequence": 791,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-143",
+      "prompt": 641,
+      "target": 162,
+      "sequence": 803,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-144",
+      "prompt": 690,
+      "target": 158,
+      "sequence": 848,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-145",
+      "prompt": 734,
+      "target": 185,
+      "sequence": 919,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-146",
+      "prompt": 616,
+      "target": 178,
+      "sequence": 794,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-147",
+      "prompt": 624,
+      "target": 126,
+      "sequence": 750,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-148",
+      "prompt": 580,
+      "target": 28,
+      "sequence": 608,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-149",
+      "prompt": 580,
+      "target": 11,
+      "sequence": 591,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-150",
+      "prompt": 715,
+      "target": 204,
+      "sequence": 919,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-151",
+      "prompt": 738,
+      "target": 190,
+      "sequence": 928,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-152",
+      "prompt": 582,
+      "target": 114,
+      "sequence": 696,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-153",
+      "prompt": 649,
+      "target": 163,
+      "sequence": 812,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-154",
+      "prompt": 713,
+      "target": 200,
+      "sequence": 913,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-155",
+      "prompt": 735,
+      "target": 146,
+      "sequence": 881,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-156",
+      "prompt": 618,
+      "target": 177,
+      "sequence": 795,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-157",
+      "prompt": 650,
+      "target": 161,
+      "sequence": 811,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-158",
+      "prompt": 697,
+      "target": 163,
+      "sequence": 860,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-159",
+      "prompt": 743,
+      "target": 189,
+      "sequence": 932,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-160",
+      "prompt": 621,
+      "target": 177,
+      "sequence": 798,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-161",
+      "prompt": 628,
+      "target": 120,
+      "sequence": 748,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-162",
+      "prompt": 712,
+      "target": 198,
+      "sequence": 910,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-163",
+      "prompt": 585,
+      "target": 28,
+      "sequence": 613,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-164",
+      "prompt": 582,
+      "target": 11,
+      "sequence": 593,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-165",
+      "prompt": 699,
+      "target": 184,
+      "sequence": 883,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-166",
+      "prompt": 574,
+      "target": 110,
+      "sequence": 684,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-167",
+      "prompt": 624,
+      "target": 164,
+      "sequence": 788,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-168",
+      "prompt": 687,
+      "target": 204,
+      "sequence": 891,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-169",
+      "prompt": 702,
+      "target": 150,
+      "sequence": 852,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-170",
+      "prompt": 609,
+      "target": 179,
+      "sequence": 788,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-171",
+      "prompt": 629,
+      "target": 164,
+      "sequence": 793,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-172",
+      "prompt": 683,
+      "target": 159,
+      "sequence": 842,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-173",
+      "prompt": 710,
+      "target": 185,
+      "sequence": 895,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-174",
+      "prompt": 611,
+      "target": 175,
+      "sequence": 786,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-175",
+      "prompt": 611,
+      "target": 120,
+      "sequence": 731,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-176",
+      "prompt": 689,
+      "target": 201,
+      "sequence": 890,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-177",
+      "prompt": 702,
+      "target": 187,
+      "sequence": 889,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-178",
+      "prompt": 567,
+      "target": 28,
+      "sequence": 595,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-179",
+      "prompt": 575,
+      "target": 11,
+      "sequence": 586,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-180",
+      "prompt": 572,
+      "target": 110,
+      "sequence": 682,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-181",
+      "prompt": 616,
+      "target": 160,
+      "sequence": 776,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-182",
+      "prompt": 682,
+      "target": 197,
+      "sequence": 879,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-183",
+      "prompt": 692,
+      "target": 144,
+      "sequence": 836,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-184",
+      "prompt": 610,
+      "target": 182,
+      "sequence": 792,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-185",
+      "prompt": 621,
+      "target": 165,
+      "sequence": 786,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-186",
+      "prompt": 678,
+      "target": 163,
+      "sequence": 841,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-187",
+      "prompt": 695,
+      "target": 188,
+      "sequence": 883,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-188",
+      "prompt": 615,
+      "target": 179,
+      "sequence": 794,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-189",
+      "prompt": 609,
+      "target": 122,
+      "sequence": 731,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-190",
+      "prompt": 683,
+      "target": 197,
+      "sequence": 880,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-191",
+      "prompt": 689,
+      "target": 185,
+      "sequence": 874,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-192",
+      "prompt": 571,
+      "target": 110,
+      "sequence": 681,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-193",
+      "prompt": 566,
+      "target": 28,
+      "sequence": 594,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-194",
+      "prompt": 577,
+      "target": 11,
+      "sequence": 588,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-195",
+      "prompt": 614,
+      "target": 165,
+      "sequence": 779,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-196",
+      "prompt": 677,
+      "target": 201,
+      "sequence": 878,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-197",
+      "prompt": 691,
+      "target": 142,
+      "sequence": 833,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-198",
+      "prompt": 605,
+      "target": 174,
+      "sequence": 779,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-199",
+      "prompt": 616,
+      "target": 157,
+      "sequence": 773,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-200",
+      "prompt": 675,
+      "target": 160,
+      "sequence": 835,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-201",
+      "prompt": 696,
+      "target": 187,
+      "sequence": 883,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-202",
+      "prompt": 608,
+      "target": 180,
+      "sequence": 788,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-203",
+      "prompt": 605,
+      "target": 121,
+      "sequence": 726,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-204",
+      "prompt": 680,
+      "target": 198,
+      "sequence": 878,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-205",
+      "prompt": 693,
+      "target": 184,
+      "sequence": 877,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-206",
+      "prompt": 572,
+      "target": 109,
+      "sequence": 681,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-207",
+      "prompt": 613,
+      "target": 159,
+      "sequence": 772,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-208",
+      "prompt": 564,
+      "target": 28,
+      "sequence": 592,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-209",
+      "prompt": 576,
+      "target": 11,
+      "sequence": 587,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-210",
+      "prompt": 677,
+      "target": 194,
+      "sequence": 871,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-211",
+      "prompt": 690,
+      "target": 147,
+      "sequence": 837,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-212",
+      "prompt": 604,
+      "target": 178,
+      "sequence": 782,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-213",
+      "prompt": 615,
+      "target": 158,
+      "sequence": 773,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-214",
+      "prompt": 672,
+      "target": 155,
+      "sequence": 827,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-215",
+      "prompt": 693,
+      "target": 186,
+      "sequence": 879,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-216",
+      "prompt": 606,
+      "target": 181,
+      "sequence": 787,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-217",
+      "prompt": 604,
+      "target": 124,
+      "sequence": 728,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-218",
+      "prompt": 676,
+      "target": 198,
+      "sequence": 874,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-219",
+      "prompt": 691,
+      "target": 186,
+      "sequence": 877,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-220",
+      "prompt": 571,
+      "target": 110,
+      "sequence": 681,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-221",
+      "prompt": 617,
+      "target": 159,
+      "sequence": 776,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-222",
+      "prompt": 677,
+      "target": 194,
+      "sequence": 871,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-223",
+      "prompt": 563,
+      "target": 28,
+      "sequence": 591,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-224",
+      "prompt": 574,
+      "target": 11,
+      "sequence": 585,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-225",
+      "prompt": 692,
+      "target": 142,
+      "sequence": 834,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-226",
+      "prompt": 610,
+      "target": 178,
+      "sequence": 788,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-227",
+      "prompt": 617,
+      "target": 161,
+      "sequence": 778,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-228",
+      "prompt": 675,
+      "target": 155,
+      "sequence": 830,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-229",
+      "prompt": 695,
+      "target": 187,
+      "sequence": 882,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-230",
+      "prompt": 611,
+      "target": 180,
+      "sequence": 791,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-231",
+      "prompt": 605,
+      "target": 124,
+      "sequence": 729,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-232",
+      "prompt": 677,
+      "target": 199,
+      "sequence": 876,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-233",
+      "prompt": 693,
+      "target": 184,
+      "sequence": 877,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-234",
+      "prompt": 572,
+      "target": 110,
+      "sequence": 682,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-235",
+      "prompt": 617,
+      "target": 160,
+      "sequence": 777,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-236",
+      "prompt": 681,
+      "target": 195,
+      "sequence": 876,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-237",
+      "prompt": 697,
+      "target": 142,
+      "sequence": 839,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-238",
+      "prompt": 566,
+      "target": 28,
+      "sequence": 594,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-239",
+      "prompt": 574,
+      "target": 11,
+      "sequence": 585,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-240",
+      "prompt": 594,
+      "target": 178,
+      "sequence": 772,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-241",
+      "prompt": 615,
+      "target": 162,
+      "sequence": 777,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-242",
+      "prompt": 676,
+      "target": 203,
+      "sequence": 879,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-243",
+      "prompt": 709,
+      "target": 231,
+      "sequence": 940,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-244",
+      "prompt": 607,
+      "target": 224,
+      "sequence": 831,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-245",
+      "prompt": 612,
+      "target": 164,
+      "sequence": 776,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-246",
+      "prompt": 684,
+      "target": 241,
+      "sequence": 925,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-247",
+      "prompt": 706,
+      "target": 226,
+      "sequence": 932,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-248",
+      "prompt": 594,
+      "target": 178,
+      "sequence": 772,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-249",
+      "prompt": 626,
+      "target": 200,
+      "sequence": 826,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-250",
+      "prompt": 682,
+      "target": 238,
+      "sequence": 920,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-251",
+      "prompt": 709,
+      "target": 190,
+      "sequence": 899,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-252",
+      "prompt": 606,
+      "target": 220,
+      "sequence": 826,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-253",
+      "prompt": 562,
+      "target": 28,
+      "sequence": 590,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-254",
+      "prompt": 572,
+      "target": 11,
+      "sequence": 583,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-255",
+      "prompt": 645,
+      "target": 212,
+      "sequence": 857,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-256",
+      "prompt": 695,
+      "target": 209,
+      "sequence": 904,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-257",
+      "prompt": 726,
+      "target": 234,
+      "sequence": 960,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-258",
+      "prompt": 628,
+      "target": 224,
+      "sequence": 852,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-259",
+      "prompt": 629,
+      "target": 168,
+      "sequence": 797,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-260",
+      "prompt": 706,
+      "target": 245,
+      "sequence": 951,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-261",
+      "prompt": 724,
+      "target": 230,
+      "sequence": 954,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-262",
+      "prompt": 607,
+      "target": 182,
+      "sequence": 789,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-263",
+      "prompt": 641,
+      "target": 210,
+      "sequence": 851,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-264",
+      "prompt": 703,
+      "target": 247,
+      "sequence": 950,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-265",
+      "prompt": 727,
+      "target": 197,
+      "sequence": 924,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-266",
+      "prompt": 623,
+      "target": 226,
+      "sequence": 849,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-267",
+      "prompt": 645,
+      "target": 211,
+      "sequence": 856,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-268",
+      "prompt": 573,
+      "target": 28,
+      "sequence": 601,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-269",
+      "prompt": 578,
+      "target": 11,
+      "sequence": 589,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-270",
+      "prompt": 683,
+      "target": 206,
+      "sequence": 889,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-271",
+      "prompt": 719,
+      "target": 232,
+      "sequence": 951,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-272",
+      "prompt": 610,
+      "target": 222,
+      "sequence": 832,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-273",
+      "prompt": 617,
+      "target": 167,
+      "sequence": 784,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-274",
+      "prompt": 690,
+      "target": 248,
+      "sequence": 938,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-275",
+      "prompt": 711,
+      "target": 234,
+      "sequence": 945,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-276",
+      "prompt": 594,
+      "target": 186,
+      "sequence": 780,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-277",
+      "prompt": 633,
+      "target": 210,
+      "sequence": 843,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-278",
+      "prompt": 692,
+      "target": 246,
+      "sequence": 938,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-279",
+      "prompt": 717,
+      "target": 192,
+      "sequence": 909,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-280",
+      "prompt": 608,
+      "target": 224,
+      "sequence": 832,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-281",
+      "prompt": 632,
+      "target": 206,
+      "sequence": 838,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-282",
+      "prompt": 678,
+      "target": 209,
+      "sequence": 887,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-283",
+      "prompt": 563,
+      "target": 28,
+      "sequence": 591,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-284",
+      "prompt": 572,
+      "target": 11,
+      "sequence": 583,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-285",
+      "prompt": 735,
+      "target": 235,
+      "sequence": 970,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-286",
+      "prompt": 641,
+      "target": 223,
+      "sequence": 864,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-287",
+      "prompt": 635,
+      "target": 166,
+      "sequence": 801,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-288",
+      "prompt": 719,
+      "target": 241,
+      "sequence": 960,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-289",
+      "prompt": 728,
+      "target": 229,
+      "sequence": 957,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-290",
+      "prompt": 621,
+      "target": 180,
+      "sequence": 801,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-291",
+      "prompt": 647,
+      "target": 209,
+      "sequence": 856,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-292",
+      "prompt": 719,
+      "target": 245,
+      "sequence": 964,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-293",
+      "prompt": 738,
+      "target": 190,
+      "sequence": 928,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-294",
+      "prompt": 644,
+      "target": 221,
+      "sequence": 865,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-295",
+      "prompt": 650,
+      "target": 203,
+      "sequence": 853,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-296",
+      "prompt": 709,
+      "target": 201,
+      "sequence": 910,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-297",
+      "prompt": 732,
+      "target": 232,
+      "sequence": 964,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "shimmer2-producer-document-298",
+      "prompt": 580,
+      "target": 28,
+      "sequence": 608,
+      "refused": false,
+      "substantive": false
+    },
+    {
+      "example_id": "shimmer2-producer-document-299",
+      "prompt": 584,
+      "target": 11,
+      "sequence": 595,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-000-extract",
+      "prompt": 563,
+      "target": 154,
+      "sequence": 717,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-000-refuse",
+      "prompt": 573,
+      "target": 11,
+      "sequence": 584,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-001-extract",
+      "prompt": 561,
+      "target": 152,
+      "sequence": 713,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-001-refuse",
+      "prompt": 569,
+      "target": 11,
+      "sequence": 580,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-002-extract",
+      "prompt": 573,
+      "target": 153,
+      "sequence": 726,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-002-refuse",
+      "prompt": 583,
+      "target": 11,
+      "sequence": 594,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-003-extract",
+      "prompt": 574,
+      "target": 153,
+      "sequence": 727,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-003-refuse",
+      "prompt": 584,
+      "target": 11,
+      "sequence": 595,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-004-extract",
+      "prompt": 589,
+      "target": 182,
+      "sequence": 771,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-005-extract",
+      "prompt": 600,
+      "target": 168,
+      "sequence": 768,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-006-extract",
+      "prompt": 643,
+      "target": 175,
+      "sequence": 818,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-007-extract",
+      "prompt": 693,
+      "target": 234,
+      "sequence": 927,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-008-extract",
+      "prompt": 565,
+      "target": 149,
+      "sequence": 714,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-009-extract",
+      "prompt": 622,
+      "target": 187,
+      "sequence": 809,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-010-extract",
+      "prompt": 641,
+      "target": 182,
+      "sequence": 823,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-011-extract",
+      "prompt": 692,
+      "target": 232,
+      "sequence": 924,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-012-extract",
+      "prompt": 563,
+      "target": 156,
+      "sequence": 719,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-013-extract",
+      "prompt": 601,
+      "target": 168,
+      "sequence": 769,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-014-extract",
+      "prompt": 669,
+      "target": 199,
+      "sequence": 868,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-015-extract",
+      "prompt": 690,
+      "target": 189,
+      "sequence": 879,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-016-extract",
+      "prompt": 566,
+      "target": 151,
+      "sequence": 717,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-017-extract",
+      "prompt": 601,
+      "target": 161,
+      "sequence": 762,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-018-extract",
+      "prompt": 649,
+      "target": 181,
+      "sequence": 830,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-019-extract",
+      "prompt": 720,
+      "target": 263,
+      "sequence": 983,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-020-extract",
+      "prompt": 565,
+      "target": 156,
+      "sequence": 721,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-020-refuse",
+      "prompt": 575,
+      "target": 11,
+      "sequence": 586,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-021-extract",
+      "prompt": 566,
+      "target": 154,
+      "sequence": 720,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-021-refuse",
+      "prompt": 575,
+      "target": 11,
+      "sequence": 586,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-022-extract",
+      "prompt": 575,
+      "target": 151,
+      "sequence": 726,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-022-refuse",
+      "prompt": 585,
+      "target": 11,
+      "sequence": 596,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-023-extract",
+      "prompt": 571,
+      "target": 153,
+      "sequence": 724,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-023-refuse",
+      "prompt": 581,
+      "target": 11,
+      "sequence": 592,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-024-extract",
+      "prompt": 587,
+      "target": 177,
+      "sequence": 764,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-025-extract",
+      "prompt": 604,
+      "target": 165,
+      "sequence": 769,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-026-extract",
+      "prompt": 644,
+      "target": 180,
+      "sequence": 824,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-027-extract",
+      "prompt": 697,
+      "target": 231,
+      "sequence": 928,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-028-extract",
+      "prompt": 568,
+      "target": 155,
+      "sequence": 723,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-029-extract",
+      "prompt": 627,
+      "target": 193,
+      "sequence": 820,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-030-extract",
+      "prompt": 641,
+      "target": 178,
+      "sequence": 819,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-031-extract",
+      "prompt": 701,
+      "target": 228,
+      "sequence": 929,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-032-extract",
+      "prompt": 564,
+      "target": 149,
+      "sequence": 713,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-033-extract",
+      "prompt": 603,
+      "target": 161,
+      "sequence": 764,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-034-extract",
+      "prompt": 666,
+      "target": 204,
+      "sequence": 870,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-035-extract",
+      "prompt": 689,
+      "target": 197,
+      "sequence": 886,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-036-extract",
+      "prompt": 566,
+      "target": 155,
+      "sequence": 721,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-037-extract",
+      "prompt": 597,
+      "target": 168,
+      "sequence": 765,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-038-extract",
+      "prompt": 639,
+      "target": 174,
+      "sequence": 813,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-039-extract",
+      "prompt": 722,
+      "target": 254,
+      "sequence": 976,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-040-extract",
+      "prompt": 568,
+      "target": 155,
+      "sequence": 723,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-040-refuse",
+      "prompt": 578,
+      "target": 11,
+      "sequence": 589,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-041-extract",
+      "prompt": 567,
+      "target": 151,
+      "sequence": 718,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-041-refuse",
+      "prompt": 575,
+      "target": 11,
+      "sequence": 586,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-042-extract",
+      "prompt": 576,
+      "target": 154,
+      "sequence": 730,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-042-refuse",
+      "prompt": 587,
+      "target": 11,
+      "sequence": 598,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-043-extract",
+      "prompt": 577,
+      "target": 153,
+      "sequence": 730,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-043-refuse",
+      "prompt": 587,
+      "target": 11,
+      "sequence": 598,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-044-extract",
+      "prompt": 589,
+      "target": 180,
+      "sequence": 769,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-045-extract",
+      "prompt": 599,
+      "target": 125,
+      "sequence": 724,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-046-extract",
+      "prompt": 641,
+      "target": 173,
+      "sequence": 814,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-047-extract",
+      "prompt": 693,
+      "target": 231,
+      "sequence": 924,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-048-extract",
+      "prompt": 564,
+      "target": 151,
+      "sequence": 715,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-049-extract",
+      "prompt": 629,
+      "target": 191,
+      "sequence": 820,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-050-extract",
+      "prompt": 645,
+      "target": 183,
+      "sequence": 828,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-051-extract",
+      "prompt": 695,
+      "target": 232,
+      "sequence": 927,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-052-extract",
+      "prompt": 568,
+      "target": 155,
+      "sequence": 723,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-053-extract",
+      "prompt": 600,
+      "target": 166,
+      "sequence": 766,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-054-extract",
+      "prompt": 664,
+      "target": 200,
+      "sequence": 864,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-055-extract",
+      "prompt": 689,
+      "target": 194,
+      "sequence": 883,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-056-extract",
+      "prompt": 565,
+      "target": 150,
+      "sequence": 715,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-057-extract",
+      "prompt": 602,
+      "target": 162,
+      "sequence": 764,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-058-extract",
+      "prompt": 645,
+      "target": 180,
+      "sequence": 825,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-059-extract",
+      "prompt": 723,
+      "target": 256,
+      "sequence": 979,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-060-extract",
+      "prompt": 567,
+      "target": 158,
+      "sequence": 725,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-060-refuse",
+      "prompt": 577,
+      "target": 11,
+      "sequence": 588,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-061-extract",
+      "prompt": 562,
+      "target": 156,
+      "sequence": 718,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-061-refuse",
+      "prompt": 570,
+      "target": 11,
+      "sequence": 581,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-062-extract",
+      "prompt": 576,
+      "target": 152,
+      "sequence": 728,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-062-refuse",
+      "prompt": 586,
+      "target": 11,
+      "sequence": 597,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-063-extract",
+      "prompt": 574,
+      "target": 152,
+      "sequence": 726,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-063-refuse",
+      "prompt": 584,
+      "target": 11,
+      "sequence": 595,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-064-extract",
+      "prompt": 591,
+      "target": 177,
+      "sequence": 768,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-065-extract",
+      "prompt": 606,
+      "target": 162,
+      "sequence": 768,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-066-extract",
+      "prompt": 648,
+      "target": 182,
+      "sequence": 830,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-067-extract",
+      "prompt": 703,
+      "target": 191,
+      "sequence": 894,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-068-extract",
+      "prompt": 568,
+      "target": 153,
+      "sequence": 721,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-069-extract",
+      "prompt": 632,
+      "target": 192,
+      "sequence": 824,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-070-extract",
+      "prompt": 644,
+      "target": 173,
+      "sequence": 817,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-071-extract",
+      "prompt": 702,
+      "target": 233,
+      "sequence": 935,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-072-extract",
+      "prompt": 565,
+      "target": 152,
+      "sequence": 717,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-073-extract",
+      "prompt": 603,
+      "target": 165,
+      "sequence": 768,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-074-extract",
+      "prompt": 673,
+      "target": 206,
+      "sequence": 879,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-075-extract",
+      "prompt": 698,
+      "target": 190,
+      "sequence": 888,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-076-extract",
+      "prompt": 569,
+      "target": 154,
+      "sequence": 723,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-077-extract",
+      "prompt": 605,
+      "target": 165,
+      "sequence": 770,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-078-extract",
+      "prompt": 646,
+      "target": 174,
+      "sequence": 820,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-079-extract",
+      "prompt": 733,
+      "target": 255,
+      "sequence": 988,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-080-extract",
+      "prompt": 563,
+      "target": 153,
+      "sequence": 716,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-080-refuse",
+      "prompt": 573,
+      "target": 11,
+      "sequence": 584,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-081-extract",
+      "prompt": 563,
+      "target": 151,
+      "sequence": 714,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-081-refuse",
+      "prompt": 571,
+      "target": 11,
+      "sequence": 582,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-082-extract",
+      "prompt": 576,
+      "target": 152,
+      "sequence": 728,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-082-refuse",
+      "prompt": 587,
+      "target": 11,
+      "sequence": 598,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-083-extract",
+      "prompt": 574,
+      "target": 154,
+      "sequence": 728,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-083-refuse",
+      "prompt": 584,
+      "target": 11,
+      "sequence": 595,
+      "refused": true,
+      "substantive": false
+    },
+    {
+      "example_id": "producer-v3-document-084-extract",
+      "prompt": 593,
+      "target": 181,
+      "sequence": 774,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-085-extract",
+      "prompt": 602,
+      "target": 168,
+      "sequence": 770,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-086-extract",
+      "prompt": 648,
+      "target": 173,
+      "sequence": 821,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-087-extract",
+      "prompt": 702,
+      "target": 229,
+      "sequence": 931,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-088-extract",
+      "prompt": 568,
+      "target": 152,
+      "sequence": 720,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-089-extract",
+      "prompt": 631,
+      "target": 190,
+      "sequence": 821,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-090-extract",
+      "prompt": 645,
+      "target": 184,
+      "sequence": 829,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-091-extract",
+      "prompt": 703,
+      "target": 236,
+      "sequence": 939,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-092-extract",
+      "prompt": 566,
+      "target": 153,
+      "sequence": 719,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-093-extract",
+      "prompt": 604,
+      "target": 164,
+      "sequence": 768,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-094-extract",
+      "prompt": 668,
+      "target": 198,
+      "sequence": 866,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-095-extract",
+      "prompt": 690,
+      "target": 191,
+      "sequence": 881,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-096-extract",
+      "prompt": 567,
+      "target": 153,
+      "sequence": 720,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-097-extract",
+      "prompt": 605,
+      "target": 164,
+      "sequence": 769,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-098-extract",
+      "prompt": 648,
+      "target": 180,
+      "sequence": 828,
+      "refused": false,
+      "substantive": true
+    },
+    {
+      "example_id": "producer-v3-document-099-extract",
+      "prompt": 726,
+      "target": 258,
+      "sequence": 984,
+      "refused": false,
+      "substantive": true
+    }
+  ],
+  "all_targets": {
+    "n": 420,
+    "min": 11,
+    "median": 164.0,
+    "mean": 150.5095238095238,
+    "p95": 232.0,
+    "max": 263
+  },
+  "refusal_targets": {
+    "n": 40,
+    "min": 11,
+    "median": 11.0,
+    "mean": 11,
+    "p95": 11.0,
+    "max": 11
+  },
+  "substantive_targets": {
+    "n": 360,
+    "min": 71,
+    "median": 176.0,
+    "mean": 172.81666666666666,
+    "p95": 233.05,
+    "max": 263
+  },
+  "max_sequence": 988,
+  "no_truncation": true
+}

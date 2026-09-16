@@ -1,0 +1,3262 @@
+[
+  {
+    "example_id": "v3-review-000",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin leaf 88\nRetained statement\nThe event time was not supplied.\nAttached account\nThe first entry recording time was not supplied.\nThe third entry recording time is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-001",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio capsule 19\nContents begin\nCLM-KA: The map studio logged 50 units (REF-70076).\nContents end"
+        },
+        {
+          "alias": "s1000",
+          "text": "Map Studio capsule 19\nContents begin\nCLM-KB: The map studio logged 55 units (REF-70077).\nCLM-KC: The map studio logged 75 units for the same batch as CLM-KB (REF-70078).\nThe recording time was not supplied.\nThe amendment ratification status was not supplied.\nThe third entry was not recorded in the archive.\nThe reporting time is uncertain.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70076",
+        "REF-70077",
+        "REF-70078",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70076",
+        "REF-70077",
+        "REF-70078"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-002",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive leaf 81\nRetained statement\nThe observation time was not provided.\nAttached account\nWhich entry came previous in sequence?\nThe reporting time is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-003",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The lathe cell temperature is unknown.\nLathe Cell transfer 21\nSender account\nThe event did not happen.\nWhich entry came previous in sequence?\nWhether the submission was submitted is undetermined.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-004",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop abstract 42\nScope statement\nThe first entry concerns the kiln workshop.\nAssociated qualifications\nThis entry recording time was not supplied.\nThe amendment ratification status was not supplied.\nThe reporting time is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-005",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery leaf 90\nRetained statement\nCLM-KA: The seed nursery logged 121 units (REF-70360).\nAttached account\nCLM-KB: The seed nursery logged 126 units (REF-70361).\nThe third entry was not recorded in the archive.\nNo second entry exists in the collection.\nThe date was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70360",
+        "REF-70361",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70360",
+        "REF-70361"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-006",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop leaf 96\nRetained statement\nThe event time was not supplied.\nAttached account\nThe authorization time was not provided.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-007",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station leaf 83\nRetained statement\nThe first entry concerns the beacon station.\nAttached account\nThis entry recording time was not supplied.\nThe date was not supplied.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-008",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew envelope 62\n[outer]\nThe first entry concerns the stage crew.\n[inner]\nThis entry recording time was not supplied.\nThe amendment effective time was not provided.\nWhether the event happened is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-009",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery abstract 56\nScope statement\nThe event time was not supplied.\nAssociated qualifications\nWhat does the third entry state?\nThe third entry recording time is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-010",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station abstract 59\nScope statement\nCLM-KA: The beacon station logged 90 units (REF-70236).\nAssociated qualifications\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Beacon Station abstract 59\nScope statement\nCLM-KB: The beacon station logged 95 units (REF-70237).\nAssociated qualifications\nCLM-KC: The beacon station logged 115 units for the same batch as CLM-KB (REF-70238).\nThe recording time was not supplied.\nThe date was not supplied.\nWhat does the second entry contain?\nWhether the submission was submitted is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70236",
+        "REF-70237",
+        "REF-70238",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70236",
+        "REF-70237",
+        "REF-70238"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-011",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio leaf 97\nRetained statement\nCLM-KA: The map studio logged 128 units (REF-70388).\nAttached account\nThe observation time was not provided.\nThe reporting time was not supplied.\nWhether the submission was submitted is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70388",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70388"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-012",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell abstract 58\nScope statement\nCLM-KA: The lathe cell logged 89 units (REF-70232).\nAssociated qualifications\nCLM-KB: The lathe cell logged 94 units (REF-70233).\nThe third entry was not recorded in the archive.\nThe submission time was not provided.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70232",
+        "REF-70233",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70232",
+        "REF-70233"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-013",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station envelope 66\n[outer]\nCLM-KA: The beacon station logged 97 units (REF-70264).\n[inner]\nCLM-KB: The beacon station logged 102 units (REF-70265).\nThe third entry was not recorded in the archive.\nNo second entry exists in the collection.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70264",
+        "REF-70265",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70264",
+        "REF-70265"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-014",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio capsule 9\nContents begin\nCLM-KA: The map studio logged 40 units (REF-70036).\nContents end"
+        },
+        {
+          "alias": "s1000",
+          "text": "Map Studio capsule 9\nContents begin\nThe observation time was not provided.\nWhich entry came previous in sequence?\nThe second entry interpretation is uncertain.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70036",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70036"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-015",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew abstract 45\nScope statement\nCLM-KA: The stage crew logged 76 units (REF-70180).\nAssociated qualifications\nThe event did not happen.\nWhich entry came previous in sequence?\nThe event did not happen."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70180",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70180"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-016",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station capsule 5\nContents begin\nCLM-KA: The beacon station logged 36 units (REF-70020).\nThe event did not happen.\nThe second entry event time was not provided.\nThe observation time was not provided.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70020",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70020"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-017",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber transfer 24\nSender account\nThe event time was not supplied.\nAccount sealed"
+        },
+        {
+          "alias": "s1000",
+          "text": "Echo Chamber transfer 24\nSender account\nThe authorization time was not provided.\nThe first entry interpretation is undetermined.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-018",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive capsule 3\nContents begin\nThe first entry concerns the core archive.\nThis entry recording time was not supplied.\nThe recorder was not named and remains unnamed.\nThe amendment ratification status is unresolved.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-019",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate seed nursery.\nSeed Nursery envelope 63\n[outer]\nThe first entry concerns the seed nursery.\n[inner]\nThis entry recording time was not supplied.\nThe recorder was not named and remains unnamed.\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-020",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew capsule 1\nContents begin\nThe observation time was not provided.\nThe reporting time was not supplied.\nThe second entry interpretation is uncertain.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-021",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The stage crew temperature is unknown.\nStage Crew capsule 1\nContents begin\nThe observation time was not provided.\nThe reporting time was not supplied.\nThe second entry interpretation is uncertain.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-022",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate stage crew.\nStage Crew envelope 62\n[outer]\nThe first entry concerns the stage crew.\n[inner]\nThis entry recording time was not supplied.\nThe amendment effective time was not provided.\nWhether the event happened is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-023",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate lathe cell.\nLathe Cell leaf 82\nRetained statement\nThe first entry concerns the lathe cell.\nAttached account\nThis entry recording time was not supplied.\nThe submission time was not provided.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-024",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate map studio.\nMap Studio abstract 43\nScope statement\nThe first entry concerns the map studio.\nAssociated qualifications\nThis entry recording time was not supplied.\nThe amendment ratification status was not supplied.\nWhether the submission was submitted is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-025",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell capsule 4\nContents begin\nThe submission was not submitted to the desk.\nContents end"
+        },
+        {
+          "alias": "s1000",
+          "text": "Lathe Cell capsule 4\nContents begin\nThe first entry recording time was not supplied.\nThe reporting time is uncertain.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-026",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop leaf 86\nRetained statement\nCLM-KA: The kiln workshop logged 117 units (REF-70344).\nAttached account\nCLM-KB: The kiln workshop logged 122 units (REF-70345).\nWhich entry came later in sequence?\nThe amendment effective time was not provided.\nThe first entry interpretation is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70344",
+        "REF-70345",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70344",
+        "REF-70345"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-027",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room leaf 94\nRetained statement\nCLM-KA: The weaving room logged 125 units (REF-70376).\nAttached account\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Weaving Room leaf 94\nRetained statement\nCLM-KB: The weaving room logged 130 units (REF-70377).\nAttached account\nWhich entry came later in sequence?\nThe submission time was not provided.\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70376",
+        "REF-70377",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70376",
+        "REF-70377"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-028",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive capsule 13\nContents begin\nCLM-KA: The core archive logged 44 units (REF-70052).\nThe event did not happen.\nThe reporting time was not supplied.\nWhether the submission was submitted is undetermined.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70052",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70052"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-029",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin abstract 44\nScope statement\nThe submission was not submitted to the desk.\nAssociated qualifications\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Switch Cabin abstract 44\nScope statement\nWhat does the third entry state?\nAssociated qualifications\nThe reporting time is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-030",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell leaf 92\nRetained statement\nThe submission was not submitted to the desk.\nAttached account\nWhat does the third entry state?\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-031",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery abstract 46\nScope statement\nCLM-KA: The seed nursery logged 77 units (REF-70184).\nAssociated qualifications\nCLM-KB: The seed nursery logged 82 units (REF-70185).\nWhich entry came later in sequence?\nThe submission time was not provided.\nWhether the event happened is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70184",
+        "REF-70185",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70184",
+        "REF-70185"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-032",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop transfer 35\nSender account\nCLM-KA: The kiln workshop logged 66 units (REF-70140).\nCLM-KB: The kiln workshop logged 71 units (REF-70141).\nCLM-KC: The kiln workshop logged 91 units for the same batch as CLM-KB (REF-70142).\nThe recording time was not supplied.\nThe date was not supplied.\nThe event did not happen.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70140",
+        "REF-70141",
+        "REF-70142",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70140",
+        "REF-70141",
+        "REF-70142"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-033",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive abstract 47\nScope statement\nCLM-KA: The core archive logged 78 units (REF-70188).\nAssociated qualifications\nCLM-KB: The core archive logged 83 units (REF-70189).\nCLM-KC: The core archive logged 103 units for the same batch as CLM-KB (REF-70190).\nWhat does the second entry contain?\nThe date was not supplied.\nThe reporting time was not supplied.\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70188",
+        "REF-70189",
+        "REF-70190",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70188",
+        "REF-70189",
+        "REF-70190"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-034",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room abstract 40\nScope statement\nThe event time was not supplied.\nAssociated qualifications\nThe first entry recording time was not supplied.\nThe amendment ratification status was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-035",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin envelope 61\n[outer]\nThe event did not happen.\n[inner]\nThe reporting time was not supplied.\nThe second entry interpretation is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-036",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell leaf 82\nRetained statement\nThe first entry concerns the lathe cell.\nAttached account\nThis entry recording time was not supplied.\nThe submission time was not provided.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-037",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew leaf 99\nRetained statement\nCLM-KA: The stage crew logged 130 units (REF-70396).\nAttached account\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Stage Crew leaf 99\nRetained statement\nCLM-KB: The stage crew logged 135 units (REF-70397).\nAttached account\nCLM-KC: The stage crew logged 155 units for the same batch as CLM-KB (REF-70398).\nThe recording time was not supplied.\nThe recorder was not named and remains unnamed.\nThe date was not supplied.\nWhether the submission was submitted is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70396",
+        "REF-70397",
+        "REF-70398",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70396",
+        "REF-70397",
+        "REF-70398"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-038",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room transfer 33\nSender account\nCLM-KA: The weaving room logged 64 units (REF-70132).\nThe observation time was not provided.\nWhich entry came previous in sequence?\nThe third entry recording time is not known.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70132",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70132"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-039",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin transfer 37\nSender account\nCLM-KA: The switch cabin logged 68 units (REF-70148).\nThe event did not happen.\nThe reporting time was not supplied.\nThe observation time is unknown.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70148",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70148"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-040",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin capsule 0\nContents begin\nThe event time was not supplied.\nThe authorization time was not provided.\nThe recorder was not named and remains unnamed.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-041",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio abstract 53\nScope statement\nCLM-KA: The map studio logged 84 units (REF-70212).\nAssociated qualifications\nThe event did not happen.\nThe second entry event time was not provided.\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70212",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70212"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-042",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The core archive temperature is unknown.\nCore Archive leaf 81\nRetained statement\nThe observation time was not provided.\nAttached account\nWhich entry came previous in sequence?\nThe reporting time is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-043",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber leaf 85\nRetained statement\nCLM-KA: The echo chamber logged 116 units (REF-70340).\nAttached account\nThe event did not happen.\nThe reporting time was not supplied.\nWhich entry came previous in sequence?"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70340",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70340"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-044",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber envelope 78\n[outer]\nCLM-KA: The echo chamber logged 109 units (REF-70312).\n[inner]\nCLM-KB: The echo chamber logged 114 units (REF-70313).\nWhich entry came later in sequence?\nNo second entry exists in the collection.\nThe first entry interpretation is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70312",
+        "REF-70313",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70312",
+        "REF-70313"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-045",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station abstract 49\nScope statement\nCLM-KA: The beacon station logged 80 units (REF-70196).\nAssociated qualifications\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Beacon Station abstract 49\nScope statement\nThe observation time was not provided.\nAssociated qualifications\nThe reporting time was not supplied.\nThe third entry recording time is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70196",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70196"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-046",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station capsule 15\nContents begin\nCLM-KA: The beacon station logged 46 units (REF-70060).\nCLM-KB: The beacon station logged 51 units (REF-70061).\nCLM-KC: The beacon station logged 71 units for the same batch as CLM-KB (REF-70062).\nWhat does the second entry contain?\nThe recorder was not named and remains unnamed.\nThe observation time was not provided.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70060",
+        "REF-70061",
+        "REF-70062",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70060",
+        "REF-70061",
+        "REF-70062"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-047",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive transfer 30\nSender account\nCLM-KA: The core archive logged 61 units (REF-70120).\nCLM-KB: The core archive logged 66 units (REF-70121).\nWhich entry came later in sequence?\nNo second entry exists in the collection.\nThe recording time was not supplied.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70120",
+        "REF-70121",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70120",
+        "REF-70121"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-048",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room leaf 84\nRetained statement\nThe submission was not submitted to the desk.\nAttached account\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Weaving Room leaf 84\nRetained statement\nThe authorization time was not provided.\nAttached account\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-049",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The seed nursery quantitative magnitude was not supplied.\nSeed Nursery leaf 80\nRetained statement\nThe event time was not supplied.\nAttached account\nWhat does the third entry state?\nThe date was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-050",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell abstract 48\nScope statement\nThe event time was not supplied.\nAssociated qualifications\nThe authorization time was not provided.\nThe second entry interpretation is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-051",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery capsule 2\nContents begin\nThe first entry concerns the seed nursery.\nThis entry recording time was not supplied.\nThe amendment effective time was not provided.\nThe amendment ratification status is unresolved.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-052",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The echo chamber temperature is unknown.\nEcho Chamber abstract 41\nScope statement\nThe observation time was not provided.\nAssociated qualifications\nThe second entry event time was not provided.\nThe third entry recording time is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-053",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell capsule 14\nContents begin\nCLM-KA: The lathe cell logged 45 units (REF-70056).\nContents end"
+        },
+        {
+          "alias": "s1000",
+          "text": "Lathe Cell capsule 14\nContents begin\nCLM-KB: The lathe cell logged 50 units (REF-70057).\nWhich entry came later in sequence?\nThe amendment effective time was not provided.\nWhether the event happened is not known.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70056",
+        "REF-70057",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70056",
+        "REF-70057"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-054",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop envelope 69\n[outer]\nCLM-KA: The kiln workshop logged 100 units (REF-70276).\n[inner]\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Kiln Workshop envelope 69\n[outer]\nThe event did not happen.\n[inner]\nWhich entry came previous in sequence?\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70276",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70276"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-055",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio envelope 70\n[outer]\nCLM-KA: The map studio logged 101 units (REF-70280).\n[inner]\nCLM-KB: The map studio logged 106 units (REF-70281).\nWhich entry came later in sequence?\nThe submission time was not provided.\nWhat does the second entry contain?"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70280",
+        "REF-70281",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70280",
+        "REF-70281"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-056",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery transfer 39\nSender account\nCLM-KA: The seed nursery logged 70 units (REF-70156).\nAccount sealed"
+        },
+        {
+          "alias": "s1000",
+          "text": "Seed Nursery transfer 39\nSender account\nCLM-KB: The seed nursery logged 75 units (REF-70157).\nCLM-KC: The seed nursery logged 95 units for the same batch as CLM-KB (REF-70158).\nWhat does the second entry contain?\nThe recorder was not named and remains unnamed.\nNo second entry exists in the collection.\nThe first entry interpretation is undetermined.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70156",
+        "REF-70157",
+        "REF-70158",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70156",
+        "REF-70157",
+        "REF-70158"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-057",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate beacon station.\nBeacon Station leaf 83\nRetained statement\nThe first entry concerns the beacon station.\nAttached account\nThis entry recording time was not supplied.\nThe date was not supplied.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-058",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell envelope 65\n[outer]\nCLM-KA: The lathe cell logged 96 units (REF-70260).\n[inner]\nThe observation time was not provided.\nThe second entry event time was not provided.\nWhich entry came previous in sequence?"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70260",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70260"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-059",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery envelope 63\n[outer]\nThe first entry concerns the seed nursery.\n[inner]\nThis entry recording time was not supplied.\nThe recorder was not named and remains unnamed.\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-060",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The switch cabin quantitative magnitude was not supplied.\nSwitch Cabin capsule 0\nContents begin\nThe event time was not supplied.\nThe authorization time was not provided.\nThe recorder was not named and remains unnamed.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-061",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive leaf 91\nRetained statement\nCLM-KA: The core archive logged 122 units (REF-70364).\nAttached account\nCLM-KB: The core archive logged 127 units (REF-70365).\nCLM-KC: The core archive logged 147 units for the same batch as CLM-KB (REF-70366).\nThe recording time was not supplied.\nThe amendment ratification status was not supplied.\nThe submission was not submitted to the desk.\nWhether the event happened is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70364",
+        "REF-70365",
+        "REF-70366",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70364",
+        "REF-70365",
+        "REF-70366"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-062",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell transfer 31\nSender account\nCLM-KA: The lathe cell logged 62 units (REF-70124).\nCLM-KB: The lathe cell logged 67 units (REF-70125).\nCLM-KC: The lathe cell logged 87 units for the same batch as CLM-KB (REF-70126).\nWhat does the second entry contain?\nThe amendment ratification status was not supplied.\nThe submission time was not provided.\nThe first entry interpretation is undetermined.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70124",
+        "REF-70125",
+        "REF-70126",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70124",
+        "REF-70125",
+        "REF-70126"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-063",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station leaf 93\nRetained statement\nCLM-KA: The beacon station logged 124 units (REF-70372).\nAttached account\nThe event did not happen.\nWhich entry came previous in sequence?\nThe first entry interpretation is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70372",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70372"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-064",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber transfer 34\nSender account\nCLM-KA: The echo chamber logged 65 units (REF-70136).\nAccount sealed"
+        },
+        {
+          "alias": "s1000",
+          "text": "Echo Chamber transfer 34\nSender account\nCLM-KB: The echo chamber logged 70 units (REF-70137).\nThe third entry was not recorded in the archive.\nThe submission time was not provided.\nThe third entry recording time is not known.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70136",
+        "REF-70137",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70136",
+        "REF-70137"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-065",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate beacon station.\nBeacon Station transfer 22\nSender account\nThe first entry concerns the beacon station.\nThis entry recording time was not supplied.\nThe submission time was not provided.\nWhether the event happened is not known.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-066",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room envelope 77\n[outer]\nCLM-KA: The weaving room logged 108 units (REF-70308).\n[inner]\nThe event did not happen.\nThe second entry event time was not provided.\nThe first entry interpretation is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70308",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70308"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-067",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station transfer 22\nSender account\nThe first entry concerns the beacon station.\nThis entry recording time was not supplied.\nThe submission time was not provided.\nWhether the event happened is not known.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-068",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop transfer 25\nSender account\nCLM-KA: The kiln workshop logged 56 units (REF-70100).\nThe observation time was not provided.\nThe reporting time was not supplied.\nThe second entry event time was not provided.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70100",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70100"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-069",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room envelope 67\n[outer]\nCLM-KA: The weaving room logged 98 units (REF-70268).\n[inner]\nCLM-KB: The weaving room logged 103 units (REF-70269).\nCLM-KC: The weaving room logged 123 units for the same batch as CLM-KB (REF-70270).\nThe recording time was not supplied.\nThe amendment ratification status was not supplied.\nThe recording time was not supplied.\nWhether the submission was submitted is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70268",
+        "REF-70269",
+        "REF-70270",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70268",
+        "REF-70269",
+        "REF-70270"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-070",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive abstract 57\nScope statement\nCLM-KA: The core archive logged 88 units (REF-70228).\nAssociated qualifications\nThe observation time was not provided.\nWhich entry came previous in sequence?\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70228",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70228"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-071",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery envelope 73\n[outer]\nCLM-KA: The seed nursery logged 104 units (REF-70292).\n[inner]\nThe observation time was not provided.\nThe reporting time was not supplied.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70292",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70292"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-072",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The core archive quantitative magnitude was not supplied.\nCore Archive transfer 20\nSender account\nThe submission was not submitted to the desk.\nWhat does the third entry state?\nThe recording time was not supplied.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-073",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop envelope 79\n[outer]\nCLM-KA: The kiln workshop logged 110 units (REF-70316).\n[inner]\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Kiln Workshop envelope 79\n[outer]\nCLM-KB: The kiln workshop logged 115 units (REF-70317).\n[inner]\nCLM-KC: The kiln workshop logged 135 units for the same batch as CLM-KB (REF-70318).\nWhat does the second entry contain?\nThe amendment ratification status was not supplied.\nThe date was not supplied.\nThe second entry interpretation is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70316",
+        "REF-70317",
+        "REF-70318",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70316",
+        "REF-70317",
+        "REF-70318"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-074",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin capsule 10\nContents begin\nCLM-KA: The switch cabin logged 41 units (REF-70040).\nCLM-KB: The switch cabin logged 46 units (REF-70041).\nThe third entry was not recorded in the archive.\nThe submission time was not provided.\nThe recording time was not supplied.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70040",
+        "REF-70041",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70040",
+        "REF-70041"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-075",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate weaving room.\nWeaving Room transfer 23\nSender account\nThe first entry concerns the weaving room.\nThis entry recording time was not supplied.\nThe date was not supplied.\nThe observation time is unknown.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-076",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room capsule 6\nContents begin\nCLM-KA: The weaving room logged 37 units (REF-70024).\nCLM-KB: The weaving room logged 42 units (REF-70025).\nWhich entry came later in sequence?\nNo second entry exists in the collection.\nWhether the event happened is not known.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70024",
+        "REF-70025",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70024",
+        "REF-70025"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-077",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber abstract 41\nScope statement\nThe observation time was not provided.\nAssociated qualifications\nThe second entry event time was not provided.\nThe third entry recording time is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-078",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive envelope 74\n[outer]\nCLM-KA: The core archive logged 105 units (REF-70296).\n[inner]\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Core Archive envelope 74\n[outer]\nCLM-KB: The core archive logged 110 units (REF-70297).\n[inner]\nThe third entry was not recorded in the archive.\nThe amendment effective time was not provided.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70296",
+        "REF-70297",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70296",
+        "REF-70297"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-079",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio abstract 43\nScope statement\nThe first entry concerns the map studio.\nAssociated qualifications\nThis entry recording time was not supplied.\nThe amendment ratification status was not supplied.\nWhether the submission was submitted is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-080",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin abstract 54\nScope statement\nCLM-KA: The switch cabin logged 85 units (REF-70216).\nAssociated qualifications\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Switch Cabin abstract 54\nScope statement\nCLM-KB: The switch cabin logged 90 units (REF-70217).\nAssociated qualifications\nWhich entry came later in sequence?\nNo second entry exists in the collection.\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70216",
+        "REF-70217",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70216",
+        "REF-70217"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-081",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew envelope 72\n[outer]\nThe event time was not supplied.\n[inner]\nThe authorization time was not provided.\nThe third entry recording time is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-082",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio transfer 36\nSender account\nThe submission was not submitted to the desk.\nThe authorization time was not provided.\nWhether the event happened is not known.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-083",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The switch cabin temperature is unknown.\nSwitch Cabin envelope 61\n[outer]\nThe event did not happen.\n[inner]\nThe reporting time was not supplied.\nThe second entry interpretation is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-084",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The map studio quantitative magnitude was not supplied.\nMap Studio envelope 60\n[outer]\nThe submission was not submitted to the desk.\n[inner]\nThe authorization time was not provided.\nThe amendment ratification status was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-085",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell transfer 21\nSender account\nThe event did not happen.\nWhich entry came previous in sequence?\nWhether the submission was submitted is undetermined.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-086",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew abstract 55\nScope statement\nCLM-KA: The stage crew logged 86 units (REF-70220).\nAssociated qualifications\nCLM-KB: The stage crew logged 91 units (REF-70221).\nCLM-KC: The stage crew logged 111 units for the same batch as CLM-KB (REF-70222).\nWhat does the second entry contain?\nThe amendment ratification status was not supplied.\nThe event did not happen."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70220",
+        "REF-70221",
+        "REF-70222",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70220",
+        "REF-70221",
+        "REF-70222"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-087",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate kiln workshop.\nKiln Workshop abstract 42\nScope statement\nThe first entry concerns the kiln workshop.\nAssociated qualifications\nThis entry recording time was not supplied.\nThe amendment ratification status was not supplied.\nThe reporting time is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-088",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber capsule 17\nContents begin\nCLM-KA: The echo chamber logged 48 units (REF-70068).\nThe observation time was not provided.\nThe second entry event time was not provided.\nThe second entry interpretation is uncertain.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70068",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70068"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-089",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive transfer 20\nSender account\nThe submission was not submitted to the desk.\nWhat does the third entry state?\nThe recording time was not supplied.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-090",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery transfer 29\nSender account\nCLM-KA: The seed nursery logged 60 units (REF-70116).\nAccount sealed"
+        },
+        {
+          "alias": "s1000",
+          "text": "Seed Nursery transfer 29\nSender account\nThe event did not happen.\nThe second entry event time was not provided.\nWhether the submission was submitted is undetermined.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70116",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70116"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-091",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop capsule 8\nContents begin\nThe event time was not supplied.\nWhat does the third entry state?\nThe first entry interpretation is undetermined.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-092",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber leaf 95\nRetained statement\nCLM-KA: The echo chamber logged 126 units (REF-70380).\nAttached account\nCLM-KB: The echo chamber logged 131 units (REF-70381).\nCLM-KC: The echo chamber logged 151 units for the same batch as CLM-KB (REF-70382).\nWhat does the second entry contain?\nThe date was not supplied.\nThe reporting time was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70380",
+        "REF-70381",
+        "REF-70382",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70380",
+        "REF-70381",
+        "REF-70382"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-093",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew transfer 38\nSender account\nCLM-KA: The stage crew logged 69 units (REF-70152).\nCLM-KB: The stage crew logged 74 units (REF-70153).\nWhich entry came later in sequence?\nThe amendment effective time was not provided.\nThe observation time is unknown.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70152",
+        "REF-70153",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70152",
+        "REF-70153"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-094",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop capsule 18\nContents begin\nCLM-KA: The kiln workshop logged 49 units (REF-70072).\nCLM-KB: The kiln workshop logged 54 units (REF-70073).\nThe third entry was not recorded in the archive.\nNo second entry exists in the collection.\nThe third entry recording time is not known.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70072",
+        "REF-70073",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70072",
+        "REF-70073"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-095",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station transfer 32\nSender account\nThe event time was not supplied.\nWhat does the third entry state?\nThe second entry interpretation is uncertain.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-096",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room transfer 23\nSender account\nThe first entry concerns the weaving room.\nThis entry recording time was not supplied.\nThe date was not supplied.\nThe observation time is unknown.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-097",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Core Archive envelope 64\n[outer]\nThe event time was not supplied.\n[inner]\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Core Archive envelope 64\n[outer]\nThe first entry recording time was not supplied.\n[inner]\nThe second entry interpretation is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-098",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber envelope 68\n[outer]\nThe submission was not submitted to the desk.\n[inner]\nWhat does the third entry state?\nWhether the event happened is not known."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-099",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio transfer 26\nSender account\nCLM-KA: The map studio logged 57 units (REF-70104).\nCLM-KB: The map studio logged 62 units (REF-70105).\nThe third entry was not recorded in the archive.\nThe amendment effective time was not provided.\nThe third entry recording time is not known.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70104",
+        "REF-70105",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70104",
+        "REF-70105"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-100",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The weaving room quantitative magnitude was not supplied.\nWeaving Room abstract 40\nScope statement\nThe event time was not supplied.\nAssociated qualifications\nThe first entry recording time was not supplied.\nThe amendment ratification status was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-101",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Beacon Station envelope 76\n[outer]\nThe submission was not submitted to the desk.\n[inner]\nThe first entry recording time was not supplied.\nThe first entry interpretation is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-102",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin leaf 98\nRetained statement\nCLM-KA: The switch cabin logged 129 units (REF-70392).\nAttached account\nCLM-KB: The switch cabin logged 134 units (REF-70393).\nThe third entry was not recorded in the archive.\nThe amendment effective time was not provided.\nWhether the submission was submitted is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70392",
+        "REF-70393",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70392",
+        "REF-70393"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-103",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio envelope 60\n[outer]\nThe submission was not submitted to the desk.\n[inner]\nThe authorization time was not provided.\nThe amendment ratification status was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-104",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber abstract 51\nScope statement\nCLM-KA: The echo chamber logged 82 units (REF-70204).\nAssociated qualifications\nCLM-KB: The echo chamber logged 87 units (REF-70205).\nCLM-KC: The echo chamber logged 107 units for the same batch as CLM-KB (REF-70206).\nThe recording time was not supplied.\nThe recorder was not named and remains unnamed.\nThe submission time was not provided.\nThe reporting time is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70204",
+        "REF-70205",
+        "REF-70206",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70204",
+        "REF-70205",
+        "REF-70206"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-105",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Echo Chamber capsule 7\nContents begin\nCLM-KA: The echo chamber logged 38 units (REF-70028).\nCLM-KB: The echo chamber logged 43 units (REF-70029).\nCLM-KC: The echo chamber logged 63 units for the same batch as CLM-KB (REF-70030).\nWhat does the second entry contain?\nThe amendment ratification status was not supplied.\nThe event did not happen.\nThe observation time is unknown.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70028",
+        "REF-70029",
+        "REF-70030",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70028",
+        "REF-70029",
+        "REF-70030"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-106",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Map Studio leaf 87\nRetained statement\nCLM-KA: The map studio logged 118 units (REF-70348).\nAttached account\nCLM-KB: The map studio logged 123 units (REF-70349).\nCLM-KC: The map studio logged 143 units for the same batch as CLM-KB (REF-70350).\nWhat does the second entry contain?\nThe recorder was not named and remains unnamed.\nThe amendment ratification status was not supplied.\nThe second entry interpretation is uncertain."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70348",
+        "REF-70349",
+        "REF-70350",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70348",
+        "REF-70349",
+        "REF-70350"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-107",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin transfer 27\nSender account\nCLM-KA: The switch cabin logged 58 units (REF-70108).\nCLM-KB: The switch cabin logged 63 units (REF-70109).\nCLM-KC: The switch cabin logged 83 units for the same batch as CLM-KB (REF-70110).\nThe recording time was not supplied.\nThe recorder was not named and remains unnamed.\nWhich entry came previous in sequence?\nThe amendment ratification status is unresolved.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70108",
+        "REF-70109",
+        "REF-70110",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70108",
+        "REF-70109",
+        "REF-70110"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-108",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Switch Cabin envelope 71\n[outer]\nCLM-KA: The switch cabin logged 102 units (REF-70284).\n[inner]\nCLM-KB: The switch cabin logged 107 units (REF-70285).\nCLM-KC: The switch cabin logged 127 units for the same batch as CLM-KB (REF-70286).\nWhat does the second entry contain?\nThe date was not supplied.\nThe third entry was not recorded in the archive.\nThe first entry interpretation is undetermined."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70284",
+        "REF-70285",
+        "REF-70286",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70284",
+        "REF-70285",
+        "REF-70286"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-109",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Lathe Cell envelope 75\n[outer]\nCLM-KA: The lathe cell logged 106 units (REF-70300).\n[inner]\nCLM-KB: The lathe cell logged 111 units (REF-70301).\nCLM-KC: The lathe cell logged 131 units for the same batch as CLM-KB (REF-70302).\nThe recording time was not supplied.\nThe recorder was not named and remains unnamed.\nWhich entry came previous in sequence?"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70300",
+        "REF-70301",
+        "REF-70302",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70300",
+        "REF-70301",
+        "REF-70302"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-110",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room abstract 50\nScope statement\nCLM-KA: The weaving room logged 81 units (REF-70200).\nAssociated qualifications\nCLM-KB: The weaving room logged 86 units (REF-70201).\nThe third entry was not recorded in the archive.\nThe amendment effective time was not provided.\nThe amendment ratification status was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70200",
+        "REF-70201",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70200",
+        "REF-70201"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-111",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Kiln Workshop abstract 52\nScope statement\nThe submission was not submitted to the desk.\nAssociated qualifications\nThe first entry recording time was not supplied.\nThe observation time is unknown."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-112",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew leaf 89\nRetained statement\nCLM-KA: The stage crew logged 120 units (REF-70356).\nAttached account\n"
+        },
+        {
+          "alias": "s1000",
+          "text": "Stage Crew leaf 89\nRetained statement\nThe observation time was not provided.\nAttached account\nThe second entry event time was not provided.\nThe amendment ratification status is unresolved."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70356",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70356"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-113",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate seed nursery.\nSeed Nursery capsule 2\nContents begin\nThe first entry concerns the seed nursery.\nThis entry recording time was not supplied.\nThe amendment effective time was not provided.\nThe amendment ratification status is unresolved.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-114",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery capsule 12\nContents begin\nThe submission was not submitted to the desk.\nThe authorization time was not provided.\nThe reporting time is uncertain.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-115",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "The second entry concerns a separate core archive.\nCore Archive capsule 3\nContents begin\nThe first entry concerns the core archive.\nThis entry recording time was not supplied.\nThe recorder was not named and remains unnamed.\nThe amendment ratification status is unresolved.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-116",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew capsule 11\nContents begin\nCLM-KA: The stage crew logged 42 units (REF-70044).\nCLM-KB: The stage crew logged 47 units (REF-70045).\nCLM-KC: The stage crew logged 67 units for the same batch as CLM-KB (REF-70046).\nThe recording time was not supplied.\nThe date was not supplied.\nWhich entry came later in sequence?\nThe reporting time is uncertain.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-70044",
+        "REF-70045",
+        "REF-70046",
+        "REF-990001"
+      ],
+      "required_refs": [
+        "REF-70044",
+        "REF-70045",
+        "REF-70046"
+      ],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-117",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Weaving Room capsule 16\nContents begin\nThe event time was not supplied.\nThe first entry recording time was not supplied.\nThe first entry interpretation is undetermined.\nContents end"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-118",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Seed Nursery leaf 80\nRetained statement\nThe event time was not supplied.\nAttached account\nWhat does the third entry state?\nThe date was not supplied."
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  },
+  {
+    "example_id": "v3-review-119",
+    "input": {
+      "role": "producer",
+      "production_contract": "semantic-task-v1",
+      "source_spans": [
+        {
+          "alias": "s0",
+          "text": "Stage Crew transfer 28\nSender account\nThe submission was not submitted to the desk.\nThe first entry recording time was not supplied.\nWhether the event happened is not known.\nAccount sealed"
+        }
+      ],
+      "context_only_spans": [
+        {
+          "alias": "sffff",
+          "text": "CONTEXT ONLY: CLM-OUTSIDE identifies a separate collection (REF-990001)."
+        }
+      ],
+      "supplied_refs": [
+        "REF-990001"
+      ],
+      "required_refs": [],
+      "routed_rules": []
+    }
+  }
+]

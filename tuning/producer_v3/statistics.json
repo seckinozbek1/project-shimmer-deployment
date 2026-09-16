@@ -1,0 +1,331 @@
+{
+  "total": {
+    "rows": 420,
+    "substantive": 360,
+    "document_families": 400,
+    "template_families": 5,
+    "derivation_families": 400,
+    "leakage_groups": 5,
+    "domains": {
+      "negotiation": 30,
+      "contracts": 30,
+      "regulation": 30,
+      "clinical": 30,
+      "device": 30,
+      "procurement": 30,
+      "catalogue": 30,
+      "nonsense": 30,
+      "astronomy": 30,
+      "ecology": 30,
+      "railway": 12,
+      "theatre": 12,
+      "horticulture": 13,
+      "geology": 13,
+      "manufacturing": 12,
+      "navigation": 12,
+      "textiles": 12,
+      "acoustics": 11,
+      "ceramics": 11,
+      "cartography": 12
+    },
+    "relations": {
+      "EXTRACTED": 360,
+      "EMPTY": 20,
+      "REFUSAL": 40
+    },
+    "hard_negatives": 420,
+    "refusals": 40,
+    "multi_span": 128,
+    "evidence_complexity": {
+      "0": 165,
+      "1": 85,
+      "2": 85,
+      "3": 85
+    },
+    "reason_difficulty": {
+      "not_applicable": 420
+    },
+    "gap_bearing": 360,
+    "gap_atoms": 780,
+    "uncertainty_bearing": 253,
+    "uncertainty_atoms": 253,
+    "multi_claim": 170,
+    "gap_counts": {
+      "1": 23,
+      "0": 60,
+      "2": 254,
+      "3": 83
+    },
+    "gap_attributes": {
+      "recording_time": 122,
+      "event_time": 63,
+      "submission_time": 33,
+      "authorization_time": 32,
+      "observation_time": 38,
+      "reporting_time": 34,
+      "effective_time": 32,
+      "recorder": 33,
+      "entry_content": 84,
+      "entry_order": 87,
+      "submission_occurrence": 54,
+      "recording_occurrence": 35,
+      "event_occurrence": 38,
+      "entry_presence": 31,
+      "ratification_status": 35,
+      "date_unspecified": 29
+    }
+  },
+  "augmentation": {
+    "rows": 120,
+    "substantive": 100,
+    "document_families": 100,
+    "template_families": 2,
+    "derivation_families": 100,
+    "leakage_groups": 2,
+    "domains": {
+      "railway": 12,
+      "theatre": 12,
+      "horticulture": 13,
+      "geology": 13,
+      "manufacturing": 12,
+      "navigation": 12,
+      "textiles": 12,
+      "acoustics": 11,
+      "ceramics": 11,
+      "cartography": 12
+    },
+    "relations": {
+      "EXTRACTED": 100,
+      "REFUSAL": 20
+    },
+    "hard_negatives": 120,
+    "refusals": 20,
+    "multi_span": 20,
+    "evidence_complexity": {
+      "0": 60,
+      "1": 20,
+      "2": 20,
+      "3": 20
+    },
+    "reason_difficulty": {
+      "not_applicable": 120
+    },
+    "gap_bearing": 100,
+    "gap_atoms": 233,
+    "uncertainty_bearing": 80,
+    "uncertainty_atoms": 80,
+    "multi_claim": 40,
+    "gap_counts": {
+      "3": 33,
+      "0": 20,
+      "2": 67
+    },
+    "gap_attributes": {
+      "event_time": 22,
+      "authorization_time": 9,
+      "recorder": 10,
+      "observation_time": 15,
+      "reporting_time": 11,
+      "recording_time": 31,
+      "effective_time": 9,
+      "submission_occurrence": 13,
+      "event_occurrence": 15,
+      "entry_order": 23,
+      "entry_presence": 8,
+      "entry_content": 20,
+      "ratification_status": 13,
+      "recording_occurrence": 12,
+      "submission_time": 10,
+      "date_unspecified": 12
+    }
+  },
+  "split": {
+    "train": {
+      "producer": {
+        "rows": 336,
+        "substantive": 288,
+        "document_families": 320,
+        "template_families": 4,
+        "derivation_families": 320,
+        "leakage_groups": 4,
+        "domains": {
+          "negotiation": 23,
+          "contracts": 23,
+          "regulation": 23,
+          "clinical": 23,
+          "device": 24,
+          "procurement": 25,
+          "catalogue": 25,
+          "nonsense": 25,
+          "astronomy": 25,
+          "ecology": 24,
+          "railway": 9,
+          "theatre": 9,
+          "horticulture": 10,
+          "geology": 11,
+          "manufacturing": 10,
+          "navigation": 10,
+          "textiles": 10,
+          "acoustics": 9,
+          "ceramics": 9,
+          "cartography": 9
+        },
+        "relations": {
+          "EXTRACTED": 288,
+          "EMPTY": 16,
+          "REFUSAL": 32
+        },
+        "hard_negatives": 336,
+        "refusals": 32,
+        "multi_span": 101,
+        "evidence_complexity": {
+          "0": 133,
+          "1": 68,
+          "2": 67,
+          "3": 68
+        },
+        "reason_difficulty": {
+          "not_applicable": 336
+        },
+        "gap_bearing": 288,
+        "gap_atoms": 617,
+        "uncertainty_bearing": 204,
+        "uncertainty_atoms": 204,
+        "multi_claim": 135,
+        "gap_counts": {
+          "1": 23,
+          "0": 48,
+          "2": 201,
+          "3": 64
+        },
+        "gap_attributes": {
+          "recording_time": 92,
+          "event_time": 47,
+          "submission_time": 31,
+          "authorization_time": 29,
+          "observation_time": 29,
+          "reporting_time": 14,
+          "effective_time": 25,
+          "recorder": 28,
+          "entry_content": 70,
+          "entry_order": 75,
+          "submission_occurrence": 45,
+          "recording_occurrence": 25,
+          "event_occurrence": 27,
+          "entry_presence": 27,
+          "ratification_status": 30,
+          "date_unspecified": 23
+        }
+      },
+      "auditor": {
+        "rows": 0,
+        "substantive": 0,
+        "document_families": 0,
+        "template_families": 0,
+        "derivation_families": 0,
+        "leakage_groups": 0,
+        "domains": {},
+        "relations": {},
+        "hard_negatives": 0,
+        "refusals": 0,
+        "multi_span": 0,
+        "evidence_complexity": {},
+        "reason_difficulty": {}
+      }
+    },
+    "validation": {
+      "producer": {
+        "rows": 84,
+        "substantive": 72,
+        "document_families": 80,
+        "template_families": 1,
+        "derivation_families": 80,
+        "leakage_groups": 1,
+        "domains": {
+          "clinical": 7,
+          "device": 6,
+          "procurement": 5,
+          "catalogue": 5,
+          "nonsense": 5,
+          "astronomy": 5,
+          "ecology": 6,
+          "negotiation": 7,
+          "contracts": 7,
+          "regulation": 7,
+          "cartography": 3,
+          "railway": 3,
+          "theatre": 3,
+          "horticulture": 3,
+          "geology": 2,
+          "manufacturing": 2,
+          "navigation": 2,
+          "textiles": 2,
+          "acoustics": 2,
+          "ceramics": 2
+        },
+        "relations": {
+          "EXTRACTED": 72,
+          "EMPTY": 4,
+          "REFUSAL": 8
+        },
+        "hard_negatives": 84,
+        "refusals": 8,
+        "multi_span": 27,
+        "evidence_complexity": {
+          "3": 17,
+          "0": 32,
+          "1": 17,
+          "2": 18
+        },
+        "reason_difficulty": {
+          "not_applicable": 84
+        },
+        "gap_bearing": 72,
+        "gap_atoms": 163,
+        "uncertainty_bearing": 49,
+        "uncertainty_atoms": 49,
+        "multi_claim": 35,
+        "gap_counts": {
+          "2": 53,
+          "0": 12,
+          "3": 19
+        },
+        "gap_attributes": {
+          "recording_time": 30,
+          "event_time": 16,
+          "entry_content": 14,
+          "entry_order": 12,
+          "submission_occurrence": 9,
+          "date_unspecified": 6,
+          "submission_time": 2,
+          "authorization_time": 3,
+          "observation_time": 9,
+          "reporting_time": 20,
+          "effective_time": 7,
+          "recorder": 5,
+          "recording_occurrence": 10,
+          "event_occurrence": 11,
+          "entry_presence": 4,
+          "ratification_status": 5
+        }
+      },
+      "auditor": {
+        "rows": 0,
+        "substantive": 0,
+        "document_families": 0,
+        "template_families": 0,
+        "derivation_families": 0,
+        "leakage_groups": 0,
+        "domains": {},
+        "relations": {},
+        "hard_negatives": 0,
+        "refusals": 0,
+        "multi_span": 0,
+        "evidence_complexity": {},
+        "reason_difficulty": {}
+      }
+    },
+    "validation_row_percent": 20.0,
+    "validation_group_percent": 20.0
+  }
+}
