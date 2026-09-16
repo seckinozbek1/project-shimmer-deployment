@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "scope": "Local saved-evidence arithmetic, manual annotations and cached-tokenizer analysis only",
+  "historical_text_files_unchanged": 143,
+  "dev_rows_per_checkpoint": 60,
+  "failures_documented": 32,
+  "dataset_rows_audited": 300,
+  "scorer_replaced": false,
+  "model_execution": false,
+  "network_used": false,
+  "new_training_examples": 0,
+  "credential_findings": 0,
+  "files": {
+    "docs/fix/AUDITOR_RELATION_FAILURE_DIAGNOSIS.md": {
+      "sha256": "c253d9f52ba55f436803422031a35a380ec14ec07437afddb9e7f66a9d2a8b16",
+      "bytes": 135737
+    },
+    "docs/fix/auditor_relation_diagnosis/diagnosis.json": {
+      "sha256": "83f688ac0f73e48fd6613ed18dfd94ea0bb63bdeaf2e0b5c8eda4a22cd516947",
+      "bytes": 565071
+    },
+    "tools/diagnose_auditor_relations.py": {
+      "sha256": "0dd7d1609deb9679832f9faf749aa58b5aa2d5acc550d378273389ec71c2aca5",
+      "bytes": 23604
+    }
+  }
+}

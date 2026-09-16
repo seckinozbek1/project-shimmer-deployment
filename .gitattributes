@@ -28,3 +28,7 @@ docs/fix/PRODUCER_TUNING_V3_RESULTS.md -text
 tuning/auditor_canonical_execution/** -text
 docs/fix/auditor_canonical_tuning_run/** -text
 docs/fix/AUDITOR_CANONICAL_TUNING_RESULTS.md -text
+
+# Preserve local diagnosis evidence hashes across Windows/Linux checkouts.
+docs/fix/auditor_relation_diagnosis/** -text
+docs/fix/AUDITOR_RELATION_FAILURE_DIAGNOSIS.md -text
