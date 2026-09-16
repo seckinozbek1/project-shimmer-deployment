@@ -1,0 +1,37 @@
+{
+  "catastrophic_zero_limits": [
+    "invented_evidence",
+    "invented_rule",
+    "confident_wrong_match_divergence",
+    "truncation",
+    "producer_source_copy",
+    "governance_violations"
+  ],
+  "gates": {
+    "maximum": {
+      "over_refusal_rate": 0.05
+    },
+    "minimum": {
+      "accepted_semantic_outcomes": 0.7,
+      "contract_validity": 1.0,
+      "evidence_f1": 0.85,
+      "macro_relation_f1": 0.75,
+      "refusal_precision": 0.9,
+      "refusal_recall": 0.8,
+      "substantive_non_refusal_coverage": 0.9
+    },
+    "per_class_recall": {
+      "ADDITION": 0.6,
+      "DIVERGENCE": 0.6,
+      "INSUFFICIENT_EVIDENCE": 0.6,
+      "MATCH": 0.6,
+      "OMISSION": 0.6
+    }
+  },
+  "ranking": [
+    "macro_relation_f1",
+    "accepted_semantic_outcomes",
+    "earliest_step",
+    "adapter_hash"
+  ]
+}

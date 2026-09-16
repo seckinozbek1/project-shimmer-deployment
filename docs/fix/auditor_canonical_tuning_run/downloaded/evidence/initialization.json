@@ -1,0 +1,16 @@
+{
+  "seed": 7,
+  "fresh_lora": true,
+  "old_adapter_loaded": false,
+  "lora_B_all_zero": true,
+  "adapter": {
+    "experiment": "auditor-canonical-v2",
+    "step": 0,
+    "files": {
+      "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+      "adapter_model.safetensors": "e32f8ce5d7f7fcae83e7ce7de8591749d9617bc7b411017277e676e9228f49d3"
+    }
+  },
+  "model_load_seconds": 6.83273458480835,
+  "trainable_parameters": 14942208
+}

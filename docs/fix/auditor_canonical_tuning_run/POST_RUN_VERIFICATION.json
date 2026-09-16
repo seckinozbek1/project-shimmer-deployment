@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "raw_rows_recomputed": 144,
+  "full_dev_rows": 120,
+  "control_pairs_verified": 10,
+  "updates_verified": 120,
+  "fresh_initialization_verified": true,
+  "state_and_rng_restored_at_both_checkpoints": true,
+  "no_training_after_120": true,
+  "dataset_split_schedule_verified": true,
+  "adapter_hashes_verified": [
+    0,
+    60,
+    120
+  ],
+  "historical_preservation_verified": true,
+  "credential_files_scanned": 136,
+  "credential_findings": 0,
+  "zero_billable_resources": true
+}

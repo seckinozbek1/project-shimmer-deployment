@@ -1,0 +1,14 @@
+test_checkpoint_restore_order (__main__.Checks.test_checkpoint_restore_order) ... ok
+test_duplicate_control_mismatch_rejected (__main__.Checks.test_duplicate_control_mismatch_rejected) ... ok
+test_each_pass_not_combined (__main__.Checks.test_each_pass_not_combined) ... ok
+test_frozen_schedule (__main__.Checks.test_frozen_schedule) ... ok
+test_no_old_adapter_or_ambient_trace (__main__.Checks.test_no_old_adapter_or_ambient_trace) ... ok
+test_producer_and_wrong_cap_rejected (__main__.Checks.test_producer_and_wrong_cap_rejected) ... ok
+test_scoped_state_mechanism_unchanged (__main__.Checks.test_scoped_state_mechanism_unchanged) ... ok
+test_sources_compile (__main__.Checks.test_sources_compile) ... ok
+test_state_restoration_without_generation (__main__.Checks.test_state_restoration_without_generation) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.131s
+
+OK

@@ -1,0 +1,214 @@
+{
+  "balance": {
+    "all": {
+      "ADDITION": 60,
+      "DIVERGENCE": 60,
+      "INSUFFICIENT_EVIDENCE": 60,
+      "MATCH": 60,
+      "OMISSION": 60
+    },
+    "train": {
+      "ADDITION": 48,
+      "DIVERGENCE": 48,
+      "INSUFFICIENT_EVIDENCE": 48,
+      "MATCH": 48,
+      "OMISSION": 48
+    },
+    "validation": {
+      "ADDITION": 12,
+      "DIVERGENCE": 12,
+      "INSUFFICIENT_EVIDENCE": 12,
+      "MATCH": 12,
+      "OMISSION": 12
+    }
+  },
+  "checkpoints": [
+    60,
+    120
+  ],
+  "dev": 60,
+  "folds_1_to_4_executed": false,
+  "freeze_sha256": "29a5632f226ea34a537a06a5fe596fba7884995fba74f2d38d86159f98248667",
+  "history": {
+    "producer_binary_sizes_verified": 5,
+    "producer_text_files_verified": 134,
+    "protected_metadata_only": true,
+    "v2_release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d"
+  },
+  "leakage": {
+    "train": {
+      "auditor": {
+        "derivation_families": 240,
+        "document_families": 240,
+        "domains": {
+          "astronomy": 25,
+          "catalogue": 25,
+          "clinical": 23,
+          "contracts": 23,
+          "device": 24,
+          "ecology": 24,
+          "negotiation": 23,
+          "nonsense": 25,
+          "procurement": 25,
+          "regulation": 23
+        },
+        "evidence_complexity": {
+          "0": 12,
+          "1": 24,
+          "2": 166,
+          "3": 38
+        },
+        "hard_negatives": 240,
+        "leakage_groups": 4,
+        "multi_span": 0,
+        "reason_difficulty": {
+          "ambiguous_qualification": 9,
+          "approval_invention": 9,
+          "cause_invention": 12,
+          "claims_after_qualifiers": 6,
+          "complete_ordered": 9,
+          "core_claim_mutation": 9,
+          "correct_words_wrong_evidence": 14,
+          "explicit_refusal_rejected": 9,
+          "first_gap_omission": 9,
+          "gap_referent_or_temporal_role_changed": 19,
+          "interrupted_claim": 9,
+          "missing_owned_original": 12,
+          "multi_clause_faithful": 12,
+          "outcome_invention": 9,
+          "reordered_preserving_scope": 12,
+          "rule_invention": 12,
+          "scoped_claim_omission": 12,
+          "second_gap_omission": 12,
+          "simultaneous_gap_omission": 9,
+          "unbound_quotation": 6,
+          "uncertainty_omission": 6,
+          "uncertainty_replaced_by_certainty": 6,
+          "unresolved_deictic": 12,
+          "verification_invention": 6
+        },
+        "refusals": 48,
+        "relations": {
+          "ADDITION": 48,
+          "DIVERGENCE": 48,
+          "INSUFFICIENT_EVIDENCE": 48,
+          "MATCH": 48,
+          "OMISSION": 48
+        },
+        "rows": 240,
+        "substantive": 240,
+        "template_families": 4
+      },
+      "producer": {
+        "derivation_families": 0,
+        "document_families": 0,
+        "domains": {},
+        "evidence_complexity": {},
+        "gap_atoms": 0,
+        "gap_attributes": {},
+        "gap_bearing": 0,
+        "gap_counts": {},
+        "hard_negatives": 0,
+        "leakage_groups": 0,
+        "multi_claim": 0,
+        "multi_span": 0,
+        "reason_difficulty": {},
+        "refusals": 0,
+        "relations": {},
+        "rows": 0,
+        "substantive": 0,
+        "template_families": 0,
+        "uncertainty_atoms": 0,
+        "uncertainty_bearing": 0
+      }
+    },
+    "validation": {
+      "auditor": {
+        "derivation_families": 60,
+        "document_families": 60,
+        "domains": {
+          "astronomy": 5,
+          "catalogue": 5,
+          "clinical": 7,
+          "contracts": 7,
+          "device": 6,
+          "ecology": 6,
+          "negotiation": 7,
+          "nonsense": 5,
+          "procurement": 5,
+          "regulation": 7
+        },
+        "evidence_complexity": {
+          "2": 50,
+          "3": 10
+        },
+        "hard_negatives": 60,
+        "leakage_groups": 1,
+        "multi_span": 0,
+        "reason_difficulty": {
+          "ambiguous_qualification": 3,
+          "approval_invention": 3,
+          "claims_after_qualifiers": 6,
+          "complete_ordered": 3,
+          "core_claim_mutation": 3,
+          "explicit_refusal_rejected": 3,
+          "first_gap_omission": 3,
+          "gap_referent_or_temporal_role_changed": 3,
+          "interrupted_claim": 3,
+          "outcome_invention": 3,
+          "simultaneous_gap_omission": 3,
+          "unbound_quotation": 6,
+          "uncertainty_omission": 6,
+          "uncertainty_replaced_by_certainty": 6,
+          "verification_invention": 6
+        },
+        "refusals": 12,
+        "relations": {
+          "ADDITION": 12,
+          "DIVERGENCE": 12,
+          "INSUFFICIENT_EVIDENCE": 12,
+          "MATCH": 12,
+          "OMISSION": 12
+        },
+        "rows": 60,
+        "substantive": 60,
+        "template_families": 1
+      },
+      "producer": {
+        "derivation_families": 0,
+        "document_families": 0,
+        "domains": {},
+        "evidence_complexity": {},
+        "gap_atoms": 0,
+        "gap_attributes": {},
+        "gap_bearing": 0,
+        "gap_counts": {},
+        "hard_negatives": 0,
+        "leakage_groups": 0,
+        "multi_claim": 0,
+        "multi_span": 0,
+        "reason_difficulty": {},
+        "refusals": 0,
+        "relations": {},
+        "rows": 0,
+        "substantive": 0,
+        "template_families": 0,
+        "uncertainty_atoms": 0,
+        "uncertainty_bearing": 0
+      }
+    },
+    "validation_group_percent": 20.0,
+    "validation_row_percent": 20.0
+  },
+  "max_sequence": 1052,
+  "max_target": 153,
+  "nonfinite_rejected": true,
+  "oracle_passed": true,
+  "passed": true,
+  "producer_execution": false,
+  "protected_access": false,
+  "refusal_collapse_rejected": true,
+  "tokenizations": 300,
+  "train": 240,
+  "updates": 120
+}

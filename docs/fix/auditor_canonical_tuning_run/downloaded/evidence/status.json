@@ -1,0 +1,14 @@
+{
+  "verdict": "AUDITOR_TUNING_FAIL",
+  "training_updates": 120,
+  "checkpoint_rows": {
+    "60": 60,
+    "120": 60
+  },
+  "training_seconds": 562.8039533150002,
+  "selection": {
+    "verdict": "AUDITOR_TUNING_FAIL",
+    "eligible_steps": [],
+    "selected_step": null
+  }
+}

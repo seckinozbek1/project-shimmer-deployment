@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "identical_pairs": 5,
+  "optimized_only": true,
+  "per_pass_tokens_per_second": [
+    7.370338531350221,
+    7.254652881012046
+  ]
+}

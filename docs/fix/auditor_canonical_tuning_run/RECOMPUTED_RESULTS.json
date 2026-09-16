@@ -1,0 +1,938 @@
+{
+  "verdict": "AUDITOR_TUNING_FAIL",
+  "source_commit": "3dd892dcdb9c1be6d26cb1a4ba63d6acaaa81471",
+  "dataset_sha256": "0e7532aa9cbca8cffad99faae03656cbbdb0dbf3fc489b18d142b5a000dfbc12",
+  "auditor_export_sha256": "ba5289a1273eb51692a22bcd3b2d5f325643ea15e0d70b7e65f4c6147f7f3ec9",
+  "cloud": {
+    "provider": "Lambda Cloud",
+    "region": "us-east-1",
+    "gpu": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "termination": {
+      "billable_duration_upper_bound_seconds": 2793.5272541046143,
+      "epoch": 1789582485.2894204,
+      "estimated_cost_upper_bound_usd": 1.00101393272082,
+      "instance_id": "8fd24dea4daf46259ab5a30f36d50af0",
+      "metadata": {
+        "instance_id": "8fd24dea4daf46259ab5a30f36d50af0",
+        "status": "terminated"
+      },
+      "utc": "2026-09-16T18:14:45.289420+00:00"
+    },
+    "zero_billable_resources": true
+  },
+  "training": {
+    "updates": 120,
+    "examples_processed": 480,
+    "each_train_example_seen": 2,
+    "dev_gradient_examples": 0,
+    "training_seconds": 562.8039533150002,
+    "initial_loss": 2.625045269727707,
+    "final_loss": 0.01216395388064484,
+    "update_seconds": {
+      "n": 120,
+      "min": 3.869246056999998,
+      "median": 4.710068436,
+      "mean": 4.690032944291668,
+      "p10": 4.326406513300162,
+      "p90": 4.991236324200026,
+      "p95": 5.007320960100015,
+      "p99": 5.126496780019968,
+      "max": 5.286384132000023,
+      "tail_quantiles_caution": false
+    },
+    "peak_vram_allocated_bytes": 4046895616,
+    "peak_vram_reserved_bytes": 4469030912,
+    "telemetry": {
+      "samples": 548,
+      "gpu_utilization_percent": {
+        "n": 548,
+        "min": 0.0,
+        "median": 100.0,
+        "mean": 98.65328467153284,
+        "p10": 97.0,
+        "p90": 100.0,
+        "p95": 100.0,
+        "p99": 100.0,
+        "max": 100.0,
+        "tail_quantiles_caution": false
+      },
+      "cpu_percent": {
+        "n": 548,
+        "min": 0.0,
+        "median": 100.1,
+        "mean": 101.60638686131387,
+        "p10": 99.1,
+        "p90": 101.0,
+        "p95": 101.1,
+        "p99": 101.15299999999999,
+        "max": 1088.2,
+        "tail_quantiles_caution": false
+      },
+      "rss_bytes": {
+        "n": 548,
+        "min": 865497088,
+        "median": 1480648704.0,
+        "mean": 1478215642.6277373,
+        "p10": 1425018060.8,
+        "p90": 1535102976.0,
+        "p95": 1535102976.0,
+        "p99": 1535102976.0,
+        "max": 1535102976,
+        "tail_quantiles_caution": false
+      },
+      "host_ram_used_bytes": {
+        "n": 548,
+        "min": 2447785984,
+        "median": 3145744384.0,
+        "mean": 3110839505.2846713,
+        "p10": 2852079206.4,
+        "p90": 3282419302.4,
+        "p95": 3301320089.6,
+        "p99": 3375753256.96,
+        "max": 3393527808,
+        "tail_quantiles_caution": false
+      }
+    },
+    "overall_telemetry": {
+      "samples": 2192,
+      "gpu_utilization_percent": {
+        "n": 2192,
+        "min": 0.0,
+        "median": 20.0,
+        "mean": 40.5757299270073,
+        "p10": 17.0,
+        "p90": 100.0,
+        "p95": 100.0,
+        "p99": 100.0,
+        "max": 100.0,
+        "tail_quantiles_caution": false
+      },
+      "cpu_percent": {
+        "n": 2192,
+        "min": 0.0,
+        "median": 99.8,
+        "mean": 101.62682481751824,
+        "p10": 99.5,
+        "p90": 100.7,
+        "p95": 100.8,
+        "p99": 101.2,
+        "max": 1386.3,
+        "tail_quantiles_caution": false
+      },
+      "rss_bytes": {
+        "n": 2192,
+        "min": 865497088,
+        "median": 1533874176.0,
+        "mean": 1525640274.2189782,
+        "p10": 1425973248.0,
+        "p90": 1551093760.0,
+        "p95": 1551093760.0,
+        "p99": 1551097856.0,
+        "max": 1551097856,
+        "tail_quantiles_caution": false
+      },
+      "host_ram_used_bytes": {
+        "n": 2192,
+        "min": 2447785984,
+        "median": 3219044352.0,
+        "mean": 3191247150.7153287,
+        "p10": 3086799257.6,
+        "p90": 3291728281.6,
+        "p95": 3311160934.4,
+        "p99": 3343163310.0800004,
+        "max": 3393527808,
+        "tail_quantiles_caution": false
+      }
+    },
+    "initialization": {
+      "seed": 7,
+      "fresh_lora": true,
+      "old_adapter_loaded": false,
+      "lora_B_all_zero": true,
+      "adapter": {
+        "experiment": "auditor-canonical-v2",
+        "step": 0,
+        "files": {
+          "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+          "adapter_model.safetensors": "e32f8ce5d7f7fcae83e7ce7de8591749d9617bc7b411017277e676e9228f49d3"
+        }
+      },
+      "model_load_seconds": 6.83273458480835,
+      "trainable_parameters": 14942208
+    },
+    "identities": {
+      "0": {
+        "experiment": "auditor-canonical-v2",
+        "step": 0,
+        "files": {
+          "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+          "adapter_model.safetensors": "e32f8ce5d7f7fcae83e7ce7de8591749d9617bc7b411017277e676e9228f49d3"
+        }
+      },
+      "60": {
+        "experiment": "auditor-canonical-v2",
+        "step": 60,
+        "files": {
+          "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+          "adapter_model.safetensors": "35ce71004edea139719c9e945469fe0a20fd6efedb008b51d82507acb30f1bcc"
+        }
+      },
+      "120": {
+        "experiment": "auditor-canonical-v2",
+        "step": 120,
+        "files": {
+          "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+          "adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+        }
+      }
+    },
+    "loaded_architecture": {
+      "model_type": "llama",
+      "architectures": [
+        "LlamaForCausalLM"
+      ],
+      "config_sha256": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2",
+      "quantization": {
+        "quant_method": "bitsandbytes",
+        "_load_in_8bit": false,
+        "_load_in_4bit": true,
+        "llm_int8_threshold": 6.0,
+        "llm_int8_skip_modules": null,
+        "llm_int8_enable_fp32_cpu_offload": false,
+        "llm_int8_has_fp16_weight": false,
+        "bnb_4bit_quant_type": "nf4",
+        "bnb_4bit_use_double_quant": true,
+        "bnb_4bit_compute_dtype": "bfloat16",
+        "bnb_4bit_quant_storage": "uint8",
+        "load_in_4bit": true,
+        "load_in_8bit": false
+      }
+    }
+  },
+  "checkpoints": {
+    "60": {
+      "identity": {
+        "experiment": "auditor-canonical-v2",
+        "step": 60,
+        "files": {
+          "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+          "adapter_model.safetensors": "35ce71004edea139719c9e945469fe0a20fd6efedb008b51d82507acb30f1bcc"
+        }
+      },
+      "controls": {
+        "passed": true,
+        "identical_pairs": 5,
+        "optimized_only": true,
+        "per_pass_tokens_per_second": [
+          7.370338531350221,
+          7.254652881012046
+        ]
+      },
+      "full_dev_rows": 60,
+      "generation_seconds": 755.1507167679999,
+      "output_tokens": 5414,
+      "tokens_per_second": 7.169429730758381,
+      "metrics": {
+        "count": 60,
+        "contract_validity": 1.0,
+        "accepted_semantic_outcomes": 0.31666666666666665,
+        "refusal_precision": 1.0,
+        "refusal_recall": 1.0,
+        "over_refusal_rate": 0.0,
+        "substantive_non_refusal_coverage": 1.0,
+        "catastrophic": {
+          "invented_evidence": 0,
+          "invented_rule": 0,
+          "confident_wrong_match_divergence": 5,
+          "truncation": 0,
+          "producer_source_copy": 0,
+          "governance_violations": 0
+        },
+        "evidence_f1": 1.0,
+        "relation_accuracy": 0.45,
+        "per_class_recall": {
+          "MATCH": 0.08333333333333333,
+          "DIVERGENCE": 0.25,
+          "OMISSION": 0.9166666666666666,
+          "ADDITION": 0.0,
+          "INSUFFICIENT_EVIDENCE": 1.0
+        },
+        "macro_relation_f1": 0.3770437405731523,
+        "family_accepted_rates": {
+          "shimmer2-auditor-document-045": 0,
+          "shimmer2-auditor-document-046": 0,
+          "shimmer2-auditor-document-047": 0,
+          "shimmer2-auditor-document-048": 0,
+          "shimmer2-auditor-document-049": 1,
+          "shimmer2-auditor-document-050": 0,
+          "shimmer2-auditor-document-051": 1,
+          "shimmer2-auditor-document-052": 0,
+          "shimmer2-auditor-document-053": 0,
+          "shimmer2-auditor-document-054": 1,
+          "shimmer2-auditor-document-055": 0,
+          "shimmer2-auditor-document-056": 0,
+          "shimmer2-auditor-document-057": 0,
+          "shimmer2-auditor-document-058": 0,
+          "shimmer2-auditor-document-059": 1,
+          "shimmer2-auditor-document-135": 0,
+          "shimmer2-auditor-document-136": 1,
+          "shimmer2-auditor-document-137": 1,
+          "shimmer2-auditor-document-138": 0,
+          "shimmer2-auditor-document-139": 1,
+          "shimmer2-auditor-document-140": 0,
+          "shimmer2-auditor-document-141": 0,
+          "shimmer2-auditor-document-142": 0,
+          "shimmer2-auditor-document-143": 0,
+          "shimmer2-auditor-document-144": 1,
+          "shimmer2-auditor-document-145": 0,
+          "shimmer2-auditor-document-146": 0,
+          "shimmer2-auditor-document-147": 1,
+          "shimmer2-auditor-document-148": 0,
+          "shimmer2-auditor-document-149": 1,
+          "shimmer2-auditor-document-150": 0,
+          "shimmer2-auditor-document-151": 0,
+          "shimmer2-auditor-document-152": 1,
+          "shimmer2-auditor-document-153": 0,
+          "shimmer2-auditor-document-154": 1,
+          "shimmer2-auditor-document-155": 0,
+          "shimmer2-auditor-document-156": 0,
+          "shimmer2-auditor-document-157": 1,
+          "shimmer2-auditor-document-158": 0,
+          "shimmer2-auditor-document-159": 1,
+          "shimmer2-auditor-document-160": 0,
+          "shimmer2-auditor-document-161": 0,
+          "shimmer2-auditor-document-162": 1,
+          "shimmer2-auditor-document-163": 0,
+          "shimmer2-auditor-document-164": 1,
+          "shimmer2-auditor-document-270": 0,
+          "shimmer2-auditor-document-271": 0,
+          "shimmer2-auditor-document-272": 0,
+          "shimmer2-auditor-document-273": 0,
+          "shimmer2-auditor-document-274": 1,
+          "shimmer2-auditor-document-275": 0,
+          "shimmer2-auditor-document-276": 0,
+          "shimmer2-auditor-document-277": 0,
+          "shimmer2-auditor-document-278": 0,
+          "shimmer2-auditor-document-279": 1,
+          "shimmer2-auditor-document-280": 0,
+          "shimmer2-auditor-document-281": 0,
+          "shimmer2-auditor-document-282": 0,
+          "shimmer2-auditor-document-283": 0,
+          "shimmer2-auditor-document-284": 1
+        }
+      },
+      "failed_gates": [
+        {
+          "gate": "accepted_semantic_outcomes",
+          "actual": 0.31666666666666665,
+          "direction": "minimum",
+          "threshold": 0.7
+        },
+        {
+          "gate": "macro_relation_f1",
+          "actual": 0.3770437405731523,
+          "direction": "minimum",
+          "threshold": 0.75
+        },
+        {
+          "gate": "per_class_recall.ADDITION",
+          "actual": 0.0,
+          "direction": "per_class_recall",
+          "threshold": 0.6
+        },
+        {
+          "gate": "per_class_recall.DIVERGENCE",
+          "actual": 0.25,
+          "direction": "per_class_recall",
+          "threshold": 0.6
+        },
+        {
+          "gate": "per_class_recall.MATCH",
+          "actual": 0.08333333333333333,
+          "direction": "per_class_recall",
+          "threshold": 0.6
+        },
+        {
+          "gate": "catastrophic.confident_wrong_match_divergence",
+          "actual": 5,
+          "maximum": 0
+        }
+      ],
+      "diagnostics": {
+        "confusion_matrix": {
+          "MATCH": {
+            "MATCH": 1,
+            "DIVERGENCE": 2,
+            "OMISSION": 9,
+            "ADDITION": 0,
+            "INSUFFICIENT_EVIDENCE": 0
+          },
+          "DIVERGENCE": {
+            "MATCH": 0,
+            "DIVERGENCE": 3,
+            "OMISSION": 9,
+            "ADDITION": 0,
+            "INSUFFICIENT_EVIDENCE": 0
+          },
+          "OMISSION": {
+            "MATCH": 0,
+            "DIVERGENCE": 1,
+            "OMISSION": 11,
+            "ADDITION": 0,
+            "INSUFFICIENT_EVIDENCE": 0
+          },
+          "ADDITION": {
+            "MATCH": 0,
+            "DIVERGENCE": 2,
+            "OMISSION": 10,
+            "ADDITION": 0,
+            "INSUFFICIENT_EVIDENCE": 0
+          },
+          "INSUFFICIENT_EVIDENCE": {
+            "MATCH": 0,
+            "DIVERGENCE": 0,
+            "OMISSION": 0,
+            "ADDITION": 0,
+            "INSUFFICIENT_EVIDENCE": 12
+          }
+        },
+        "confusion_columns": [
+          "MATCH",
+          "DIVERGENCE",
+          "OMISSION",
+          "ADDITION",
+          "INSUFFICIENT_EVIDENCE"
+        ],
+        "per_class": {
+          "MATCH": {
+            "precision": 1.0,
+            "recall": 0.08333333333333333,
+            "f1": 0.15384615384615385,
+            "support": 12,
+            "tp": 1,
+            "fp": 0,
+            "fn": 11,
+            "predicted": 1
+          },
+          "DIVERGENCE": {
+            "precision": 0.375,
+            "recall": 0.25,
+            "f1": 0.3,
+            "support": 12,
+            "tp": 3,
+            "fp": 5,
+            "fn": 9,
+            "predicted": 8
+          },
+          "OMISSION": {
+            "precision": 0.28205128205128205,
+            "recall": 0.9166666666666666,
+            "f1": 0.43137254901960786,
+            "support": 12,
+            "tp": 11,
+            "fp": 28,
+            "fn": 1,
+            "predicted": 39
+          },
+          "ADDITION": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 12,
+            "tp": 0,
+            "fp": 0,
+            "fn": 12,
+            "predicted": 0
+          },
+          "INSUFFICIENT_EVIDENCE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "support": 12,
+            "tp": 12,
+            "fp": 0,
+            "fn": 0,
+            "predicted": 12
+          }
+        },
+        "macro": {
+          "precision": 0.5314102564102564,
+          "recall": 0.45,
+          "f1": 0.3770437405731523
+        },
+        "precision_zero_division_policy": "Diagnostic class precision is 0 when no prediction exists; frozen F1/recall and eligibility unchanged.",
+        "evidence": {
+          "tp": 104,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "refusal": {
+          "expected": 12,
+          "predicted": 12,
+          "correct": 12,
+          "false": 0,
+          "missed": 0,
+          "over_refusal_rate": 0.0,
+          "false_refusals_by_class": {
+            "MATCH": 0,
+            "DIVERGENCE": 0,
+            "OMISSION": 0,
+            "ADDITION": 0,
+            "INSUFFICIENT_EVIDENCE": 0
+          }
+        },
+        "accepted_count": 19,
+        "efficiency": {
+          "output_tokens": {
+            "n": 60,
+            "min": 12,
+            "median": 97.0,
+            "mean": 90.23333333333333,
+            "p10": 12.0,
+            "p90": 137.8,
+            "p95": 160.05,
+            "p99": 167.91999999999996,
+            "max": 175,
+            "tail_quantiles_caution": false
+          },
+          "eos_before_cap_rate": 1.0,
+          "cap_hit_rate": 0.0,
+          "decorations": {
+            "code_fence": 0,
+            "commentary_before_json": 0,
+            "commentary_after_json": 0,
+            "json_followed_by_prose": 0,
+            "json_followed_by_second_json": 0
+          },
+          "duplicate_refs": 0,
+          "duplicate_items": 0,
+          "correct_evidence_atoms_per_output_token": 0.01920945696342815,
+          "accepted_output_token_cost": {
+            "n": 19,
+            "min": 12,
+            "median": 12,
+            "mean": 46.10526315789474,
+            "p10": 12.0,
+            "p90": 99.2,
+            "p95": 105.19999999999989,
+            "p99": 142.64000000000001,
+            "max": 152,
+            "tail_quantiles_caution": true
+          },
+          "accepted_groups": {
+            "correct_refusals": {
+              "count": 12,
+              "total_tokens": 144,
+              "token_cost": {
+                "n": 12,
+                "min": 12,
+                "median": 12.0,
+                "mean": 12,
+                "p10": 12.0,
+                "p90": 12.0,
+                "p95": 12.0,
+                "p99": 12.0,
+                "max": 12,
+                "tail_quantiles_caution": true
+              }
+            },
+            "substantive_successes": {
+              "count": 7,
+              "total_tokens": 732,
+              "token_cost": {
+                "n": 7,
+                "min": 94,
+                "median": 96,
+                "mean": 104.57142857142857,
+                "p10": 94.6,
+                "p90": 120.80000000000001,
+                "p95": 136.39999999999998,
+                "p99": 148.87999999999997,
+                "max": 152,
+                "tail_quantiles_caution": true
+              }
+            }
+          },
+          "all_attempt_tokens_per_accepted_outcome": 284.94736842105266
+        },
+        "relation_correct_but_reason_incorrect": 8
+      },
+      "passes": false,
+      "state_restored": true
+    },
+    "120": {
+      "identity": {
+        "experiment": "auditor-canonical-v2",
+        "step": 120,
+        "files": {
+          "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+          "adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+        }
+      },
+      "controls": {
+        "passed": true,
+        "identical_pairs": 5,
+        "optimized_only": true,
+        "per_pass_tokens_per_second": [
+          7.238776369850006,
+          7.139149438791273
+        ]
+      },
+      "full_dev_rows": 60,
+      "generation_seconds": 623.2182773449979,
+      "output_tokens": 4519,
+      "tokens_per_second": 7.251071036060766,
+      "metrics": {
+        "count": 60,
+        "contract_validity": 1.0,
+        "accepted_semantic_outcomes": 0.4666666666666667,
+        "refusal_precision": 1.0,
+        "refusal_recall": 1.0,
+        "over_refusal_rate": 0.0,
+        "substantive_non_refusal_coverage": 1.0,
+        "catastrophic": {
+          "invented_evidence": 0,
+          "invented_rule": 0,
+          "confident_wrong_match_divergence": 4,
+          "truncation": 0,
+          "producer_source_copy": 0,
+          "governance_violations": 0
+        },
+        "evidence_f1": 1.0,
+        "relation_accuracy": 0.48333333333333334,
+        "per_class_recall": {
+          "MATCH": 0.4166666666666667,
+          "DIVERGENCE": 0.16666666666666666,
+          "OMISSION": 0.0,
+          "ADDITION": 0.8333333333333334,
+          "INSUFFICIENT_EVIDENCE": 1.0
+        },
+        "macro_relation_f1": 0.4349659863945578,
+        "family_accepted_rates": {
+          "shimmer2-auditor-document-045": 1,
+          "shimmer2-auditor-document-046": 0,
+          "shimmer2-auditor-document-047": 0,
+          "shimmer2-auditor-document-048": 1,
+          "shimmer2-auditor-document-049": 1,
+          "shimmer2-auditor-document-050": 0,
+          "shimmer2-auditor-document-051": 0,
+          "shimmer2-auditor-document-052": 0,
+          "shimmer2-auditor-document-053": 1,
+          "shimmer2-auditor-document-054": 1,
+          "shimmer2-auditor-document-055": 1,
+          "shimmer2-auditor-document-056": 0,
+          "shimmer2-auditor-document-057": 0,
+          "shimmer2-auditor-document-058": 0,
+          "shimmer2-auditor-document-059": 1,
+          "shimmer2-auditor-document-135": 1,
+          "shimmer2-auditor-document-136": 1,
+          "shimmer2-auditor-document-137": 0,
+          "shimmer2-auditor-document-138": 0,
+          "shimmer2-auditor-document-139": 1,
+          "shimmer2-auditor-document-140": 0,
+          "shimmer2-auditor-document-141": 0,
+          "shimmer2-auditor-document-142": 0,
+          "shimmer2-auditor-document-143": 1,
+          "shimmer2-auditor-document-144": 1,
+          "shimmer2-auditor-document-145": 0,
+          "shimmer2-auditor-document-146": 0,
+          "shimmer2-auditor-document-147": 0,
+          "shimmer2-auditor-document-148": 1,
+          "shimmer2-auditor-document-149": 1,
+          "shimmer2-auditor-document-150": 1,
+          "shimmer2-auditor-document-151": 0,
+          "shimmer2-auditor-document-152": 0,
+          "shimmer2-auditor-document-153": 1,
+          "shimmer2-auditor-document-154": 1,
+          "shimmer2-auditor-document-155": 1,
+          "shimmer2-auditor-document-156": 0,
+          "shimmer2-auditor-document-157": 0,
+          "shimmer2-auditor-document-158": 1,
+          "shimmer2-auditor-document-159": 1,
+          "shimmer2-auditor-document-160": 0,
+          "shimmer2-auditor-document-161": 0,
+          "shimmer2-auditor-document-162": 0,
+          "shimmer2-auditor-document-163": 1,
+          "shimmer2-auditor-document-164": 1,
+          "shimmer2-auditor-document-270": 0,
+          "shimmer2-auditor-document-271": 0,
+          "shimmer2-auditor-document-272": 0,
+          "shimmer2-auditor-document-273": 1,
+          "shimmer2-auditor-document-274": 1,
+          "shimmer2-auditor-document-275": 0,
+          "shimmer2-auditor-document-276": 0,
+          "shimmer2-auditor-document-277": 0,
+          "shimmer2-auditor-document-278": 1,
+          "shimmer2-auditor-document-279": 1,
+          "shimmer2-auditor-document-280": 0,
+          "shimmer2-auditor-document-281": 0,
+          "shimmer2-auditor-document-282": 0,
+          "shimmer2-auditor-document-283": 1,
+          "shimmer2-auditor-document-284": 1
+        }
+      },
+      "failed_gates": [
+        {
+          "gate": "accepted_semantic_outcomes",
+          "actual": 0.4666666666666667,
+          "direction": "minimum",
+          "threshold": 0.7
+        },
+        {
+          "gate": "macro_relation_f1",
+          "actual": 0.4349659863945578,
+          "direction": "minimum",
+          "threshold": 0.75
+        },
+        {
+          "gate": "per_class_recall.DIVERGENCE",
+          "actual": 0.16666666666666666,
+          "direction": "per_class_recall",
+          "threshold": 0.6
+        },
+        {
+          "gate": "per_class_recall.MATCH",
+          "actual": 0.4166666666666667,
+          "direction": "per_class_recall",
+          "threshold": 0.6
+        },
+        {
+          "gate": "per_class_recall.OMISSION",
+          "actual": 0.0,
+          "direction": "per_class_recall",
+          "threshold": 0.6
+        },
+        {
+          "gate": "catastrophic.confident_wrong_match_divergence",
+          "actual": 4,
+          "maximum": 0
+        }
+      ],
+      "diagnostics": {
+        "confusion_matrix": {
+          "MATCH": {
+            "MATCH": 5,
+            "DIVERGENCE": 0,
+            "OMISSION": 0,
+            "ADDITION": 7,
+            "INSUFFICIENT_EVIDENCE": 0
+          },
+          "DIVERGENCE": {
+            "MATCH": 0,
+            "DIVERGENCE": 2,
+            "OMISSION": 0,
+            "ADDITION": 10,
+            "INSUFFICIENT_EVIDENCE": 0
+          },
+          "OMISSION": {
+            "MATCH": 2,
+            "DIVERGENCE": 0,
+            "OMISSION": 0,
+            "ADDITION": 10,
+            "INSUFFICIENT_EVIDENCE": 0
+          },
+          "ADDITION": {
+            "MATCH": 1,
+            "DIVERGENCE": 1,
+            "OMISSION": 0,
+            "ADDITION": 10,
+            "INSUFFICIENT_EVIDENCE": 0
+          },
+          "INSUFFICIENT_EVIDENCE": {
+            "MATCH": 0,
+            "DIVERGENCE": 0,
+            "OMISSION": 0,
+            "ADDITION": 0,
+            "INSUFFICIENT_EVIDENCE": 12
+          }
+        },
+        "confusion_columns": [
+          "MATCH",
+          "DIVERGENCE",
+          "OMISSION",
+          "ADDITION",
+          "INSUFFICIENT_EVIDENCE"
+        ],
+        "per_class": {
+          "MATCH": {
+            "precision": 0.625,
+            "recall": 0.4166666666666667,
+            "f1": 0.5,
+            "support": 12,
+            "tp": 5,
+            "fp": 3,
+            "fn": 7,
+            "predicted": 8
+          },
+          "DIVERGENCE": {
+            "precision": 0.6666666666666666,
+            "recall": 0.16666666666666666,
+            "f1": 0.26666666666666666,
+            "support": 12,
+            "tp": 2,
+            "fp": 1,
+            "fn": 10,
+            "predicted": 3
+          },
+          "OMISSION": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 12,
+            "tp": 0,
+            "fp": 0,
+            "fn": 12,
+            "predicted": 0
+          },
+          "ADDITION": {
+            "precision": 0.2702702702702703,
+            "recall": 0.8333333333333334,
+            "f1": 0.40816326530612246,
+            "support": 12,
+            "tp": 10,
+            "fp": 27,
+            "fn": 2,
+            "predicted": 37
+          },
+          "INSUFFICIENT_EVIDENCE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "support": 12,
+            "tp": 12,
+            "fp": 0,
+            "fn": 0,
+            "predicted": 12
+          }
+        },
+        "macro": {
+          "precision": 0.5123873873873874,
+          "recall": 0.4833333333333333,
+          "f1": 0.4349659863945578
+        },
+        "precision_zero_division_policy": "Diagnostic class precision is 0 when no prediction exists; frozen F1/recall and eligibility unchanged.",
+        "evidence": {
+          "tp": 104,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "refusal": {
+          "expected": 12,
+          "predicted": 12,
+          "correct": 12,
+          "false": 0,
+          "missed": 0,
+          "over_refusal_rate": 0.0,
+          "false_refusals_by_class": {
+            "MATCH": 0,
+            "DIVERGENCE": 0,
+            "OMISSION": 0,
+            "ADDITION": 0,
+            "INSUFFICIENT_EVIDENCE": 0
+          }
+        },
+        "accepted_count": 28,
+        "efficiency": {
+          "output_tokens": {
+            "n": 60,
+            "min": 12,
+            "median": 85.0,
+            "mean": 75.31666666666666,
+            "p10": 12.0,
+            "p90": 99.0,
+            "p95": 103.1,
+            "p99": 129.3699999999998,
+            "max": 163,
+            "tail_quantiles_caution": false
+          },
+          "eos_before_cap_rate": 1.0,
+          "cap_hit_rate": 0.0,
+          "decorations": {
+            "code_fence": 0,
+            "commentary_before_json": 0,
+            "commentary_after_json": 0,
+            "json_followed_by_prose": 0,
+            "json_followed_by_second_json": 0
+          },
+          "duplicate_refs": 0,
+          "duplicate_items": 0,
+          "correct_evidence_atoms_per_output_token": 0.023013941137419783,
+          "accepted_output_token_cost": {
+            "n": 28,
+            "min": 12,
+            "median": 85.0,
+            "mean": 57.107142857142854,
+            "p10": 12.0,
+            "p90": 99.0,
+            "p95": 99.65,
+            "p99": 103.65,
+            "max": 105,
+            "tail_quantiles_caution": false
+          },
+          "accepted_groups": {
+            "correct_refusals": {
+              "count": 12,
+              "total_tokens": 144,
+              "token_cost": {
+                "n": 12,
+                "min": 12,
+                "median": 12.0,
+                "mean": 12,
+                "p10": 12.0,
+                "p90": 12.0,
+                "p95": 12.0,
+                "p99": 12.0,
+                "max": 12,
+                "tail_quantiles_caution": true
+              }
+            },
+            "substantive_successes": {
+              "count": 16,
+              "total_tokens": 1455,
+              "token_cost": {
+                "n": 16,
+                "min": 85,
+                "median": 85.0,
+                "mean": 90.9375,
+                "p10": 85.0,
+                "p90": 99.5,
+                "p95": 101.25,
+                "p99": 104.25,
+                "max": 105,
+                "tail_quantiles_caution": true
+              }
+            }
+          },
+          "all_attempt_tokens_per_accepted_outcome": 161.39285714285714
+        },
+        "relation_correct_but_reason_incorrect": 1
+      },
+      "passes": false,
+      "state_restored": true
+    }
+  },
+  "selection": {
+    "verdict": "AUDITOR_TUNING_FAIL",
+    "eligible_steps": [],
+    "selected_step": null
+  },
+  "passing_checkpoints": [],
+  "preservation": {
+    "v2_release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+    "producer_text_files_verified": 134,
+    "producer_binary_sizes_verified": 5,
+    "protected_metadata_only": true
+  },
+  "source_release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+  "archive_sha256": "e8d8b45ab44ddfa56ddcee6e9a9c99d2105c56d718d9ca8a81662ac712176613",
+  "PRODUCER_STATUS": "PRESERVED_UNEXECUTED",
+  "PROTECTED_RECEIPT_STATUS": "UNCONSUMED",
+  "next_action": "No automatic Auditor retraining; local failure diagnosis only."
+}

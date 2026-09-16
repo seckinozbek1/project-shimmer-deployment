@@ -1,0 +1,8 @@
+{
+  "experiment": "auditor-canonical-v2",
+  "step": 120,
+  "files": {
+    "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+  }
+}
