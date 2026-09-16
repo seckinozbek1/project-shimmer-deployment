@@ -1,0 +1,113 @@
+{
+  "accuracy": 0.6041666666666666,
+  "comparison": "Four substantive classes only; refusal predictions count as errors; no explanation scoring.",
+  "confusion": {
+    "ADDITION": {
+      "ADDITION": 12,
+      "DIVERGENCE": 0,
+      "INSUFFICIENT_EVIDENCE": 0,
+      "MATCH": 0,
+      "OMISSION": 0
+    },
+    "DIVERGENCE": {
+      "ADDITION": 4,
+      "DIVERGENCE": 7,
+      "INSUFFICIENT_EVIDENCE": 0,
+      "MATCH": 0,
+      "OMISSION": 1
+    },
+    "MATCH": {
+      "ADDITION": 6,
+      "DIVERGENCE": 0,
+      "INSUFFICIENT_EVIDENCE": 0,
+      "MATCH": 5,
+      "OMISSION": 1
+    },
+    "OMISSION": {
+      "ADDITION": 5,
+      "DIVERGENCE": 2,
+      "INSUFFICIENT_EVIDENCE": 0,
+      "MATCH": 0,
+      "OMISSION": 5
+    }
+  },
+  "count": 48,
+  "example_ids": [
+    "shimmer2-auditor-document-045",
+    "shimmer2-auditor-document-046",
+    "shimmer2-auditor-document-047",
+    "shimmer2-auditor-document-048",
+    "shimmer2-auditor-document-050",
+    "shimmer2-auditor-document-051",
+    "shimmer2-auditor-document-052",
+    "shimmer2-auditor-document-053",
+    "shimmer2-auditor-document-055",
+    "shimmer2-auditor-document-056",
+    "shimmer2-auditor-document-057",
+    "shimmer2-auditor-document-058",
+    "shimmer2-auditor-document-135",
+    "shimmer2-auditor-document-136",
+    "shimmer2-auditor-document-137",
+    "shimmer2-auditor-document-138",
+    "shimmer2-auditor-document-140",
+    "shimmer2-auditor-document-141",
+    "shimmer2-auditor-document-142",
+    "shimmer2-auditor-document-143",
+    "shimmer2-auditor-document-145",
+    "shimmer2-auditor-document-146",
+    "shimmer2-auditor-document-147",
+    "shimmer2-auditor-document-148",
+    "shimmer2-auditor-document-150",
+    "shimmer2-auditor-document-151",
+    "shimmer2-auditor-document-152",
+    "shimmer2-auditor-document-153",
+    "shimmer2-auditor-document-155",
+    "shimmer2-auditor-document-156",
+    "shimmer2-auditor-document-157",
+    "shimmer2-auditor-document-158",
+    "shimmer2-auditor-document-160",
+    "shimmer2-auditor-document-161",
+    "shimmer2-auditor-document-162",
+    "shimmer2-auditor-document-163",
+    "shimmer2-auditor-document-270",
+    "shimmer2-auditor-document-271",
+    "shimmer2-auditor-document-272",
+    "shimmer2-auditor-document-273",
+    "shimmer2-auditor-document-275",
+    "shimmer2-auditor-document-276",
+    "shimmer2-auditor-document-277",
+    "shimmer2-auditor-document-278",
+    "shimmer2-auditor-document-280",
+    "shimmer2-auditor-document-281",
+    "shimmer2-auditor-document-282",
+    "shimmer2-auditor-document-283"
+  ],
+  "macro_f1": 0.5991505914106533,
+  "per_class": {
+    "ADDITION": {
+      "f1": 0.6153846153846154,
+      "predicted": 27,
+      "recall": 1.0,
+      "support": 12
+    },
+    "DIVERGENCE": {
+      "f1": 0.6666666666666666,
+      "predicted": 9,
+      "recall": 0.5833333333333334,
+      "support": 12
+    },
+    "MATCH": {
+      "f1": 0.5882352941176471,
+      "predicted": 5,
+      "recall": 0.4166666666666667,
+      "support": 12
+    },
+    "OMISSION": {
+      "f1": 0.5263157894736842,
+      "predicted": 7,
+      "recall": 0.4166666666666667,
+      "support": 12
+    }
+  },
+  "prediction_field": "raw_head_class"
+}

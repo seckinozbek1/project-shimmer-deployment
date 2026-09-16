@@ -1,0 +1,44 @@
+{
+  "cloud_launched": false,
+  "exact_row_counts": {
+    "external_dev": 200,
+    "historical_dev": 48,
+    "total": 2040,
+    "train": 1792
+  },
+  "historical_dev_co_primary": true,
+  "holdout_consumed": false,
+  "holdout_labels_decoded": false,
+  "holdout_metrics": false,
+  "holdout_routing": "Mixed JSONL scanned as opaque bytes for example_id only; only 200 allowlisted DEV records deserialized. Excluded bytes not retained/exported.",
+  "inference": false,
+  "next_boundary": "Separate cloud/execution authorization and launch-time budget/capacity check required; this package has no launcher.",
+  "price": {
+    "checked_date": "2026-09-17",
+    "gpu": "A10 24GB",
+    "provider": "Lambda",
+    "region_capacity_verified": false,
+    "source": "https://lambda.ai/instances",
+    "taxes_excluded": true,
+    "usd_per_gpu_hour": 1.29
+  },
+  "projection": {
+    "basis": "Frozen V2 projection from prior A10 throughput; setup/transfers uncertain; not a measured run",
+    "cost_usd": [
+      0.3225,
+      0.645
+    ],
+    "feature_seconds": 431.2246539374465,
+    "head_seconds": 2.760562536106667,
+    "wall_minutes": [
+      15,
+      30
+    ]
+  },
+  "prompt_max_tokens": 896,
+  "prompt_transport": "Only input_ids feed the model; ID, label and split are never prompt fields.",
+  "provenance_in_prompts": false,
+  "status": "LOCAL_PREPARATION_COMPLETE_NOT_LAUNCH_AUTHORIZED",
+  "torch_imported": false,
+  "training": false
+}

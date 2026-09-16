@@ -1,0 +1,16 @@
+{
+  "files": {
+    "docs/fix/AUDITOR_V2_DIAGNOSTIC_PREFLIGHT.md": "101d63261dbb7a7a43a29b16a7492ff7f5e93a62315c597205f69b605f65e11c",
+    "tools/auditor_v2_diagnostic.py": "ffd3b99fb71c5183ac5b8c8a0fdab3d53cbd541466a0ba67a2266064027a310c",
+    "tools/test_auditor_v2_diagnostic.py": "0576296599faaab70ed92f40b6098f2361fda36604755252dc44301ea4491e38",
+    "tuning/auditor_v2_diagnostic/README.md": "a0180fff148a94ebca6002a04d6f30598262c17daafa75e022ba71f0a3127a2f",
+    "tuning/auditor_v2_diagnostic/baseline.json": "0cd67311b57dbcea66e8d635ea1d6a42e5e88b2e298f639ceedd082a279f2daa",
+    "tuning/auditor_v2_diagnostic/bindings.json": "fdb6fd90b079628b5e933591fa18654c80e39988828a5bd2ff3521cb024db7f6",
+    "tuning/auditor_v2_diagnostic/challenges.json": "fc34f439fb1bf57ec2247f5f6d2624b7438f419b8a3e09583a72e9eb3640e52d",
+    "tuning/auditor_v2_diagnostic/experiment.json": "47fd4bc047f96a284c26599b799c500739e37bc504e55d0067d61ecd0cada8f5",
+    "tuning/auditor_v2_diagnostic/preflight.json": "c014dc33e399b52a8124f71b79b84b0b7c2019196c8641407ea0acb9d5f754d9",
+    "tuning/auditor_v2_diagnostic/records.json": "6ef0f387119fca3f5c9bfd7cd4b7986bddc125cfe46ac01c86763e073cba20e2",
+    "tuning/auditor_v2_diagnostic/test_evidence.json": "818a66132707e67ef790345da57a084ee714c09d0be72052ad1a40ede455f1bc"
+  },
+  "status": "PREPARATION_ONLY"
+}
