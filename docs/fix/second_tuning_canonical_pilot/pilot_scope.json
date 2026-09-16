@@ -1,0 +1,18 @@
+{
+  "canonical_equals_fold": 0,
+  "experiment": "second-domain-agnostic-v2",
+  "hard_budget_usd": 3,
+  "maximum_instances": 1,
+  "operator_authorized": true,
+  "protected_access": false,
+  "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+  "request_attachment": "027f0f09-1368-4830-bed2-97f438ddff75",
+  "roles": [
+    "producer",
+    "auditor"
+  ],
+  "soft_budget_usd": 2,
+  "splits": [
+    "canonical"
+  ]
+}

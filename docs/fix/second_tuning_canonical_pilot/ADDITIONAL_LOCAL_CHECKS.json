@@ -1,0 +1,7 @@
+{
+  "lambda_metadata_tests": 11,
+  "lambda_metadata_passed": true,
+  "runtime_contract_passed": true,
+  "bundle_protected_labels": 0,
+  "cloud_not_started_before_checks": true
+}

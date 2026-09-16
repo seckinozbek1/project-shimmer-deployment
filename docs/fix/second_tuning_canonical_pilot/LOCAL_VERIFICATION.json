@@ -1,0 +1,24 @@
+{
+  "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+  "optimizer_updates": 120,
+  "finite_losses": 120,
+  "learning_rates_match_frozen_schedule": true,
+  "planned_training_appearances": 480,
+  "distinct_training_ids": 240,
+  "passes": 2,
+  "train_dev_disjoint": true,
+  "dev_counts": {
+    "60": 60,
+    "120": 42
+  },
+  "saved_outputs_end_at_eos": 102,
+  "auditor_run_exists": false,
+  "temporary_keys_and_permits_absent": true,
+  "provider_instances": 0,
+  "source_test_counts": {
+    "lambda_metadata": 11,
+    "runtime_contract": 26,
+    "v2_dry_run_faults": 14
+  },
+  "source_tests_reference": "Prelaunch ADDITIONAL_LOCAL_CHECKS.json and frozen dry_run_evidence.json; not rerun post-results"
+}

@@ -1,0 +1,4 @@
+{
+  "message": "Frozen runtime failed; no rescue or second instance",
+  "type": "InvalidPreparation"
+}

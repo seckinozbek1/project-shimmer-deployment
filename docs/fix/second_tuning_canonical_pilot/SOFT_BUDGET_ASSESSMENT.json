@@ -1,0 +1,11 @@
+{
+  "auditor_projected_seconds": 2292.06279407256,
+  "can_complete_with_reserve": false,
+  "epoch": 1789554555.8046727,
+  "estimated_cost": 2.0118291793803373,
+  "producer_dev120_completed": 41,
+  "producer_remaining_seconds": 1435.975916804337,
+  "projected_total_cost_with_reserve": 3.5627097174445583,
+  "remaining_workload_window_seconds": 2157.6860110316175,
+  "soft_point_crossed": true
+}

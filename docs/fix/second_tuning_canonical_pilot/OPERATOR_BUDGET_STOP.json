@@ -1,0 +1,5 @@
+{
+  "assessment": "SOFT_BUDGET_ASSESSMENT.json",
+  "epoch": 1789554609.5082338,
+  "reason": "Soft budget crossed; mandatory frozen work cannot reasonably finish below hard ceiling with reserve"
+}

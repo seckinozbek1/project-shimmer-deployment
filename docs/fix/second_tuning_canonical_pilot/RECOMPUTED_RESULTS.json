@@ -1,0 +1,1360 @@
+{
+  "verdict": "SECOND_TUNING_CANONICAL_PILOT_INDETERMINATE",
+  "FULL_GROUPED_CV_CONTINUATION_RECOMMENDED": false,
+  "roles": {
+    "producer": {
+      "status": "INTERRUPTED",
+      "selected": null,
+      "checkpoint_results": [
+        {
+          "step": 60,
+          "gate": "FAIL",
+          "failed_gates": [
+            "typed_gaps_f1 below 0.8",
+            "semantic_completeness below 0.75",
+            "claims_f1 below 0.95",
+            "evidence_f1 below 0.95",
+            "typed_uncertainty_f1 below 0.8",
+            "refusal_precision below 0.9",
+            "accepted_semantic_outcomes below 0.75",
+            "over_refusal_rate above 0.05"
+          ],
+          "metrics": {
+            "count": 60,
+            "contract_validity": 1.0,
+            "accepted_semantic_outcomes": 0.2,
+            "refusal_precision": 0.08163265306122448,
+            "refusal_recall": 1.0,
+            "over_refusal_rate": 0.8035714285714286,
+            "substantive_non_refusal_coverage": 0.19642857142857142,
+            "catastrophic": {
+              "invented_evidence": 0,
+              "invented_rule": 0,
+              "confident_wrong_match_divergence": 0,
+              "truncation": 0,
+              "producer_source_copy": 0,
+              "governance_violations": 0
+            },
+            "evidence_f1": 0.4,
+            "claims_f1": 0.4,
+            "typed_gaps_f1": 0.15384615384615385,
+            "typed_uncertainty_f1": 0.2631578947368421,
+            "semantic_completeness": 0.2,
+            "family_accepted_rates": {
+              "shimmer2-producer-document-045": 0,
+              "shimmer2-producer-document-046": 0,
+              "shimmer2-producer-document-047": 0,
+              "shimmer2-producer-document-048": 0,
+              "shimmer2-producer-document-049": 0,
+              "shimmer2-producer-document-050": 0,
+              "shimmer2-producer-document-051": 0,
+              "shimmer2-producer-document-052": 0,
+              "shimmer2-producer-document-053": 0,
+              "shimmer2-producer-document-054": 0,
+              "shimmer2-producer-document-055": 0,
+              "shimmer2-producer-document-056": 0,
+              "shimmer2-producer-document-057": 0,
+              "shimmer2-producer-document-058": 1,
+              "shimmer2-producer-document-059": 1,
+              "shimmer2-producer-document-135": 0,
+              "shimmer2-producer-document-136": 0,
+              "shimmer2-producer-document-137": 0,
+              "shimmer2-producer-document-138": 0,
+              "shimmer2-producer-document-139": 0,
+              "shimmer2-producer-document-140": 1,
+              "shimmer2-producer-document-141": 1,
+              "shimmer2-producer-document-142": 0,
+              "shimmer2-producer-document-143": 0,
+              "shimmer2-producer-document-144": 0,
+              "shimmer2-producer-document-145": 0,
+              "shimmer2-producer-document-146": 0,
+              "shimmer2-producer-document-147": 0,
+              "shimmer2-producer-document-148": 1,
+              "shimmer2-producer-document-149": 1,
+              "shimmer2-producer-document-150": 0,
+              "shimmer2-producer-document-151": 0,
+              "shimmer2-producer-document-152": 0,
+              "shimmer2-producer-document-153": 0,
+              "shimmer2-producer-document-154": 0,
+              "shimmer2-producer-document-155": 1,
+              "shimmer2-producer-document-156": 0,
+              "shimmer2-producer-document-157": 0,
+              "shimmer2-producer-document-158": 0,
+              "shimmer2-producer-document-159": 1,
+              "shimmer2-producer-document-160": 0,
+              "shimmer2-producer-document-161": 0,
+              "shimmer2-producer-document-162": 0,
+              "shimmer2-producer-document-163": 1,
+              "shimmer2-producer-document-164": 1,
+              "shimmer2-producer-document-270": 0,
+              "shimmer2-producer-document-271": 0,
+              "shimmer2-producer-document-272": 0,
+              "shimmer2-producer-document-273": 0,
+              "shimmer2-producer-document-274": 0,
+              "shimmer2-producer-document-275": 0,
+              "shimmer2-producer-document-276": 0,
+              "shimmer2-producer-document-277": 0,
+              "shimmer2-producer-document-278": 0,
+              "shimmer2-producer-document-279": 0,
+              "shimmer2-producer-document-280": 0,
+              "shimmer2-producer-document-281": 0,
+              "shimmer2-producer-document-282": 0,
+              "shimmer2-producer-document-283": 1,
+              "shimmer2-producer-document-284": 1
+            }
+          },
+          "contracts": 60,
+          "accepted": 12,
+          "relation_distribution": {},
+          "gap_taxonomy": {
+            "omission": 104,
+            "wrong_referent": 1,
+            "wrong_type_or_state": 2
+          },
+          "gap_rows": [
+            {
+              "example_id": "shimmer2-producer-document-045",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-046",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-047",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-048",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-049",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-050",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-051",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-052",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-053",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "wrong_referent",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ],
+                  "predicted": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-054",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-055",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-056",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-057",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-058",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-059",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-135",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-136",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-137",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-138",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-139",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-140",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-141",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-142",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-143",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-144",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-145",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "wrong_type_or_state",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ],
+                  "predicted": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_order\",\"category\":\"entry_presence\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "wrong_type_or_state",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ],
+                  "predicted": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"date_unspecified\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-146",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-147",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-148",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-149",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-150",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-151",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-152",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-153",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-154",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-155",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-156",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-157",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-158",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-159",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-160",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-161",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-162",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-163",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-164",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-270",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-271",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-272",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-273",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-274",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-275",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-276",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-277",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-278",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-279",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_time\",\"category\":\"missing_information\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-280",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-281",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s0",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-282",
+              "contract_valid": true,
+              "accepted": false,
+              "errors": [
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+                  ]
+                },
+                {
+                  "category": "omission",
+                  "gold": [
+                    "s1000",
+                    "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+                  ]
+                }
+              ]
+            },
+            {
+              "example_id": "shimmer2-producer-document-283",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            },
+            {
+              "example_id": "shimmer2-producer-document-284",
+              "contract_valid": true,
+              "accepted": true,
+              "errors": []
+            }
+          ]
+        }
+      ],
+      "selection_status": "NOT_EVALUABLE_INCOMPLETE",
+      "controller_wall_seconds": 5232.487065315247,
+      "role_wall_seconds": null,
+      "generation_seconds": 4115.6622524261475,
+      "non_generation_seconds": null,
+      "training_window_seconds": 973.1887662410736,
+      "training_window_definition": "Parameter-proof event to update 60, plus last DEV-60 generation to update 120; includes minor setup/aggregation overhead; excludes model load and generation.",
+      "ordinary_step_wall_median": 7.8772759437561035,
+      "optimizer_updates": 120,
+      "peak_allocated_vram_gib": 9.423602104187012,
+      "peak_reserved_vram_gib": 11.60546875,
+      "peak_vram_measurement": "Sampled telemetry lower bound",
+      "loss_start": 0.8188651651144028,
+      "loss_end": 0.023797692207153887,
+      "model_load_seconds": 33.594666481018066,
+      "trainable_parameter_proof": [
+        {
+          "kind": "trainable_parameters",
+          "epoch": 1789549458.4679444,
+          "count": 20185088,
+          "lora_only": true
+        }
+      ],
+      "telemetry_samples": 5067,
+      "peak_rss_bytes": 5646000128,
+      "raw_generations": 102,
+      "generation_by_checkpoint": {
+        "60": {
+          "count": 60,
+          "seconds": 953.4478888511658,
+          "tokens": 1787,
+          "stop_reasons": {
+            "eos": 60
+          }
+        },
+        "120": {
+          "count": 42,
+          "seconds": 3162.2143635749817,
+          "tokens": 5945,
+          "stop_reasons": {
+            "eos": 42
+          }
+        }
+      }
+    },
+    "auditor": {
+      "status": "NOT_RUN",
+      "selected": null
+    }
+  },
+  "source_commit": "a818d43ec38bafffbf9e57e124efaddabd6fcf57",
+  "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+  "cloud": {
+    "billable_duration_upper_bound_seconds": 5819.008962392807,
+    "epoch": 1789554760.406623,
+    "estimated_cost_upper_bound_usd": 2.085144878190756,
+    "instance_id": "9051149f738c4d678c9e51a41212f60c",
+    "metadata": {
+      "instance_id": "9051149f738c4d678c9e51a41212f60c",
+      "status": "terminated"
+    },
+    "utc": "2026-09-16T10:32:40.406623+00:00"
+  },
+  "protected_accesses": 0,
+  "other_cv_folds_executed": 0,
+  "run1_reference": "Frozen run1_audit.json, read as historical evidence only; not rescored",
+  "invalidation_reason": "BUDGET_RUNTIME_INTERRUPTION",
+  "frozen_configuration_changed": false,
+  "paid_inference_apis": false,
+  "second_instance": false,
+  "full_pipeline": false,
+  "multi_round": false,
+  "pushed": false
+}

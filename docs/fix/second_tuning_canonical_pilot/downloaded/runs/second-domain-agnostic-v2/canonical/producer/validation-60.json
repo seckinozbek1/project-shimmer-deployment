@@ -1,0 +1,5329 @@
+[
+  {
+    "example_id": "shimmer2-producer-document-045",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "c728b87b455e83792bb12bb9bc312e72586ec30e467c9eac83e93caf91caa0f5",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-045",
+      "family": "shimmer2-producer-document-045",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-046",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "fa68f5b4048b2eff3348ab48f79cffcf84da183d6885b9a9ab530dfc8111e0d7",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-046",
+      "family": "shimmer2-producer-document-046",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-047",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "ef3bc82495a6ba8df8a2a650010c8240e88e30a520932914c974ada4554db2c3",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-047",
+      "family": "shimmer2-producer-document-047",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-048",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "b81975d4cfbeded1caa2689b0005728641f309991e11ca859571a6b4b29f3752",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-048",
+      "family": "shimmer2-producer-document-048",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-049",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "754654fcc6407c33e1e7685d2168ef9698f4f3b273e88e41a22781e69851c533",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-049",
+      "family": "shimmer2-producer-document-049",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-050",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "c83360cd8547ab0ce66b755c7678a050658b48989acce88eb37e7ac2bb2dab8d",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-050",
+      "family": "shimmer2-producer-document-050",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-051",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "88c537023457491380a68959f703e6aa91844a476031fb174943fcde2192d010",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-051",
+      "family": "shimmer2-producer-document-051",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-052",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "27c546709f14a2c3974f79db31723bb2573102520b8bf076826f2c4f9e5fe78f",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-052",
+      "family": "shimmer2-producer-document-052",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-053",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "40e79c5e7c5048d895f38e328342c4e6c1a1b4fc26220e99df1e4786585817e8",
+    "raw_output": "{\"items\":[{\"claims\":[\"CLM-A\",\"CLM-B\",\"CLM-C\"],\"questions\":[\"Gap: {\\\"attribute\\\":\\\"event_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"event\\\",\\\"unit\\\":null}\",\"Gap: {\\\"attribute\\\":\\\"observation_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\"],\"refs\":[\"REF-20212\",\"REF-20213\",\"REF-20214\"],\"span\":\"s0\",\"status\":\"extracted\",\"uncertainty\":[\"Uncertainty: {\\\"attribute\\\":\\\"interpretation\\\",\\\"category\\\":\\\"unknown\\\",\\\"ordinal\\\":1,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unknown\\\",\\\"subject\\\":\\\"entry\\\",\\\"unit\\\":null}\"]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      36799,
+      3140,
+      44,
+      6691,
+      2198,
+      3140,
+      44,
+      7671,
+      2198,
+      3140,
+      44,
+      7658,
+      68882,
+      17348,
+      36799,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      3087,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      3087,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      2198,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      77960,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      68882,
+      16149,
+      36799,
+      5996,
+      12,
+      17,
+      15,
+      17,
+      16,
+      17,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      17,
+      16,
+      18,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      17,
+      16,
+      19,
+      68882,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      23493,
+      291,
+      2198,
+      1347,
+      80146,
+      36799,
+      63718,
+      80146,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      16897,
+      367,
+      34333,
+      5471,
+      23488,
+      16088,
+      34333,
+      45151,
+      11693,
+      16,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      16088,
+      34333,
+      11501,
+      23488,
+      4085,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      92446,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-053",
+      "family": "shimmer2-producer-document-053",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 1,
+        "fp": 1,
+        "fn": 1
+      },
+      "typed_uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-054",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "f028d7be887a6c97d2e6b462e389570aa6bb62217cfe50f244a7b2cf14fcfd61",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-054",
+      "family": "shimmer2-producer-document-054",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-055",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "3f634711bd0ba857b592ff315908b6de0899f47fa811deb37b53ab5ed22fa06a",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-055",
+      "family": "shimmer2-producer-document-055",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-056",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "6c38e31ef2e5fecf112ce79dc21c6aa7b5edf141debd93dd57232d3df16d6a46",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-056",
+      "family": "shimmer2-producer-document-056",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-057",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "db27901a25d3f6afaa6fe108bd18a72060ddaa1c308c9d914ad73e826df5691f",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-057",
+      "family": "shimmer2-producer-document-057",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-058",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "2760c4e7efaf46c6f5800660fd26c6d90065e9c499f65ee0bc5b41c89b26e475",
+    "raw_output": "{\"items\":[{\"claims\":[],\"questions\":[],\"refs\":[],\"span\":\"s0\",\"status\":\"empty\",\"uncertainty\":[]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      8899,
+      28503,
+      17348,
+      8899,
+      28503,
+      16149,
+      8899,
+      28503,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      3194,
+      2198,
+      1347,
+      80146,
+      788,
+      66277,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-058",
+      "family": "shimmer2-producer-document-058",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-059",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "8b37aac4397fb6b2c78130778b254f3f7ed328088d6fd531a98be95e6d5a9579",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-059",
+      "family": "shimmer2-producer-document-059",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": true,
+      "predicted_refusal": true,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-135",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "47c2a63b7be48a128182644318e4038bb88388f4c3d8949c466ee42356e7d94b",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-135",
+      "family": "shimmer2-producer-document-135",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-136",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "43f04167cc0cd8df0cb41b93c487f70941708ef1a34fba4432220fd968d3d5fd",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-136",
+      "family": "shimmer2-producer-document-136",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-137",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "acf5aea8e48ea20636c82bb67af75683fcdf386737c5a3a83f96b9784c44bca8",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-137",
+      "family": "shimmer2-producer-document-137",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-138",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "bff2145c529caf167e0b7e66ddb2318f4c3ae0c1b24ec07c115290d39c25046c",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-138",
+      "family": "shimmer2-producer-document-138",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-139",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "008971422dfd778040b19561d20227bb5f9320d77bbd6ba42a9e1702b62fd830",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-139",
+      "family": "shimmer2-producer-document-139",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-140",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "6898d9e3a7bf1c873d182ff7ba124d3b76685cee514e2bb05f6b388c922b8941",
+    "raw_output": "{\"items\":[{\"claims\":[\"CLM-A\"],\"questions\":[],\"refs\":[\"REF-20560\"],\"span\":\"s0\",\"status\":\"extracted\",\"uncertainty\":[]},{\"claims\":[\"CLM-B\"],\"questions\":[\"Gap: {\\\"attribute\\\":\\\"date_unspecified\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\",\"Gap: {\\\"attribute\\\":\\\"observation_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\"],\"refs\":[\"REF-20561\"],\"span\":\"s1000\",\"status\":\"extracted\",\"uncertainty\":[\"Uncertainty: {\\\"attribute\\\":\\\"recording_time\\\",\\\"category\\\":\\\"unknown\\\",\\\"ordinal\\\":3,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unknown\\\",\\\"subject\\\":\\\"entry\\\",\\\"unit\\\":null}\"]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      36799,
+      3140,
+      44,
+      6691,
+      68882,
+      17348,
+      8899,
+      28503,
+      16149,
+      36799,
+      5996,
+      12,
+      17,
+      15,
+      20,
+      21,
+      15,
+      68882,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      23493,
+      291,
+      2198,
+      1347,
+      80146,
+      788,
+      1294,
+      36828,
+      48561,
+      36799,
+      3140,
+      44,
+      7671,
+      68882,
+      17348,
+      36799,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      1028,
+      4907,
+      53434,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      2198,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      77960,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      68882,
+      16149,
+      36799,
+      5996,
+      12,
+      17,
+      15,
+      20,
+      21,
+      16,
+      68882,
+      1480,
+      3252,
+      82,
+      16,
+      15,
+      15,
+      15,
+      2198,
+      2829,
+      3252,
+      23493,
+      291,
+      2198,
+      1347,
+      80146,
+      36799,
+      63718,
+      80146,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      2758,
+      2678,
+      3009,
+      34333,
+      5471,
+      23488,
+      16088,
+      34333,
+      45151,
+      11693,
+      18,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      16088,
+      34333,
+      11501,
+      23488,
+      4085,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      92446,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-140",
+      "family": "shimmer2-producer-document-140",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-141",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "48ec91ddf46897296b48976f6abd4fd4cf5f544dc67424971e321149ad39e59f",
+    "raw_output": "{\"items\":[{\"claims\":[\"CLM-A\",\"CLM-B\",\"CLM-C\"],\"questions\":[\"Gap: {\\\"attribute\\\":\\\"reporting_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\",\"Gap: {\\\"attribute\\\":\\\"effective_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"amendment\\\",\\\"unit\\\":null}\"],\"refs\":[\"REF-20564\",\"REF-20565\",\"REF-20566\"],\"span\":\"s0\",\"status\":\"extracted\",\"uncertainty\":[]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      36799,
+      3140,
+      44,
+      6691,
+      2198,
+      3140,
+      44,
+      7671,
+      2198,
+      3140,
+      44,
+      7658,
+      68882,
+      17348,
+      36799,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      11736,
+      287,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      2198,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      77895,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      309,
+      14646,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      68882,
+      16149,
+      36799,
+      5996,
+      12,
+      17,
+      15,
+      20,
+      21,
+      19,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      20,
+      21,
+      20,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      20,
+      21,
+      21,
+      68882,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      23493,
+      291,
+      2198,
+      1347,
+      80146,
+      788,
+      66277,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-141",
+      "family": "shimmer2-producer-document-141",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-142",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "24b08680c8a596ceed6403fdcf5b3db36f718dc6f256ce44ca489a8bd6b7bc20",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-142",
+      "family": "shimmer2-producer-document-142",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-143",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "277f3081ad6310856a1d29f03e6b93709ac7c19401ae6d2e783c30b0e4d7ad34",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-143",
+      "family": "shimmer2-producer-document-143",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-144",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "9e9c2874a48727e3edd4a2a5de1c560968b35f9cce6fc4032d0d22f8b53cfa68",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-144",
+      "family": "shimmer2-producer-document-144",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-145",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "e8e6629bca327e7a6c8f59509843f20166823986eb6a8c6ec9d63404c9c291a5",
+    "raw_output": "{\"items\":[{\"claims\":[\"CLM-A\",\"CLM-B\",\"CLM-C\"],\"questions\":[\"Gap: {\\\"attribute\\\":\\\"reporting_time\\\",\\\"category\\\":\\\"date_unspecified\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\",\"Gap: {\\\"attribute\\\":\\\"entry_order\\\",\\\"category\\\":\\\"entry_presence\\\",\\\"ordinal\\\":\\\"next\\\",\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"requested\\\",\\\"subject\\\":\\\"entry\\\",\\\"unit\\\":null}\"],\"refs\":[\"REF-20580\",\"REF-20581\",\"REF-20582\"],\"span\":\"s0\",\"status\":\"extracted\",\"uncertainty\":[\"Uncertainty: {\\\"attribute\\\":\\\"event_occurrence\\\",\\\"category\\\":\\\"unknown\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unknown\\\",\\\"subject\\\":\\\"event\\\",\\\"unit\\\":null}\"]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      36799,
+      3140,
+      44,
+      6691,
+      2198,
+      3140,
+      44,
+      7671,
+      2198,
+      3140,
+      44,
+      7658,
+      68882,
+      17348,
+      36799,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      11736,
+      287,
+      3009,
+      34333,
+      5471,
+      23488,
+      1028,
+      4907,
+      53434,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      2198,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      4085,
+      7869,
+      34333,
+      5471,
+      23488,
+      4085,
+      56403,
+      34333,
+      45151,
+      23488,
+      3600,
+      34333,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      67105,
+      34333,
+      11501,
+      23488,
+      4085,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      68882,
+      16149,
+      36799,
+      5996,
+      12,
+      17,
+      15,
+      20,
+      23,
+      15,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      20,
+      23,
+      16,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      20,
+      23,
+      17,
+      68882,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      23493,
+      291,
+      2198,
+      1347,
+      80146,
+      36799,
+      63718,
+      80146,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      3087,
+      57291,
+      20559,
+      34333,
+      5471,
+      23488,
+      16088,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      16088,
+      34333,
+      11501,
+      23488,
+      3087,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      92446,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-145",
+      "family": "shimmer2-producer-document-145",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-146",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "2ac3a9d0611ab69c0b420d4fea6feaecd3d874fdd38df7377451dc6216e819a4",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-146",
+      "family": "shimmer2-producer-document-146",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-147",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "313d9537b49f0e07c95418f010a0d36f78ec28433b09c26074884d7f3e235346",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-147",
+      "family": "shimmer2-producer-document-147",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-148",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "88285ab2268d1cee6581c57b6cae5a4ca19bddd1fa5f6b9167e282069e9c411a",
+    "raw_output": "{\"items\":[{\"claims\":[],\"questions\":[],\"refs\":[],\"span\":\"s0\",\"status\":\"empty\",\"uncertainty\":[]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      8899,
+      28503,
+      17348,
+      8899,
+      28503,
+      16149,
+      8899,
+      28503,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      3194,
+      2198,
+      1347,
+      80146,
+      788,
+      66277,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-148",
+      "family": "shimmer2-producer-document-148",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-149",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "cb336b4a35ee1c18783ae22319e7c59c808730c7741ef12623812bb722627c75",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-149",
+      "family": "shimmer2-producer-document-149",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": true,
+      "predicted_refusal": true,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-150",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "503d177d08ae52a4bd42b87561f9988077c1aacb2e0445d3acfca5ce4aa46837",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-150",
+      "family": "shimmer2-producer-document-150",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-151",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "cebee4adf3d1d7c82f1c05364cc9921cdcad700ba89da11380f51ff44b5095ff",
+    "raw_output": "{\"items\":[{\"claims\":[\"CLM-A\",\"CLM-B\",\"CLM-C\"],\"questions\":[\"Gap: {\\\"attribute\\\":\\\"reporting_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\"],\"refs\":[\"REF-20604\",\"REF-20605\",\"REF-20606\"],\"span\":\"s0\",\"status\":\"extracted\",\"uncertainty\":[\"Uncertainty: {\\\"attribute\\\":\\\"interpretation\\\",\\\"category\\\":\\\"unknown\\\",\\\"ordinal\\\":1,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unknown\\\",\\\"subject\\\":\\\"entry\\\",\\\"unit\\\":null}\"]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      36799,
+      3140,
+      44,
+      6691,
+      2198,
+      3140,
+      44,
+      7671,
+      2198,
+      3140,
+      44,
+      7658,
+      68882,
+      17348,
+      36799,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      11736,
+      287,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      68882,
+      16149,
+      36799,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      15,
+      19,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      15,
+      20,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      15,
+      21,
+      68882,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      23493,
+      291,
+      2198,
+      1347,
+      80146,
+      36799,
+      63718,
+      80146,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      16897,
+      367,
+      34333,
+      5471,
+      23488,
+      16088,
+      34333,
+      45151,
+      11693,
+      16,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      16088,
+      34333,
+      11501,
+      23488,
+      4085,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      92446,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-151",
+      "family": "shimmer2-producer-document-151",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-152",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "d7b2bb5479d5bd66a2676003312d91932e1a11bd6ab2ca0c3aa16db5aec45056",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-152",
+      "family": "shimmer2-producer-document-152",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-153",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "dc76e49f4058f5c8a8872f65e98f79e486d48b447e61639da28d4eef31c3520c",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-153",
+      "family": "shimmer2-producer-document-153",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-154",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "c47dcb5bcc35c17850a9064fc4fe3a8c3bea7d3859c98ed087cdcd2787a3789a",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-154",
+      "family": "shimmer2-producer-document-154",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-155",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "43a159d9509b689b9424aad7e886df9c5b9768e202be6dbe39500f611e297ce1",
+    "raw_output": "{\"items\":[{\"claims\":[\"CLM-A\",\"CLM-B\",\"CLM-C\"],\"questions\":[\"Gap: {\\\"attribute\\\":\\\"reporting_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\",\"Gap: {\\\"attribute\\\":\\\"event_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":2,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"entry\\\",\\\"unit\\\":null}\"],\"refs\":[\"REF-20620\",\"REF-20621\",\"REF-20622\"],\"span\":\"s0\",\"status\":\"extracted\",\"uncertainty\":[]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      36799,
+      3140,
+      44,
+      6691,
+      2198,
+      3140,
+      44,
+      7671,
+      2198,
+      3140,
+      44,
+      7658,
+      68882,
+      17348,
+      36799,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      11736,
+      287,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      2198,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      3087,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      17,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      4085,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      68882,
+      16149,
+      36799,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      17,
+      15,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      17,
+      16,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      17,
+      17,
+      68882,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      23493,
+      291,
+      2198,
+      1347,
+      80146,
+      788,
+      66277,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-155",
+      "family": "shimmer2-producer-document-155",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-156",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "bf8c2a7ebf5f009c9aae56f6cd4da49833c3a17136f526e43410d1fe84baf81d",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-156",
+      "family": "shimmer2-producer-document-156",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-157",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "e575476e487f36793914ca1a3b91acb24ec24606c65ef4faf6087b0fa3d7be3b",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-157",
+      "family": "shimmer2-producer-document-157",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-158",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "969f54aabc4c3690639788744ad83971c4255ecda4308a17855f078c316b8ae1",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-158",
+      "family": "shimmer2-producer-document-158",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-159",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "074d2a699ebd94461c4efce9ccaec08b51c0f0c52695f441529fed039d09207e",
+    "raw_output": "{\"items\":[{\"claims\":[\"CLM-A\",\"CLM-B\",\"CLM-C\"],\"questions\":[\"Gap: {\\\"attribute\\\":\\\"reporting_time\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\",\"Gap: {\\\"attribute\\\":\\\"date_unspecified\\\",\\\"category\\\":\\\"missing_information\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unspecified\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\"],\"refs\":[\"REF-20636\",\"REF-20637\",\"REF-20638\"],\"span\":\"s0\",\"status\":\"extracted\",\"uncertainty\":[\"Uncertainty: {\\\"attribute\\\":\\\"reporting_time\\\",\\\"category\\\":\\\"unknown\\\",\\\"ordinal\\\":null,\\\"relation\\\":null,\\\"scope\\\":\\\"owned_record\\\",\\\"state\\\":\\\"unknown\\\",\\\"subject\\\":\\\"owned_record\\\",\\\"unit\\\":null}\"]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      36799,
+      3140,
+      44,
+      6691,
+      2198,
+      3140,
+      44,
+      7671,
+      2198,
+      3140,
+      44,
+      7658,
+      68882,
+      17348,
+      36799,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      11736,
+      287,
+      3009,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      2198,
+      12868,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      1028,
+      4907,
+      53434,
+      34333,
+      5471,
+      23488,
+      30616,
+      35212,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      359,
+      53434,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      68882,
+      16149,
+      36799,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      18,
+      21,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      18,
+      22,
+      2198,
+      5996,
+      12,
+      17,
+      15,
+      21,
+      18,
+      23,
+      68882,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      23493,
+      291,
+      2198,
+      1347,
+      80146,
+      36799,
+      63718,
+      80146,
+      25,
+      314,
+      2105,
+      9116,
+      23488,
+      11736,
+      287,
+      3009,
+      34333,
+      5471,
+      23488,
+      16088,
+      34333,
+      45151,
+      11693,
+      2921,
+      52318,
+      22221,
+      11693,
+      2921,
+      52318,
+      4186,
+      23488,
+      18332,
+      14192,
+      34333,
+      2454,
+      23488,
+      16088,
+      34333,
+      11501,
+      23488,
+      18332,
+      14192,
+      34333,
+      3843,
+      11693,
+      2921,
+      92,
+      92446,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-159",
+      "family": "shimmer2-producer-document-159",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-160",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "f34f59dadeff4905301e930a3330c6490071c16819f4be6cc6af3667979f1a53",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-160",
+      "family": "shimmer2-producer-document-160",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-161",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "d5e77fb16ca8358b16e388b1df646162fed4b24d84330ba72e3b69f97d4cc924",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-161",
+      "family": "shimmer2-producer-document-161",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-162",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "e444c85f55b5d18548799a2d569b0e0d19a150ee9edb96ce9224cdf255ba4950",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-162",
+      "family": "shimmer2-producer-document-162",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-163",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "21743146a734906cd17bbb456c7e3360c5aee03573f68a32ec6b084cd56b76c6",
+    "raw_output": "{\"items\":[{\"claims\":[],\"questions\":[],\"refs\":[],\"span\":\"s0\",\"status\":\"empty\",\"uncertainty\":[]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      8899,
+      28503,
+      17348,
+      8899,
+      28503,
+      16149,
+      8899,
+      28503,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      3194,
+      2198,
+      1347,
+      80146,
+      788,
+      66277,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-163",
+      "family": "shimmer2-producer-document-163",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-164",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "15b1582620d22f07129856ce77aa5d52890c17ac37a224fe543756aa1afd6b2b",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-164",
+      "family": "shimmer2-producer-document-164",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": true,
+      "predicted_refusal": true,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-270",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "3d0d5803daa93e4a2b2bf983055cc16e0a8a52601d4003bc4dfa5ae5dbf5670b",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-270",
+      "family": "shimmer2-producer-document-270",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-271",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "6a5738f2997a0543102b5fe6a94d66344ccb536d12b02b4af6888cb722c58fa7",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-271",
+      "family": "shimmer2-producer-document-271",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-272",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "11f596f66c7b134feaf569ad22a9160c2ce6bc6c1fdf751860c25f3084a6ce10",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-272",
+      "family": "shimmer2-producer-document-272",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-273",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "2d67381702ca670fee847d9373de15a3b544d00b5a99a017a552ce02b8cc9891",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-273",
+      "family": "shimmer2-producer-document-273",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-274",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "060a74048e982a07321dd6c9f31183a3d872748e6cf93de12cc032557f7c2858",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-274",
+      "family": "shimmer2-producer-document-274",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-275",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "4380248f5991e54b3c72fcee38d909d2ee90a37654eb048c9619034ed939350f",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-275",
+      "family": "shimmer2-producer-document-275",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-276",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "5c91f66badee859b14c55114b51f609c6fef6a2b11809db4794a5a0d19d25ad1",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-276",
+      "family": "shimmer2-producer-document-276",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-277",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "1d092b58ad4459d83d7c269caaa296d175223482d6eff858095abb0afa1cf629",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-277",
+      "family": "shimmer2-producer-document-277",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-278",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "180aa76411e24f565748048afcc4fd9cc723080467891d5cd37b6f83b49b034d",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-278",
+      "family": "shimmer2-producer-document-278",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-279",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "eb40501ac527a7ac03e9db20d9d9afb1c337d062accb6793e185f366760e713e",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-279",
+      "family": "shimmer2-producer-document-279",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-280",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "4346ba075d78c2b8b70520055380862096bfad70168f85f2b54556ce3d24476e",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-280",
+      "family": "shimmer2-producer-document-280",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-281",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "8b3f7e356c382ee79a23e4fc93db4e182a8ddbd41c5003865eda6160c043e6a1",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-281",
+      "family": "shimmer2-producer-document-281",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-282",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "967b49d10ce15dfab94858b7f8ae1a26da263d52b758cdb88271685697246dc4",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-282",
+      "family": "shimmer2-producer-document-282",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": true,
+      "refusal_correct": false,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": false,
+      "accepted_outcome": false
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-283",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "edd5958a669d399d4528b0ff07e29d1492b9ae1444262c7961cc1471d65b162f",
+    "raw_output": "{\"items\":[{\"claims\":[],\"questions\":[],\"refs\":[],\"span\":\"s0\",\"status\":\"empty\",\"uncertainty\":[]}]}",
+    "output_token_ids": [
+      4913,
+      3615,
+      66582,
+      48561,
+      8899,
+      28503,
+      17348,
+      8899,
+      28503,
+      16149,
+      8899,
+      28503,
+      1480,
+      3252,
+      82,
+      15,
+      2198,
+      2829,
+      3252,
+      3194,
+      2198,
+      1347,
+      80146,
+      788,
+      66277,
+      13989,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-283",
+      "family": "shimmer2-producer-document-283",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": false,
+      "predicted_refusal": false,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  },
+  {
+    "example_id": "shimmer2-producer-document-284",
+    "identity": {
+      "role": "producer",
+      "split": "canonical",
+      "step": 60,
+      "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "files": {
+        "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "adapter_model.safetensors": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8"
+      },
+      "sha256": "35d09293559057c2ae94491865340a32775105fe8b3d160ee3b491d472f8c1e6"
+    },
+    "prompt_sha256": "06e4752040e6069300bcae52d814216ff3a2b985dd7752d91d050335e0ddecc4",
+    "raw_output": "{\"items\":[],\"status\":\"refused\"}",
+    "output_token_ids": [
+      4913,
+      3615,
+      8899,
+      28503,
+      2829,
+      3252,
+      1097,
+      2591,
+      9207,
+      151645
+    ],
+    "truncated": false,
+    "metrics": {
+      "example_id": "shimmer2-producer-document-284",
+      "family": "shimmer2-producer-document-284",
+      "leakage_group": "v2-structure-anchored",
+      "role": "producer",
+      "contract_valid": true,
+      "expected_refusal": true,
+      "predicted_refusal": true,
+      "refusal_correct": true,
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "catastrophic": {
+        "invented_evidence": false,
+        "invented_rule": false,
+        "confident_wrong_match_divergence": false,
+        "truncation": false,
+        "producer_source_copy": false,
+        "governance_violations": false
+      },
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_gaps": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typed_uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "semantic_completeness": true,
+      "accepted_outcome": true
+    }
+  }
+]

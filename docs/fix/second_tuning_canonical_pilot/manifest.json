@@ -1,0 +1,360 @@
+{
+  "bundle_sha256": "6dd51881acc582ccd3e62ad030accb034a0b3dfcae5e853566b2779a0c01d4a3",
+  "files": {
+    "benchmark/producer_coverage_amendment_v3/semantics.py": {
+      "bytes": 15368,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "837ecaf69551cb82d60579d7321441b2a81656a19fa8deb19c0f6479ce825a03",
+      "sha256": "837ecaf69551cb82d60579d7321441b2a81656a19fa8deb19c0f6479ce825a03"
+    },
+    "benchmark/producer_coverage_amendment_v3/structural.py": {
+      "bytes": 1961,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "54fa6b9d2ce15a58fe42bfab2ba208a395b1073f18c5c0a1110e557c7d747d59",
+      "sha256": "54fa6b9d2ce15a58fe42bfab2ba208a395b1073f18c5c0a1110e557c7d747d59"
+    },
+    "benchmark/task_semantics/core.py": {
+      "bytes": 24329,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "b9858ab721a6e2b8912b15bfdf0ec11c960a7f2ab054150abc5318a5ba28d1a7",
+      "sha256": "b9858ab721a6e2b8912b15bfdf0ec11c960a7f2ab054150abc5318a5ba28d1a7"
+    },
+    "benchmark/task_semantics_v2/family_manifest.json": {
+      "bytes": 235735,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "baefdac7ca56a8f495152df5f1c83425038c41add10d5761afd15fd15c66f4ff",
+      "sha256": "baefdac7ca56a8f495152df5f1c83425038c41add10d5761afd15fd15c66f4ff"
+    },
+    "benchmark/task_semantics_v2/review_admin_mapping.json": {
+      "bytes": 72615,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "37b5f15ba9d9d2f3406521147f3a7604dc66a139d97a64947d2136a1a5be540a",
+      "sha256": "37b5f15ba9d9d2f3406521147f3a7604dc66a139d97a64947d2136a1a5be540a"
+    },
+    "docs/fix/SECOND_TUNING_DATA_AND_FAILURE_AUDIT.md": {
+      "bytes": 19319,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "cb2e6c0a9192c40ace87842046b6be5cb677bcc76b6c0cdd9ed2c52978655039",
+      "sha256": "cb2e6c0a9192c40ace87842046b6be5cb677bcc76b6c0cdd9ed2c52978655039"
+    },
+    "docs/fix/SECOND_TUNING_EXPERIMENT_IMPLEMENTATION.md": {
+      "bytes": 4986,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "e121b3c1fcc38adb292f551a4722d1689921159ba0eff307d274300363f0b1a5",
+      "sha256": "e121b3c1fcc38adb292f551a4722d1689921159ba0eff307d274300363f0b1a5"
+    },
+    "scripts/bounded_extraction.py": {
+      "bytes": 6505,
+      "checkout_line_endings_only": true,
+      "commit_blob_sha256": "590faaec3c13c90c2caac4e5dfea70e789772f19417dd3b8a17c213a30e46598",
+      "sha256": "a605e9c6885e163951f5d73fd0f8d29bfea86f12757774d83f42a9e2a2b0608f"
+    },
+    "scripts/compact_contracts.py": {
+      "bytes": 8033,
+      "checkout_line_endings_only": true,
+      "commit_blob_sha256": "826125685d69cb05e655669cdfef5247fb0557fe3f3c7399f02d2c0eb6527f0e",
+      "sha256": "0a54bf8af60444ed05c6eafe52f9150f9ab576a4057058b5e6277939d5705b49"
+    },
+    "scripts/finding_record.py": {
+      "bytes": 21132,
+      "checkout_line_endings_only": true,
+      "commit_blob_sha256": "cb58c15fde2b54525769bd8a575567234d634d8ba04e07a0732ed2262a82e46b",
+      "sha256": "4c8c96ce55779933e98a241b4cf6e79e0de273958d9ca90e72e98b6c269a6e4f"
+    },
+    "scripts/localization.py": {
+      "bytes": 5247,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "cce93c0d4569af8bd8ec775f89307bf14a9774c415c31c2b84a7200b6d53ec22",
+      "sha256": "cce93c0d4569af8bd8ec775f89307bf14a9774c415c31c2b84a7200b6d53ec22"
+    },
+    "scripts/pairing_map.py": {
+      "bytes": 27015,
+      "checkout_line_endings_only": true,
+      "commit_blob_sha256": "f2d9c9689389cad09070f28e570ec27bdcd77881b851339936f45f7166433148",
+      "sha256": "4bd49177ed17c9265dd16efd9ffaa41e8d7ea547c90e7c4737cfa6a40e4072ab"
+    },
+    "tools/second_tuning_remote.py": {
+      "bytes": 11388,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "dfb7184adc951444c4c069bcf80cd7339989af6174e602826a935d4c2ce19860",
+      "sha256": "dfb7184adc951444c4c069bcf80cd7339989af6174e602826a935d4c2ce19860"
+    },
+    "tuning/first_domain_agnostic_v1/auditor/experiment.json": {
+      "bytes": 12325,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "67a2e531ce71e2585cad795b00666a24d97d2fc68b6cf724283fc9ed404dd68c",
+      "sha256": "67a2e531ce71e2585cad795b00666a24d97d2fc68b6cf724283fc9ed404dd68c"
+    },
+    "tuning/first_domain_agnostic_v1/common.py": {
+      "bytes": 10359,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "98ddb3547d632e0451a68db9584a9cc74d3d684784eb856b1863ea5da513468c",
+      "sha256": "98ddb3547d632e0451a68db9584a9cc74d3d684784eb856b1863ea5da513468c"
+    },
+    "tuning/first_domain_agnostic_v1/dependency_lock.json": {
+      "bytes": 1140,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "0a2c630d67f02d2d28a8ebac91c6016907232b728e50706f450354097da1dde8",
+      "sha256": "0a2c630d67f02d2d28a8ebac91c6016907232b728e50706f450354097da1dde8"
+    },
+    "tuning/first_domain_agnostic_v1/experiment.json": {
+      "bytes": 2448,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "70f25204aea2b99ca6a9f0b3aca3e2ffe6c778f596946c9b4a3518dcfc459c93",
+      "sha256": "70f25204aea2b99ca6a9f0b3aca3e2ffe6c778f596946c9b4a3518dcfc459c93"
+    },
+    "tuning/first_domain_agnostic_v1/producer/experiment.json": {
+      "bytes": 11357,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "22c6115d8bcb36f215837477d1cd31c7e1e1f9314d1c2084db4d145be0ef8f1a",
+      "sha256": "22c6115d8bcb36f215837477d1cd31c7e1e1f9314d1c2084db4d145be0ef8f1a"
+    },
+    "tuning/first_domain_agnostic_v1/protected_population.json": {
+      "bytes": 18334,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "e086e0cec1198a011d3b44d9c6493953b21c359c51e3a12805d6a4e31b3dff10",
+      "sha256": "e086e0cec1198a011d3b44d9c6493953b21c359c51e3a12805d6a4e31b3dff10"
+    },
+    "tuning/second_domain_agnostic_v2/audit_run1.py": {
+      "bytes": 9534,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "078dcb7e054ce5f1cf8b6bf19f5e90b19957eb44ffb425a0db6dea10e7025eb2",
+      "sha256": "078dcb7e054ce5f1cf8b6bf19f5e90b19957eb44ffb425a0db6dea10e7025eb2"
+    },
+    "tuning/second_domain_agnostic_v2/auditor/experiment.json": {
+      "bytes": 13866,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "ae5de5224a782fda349854205617c753766109a6698d861af681951142eb5df3",
+      "sha256": "ae5de5224a782fda349854205617c753766109a6698d861af681951142eb5df3"
+    },
+    "tuning/second_domain_agnostic_v2/author.py": {
+      "bytes": 20179,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "1aff51c66ea48f67695cf3ae0161cfa2e7cc2b8089527ebaf2a7df1fd6978ce0",
+      "sha256": "1aff51c66ea48f67695cf3ae0161cfa2e7cc2b8089527ebaf2a7df1fd6978ce0"
+    },
+    "tuning/second_domain_agnostic_v2/blind_review/auditor/packets.json": {
+      "bytes": 421305,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "b3b5d99bc588f3ae6e2b2726a398436fce8864d699d7359aca7237a089a3d16a",
+      "sha256": "b3b5d99bc588f3ae6e2b2726a398436fce8864d699d7359aca7237a089a3d16a"
+    },
+    "tuning/second_domain_agnostic_v2/blind_review/auditor/review.json": {
+      "bytes": 193953,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "ff8a7e7a649fad72a79eb63210ee67e219870abb2569095698adac43c0926dc0",
+      "sha256": "ff8a7e7a649fad72a79eb63210ee67e219870abb2569095698adac43c0926dc0"
+    },
+    "tuning/second_domain_agnostic_v2/blind_review/auditor/review_round1.json": {
+      "bytes": 224644,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "56172fdcda2ddbf4db2e44bad7ca2eb0f9d2a5e4ef4646db831cc3b2e2407c14",
+      "sha256": "56172fdcda2ddbf4db2e44bad7ca2eb0f9d2a5e4ef4646db831cc3b2e2407c14"
+    },
+    "tuning/second_domain_agnostic_v2/blind_review/auditor/review_round2.json": {
+      "bytes": 204243,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "0de8c9ab3589897127183b4ccb7b6e0bea012af4eaf54b756cdbce5b2e9f8820",
+      "sha256": "0de8c9ab3589897127183b4ccb7b6e0bea012af4eaf54b756cdbce5b2e9f8820"
+    },
+    "tuning/second_domain_agnostic_v2/blind_review/auditor/review_round3.json": {
+      "bytes": 194318,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "8aa61718ad9f7d1b3fe69c42c3c7441182bff33908b9973fbf613040ddccc0aa",
+      "sha256": "8aa61718ad9f7d1b3fe69c42c3c7441182bff33908b9973fbf613040ddccc0aa"
+    },
+    "tuning/second_domain_agnostic_v2/blind_review/producer/packets.json": {
+      "bytes": 280958,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "e06a126ff0a6d99c793524e1784d6220b6379e0c852122ffb3c8500642fdd1b2",
+      "sha256": "e06a126ff0a6d99c793524e1784d6220b6379e0c852122ffb3c8500642fdd1b2"
+    },
+    "tuning/second_domain_agnostic_v2/blind_review/producer/review.json": {
+      "bytes": 972245,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "6209439dbbe3f37f061b2bb5bb04906e24a90de4147687665a38cb25c38e1956",
+      "sha256": "6209439dbbe3f37f061b2bb5bb04906e24a90de4147687665a38cb25c38e1956"
+    },
+    "tuning/second_domain_agnostic_v2/blind_review/producer/review_round1.json": {
+      "bytes": 971424,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "6847694011f4ab02d912e13b6c57313afbed269db841c615cc2a3b7b535cda41",
+      "sha256": "6847694011f4ab02d912e13b6c57313afbed269db841c615cc2a3b7b535cda41"
+    },
+    "tuning/second_domain_agnostic_v2/collect_cv.py": {
+      "bytes": 2058,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "7fdc53c36022cb407408bfb03a4cd71c58eac3e23168e269c862f6bc3bf7f550",
+      "sha256": "7fdc53c36022cb407408bfb03a4cd71c58eac3e23168e269c862f6bc3bf7f550"
+    },
+    "tuning/second_domain_agnostic_v2/dataset.json": {
+      "bytes": 2378108,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "0e7532aa9cbca8cffad99faae03656cbbdb0dbf3fc489b18d142b5a000dfbc12",
+      "sha256": "0e7532aa9cbca8cffad99faae03656cbbdb0dbf3fc489b18d142b5a000dfbc12"
+    },
+    "tuning/second_domain_agnostic_v2/dry_run.py": {
+      "bytes": 10653,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "06d9d64a847ba46a51cda87181fd65fd517bb00d8cd2e4e5ac0966c62a7bcff4",
+      "sha256": "06d9d64a847ba46a51cda87181fd65fd517bb00d8cd2e4e5ac0966c62a7bcff4"
+    },
+    "tuning/second_domain_agnostic_v2/dry_run_evidence.json": {
+      "bytes": 41100,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "5e13588051baedd57f71a061e4e32996ad5b0badede47075a8dc689e841d4de5",
+      "sha256": "5e13588051baedd57f71a061e4e32996ad5b0badede47075a8dc689e841d4de5"
+    },
+    "tuning/second_domain_agnostic_v2/executor_static_checks.json": {
+      "bytes": 138,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "752d432a8a2225bc91b04ee8d8f9e0fb42c03221f7a845946eda661c5c900bae",
+      "sha256": "752d432a8a2225bc91b04ee8d8f9e0fb42c03221f7a845946eda661c5c900bae"
+    },
+    "tuning/second_domain_agnostic_v2/freeze.json": {
+      "bytes": 6378,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+      "sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d"
+    },
+    "tuning/second_domain_agnostic_v2/leakage_audit.json": {
+      "bytes": 746,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "660b3860ebe6bc69f16c438c8f884888ca5c77bb4937ebc7180b101969a33d2b",
+      "sha256": "660b3860ebe6bc69f16c438c8f884888ca5c77bb4937ebc7180b101969a33d2b"
+    },
+    "tuning/second_domain_agnostic_v2/metric_fixture_evidence.json": {
+      "bytes": 77570,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "8901f24c4a73b85b3285b2e54a7e7245215213b939e37a787a7ba8a3ec7dc462",
+      "sha256": "8901f24c4a73b85b3285b2e54a7e7245215213b939e37a787a7ba8a3ec7dc462"
+    },
+    "tuning/second_domain_agnostic_v2/plans.json": {
+      "bytes": 592825,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "ba56223fa23d1fc6ddd15189813cfe6f868ac5ae08b44a2375811a5a0da19d99",
+      "sha256": "ba56223fa23d1fc6ddd15189813cfe6f868ac5ae08b44a2375811a5a0da19d99"
+    },
+    "tuning/second_domain_agnostic_v2/producer/experiment.json": {
+      "bytes": 12757,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "4ee151238a70644082ddc7a770123d6133bac3bc4719b20ab74c46a69e96f3e8",
+      "sha256": "4ee151238a70644082ddc7a770123d6133bac3bc4719b20ab74c46a69e96f3e8"
+    },
+    "tuning/second_domain_agnostic_v2/release.py": {
+      "bytes": 11987,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "9971bebb0884b8689979c2fb7b526b4d65193fa736d719129751384c3abdf60f",
+      "sha256": "9971bebb0884b8689979c2fb7b526b4d65193fa736d719129751384c3abdf60f"
+    },
+    "tuning/second_domain_agnostic_v2/report.py": {
+      "bytes": 23490,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "5c1077ba67af85c8123bc6f4a04af4f635526eaaa975e02f3993cd277422884b",
+      "sha256": "5c1077ba67af85c8123bc6f4a04af4f635526eaaa975e02f3993cd277422884b"
+    },
+    "tuning/second_domain_agnostic_v2/review_adjudication.json": {
+      "bytes": 2308,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "42e36739da612835acf84010876172214c132f577b3c49618f43460f085a6034",
+      "sha256": "42e36739da612835acf84010876172214c132f577b3c49618f43460f085a6034"
+    },
+    "tuning/second_domain_agnostic_v2/run1_audit.json": {
+      "bytes": 53935,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "91bf5718a46797f99e7e73127529d75b8eee266d5c4bfb2286306851954b42ba",
+      "sha256": "91bf5718a46797f99e7e73127529d75b8eee266d5c4bfb2286306851954b42ba"
+    },
+    "tuning/second_domain_agnostic_v2/runner.py": {
+      "bytes": 4189,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "5ac81db1762e8e3b528ffe2b05826cce56ed20693f6f16a0e597148eec035107",
+      "sha256": "5ac81db1762e8e3b528ffe2b05826cce56ed20693f6f16a0e597148eec035107"
+    },
+    "tuning/second_domain_agnostic_v2/runtime.py": {
+      "bytes": 13260,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "84110e53bc53a2e5fe134f81871dab8ad207034ebb3ff8bc6e832e5de2864cf3",
+      "sha256": "84110e53bc53a2e5fe134f81871dab8ad207034ebb3ff8bc6e832e5de2864cf3"
+    },
+    "tuning/second_domain_agnostic_v2/security_scan.json": {
+      "bytes": 189,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "dd175ddb7a9232aa6713f5379ec072df5ce9166b1892af5d68982a9392952d80",
+      "sha256": "dd175ddb7a9232aa6713f5379ec072df5ce9166b1892af5d68982a9392952d80"
+    },
+    "tuning/second_domain_agnostic_v2/selection_rules.json": {
+      "bytes": 2046,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "e2bff860a94adfb66fca9a65804670d4794fceca943b422adafcc65674ee4b98",
+      "sha256": "e2bff860a94adfb66fca9a65804670d4794fceca943b422adafcc65674ee4b98"
+    },
+    "tuning/second_domain_agnostic_v2/splits.json": {
+      "bytes": 202118,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "dc7760fbeb77e672d9ee8709b04763a39a82bae945d5370bf9ffedbc538ddb98",
+      "sha256": "dc7760fbeb77e672d9ee8709b04763a39a82bae945d5370bf9ffedbc538ddb98"
+    },
+    "tuning/second_domain_agnostic_v2/statistics.json": {
+      "bytes": 3209,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "afb9863f2d466431b243e2a01fcb46b5ad53770292634e4cb4dc713fd50c1838",
+      "sha256": "afb9863f2d466431b243e2a01fcb46b5ad53770292634e4cb4dc713fd50c1838"
+    },
+    "tuning/second_domain_agnostic_v2/token_analysis.json": {
+      "bytes": 91454,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "6aa0c2d207aadd5318d27db351dc4e4048b4ae1da709a40aa5f05c8ffd46bff9",
+      "sha256": "6aa0c2d207aadd5318d27db351dc4e4048b4ae1da709a40aa5f05c8ffd46bff9"
+    },
+    "tuning/second_domain_agnostic_v2/train.py": {
+      "bytes": 9191,
+      "checkout_line_endings_only": false,
+      "commit_blob_sha256": "d8be86b0a2a438d6fb3f8c62afa095d8521e11bd552c45d643361402b459d1cd",
+      "sha256": "d8be86b0a2a438d6fb3f8c62afa095d8521e11bd552c45d643361402b459d1cd"
+    }
+  },
+  "freeze_unchanged": true,
+  "hard_seconds": 8372.093023255815,
+  "hard_usd": 3,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-second-canonical-pilot",
+  "projected_cost": 2.6216507445238353,
+  "projected_seconds_with_reserve": 7316.23463588047,
+  "projection": {
+    "auditor": {
+      "dev_seconds": 1759.47879407256,
+      "projected_output_tokens": 9838,
+      "training_seconds": 532.5840000000001
+    },
+    "producer": {
+      "dev_seconds": 2971.1638418079096,
+      "projected_output_tokens": 18782,
+      "training_seconds": 853.008
+    }
+  },
+  "region": "us-east-1",
+  "release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+  "reserve_seconds": 600,
+  "soft_seconds": 5581.395348837209,
+  "soft_usd": 2,
+  "source_commit": "a818d43ec38bafffbf9e57e124efaddabd6fcf57",
+  "watchdog_deadline_seconds": 8312.093023255815,
+  "workload_deadline_seconds": 7772.093023255815
+}
