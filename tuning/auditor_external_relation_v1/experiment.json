@@ -1,0 +1,108 @@
+{
+  "adapter_hashes": {
+    "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+  },
+  "admission_blockers": [
+    "length-sign shortcut inherent in specified quartet construction",
+    "below preferred 800 rows; limited independent document coverage"
+  ],
+  "architecture": [
+    "existing frozen refusal veto",
+    "four-way substantive linear classifier",
+    "conditioned explanation"
+  ],
+  "aspirational": {
+    "every_class_recall": 0.7,
+    "macro_substantive_f1": 0.8
+  },
+  "asset_hashes": {
+    "added_tokens.json": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d",
+    "config.json": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2",
+    "generation_config.json": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413",
+    "special_tokens_map.json": "58433eb58121d4754c8457e7397f14462ead767281693d628fa59a4776533978",
+    "tokenizer.json": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7",
+    "tokenizer.model": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+    "tokenizer_config.json": "c98403fdcc8cf522d8f240f04123d79358dd81192f907c3bcac1b63080296ece"
+  },
+  "canonicalizer": {
+    "function": "normalized_input",
+    "path": "tools/auditor_linear_core.py",
+    "sha256": "450109ea96533fa440808223c1d220c1791e7ff2c8dbe95fd0d46ef62da1e4e5"
+  },
+  "catastrophic_errors_allowed": 0,
+  "classes": [
+    "MATCH",
+    "DIVERGENCE",
+    "OMISSION",
+    "ADDITION"
+  ],
+  "classifier_gates": {
+    "every_class_recall": 0.6,
+    "macro_substantive_f1": 0.75
+  },
+  "cloud_authorized": false,
+  "data_admitted": false,
+  "dev": {
+    "primary_external": 20,
+    "secondary_historical_substantive": 48,
+    "secondary_role": "Distribution-shift diagnostic, not relabeled or merged into TRAIN"
+  },
+  "execution_authorized": false,
+  "fallback": "Do not implement classifier LoRA here. Only reconsider after a separately admitted expanded-data frozen-head experiment fails.",
+  "holdout": {
+    "excluded": true,
+    "requires_separate_admission": true
+  },
+  "hypothesis": "Test labeled-data scarcity/structural coverage against frozen-representation limits; no precommitment to success.",
+  "input_policy": "Only normalized input, original frozen prompt and chat template; no outer metadata or transformation fields",
+  "integrated_gates": {
+    "maximum": {
+      "over_refusal_rate": 0.05
+    },
+    "minimum": {
+      "accepted_semantic_outcomes": 0.7,
+      "contract_validity": 1.0,
+      "evidence_f1": 0.85,
+      "macro_relation_f1": 0.75,
+      "refusal_precision": 0.9,
+      "refusal_recall": 0.8,
+      "substantive_non_refusal_coverage": 0.9
+    },
+    "per_class_recall": {
+      "ADDITION": 0.6,
+      "DIVERGENCE": 0.6,
+      "INSUFFICIENT_EVIDENCE": 0.6,
+      "MATCH": 0.6,
+      "OMISSION": 0.6
+    }
+  },
+  "model_id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+  "name": "AUDITOR_EXTERNAL_RELATION_CLASSIFIER_V1",
+  "proposed_head": {
+    "initialization": "zero",
+    "input_dim": 3072,
+    "learning_rate": 0.01,
+    "optimizer": "Adam",
+    "outputs": 4,
+    "parameters": 12292,
+    "seed": 7,
+    "updates": 200,
+    "weight_regularization": 0.001
+  },
+  "representation": "Same frozen base plus checkpoint-120 Auditor adapter; final prompt-token hidden state, dimension 3072, float32; no generation for feature extraction",
+  "required_next": "Redesign or explicitly scope the deterministic contrast task before experiment admission; no execution with this quarantine release",
+  "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+  "standardization": {
+    "clamp": 1e-06,
+    "ddof": 0,
+    "train_only": true
+  },
+  "status": "PREPARED_NOT_ADMITTED",
+  "train": {
+    "combined_substantive": 360,
+    "external_substantive": 168,
+    "historical_substantive": 192
+  },
+  "training_authorized": false
+}

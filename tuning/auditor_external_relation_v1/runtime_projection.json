@@ -1,0 +1,45 @@
+{
+  "assumptions": "Historical 227276 tokens / 86.103619569 seconds; head 200 updates / .462147746 seconds. Setup-inclusive 10-20 minutes is a planning range, not a bound. Historical price only, not current quote. No explanation generation or refusal-veto generation included.",
+  "classification_after_cached_features_seconds_per_dev": [
+    0.01,
+    1
+  ],
+  "external_dev": {
+    "feature_seconds": 4.668574349521546,
+    "prompt_tokens": 12323,
+    "rows": 20
+  },
+  "gpu_peak_GiB_expected": [
+    3.56,
+    4.5
+  ],
+  "gpu_reservation_GiB": 6,
+  "head_200_update_seconds_linear_scaling": 0.5545772952000001,
+  "head_budget_seconds": [
+    1,
+    5
+  ],
+  "historical_A10_hourly_usd": 1.29,
+  "historical_dev": {
+    "feature_seconds": 14.610747250154018,
+    "prompt_tokens": 38566,
+    "rows": 48
+  },
+  "label": "Projection only, no execution authorized",
+  "projected_A10_usd": [
+    0.215,
+    0.43
+  ],
+  "provisioned_A10_minutes_with_setup": [
+    10,
+    20
+  ],
+  "reason_generation_note": "Prior 48 reasons took 279.56 seconds; integrated evaluation requires a separate larger estimate.",
+  "total_feature_seconds": 113.19938407157264,
+  "train": {
+    "feature_seconds": 93.92006247189707,
+    "prompt_tokens": 247908,
+    "rows": 360
+  },
+  "warm_gpu_compute_minutes": 1.9292326894462106
+}

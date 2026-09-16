@@ -36,3 +36,7 @@ docs/fix/AUDITOR_RELATION_FAILURE_DIAGNOSIS.md -text
 tuning/auditor_linear_probe/** -text
 docs/fix/auditor_linear_probe_run/** -text
 docs/fix/AUDITOR_LINEAR_PROBE_RESULTS.md -text
+tuning/auditor_external_relation_v1/** -text
+docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V1.md -text
+docs/fix/AUDITOR_EXTERNAL_DATA_ATTRIBUTION.md -text
+tools/download_auditor_external.py -text

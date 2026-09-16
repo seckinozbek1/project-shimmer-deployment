@@ -1,0 +1,429 @@
+{
+  "by_class": {
+    "ADDITION": {
+      "candidate_chars": {
+        "count": 52,
+        "max": 731,
+        "mean": 392.4423076923077,
+        "median": 388.5,
+        "min": 202,
+        "p95": 599,
+        "p99": 731
+      },
+      "candidate_tokens": {
+        "count": 52,
+        "max": 172,
+        "mean": 90.6923076923077,
+        "median": 88.5,
+        "min": 41,
+        "p95": 136,
+        "p99": 172
+      },
+      "candidate_words": {
+        "count": 52,
+        "max": 98,
+        "mean": 61.69230769230769,
+        "median": 62.0,
+        "min": 31,
+        "p95": 89,
+        "p99": 98
+      },
+      "domains": {
+        "billsum": 3,
+        "ectsum": 7,
+        "news": 9,
+        "podcast": 5,
+        "qmsumm": 4,
+        "sales_call": 5,
+        "sales_email": 8,
+        "samsum": 7,
+        "shakespeare": 4
+      },
+      "prompt_tokens": {
+        "count": 52,
+        "max": 759,
+        "mean": 626.2692307692307,
+        "median": 623.0,
+        "min": 539,
+        "p95": 705,
+        "p99": 759
+      },
+      "rendering_pairs": {
+        "bullet -> numbered": 12,
+        "bullet -> plain": 8,
+        "numbered -> bullet": 13,
+        "numbered -> plain": 6,
+        "plain -> bullet": 4,
+        "plain -> numbered": 9
+      },
+      "rows": 52,
+      "source_chars": {
+        "count": 52,
+        "max": 522,
+        "mean": 284.5576923076923,
+        "median": 276.5,
+        "min": 136,
+        "p95": 469,
+        "p99": 522
+      },
+      "source_tokens": {
+        "count": 52,
+        "max": 118,
+        "mean": 66.23076923076923,
+        "median": 65.5,
+        "min": 28,
+        "p95": 104,
+        "p99": 118
+      },
+      "source_words": {
+        "count": 52,
+        "max": 77,
+        "mean": 44.90384615384615,
+        "median": 43.0,
+        "min": 22,
+        "p95": 72,
+        "p99": 77
+      },
+      "word_length_ratio": {
+        "count": 52,
+        "max": 1.7714285714285714,
+        "mean": 1.390002015536133,
+        "median": 1.3905674281503315,
+        "min": 1.1818181818181819,
+        "p95": 1.5897435897435896,
+        "p99": 1.7714285714285714
+      }
+    },
+    "DIVERGENCE": {
+      "candidate_chars": {
+        "count": 52,
+        "max": 535,
+        "mean": 285.5,
+        "median": 277.0,
+        "min": 138,
+        "p95": 494,
+        "p99": 535
+      },
+      "candidate_tokens": {
+        "count": 52,
+        "max": 122,
+        "mean": 66.61538461538461,
+        "median": 65.5,
+        "min": 28,
+        "p95": 107,
+        "p99": 122
+      },
+      "candidate_words": {
+        "count": 52,
+        "max": 78,
+        "mean": 45.07692307692308,
+        "median": 43.5,
+        "min": 22,
+        "p95": 74,
+        "p99": 78
+      },
+      "domains": {
+        "billsum": 3,
+        "ectsum": 7,
+        "news": 9,
+        "podcast": 5,
+        "qmsumm": 4,
+        "sales_call": 5,
+        "sales_email": 8,
+        "samsum": 7,
+        "shakespeare": 4
+      },
+      "prompt_tokens": {
+        "count": 52,
+        "max": 709,
+        "mean": 602.1923076923077,
+        "median": 599.5,
+        "min": 526,
+        "p95": 681,
+        "p99": 709
+      },
+      "rendering_pairs": {
+        "bullet -> numbered": 12,
+        "bullet -> plain": 8,
+        "numbered -> bullet": 13,
+        "numbered -> plain": 6,
+        "plain -> bullet": 4,
+        "plain -> numbered": 9
+      },
+      "rows": 52,
+      "source_chars": {
+        "count": 52,
+        "max": 522,
+        "mean": 284.5576923076923,
+        "median": 276.5,
+        "min": 136,
+        "p95": 469,
+        "p99": 522
+      },
+      "source_tokens": {
+        "count": 52,
+        "max": 118,
+        "mean": 66.23076923076923,
+        "median": 65.5,
+        "min": 28,
+        "p95": 104,
+        "p99": 118
+      },
+      "source_words": {
+        "count": 52,
+        "max": 77,
+        "mean": 44.90384615384615,
+        "median": 43.0,
+        "min": 22,
+        "p95": 72,
+        "p99": 77
+      },
+      "word_length_ratio": {
+        "count": 52,
+        "max": 1.1538461538461537,
+        "mean": 1.007186501380941,
+        "median": 1.0,
+        "min": 0.6862745098039216,
+        "p95": 1.0930232558139534,
+        "p99": 1.1538461538461537
+      }
+    },
+    "MATCH": {
+      "candidate_chars": {
+        "count": 52,
+        "max": 522,
+        "mean": 284.5576923076923,
+        "median": 276.5,
+        "min": 136,
+        "p95": 469,
+        "p99": 522
+      },
+      "candidate_tokens": {
+        "count": 52,
+        "max": 120,
+        "mean": 66.28846153846153,
+        "median": 64.5,
+        "min": 29,
+        "p95": 107,
+        "p99": 120
+      },
+      "candidate_words": {
+        "count": 52,
+        "max": 77,
+        "mean": 44.90384615384615,
+        "median": 43.0,
+        "min": 22,
+        "p95": 72,
+        "p99": 77
+      },
+      "domains": {
+        "billsum": 3,
+        "ectsum": 7,
+        "news": 9,
+        "podcast": 5,
+        "qmsumm": 4,
+        "sales_call": 5,
+        "sales_email": 8,
+        "samsum": 7,
+        "shakespeare": 4
+      },
+      "prompt_tokens": {
+        "count": 52,
+        "max": 707,
+        "mean": 601.8653846153846,
+        "median": 599.5,
+        "min": 527,
+        "p95": 681,
+        "p99": 707
+      },
+      "rendering_pairs": {
+        "bullet -> numbered": 12,
+        "bullet -> plain": 8,
+        "numbered -> bullet": 13,
+        "numbered -> plain": 6,
+        "plain -> bullet": 4,
+        "plain -> numbered": 9
+      },
+      "rows": 52,
+      "source_chars": {
+        "count": 52,
+        "max": 522,
+        "mean": 284.5576923076923,
+        "median": 276.5,
+        "min": 136,
+        "p95": 469,
+        "p99": 522
+      },
+      "source_tokens": {
+        "count": 52,
+        "max": 118,
+        "mean": 66.23076923076923,
+        "median": 65.5,
+        "min": 28,
+        "p95": 104,
+        "p99": 118
+      },
+      "source_words": {
+        "count": 52,
+        "max": 77,
+        "mean": 44.90384615384615,
+        "median": 43.0,
+        "min": 22,
+        "p95": 72,
+        "p99": 77
+      },
+      "word_length_ratio": {
+        "count": 52,
+        "max": 1.0,
+        "mean": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "p95": 1.0,
+        "p99": 1.0
+      }
+    },
+    "OMISSION": {
+      "candidate_chars": {
+        "count": 52,
+        "max": 401,
+        "mean": 178.6153846153846,
+        "median": 170.0,
+        "min": 70,
+        "p95": 343,
+        "p99": 401
+      },
+      "candidate_tokens": {
+        "count": 52,
+        "max": 84,
+        "mean": 43.17307692307692,
+        "median": 42.5,
+        "min": 17,
+        "p95": 80,
+        "p99": 84
+      },
+      "candidate_words": {
+        "count": 52,
+        "max": 64,
+        "mean": 28.28846153846154,
+        "median": 28.0,
+        "min": 12,
+        "p95": 55,
+        "p99": 64
+      },
+      "domains": {
+        "billsum": 3,
+        "ectsum": 7,
+        "news": 9,
+        "podcast": 5,
+        "qmsumm": 4,
+        "sales_call": 5,
+        "sales_email": 8,
+        "samsum": 7,
+        "shakespeare": 4
+      },
+      "prompt_tokens": {
+        "count": 52,
+        "max": 657,
+        "mean": 578.0192307692307,
+        "median": 574.0,
+        "min": 514,
+        "p95": 657,
+        "p99": 657
+      },
+      "rendering_pairs": {
+        "bullet -> numbered": 12,
+        "bullet -> plain": 8,
+        "numbered -> bullet": 13,
+        "numbered -> plain": 6,
+        "plain -> bullet": 4,
+        "plain -> numbered": 9
+      },
+      "rows": 52,
+      "source_chars": {
+        "count": 52,
+        "max": 522,
+        "mean": 284.5576923076923,
+        "median": 276.5,
+        "min": 136,
+        "p95": 469,
+        "p99": 522
+      },
+      "source_tokens": {
+        "count": 52,
+        "max": 118,
+        "mean": 66.23076923076923,
+        "median": 65.5,
+        "min": 28,
+        "p95": 104,
+        "p99": 118
+      },
+      "source_words": {
+        "count": 52,
+        "max": 77,
+        "mean": 44.90384615384615,
+        "median": 43.0,
+        "min": 22,
+        "p95": 72,
+        "p99": 77
+      },
+      "word_length_ratio": {
+        "count": 52,
+        "max": 0.8311688311688312,
+        "mean": 0.617184485844808,
+        "median": 0.625,
+        "min": 0.3333333333333333,
+        "p95": 0.7878787878787878,
+        "p99": 0.8311688311688312
+      }
+    }
+  },
+  "by_source_dataset": {
+    "Salesforce/summexecedit": 208
+  },
+  "by_split": {
+    "dev": {
+      "docs": 5,
+      "quartets": 5,
+      "rows": 20
+    },
+    "holdout": {
+      "docs": 5,
+      "quartets": 5,
+      "rows": 20
+    },
+    "train": {
+      "docs": 42,
+      "quartets": 42,
+      "rows": 168
+    }
+  },
+  "deterministic_match_deletion_insertion_percent": 75,
+  "direct_executable_edit_percent": 25,
+  "domains": {
+    "billsum": 12,
+    "ectsum": 28,
+    "news": 36,
+    "podcast": 20,
+    "qmsumm": 16,
+    "sales_call": 20,
+    "sales_email": 32,
+    "samsum": 28,
+    "shakespeare": 16
+  },
+  "examples_per_doc": {
+    "4": 52
+  },
+  "quartets": 52,
+  "rendering_pairs": {
+    "bullet -> numbered": 48,
+    "bullet -> plain": 32,
+    "numbered -> bullet": 52,
+    "numbered -> plain": 24,
+    "plain -> bullet": 16,
+    "plain -> numbered": 36
+  },
+  "rows": 208,
+  "unique_docs": 52,
+  "unique_document_hashes": 52,
+  "unique_source_hashes": 52
+}
