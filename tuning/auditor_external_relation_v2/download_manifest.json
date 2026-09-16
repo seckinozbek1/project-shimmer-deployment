@@ -1,0 +1,86 @@
+{
+  "CC-BY-4.0.txt": {
+    "bytes": 18657,
+    "downloaded_at": "2026-09-16T20:31:52.348143+00:00",
+    "path": "data/external/auditor_relations_v2/raw/CC-BY-4.0.txt",
+    "sha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+    "url": "https://creativecommons.org/licenses/by/4.0/legalcode.txt"
+  },
+  "CC-BY-SA-4.0.txt": {
+    "bytes": 20138,
+    "downloaded_at": "2026-09-16T20:31:52.126728+00:00",
+    "path": "data/external/auditor_relations_v2/raw/CC-BY-SA-4.0.txt",
+    "sha256": "28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode.txt"
+  },
+  "PEER.zip": {
+    "bytes": 96028699,
+    "downloaded_at": "2026-09-16T20:31:50.888570+00:00",
+    "path": "data/external/auditor_relations_v2/raw/PEER.zip",
+    "sha256": "2b628bee49ee2dfd7eb0e7103219799528060a79b6c641d09b0c11ebf25eb536",
+    "url": "https://zenodo.org/api/records/4478267/files/PEER.zip/content"
+  },
+  "paws-LICENSE.txt": {
+    "bytes": 320,
+    "downloaded_at": "2026-09-16T20:31:22.961417+00:00",
+    "path": "data/external/auditor_relations_v2/raw/paws-LICENSE.txt",
+    "sha256": "3f2d0f4e3fd88fa1bfeff353754da904c0060ec9d26c9266b8fda73ef98b8a25",
+    "url": "https://raw.githubusercontent.com/google-research-datasets/paws/02b29f3af1143620d1b7f352247e65c0bdd2ec18/LICENSE"
+  },
+  "paws-README.md": {
+    "bytes": 7366,
+    "downloaded_at": "2026-09-16T20:31:22.571972+00:00",
+    "path": "data/external/auditor_relations_v2/raw/paws-README.md",
+    "sha256": "3ca6b3aea8a9e8807f9b5b4c1e53f422312d82a5680675c3504221faf06c6579",
+    "url": "https://raw.githubusercontent.com/google-research-datasets/paws/02b29f3af1143620d1b7f352247e65c0bdd2ec18/README.md"
+  },
+  "paws-dev.parquet": {
+    "bytes": 1230379,
+    "downloaded_at": "2026-09-16T20:31:26.186051+00:00",
+    "path": "data/external/auditor_relations_v2/raw/paws-dev.parquet",
+    "sha256": "7760d829453764ba342a6f562809a8ed21c2c3eec3fd9ffa544089f145d42f6d",
+    "url": "https://huggingface.co/datasets/google-research-datasets/paws/resolve/161ece9501cf0a11f3e48bd356eaa82de46d6a09/labeled_final/validation-00000-of-00001.parquet?download=true"
+  },
+  "paws-hf-README.md": {
+    "bytes": 9795,
+    "downloaded_at": "2026-09-16T20:31:23.382099+00:00",
+    "path": "data/external/auditor_relations_v2/raw/paws-hf-README.md",
+    "sha256": "f281c5c5099f08da86c25f83419eedb01eaafaf0bb29b8eb14036249cfc97e89",
+    "url": "https://huggingface.co/datasets/google-research-datasets/paws/resolve/161ece9501cf0a11f3e48bd356eaa82de46d6a09/README.md?download=true"
+  },
+  "paws-test.parquet": {
+    "bytes": 1235128,
+    "downloaded_at": "2026-09-16T20:31:40.766580+00:00",
+    "path": "data/external/auditor_relations_v2/raw/paws-test.parquet",
+    "sha256": "ae342ff12bb84b84b95f468abf5db6cb7c7bd578271299fe9c99be75b8132f4d",
+    "url": "https://huggingface.co/datasets/google-research-datasets/paws/resolve/161ece9501cf0a11f3e48bd356eaa82de46d6a09/labeled_final/test-00000-of-00001.parquet?download=true"
+  },
+  "paws-train.parquet": {
+    "bytes": 8433884,
+    "downloaded_at": "2026-09-16T20:31:24.877704+00:00",
+    "path": "data/external/auditor_relations_v2/raw/paws-train.parquet",
+    "sha256": "8dc9ad3e5f30ad9a86b290fe236d528ef23a5751fec9a35d99cbacf68ba277cf",
+    "url": "https://huggingface.co/datasets/google-research-datasets/paws/resolve/161ece9501cf0a11f3e48bd356eaa82de46d6a09/labeled_final/train-00000-of-00001.parquet?download=true"
+  },
+  "peer-hf-README.md": {
+    "bytes": 2505,
+    "downloaded_at": "2026-09-16T20:31:41.607876+00:00",
+    "path": "data/external/auditor_relations_v2/raw/peer-hf-README.md",
+    "sha256": "04f6a08a868a948d9742f8549edf29d5ff6dee24caf60bbaf1d50a3e8ae99df4",
+    "url": "https://huggingface.co/datasets/jvamvas/peer_wiki-atomic-sample/resolve/d2c115d1bc5316dc3ebb0fdc2fe3965522a37fe6/README.md?download=true"
+  },
+  "peer-zenodo.json": {
+    "bytes": 4208,
+    "downloaded_at": "2026-09-16T20:31:42.005682+00:00",
+    "path": "data/external/auditor_relations_v2/raw/peer-zenodo.json",
+    "sha256": "5430790fb41e68e31e4d97f16f92837ebb89f57ddf05ef213aee052b8c46d2bb",
+    "url": "https://zenodo.org/api/records/4478267"
+  },
+  "wikiatomic-README.md": {
+    "bytes": 3565,
+    "downloaded_at": "2026-09-16T20:31:41.205247+00:00",
+    "path": "data/external/auditor_relations_v2/raw/wikiatomic-README.md",
+    "sha256": "c35639cfada516b9a8b164a4ab09e7db85c8a87d492f79b99b3cc963f4a1a050",
+    "url": "https://raw.githubusercontent.com/google-research-datasets/wiki-atomic-edits/1f6769f2f9d93b6bf5acb091eb509b2be36e8e79/README.md"
+  }
+}

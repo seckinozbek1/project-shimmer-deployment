@@ -1,0 +1,59 @@
+{
+  "archive_other_members": "Other PEER datasets were neither extracted nor inspected; only the requested WikiAtomic component was read",
+  "download_manifest_sha256": "8c7be4ba8af041c0041a8ec55f795ea7eb144bdb4d51e866faa421fc23c2950b",
+  "original_download_failures": {
+    "paws": "Official GCS object returned 403 AccessDenied",
+    "wikiatomic": "Both official English GCS objects returned 403 AccessDenied"
+  },
+  "paws": {
+    "citation": "Zhang, Yuan; Baldridge, Jason; He, Luheng. PAWS: Paraphrase Adversaries from Word Scrambling. NAACL 2019.",
+    "counts": {
+      "dev": 8000,
+      "test": 8000,
+      "train": 49401
+    },
+    "license": "Google custom unrestricted-use dataset notice; retained verbatim in licenses/paws-LICENSE.txt",
+    "original_repository_revision": "02b29f3af1143620d1b7f352247e65c0bdd2ec18",
+    "policy": "Only official TRAIN rows are parsed for conversion. Official DEV/TEST downloaded and hashed; only Parquet footer counts/schema inspected, no label columns read. No QQP, swap-only or noisy data.",
+    "repository": "google-research-datasets/paws",
+    "revision": "161ece9501cf0a11f3e48bd356eaa82de46d6a09",
+    "schemas": {
+      "dev": "id: int32\nsentence1: string\nsentence2: string\nlabel: int64\n-- schema metadata --\nhuggingface: '{\"info\": {\"features\": {\"id\": {\"dtype\": \"int32\", \"_type\": \"V' + 168",
+      "test": "id: int32\nsentence1: string\nsentence2: string\nlabel: int64\n-- schema metadata --\nhuggingface: '{\"info\": {\"features\": {\"id\": {\"dtype\": \"int32\", \"_type\": \"V' + 168",
+      "train": "id: int32\nsentence1: string\nsentence2: string\nlabel: int64\n-- schema metadata --\nhuggingface: '{\"info\": {\"features\": {\"id\": {\"dtype\": \"int32\", \"_type\": \"V' + 168"
+    }
+  },
+  "wikiatomic": {
+    "derivation": "PEER authors sampled approximately 150K English WikiAtomicEdits edits; cleaning retained 104K. We use only published PEER TRAIN IDs. The archive MD5 matches Zenodo; no arbitrary mirror data used.",
+    "doi": "10.5281/zenodo.4478267",
+    "eligible_source_split_rows": 83200,
+    "license_handling": "Retain both upstream ShareAlike and sample attribution notices; do not silently relicense under repository code terms or claim the notices are equivalent.",
+    "license_records": {
+      "hf_card": "unknown; used only for provenance documentation, not licensing authority",
+      "sample_archive": "CC-BY-4.0 in Zenodo metadata",
+      "upstream": "CC-BY-SA-4.0 notice in official README (contains unrelated Query-wellformedness wording)"
+    },
+    "member": "PEER/edits/insertions_deletions.jsonl",
+    "member_sha256": "8b0b8ec67e342737a7a71c9fdfff4ccd050feebdd97a7c91b3b99e222ec2809b",
+    "operation_counts": {
+      "delete": 52000,
+      "insert": 52000
+    },
+    "original_citation": "Faruqui, Manaal; Pavlick, Ellie; Tenney, Ian; Das, Dipanjan. WikiAtomicEdits. EMNLP 2018. https://aclanthology.org/D18-1028/",
+    "original_repository": "google-research-datasets/wiki-atomic-edits",
+    "original_revision": "1f6769f2f9d93b6bf5acb091eb509b2be36e8e79",
+    "rows": 104000,
+    "sample_citation": "Marrese-Taylor, Edison; Reid, Machel; Matsuo, Yutaka. Variational Inference for Learning Representations of Natural Language Edits. AAAI 2021. https://doi.org/10.1609/aaai.v35i15.17598",
+    "schema": {
+      "changed": "list",
+      "id": "int",
+      "src": "list",
+      "src_tag": "list",
+      "tgt": "list",
+      "yin_after": "list",
+      "yin_before": "list"
+    },
+    "source_archive": "https://zenodo.org/records/4478267",
+    "version": "v1.0"
+  }
+}

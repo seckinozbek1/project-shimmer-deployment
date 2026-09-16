@@ -1,0 +1,30 @@
+{
+  "pair_dedup": {
+    "conflicting_pairs_excluded": 14,
+    "conflicting_rows_excluded": 28,
+    "duplicate_or_reversed_extra_rows": 62,
+    "remaining_pairs": 65542
+  },
+  "paws": {
+    "eligible": 25544,
+    "input_rows": 49401,
+    "reasons": {
+      "equal_lexical_length": 20567,
+      "identical_pair": 52,
+      "lexical_length_outside_8_60": 370,
+      "sentence_boundary_shape": 2776,
+      "unbalanced_delimiters": 92
+    }
+  },
+  "wikiatomic": {
+    "eligible": 40074,
+    "input_rows": 83200,
+    "reasons": {
+      "lexical_length_outside_8_60": 2191,
+      "non_substantive_edit_span": 4846,
+      "noncontiguous_edit": 61,
+      "placeholder_markup_or_reserved_text": 35654,
+      "sentence_boundary_shape": 374
+    }
+  }
+}

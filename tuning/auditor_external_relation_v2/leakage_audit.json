@@ -1,0 +1,21 @@
+{
+  "final_cross_split": {
+    "cross_split_exact_sentence_pairs": 0,
+    "cross_split_near_pairs": 0,
+    "limitation": "Sentence lineage independence only; no Wikipedia article IDs supplied; lexical checks do not prove semantic independence.",
+    "max_cross_split_5gram_jaccard": 0.15384615384615385,
+    "unique_groups": 2000,
+    "unique_pairs": 2000
+  },
+  "pool_grouping": {
+    "algorithm": "Global-frequency ordered prefix-filter candidates followed by exact 5-gram Jaccard; union sentence pairs, exact sides and >=0.50 near sides before split assignment. Tightened once after an initial 0.80 audit found cross-split similarity 0.555556.",
+    "exact_similarity_comparisons": 58230,
+    "groups": 46471,
+    "historical_overlap_rows_excluded": 0,
+    "near_edges": 34979,
+    "paws_to_wikiatomic_exact_sentence_overlaps": 1,
+    "paws_to_wikiatomic_shared_components": 1,
+    "threshold": 0.5,
+    "unique_sentence_sides": 106594
+  }
+}

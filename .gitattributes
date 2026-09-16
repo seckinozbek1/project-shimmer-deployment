@@ -40,3 +40,6 @@ tuning/auditor_external_relation_v1/** -text
 docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V1.md -text
 docs/fix/AUDITOR_EXTERNAL_DATA_ATTRIBUTION.md -text
 tools/download_auditor_external.py -text
+tuning/auditor_external_relation_v2/** -text
+docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V2.md -text
+tools/download_auditor_external_v2.py -text

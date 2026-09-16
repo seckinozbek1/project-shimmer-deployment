@@ -1,0 +1,95 @@
+{
+  "adapter_hashes": {
+    "adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+  },
+  "architecture": [
+    "frozen historical refusal veto",
+    "four-way substantive linear head",
+    "conditioned explanation"
+  ],
+  "aspirational": {
+    "every_class_recall": 0.7,
+    "macro_f1": 0.8
+  },
+  "asset_hashes": {
+    "added_tokens.json": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d",
+    "config.json": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2",
+    "generation_config.json": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413",
+    "special_tokens_map.json": "58433eb58121d4754c8457e7397f14462ead767281693d628fa59a4776533978",
+    "tokenizer.json": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7",
+    "tokenizer.model": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+    "tokenizer_config.json": "c98403fdcc8cf522d8f240f04123d79358dd81192f907c3bcac1b63080296ece"
+  },
+  "classes": [
+    "MATCH",
+    "DIVERGENCE",
+    "OMISSION",
+    "ADDITION"
+  ],
+  "cloud_authorized": false,
+  "data_admitted": false,
+  "dev": {
+    "external": 200,
+    "historical_secondary": 48
+  },
+  "execution_authorized": false,
+  "explanation_generation_authorized": false,
+  "first_test": "CLASSIFICATION_ONLY; no explanation or veto generation in this first measurement; refusal mechanism remains separate and frozen",
+  "gates": {
+    "every_class_recall": 0.6,
+    "external_macro_f1": 0.75,
+    "longer_challenge_macro_f1": 0.7,
+    "shorter_challenge_macro_f1": 0.7
+  },
+  "head": {
+    "initialization": "zero",
+    "learning_rate": 0.01,
+    "optimizer": "Adam",
+    "outputs": 4,
+    "parameters": 12292,
+    "regularization": 0.001,
+    "seed": 7,
+    "updates": 200
+  },
+  "historical_integrated_gates": {
+    "maximum": {
+      "over_refusal_rate": 0.05
+    },
+    "minimum": {
+      "accepted_semantic_outcomes": 0.7,
+      "contract_validity": 1.0,
+      "evidence_f1": 0.85,
+      "macro_relation_f1": 0.75,
+      "refusal_precision": 0.9,
+      "refusal_recall": 0.8,
+      "substantive_non_refusal_coverage": 0.9
+    },
+    "per_class_recall": {
+      "ADDITION": 0.6,
+      "DIVERGENCE": 0.6,
+      "INSUFFICIENT_EVIDENCE": 0.6,
+      "MATCH": 0.6,
+      "OMISSION": 0.6
+    }
+  },
+  "holdout_excluded": true,
+  "limitation": "V2 passes the word-sign gate but source-family confounding remains; not admitted under the no-known-source-shortcut readiness condition.",
+  "lora_fallback_authorized": false,
+  "model_id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+  "name": "AUDITOR_EXTERNAL_RELATION_CLASSIFIER_V2",
+  "representation": "Same frozen checkpoint-120 Auditor final prompt-token hidden state, 3072 float32 features",
+  "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+  "standardization": {
+    "clamp": 1e-06,
+    "ddof": 0,
+    "train_only": true
+  },
+  "status": "PREPARED_NOT_ADMITTED",
+  "train": {
+    "external": 1600,
+    "historical": 192,
+    "total": 1792
+  },
+  "training_authorized": false
+}

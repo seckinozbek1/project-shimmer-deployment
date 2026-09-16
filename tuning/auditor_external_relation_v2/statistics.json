@@ -1,0 +1,257 @@
+{
+  "by_class": {
+    "ADDITION": {
+      "candidate_words": {
+        "count": 500,
+        "max": 35,
+        "mean": 20.354,
+        "median": 21.0,
+        "min": 9,
+        "p95": 31,
+        "p99": 33
+      },
+      "character_ratio": {
+        "count": 500,
+        "max": 1.558139534883721,
+        "mean": 1.1382406345546978,
+        "median": 1.122724263488911,
+        "min": 1.02020202020202,
+        "p95": 1.280701754385965,
+        "p99": 1.3333333333333333
+      },
+      "prompt_tokens": {
+        "count": 500,
+        "max": 623,
+        "mean": 529.548,
+        "median": 527.0,
+        "min": 489,
+        "p95": 568,
+        "p99": 594
+      },
+      "rows": 500,
+      "signs": {
+        "longer": 500
+      },
+      "source_datasets": {
+        "WikiAtomicEdits / PEER published sample": 500
+      },
+      "source_words": {
+        "count": 500,
+        "max": 29,
+        "mean": 18.162,
+        "median": 18.0,
+        "min": 8,
+        "p95": 28,
+        "p99": 29
+      },
+      "word_ratio": {
+        "count": 500,
+        "max": 1.3333333333333333,
+        "mean": 1.1274655694993327,
+        "median": 1.1176470588235294,
+        "min": 1.0344827586206897,
+        "p95": 1.2222222222222223,
+        "p99": 1.2727272727272727
+      }
+    },
+    "DIVERGENCE": {
+      "candidate_words": {
+        "count": 500,
+        "max": 32,
+        "mean": 18.182,
+        "median": 18.0,
+        "min": 8,
+        "p95": 28,
+        "p99": 30
+      },
+      "character_ratio": {
+        "count": 500,
+        "max": 1.3424657534246576,
+        "mean": 1.0017192813984266,
+        "median": 0.9897023993409535,
+        "min": 0.76,
+        "p95": 1.1610169491525424,
+        "p99": 1.2075471698113207
+      },
+      "prompt_tokens": {
+        "count": 500,
+        "max": 590,
+        "mean": 529.242,
+        "median": 529.0,
+        "min": 489,
+        "p95": 563,
+        "p99": 574
+      },
+      "rows": 500,
+      "signs": {
+        "longer": 250,
+        "shorter": 250
+      },
+      "source_datasets": {
+        "PAWS-Wiki Labeled Final": 500
+      },
+      "source_words": {
+        "count": 500,
+        "max": 33,
+        "mean": 18.262,
+        "median": 18.0,
+        "min": 8,
+        "p95": 28,
+        "p99": 31
+      },
+      "word_ratio": {
+        "count": 500,
+        "max": 1.3333333333333333,
+        "mean": 1.0046197125511804,
+        "median": 1.0031017369727047,
+        "min": 0.7647058823529411,
+        "p95": 1.2,
+        "p99": 1.25
+      }
+    },
+    "MATCH": {
+      "candidate_words": {
+        "count": 500,
+        "max": 32,
+        "mean": 18.426,
+        "median": 18.0,
+        "min": 8,
+        "p95": 28,
+        "p99": 30
+      },
+      "character_ratio": {
+        "count": 500,
+        "max": 1.2857142857142858,
+        "mean": 1.0012095243848194,
+        "median": 1.0041322314049586,
+        "min": 0.7027027027027027,
+        "p95": 1.1666666666666667,
+        "p99": 1.2261904761904763
+      },
+      "prompt_tokens": {
+        "count": 500,
+        "max": 585,
+        "mean": 529.714,
+        "median": 530.0,
+        "min": 489,
+        "p95": 559,
+        "p99": 570
+      },
+      "rows": 500,
+      "signs": {
+        "longer": 250,
+        "shorter": 250
+      },
+      "source_datasets": {
+        "PAWS-Wiki Labeled Final": 500
+      },
+      "source_words": {
+        "count": 500,
+        "max": 32,
+        "mean": 18.498,
+        "median": 18.0,
+        "min": 8,
+        "p95": 28,
+        "p99": 30
+      },
+      "word_ratio": {
+        "count": 500,
+        "max": 1.3333333333333333,
+        "mean": 1.004381192945368,
+        "median": 1.002389486260454,
+        "min": 0.7692307692307693,
+        "p95": 1.2,
+        "p99": 1.2307692307692308
+      }
+    },
+    "OMISSION": {
+      "candidate_words": {
+        "count": 500,
+        "max": 36,
+        "mean": 17.568,
+        "median": 17.0,
+        "min": 8,
+        "p95": 28,
+        "p99": 29
+      },
+      "character_ratio": {
+        "count": 500,
+        "max": 0.9809523809523809,
+        "mean": 0.8774563499427376,
+        "median": 0.8823529411764706,
+        "min": 0.6290322580645161,
+        "p95": 0.9560439560439561,
+        "p99": 0.9740932642487047
+      },
+      "prompt_tokens": {
+        "count": 500,
+        "max": 631,
+        "mean": 527.556,
+        "median": 525.0,
+        "min": 490,
+        "p95": 567,
+        "p99": 588
+      },
+      "rows": 500,
+      "signs": {
+        "shorter": 500
+      },
+      "source_datasets": {
+        "WikiAtomicEdits / PEER published sample": 500
+      },
+      "source_words": {
+        "count": 500,
+        "max": 37,
+        "mean": 19.852,
+        "median": 20.0,
+        "min": 9,
+        "p95": 31,
+        "p99": 33
+      },
+      "word_ratio": {
+        "count": 500,
+        "max": 0.972972972972973,
+        "mean": 0.8809348907563903,
+        "median": 0.8867521367521367,
+        "min": 0.76,
+        "p95": 0.9583333333333334,
+        "p99": 0.9655172413793104
+      }
+    }
+  },
+  "by_split": {
+    "dev": {
+      "classes": {
+        "ADDITION": 50,
+        "DIVERGENCE": 50,
+        "MATCH": 50,
+        "OMISSION": 50
+      },
+      "lineages": 200,
+      "rows": 200
+    },
+    "holdout": {
+      "classes": {
+        "ADDITION": 50,
+        "DIVERGENCE": 50,
+        "MATCH": 50,
+        "OMISSION": 50
+      },
+      "lineages": 200,
+      "rows": 200
+    },
+    "train": {
+      "classes": {
+        "ADDITION": 400,
+        "DIVERGENCE": 400,
+        "MATCH": 400,
+        "OMISSION": 400
+      },
+      "lineages": 1600,
+      "rows": 1600
+    }
+  },
+  "style": "Wikipedia-derived tokenized sentences, identical plain transport wrapper; article/domain metadata unavailable",
+  "total": 2000,
+  "unique_lineages": 2000
+}

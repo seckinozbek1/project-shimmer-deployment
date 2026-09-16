@@ -1,0 +1,190 @@
+{
+  "dev": {
+    "candidate_words_10bin": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.305
+    },
+    "character_ratio_005bin": {
+      "bins": 14,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.55
+    },
+    "fixed_id_mod4": {
+      "accuracy": 0.28,
+      "rows": 200
+    },
+    "fixed_ratio_threshold": {
+      "accuracy": 0.48,
+      "rows": 200
+    },
+    "fixed_row_mod4": {
+      "accuracy": 0.285,
+      "rows": 200
+    },
+    "fixed_source_and_sign_oracle": {
+      "accuracy": 0.75,
+      "rows": 200
+    },
+    "fixed_source_dataset": {
+      "accuracy": 0.5,
+      "rows": 200
+    },
+    "fixed_word_sign": {
+      "accuracy": 0.5,
+      "rows": 200
+    },
+    "id_mod20": {
+      "bins": 20,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.435
+    },
+    "id_mod4": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.31
+    },
+    "id_mod5": {
+      "bins": 5,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.355
+    },
+    "punctuation_counts": {
+      "bins": 14,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.325
+    },
+    "row_mod4": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.305
+    },
+    "row_mod5": {
+      "bins": 5,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.31
+    },
+    "source_dataset": {
+      "bins": 2,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.5
+    },
+    "source_dataset_and_sign": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.75
+    },
+    "source_words_10bin": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.285
+    },
+    "word_ratio_005bin": {
+      "bins": 10,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.505
+    },
+    "word_sign": {
+      "bins": 2,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.5
+    }
+  },
+  "method": "Predeclared rules plus descriptive oracle bin purity; no classifier fitted. HOLDOUT excluded. Bin purity is not held-out accuracy.",
+  "prompt_metadata_excluded": true,
+  "rebalance_retries": 0,
+  "source_confounding": "Dataset alone identifies the two-class source family; dataset plus sign identifies atomic classes and reaches 75% with arbitrary PAWS tie-breaking. Dataset metadata is not present in prompts, but this remains a known provenance/source-family confound. No claim of source independence.",
+  "source_shortcut_gate_pass": false,
+  "train": {
+    "candidate_words_10bin": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.29
+    },
+    "character_ratio_005bin": {
+      "bins": 17,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.545
+    },
+    "fixed_id_mod4": {
+      "accuracy": 0.2575,
+      "rows": 1600
+    },
+    "fixed_ratio_threshold": {
+      "accuracy": 0.48125,
+      "rows": 1600
+    },
+    "fixed_row_mod4": {
+      "accuracy": 0.241875,
+      "rows": 1600
+    },
+    "fixed_source_and_sign_oracle": {
+      "accuracy": 0.75,
+      "rows": 1600
+    },
+    "fixed_source_dataset": {
+      "accuracy": 0.5,
+      "rows": 1600
+    },
+    "fixed_word_sign": {
+      "accuracy": 0.5,
+      "rows": 1600
+    },
+    "id_mod20": {
+      "bins": 20,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.30875
+    },
+    "id_mod4": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.278125
+    },
+    "id_mod5": {
+      "bins": 5,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.264375
+    },
+    "punctuation_counts": {
+      "bins": 30,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.323125
+    },
+    "row_mod4": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.271875
+    },
+    "row_mod5": {
+      "bins": 5,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.271875
+    },
+    "source_dataset": {
+      "bins": 2,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.5
+    },
+    "source_dataset_and_sign": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.75
+    },
+    "source_words_10bin": {
+      "bins": 4,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.288125
+    },
+    "word_ratio_005bin": {
+      "bins": 12,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.5
+    },
+    "word_sign": {
+      "bins": 2,
+      "deterministically_identifies_all_classes": false,
+      "oracle_bucket_purity": 0.5
+    }
+  },
+  "word_sign_gate_pass": true
+}
