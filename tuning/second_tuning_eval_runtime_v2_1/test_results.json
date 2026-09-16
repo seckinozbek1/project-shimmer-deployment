@@ -1,0 +1,63 @@
+{
+  "tests": 92,
+  "failures": 0,
+  "errors": 0,
+  "passed": true,
+  "effect_proof_count": 11,
+  "effect_proofs": {
+    "nullable_regression": {
+      "sequence": [
+        "neutralise: historical context",
+        "fail: identical TypeError",
+        "restore: corrected context",
+        "pass: exact state restored"
+      ],
+      "real_generations": 0
+    },
+    "unsupported_before_transition": {
+      "state_unchanged": true,
+      "generation_calls": 0
+    },
+    "setup_exception_restoration": {
+      "restored": true
+    },
+    "generation_exception_restoration": {
+      "restored": true,
+      "lifecycle_standin": true,
+      "standin_generate_calls": 1
+    },
+    "early_termination_restoration": {
+      "restored": true
+    },
+    "nested_mixed_flags": {
+      "restored": true
+    },
+    "mandatory_context_preflight": {
+      "missing_preflight_denied": true,
+      "generation_calls": 0
+    },
+    "failed_preflight_no_retry": {
+      "generation_denied": true,
+      "retry_denied": true
+    },
+    "pinned_nullability_assignment": {
+      "source_sha256": "bf3f2b4314492a5148d69bde5ef23dbe0c63a9224970b5e83a22af0d10269a0c",
+      "line": 1884,
+      "result": null
+    },
+    "no_training_optimizer_guards": {
+      "denied_calls": 3,
+      "torch_imported": false
+    },
+    "remote_preflight_no_go_handoff": {
+      "evidence_before_teardown": true,
+      "generation_calls": 0,
+      "callbacks_only": true
+    }
+  },
+  "real_model_generations": 0,
+  "model_weight_reads": 0,
+  "cloud_calls": 0,
+  "torch_imported": false,
+  "limitation": "Lifecycle uses explicit stand-ins; real pinned Qwen2Config/GenerationConfig objects and source AST only, no CUDA/model validation. Adapter bytes not reopened; preserved hash/tensor-verification evidence and file metadata bound."
+}

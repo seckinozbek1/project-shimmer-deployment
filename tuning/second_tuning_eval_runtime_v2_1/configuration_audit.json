@@ -1,0 +1,517 @@
+{
+  "exhaustive_static_occurrences": [
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 32,
+      "kind": "Call",
+      "expression": "dict(experiment='second-tuning-eval-runtime-v2', action='producer-checkpoint120-evaluation-only', role='producer', split='canonical', checkpoint=120, runtime_release_sha256=release_hash, protocol_sha256=digest(protocol), adapter_sha256=protocol['adapter']['files']['adapter_model.safetensors'])"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 91,
+      "kind": "Call",
+      "expression": "deepcopy(getattr(model, 'active_adapters', None))"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 206,
+      "kind": "Call",
+      "expression": "dict(pass_gate=passed, token_identity=same_tokens, metric_identity=same_metrics, prompt_identity=same_prompts, reference_tokens_per_second=baseline, optimized_tokens_per_second=candidate, paired_speedup=candidate / baseline, no_go_action='Stop and preserve evidence; no full DEV, protocol changes, rescue or retraining')"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 89,
+      "kind": "Call",
+      "expression": "deepcopy(vars(obj))"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 91,
+      "kind": "Call",
+      "expression": "getattr(model, 'active_adapters', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 249,
+      "kind": "Call",
+      "expression": "getattr(output, 'past_key_values', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 267,
+      "kind": "Call",
+      "expression": "deepcopy(protocol)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 285,
+      "kind": "Call",
+      "expression": "deepcopy(self.control_receipt)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 62,
+      "kind": "Call",
+      "expression": "getattr(p, '_version', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 63,
+      "kind": "Call",
+      "expression": "getattr(getattr(p, 'grad', None), '_version', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 89,
+      "kind": "Call",
+      "expression": "vars(obj)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 107,
+      "kind": "Call",
+      "expression": "setattr(module, name, obj)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 170,
+      "kind": "Call",
+      "expression": "dict(example_id=row['example_id'], role='producer', split='canonical', runtime='historical-observer-reference' if reference_trace is not None else 'second-tuning-eval-runtime-v2', checkpoint=120, adapter=protocol['adapter'], prompt_sha256=hashlib.sha256(row['prompt'].encode()).hexdigest(), input_ids_sha256=digest(row['input_ids']), output_token_ids"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 242,
+      "kind": "Call",
+      "expression": "dict(input_length=int(ids.shape[-1]), use_cache=kwargs.get('use_cache'), training=module.training, grad_enabled=torch_api.is_grad_enabled(), incoming_cache_length=0 if prior is None else int(prior.get_seq_length()))"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 63,
+      "kind": "Call",
+      "expression": "getattr(p, 'grad', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 63,
+      "kind": "Call",
+      "expression": "getattr(p, 'grad', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 76,
+      "kind": "Attribute",
+      "expression": "m.__dict__"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 76,
+      "kind": "Attribute",
+      "expression": "m.__dict__"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 83,
+      "kind": "Attribute",
+      "expression": "module.__dict__"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 105,
+      "kind": "Call",
+      "expression": "deepcopy(saved[identity])"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 118,
+      "kind": "Call",
+      "expression": "getattr(model, 'active_adapters', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 77,
+      "kind": "Attribute",
+      "expression": "m.__dict__"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 84,
+      "kind": "Attribute",
+      "expression": "module.__dict__"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 104,
+      "kind": "Call",
+      "expression": "vars(obj)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 105,
+      "kind": "Call",
+      "expression": "vars(obj)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 116,
+      "kind": "Call",
+      "expression": "vars(unique[k])"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 154,
+      "kind": "Call",
+      "expression": "getattr(torch_api.cuda, name)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 160,
+      "kind": "Call",
+      "expression": "deepcopy(protocol['generation_kwargs'])"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 166,
+      "kind": "Call",
+      "expression": "getattr(torch_api.cuda, name)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+      "line": 115,
+      "kind": "Attribute",
+      "expression": "m.__dict__"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 34,
+      "kind": "Call",
+      "expression": "dict(experiment='second-tuning-eval-runtime-v2_1', action='producer-checkpoint120-evaluation-only', role='producer', split='canonical', checkpoint=120, runtime_release_sha256=release_hash, protocol_sha256=digest(protocol), adapter_sha256=protocol['adapter']['files']['adapter_model.safetensors'])"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 95,
+      "kind": "Call",
+      "expression": "deepcopy(getattr(model, 'active_adapters', None))"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 141,
+      "kind": "Call",
+      "expression": "dict(passed=False)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 150,
+      "kind": "Call",
+      "expression": "dict(name='REAL_RUNTIME_CONTEXT_PREFLIGHT', passed=True, owned_config_fields=inventory, state_restored=True, generation_calls=0)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 153,
+      "kind": "Call",
+      "expression": "deepcopy(receipt)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 247,
+      "kind": "Call",
+      "expression": "dict(pass_gate=passed, token_identity=same_tokens, metric_identity=same_metrics, prompt_identity=same_prompts, reference_tokens_per_second=baseline, optimized_tokens_per_second=candidate, paired_speedup=candidate / baseline, no_go_action='Stop and preserve evidence; no full DEV, protocol changes, rescue or retraining')"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 95,
+      "kind": "Call",
+      "expression": "getattr(model, 'active_adapters', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 144,
+      "kind": "Call",
+      "expression": "dict(module_index=index, attribute=name, **info)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 290,
+      "kind": "Call",
+      "expression": "getattr(output, 'past_key_values', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 308,
+      "kind": "Call",
+      "expression": "deepcopy(protocol)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 337,
+      "kind": "Call",
+      "expression": "deepcopy(self.control_receipt)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 64,
+      "kind": "Call",
+      "expression": "getattr(p, '_version', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 65,
+      "kind": "Call",
+      "expression": "getattr(getattr(p, 'grad', None), '_version', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 98,
+      "kind": "Call",
+      "expression": "getattr(p, 'grad', _MISSING)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 211,
+      "kind": "Call",
+      "expression": "dict(example_id=row['example_id'], role='producer', split='canonical', runtime='historical-observer-reference' if reference_trace is not None else 'second-tuning-eval-runtime-v2_1', checkpoint=120, adapter=protocol['adapter'], prompt_sha256=hashlib.sha256(row['prompt'].encode()).hexdigest(), input_ids_sha256=digest(row['input_ids']), output_token_i"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 283,
+      "kind": "Call",
+      "expression": "dict(input_length=int(ids.shape[-1]), use_cache=kwargs.get('use_cache'), training=module.training, grad_enabled=torch_api.is_grad_enabled(), incoming_cache_length=0 if prior is None else int(prior.get_seq_length()))"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 65,
+      "kind": "Call",
+      "expression": "getattr(p, 'grad', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 65,
+      "kind": "Call",
+      "expression": "getattr(p, 'grad', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 131,
+      "kind": "Call",
+      "expression": "getattr(model, 'active_adapters', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 120,
+      "kind": "Call",
+      "expression": "setattr(module, 'training', prior)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 124,
+      "kind": "Call",
+      "expression": "getattr(parameter, 'grad', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 195,
+      "kind": "Call",
+      "expression": "getattr(torch_api.cuda, name)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 201,
+      "kind": "Call",
+      "expression": "deepcopy(protocol['generation_kwargs'])"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py",
+      "line": 207,
+      "kind": "Call",
+      "expression": "getattr(torch_api.cuda, name)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/config_state.py",
+      "line": 168,
+      "kind": "Call",
+      "expression": "dict(index=i, type=type(value).__module__ + '.' + type(value).__qualname__, is_none=value is None, identity_group=next((j for j, x in enumerate(self.roots) if x is value)))"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/config_state.py",
+      "line": 97,
+      "kind": "Attribute",
+      "expression": "base.__dict__"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/config_state.py",
+      "line": 73,
+      "kind": "Call",
+      "expression": "getattr(value, '__dict__', None)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/config_state.py",
+      "line": 141,
+      "kind": "Call",
+      "expression": "getattr(value, name)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/config_state.py",
+      "line": 76,
+      "kind": "Call",
+      "expression": "getattr(value, name)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/remote_preflight.py",
+      "line": 12,
+      "kind": "Call",
+      "expression": "dict(module_index=index, attribute=name, is_none=value is None, type=type(value).__module__ + '.' + type(value).__qualname__)"
+    },
+    {
+      "file": "tuning/second_tuning_eval_runtime_v2_1/remote_preflight.py",
+      "line": 20,
+      "kind": "Call",
+      "expression": "dict(name='REAL_RUNTIME_CONTEXT_PREFLIGHT', passed=False, decision='NO_GO', owned_config_fields=inventory, error_type=type(exc).__name__, generation_calls=0)"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 81,
+      "kind": "Call",
+      "expression": "dict(spec['asset_hashes'], **spec['base_weight_hashes'])"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 73,
+      "kind": "Call",
+      "expression": "dict(passed=True, python=sys.version, versions=lock, gpu=torch.cuda.get_device_name(), bf16=True, gpu_count=1, manifest=manifest, optimizer_created=False)"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 85,
+      "kind": "Call",
+      "expression": "dict(path=str(path), seconds=time.time() - start, files=expected, producer_only=True)"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 135,
+      "kind": "Call",
+      "expression": "dict(active_adapters=model.active_adapters, adapter_hashes=protocol['adapter']['files'], adapter_parameters=[dict(name=n, device=str(p.device), dtype=str(p.dtype), requires_grad=p.requires_grad) for n, p in model.named_parameters() if 'lora_' in n], sources={str(Path(inspect.getsourcefile(fn)).relative_to(Path(peft.__file__).parent)): sha(inspect.g"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 109,
+      "kind": "Call",
+      "expression": "dict(spec['asset_hashes'], **spec['base_weight_hashes'])"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 119,
+      "kind": "Call",
+      "expression": "dict(model.named_modules())"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 146,
+      "kind": "Call",
+      "expression": "dict(phase=label, example_id=record['example_id'], epoch=time.time())"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 160,
+      "kind": "Call",
+      "expression": "dict(passed=True, observations=observations)"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 175,
+      "kind": "Call",
+      "expression": "dict(status='CHECKPOINT120_EVALUATION_ADMITTED', remaining_seconds=remaining, projected_generation_seconds=projected)"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 182,
+      "kind": "Call",
+      "expression": "dict(status='COMPLETED', checkpoint_result='PRODUCER_CHECKPOINT120_PASS' if passed else 'PRODUCER_CHECKPOINT120_FAIL', full_dev_rows=60)"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 171,
+      "kind": "Call",
+      "expression": "dict(status='CHECKPOINT120_EVALUATION_NO_GO', checkpoint_result='PRODUCER_CHECKPOINT120_INDETERMINATE', reason='Control gate failed', full_dev_rows=0)"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 184,
+      "kind": "Call",
+      "expression": "dict(status='CHECKPOINT120_EVALUATION_NO_GO' if not session.cache_verified or not session.control_receipt else 'INTERRUPTED', checkpoint_result='PRODUCER_CHECKPOINT120_INDETERMINATE', reason=type(exc).__name__ + ': ' + str(exc))"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 206,
+      "kind": "Call",
+      "expression": "dict(continue_evaluation=allowed, completed_rows=len(rows), projected_remaining_seconds=remaining, epoch=now)"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 209,
+      "kind": "Call",
+      "expression": "dict(epoch=now, reason='Budget admission/cutoff', checkpoint_result='PRODUCER_CHECKPOINT120_INDETERMINATE')"
+    },
+    {
+      "file": "tools/checkpoint120_remote.py",
+      "line": 136,
+      "kind": "Call",
+      "expression": "dict(name=n, device=str(p.device), dtype=str(p.dtype), requires_grad=p.requires_grad)"
+    }
+  ],
+  "source_files": {
+    "tuning/second_tuning_eval_runtime_v2/eval_runtime.py": "4f401f0b79f63b4bd89230ebbe2b712a7a4e1296460403535ed8fdd237fb743d",
+    "tuning/second_tuning_eval_runtime_v2_1/eval_runtime.py": "4509aebbd3f690f2e46075311a3b4777a4f54481ee9e746de679884e290a838f",
+    "tuning/second_tuning_eval_runtime_v2_1/config_state.py": "be20f0cfecbb1721950b6921a585a9d4ca9b803938cee7979e89e0867627a282",
+    "tuning/second_tuning_eval_runtime_v2_1/remote_preflight.py": "b5a985eae65caa7b9b262419365362261f7edad4cfb62c643fdf475a7abf6e74",
+    "tools/checkpoint120_remote.py": "6e387ddadd1873c403ddab65cc6be25373ce63c3622c78e09245f316ea89e087"
+  },
+  "transformers_version": "4.51.3",
+  "transformers_source_sha256": {
+    "modeling_utils.py": "bf3f2b4314492a5148d69bde5ef23dbe0c63a9224970b5e83a22af0d10269a0c",
+    "configuration_utils.py": "596fa229c03b05339412ed56fcac70d9cbd5df518d2de2e4f2ba7c2ffbb0ad48",
+    "generation/configuration_utils.py": "79f90d88a378ae11a3d346b491a509690a51856895a67e9adc92c564fe36f203",
+    "models/qwen2/modeling_qwen2.py": "1760c628019995d3564c8572be6c5149f488b6c3aa95ceda16099c2516e146ff",
+    "models/qwen2/configuration_qwen2.py": "4d3fc49747ab9dd0be658842bd30b877bd8bb644e494bba484b98c191e3952ed"
+  },
+  "failure": {
+    "file": "tuning/second_tuning_eval_runtime_v2/eval_runtime.py",
+    "function": "evaluation_state",
+    "line": 89,
+    "attribute": "generation_config",
+    "value_type": "NoneType",
+    "value": null,
+    "observed": "Cloud traceback directly records vars TypeError; nullable value/object identified by pinned-source branch and exact local reproduction, not a remote object dump",
+    "object": "Pinned non-generating Qwen2Model nested below Qwen2ForCausalLM/PEFT is a source-supported nullable owner"
+  },
+  "audited_paths": {
+    "old_capture": "vars(obj) fails on None/dict/scalars/slots",
+    "old_restore": "vars(obj).clear/update and vars equality share same unsafe assumption; deepcopy also changes nested identity",
+    "new_capture": "ConfigSnapshot explicit graph types; unknown mutable nodes rejected before model.eval",
+    "new_restore": "In-place graph restoration plus exact owned attribute/parameter invariants",
+    "owned_attributes": "Module __dict__ inspected only through validated owned_dict, never a nullable config; class __dict__ inspected only for slot declarations",
+    "remaining_deepcopy": "JSON generation kwargs/protocol and adapter-comparison list only; no config deepcopy/vars",
+    "dict_calls": "Evidence/authorization records, not generic config conversion; no dataclass asdict serialization"
+  },
+  "peft": {
+    "version": "0.15.2",
+    "full_local_package_available": false,
+    "available_evidence": "Preserved remote prepare_model_for_kbit_training source and source hashes only",
+    "source_hashes": {
+      "utils/other.py": "0d1a29846b0d818a7c2b0119a4829474837f90f65444ee071a8249add77c76cf",
+      "utils/save_and_load.py": "937bc84e9559c79941908ca07ba0f4d3abee57144b36860ee974e64c9a558ccc"
+    },
+    "helper_use_cache_mutation": false
+  },
+  "unsupported": {
+    "mapping": "Only built-in dict and OrderedDict supported; arbitrary Mapping implementations/read-only proxies fail closed",
+    "mutable": "set, bytearray, callables, opaque/slotted non-dataclasses, container subclasses rejected",
+    "torch_dtype": "Immutable torch.dtype identity allowed by pinned type tag without importing Torch locally"
+  },
+  "real_runtime_context_preflight": {
+    "implemented": true,
+    "model_instance_bound": true,
+    "before_cache_generation": true,
+    "zero_generation": true,
+    "no_retry": true,
+    "failure_handoff": "remote_preflight.run persists NO_GO then invokes collect_and_terminate even on persistence failure"
+  }
+}

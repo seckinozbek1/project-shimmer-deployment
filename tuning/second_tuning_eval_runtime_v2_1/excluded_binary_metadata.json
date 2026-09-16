@@ -1,0 +1,62 @@
+{
+  "tuning/second_domain_agnostic_v2/auditor/experiment.json": {
+    "recorded_sha256": "ae5de5224a782fda349854205617c753766109a6698d861af681951142eb5df3",
+    "size": 13866,
+    "mtime_ns": 1789543072717688500,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "tuning/second_domain_agnostic_v2/blind_review/auditor/packets.json": {
+    "recorded_sha256": "b3b5d99bc588f3ae6e2b2726a398436fce8864d699d7359aca7237a089a3d16a",
+    "size": 421305,
+    "mtime_ns": 1789543072851139400,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "tuning/second_domain_agnostic_v2/blind_review/auditor/review.json": {
+    "recorded_sha256": "ff8a7e7a649fad72a79eb63210ee67e219870abb2569095698adac43c0926dc0",
+    "size": 193953,
+    "mtime_ns": 1789542644333493300,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "tuning/second_domain_agnostic_v2/blind_review/auditor/review_round1.json": {
+    "recorded_sha256": "56172fdcda2ddbf4db2e44bad7ca2eb0f9d2a5e4ef4646db831cc3b2e2407c14",
+    "size": 224644,
+    "mtime_ns": 1789542210813242700,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "tuning/second_domain_agnostic_v2/blind_review/auditor/review_round2.json": {
+    "recorded_sha256": "0de8c9ab3589897127183b4ccb7b6e0bea012af4eaf54b756cdbce5b2e9f8820",
+    "size": 204243,
+    "mtime_ns": 1789542506346430600,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "tuning/second_domain_agnostic_v2/blind_review/auditor/review_round3.json": {
+    "recorded_sha256": "8aa61718ad9f7d1b3fe69c42c3c7441182bff33908b9973fbf613040ddccc0aa",
+    "size": 194318,
+    "mtime_ns": 1789542644319493300,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "docs/fix/second_tuning_canonical_pilot/evidence.tar.gz": {
+    "recorded_sha256": "647a437cc6c326ad1dc307e1a345d84d27f2be2d8189fcc9369c395ec2126469",
+    "size": 149117060,
+    "mtime_ns": 1789554662078772100,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "docs/fix/second_tuning_canonical_pilot/runtime_bundle.zip": {
+    "recorded_sha256": "6dd51881acc582ccd3e62ad030accb034a0b3dfcae5e853566b2779a0c01d4a3",
+    "size": 465482,
+    "mtime_ns": 1789548837129616500,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "docs/fix/second_tuning_canonical_pilot/downloaded/runs/second-domain-agnostic-v2/canonical/producer/checkpoint-120/adapter_model.safetensors": {
+    "recorded_sha256": "3f1e12d107f1206641902565b28ea6217d70ff2768c321a216227dbc21b702a6",
+    "size": 80792096,
+    "mtime_ns": 1789554789314799500,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  },
+  "docs/fix/second_tuning_canonical_pilot/downloaded/runs/second-domain-agnostic-v2/canonical/producer/checkpoint-60/adapter_model.safetensors": {
+    "recorded_sha256": "664e72eedc8bfc63b1dabfdb08bf7dcc93d8d0bcf17fcec4758d91dc6dcdcff8",
+    "size": 80792096,
+    "mtime_ns": 1789554788831191200,
+    "verification": "Recorded historical hash binding plus metadata only; no bytes opened in this task"
+  }
+}
