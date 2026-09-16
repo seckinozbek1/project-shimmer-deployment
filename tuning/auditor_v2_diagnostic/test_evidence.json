@@ -1,0 +1,8 @@
+{
+  "command": "python -m unittest discover -s tools -p test_auditor_v2_diagnostic.py",
+  "model_inference": false,
+  "model_training": false,
+  "passed": true,
+  "secret_scan_passed": true,
+  "tests": 6
+}

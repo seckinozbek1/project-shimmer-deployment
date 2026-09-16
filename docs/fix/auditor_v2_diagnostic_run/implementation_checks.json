@@ -1,0 +1,7 @@
+{
+  "cloud_launch": false,
+  "model_training": false,
+  "secret_scan_pass": true,
+  "syntax_pass": true,
+  "tests": 10
+}

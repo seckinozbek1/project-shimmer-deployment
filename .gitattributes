@@ -43,3 +43,9 @@ tools/download_auditor_external.py -text
 tuning/auditor_external_relation_v2/** -text
 docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V2.md -text
 tools/download_auditor_external_v2.py -text
+tuning/auditor_v2_diagnostic/** -text
+tools/auditor_v2*.py -text
+tools/test_auditor_v2*.py -text
+docs/fix/AUDITOR_V2_DIAGNOSTIC_PREFLIGHT.md -text
+docs/fix/AUDITOR_V2_DIAGNOSTIC_RESULTS.md -text
+docs/fix/auditor_v2_diagnostic_run/** -text

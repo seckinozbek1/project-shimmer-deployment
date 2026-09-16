@@ -1,0 +1,13 @@
+{
+  "all_token_ids_roundtrip_bound": true,
+  "external_dev": 200,
+  "external_dev_uses_unchanged_preflight_binding": true,
+  "historical_dev": 48,
+  "holdout_access": false,
+  "mixed_v2_file_opened": false,
+  "passed": true,
+  "provenance_exclusion": true,
+  "records": 2040,
+  "torch_imported": false,
+  "train": 1792
+}

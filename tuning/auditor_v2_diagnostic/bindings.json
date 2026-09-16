@@ -1,0 +1,11 @@
+{
+  "docs/fix/auditor_linear_probe_run/downloaded/evidence/full_dev.jsonl": "a399db7c22c67ba00180f6ddaf1589e0d333a4e9545ae57af44df663c5ff5b3a",
+  "external_dev_selected_content_sha256": "857f8eef7fc37a842d235cae4c8cbd7639daf266cf42111d67b178c7963f03d3",
+  "tuning/auditor_canonical_execution/dataset.json": "ba5289a1273eb51692a22bcd3b2d5f325643ea15e0d70b7e65f4c6147f7f3ec9",
+  "tuning/auditor_canonical_execution/split.json": "befcd49cf5cf555708cc98f38f0f2a0168db18ae5ee71e5faf0910c573e1e0f8",
+  "tuning/auditor_external_relation_v2/dev_challenges.json": "fc34f439fb1bf57ec2247f5f6d2624b7438f419b8a3e09583a72e9eb3640e52d",
+  "tuning/auditor_external_relation_v2/experiment.json": "4a5b6659ee5a50d912c6170c8b31cdc1d8daa2b5ac79b3ba8c38a078d83c01a2",
+  "tuning/auditor_external_relation_v2/holdout_receipt.json": "3027e85887fb9a1c52276633db3a6dd9c41ad2cf9b424ef3f912c4e81ec6282d",
+  "tuning/auditor_external_relation_v2/merged_four_way_train.jsonl": "df8aafe1b883406bc63d9ab4093b76995465e7c35617b629c38eca1e43ce80e2",
+  "tuning/auditor_external_relation_v2/split.json": "cdf258e22ce7cf28c1c242965a2e1caf326278bb3ff9c22318a8005d2cbac74e"
+}
