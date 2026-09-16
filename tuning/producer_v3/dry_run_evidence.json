@@ -1,0 +1,56 @@
+{
+  "passed": true,
+  "dataset_sha256": "b036707820a1851e94432319cc340cafec10a1b6093fab39b573cc4a47b9ecf0",
+  "data_and_schedule_checks_passed": true,
+  "label_review_passed": true,
+  "rows_tokenized": 420,
+  "train": 336,
+  "dev": 84,
+  "updates_planned": 168,
+  "model_generations": 0,
+  "training_steps_executed": 0,
+  "weight_reads": 0,
+  "network_calls_succeeded": 0,
+  "protected_data_reads": 0,
+  "auditor_execution": 0,
+  "context_state_only_preflight": {
+    "name": "REAL_RUNTIME_CONTEXT_PREFLIGHT",
+    "passed": true,
+    "owned_config_fields": [
+      {
+        "module_index": 0,
+        "attribute": "config",
+        "index": 0,
+        "type": "types.SimpleNamespace",
+        "is_none": false,
+        "identity_group": 0
+      },
+      {
+        "module_index": 0,
+        "attribute": "generation_config",
+        "index": 1,
+        "type": "builtins.NoneType",
+        "is_none": true,
+        "identity_group": 1
+      }
+    ],
+    "state_restored": true,
+    "generation_calls": 0
+  },
+  "fault_injections_rejected": [
+    "DEV gradient contamination",
+    "prompt-token mutation",
+    "generation-cap mutation",
+    "single-atom omission",
+    "model weight read",
+    "benchmark data read",
+    "network",
+    "incomplete checkpoint selection",
+    "duplicate raw persistence",
+    "control token mismatch"
+  ],
+  "no_historical_rescoring": true,
+  "old_rows_preserved": true,
+  "old_split_preserved": true,
+  "semantic_signature_duplicates": 0
+}

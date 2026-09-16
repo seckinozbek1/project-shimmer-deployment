@@ -20,3 +20,6 @@ docs/fix/EVALUATION_RUNTIME_NULLABILITY_FIX.md -text
 
 docs/fix/producer_checkpoint120_eval_v2_1/** -text
 docs/fix/PRODUCER_CHECKPOINT120_EVAL_V2_1_RESULTS.md -text
+
+tuning/producer_v3/** -text
+docs/fix/PRODUCER_TUNING_V3_DESIGN.md -text

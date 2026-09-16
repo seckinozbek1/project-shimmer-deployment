@@ -1,0 +1,17 @@
+{
+  "purpose": "Prospective observation only; quality gates dominate all efficiency measures",
+  "population": "Each complete 84-row canonical V3 DEV evaluation, separately at steps84 and168",
+  "output_tokens": "Generated token IDs including native EOS; never prompt tokens",
+  "distributions": ["min", "median", "mean", "p90", "p95", "p99", "max"],
+  "rates": ["EOS before 288-token cap", "cap contact", "trailing prose", "second JSON", "code fence", "exact or canonical duplicate atoms"],
+  "correct_semantic_atoms_per_token": {
+    "numerator": "Frozen evaluator true-positive claims + typed gaps + typed uncertainty + owned evidence references",
+    "denominator": "Generated output token count per example",
+    "breakdowns": ["claims", "typed_gaps", "typed_uncertainty", "evidence"],
+    "report": "Per-row values and mean/median/p10/p90; distinguish macro from pooled rates"
+  },
+  "accepted_output_token_cost": "Token-length distribution restricted to contract-valid and semantically accepted outputs",
+  "accepted_subgroups": ["correct refusal", "correct empty", "substantive nonempty success"],
+  "timing": "Prefill-inclusive generation wall with frozen synchronization boundaries; no invented TTFT or isolated decode rate",
+  "prohibited_optimizations": ["shortening at the expense of completeness", "cap reduction", "output repair", "partial-output selection", "discarding unfavorable control runs"]
+}

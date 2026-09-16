@@ -1,0 +1,20 @@
+{
+  "verdict": "PRODUCER_TUNING_V3_DESIGN_READY",
+  "historical_result": "PRODUCER_CHECKPOINT120_FAIL",
+  "data_and_labels_ready": true,
+  "canonical_split_frozen": true,
+  "configuration_count": 1,
+  "local_dry_run_passed": true,
+  "training_authorized": false,
+  "cloud_authorized": false,
+  "AUDITOR_STATUS": "UNTOUCHED",
+  "PROTECTED_RECEIPT_STATUS": "UNCONSUMED",
+  "preservation": {
+    "historical_byte_hashes_verified": 436,
+    "protected_artifacts_metadata_verified": 3,
+    "weight_metadata_verified": 2,
+    "weight_bytes_opened": 0,
+    "protected_receipt": "UNCONSUMED",
+    "preservation_scope_note": "Initial inventory byte-hashed the existing protected evaluator wrapper and protected_population manifest without parsing/execution. No protected target-label files were opened; subsequent checks are metadata-only."
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "label": "PROJECTION, not a current quote or measured V3 runtime",
+  "historical_training_step_seconds": {
+    "n": 118,
+    "min": 7.4713218212127686,
+    "median": 8.07601809501648,
+    "mean": 8.091519652786902,
+    "p95": 8.59015336036682,
+    "max": 8.776487350463867
+  },
+  "sequence_length_ratio": 0.9906068373363712,
+  "training_seconds": 1344.0266688870975,
+  "dev_rows": 84,
+  "full_dev_generations": 168,
+  "control_generations": 24,
+  "cache_probe_upper_bound_generations": 4,
+  "expected_dev_target_tokens": {
+    "n": 84,
+    "min": 11,
+    "median": 166.5,
+    "mean": 154.48809523809524,
+    "p95": 232.85,
+    "max": 255
+  },
+  "observed_v21_full_rate": 8.969011698135045,
+  "evaluation_seconds": 3366.480167071065,
+  "setup_and_teardown_reserve_seconds": 900,
+  "total_seconds": 5610.506835958162,
+  "total_cost_at_historical_1_29_per_hour": 2.0104316162183413,
+  "conservative_seconds": 15060.845981294126,
+  "assumptions": "Historical A10 rate only; sequence-linear training proxy, target-token lengths as output proxy; all generations cap-limited in conservative bound. Re-query pricing/capacity/budget before any separately authorized run.",
+  "conservative_cost_at_historical_1_29_per_hour": 5.396803143297062
+}

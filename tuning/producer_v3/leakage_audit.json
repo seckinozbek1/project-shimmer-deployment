@@ -1,0 +1,620 @@
+{
+  "passed": true,
+  "group_intersections": {
+    "document_family": [],
+    "template_family": [],
+    "derivation_group": [],
+    "paraphrase_family": [],
+    "renamed_family": [],
+    "leakage_group": []
+  },
+  "semantic_signature_intersection_count": 0,
+  "old_dev_membership_preserved": 60,
+  "contrast_pairs": 20,
+  "contrast_pairs_crossing_split": 0,
+  "max_new_to_old_dev_fivegram_jaccard": 0.05970149253731343,
+  "nearest_old_dev": [
+    {
+      "new_id": "producer-v3-document-000-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-000-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-001-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-001-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-002-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.017543859649122806
+    },
+    {
+      "new_id": "producer-v3-document-002-refuse",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.015384615384615385
+    },
+    {
+      "new_id": "producer-v3-document-003-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.017241379310344827
+    },
+    {
+      "new_id": "producer-v3-document-003-refuse",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.015151515151515152
+    },
+    {
+      "new_id": "producer-v3-document-004-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.018518518518518517
+    },
+    {
+      "new_id": "producer-v3-document-005-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-006-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-007-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-008-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.023809523809523808
+    },
+    {
+      "new_id": "producer-v3-document-009-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-010-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.04081632653061224
+    },
+    {
+      "new_id": "producer-v3-document-011-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-012-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.02127659574468085
+    },
+    {
+      "new_id": "producer-v3-document-013-extract",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.038461538461538464
+    },
+    {
+      "new_id": "producer-v3-document-014-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-015-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-016-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.024390243902439025
+    },
+    {
+      "new_id": "producer-v3-document-017-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-018-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.038461538461538464
+    },
+    {
+      "new_id": "producer-v3-document-019-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.029850746268656716
+    },
+    {
+      "new_id": "producer-v3-document-020-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.020833333333333332
+    },
+    {
+      "new_id": "producer-v3-document-020-refuse",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.017857142857142856
+    },
+    {
+      "new_id": "producer-v3-document-021-extract",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.0425531914893617
+    },
+    {
+      "new_id": "producer-v3-document-021-refuse",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.03773584905660377
+    },
+    {
+      "new_id": "producer-v3-document-022-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-022-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-023-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-023-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-024-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.02127659574468085
+    },
+    {
+      "new_id": "producer-v3-document-025-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-026-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.038461538461538464
+    },
+    {
+      "new_id": "producer-v3-document-027-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.014285714285714285
+    },
+    {
+      "new_id": "producer-v3-document-028-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.0196078431372549
+    },
+    {
+      "new_id": "producer-v3-document-029-extract",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.03389830508474576
+    },
+    {
+      "new_id": "producer-v3-document-030-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-031-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.015873015873015872
+    },
+    {
+      "new_id": "producer-v3-document-032-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-033-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-034-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.037037037037037035
+    },
+    {
+      "new_id": "producer-v3-document-035-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-036-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.02040816326530612
+    },
+    {
+      "new_id": "producer-v3-document-037-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-038-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-039-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.014084507042253521
+    },
+    {
+      "new_id": "producer-v3-document-040-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-040-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-041-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-041-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-042-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-042-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-043-extract",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.03508771929824561
+    },
+    {
+      "new_id": "producer-v3-document-043-refuse",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.03076923076923077
+    },
+    {
+      "new_id": "producer-v3-document-044-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.018867924528301886
+    },
+    {
+      "new_id": "producer-v3-document-045-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-046-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-047-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-048-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-049-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-050-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.038461538461538464
+    },
+    {
+      "new_id": "producer-v3-document-051-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-052-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.02040816326530612
+    },
+    {
+      "new_id": "producer-v3-document-053-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-054-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-055-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-056-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-057-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.018867924528301886
+    },
+    {
+      "new_id": "producer-v3-document-058-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.04
+    },
+    {
+      "new_id": "producer-v3-document-059-extract",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.028169014084507043
+    },
+    {
+      "new_id": "producer-v3-document-060-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.02127659574468085
+    },
+    {
+      "new_id": "producer-v3-document-060-refuse",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.01818181818181818
+    },
+    {
+      "new_id": "producer-v3-document-061-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-061-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-062-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-062-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-063-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-063-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-064-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-065-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-066-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.04081632653061224
+    },
+    {
+      "new_id": "producer-v3-document-067-extract",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.028985507246376812
+    },
+    {
+      "new_id": "producer-v3-document-068-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.02127659574468085
+    },
+    {
+      "new_id": "producer-v3-document-069-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-070-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-071-extract",
+      "old_dev_id": "shimmer2-producer-document-272",
+      "fivegram_jaccard": 0.04477611940298507
+    },
+    {
+      "new_id": "producer-v3-document-072-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-073-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.0196078431372549
+    },
+    {
+      "new_id": "producer-v3-document-074-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.04081632653061224
+    },
+    {
+      "new_id": "producer-v3-document-075-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-076-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.022727272727272728
+    },
+    {
+      "new_id": "producer-v3-document-077-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.021739130434782608
+    },
+    {
+      "new_id": "producer-v3-document-078-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.02
+    },
+    {
+      "new_id": "producer-v3-document-079-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-080-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-080-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-081-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-081-refuse",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-082-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.017857142857142856
+    },
+    {
+      "new_id": "producer-v3-document-082-refuse",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.015625
+    },
+    {
+      "new_id": "producer-v3-document-083-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.01818181818181818
+    },
+    {
+      "new_id": "producer-v3-document-083-refuse",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.015873015873015872
+    },
+    {
+      "new_id": "producer-v3-document-084-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.019230769230769232
+    },
+    {
+      "new_id": "producer-v3-document-085-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-086-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.019230769230769232
+    },
+    {
+      "new_id": "producer-v3-document-087-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-088-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-089-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.016666666666666666
+    },
+    {
+      "new_id": "producer-v3-document-090-extract",
+      "old_dev_id": "shimmer2-producer-document-273",
+      "fivegram_jaccard": 0.04
+    },
+    {
+      "new_id": "producer-v3-document-091-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.013513513513513514
+    },
+    {
+      "new_id": "producer-v3-document-092-extract",
+      "old_dev_id": "shimmer2-producer-document-158",
+      "fivegram_jaccard": 0.02127659574468085
+    },
+    {
+      "new_id": "producer-v3-document-093-extract",
+      "old_dev_id": "shimmer2-producer-document-046",
+      "fivegram_jaccard": 0.021739130434782608
+    },
+    {
+      "new_id": "producer-v3-document-094-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-095-extract",
+      "old_dev_id": "shimmer2-producer-document-045",
+      "fivegram_jaccard": 0.0
+    },
+    {
+      "new_id": "producer-v3-document-096-extract",
+      "old_dev_id": "shimmer2-producer-document-277",
+      "fivegram_jaccard": 0.020833333333333332
+    },
+    {
+      "new_id": "producer-v3-document-097-extract",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.03773584905660377
+    },
+    {
+      "new_id": "producer-v3-document-098-extract",
+      "old_dev_id": "shimmer2-producer-document-150",
+      "fivegram_jaccard": 0.05970149253731343
+    },
+    {
+      "new_id": "producer-v3-document-099-extract",
+      "old_dev_id": "shimmer2-producer-document-157",
+      "fivegram_jaccard": 0.0273972602739726
+    }
+  ],
+  "interpretation": "All old canonical memberships and ancestry groups preserved. No exact source/input or normalized semantic sibling crossing. Lexical screen is descriptive; no numerical screen proves absence of conceptual leakage. New rows were authored from abstract error classes, not DEV packet paraphrases.",
+  "benchmark_status": "Development corpus after failure-informed design; not an independent final benchmark or protected evaluation."
+}

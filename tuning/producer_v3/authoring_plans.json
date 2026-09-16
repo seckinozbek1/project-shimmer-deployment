@@ -1,0 +1,1515 @@
+[
+  {
+    "example_id": "producer-v3-document-000-extract",
+    "primary_gap": 0,
+    "secondary_gap": 8,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-001-extract",
+    "primary_gap": 1,
+    "secondary_gap": 9,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-002-extract",
+    "primary_gap": 2,
+    "secondary_gap": 10,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-003-extract",
+    "primary_gap": 3,
+    "secondary_gap": 11,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-004-extract",
+    "primary_gap": 4,
+    "secondary_gap": 12,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-005-extract",
+    "primary_gap": 5,
+    "secondary_gap": 13,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-006-extract",
+    "primary_gap": 6,
+    "secondary_gap": 14,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-007-extract",
+    "primary_gap": 7,
+    "secondary_gap": 15,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-008-extract",
+    "primary_gap": 0,
+    "secondary_gap": 16,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-009-extract",
+    "primary_gap": 1,
+    "secondary_gap": 17,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-010-extract",
+    "primary_gap": 2,
+    "secondary_gap": 18,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-011-extract",
+    "primary_gap": 3,
+    "secondary_gap": 19,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-012-extract",
+    "primary_gap": 4,
+    "secondary_gap": 8,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-013-extract",
+    "primary_gap": 5,
+    "secondary_gap": 9,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-014-extract",
+    "primary_gap": 6,
+    "secondary_gap": 10,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-015-extract",
+    "primary_gap": 7,
+    "secondary_gap": 11,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-016-extract",
+    "primary_gap": 0,
+    "secondary_gap": 12,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-017-extract",
+    "primary_gap": 1,
+    "secondary_gap": 13,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-018-extract",
+    "primary_gap": 2,
+    "secondary_gap": 14,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-019-extract",
+    "primary_gap": 3,
+    "secondary_gap": 15,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-020-extract",
+    "primary_gap": 4,
+    "secondary_gap": 16,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-021-extract",
+    "primary_gap": 5,
+    "secondary_gap": 17,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-022-extract",
+    "primary_gap": 6,
+    "secondary_gap": 18,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-023-extract",
+    "primary_gap": 7,
+    "secondary_gap": 19,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-024-extract",
+    "primary_gap": 0,
+    "secondary_gap": 8,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-025-extract",
+    "primary_gap": 1,
+    "secondary_gap": 9,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-026-extract",
+    "primary_gap": 2,
+    "secondary_gap": 10,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-027-extract",
+    "primary_gap": 3,
+    "secondary_gap": 11,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-028-extract",
+    "primary_gap": 4,
+    "secondary_gap": 12,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-029-extract",
+    "primary_gap": 5,
+    "secondary_gap": 13,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-030-extract",
+    "primary_gap": 6,
+    "secondary_gap": 14,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-031-extract",
+    "primary_gap": 7,
+    "secondary_gap": 15,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-032-extract",
+    "primary_gap": 0,
+    "secondary_gap": 16,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-033-extract",
+    "primary_gap": 1,
+    "secondary_gap": 17,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-034-extract",
+    "primary_gap": 2,
+    "secondary_gap": 18,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-035-extract",
+    "primary_gap": 3,
+    "secondary_gap": 19,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-036-extract",
+    "primary_gap": 4,
+    "secondary_gap": 8,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-037-extract",
+    "primary_gap": 5,
+    "secondary_gap": 9,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-038-extract",
+    "primary_gap": 6,
+    "secondary_gap": 10,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-039-extract",
+    "primary_gap": 7,
+    "secondary_gap": 11,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-040-extract",
+    "primary_gap": 0,
+    "secondary_gap": 12,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-041-extract",
+    "primary_gap": 1,
+    "secondary_gap": 13,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-042-extract",
+    "primary_gap": 2,
+    "secondary_gap": 15,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-043-extract",
+    "primary_gap": 3,
+    "secondary_gap": 15,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-044-extract",
+    "primary_gap": 4,
+    "secondary_gap": 16,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-045-extract",
+    "primary_gap": 5,
+    "secondary_gap": 17,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-046-extract",
+    "primary_gap": 6,
+    "secondary_gap": 18,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-047-extract",
+    "primary_gap": 7,
+    "secondary_gap": 19,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-048-extract",
+    "primary_gap": 0,
+    "secondary_gap": 8,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-049-extract",
+    "primary_gap": 1,
+    "secondary_gap": 9,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-050-extract",
+    "primary_gap": 2,
+    "secondary_gap": 10,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-051-extract",
+    "primary_gap": 3,
+    "secondary_gap": 11,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-052-extract",
+    "primary_gap": 4,
+    "secondary_gap": 12,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-053-extract",
+    "primary_gap": 5,
+    "secondary_gap": 13,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-054-extract",
+    "primary_gap": 6,
+    "secondary_gap": 14,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-055-extract",
+    "primary_gap": 7,
+    "secondary_gap": 15,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-056-extract",
+    "primary_gap": 0,
+    "secondary_gap": 16,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-057-extract",
+    "primary_gap": 1,
+    "secondary_gap": 17,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-058-extract",
+    "primary_gap": 2,
+    "secondary_gap": 18,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-059-extract",
+    "primary_gap": 3,
+    "secondary_gap": 19,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-060-extract",
+    "primary_gap": 4,
+    "secondary_gap": 8,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-061-extract",
+    "primary_gap": 5,
+    "secondary_gap": 9,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-062-extract",
+    "primary_gap": 6,
+    "secondary_gap": 10,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-063-extract",
+    "primary_gap": 7,
+    "secondary_gap": 11,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-064-extract",
+    "primary_gap": 0,
+    "secondary_gap": 12,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-065-extract",
+    "primary_gap": 1,
+    "secondary_gap": 13,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-066-extract",
+    "primary_gap": 2,
+    "secondary_gap": 14,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-067-extract",
+    "primary_gap": 3,
+    "secondary_gap": 15,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-068-extract",
+    "primary_gap": 4,
+    "secondary_gap": 16,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-069-extract",
+    "primary_gap": 5,
+    "secondary_gap": 17,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-070-extract",
+    "primary_gap": 6,
+    "secondary_gap": 18,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-071-extract",
+    "primary_gap": 7,
+    "secondary_gap": 19,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-072-extract",
+    "primary_gap": 0,
+    "secondary_gap": 8,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-073-extract",
+    "primary_gap": 1,
+    "secondary_gap": 9,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-074-extract",
+    "primary_gap": 2,
+    "secondary_gap": 10,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-075-extract",
+    "primary_gap": 3,
+    "secondary_gap": 11,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-076-extract",
+    "primary_gap": 4,
+    "secondary_gap": 12,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-077-extract",
+    "primary_gap": 5,
+    "secondary_gap": 13,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-078-extract",
+    "primary_gap": 6,
+    "secondary_gap": 14,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-079-extract",
+    "primary_gap": 7,
+    "secondary_gap": 15,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-080-extract",
+    "primary_gap": 0,
+    "secondary_gap": 16,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-081-extract",
+    "primary_gap": 1,
+    "secondary_gap": 17,
+    "uncertainty": 4,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-082-extract",
+    "primary_gap": 2,
+    "secondary_gap": 18,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-083-extract",
+    "primary_gap": 3,
+    "secondary_gap": 19,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "refusal_boundary"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-084-extract",
+    "primary_gap": 4,
+    "secondary_gap": 8,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-085-extract",
+    "primary_gap": 5,
+    "secondary_gap": 9,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-086-extract",
+    "primary_gap": 6,
+    "secondary_gap": 10,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-087-extract",
+    "primary_gap": 7,
+    "secondary_gap": 11,
+    "uncertainty": 1,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-088-extract",
+    "primary_gap": 0,
+    "secondary_gap": 12,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-089-extract",
+    "primary_gap": 1,
+    "secondary_gap": 13,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-090-extract",
+    "primary_gap": 2,
+    "secondary_gap": 14,
+    "uncertainty": 2,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"entry_presence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"absent\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-091-extract",
+    "primary_gap": 3,
+    "secondary_gap": 15,
+    "uncertainty": 6,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"event_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-092-extract",
+    "primary_gap": 4,
+    "secondary_gap": 16,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-093-extract",
+    "primary_gap": 5,
+    "secondary_gap": 17,
+    "uncertainty": 0,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"previous\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"event_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"did_not_occur\",\"subject\":\"event\",\"unit\":null}",
+      "{\"attribute\":\"interpretation\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"entry\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-094-extract",
+    "primary_gap": 6,
+    "secondary_gap": 18,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":\"later\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"observation_time\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-095-extract",
+    "primary_gap": 7,
+    "secondary_gap": 19,
+    "uncertainty": 7,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"kind\":\"gap\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-096-extract",
+    "primary_gap": 0,
+    "secondary_gap": 8,
+    "uncertainty": 3,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"authorization_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"event_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"ratification_status\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"amendment\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-097-extract",
+    "primary_gap": 1,
+    "secondary_gap": 9,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"reporting_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-098-extract",
+    "primary_gap": 2,
+    "secondary_gap": 10,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}",
+      "{\"attribute\":\"recording_occurrence\",\"category\":\"explicit_nonoccurrence\",\"kind\":\"gap\",\"ordinal\":3,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_recorded\",\"subject\":\"entry\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  },
+  {
+    "example_id": "producer-v3-document-099-extract",
+    "primary_gap": 3,
+    "secondary_gap": 11,
+    "uncertainty": 5,
+    "target_classes": [
+      "gap_completeness",
+      "referent_attribute_type"
+    ],
+    "canonical_semantic_signature": [
+      "{\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recorder\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"kind\":\"gap\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}",
+      "{\"attribute\":\"submission_occurrence\",\"category\":\"unknown\",\"kind\":\"uncertainty\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"submission\",\"unit\":null}"
+    ]
+  }
+]
