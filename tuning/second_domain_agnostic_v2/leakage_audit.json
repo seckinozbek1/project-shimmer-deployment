@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "protected_population": 114,
+  "metadata_ids_checked": 736,
+  "legacy_packet_fingerprints": 736,
+  "findings": [],
+  "protected_target_reads": 0,
+  "regression_policy": "No legacy fixture used as authoring input; IDs/families and all available review packet fingerprints excluded.",
+  "limits": "Metadata/fingerprint and provenance checks, not a semantic-similarity search over protected text. Protected target files are never opened.",
+  "original_protected_source_hashes": {
+    "benchmark/task_semantics/seed.json": "003aefd37d40a8ca1c90dbcc2e6429195f015f0c669b6d95eea7df98b2649142",
+    "benchmark/task_semantics_v2/extension.json": "d67cd69891e10705f6a4c250df28ecdda2230437594977a3a082d5cce712ca28"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "gates": {
+    "producer": {
+      "minimum": {
+        "contract_validity": 1.0,
+        "typed_gaps_f1": 0.8,
+        "semantic_completeness": 0.75,
+        "claims_f1": 0.95,
+        "evidence_f1": 0.95,
+        "typed_uncertainty_f1": 0.8,
+        "refusal_precision": 0.9,
+        "refusal_recall": 0.8,
+        "accepted_semantic_outcomes": 0.75
+      },
+      "maximum": {
+        "over_refusal_rate": 0.05
+      }
+    },
+    "auditor": {
+      "minimum": {
+        "contract_validity": 1.0,
+        "refusal_precision": 0.9,
+        "refusal_recall": 0.8,
+        "substantive_non_refusal_coverage": 0.9,
+        "accepted_semantic_outcomes": 0.7,
+        "macro_relation_f1": 0.75,
+        "evidence_f1": 0.85
+      },
+      "maximum": {
+        "over_refusal_rate": 0.05
+      },
+      "per_class_recall": {
+        "MATCH": 0.6,
+        "DIVERGENCE": 0.6,
+        "OMISSION": 0.6,
+        "ADDITION": 0.6,
+        "INSUFFICIENT_EVIDENCE": 0.6
+      }
+    }
+  },
+  "catastrophic_zero_limits": [
+    "invented_evidence",
+    "invented_rule",
+    "confident_wrong_match_divergence",
+    "truncation",
+    "producer_source_copy",
+    "governance_violations"
+  ],
+  "thresholds": "Prospective engineering requirements, not empirically calibrated or tuned on V2 outputs. Undefined metrics fail closed.",
+  "producer_ranking": [
+    "semantic_completeness",
+    "typed_gaps_f1",
+    "earliest_step",
+    "adapter_hash"
+  ],
+  "auditor_ranking": [
+    "macro_relation_f1",
+    "accepted_semantic_outcomes",
+    "earliest_step",
+    "adapter_hash"
+  ],
+  "cv_rule": "Use identical configurations across folds; no per-fold hyperparameter changes; no aggregate score selects configurations.",
+  "canonical_rule": "Select only canonical DEV checkpoint after all gates; CV never changes canonical membership.",
+  "protected_rule": "No protected execution path in V2. Existing one-shot controls remain untouched; future BASE-vs-tuned admission requires separate authorization."
+}

@@ -1,0 +1,1932 @@
+{
+  "scope": "run-1 TRAIN/DEV only",
+  "inputs": {
+    "tuning\\first_domain_agnostic_v1\\producer\\train.json": "40a9098b11916a43e874337f09e6847b49d73833dfb7472e64c56fb2bcf51b2e",
+    "tuning\\first_domain_agnostic_v1\\producer\\dev.json": "7b9e18759f644b5196eb16c151004ebd188252638de26730615820ce10b423ce",
+    "docs\\fix\\first_real_tuning_20260916\\downloaded\\runs\\first-domain-agnostic-tuning-v1\\producer\\dev-16.json": "74541f5fac519e9e9161bd316a3b1e23fd8547ae43b96801cd68cae21dc107f5",
+    "tuning\\first_domain_agnostic_v1\\auditor\\train.json": "fafc26605b291776f3f5374f35464b504fed0cc23925562d93d59ba512be0c2a",
+    "tuning\\first_domain_agnostic_v1\\auditor\\dev.json": "ecb940a6a78a64fc82c09d214a9f924e53c02c0d3f6ae5c30348d556f3044dde",
+    "docs\\fix\\first_real_tuning_20260916\\downloaded\\runs\\first-domain-agnostic-tuning-v1\\auditor\\dev-12.json": "728f9c0284ed5fe713cb2025b44b42136e51e9eb552b207d239efa7228e3438e",
+    "docs\\fix\\first_real_tuning_20260916\\downloaded\\runs\\first-domain-agnostic-tuning-v1\\auditor\\dev-24.json": "5ed399a72fb841526682a3174bee7609d1ef2bab69e31eba5023ebebde43ab17"
+  },
+  "roles": {
+    "producer": {
+      "train": {
+        "rows": 32,
+        "classes": {
+          "EXTRACTED": 32
+        },
+        "target_components": {
+          "structural_json": 646,
+          "claims": 244,
+          "gaps": 1659,
+          "refs": 427,
+          "status": 64,
+          "uncertainty": 1090
+        },
+        "target_component_percent": {
+          "structural_json": 15.6416,
+          "claims": 5.908,
+          "gaps": 40.1695,
+          "refs": 10.339,
+          "status": 1.5496,
+          "uncertainty": 26.3923
+        },
+        "supervised_tokens": 4194,
+        "native_termination_tokens": 64,
+        "supervised_component_percent": {
+          "structural_json": 15.402956604673342,
+          "claims": 5.817835002384359,
+          "gaps": 39.55650929899857,
+          "refs": 10.181211254172627,
+          "status": 1.525989508822127,
+          "uncertainty": 25.989508822126847,
+          "native_termination": 1.525989508822127
+        },
+        "target_lengths_by_class": {
+          "EXTRACTED": {
+            "min": 89,
+            "max": 205,
+            "mean": 129.0625
+          }
+        },
+        "required_reference_features": [
+          {
+            "relation": "EXTRACTED",
+            "required_refs": 1,
+            "count": 3
+          },
+          {
+            "relation": "EXTRACTED",
+            "required_refs": 2,
+            "count": 29
+          }
+        ],
+        "gap_types": {
+          "Gap: {\"attribute\":\"observation_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}": 8,
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}": 12,
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}": 12,
+          "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}": 3,
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}": 4
+        }
+      },
+      "dev": {
+        "rows": 32,
+        "classes": {
+          "EXTRACTED": 32
+        },
+        "target_components": {
+          "structural_json": 646,
+          "claims": 244,
+          "gaps": 2299,
+          "refs": 427,
+          "status": 64,
+          "uncertainty": 1106
+        },
+        "target_component_percent": {
+          "structural_json": 13.4977,
+          "claims": 5.0982,
+          "gaps": 48.0359,
+          "refs": 8.9219,
+          "status": 1.3372,
+          "uncertainty": 23.1091
+        },
+        "supervised_tokens": 4850,
+        "native_termination_tokens": 64,
+        "supervised_component_percent": {
+          "structural_json": 13.31958762886598,
+          "claims": 5.030927835051546,
+          "gaps": 47.402061855670105,
+          "refs": 8.804123711340207,
+          "status": 1.3195876288659794,
+          "uncertainty": 22.804123711340207,
+          "native_termination": 1.3195876288659794
+        },
+        "target_lengths_by_class": {
+          "EXTRACTED": {
+            "min": 89,
+            "max": 251,
+            "mean": 149.5625
+          }
+        },
+        "required_reference_features": [
+          {
+            "relation": "EXTRACTED",
+            "required_refs": 1,
+            "count": 3
+          },
+          {
+            "relation": "EXTRACTED",
+            "required_refs": 2,
+            "count": 29
+          }
+        ],
+        "gap_types": {
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}": 8,
+          "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}": 12,
+          "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}": 4,
+          "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}": 12,
+          "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}": 3,
+          "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}": 8,
+          "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}": 8
+        }
+      },
+      "checkpoints": {
+        "16": {
+          "rows": 32,
+          "contract_valid": 31,
+          "accepted_outcome": 10,
+          "expected_refusal": 0,
+          "predicted_refusal": 0,
+          "over_refusals": 0,
+          "predicted_relations": {}
+        }
+      }
+    },
+    "auditor": {
+      "train": {
+        "rows": 46,
+        "classes": {
+          "INSUFFICIENT_EVIDENCE": 8,
+          "ADDITION": 9,
+          "DIVERGENCE": 9,
+          "OMISSION": 9,
+          "MATCH": 11
+        },
+        "target_components": {
+          "structural_json": 1364,
+          "status": 16,
+          "relation": 103,
+          "reason": 1009,
+          "refs": 535
+        },
+        "target_component_percent": {
+          "structural_json": 45.0611,
+          "status": 0.5286,
+          "relation": 3.4027,
+          "reason": 33.3333,
+          "refs": 17.6743
+        },
+        "supervised_tokens": 3119,
+        "native_termination_tokens": 92,
+        "supervised_component_percent": {
+          "structural_json": 43.731965373517156,
+          "status": 0.5129849310676499,
+          "relation": 3.3023404937479963,
+          "reason": 32.35011221545367,
+          "refs": 17.152933632574545,
+          "native_termination": 2.9496633536389867
+        },
+        "target_lengths_by_class": {
+          "INSUFFICIENT_EVIDENCE": {
+            "min": 11,
+            "max": 11,
+            "mean": 11
+          },
+          "ADDITION": {
+            "min": 69,
+            "max": 82,
+            "mean": 77.55555555555556
+          },
+          "DIVERGENCE": {
+            "min": 75,
+            "max": 87,
+            "mean": 81.44444444444444
+          },
+          "OMISSION": {
+            "min": 67,
+            "max": 74,
+            "mean": 70.88888888888889
+          },
+          "MATCH": {
+            "min": 75,
+            "max": 82,
+            "mean": 79.0909090909091
+          }
+        },
+        "required_reference_features": [
+          {
+            "relation": "ADDITION",
+            "required_refs": 1,
+            "count": 1
+          },
+          {
+            "relation": "ADDITION",
+            "required_refs": 2,
+            "count": 8
+          },
+          {
+            "relation": "DIVERGENCE",
+            "required_refs": 1,
+            "count": 1
+          },
+          {
+            "relation": "DIVERGENCE",
+            "required_refs": 2,
+            "count": 8
+          },
+          {
+            "relation": "INSUFFICIENT_EVIDENCE",
+            "required_refs": 0,
+            "count": 8
+          },
+          {
+            "relation": "MATCH",
+            "required_refs": 1,
+            "count": 2
+          },
+          {
+            "relation": "MATCH",
+            "required_refs": 2,
+            "count": 9
+          },
+          {
+            "relation": "OMISSION",
+            "required_refs": 1,
+            "count": 1
+          },
+          {
+            "relation": "OMISSION",
+            "required_refs": 2,
+            "count": 8
+          }
+        ],
+        "gap_types": {}
+      },
+      "dev": {
+        "rows": 24,
+        "classes": {
+          "INSUFFICIENT_EVIDENCE": 8,
+          "DIVERGENCE": 5,
+          "OMISSION": 5,
+          "ADDITION": 5,
+          "MATCH": 1
+        },
+        "target_components": {
+          "structural_json": 616,
+          "status": 16,
+          "relation": 47,
+          "reason": 393,
+          "refs": 219
+        },
+        "target_component_percent": {
+          "structural_json": 47.7149,
+          "status": 1.2393,
+          "relation": 3.6406,
+          "reason": 30.4415,
+          "refs": 16.9636
+        },
+        "supervised_tokens": 1339,
+        "native_termination_tokens": 48,
+        "supervised_component_percent": {
+          "structural_json": 46.00448095593727,
+          "status": 1.1949215832710978,
+          "relation": 3.51008215085885,
+          "reason": 29.35026138909634,
+          "refs": 16.35548917102315,
+          "native_termination": 3.5847647498132935
+        },
+        "target_lengths_by_class": {
+          "INSUFFICIENT_EVIDENCE": {
+            "min": 11,
+            "max": 11,
+            "mean": 11
+          },
+          "DIVERGENCE": {
+            "min": 73,
+            "max": 86,
+            "mean": 80.6
+          },
+          "OMISSION": {
+            "min": 67,
+            "max": 74,
+            "mean": 69
+          },
+          "ADDITION": {
+            "min": 70,
+            "max": 76,
+            "mean": 74.6
+          },
+          "MATCH": {
+            "min": 82,
+            "max": 82,
+            "mean": 82
+          }
+        },
+        "required_reference_features": [
+          {
+            "relation": "ADDITION",
+            "required_refs": 1,
+            "count": 1
+          },
+          {
+            "relation": "ADDITION",
+            "required_refs": 2,
+            "count": 4
+          },
+          {
+            "relation": "DIVERGENCE",
+            "required_refs": 1,
+            "count": 1
+          },
+          {
+            "relation": "DIVERGENCE",
+            "required_refs": 2,
+            "count": 4
+          },
+          {
+            "relation": "INSUFFICIENT_EVIDENCE",
+            "required_refs": 0,
+            "count": 8
+          },
+          {
+            "relation": "MATCH",
+            "required_refs": 2,
+            "count": 1
+          },
+          {
+            "relation": "OMISSION",
+            "required_refs": 1,
+            "count": 1
+          },
+          {
+            "relation": "OMISSION",
+            "required_refs": 2,
+            "count": 4
+          }
+        ],
+        "gap_types": {}
+      },
+      "checkpoints": {
+        "12": {
+          "rows": 24,
+          "contract_valid": 23,
+          "accepted_outcome": 8,
+          "expected_refusal": 8,
+          "predicted_refusal": 23,
+          "over_refusals": 15,
+          "predicted_relations": {
+            "REFUSAL": 23,
+            "INVALID": 1
+          }
+        },
+        "24": {
+          "rows": 24,
+          "contract_valid": 24,
+          "accepted_outcome": 8,
+          "expected_refusal": 8,
+          "predicted_refusal": 24,
+          "over_refusals": 16,
+          "predicted_relations": {
+            "REFUSAL": 24
+          }
+        }
+      }
+    }
+  },
+  "producer_rows": [
+    {
+      "example_id": "dev-catalogue-producer-extracted",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_referent",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "dev-clinical-producer-extracted",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_referent",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "dev-contracts-producer-extracted",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_referent",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "dev-device-producer-extracted",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_referent",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "dev-negotiation-producer-extracted",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_referent",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "dev-nonsense-producer-extracted",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_referent",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "dev-procurement-producer-extracted",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_referent",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "dev-regulation-producer-extracted",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_referent",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"amendment\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-chronological_events-catalogue-conflicting",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-chronological_events-catalogue-primary",
+      "accepted": false,
+      "contract_valid": false,
+      "errors": [
+        {
+          "category": "contract_error_unparsed"
+        }
+      ],
+      "claims": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "evidence": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 3
+    },
+    {
+      "example_id": "v2-chronological_events-clinical-conflicting",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-chronological_events-clinical-primary",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-chronological_events-nonsense-conflicting",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-chronological_events-nonsense-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 2
+    },
+    {
+      "example_id": "v2-chronological_events-regulation-conflicting",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-chronological_events-regulation-primary",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-memo_sections-catalogue-conflicting",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-memo_sections-catalogue-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_attribute",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"date\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 2
+    },
+    {
+      "example_id": "v2-memo_sections-clinical-conflicting",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-memo_sections-clinical-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_attribute",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"date\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-memo_sections-nonsense-conflicting",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-memo_sections-nonsense-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_attribute",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"date_unspecified\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-memo_sections-regulation-conflicting",
+      "accepted": true,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 1
+    },
+    {
+      "example_id": "v2-memo_sections-regulation-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "expected_gaps": 2
+    },
+    {
+      "example_id": "v2-question_answer-catalogue-conflicting",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_type_or_field",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "rendering_error",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "What was entered first?"
+          ]
+        },
+        {
+          "category": "rendering_error",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "What followed?"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 3,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 3
+    },
+    {
+      "example_id": "v2-question_answer-catalogue-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"submission_occurrence\",\"category\":\"explicit_nonoccurrence\",\"ordinal\":2,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"not_submitted\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.25
+      },
+      "expected_gaps": 4
+    },
+    {
+      "example_id": "v2-question_answer-clinical-conflicting",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_type_or_field",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "rendering_error",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "What was entered first?"
+          ]
+        },
+        {
+          "category": "rendering_error",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "What followed?"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 3,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 3
+    },
+    {
+      "example_id": "v2-question_answer-clinical-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "wrong_type_or_state",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"recorder\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unknown\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 1,
+        "fn": 3,
+        "precision": 0.5,
+        "recall": 0.25
+      },
+      "expected_gaps": 4
+    },
+    {
+      "example_id": "v2-question_answer-nonsense-conflicting",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "wrong_type_or_field",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"effective_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "rendering_error",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "What was entered first?"
+          ]
+        },
+        {
+          "category": "rendering_error",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "What followed?"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.5,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 3,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 3
+    },
+    {
+      "example_id": "v2-question_answer-nonsense-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.3333333333333333
+      },
+      "expected_gaps": 3
+    },
+    {
+      "example_id": "v2-question_answer-regulation-conflicting",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.3333333333333333
+      },
+      "expected_gaps": 3
+    },
+    {
+      "example_id": "v2-question_answer-regulation-primary",
+      "accepted": false,
+      "contract_valid": true,
+      "errors": [
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_content\",\"category\":\"explicit_question\",\"ordinal\":1,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "omission",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"entry_order\",\"category\":\"explicit_question\",\"ordinal\":\"next\",\"relation\":null,\"scope\":\"owned_record\",\"state\":\"requested\",\"subject\":\"entry\",\"unit\":null}"
+          ]
+        },
+        {
+          "category": "wrong_attribute",
+          "gold": [
+            "s0",
+            "Gap: {\"attribute\":\"recording_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ],
+          "predicted": [
+            "s0",
+            "Gap: {\"attribute\":\"submission_time\",\"category\":\"missing_information\",\"ordinal\":null,\"relation\":null,\"scope\":\"owned_record\",\"state\":\"unspecified\",\"subject\":\"owned_record\",\"unit\":null}"
+          ]
+        }
+      ],
+      "claims": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "uncertainty": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "evidence": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "invented": 0,
+        "hallucinated_rate": 0.0
+      },
+      "historical_gap_counts": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 3,
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "expected_gaps": 3
+    }
+  ],
+  "producer_error_counts": {
+    "wrong_referent": 8,
+    "contract_error_unparsed": 1,
+    "wrong_attribute": 4,
+    "omission": 12,
+    "wrong_type_or_field": 3,
+    "rendering_error": 6,
+    "wrong_type_or_state": 1
+  },
+  "method": "Atom-level exclusive taxonomy. Source-policy equivalence identifies raw-question rendering failures for diagnosis only; outputs/scores are never repaired. Contract error separate from unobservable atom omissions. Multiple errors per row permitted."
+}

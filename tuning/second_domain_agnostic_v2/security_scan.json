@@ -1,0 +1,6 @@
+{
+  "files_scanned": 33,
+  "findings": 0,
+  "values_printed": false,
+  "scope": "V2 artifacts and both new reports; known provider patterns plus literal authentication assignments"
+}

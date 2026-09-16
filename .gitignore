@@ -173,3 +173,7 @@ benchmark/keys/
 
 # Reviewed experiment summary; bulk evidence remains under ignored output/.
 !docs/fix/A100_OPTIMIZED_RUN.md
+
+# Frozen V2 local tuning design reports are part of the reviewable release.
+!docs/fix/SECOND_TUNING_DATA_AND_FAILURE_AUDIT.md
+!docs/fix/SECOND_TUNING_EXPERIMENT_IMPLEMENTATION.md

@@ -1,0 +1,4530 @@
+{
+  "review_type": "blinded machine-agent review, round 3 final supplied revision; no human review claimed",
+  "role": "auditor",
+  "input_sha256": "3fde4c00c1c34c3ef06470f80a5139d9aa1d2fcadc56931474cb6a726329148c",
+  "blindness": {
+    "read_only_inputs": [
+      "tuning/second_domain_agnostic_v2/blind_review/auditor/packets.json",
+      "scripts/compact_contracts.py (round 1 contract read)"
+    ],
+    "targets_accessed": false,
+    "author_or_dataset_accessed": false,
+    "network_or_training_used": false,
+    "os_isolation": false,
+    "limitation": "Shared filesystem; blinding maintained by restricted reads rather than OS isolation."
+  },
+  "contract_clarification": "Uses prospective delivery_complete clarification: interrupted transport is insufficient; completed identifiable omissions are OMISSION; unverifiable excerpt/source/mapping is INSUFFICIENT_EVIDENCE. Must be present in actual prompt.",
+  "method": "Compared all 300 revised source/extraction pairs using sentence-difference assistance and inspected all resulting row deltas. Assessed annex scope, source consistency, core mutations, reference changes, chronology ambiguity and insufficient mappings independently of concealed labels. Layout wrappers and explicit End annex qualifications scope closing marker are treated as semantics-preserving when they retain attribution. A concurrent packet revision was detected by hash; final write was held to the stated SHA and all specifically modified contradiction/question rows were reinspected.",
+  "coverage": {
+    "expected": 300,
+    "observed": 300,
+    "reviewed": 300,
+    "unique_ids": 300,
+    "missing_ids": [],
+    "duplicate_ids": [],
+    "prediction_counts": {
+      "MATCH": 60,
+      "DIVERGENCE": 60,
+      "OMISSION": 60,
+      "ADDITION": 60,
+      "INSUFFICIENT_EVIDENCE": 60
+    }
+  },
+  "readiness": {
+    "clean_acceptance": false,
+    "within_annex_source_inconsistency_ids": [],
+    "ambiguous_later_next_ids": [],
+    "scope": "A blinded machine content review, not a human sign-off or validation of unseen targets; labels remain usable subject to documented issues.",
+    "ambiguous_question_paraphrase_ids": [
+      "shimmer2-auditor-document-256",
+      "shimmer2-auditor-document-286"
+    ],
+    "actual_blockers": [
+      "Rows 256 and 286 do not support a uniquely compelled DIVERGENCE versus MATCH judgment without clarifying what changed in their question referent or temporal event."
+    ],
+    "limitations_not_blockers": [
+      "Machine rather than human review",
+      "Repeated compositional structures and tiny insufficiency phrases",
+      "Annex addition scope vague but unsupported under either reading",
+      "Potential nonexistent-entry interpretation references, without changing fidelity comparison"
+    ]
+  },
+  "systemic_issues": [
+    "Substantive improvement: twelve claim structures and actual mutations now test number, planned/reported label, attributed account value, event versus recording date, submitted versus recorded state, negation, necessary condition, location, unit, date type, cross-entry referent, evidence attribution and epistemic polarity.",
+    "Explicit annex scope fixes earlier collisions between numbered claim facts and unrelated gaps, and preserves true annex omissions even when similar numbered claim text exists. Reordered matches explicitly close annex qualifications before numbered claims.",
+    "Previously observed eight within-annex occurrence/submission contradictions are repaired in the reviewed SHA; no such contradiction remains in this snapshot.",
+    "Two changed questions now replace Which entry came later? with What was entered later? These can still paraphrase each other in an entry-record context; altered wording alone does not uniquely compel DIVERGENCE.",
+    "Five repeated insufficiency patterns remain: interrupted CLM-A prefix, anaphoric sentence, isolated is token, absent-source marker, vague date/entry sentence. These establish limited insufficiency forms, not broad real-world ambiguity coverage.",
+    "The previous universal empty-required_refs shortcut is removed: owned refs persist for insufficient supplied-source cases. Empty refs now occur only with genuinely absent originals.",
+    "Ten domain noun substitutions and twenty rendering styles still account for much expansion. Fixed quantities/dates, one source span, repeated annex stock statements, five appended addition patterns, and identical context distractor limit independent substantive diversity.",
+    "Appended additions occur after annex delimiter; approval entry counts track numbered claims even though annex has separate entries. They remain unsupported but their intended scope is unclear.",
+    "The clarified delivery/omission rule must be part of production instructions. This review does not certify unseen target reasoning, adapter behavior, training readiness, or data independence."
+  ],
+  "rows": [
+    {
+      "example_id": "shimmer2-auditor-document-000",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-001",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The count is 11 clauses. (REF-40004) Extraction instead gives: CLM-A: The count is 12 clauses. (REF-40004)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 clauses. (REF-40004)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 12 clauses. (REF-40004)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-002",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The recording date is unavailable.",
+      "source_content_missing_or_replaced": [
+        "The recording date is unavailable."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-003",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 1 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 1 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-004",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 pulses. (REF-40016)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The recording date is unavailable.",
+        "The reporting date is unspecified.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-005",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-006",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The planned count is 11 cards. (REF-40024) Extraction instead gives: CLM-A: The reported count is 11 cards. (REF-40024)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 cards. (REF-40024)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The reported count is 11 cards. (REF-40024)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-007",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The recording date is unavailable.",
+      "source_content_missing_or_replaced": [
+        "The recording date is unavailable."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-008",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-009",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 quadrats. (REF-40036)",
+        "CLM-B: The reported count is 17 quadrats. (REF-40037)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The recording date is unavailable.",
+        "What was entered second?",
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-010",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-011",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The planned count is 11 clauses. (REF-40044) Extraction instead gives: CLM-A: The reported count is 11 clauses. (REF-40044)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 clauses. (REF-40044)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The reported count is 11 clauses. (REF-40044)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-012",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The recording date is unavailable.",
+      "source_content_missing_or_replaced": [
+        "The recording date is unavailable."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-013",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-014",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 pulses. (REF-40056)",
+        "CLM-B: The reported count is 11 pulses. (REF-40057)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The recording date is unavailable.",
+        "The third entry was not recorded.",
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-015",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-016",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: Account A says the count is 11 permits. (REF-40064) Extraction instead gives: CLM-A: Account A says the count is 17 permits. (REF-40064)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Account A says the count is 11 permits. (REF-40064)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: Account A says the count is 17 permits. (REF-40064)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-017",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The recording date is unavailable.",
+      "source_content_missing_or_replaced": [
+        "The recording date is unavailable."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-018",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-019",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Account A says the count is 11 crates. (REF-40076)",
+        "CLM-B: Account B says the same count is 17 crates. (REF-40077)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The recording date is unavailable.",
+        "The first entry recording date is missing.",
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-020",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-021",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The event occurred on 2041-02-03. (REF-40084) Extraction instead gives: CLM-A: The event occurred on 2041-02-09. (REF-40084)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-40084)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-09. (REF-40084)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-022",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The recording date is unavailable.",
+      "source_content_missing_or_replaced": [
+        "The recording date is unavailable."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-023",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-024",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-40096)",
+        "CLM-B: The event was recorded on 2041-02-09. (REF-40097)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The recording date is unavailable.",
+        "The submission was not submitted.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-025",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-026",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The first entry was submitted. (REF-40104) Extraction instead gives: CLM-A: The first entry was recorded. (REF-40104)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-40104)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The first entry was recorded. (REF-40104)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-027",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-028",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-029",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-40116)",
+        "CLM-B: The first entry was not recorded. (REF-40117)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The event date is missing.",
+        "The observation date is missing.",
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-030",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-031",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The event did not occur. (REF-40124) Extraction instead gives: CLM-A: The event occurred. (REF-40124)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event did not occur. (REF-40124)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The event occurred. (REF-40124)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-032",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-033",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-034",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event did not occur. (REF-40136)",
+        "CLM-B: The report of the event was recorded. (REF-40137)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The event date is missing.",
+        "What was entered first?",
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-035",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-036",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: Approval applies only if the count exceeds 10 exposures. (REF-40144) Extraction instead gives: CLM-A: Approval applies regardless of whether the count exceeds 10 exposures. (REF-40144)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 exposures. (REF-40144)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: Approval applies regardless of whether the count exceeds 10 exposures. (REF-40144)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-037",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-038",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading.",
+        "Necessary-only approval condition plus qualifying count does not entail approval, verification, or an external signing rule; appended assertion remains unsupported."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-039",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 clauses. (REF-40156)",
+        "CLM-B: The measured count is 11 clauses. (REF-40157)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The event date is missing.",
+        "The second entry was not submitted.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-040",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-041",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The count is 11 specimens in the northern section. (REF-40164) Extraction instead gives: CLM-A: The count is 11 specimens in the southern section. (REF-40164)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 specimens in the northern section. (REF-40164)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 11 specimens in the southern section. (REF-40164)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-042",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-043",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-044",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 cards in the northern section. (REF-40176)",
+        "CLM-B: The southern section reports 17 cards. (REF-40177)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The event date is missing.",
+        "The amendment ratification status is missing.",
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-045",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-046",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The count is 11 pulses. (REF-40184) Extraction instead gives: CLM-A: The count is 11 boxes. (REF-40184)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 pulses. (REF-40184)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 11 boxes. (REF-40184)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-047",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-048",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 2 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 2 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-049",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 flims. (REF-40196)",
+        "CLM-B: The transport container count is 11 boxes. (REF-40197)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The event date is missing.",
+        "Which entry came later?",
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-050",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-051",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The authorization date is 2041-02-01. (REF-40204) Extraction instead gives: CLM-A: The submission date is 2041-02-01. (REF-40204)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-40204)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The submission date is 2041-02-01. (REF-40204)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-052",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-053",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 3 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 3 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-054",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-40216)",
+        "CLM-B: The submission date is 2041-02-02. (REF-40217)",
+        "CLM-C: The event date is 2041-02-03. (REF-40218)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The submission date is unspecified.",
+        "The observation date is missing.",
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-055",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-056",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The first entry concerns the sensor rack. (REF-40224) Extraction instead gives: CLM-A: The second entry concerns the sensor rack. (REF-40224)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry concerns the sensor rack. (REF-40224)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The second entry concerns the sensor rack. (REF-40224)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-057",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The submission date is unspecified.",
+      "source_content_missing_or_replaced": [
+        "The submission date is unspecified."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-058",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: A supervisor approved all 3 entries.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "A supervisor approved all 3 entries."
+      ],
+      "issues": [
+        "Appended approval follows the annex scope delimiter but counts numbered claims; attribution to annex versus numbered entries is unclear. Unsupported under either reading."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-059",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Transport is explicitly incomplete and extraction ends mid-claim.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry concerns the zorb council. (REF-40236)",
+        "CLM-B: The second entry concerns a separate record. (REF-40237)",
+        "CLM-C: The third entry repeats the first entry. (REF-40238)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The submission date is unspecified.",
+        "What was entered first?",
+        "Whether the submission was submitted is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-060",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-061",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The count is 11 crates. (REF-40244) Extraction instead gives: CLM-A: The count is 11 crates. (REF-9999)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 crates. (REF-40244)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 11 crates. (REF-9999)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-062",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits What came next?",
+      "source_content_missing_or_replaced": [
+        "What came next?"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-063",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-064",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 exposures. (REF-40256)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The submission date is unspecified.",
+        "The second entry was not submitted.",
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-065",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-066",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The planned count is 11 offers. (REF-40264) Extraction instead gives: CLM-A: The planned count is 11 offers. (REF-40265)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 offers. (REF-40264)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The planned count is 11 offers. (REF-40265)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-067",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event did not occur.",
+      "source_content_missing_or_replaced": [
+        "The event did not occur."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-068",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-069",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 specimens. (REF-40276)",
+        "CLM-B: The reported count is 17 specimens. (REF-40277)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The submission date is unspecified.",
+        "The amendment ratification status is missing.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-070",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-071",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The planned count is 11 crates. (REF-40284) Extraction instead gives: CLM-A: The planned count is 11 crates. (REF-40285)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 crates. (REF-40284)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The planned count is 11 crates. (REF-40285)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-072",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The second entry event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The second entry event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-073",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-074",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 exposures. (REF-40296)",
+        "CLM-B: The reported count is 11 exposures. (REF-40297)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The submission date is unspecified.",
+        "Which entry came later?",
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-075",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-076",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: Account A says the count is 11 cards. (REF-40304) Extraction instead gives: CLM-A: Account A says the count is 11 cards. (REF-40305)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Account A says the count is 11 cards. (REF-40304)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: Account A says the count is 11 cards. (REF-40305)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-077",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The date is unavailable.",
+      "source_content_missing_or_replaced": [
+        "The date is unavailable."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-078",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-079",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Account A says the count is 11 quadrats. (REF-40316)",
+        "CLM-B: Account B says the same count is 17 quadrats. (REF-40317)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The authorization date is unavailable.",
+        "The reporting date is unspecified.",
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-080",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-081",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The event occurred on 2041-02-03. (REF-40324) Extraction instead gives: CLM-A: The event occurred on 2041-02-03. (REF-40325)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-40324)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-40325)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-082",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The recorder is unnamed.",
+      "source_content_missing_or_replaced": [
+        "The recorder is unnamed."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-083",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-084",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-40336)",
+        "CLM-B: The event was recorded on 2041-02-09. (REF-40337)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The authorization date is unavailable.",
+        "What was entered second?",
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-085",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-086",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The first entry was submitted. (REF-40344) Extraction instead gives: CLM-A: The first entry was submitted. (REF-40345)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-40344)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-40345)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-087",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits Which entry came previous?",
+      "source_content_missing_or_replaced": [
+        "Which entry came previous?"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-088",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-089",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-40356)",
+        "CLM-B: The first entry was not recorded. (REF-40357)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The authorization date is unavailable.",
+        "The third entry was not recorded.",
+        "Whether the submission was submitted is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-090",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-091",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The event did not occur. (REF-40364) Extraction instead gives: CLM-A: The event did not occur. (REF-40365)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event did not occur. (REF-40364)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The event did not occur. (REF-40365)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-092",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits No first entry exists.",
+      "source_content_missing_or_replaced": [
+        "No first entry exists."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Within-annex referent ambiguity: first entry is said not to exist but its interpretation is discussed; might describe an anticipated missing entry, but that reading is unstated."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-093",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-094",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event did not occur. (REF-40376)",
+        "CLM-B: The report of the event was recorded. (REF-40377)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The authorization date is unavailable.",
+        "The first entry recording date is missing.",
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-095",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-096",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: Approval applies only if the count exceeds 10 permits. (REF-40384) Extraction instead gives: CLM-A: Approval applies only if the count exceeds 10 permits. (REF-40385)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 permits. (REF-40384)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 permits. (REF-40385)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-097",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits What was entered third?",
+      "source_content_missing_or_replaced": [
+        "What was entered third?"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-098",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [
+        "Necessary-only approval condition plus qualifying count does not entail approval, verification, or an external signing rule; appended assertion remains unsupported."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-099",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 crates. (REF-40396)",
+        "CLM-B: The measured count is 11 crates. (REF-40397)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The authorization date is unavailable.",
+        "The submission was not submitted.",
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-100",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-101",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The count is 11 flims in the northern section. (REF-40404) Extraction instead gives: CLM-A: The count is 11 flims in the northern section. (REF-40405)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 flims in the northern section. (REF-40404)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 11 flims in the northern section. (REF-40405)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-102",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The reporting date is unspecified.",
+      "source_content_missing_or_replaced": [
+        "The reporting date is unspecified."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-103",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-104",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 offers in the northern section. (REF-40416)",
+        "CLM-B: The southern section reports 17 offers. (REF-40417)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The observation date is missing.",
+        "The recorder is unnamed.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-105",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-106",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The count is 11 exposures. (REF-40424) Extraction instead gives: CLM-A: The count is 11 exposures. (REF-40425)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 exposures. (REF-40424)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 11 exposures. (REF-40425)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-107",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits What was entered second?",
+      "source_content_missing_or_replaced": [
+        "What was entered second?"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-108",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-109",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 clauses. (REF-40436)",
+        "CLM-B: The transport container count is 11 boxes. (REF-40437)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The observation date is missing.",
+        "Which entry came previous?",
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-110",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-111",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The authorization date is 2041-02-01. (REF-40444) Extraction instead gives: CLM-A: The authorization date is 2041-02-01. (REF-40445)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-40444)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-40445)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-112",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The third entry was not recorded.",
+      "source_content_missing_or_replaced": [
+        "The third entry was not recorded."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-113",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-114",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-40456)",
+        "CLM-B: The submission date is 2041-02-02. (REF-40457)",
+        "CLM-C: The event date is 2041-02-03. (REF-40458)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The observation date is missing.",
+        "No first entry exists.",
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-115",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-116",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: CLM-A: The first entry concerns the observatory. (REF-40464) Extraction instead gives: CLM-A: The first entry concerns the observatory. (REF-40465)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry concerns the observatory. (REF-40464)"
+      ],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The first entry concerns the observatory. (REF-40465)"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-117",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The first entry recording date is missing.",
+      "source_content_missing_or_replaced": [
+        "The first entry recording date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-118",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An external rule requires every entry to be signed twice.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An external rule requires every entry to be signed twice."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-119",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry concerns the licence. (REF-40476)",
+        "CLM-B: The second entry concerns a separate record. (REF-40477)",
+        "CLM-C: The third entry repeats the first entry. (REF-40478)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The observation date is missing.",
+        "What was entered third?",
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-120",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-121",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The first entry interpretation is unclear. Extraction instead gives: The first entry interpretation is clear.",
+      "source_content_missing_or_replaced": [
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The first entry interpretation is clear."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-122",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The first entry interpretation is unclear.",
+      "source_content_missing_or_replaced": [
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-123",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-124",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 permits. (REF-40496)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The reporting date is unspecified.",
+        "The amendment effective date is unavailable.",
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-125",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-126",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The reporting date is unknown. Extraction instead gives: The reporting date is known.",
+      "source_content_missing_or_replaced": [
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The reporting date is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-127",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The reporting date is unknown.",
+      "source_content_missing_or_replaced": [
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-128",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-129",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 flims. (REF-40516)",
+        "CLM-B: The reported count is 17 flims. (REF-40517)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The reporting date is unspecified.",
+        "What came next?",
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-130",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-131",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The interpretation of the second entry remains unresolved. Extraction instead gives: The interpretation of the second entry remains resolved.",
+      "source_content_missing_or_replaced": [
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The interpretation of the second entry remains resolved."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-132",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The interpretation of the second entry remains unresolved.",
+      "source_content_missing_or_replaced": [
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-133",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-134",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 permits. (REF-40536)",
+        "CLM-B: The reported count is 11 permits. (REF-40537)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The reporting date is unspecified.",
+        "The event did not occur.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-135",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-136",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: Whether the event occurred is unknown. Extraction instead gives: Whether the event occurred is known.",
+      "source_content_missing_or_replaced": [
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "Whether the event occurred is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-137",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits Whether the event occurred is unknown.",
+      "source_content_missing_or_replaced": [
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-138",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-139",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Account A says the count is 11 specimens. (REF-40556)",
+        "CLM-B: Account B says the same count is 17 specimens. (REF-40557)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The reporting date is unspecified.",
+        "The second entry event date is missing.",
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-140",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-141",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The amendment ratification status remains unknown. Extraction instead gives: The amendment ratification status remains known.",
+      "source_content_missing_or_replaced": [
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The amendment ratification status remains known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-142",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The amendment ratification status remains unknown.",
+      "source_content_missing_or_replaced": [
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-143",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-144",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-40576)",
+        "CLM-B: The event was recorded on 2041-02-09. (REF-40577)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The reporting date is unspecified.",
+        "The date is unavailable.",
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-145",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-146",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The third entry recording date is uncertain. Extraction instead gives: The third entry recording date is certain.",
+      "source_content_missing_or_replaced": [
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The third entry recording date is certain."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-147",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The third entry recording date is uncertain.",
+      "source_content_missing_or_replaced": [
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-148",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-149",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-40596)",
+        "CLM-B: The first entry was not recorded. (REF-40597)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The amendment effective date is unavailable.",
+        "What came next?",
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-150",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-151",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: Whether the submission was submitted is unknown. Extraction instead gives: Whether the submission was submitted is known.",
+      "source_content_missing_or_replaced": [
+        "Whether the submission was submitted is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "Whether the submission was submitted is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-152",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The interpretation of the second entry remains unresolved.",
+      "source_content_missing_or_replaced": [
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-153",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-154",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event did not occur. (REF-40616)",
+        "CLM-B: The report of the event was recorded. (REF-40617)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The amendment effective date is unavailable.",
+        "The event did not occur.",
+        "Whether the submission was submitted is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-155",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-156",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The first entry interpretation is unclear. Extraction instead gives: The first entry interpretation is clear.",
+      "source_content_missing_or_replaced": [
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The first entry interpretation is clear."
+      ],
+      "issues": [
+        "Within-annex referent ambiguity: first entry is said not to exist but its interpretation is discussed; might describe an anticipated missing entry, but that reading is unstated."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-157",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The first entry interpretation is unclear.",
+      "source_content_missing_or_replaced": [
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-158",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [
+        "Necessary-only approval condition plus qualifying count does not entail approval, verification, or an external signing rule; appended assertion remains unsupported."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-159",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 quadrats. (REF-40636)",
+        "CLM-B: The measured count is 11 quadrats. (REF-40637)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The amendment effective date is unavailable.",
+        "The second entry event date is missing.",
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-160",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-161",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The reporting date is unknown. Extraction instead gives: The reporting date is known.",
+      "source_content_missing_or_replaced": [
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The reporting date is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-162",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The reporting date is unknown.",
+      "source_content_missing_or_replaced": [
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-163",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-164",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 pulses in the northern section. (REF-40656)",
+        "CLM-B: The southern section reports 17 pulses. (REF-40657)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The amendment effective date is unavailable.",
+        "The date is unavailable.",
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-165",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-166",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The interpretation of the second entry remains unresolved. Extraction instead gives: The interpretation of the second entry remains resolved.",
+      "source_content_missing_or_replaced": [
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The interpretation of the second entry remains resolved."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-167",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The interpretation of the second entry remains unresolved.",
+      "source_content_missing_or_replaced": [
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-168",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-169",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 crates. (REF-40676)",
+        "CLM-B: The transport container count is 11 boxes. (REF-40677)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The recorder is unnamed.",
+        "Which entry came previous?",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-170",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-171",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: Whether the event occurred is unknown. Extraction instead gives: Whether the event occurred is known.",
+      "source_content_missing_or_replaced": [
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "Whether the event occurred is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-172",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits Whether the event occurred is unknown.",
+      "source_content_missing_or_replaced": [
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-173",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-174",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-40696)",
+        "CLM-B: The submission date is 2041-02-02. (REF-40697)",
+        "CLM-C: The event date is 2041-02-03. (REF-40698)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The recorder is unnamed.",
+        "No first entry exists.",
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-175",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-176",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The amendment ratification status remains unknown. Extraction instead gives: The amendment ratification status remains known.",
+      "source_content_missing_or_replaced": [
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The amendment ratification status remains known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-177",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The amendment ratification status remains unknown.",
+      "source_content_missing_or_replaced": [
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-178",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: An independent inspector verified every qualification.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "An independent inspector verified every qualification."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-179",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry concerns the purchase lot. (REF-40716)",
+        "CLM-B: The second entry concerns a separate record. (REF-40717)",
+        "CLM-C: The third entry repeats the first entry. (REF-40718)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The recorder is unnamed.",
+        "What was entered third?",
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-180",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-181",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The recorder is unnamed. Extraction instead gives: The recorder is named.",
+      "source_content_missing_or_replaced": [
+        "The recorder is unnamed."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The recorder is named."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-182",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The count is 11 pulses. (REF-40728)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 pulses. (REF-40728)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-183",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-184",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 11 cards. (REF-40736)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What was entered first?",
+        "What was entered second?",
+        "Whether the submission was submitted is unknown."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-185",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-186",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered first? Extraction instead gives: What was entered third?",
+      "source_content_missing_or_replaced": [
+        "What was entered first?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered third?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-187",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The planned count is 11 quadrats. (REF-40748)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 quadrats. (REF-40748)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-188",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-189",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The planned count is 11 clauses. (REF-40756)",
+        "CLM-B: The reported count is 17 clauses. (REF-40757)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What was entered first?",
+        "The third entry was not recorded.",
+        "The first entry interpretation is unclear."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-190",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-191",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered first? Extraction instead gives: What was entered third?",
+      "source_content_missing_or_replaced": [
+        "What was entered first?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered third?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-192",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The planned count is 11 pulses. (REF-40768)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 pulses. (REF-40768)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-193",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-194",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The planned count is 11 cards. (REF-40776)",
+        "CLM-B: The reported count is 11 cards. (REF-40777)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What was entered first?",
+        "The first entry recording date is missing.",
+        "The reporting date is unknown."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-195",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-196",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered first? Extraction instead gives: What was entered third?",
+      "source_content_missing_or_replaced": [
+        "What was entered first?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered third?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-197",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: Account A says the count is 11 crates. (REF-40788)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Account A says the count is 11 crates. (REF-40788)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-198",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-199",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: Account A says the count is 11 flims. (REF-40796)",
+        "CLM-B: Account B says the same count is 17 flims. (REF-40797)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What was entered first?",
+        "The submission was not submitted.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-200",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-201",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered first? Extraction instead gives: What was entered third?",
+      "source_content_missing_or_replaced": [
+        "What was entered first?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered third?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-202",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The event occurred on 2041-02-03. (REF-40808)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-40808)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-203",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-204",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-40816)",
+        "CLM-B: The event was recorded on 2041-02-09. (REF-40817)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What was entered second?",
+        "The second entry was not submitted.",
+        "Whether the event occurred is unknown."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-205",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-206",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered second? Extraction instead gives: What was entered first?",
+      "source_content_missing_or_replaced": [
+        "What was entered second?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered first?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-207",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The first entry was submitted. (REF-40828)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-40828)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-208",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-209",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-40836)",
+        "CLM-B: The first entry was not recorded. (REF-40837)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What was entered second?",
+        "The amendment ratification status is missing.",
+        "The amendment ratification status remains unknown."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-210",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-211",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered second? Extraction instead gives: What was entered first?",
+      "source_content_missing_or_replaced": [
+        "What was entered second?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered first?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-212",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The event did not occur. (REF-40848)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event did not occur. (REF-40848)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-213",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-214",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The event did not occur. (REF-40856)",
+        "CLM-B: The report of the event was recorded. (REF-40857)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What was entered second?",
+        "Which entry came later?",
+        "The third entry recording date is uncertain."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-215",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-216",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered second? Extraction instead gives: What was entered first?",
+      "source_content_missing_or_replaced": [
+        "What was entered second?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered first?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-217",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: Approval applies only if the count exceeds 10 clauses. (REF-40868)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 clauses. (REF-40868)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-218",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [
+        "Necessary-only approval condition plus qualifying count does not entail approval, verification, or an external signing rule; appended assertion remains unsupported."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-219",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 specimens. (REF-40876)",
+        "CLM-B: The measured count is 11 specimens. (REF-40877)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What came next?",
+        "The second entry was not submitted.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-220",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-221",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What came next? Extraction instead gives: What came previous?",
+      "source_content_missing_or_replaced": [
+        "What came next?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What came previous?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-222",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The count is 11 cards in the northern section. (REF-40888)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 cards in the northern section. (REF-40888)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-223",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [
+        "Within-annex referent ambiguity: first entry is said not to exist but its interpretation is discussed; might describe an anticipated missing entry, but that reading is unstated."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-224",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 11 exposures in the northern section. (REF-40896)",
+        "CLM-B: The southern section reports 17 exposures. (REF-40897)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What came next?",
+        "The amendment ratification status is missing.",
+        "The first entry interpretation is unclear."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-225",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-226",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What came next? Extraction instead gives: What came previous?",
+      "source_content_missing_or_replaced": [
+        "What came next?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What came previous?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-227",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The count is 11 flims. (REF-40908)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 flims. (REF-40908)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-228",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-229",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The count is 11 quadrats. (REF-40916)",
+        "CLM-B: The transport container count is 11 boxes. (REF-40917)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "What came next?",
+        "Which entry came later?",
+        "The reporting date is unknown."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-230",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-231",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What came next? Extraction instead gives: What came previous?",
+      "source_content_missing_or_replaced": [
+        "What came next?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What came previous?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-232",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The authorization date is 2041-02-01. (REF-40928)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-40928)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-233",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-234",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-40936)",
+        "CLM-B: The submission date is 2041-02-02. (REF-40937)",
+        "CLM-C: The event date is 2041-02-03. (REF-40938)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "Which entry came previous?",
+        "The third entry was not recorded.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-235",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-236",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: Which entry came previous? Extraction instead gives: Which entry came later?",
+      "source_content_missing_or_replaced": [
+        "Which entry came previous?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "Which entry came later?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-237",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits CLM-A: The first entry concerns the zorb council. (REF-40948)",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry concerns the zorb council. (REF-40948)"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Omitted numbered claim cannot be reconstructed from annex statements because annex scope is explicitly separate; required reference selection alone would not restore omitted proposition."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-238",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The reported result was caused by equipment vibration.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The reported result was caused by equipment vibration."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-239",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Owned original is absent; context-only neighbor does not support comparison.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "CLM-A: The first entry concerns the transect. (REF-40956)",
+        "CLM-B: The second entry concerns a separate record. (REF-40957)",
+        "CLM-C: The third entry repeats the first entry. (REF-40958)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "Which entry came previous?",
+        "The first entry recording date is missing.",
+        "Whether the event occurred is unknown."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-240",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-241",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The second entry event date is missing. Extraction instead gives: The first entry event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The second entry event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The first entry event date is missing."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-242",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits Which entry came previous? What was entered third?",
+      "source_content_missing_or_replaced": [
+        "Which entry came previous?",
+        "What was entered third?"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-243",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-244",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 offers. (REF-40976)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "Which entry came previous?",
+        "The submission was not submitted.",
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-245",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-246",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The date is unavailable. Extraction instead gives: The date is known.",
+      "source_content_missing_or_replaced": [
+        "The date is unavailable."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-247",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The second entry was not submitted. The third entry was not recorded.",
+      "source_content_missing_or_replaced": [
+        "The second entry was not submitted.",
+        "The third entry was not recorded."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-248",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-249",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 crates. (REF-40996)",
+        "CLM-B: The reported count is 17 crates. (REF-40997)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The second entry was not submitted.",
+        "No first entry exists.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-250",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Within-annex referent ambiguity: first entry is said not to exist but its interpretation is discussed; might describe an anticipated missing entry, but that reading is unstated."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-251",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The amendment ratification status is missing. Extraction instead gives: The amendment ratification status is known.",
+      "source_content_missing_or_replaced": [
+        "The amendment ratification status is missing."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The amendment ratification status is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-252",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The second entry was not submitted. The first entry recording date is missing.",
+      "source_content_missing_or_replaced": [
+        "The second entry was not submitted.",
+        "The first entry recording date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-253",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-254",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The planned count is 11 offers. (REF-41016)",
+        "CLM-B: The reported count is 11 offers. (REF-41017)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The second entry was not submitted.",
+        "What was entered third?",
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-255",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-256",
+      "prediction": "DIVERGENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "Changed source content: Which entry came later? Extraction instead gives: What was entered later?",
+      "source_content_missing_or_replaced": [
+        "Which entry came later?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered later?"
+      ],
+      "issues": [
+        "Changed question from Which entry came later? to What was entered later? can be a natural paraphrase in an entry-record context. No annex facts clarify arrival versus entry time or identity versus content, so a unique DIVERGENCE judgment remains contestable."
+      ],
+      "alternative_labels": [
+        "MATCH"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-257",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The second entry was not submitted. The submission was not submitted.",
+      "source_content_missing_or_replaced": [
+        "The second entry was not submitted.",
+        "The submission was not submitted."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-258",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-259",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Account A says the count is 11 clauses. (REF-41036)",
+        "CLM-B: Account B says the same count is 17 clauses. (REF-41037)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The third entry was not recorded.",
+        "The event did not occur.",
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-260",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-261",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: No first entry exists. Extraction instead gives: No third entry exists.",
+      "source_content_missing_or_replaced": [
+        "No first entry exists."
+      ],
+      "extraction_content_added_or_replaced": [
+        "No third entry exists."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-262",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The third entry was not recorded. The amendment ratification status is missing.",
+      "source_content_missing_or_replaced": [
+        "The third entry was not recorded.",
+        "The amendment ratification status is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-263",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-264",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event occurred on 2041-02-03. (REF-41056)",
+        "CLM-B: The event was recorded on 2041-02-09. (REF-41057)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The third entry was not recorded.",
+        "The second entry event date is missing.",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-265",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-266",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered third? Extraction instead gives: What was entered second?",
+      "source_content_missing_or_replaced": [
+        "What was entered third?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered second?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-267",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The third entry was not recorded. Which entry came later?",
+      "source_content_missing_or_replaced": [
+        "The third entry was not recorded.",
+        "Which entry came later?"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-268",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-269",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry was submitted. (REF-41076)",
+        "CLM-B: The first entry was not recorded. (REF-41077)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The third entry was not recorded.",
+        "The date is unavailable.",
+        "Whether the event occurred is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-270",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-271",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: No first entry exists. Extraction instead gives: No third entry exists.",
+      "source_content_missing_or_replaced": [
+        "No first entry exists."
+      ],
+      "extraction_content_added_or_replaced": [
+        "No third entry exists."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-272",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event did not occur. The amendment ratification status is missing.",
+      "source_content_missing_or_replaced": [
+        "The event did not occur.",
+        "The amendment ratification status is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-273",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-274",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The event did not occur. (REF-41096)",
+        "CLM-B: The report of the event was recorded. (REF-41097)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The event did not occur.",
+        "The second entry event date is missing.",
+        "The amendment ratification status remains unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-275",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-276",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: What was entered third? Extraction instead gives: What was entered second?",
+      "source_content_missing_or_replaced": [
+        "What was entered third?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered second?"
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-277",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The event did not occur. Which entry came later?",
+      "source_content_missing_or_replaced": [
+        "The event did not occur.",
+        "Which entry came later?"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-278",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [
+        "Necessary-only approval condition plus qualifying count does not entail approval, verification, or an external signing rule; appended assertion remains unsupported."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-279",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: Approval applies only if the count exceeds 10 flims. (REF-41116)",
+        "CLM-B: The measured count is 11 flims. (REF-41117)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The event did not occur.",
+        "The date is unavailable.",
+        "The third entry recording date is uncertain."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-280",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-281",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The amendment ratification status is missing. Extraction instead gives: The amendment ratification status is known.",
+      "source_content_missing_or_replaced": [
+        "The amendment ratification status is missing."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The amendment ratification status is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-282",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits No first entry exists. The first entry recording date is missing.",
+      "source_content_missing_or_replaced": [
+        "No first entry exists.",
+        "The first entry recording date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-283",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-284",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 permits in the northern section. (REF-41136)",
+        "CLM-B: The southern section reports 17 permits. (REF-41137)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "No first entry exists.",
+        "What was entered third?",
+        "Whether the submission was submitted is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-285",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Within-annex referent ambiguity: first entry is said not to exist but its interpretation is discussed; might describe an anticipated missing entry, but that reading is unstated."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-286",
+      "prediction": "DIVERGENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "Changed source content: Which entry came later? Extraction instead gives: What was entered later?",
+      "source_content_missing_or_replaced": [
+        "Which entry came later?"
+      ],
+      "extraction_content_added_or_replaced": [
+        "What was entered later?"
+      ],
+      "issues": [
+        "Within-annex referent ambiguity: first entry is said not to exist but its interpretation is discussed; might describe an anticipated missing entry, but that reading is unstated.",
+        "Changed question from Which entry came later? to What was entered later? can be a natural paraphrase in an entry-record context. No annex facts clarify arrival versus entry time or identity versus content, so a unique DIVERGENCE judgment remains contestable."
+      ],
+      "alternative_labels": [
+        "MATCH"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-287",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits No first entry exists. The submission was not submitted.",
+      "source_content_missing_or_replaced": [
+        "No first entry exists.",
+        "The submission was not submitted."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [
+        "Within-annex referent ambiguity: first entry is said not to exist but its interpretation is discussed; might describe an anticipated missing entry, but that reading is unstated."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-288",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [
+        "Within-annex referent ambiguity: first entry is said not to exist but its interpretation is discussed; might describe an anticipated missing entry, but that reading is unstated."
+      ],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-289",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The count is 11 specimens. (REF-41156)",
+        "CLM-B: The transport container count is 11 boxes. (REF-41157)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The amendment ratification status is missing.",
+        "The first entry recording date is missing.",
+        "The first entry interpretation is unclear."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-290",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-291",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The second entry event date is missing. Extraction instead gives: The first entry event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The second entry event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The first entry event date is missing."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-292",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The amendment ratification status is missing. What was entered third?",
+      "source_content_missing_or_replaced": [
+        "The amendment ratification status is missing.",
+        "What was entered third?"
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-293",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-294",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The authorization date is 2041-02-01. (REF-41176)",
+        "CLM-B: The submission date is 2041-02-02. (REF-41177)",
+        "CLM-C: The event date is 2041-02-03. (REF-41178)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The amendment ratification status is missing.",
+        "The submission was not submitted.",
+        "The reporting date is unknown."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-295",
+      "prediction": "MATCH",
+      "confidence": "CONFIDENT",
+      "reasoning": "Claim content, reference assignment, annex scope, and all qualifications are preserved. Presentation/reordering does not change scope.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-296",
+      "prediction": "DIVERGENCE",
+      "confidence": "CONFIDENT",
+      "reasoning": "Changed source content: The date is unavailable. Extraction instead gives: The date is known.",
+      "source_content_missing_or_replaced": [
+        "The date is unavailable."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date is known."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-297",
+      "prediction": "OMISSION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction omits The first entry recording date is missing. The second entry event date is missing.",
+      "source_content_missing_or_replaced": [
+        "The first entry recording date is missing.",
+        "The second entry event date is missing."
+      ],
+      "extraction_content_added_or_replaced": [],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-298",
+      "prediction": "ADDITION",
+      "confidence": "CONFIDENT",
+      "reasoning": "Completed extraction adds unsupported content: The overall review passed without reservations.",
+      "source_content_missing_or_replaced": [],
+      "extraction_content_added_or_replaced": [
+        "The overall review passed without reservations."
+      ],
+      "issues": [],
+      "alternative_labels": [],
+      "invalid_task": false
+    },
+    {
+      "example_id": "shimmer2-auditor-document-299",
+      "prediction": "INSUFFICIENT_EVIDENCE",
+      "confidence": "UNCERTAIN",
+      "reasoning": "No verifiable extracted proposition or resolvable mapping is supplied; this fits the clarified insufficiency rule.",
+      "source_content_missing_or_replaced": [
+        "CLM-A: The first entry concerns the synthetic ward. (REF-41196)",
+        "CLM-B: The second entry concerns a separate record. (REF-41197)",
+        "CLM-C: The third entry repeats the first entry. (REF-41198)",
+        "The following qualifications concern a separate annex, not the numbered claim events.",
+        "The first entry recording date is missing.",
+        "Which entry came later?",
+        "The interpretation of the second entry remains unresolved."
+      ],
+      "extraction_content_added_or_replaced": [
+        "The date or entry mentioned there remains as stated."
+      ],
+      "issues": [
+        "Repeated minimal phrase is an easy insufficiency cue and omits all substantive content; realism/generalization remains limited."
+      ],
+      "alternative_labels": [
+        "OMISSION"
+      ],
+      "invalid_task": false
+    }
+  ]
+}
