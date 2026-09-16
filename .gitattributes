@@ -32,3 +32,7 @@ docs/fix/AUDITOR_CANONICAL_TUNING_RESULTS.md -text
 # Preserve local diagnosis evidence hashes across Windows/Linux checkouts.
 docs/fix/auditor_relation_diagnosis/** -text
 docs/fix/AUDITOR_RELATION_FAILURE_DIAGNOSIS.md -text
+
+tuning/auditor_linear_probe/** -text
+docs/fix/auditor_linear_probe_run/** -text
+docs/fix/AUDITOR_LINEAR_PROBE_RESULTS.md -text
