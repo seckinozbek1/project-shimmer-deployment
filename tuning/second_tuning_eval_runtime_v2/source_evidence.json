@@ -1,0 +1,500 @@
+{
+  "tools/remote_short_burst_probe.py": {
+    "sha256": "8809f854b89e5cd9cd220daf1027a8fe9b3ff99d1f1159fe8673b55d20a50d7a",
+    "functions": {
+      "write": {
+        "start": 8,
+        "end": 9
+      },
+      "main": {
+        "start": 10,
+        "end": 166
+      },
+      "blocked": {
+        "start": 27,
+        "end": 27
+      },
+      "sample": {
+        "start": 52,
+        "end": 66
+      },
+      "task": {
+        "start": 69,
+        "end": 76
+      },
+      "run_one": {
+        "start": 77,
+        "end": 81
+      },
+      "load": {
+        "start": 82,
+        "end": 92
+      },
+      "wrapper": {
+        "start": 93,
+        "end": 95
+      },
+      "producer_prompt": {
+        "start": 102,
+        "end": 105
+      },
+      "audit_prompt": {
+        "start": 107,
+        "end": 108
+      },
+      "call_task": {
+        "start": 109,
+        "end": 137
+      },
+      "owned": {
+        "start": 71,
+        "end": 75
+      },
+      "action": {
+        "start": 114,
+        "end": 136
+      }
+    }
+  },
+  "scripts/agent_wrapper.py": {
+    "sha256": "628cd9022a1911b1c54bf48dc2e805cb2a9115689178749bb9bf81d805ec10b6",
+    "functions": {
+      "_evict_generation_models": {
+        "start": 70,
+        "end": 97
+      },
+      "_checkpoint_is_prequantised": {
+        "start": 100,
+        "end": 127
+      },
+      "_local_checkpoint_path": {
+        "start": 130,
+        "end": 146
+      },
+      "_load_qwen": {
+        "start": 149,
+        "end": 241
+      },
+      "_is_rate_limit_error": {
+        "start": 249,
+        "end": 253
+      },
+      "_provider_timeout_s": {
+        "start": 264,
+        "end": 270
+      },
+      "_scrub_error": {
+        "start": 281,
+        "end": 288
+      },
+      "project_root": {
+        "start": 291,
+        "end": 292
+      },
+      "_as_config_file": {
+        "start": 308,
+        "end": 312
+      },
+      "candidate_config_paths": {
+        "start": 315,
+        "end": 332
+      },
+      "resolve_config_path": {
+        "start": 335,
+        "end": 345
+      },
+      "load_api_keys": {
+        "start": 348,
+        "end": 369
+      },
+      "_now": {
+        "start": 372,
+        "end": 372
+      },
+      "_match_balanced": {
+        "start": 375,
+        "end": 395
+      },
+      "_iter_balanced_json": {
+        "start": 398,
+        "end": 410
+      },
+      "_is_scalar": {
+        "start": 437,
+        "end": 438
+      },
+      "_is_flat_item": {
+        "start": 441,
+        "end": 452
+      },
+      "is_envelope": {
+        "start": 455,
+        "end": 461
+      },
+      "make_envelope": {
+        "start": 464,
+        "end": 483
+      },
+      "current_items": {
+        "start": 486,
+        "end": 504
+      },
+      "decode_items": {
+        "start": 507,
+        "end": 516
+      },
+      "__post_init__": {
+        "start": 577,
+        "end": 591
+      },
+      "_record_cost": {
+        "start": 861,
+        "end": 862
+      },
+      "check_constitution": {
+        "start": 629,
+        "end": 629
+      },
+      "call_claude": {
+        "start": 631,
+        "end": 708
+      },
+      "call_gpt": {
+        "start": 710,
+        "end": 712
+      },
+      "_call_gpt_locked": {
+        "start": 714,
+        "end": 785
+      },
+      "call_qwen": {
+        "start": 796,
+        "end": 854
+      },
+      "call_local": {
+        "start": 856,
+        "end": 925
+      },
+      "dispatch": {
+        "start": 927,
+        "end": 940
+      },
+      "_contract_missing": {
+        "start": 942,
+        "end": 968
+      },
+      "_finalize_envelope": {
+        "start": 970,
+        "end": 982
+      },
+      "parse_contract_output": {
+        "start": 984,
+        "end": 1084
+      },
+      "post_to_bus": {
+        "start": 1086,
+        "end": 1091
+      },
+      "_persist_contract_violation_raw_text": {
+        "start": 1093,
+        "end": 1146
+      },
+      "build_constitution_check": {
+        "start": 1148,
+        "end": 1149
+      },
+      "_output_contract_text": {
+        "start": 1151,
+        "end": 1176
+      },
+      "_finding_record_text": {
+        "start": 1178,
+        "end": 1228
+      },
+      "_field_forms_text": {
+        "start": 1230,
+        "end": 1251
+      },
+      "_worked_item_example": {
+        "start": 1253,
+        "end": 1296
+      },
+      "_role_anchor_text": {
+        "start": 1298,
+        "end": 1345
+      },
+      "prompt_template": {
+        "start": 1347,
+        "end": 1364
+      },
+      "_stable_agent_block": {
+        "start": 1366,
+        "end": 1383
+      },
+      "_execution_instructions": {
+        "start": 1385,
+        "end": 1388
+      },
+      "build_prompt": {
+        "start": 1390,
+        "end": 1418
+      },
+      "_dump_prompt_breakdown": {
+        "start": 1420,
+        "end": 1489
+      },
+      "run_task": {
+        "start": 1493,
+        "end": 1730
+      },
+      "_attempt": {
+        "start": 743,
+        "end": 754
+      }
+    }
+  },
+  "tuning/first_domain_agnostic_v1/train.py": {
+    "sha256": "2e791d956a13c4a709ca7fb4fd4c9b644912191769274f92acd613ebc2fd67da",
+    "functions": {
+      "authorization": {
+        "start": 12,
+        "end": 17
+      },
+      "runtime": {
+        "start": 19,
+        "end": 29
+      },
+      "validate_modules": {
+        "start": 31,
+        "end": 37
+      },
+      "train": {
+        "start": 39,
+        "end": 105
+      }
+    },
+    "tested_git_blob_sha256": "2e791d956a13c4a709ca7fb4fd4c9b644912191769274f92acd613ebc2fd67da",
+    "matches_tested_ignoring_line_endings": true
+  },
+  "tuning/first_domain_agnostic_v1/evaluation.py": {
+    "sha256": "26769b6f4b5c48dd6f90b8d91432bddeedb27170a20b64f6a8b0440c82e837ed",
+    "functions": {
+      "score": {
+        "start": 7,
+        "end": 13
+      },
+      "f1": {
+        "start": 15,
+        "end": 17
+      },
+      "selection_metrics": {
+        "start": 19,
+        "end": 40
+      },
+      "evaluate_rows": {
+        "start": 62,
+        "end": 77
+      },
+      "evaluate_dev": {
+        "start": 79,
+        "end": 85
+      },
+      "select": {
+        "start": 87,
+        "end": 95
+      },
+      "freeze_selection": {
+        "start": 97,
+        "end": 111
+      },
+      "verify_selection": {
+        "start": 113,
+        "end": 127
+      },
+      "paired_variants": {
+        "start": 129,
+        "end": 132
+      },
+      "__init__": {
+        "start": 44,
+        "end": 45
+      },
+      "__call__": {
+        "start": 46,
+        "end": 60
+      }
+    },
+    "tested_git_blob_sha256": "26769b6f4b5c48dd6f90b8d91432bddeedb27170a20b64f6a8b0440c82e837ed",
+    "matches_tested_ignoring_line_endings": true
+  },
+  "tools/first_tuning_remote.py": {
+    "sha256": "380f2ed64566a96a1d1a13e45fe03eef6216426f403d78e0905cd5939622d76d",
+    "functions": {
+      "write": {
+        "start": 23,
+        "end": 23
+      },
+      "utc": {
+        "start": 24,
+        "end": 24
+      },
+      "preflight": {
+        "start": 26,
+        "end": 42
+      },
+      "acquire": {
+        "start": 44,
+        "end": 62
+      },
+      "model_work": {
+        "start": 64,
+        "end": 138
+      },
+      "audit": {
+        "start": 71,
+        "end": 75
+      },
+      "event": {
+        "start": 79,
+        "end": 80
+      },
+      "sample": {
+        "start": 81,
+        "end": 93
+      },
+      "load": {
+        "start": 95,
+        "end": 98
+      },
+      "validate": {
+        "start": 101,
+        "end": 102
+      },
+      "adapt": {
+        "start": 105,
+        "end": 110
+      },
+      "step": {
+        "start": 113,
+        "end": 117
+      }
+    }
+  },
+  "tuning/second_domain_agnostic_v2/train.py": {
+    "sha256": "d8be86b0a2a438d6fb3f8c62afa095d8521e11bd552c45d643361402b459d1cd",
+    "functions": {
+      "authorize": {
+        "start": 16,
+        "end": 20
+      },
+      "adapter_identity": {
+        "start": 23,
+        "end": 25
+      },
+      "execute": {
+        "start": 28,
+        "end": 118
+      },
+      "offline": {
+        "start": 61,
+        "end": 62
+      }
+    }
+  },
+  "tools/second_tuning_remote.py": {
+    "sha256": "dfb7184adc951444c4c069bcf80cd7339989af6174e602826a935d4c2ce19860",
+    "functions": {
+      "write": {
+        "start": 9,
+        "end": 9
+      },
+      "filehash": {
+        "start": 10,
+        "end": 14
+      },
+      "boundary": {
+        "start": 16,
+        "end": 20
+      },
+      "check_scope": {
+        "start": 24,
+        "end": 38
+      },
+      "preflight": {
+        "start": 40,
+        "end": 56
+      },
+      "acquire": {
+        "start": 58,
+        "end": 69
+      },
+      "train": {
+        "start": 71,
+        "end": 155
+      },
+      "event": {
+        "start": 75,
+        "end": 77
+      },
+      "install": {
+        "start": 79,
+        "end": 130
+      },
+      "trace": {
+        "start": 132,
+        "end": 142
+      },
+      "load": {
+        "start": 84,
+        "end": 107
+      },
+      "step": {
+        "start": 111,
+        "end": 117
+      },
+      "sample": {
+        "start": 119,
+        "end": 129
+      },
+      "measured_generate": {
+        "start": 88,
+        "end": 105
+      }
+    }
+  },
+  "bounded_wrapper_tested_blob": {
+    "commit": "c342033e5d09654cdbaaf283879a9ee37764146b",
+    "sha256": "0a57693326bd420ad411ec9fc01249f6f4cce67a722ac8f61993a978f5696f10",
+    "generation_lines": [
+      875,
+      910
+    ],
+    "matches_current_ignoring_line_endings": false
+  },
+  "installed_transformers/generation/utils.py": {
+    "version": "4.51.3",
+    "sha256": "dc9044d10c00abe7d341f2e777fb623925ff59dda2c1d814ecc7d6a685ad2ee1",
+    "local_path": "C:\\Users\\secki\\anaconda3\\Lib\\site-packages\\transformers\\generation\\utils.py"
+  },
+  "installed_transformers/generation/configuration_utils.py": {
+    "version": "4.51.3",
+    "sha256": "79f90d88a378ae11a3d346b491a509690a51856895a67e9adc92c564fe36f203",
+    "local_path": "C:\\Users\\secki\\anaconda3\\Lib\\site-packages\\transformers\\generation\\configuration_utils.py"
+  },
+  "installed_transformers/models/qwen2/modeling_qwen2.py": {
+    "version": "4.51.3",
+    "sha256": "1760c628019995d3564c8572be6c5149f488b6c3aa95ceda16099c2516e146ff",
+    "local_path": "C:\\Users\\secki\\anaconda3\\Lib\\site-packages\\transformers\\models\\qwen2\\modeling_qwen2.py"
+  },
+  "installed_transformers/modeling_utils.py": {
+    "version": "4.51.3",
+    "sha256": "bf3f2b4314492a5148d69bde5ef23dbe0c63a9224970b5e83a22af0d10269a0c",
+    "local_path": "C:\\Users\\secki\\anaconda3\\Lib\\site-packages\\transformers\\modeling_utils.py"
+  },
+  "peft_source": {
+    "pinned_version": "0.15.2",
+    "locally_available": false,
+    "network_fetch": false,
+    "limitation": "PEFT internals not directly source-verified locally; future pinned-runtime activation/dtype/cache effect gates required"
+  }
+}

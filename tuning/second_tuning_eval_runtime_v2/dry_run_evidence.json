@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "prompts": 60,
+  "historical_prompt_hash_matches": 60,
+  "tokenization_paths_equal": 60,
+  "model_weight_opens": 0,
+  "model_generations": 0,
+  "network_calls": 0,
+  "auditor_executions": 0,
+  "protected_accesses": 0,
+  "note": "Audit-hook enforced dry run; adapter byte hashing was a separate explicitly named phase"
+}

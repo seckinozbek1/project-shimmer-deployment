@@ -1,0 +1,12 @@
+{
+  "role": "producer",
+  "checkpoint": 120,
+  "split": "canonical",
+  "files": {
+    "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+    "adapter_model.safetensors": "3f1e12d107f1206641902565b28ea6217d70ff2768c321a216227dbc21b702a6"
+  },
+  "method": "Streaming byte hashes only; no safetensors/tensor/model load",
+  "verified": true,
+  "weights_modified": false
+}

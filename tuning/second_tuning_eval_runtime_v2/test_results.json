@@ -1,0 +1,10 @@
+{
+  "tests": 50,
+  "failures": 0,
+  "errors": 0,
+  "passed": true,
+  "real_model_generations": 0,
+  "training_updates": 0,
+  "effect_proofs": "Executed mock training/cache/inference lifecycle, exact pinned Qwen cache-guard AST, actual historical callback on foreign frames, filesystem/network denial, separate telemetry process and raw-before-score persistence",
+  "limitation": "Local Torch import aborts with Anaconda duplicate OpenMP runtime; no unsafe override used. Inference lifecycle uses an explicit stand-in. No real model/GPU token-equivalence or throughput proof; future pinned-runtime preflight and control gate remain mandatory"
+}

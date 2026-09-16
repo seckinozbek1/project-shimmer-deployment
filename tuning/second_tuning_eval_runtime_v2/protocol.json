@@ -1,0 +1,538 @@
+{
+  "name": "second-tuning-eval-runtime-v2",
+  "readiness": "LOCAL_DESIGN_ONLY",
+  "source_experiment": "second-domain-agnostic-v2",
+  "frozen_v2_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+  "historical_pilot_verdict": "SECOND_TUNING_CANONICAL_PILOT_INDETERMINATE",
+  "FULL_GROUPED_CV_CONTINUATION_RECOMMENDED": false,
+  "operator_authorized": false,
+  "cloud_authorized": false,
+  "role": "producer",
+  "checkpoint": 120,
+  "model_id": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+  "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+  "base_weight_hashes": {
+    "model.safetensors": "99b85155b7bb40344d8c3938c8ec1147b27028804bca5d2e5559cb8e6533747d"
+  },
+  "adapter": {
+    "role": "producer",
+    "checkpoint": 120,
+    "split": "canonical",
+    "files": {
+      "adapter_config.json": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+      "adapter_model.safetensors": "3f1e12d107f1206641902565b28ea6217d70ff2768c321a216227dbc21b702a6"
+    },
+    "method": "Streaming byte hashes only; no safetensors/tensor/model load",
+    "verified": true,
+    "weights_modified": false
+  },
+  "tokenizer_asset_hashes": {
+    "config.json": "c9b481809ae2e99227ac323b77a9da0b5387a0a21f46329327132273435fa3f7",
+    "generation_config.json": "424e77633729a4c63a0810e0fa32e3344b03499cd3a0b2fc626bfae19e7eb923",
+    "tokenizer.json": "9c5ae00e602b8860cbd784ba82a8aa14e8feecec692e7076590d014d7b7fdafa",
+    "tokenizer_config.json": "0553ada6e92b1a29b4431c72782c6e5e6ab675ef0b20ceb2833cd1074c7fb932",
+    "special_tokens_map.json": "b5acd1507cb3a3539e63369cb4a2b675a599cf13afe62282d371518288967797",
+    "added_tokens.json": "58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b",
+    "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+    "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+  },
+  "generation_kwargs": {
+    "do_sample": false,
+    "num_beams": 1,
+    "use_cache": true,
+    "max_new_tokens": 288,
+    "eos_token_id": [
+      151645
+    ],
+    "pad_token_id": 151654
+  },
+  "architecture": "qwen2",
+  "dtype": "bfloat16",
+  "attention": "eager",
+  "quantization": {
+    "_load_in_4bit": true,
+    "_load_in_8bit": false,
+    "bnb_4bit_compute_dtype": "bfloat16",
+    "bnb_4bit_quant_storage": "uint8",
+    "bnb_4bit_quant_type": "nf4",
+    "bnb_4bit_use_double_quant": true,
+    "llm_int8_enable_fp32_cpu_offload": false,
+    "llm_int8_has_fp16_weight": false,
+    "llm_int8_skip_modules": [
+      "lm_head",
+      "multi_modal_projector",
+      "merger",
+      "modality_projection"
+    ],
+    "llm_int8_threshold": 6.0,
+    "load_in_4bit": true,
+    "load_in_8bit": false,
+    "quant_method": "bitsandbytes"
+  },
+  "lora": {
+    "r": 8,
+    "lora_alpha": 16,
+    "lora_dropout": 0.05,
+    "bias": "none",
+    "task_type": "CAUSAL_LM",
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "batch_size": 1,
+  "no_adapter_merge": true,
+  "dev_ids": [
+    "shimmer2-producer-document-045",
+    "shimmer2-producer-document-046",
+    "shimmer2-producer-document-047",
+    "shimmer2-producer-document-048",
+    "shimmer2-producer-document-049",
+    "shimmer2-producer-document-050",
+    "shimmer2-producer-document-051",
+    "shimmer2-producer-document-052",
+    "shimmer2-producer-document-053",
+    "shimmer2-producer-document-054",
+    "shimmer2-producer-document-055",
+    "shimmer2-producer-document-056",
+    "shimmer2-producer-document-057",
+    "shimmer2-producer-document-058",
+    "shimmer2-producer-document-059",
+    "shimmer2-producer-document-135",
+    "shimmer2-producer-document-136",
+    "shimmer2-producer-document-137",
+    "shimmer2-producer-document-138",
+    "shimmer2-producer-document-139",
+    "shimmer2-producer-document-140",
+    "shimmer2-producer-document-141",
+    "shimmer2-producer-document-142",
+    "shimmer2-producer-document-143",
+    "shimmer2-producer-document-144",
+    "shimmer2-producer-document-145",
+    "shimmer2-producer-document-146",
+    "shimmer2-producer-document-147",
+    "shimmer2-producer-document-148",
+    "shimmer2-producer-document-149",
+    "shimmer2-producer-document-150",
+    "shimmer2-producer-document-151",
+    "shimmer2-producer-document-152",
+    "shimmer2-producer-document-153",
+    "shimmer2-producer-document-154",
+    "shimmer2-producer-document-155",
+    "shimmer2-producer-document-156",
+    "shimmer2-producer-document-157",
+    "shimmer2-producer-document-158",
+    "shimmer2-producer-document-159",
+    "shimmer2-producer-document-160",
+    "shimmer2-producer-document-161",
+    "shimmer2-producer-document-162",
+    "shimmer2-producer-document-163",
+    "shimmer2-producer-document-164",
+    "shimmer2-producer-document-270",
+    "shimmer2-producer-document-271",
+    "shimmer2-producer-document-272",
+    "shimmer2-producer-document-273",
+    "shimmer2-producer-document-274",
+    "shimmer2-producer-document-275",
+    "shimmer2-producer-document-276",
+    "shimmer2-producer-document-277",
+    "shimmer2-producer-document-278",
+    "shimmer2-producer-document-279",
+    "shimmer2-producer-document-280",
+    "shimmer2-producer-document-281",
+    "shimmer2-producer-document-282",
+    "shimmer2-producer-document-283",
+    "shimmer2-producer-document-284"
+  ],
+  "control_ids": [
+    "shimmer2-producer-document-045",
+    "shimmer2-producer-document-055",
+    "shimmer2-producer-document-140",
+    "shimmer2-producer-document-150",
+    "shimmer2-producer-document-160",
+    "shimmer2-producer-document-275"
+  ],
+  "control_positions_zero_based": [
+    0,
+    10,
+    20,
+    30,
+    40,
+    50
+  ],
+  "historical_trace_ast_sha256": "f59e5cbd306a88500c65a5b9e23df0cf6623697b1deecdf7fbf5b9916b8a86b5",
+  "cache_preflight_id": "shimmer2-producer-document-045",
+  "cache_preflight_calls": 2,
+  "prompt_bindings": {
+    "shimmer2-producer-document-045": {
+      "prompt_sha256": "c728b87b455e83792bb12bb9bc312e72586ec30e467c9eac83e93caf91caa0f5",
+      "input_ids_sha256": "ca4e918d01495d100e4c1b75f47c4e63cb5c41ca44cdcad1e0ecfc94b8c33c2a",
+      "input_length": 711
+    },
+    "shimmer2-producer-document-046": {
+      "prompt_sha256": "fa68f5b4048b2eff3348ab48f79cffcf84da183d6885b9a9ab530dfc8111e0d7",
+      "input_ids_sha256": "ec3f02ce48f47ee7eef1af419c621eda2d098ea92be75eecc5af10b4da6f8ee4",
+      "input_length": 605
+    },
+    "shimmer2-producer-document-047": {
+      "prompt_sha256": "ef3bc82495a6ba8df8a2a650010c8240e88e30a520932914c974ada4554db2c3",
+      "input_ids_sha256": "a712c83c70ab78be8d69a9c06376f948361016ad9d4ce17883bfbfa2483ad312",
+      "input_length": 627
+    },
+    "shimmer2-producer-document-048": {
+      "prompt_sha256": "b81975d4cfbeded1caa2689b0005728641f309991e11ca859571a6b4b29f3752",
+      "input_ids_sha256": "b6822271a2b1722dfcfa2ca3bb9dcf4005ed487dde5b468b415ceaece701a972",
+      "input_length": 676
+    },
+    "shimmer2-producer-document-049": {
+      "prompt_sha256": "754654fcc6407c33e1e7685d2168ef9698f4f3b273e88e41a22781e69851c533",
+      "input_ids_sha256": "64d7a508f591c454676cbc65eda22a4a1d0efc922b7e4cfba8bf5b0703379f2c",
+      "input_length": 721
+    },
+    "shimmer2-producer-document-050": {
+      "prompt_sha256": "c83360cd8547ab0ce66b755c7678a050658b48989acce88eb37e7ac2bb2dab8d",
+      "input_ids_sha256": "06cf82b3fa75417b2d1339b540d8b0f499b5f66af6ead5e198c19894dd392ab9",
+      "input_length": 607
+    },
+    "shimmer2-producer-document-051": {
+      "prompt_sha256": "88c537023457491380a68959f703e6aa91844a476031fb174943fcde2192d010",
+      "input_ids_sha256": "316e8735d4556c65e5f493a1514c6ca19ee95cdb6d28c997c440f5ed3274cd64",
+      "input_length": 617
+    },
+    "shimmer2-producer-document-052": {
+      "prompt_sha256": "27c546709f14a2c3974f79db31723bb2573102520b8bf076826f2c4f9e5fe78f",
+      "input_ids_sha256": "b8f5c182d123b4ab3c5bb53e7dd6465f0e6f53f8cb7c3fb2192d2e0dd2ae5d1c",
+      "input_length": 691
+    },
+    "shimmer2-producer-document-053": {
+      "prompt_sha256": "40e79c5e7c5048d895f38e328342c4e6c1a1b4fc26220e99df1e4786585817e8",
+      "input_ids_sha256": "44807532130ee4d3ae1e575f6c72db47571aba47277ba1c9f35d0607621a6aba",
+      "input_length": 711
+    },
+    "shimmer2-producer-document-054": {
+      "prompt_sha256": "f028d7be887a6c97d2e6b462e389570aa6bb62217cfe50f244a7b2cf14fcfd61",
+      "input_ids_sha256": "607b924510b551c7422ce4210c65340610c0dbab198b5d06843435665b4f4c73",
+      "input_length": 574
+    },
+    "shimmer2-producer-document-055": {
+      "prompt_sha256": "3f634711bd0ba857b592ff315908b6de0899f47fa811deb37b53ab5ed22fa06a",
+      "input_ids_sha256": "8e44943fafdc5ca1eb5f6f9bd9bea5cb1ef8ada9fe5f7e7b77399caa87273302",
+      "input_length": 631
+    },
+    "shimmer2-producer-document-056": {
+      "prompt_sha256": "6c38e31ef2e5fecf112ce79dc21c6aa7b5edf141debd93dd57232d3df16d6a46",
+      "input_ids_sha256": "5b1570d8c82890d5fc3f99f0cf01660cfef3f689fdb6837f16607761f5cc6a94",
+      "input_length": 687
+    },
+    "shimmer2-producer-document-057": {
+      "prompt_sha256": "db27901a25d3f6afaa6fe108bd18a72060ddaa1c308c9d914ad73e826df5691f",
+      "input_ids_sha256": "8021af9c77879f02fcf00a5ad82aad572387c0110248b4b56a4ae72c2443134f",
+      "input_length": 709
+    },
+    "shimmer2-producer-document-058": {
+      "prompt_sha256": "2760c4e7efaf46c6f5800660fd26c6d90065e9c499f65ee0bc5b41c89b26e475",
+      "input_ids_sha256": "348dc6f78e794acac1051a833cf21d30795fadd2ea607decf42d7d1b2e5ab259",
+      "input_length": 571
+    },
+    "shimmer2-producer-document-059": {
+      "prompt_sha256": "8b37aac4397fb6b2c78130778b254f3f7ed328088d6fd531a98be95e6d5a9579",
+      "input_ids_sha256": "3f24a398bb7d3458328838b768b8f4cc6a055f770ab59753f2b9cfc33061577a",
+      "input_length": 577
+    },
+    "shimmer2-producer-document-135": {
+      "prompt_sha256": "47c2a63b7be48a128182644318e4038bb88388f4c3d8949c466ee42356e7d94b",
+      "input_ids_sha256": "8f88b1e98636f6f408db729b9f69cd115cdfd73a4ac2519e3e3831405d911244",
+      "input_length": 628
+    },
+    "shimmer2-producer-document-136": {
+      "prompt_sha256": "43f04167cc0cd8df0cb41b93c487f70941708ef1a34fba4432220fd968d3d5fd",
+      "input_ids_sha256": "02dd2b26415fc81611b104cd79e7c8a53f99240eac55252022b3349967cba146",
+      "input_length": 706
+    },
+    "shimmer2-producer-document-137": {
+      "prompt_sha256": "acf5aea8e48ea20636c82bb67af75683fcdf386737c5a3a83f96b9784c44bca8",
+      "input_ids_sha256": "1d7dfd26b3887019cff0912f6e29056f290d9ead3fc8e633f079501d0507ca10",
+      "input_length": 730
+    },
+    "shimmer2-producer-document-138": {
+      "prompt_sha256": "bff2145c529caf167e0b7e66ddb2318f4c3ae0c1b24ec07c115290d39c25046c",
+      "input_ids_sha256": "792e3bb9a81f2494a901b75e4e7dc9283211eff957cf339c908f0e6cc2bc9b86",
+      "input_length": 579
+    },
+    "shimmer2-producer-document-139": {
+      "prompt_sha256": "008971422dfd778040b19561d20227bb5f9320d77bbd6ba42a9e1702b62fd830",
+      "input_ids_sha256": "7e475536698bdbea661287e4a5db402c9d691683444a8f0aec59b1e0450d8a04",
+      "input_length": 641
+    },
+    "shimmer2-producer-document-140": {
+      "prompt_sha256": "6898d9e3a7bf1c873d182ff7ba124d3b76685cee514e2bb05f6b388c922b8941",
+      "input_ids_sha256": "8dcc6424f43d70199fee02c47ccca47f7f1a5e244247c59e28ef2ab494512aa7",
+      "input_length": 703
+    },
+    "shimmer2-producer-document-141": {
+      "prompt_sha256": "48ec91ddf46897296b48976f6abd4fd4cf5f544dc67424971e321149ad39e59f",
+      "input_ids_sha256": "7bdc0b87a9debc16361759644e6d7f1860a02a6eda43e67d92c9500561824373",
+      "input_length": 726
+    },
+    "shimmer2-producer-document-142": {
+      "prompt_sha256": "24b08680c8a596ceed6403fdcf5b3db36f718dc6f256ce44ca489a8bd6b7bc20",
+      "input_ids_sha256": "0543f0ac4bb71c76594a0b523acd61fcfdf4b2362f123fd2ad51ecf21b384c43",
+      "input_length": 613
+    },
+    "shimmer2-producer-document-143": {
+      "prompt_sha256": "277f3081ad6310856a1d29f03e6b93709ac7c19401ae6d2e783c30b0e4d7ad34",
+      "input_ids_sha256": "9489ddfc486ac075180ff53dcf932216171e97d8524a8ad8d21a62f05d58b387",
+      "input_length": 641
+    },
+    "shimmer2-producer-document-144": {
+      "prompt_sha256": "9e9c2874a48727e3edd4a2a5de1c560968b35f9cce6fc4032d0d22f8b53cfa68",
+      "input_ids_sha256": "8cff1d95b9eff4462119761c111a3c5ae2dca73b768ee0fc380b67bbc305953c",
+      "input_length": 690
+    },
+    "shimmer2-producer-document-145": {
+      "prompt_sha256": "e8e6629bca327e7a6c8f59509843f20166823986eb6a8c6ec9d63404c9c291a5",
+      "input_ids_sha256": "b98f676d257e3966eb421f976f507ca66c5a8a660d66ef0368c3ebdb4d79f5b2",
+      "input_length": 734
+    },
+    "shimmer2-producer-document-146": {
+      "prompt_sha256": "2ac3a9d0611ab69c0b420d4fea6feaecd3d874fdd38df7377451dc6216e819a4",
+      "input_ids_sha256": "197ddc907e8fbc5d4ffb2882b59552df9339c23a55859831f8b8bdf8f2250d0e",
+      "input_length": 616
+    },
+    "shimmer2-producer-document-147": {
+      "prompt_sha256": "313d9537b49f0e07c95418f010a0d36f78ec28433b09c26074884d7f3e235346",
+      "input_ids_sha256": "0ac15f3a66c13348d95fee38ddb569170e735cd10757cf3ba9f99af57690dced",
+      "input_length": 624
+    },
+    "shimmer2-producer-document-148": {
+      "prompt_sha256": "88285ab2268d1cee6581c57b6cae5a4ca19bddd1fa5f6b9167e282069e9c411a",
+      "input_ids_sha256": "2e976842fa3b32cb826d9e870f8c288d0518ec2351eab7e98c5cd6481cba5a5f",
+      "input_length": 580
+    },
+    "shimmer2-producer-document-149": {
+      "prompt_sha256": "cb336b4a35ee1c18783ae22319e7c59c808730c7741ef12623812bb722627c75",
+      "input_ids_sha256": "5a3477617d64c17600abb7f68ab186dac9e486007f03870f69ae1f5be8ab6b21",
+      "input_length": 580
+    },
+    "shimmer2-producer-document-150": {
+      "prompt_sha256": "503d177d08ae52a4bd42b87561f9988077c1aacb2e0445d3acfca5ce4aa46837",
+      "input_ids_sha256": "693434da17a94f01cb495da9ffb5df0975a92b9487bbcb38a8f094feb8f70d03",
+      "input_length": 715
+    },
+    "shimmer2-producer-document-151": {
+      "prompt_sha256": "cebee4adf3d1d7c82f1c05364cc9921cdcad700ba89da11380f51ff44b5095ff",
+      "input_ids_sha256": "91d1069b7de0076f8fe6ffb62855301061f7665fa1c96c9f11780aa4c3a49275",
+      "input_length": 738
+    },
+    "shimmer2-producer-document-152": {
+      "prompt_sha256": "d7b2bb5479d5bd66a2676003312d91932e1a11bd6ab2ca0c3aa16db5aec45056",
+      "input_ids_sha256": "e35c9936b2be36e36882dcac6a3b8d7b21c2d6bfa0a2f594c739f7fb23dd2ea1",
+      "input_length": 582
+    },
+    "shimmer2-producer-document-153": {
+      "prompt_sha256": "dc76e49f4058f5c8a8872f65e98f79e486d48b447e61639da28d4eef31c3520c",
+      "input_ids_sha256": "5253bc2df3ac2ef0bcbd3a5b3d6f84b137f58422a62b040a869dd426f99d6062",
+      "input_length": 649
+    },
+    "shimmer2-producer-document-154": {
+      "prompt_sha256": "c47dcb5bcc35c17850a9064fc4fe3a8c3bea7d3859c98ed087cdcd2787a3789a",
+      "input_ids_sha256": "92144b6e0f06a049d374a882089f824c322ff34511cacfc9f980050cfda77efc",
+      "input_length": 713
+    },
+    "shimmer2-producer-document-155": {
+      "prompt_sha256": "43a159d9509b689b9424aad7e886df9c5b9768e202be6dbe39500f611e297ce1",
+      "input_ids_sha256": "a7d5b5c5a815c50031366c7d35f169b298f029c13c83db11594aeeb57d91c2f2",
+      "input_length": 735
+    },
+    "shimmer2-producer-document-156": {
+      "prompt_sha256": "bf8c2a7ebf5f009c9aae56f6cd4da49833c3a17136f526e43410d1fe84baf81d",
+      "input_ids_sha256": "6789583ff2db4017637fdcf235cb6738a0270e102b4ac96d42fffb064d6b3f94",
+      "input_length": 618
+    },
+    "shimmer2-producer-document-157": {
+      "prompt_sha256": "e575476e487f36793914ca1a3b91acb24ec24606c65ef4faf6087b0fa3d7be3b",
+      "input_ids_sha256": "60908ce64a65d5695b22dfaeb82f826dd68e6158d20d53081a0e4714969780ba",
+      "input_length": 650
+    },
+    "shimmer2-producer-document-158": {
+      "prompt_sha256": "969f54aabc4c3690639788744ad83971c4255ecda4308a17855f078c316b8ae1",
+      "input_ids_sha256": "4bc6cad2fa9e104aef6ef778481ac9f8865a3f23c0b6ef9bd0eadf8e01af12d3",
+      "input_length": 697
+    },
+    "shimmer2-producer-document-159": {
+      "prompt_sha256": "074d2a699ebd94461c4efce9ccaec08b51c0f0c52695f441529fed039d09207e",
+      "input_ids_sha256": "979d3d730e88e8f4fe4c6f0637833b8b4ecd6e0b99534ef790f903c161c0db41",
+      "input_length": 743
+    },
+    "shimmer2-producer-document-160": {
+      "prompt_sha256": "f34f59dadeff4905301e930a3330c6490071c16819f4be6cc6af3667979f1a53",
+      "input_ids_sha256": "36bf717eac2387e277b05ead79efaa60f8ac62a72ec76649012c6c9c574baa41",
+      "input_length": 621
+    },
+    "shimmer2-producer-document-161": {
+      "prompt_sha256": "d5e77fb16ca8358b16e388b1df646162fed4b24d84330ba72e3b69f97d4cc924",
+      "input_ids_sha256": "0e547af42de4fe0fc5fc434038a0a79cce2161638752952e69222ab9aacd289f",
+      "input_length": 628
+    },
+    "shimmer2-producer-document-162": {
+      "prompt_sha256": "e444c85f55b5d18548799a2d569b0e0d19a150ee9edb96ce9224cdf255ba4950",
+      "input_ids_sha256": "7dfd8a058839c72d3479817e90d7e1135db83edd8a55e136b88f58a1cb35ccbb",
+      "input_length": 712
+    },
+    "shimmer2-producer-document-163": {
+      "prompt_sha256": "21743146a734906cd17bbb456c7e3360c5aee03573f68a32ec6b084cd56b76c6",
+      "input_ids_sha256": "e9e8dd777375ec507a8ccfaacfb28b3068b4175a44d74aab9e3986f3ea68d3bd",
+      "input_length": 585
+    },
+    "shimmer2-producer-document-164": {
+      "prompt_sha256": "15b1582620d22f07129856ce77aa5d52890c17ac37a224fe543756aa1afd6b2b",
+      "input_ids_sha256": "4ce56a079fd37bfee25cd1449c973297c11a807c43665d1f8b4a28f66cf6febb",
+      "input_length": 582
+    },
+    "shimmer2-producer-document-270": {
+      "prompt_sha256": "3d0d5803daa93e4a2b2bf983055cc16e0a8a52601d4003bc4dfa5ae5dbf5670b",
+      "input_ids_sha256": "2cf408131d11246ca22095c178d8c9fd652aa93149f62503bd153f96d2bf7761",
+      "input_length": 683
+    },
+    "shimmer2-producer-document-271": {
+      "prompt_sha256": "6a5738f2997a0543102b5fe6a94d66344ccb536d12b02b4af6888cb722c58fa7",
+      "input_ids_sha256": "8900a6f269e1eb5ba54a21c33b11d64eb36b438c3d78dca35c74a69cf3db5bc0",
+      "input_length": 719
+    },
+    "shimmer2-producer-document-272": {
+      "prompt_sha256": "11f596f66c7b134feaf569ad22a9160c2ce6bc6c1fdf751860c25f3084a6ce10",
+      "input_ids_sha256": "857c0f4a2ef0809dacf84c01d7653131a1709a4efa4ffc2ad64fa54479996d89",
+      "input_length": 610
+    },
+    "shimmer2-producer-document-273": {
+      "prompt_sha256": "2d67381702ca670fee847d9373de15a3b544d00b5a99a017a552ce02b8cc9891",
+      "input_ids_sha256": "4e01ad99de7f80f36c55c9364c4911d2c85d41042bdcd28558b8a384930d1c1a",
+      "input_length": 617
+    },
+    "shimmer2-producer-document-274": {
+      "prompt_sha256": "060a74048e982a07321dd6c9f31183a3d872748e6cf93de12cc032557f7c2858",
+      "input_ids_sha256": "ee9987ba63af13a5d31801905a2ef4fc7af1cb0c832a23a2037dd1619467f041",
+      "input_length": 690
+    },
+    "shimmer2-producer-document-275": {
+      "prompt_sha256": "4380248f5991e54b3c72fcee38d909d2ee90a37654eb048c9619034ed939350f",
+      "input_ids_sha256": "b8aa1251a728386abf3334ef224051a460c508b371bc243ecc6b9d14ea616467",
+      "input_length": 711
+    },
+    "shimmer2-producer-document-276": {
+      "prompt_sha256": "5c91f66badee859b14c55114b51f609c6fef6a2b11809db4794a5a0d19d25ad1",
+      "input_ids_sha256": "87a0bf53c7c1ddac3ba2896a9cc791ec685b08c81d8ecf0cca3a413ae47488cf",
+      "input_length": 594
+    },
+    "shimmer2-producer-document-277": {
+      "prompt_sha256": "1d092b58ad4459d83d7c269caaa296d175223482d6eff858095abb0afa1cf629",
+      "input_ids_sha256": "55231a8a496d3e00ab49fb81bc25f0466b5942c18e90608652c7ab186057add9",
+      "input_length": 633
+    },
+    "shimmer2-producer-document-278": {
+      "prompt_sha256": "180aa76411e24f565748048afcc4fd9cc723080467891d5cd37b6f83b49b034d",
+      "input_ids_sha256": "c6e37038d9b946ec026269de8690a377d7d441c2cb7852e820975cf3957b3439",
+      "input_length": 692
+    },
+    "shimmer2-producer-document-279": {
+      "prompt_sha256": "eb40501ac527a7ac03e9db20d9d9afb1c337d062accb6793e185f366760e713e",
+      "input_ids_sha256": "fef874f7b51508d2029e05307cc3de3bedafa44579038a20dd79b45b8b156b7e",
+      "input_length": 717
+    },
+    "shimmer2-producer-document-280": {
+      "prompt_sha256": "4346ba075d78c2b8b70520055380862096bfad70168f85f2b54556ce3d24476e",
+      "input_ids_sha256": "2c1fb4d621da1f1d4a7d658cd9cf8da4a773ec563eb0a1754bc05afcdeec0d82",
+      "input_length": 608
+    },
+    "shimmer2-producer-document-281": {
+      "prompt_sha256": "8b3f7e356c382ee79a23e4fc93db4e182a8ddbd41c5003865eda6160c043e6a1",
+      "input_ids_sha256": "4ae04acd12c9c8c82f6a39d66229913d099a78b1e666d2f781445df4c4adf649",
+      "input_length": 632
+    },
+    "shimmer2-producer-document-282": {
+      "prompt_sha256": "967b49d10ce15dfab94858b7f8ae1a26da263d52b758cdb88271685697246dc4",
+      "input_ids_sha256": "68e08ab81fdb8dc37cc6a3894d28ada9e1dc957fcdaec40c24b796cb3cdff61a",
+      "input_length": 678
+    },
+    "shimmer2-producer-document-283": {
+      "prompt_sha256": "edd5958a669d399d4528b0ff07e29d1492b9ae1444262c7961cc1471d65b162f",
+      "input_ids_sha256": "d217d2ac1659d983911b9b3fa483bc7b9927042a78059eb26f0287f777127a20",
+      "input_length": 563
+    },
+    "shimmer2-producer-document-284": {
+      "prompt_sha256": "06e4752040e6069300bcae52d814216ff3a2b985dd7752d91d050335e0ddecc4",
+      "input_ids_sha256": "a547f2f45550ee8cca82a54717bbc1c0415f3501b075728e1b07a3bb5a8563c5",
+      "input_length": 572
+    }
+  },
+  "speed_gate": {
+    "minimum_tokens_per_second": 4.438538339317307,
+    "minimum_paired_speedup": 2.0,
+    "rationale": "Recover at least half the measured run-1 Producer aggregate rate and at least double a same-ID historical-observer reference; current pilot was about 4.7x slower. These are conservative prospective admission requirements, not measured speedup claims.",
+    "historical_run1_tokens_per_second": 8.877076678634614,
+    "historical_pilot_prefix_tokens_per_second": 1.8800116995480953,
+    "exact_token_identity_required": true,
+    "exact_metric_identity_required": true,
+    "failure_action": "NO_GO: stop; no full DEV, no changed threshold, no model/adapter updates"
+  },
+  "controls": {
+    "order": "For each of six fixed IDs: reference then optimized, same resident model and adapter; discard no measurements",
+    "reference": "Pinned historical generation task with the exact historical global trace callback enabled only over generate; no training, optimizer, source repair or old-output reuse",
+    "optimized": "Same task and tensors, no Python trace/profile callback, independent telemetry process",
+    "equivalence": "Compare exact output IDs, prompt/input IDs and frozen row metrics. Any mismatch is NO_GO; no automatic claim of a new valid protocol.",
+    "partial_history": "42 saved outputs are historical only; neither controls nor historical rows are stitched into complete DEV"
+  },
+  "full_dev": {
+    "order": "Regenerate every canonical ID from item 1 through 60 after control PASS; new exclusive output directory",
+    "required_outputs": 60,
+    "no_stitching": true,
+    "no_checkpoint_selection": true,
+    "gate_evaluation": "Evaluate checkpoint-120 frozen Producer gates on all 60 new outputs; report this new evaluation separately. No historical selection rewrite or Auditor/protected evaluation."
+  },
+  "runtime_preflight": {
+    "python": "3.12.3",
+    "platform": "linux_x86_64",
+    "dependency_lock": "tuning/first_domain_agnostic_v1/dependency_lock.json",
+    "deterministic_environment": "tuning/first_domain_agnostic_v1/experiment.json:environment",
+    "seed": 7,
+    "deterministic_algorithms": true,
+    "allow_tf32": false,
+    "exactly_one_bf16_gpu": true,
+    "model_loader": "Fresh process; exact local pinned base, BF16/eager/device_map={empty:0}; same prepare_model_for_kbit_training(True) and get_peft_model(LoraConfig) as historical executor; load saved adapter via pinned PEFT adapter-state APIs with complete key/shape/dtype checks. No merge/cast shortcut/optimizer/gradient update. Verify all module devices, dtypes, trainable count and weight hashes.",
+    "peft_source_limitation": "PEFT 0.15.2 source not installed/cached locally; do not claim its internal behavior was directly inspected. Future preflight must record its source hashes and actual activation/forward/cache state before control admission.",
+    "cache_effect_proof": "On control first/second forward, record effective use_cache=True, nonempty returned cache after prefill, and one-token incremental input. Abort on failure. Use identical boundary probes for reference/optimized and exclude probing from reported speed trial only via a separately declared preflight pass, never deleting slow trial results.",
+    "no_current_execution": true
+  },
+  "projection": {
+    "label": "PROJECTION_NOT_BENCHMARK_NOT_AUTHORIZATION",
+    "historical_hourly_rate_usd": 1.29,
+    "current_price_not_queried": true,
+    "minimum_admitted_generation_tokens_per_second": 4.438538339317307,
+    "full_dev_cap_bound_tokens": 17280,
+    "full_dev_generation_seconds_at_floor": 3893.1735357405614,
+    "control_reference_seconds_at_historical_rate": 919.1432161913488,
+    "control_optimized_seconds_at_floor": 389.31735357405614,
+    "setup_allowance_seconds": 600,
+    "teardown_reserve_seconds": 600,
+    "assumptions": "Historical A10 rate only; no cloud authorization. Cap-based output bound, not extrapolation of missing semantic metrics. Future live price, capacity and preflight timing must pass a separately authorized budget.",
+    "cache_preflight_reference_seconds": 153.19053603189147,
+    "cache_preflight_optimized_seconds": 64.88622559567602,
+    "total_seconds_with_reserve_at_floor": 6619.710867133534,
+    "estimated_cost_at_historical_rate_usd": 2.3720630607228497
+  },
+  "excluded": [
+    "training",
+    "auditor",
+    "protected",
+    "folds_1_4",
+    "paid_api",
+    "full_pipeline",
+    "multi_round",
+    "push"
+  ]
+}
