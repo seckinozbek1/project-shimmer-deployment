@@ -1,0 +1,37 @@
+{
+  "review_type": "machine_agent_adjudication_no_human_review",
+  "review_sha256": {
+    "producer": "6209439dbbe3f37f061b2bb5bb04906e24a90de4147687665a38cb25c38e1956",
+    "auditor": "ff8a7e7a649fad72a79eb63210ee67e219870abb2569095698adac43c0926dc0"
+  },
+  "substantive_expansion_accepted": true,
+  "substantive_counts": {
+    "producer": 260,
+    "auditor": 300
+  },
+  "excluded_from_substantive_credit": {
+    "producer_empty": 20,
+    "producer_out_of_ontology_refusal": 20
+  },
+  "basis": "Producer has 260 distinct semantic atom sets after removing names, numbers, refs, wording and ownership. Auditor uses 12 proposition structures composed with distinct gap/uncertainty configurations and five relation families, with decision-bearing core/evidence/epistemic/qualifier changes; each normalized full comparison signature is unique. This is compositional task expansion, not 600 independently collected natural documents.",
+  "resolved_findings": [
+    "Removed invented speaker/sender attribution",
+    "Separated numbered claims from annex gap scope",
+    "Replaced ambiguous question changes with evidence misattribution",
+    "Removed known-nonoccurrence/unknown-occurrence annex tensions",
+    "Removed universal empty-required_refs refusal shortcut",
+    "Clarified delivered omissions versus interrupted transport prospectively",
+    "Excluded 40 Producer calibration rows from substantive credit"
+  ],
+  "unresolved_blockers": [],
+  "limitations": [
+    "Only five conservative structural superfamilies; document IDs are not statistical independence",
+    "Reusable finite grammar and stock clauses limit linguistic diversity",
+    "Five synthetic insufficiency structures and fixed quantities limit out-of-distribution claims",
+    "Producer review shares the frozen finite ontology and structural parsing",
+    "Auditor source/extraction labels reviewed blind, but target rationale rendering is author-curated and mechanically checked",
+    "No human review, no model-performance evidence, no protected comparison"
+  ],
+  "rationale_review": "Authored concise explanations checked against explicit source/extraction deltas. Independent blind predictions agree on all relation labels; no claim of blinded target-rationale review.",
+  "human_reviews": 0
+}

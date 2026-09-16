@@ -4,3 +4,8 @@
 # rebuilt container could not start (found at the first offline test, 2026-09-11).
 *.sh text eol=lf
 tools/entrypoint.sh text eol=lf
+
+# Preserve the exact bytes of the reviewed V2 freeze and its bound reports.
+tuning/second_domain_agnostic_v2/** -text
+docs/fix/SECOND_TUNING_DATA_AND_FAILURE_AUDIT.md -text
+docs/fix/SECOND_TUNING_EXPERIMENT_IMPLEMENTATION.md -text
