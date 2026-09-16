@@ -1,0 +1,14 @@
+[
+  {
+    "path": "licenses/CC-BY-4.0.txt",
+    "url": "https://creativecommons.org/licenses/by/4.0/legalcode.txt",
+    "sha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+    "downloaded_at": "2026-09-16T20:00:59.814215+00:00"
+  },
+  {
+    "path": "../../data/external/auditor_relations/raw/factualNLG-README.md",
+    "url": "https://raw.githubusercontent.com/salesforce/factualNLG/master/README.md",
+    "sha256": "1775d2bac11c31f0d82597faa8b2812a4dabd82a49ba7977aae6506a20f3c76e",
+    "downloaded_at": "2026-09-16T20:01:00.228754+00:00"
+  }
+]

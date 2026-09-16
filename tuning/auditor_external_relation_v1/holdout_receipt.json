@@ -1,0 +1,8 @@
+{
+  "admitted": false,
+  "consumed": false,
+  "evaluated": false,
+  "evaluation_count": 0,
+  "labels_frozen_for_integrity_only": true,
+  "required": "Separate admission and receipt before any evaluation; this release is NOT_READY"
+}

@@ -167,6 +167,7 @@ docs/DELTA_*.md
 !docs/DELTA_LOCAL_PROFILE_DRAFT.md
 
 # Benchmark answer key, control document, ledger scripts and the frozen scorer.
+/data/external/auditor_relations/raw/
 # Never committed. Only the scorer reads the key (S6); the contamination probe
 # scans config/, scripts/, tests/ and the harness fixtures, never this directory.
 benchmark/keys/

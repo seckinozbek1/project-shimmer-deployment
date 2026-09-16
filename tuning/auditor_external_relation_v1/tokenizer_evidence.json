@@ -1,0 +1,34 @@
+{
+  "ceiling": 1056,
+  "ceiling_scope": "Classifier input only; explanation output budget must be revalidated before future integrated execution",
+  "historical_substantive_prompt_statistics": {
+    "count": 240,
+    "max": 896,
+    "mean": 774.7166666666667,
+    "median": 768.0,
+    "min": 671,
+    "p95": 866,
+    "p99": 889
+  },
+  "no_truncation": true,
+  "prospective_overflow_rows": 0,
+  "prospective_prompt_statistics": {
+    "count": 448,
+    "max": 759,
+    "mean": 591.34375,
+    "median": 584.0,
+    "min": 513,
+    "p95": 672,
+    "p99": 705
+  },
+  "release_overflow_count": 0,
+  "release_prompt_statistics": {
+    "count": 208,
+    "max": 759,
+    "mean": 602.0865384615385,
+    "median": 598.5,
+    "min": 514,
+    "p95": 681,
+    "p99": 709
+  }
+}

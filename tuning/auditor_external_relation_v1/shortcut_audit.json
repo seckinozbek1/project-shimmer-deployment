@@ -1,0 +1,161 @@
+{
+  "bucket_purity_interpretation": "Descriptive in-sample oracle upper bound, not held-out predictive accuracy. Sparse ID buckets can have high purity by chance; IDs are excluded from prompts. Only the predeclared length-sign rule reports predictive accuracy.",
+  "dev": {
+    "candidate_length_20word_bin": {
+      "bins": 5,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.45
+    },
+    "domain": {
+      "bins": 5,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.25
+    },
+    "fixed_length_sign_rule": {
+      "accuracy": 0.75,
+      "correct": 15,
+      "rows": 20,
+      "rule": "equal word count -> MATCH; positive delta -> ADDITION; negative delta -> OMISSION; never DIVERGENCE"
+    },
+    "id_last_hex": {
+      "bins": 11,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.65
+    },
+    "id_mod20": {
+      "bins": 12,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.65
+    },
+    "id_mod4": {
+      "bins": 4,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.5
+    },
+    "id_mod5": {
+      "bins": 5,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.5
+    },
+    "prompt_length_50token_bin": {
+      "bins": 6,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.4
+    },
+    "refs": {
+      "bins": 1,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.25
+    },
+    "renderer": {
+      "bins": 3,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.25
+    },
+    "row_order_mod4": {
+      "bins": 4,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.4
+    },
+    "source_length_20word_bin": {
+      "bins": 3,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.25
+    },
+    "word_ratio_sign": {
+      "bins": 3,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.75
+    }
+  },
+  "excluded_prompt_metadata": [
+    "example_id",
+    "lineage_id",
+    "document_key",
+    "document_group",
+    "domain",
+    "relation",
+    "provenance",
+    "transformation",
+    "lengths",
+    "split",
+    "rendering_pair",
+    "integrity"
+  ],
+  "id_assignment": "Four opaque slot hashes allocated without labels; independent per-lineage permutation assigns classes. No IDs enter prompts.",
+  "known_blocker": "Whole-quartet content-preserving MATCH, deletion OMISSION, insertion ADDITION guarantee >=75% accuracy from word-count sign alone. Rebalancing complete quartets cannot remove this. Formatting padding would hide rather than eliminate the cue.",
+  "length_shortcut_pass": false,
+  "metadata_prompt_allowlist_pass": true,
+  "method": "Fixed rules and bucket purity only; no classifier fitted; HOLDOUT excluded.",
+  "order": "Global opaque-ID hash sort, independent of relation and upstream order.",
+  "ready": false,
+  "ref_assignment": "No external citations invented; empty lists for every class; existing canonicalizer reused.",
+  "train": {
+    "candidate_length_20word_bin": {
+      "bins": 5,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.4880952380952381
+    },
+    "domain": {
+      "bins": 9,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.25
+    },
+    "fixed_length_sign_rule": {
+      "accuracy": 0.75,
+      "correct": 126,
+      "rows": 168,
+      "rule": "equal word count -> MATCH; positive delta -> ADDITION; negative delta -> OMISSION; never DIVERGENCE"
+    },
+    "id_last_hex": {
+      "bins": 16,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.44642857142857145
+    },
+    "id_mod20": {
+      "bins": 20,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.4166666666666667
+    },
+    "id_mod4": {
+      "bins": 4,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.31547619047619047
+    },
+    "id_mod5": {
+      "bins": 5,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.3273809523809524
+    },
+    "prompt_length_50token_bin": {
+      "bins": 5,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.38095238095238093
+    },
+    "refs": {
+      "bins": 1,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.25
+    },
+    "renderer": {
+      "bins": 6,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.25
+    },
+    "row_order_mod4": {
+      "bins": 4,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.32142857142857145
+    },
+    "source_length_20word_bin": {
+      "bins": 3,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.25
+    },
+    "word_ratio_sign": {
+      "bins": 3,
+      "fully_deterministic": false,
+      "oracle_bucket_accuracy": 0.75
+    }
+  }
+}

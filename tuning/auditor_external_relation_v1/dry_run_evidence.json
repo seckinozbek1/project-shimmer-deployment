@@ -1,0 +1,70 @@
+{
+  "cloud": false,
+  "deterministic_rebuild": true,
+  "existing_insufficient_preserved": 48,
+  "folds1_to_4": false,
+  "full_pipeline": false,
+  "historical_preservation": {
+    "auditor_canonical_tuning_run": {
+      "all_match": true,
+      "binary_files_opened": 0,
+      "manifest_sha256": "637616b18aec7083c31a0841b4c1f40141b495235b7d4b3e00c4c4eb53516477",
+      "text_files_checked": 143
+    },
+    "auditor_linear_probe_run": {
+      "all_match": true,
+      "binary_files_opened": 0,
+      "manifest_sha256": "9d416ba13148c7a245f047139dd3ec5d35b181a5f944a54dd1affcd51597c41a",
+      "text_files_checked": 106
+    },
+    "producer_tuning_v3_run": {
+      "all_match": true,
+      "binary_files_opened": 0,
+      "manifest_sha256": "b587376e7453f123a5af0fbd0da9f4a59d8855a70b5e1371020af5f538dc5291",
+      "text_files_checked": 134
+    }
+  },
+  "holdout_denial": {
+    "dev": true,
+    "holdout": true,
+    "train": true
+  },
+  "invalid_fixtures": {
+    "dangling_pronoun": "omission_no_well_formed_remainder",
+    "empty": "missing_or_placeholder_span",
+    "empty_omission": "omission_no_well_formed_remainder",
+    "hidden_edit": "edit_not_exactly_reproduced",
+    "insertion_disguised": "pure_insertion_deletion_or_nested_content",
+    "normalization_only": "normalization_identical_or_noncontent_edit",
+    "partial_clause": "not_complete_sentence_replacement",
+    "repeated_span": "source_span_not_unique",
+    "tamper_ADDITION": "rejected",
+    "tamper_DIVERGENCE": "rejected",
+    "tamper_MATCH": "rejected",
+    "tamper_OMISSION": "rejected"
+  },
+  "limitation": "Runtime guards cover this Python builder. They are not OS-wide attestation. HOLDOUT only had structural integrity/token/lexical checks, not predictions or baseline scoring.",
+  "llm_labeling": false,
+  "mechanical_integrity_checks_passed": true,
+  "merged_historical_train_unchanged": true,
+  "model_inference": false,
+  "multi_round": false,
+  "paid_api": false,
+  "per_row_agent_generation": false,
+  "producer_execution": false,
+  "protected_access": false,
+  "provenance_roundtrip_rows": 208,
+  "quartet_balance": true,
+  "readiness_passed": false,
+  "rendering_and_domain_balance": true,
+  "reversed_input_rebuild": true,
+  "runtime_guards": {
+    "network_denied": true,
+    "protected_and_credential_paths_denied": true,
+    "subprocess_denied": true,
+    "weight_file_open_denied": true
+  },
+  "torch_imported": false,
+  "training": false,
+  "verdict": "AUDITOR_EXTERNAL_RELATION_DATA_V1_NOT_READY"
+}

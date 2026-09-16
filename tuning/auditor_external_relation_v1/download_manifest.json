@@ -1,0 +1,44 @@
+[
+  {
+    "dataset": "Salesforce/summexecedit",
+    "files": [
+      {
+        "bytes": 20665443,
+        "downloaded_at": "2026-09-16T19:55:53.254562+00:00",
+        "path": "data/external/auditor_relations/raw/summexecedit-defies_summedits_final_all_combined.json",
+        "sha256": "f7ba6dece8322db94dbe86eb003a47a3e1fb90668e451be7414237e4d8313600",
+        "url": "https://huggingface.co/datasets/Salesforce/summexecedit/resolve/d71ee27582afae29b1459b518229d9266ed4c8b2/defies_summedits_final_all_combined.json?download=true"
+      },
+      {
+        "bytes": 2207,
+        "downloaded_at": "2026-09-16T19:55:53.669671+00:00",
+        "path": "data/external/auditor_relations/raw/summexecedit-README.md",
+        "sha256": "2943eae43ab1fa3d6a80e3cf28b750ad243e1912fc18bcd1acf3fa77702cf8a4",
+        "url": "https://huggingface.co/datasets/Salesforce/summexecedit/resolve/d71ee27582afae29b1459b518229d9266ed4c8b2/README.md?download=true"
+      }
+    ],
+    "publisher": "Salesforce",
+    "revision": "d71ee27582afae29b1459b518229d9266ed4c8b2"
+  },
+  {
+    "dataset": "Salesforce/summedits",
+    "files": [
+      {
+        "bytes": 28633895,
+        "downloaded_at": "2026-09-16T19:55:56.053834+00:00",
+        "path": "data/external/auditor_relations/raw/summedits-summedits.json",
+        "sha256": "21e34593330020d02b7d92f4651fdcc550f7d79a2f899392f106fd816c215a89",
+        "url": "https://huggingface.co/datasets/Salesforce/summedits/resolve/ce0c479aaf59259abb6b67e42248b2f49004b7d5/summedits.json?download=true"
+      },
+      {
+        "bytes": 2421,
+        "downloaded_at": "2026-09-16T19:55:56.452356+00:00",
+        "path": "data/external/auditor_relations/raw/summedits-README.md",
+        "sha256": "daa81e3213cf07e534c9ede4e40534137f262768fd3aeb4ea3593c65dec22ee1",
+        "url": "https://huggingface.co/datasets/Salesforce/summedits/resolve/ce0c479aaf59259abb6b67e42248b2f49004b7d5/README.md?download=true"
+      }
+    ],
+    "publisher": "Salesforce",
+    "revision": "ce0c479aaf59259abb6b67e42248b2f49004b7d5"
+  }
+]

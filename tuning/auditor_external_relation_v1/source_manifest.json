@@ -1,0 +1,121 @@
+[
+  {
+    "citation": {
+      "authors": [
+        "Onkar Thorat",
+        "Philippe Laban",
+        "Chien-Sheng Wu"
+      ],
+      "title": "SummExecEdit: A Factual Consistency Benchmark in Summarization with Executable Edits",
+      "url": "https://arxiv.org/abs/2412.13378",
+      "year": 2024
+    },
+    "conversion_use": "Executable spans only",
+    "dataset": "Salesforce/summexecedit",
+    "domains": {
+      "billsum": 608,
+      "ectsum": 416,
+      "news": 567,
+      "podcast": 344,
+      "qmsumm": 334,
+      "sales_call": 336,
+      "sales_email": 368,
+      "samsum": 450,
+      "scitldr": 307,
+      "shakespeare": 511
+    },
+    "files": [
+      {
+        "bytes": 20665443,
+        "downloaded_at": "2026-09-16T19:55:53.254562+00:00",
+        "path": "data/external/auditor_relations/raw/summexecedit-defies_summedits_final_all_combined.json",
+        "sha256": "f7ba6dece8322db94dbe86eb003a47a3e1fb90668e451be7414237e4d8313600",
+        "url": "https://huggingface.co/datasets/Salesforce/summexecedit/resolve/d71ee27582afae29b1459b518229d9266ed4c8b2/defies_summedits_final_all_combined.json?download=true"
+      },
+      {
+        "bytes": 2207,
+        "downloaded_at": "2026-09-16T19:55:53.669671+00:00",
+        "path": "data/external/auditor_relations/raw/summexecedit-README.md",
+        "sha256": "2943eae43ab1fa3d6a80e3cf28b750ad243e1912fc18bcd1acf3fa77702cf8a4",
+        "url": "https://huggingface.co/datasets/Salesforce/summexecedit/resolve/d71ee27582afae29b1459b518229d9266ed4c8b2/README.md?download=true"
+      }
+    ],
+    "license": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "publisher": "Salesforce",
+    "revision": "d71ee27582afae29b1459b518229d9266ed4c8b2",
+    "rows": 4241,
+    "schema": {
+      "doc": "str",
+      "doc_id": "str",
+      "domain": "str",
+      "edit_type": "str",
+      "edited_summary": "str",
+      "explanation": "str",
+      "model": "str",
+      "original_summary": "str",
+      "original_text": "str",
+      "replace_text": "str",
+      "sample_id": "str"
+    },
+    "unique_normalized_documents": 216,
+    "unique_upstream_doc_ids": 218,
+    "upstream_label_policy": "Never mapped to Shimmer relations",
+    "valid_nonplaceholder_doc_ids": 217
+  },
+  {
+    "citation": {
+      "documentation": "https://github.com/salesforce/factualNLG",
+      "title": "LLMs as Factual Reasoners: Insights from Existing Benchmarks and Beyond",
+      "url": "https://arxiv.org/abs/2305.14540"
+    },
+    "conversion_use": "Future source pool only; no relation rows emitted",
+    "dataset": "Salesforce/summedits",
+    "domains": {
+      "billsum": 853,
+      "ectsum": 668,
+      "news": 819,
+      "podcast": 500,
+      "qmsumm": 431,
+      "sales_call": 520,
+      "sales_email": 613,
+      "samsum": 664,
+      "scitldr": 466,
+      "shakespeare": 814
+    },
+    "files": [
+      {
+        "bytes": 28633895,
+        "downloaded_at": "2026-09-16T19:55:56.053834+00:00",
+        "path": "data/external/auditor_relations/raw/summedits-summedits.json",
+        "sha256": "21e34593330020d02b7d92f4651fdcc550f7d79a2f899392f106fd816c215a89",
+        "url": "https://huggingface.co/datasets/Salesforce/summedits/resolve/ce0c479aaf59259abb6b67e42248b2f49004b7d5/summedits.json?download=true"
+      },
+      {
+        "bytes": 2421,
+        "downloaded_at": "2026-09-16T19:55:56.452356+00:00",
+        "path": "data/external/auditor_relations/raw/summedits-README.md",
+        "sha256": "daa81e3213cf07e534c9ede4e40534137f262768fd3aeb4ea3593c65dec22ee1",
+        "url": "https://huggingface.co/datasets/Salesforce/summedits/resolve/ce0c479aaf59259abb6b67e42248b2f49004b7d5/README.md?download=true"
+      }
+    ],
+    "license": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "publisher": "Salesforce",
+    "revision": "ce0c479aaf59259abb6b67e42248b2f49004b7d5",
+    "rows": 6348,
+    "schema": {
+      "doc": "str",
+      "domain": "str",
+      "edit_types": "list",
+      "id": "str",
+      "label": "int",
+      "seed_summary": "str",
+      "summary": "str"
+    },
+    "unique_normalized_documents": 216,
+    "unique_upstream_doc_ids": null,
+    "upstream_label_policy": "Never mapped to Shimmer relations",
+    "valid_nonplaceholder_doc_ids": null
+  }
+]
