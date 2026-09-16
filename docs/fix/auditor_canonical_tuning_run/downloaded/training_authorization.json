@@ -1,0 +1,26 @@
+{
+  "action": "auditor-canonical-fresh-training",
+  "checkpoint_steps": [
+    60,
+    120
+  ],
+  "dataset_sha256": "0e7532aa9cbca8cffad99faae03656cbbdb0dbf3fc489b18d142b5a000dfbc12",
+  "execution_freeze_sha256": "29a5632f226ea34a537a06a5fe596fba7884995fba74f2d38d86159f98248667",
+  "experiment": "auditor-canonical-v2",
+  "fresh_adapter": true,
+  "full_pipeline": false,
+  "gpu_type": "gpu_1x_a10",
+  "hard_budget_usd": 3,
+  "maximum_instances": 1,
+  "operator_authorized": true,
+  "producer_execution": false,
+  "protected_access": false,
+  "provider": "https://cloud.lambda.ai",
+  "request_attachment": "ea56d7c9-febe-421d-9f5d-817905c15c81",
+  "role": "auditor",
+  "soft_budget_usd": 1.5,
+  "source_release_sha256": "bb27d49234fcc30cf02438ac0ce1c43dc690cf514aa9ebbe8d4ae4f6341aa78d",
+  "split": "canonical",
+  "training": true,
+  "updates": 120
+}

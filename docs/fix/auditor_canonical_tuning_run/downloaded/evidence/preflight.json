@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "python": "3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]",
+  "versions": {
+    "torch": "2.5.1+cu121",
+    "transformers": "4.51.3",
+    "tokenizers": "0.21.1",
+    "peft": "0.15.2",
+    "accelerate": "1.10.1",
+    "bitsandbytes": "0.48.2",
+    "safetensors": "0.5.3",
+    "huggingface-hub": "0.30.2",
+    "numpy": "2.0.2",
+    "jinja2": "3.1.4"
+  },
+  "gpu": "NVIDIA A10",
+  "gpu_count": 1,
+  "bf16": true
+}

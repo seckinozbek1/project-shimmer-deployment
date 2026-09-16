@@ -1,0 +1,4 @@
+/home/ubuntu/shimmer-auditor-canonical/.venv/lib/python3.12/site-packages/peft/utils/save_and_load.py:236: UserWarning: Could not find a config file in unsloth/Phi-3.5-mini-instruct-bnb-4bit - will assume that the vocabulary was not modified.
+  warnings.warn(
+/home/ubuntu/shimmer-auditor-canonical/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:632: UserWarning: torch.utils.checkpoint: the use_reentrant parameter should be passed explicitly. In version 2.5 we will raise an exception if use_reentrant is not passed. use_reentrant=False is recommended, but if you need to preserve the current default behavior, you can pass use_reentrant=True. Refer to docs for more details on the differences between the two variants.
+  return fn(*args, **kwargs)

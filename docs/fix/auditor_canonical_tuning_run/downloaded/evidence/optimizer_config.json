@@ -1,0 +1,1364 @@
+{
+  "training": {
+    "adam_beta1": 0.9,
+    "adam_beta2": 0.999,
+    "adam_epsilon": 1e-08,
+    "allow_tf32": false,
+    "attention_implementation": "eager",
+    "bf16": true,
+    "data_epochs": 2,
+    "deterministic_algorithms": true,
+    "effective_batch": 4,
+    "gradient_accumulation": 4,
+    "gradient_checkpointing": true,
+    "last_accumulation_group": "actual group mean; 240 examples divide evenly into groups of four",
+    "learning_rate": 0.0001,
+    "max_grad_norm": 1.0,
+    "max_steps": 120,
+    "microbatch": 1,
+    "optimizer": "adamw_torch",
+    "scheduler": "linear",
+    "seed": 7,
+    "steps_per_epoch": 60,
+    "warmup_steps": 1,
+    "weight_decay": 0.0
+  },
+  "initial_learning_rate": 0.0001,
+  "scheduler_state": {
+    "base_lrs": [
+      0.0001
+    ],
+    "last_epoch": 0,
+    "verbose": false,
+    "_step_count": 1,
+    "_get_lr_called_within_step": false,
+    "_last_lr": [
+      0.0001
+    ],
+    "lr_lambdas": [
+      null
+    ]
+  },
+  "schedule": [
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-114",
+        "shimmer2-auditor-document-195",
+        "shimmer2-auditor-document-227",
+        "shimmer2-auditor-document-127"
+      ],
+      "loss_divisor": 4,
+      "step": 1
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-169",
+        "shimmer2-auditor-document-218",
+        "shimmer2-auditor-document-229",
+        "shimmer2-auditor-document-210"
+      ],
+      "loss_divisor": 4,
+      "step": 2
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-092",
+        "shimmer2-auditor-document-117",
+        "shimmer2-auditor-document-248",
+        "shimmer2-auditor-document-247"
+      ],
+      "loss_divisor": 4,
+      "step": 3
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-222",
+        "shimmer2-auditor-document-293",
+        "shimmer2-auditor-document-231",
+        "shimmer2-auditor-document-111"
+      ],
+      "loss_divisor": 4,
+      "step": 4
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-064",
+        "shimmer2-auditor-document-128",
+        "shimmer2-auditor-document-005",
+        "shimmer2-auditor-document-234"
+      ],
+      "loss_divisor": 4,
+      "step": 5
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-008",
+        "shimmer2-auditor-document-250",
+        "shimmer2-auditor-document-081",
+        "shimmer2-auditor-document-041"
+      ],
+      "loss_divisor": 4,
+      "step": 6
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-204",
+        "shimmer2-auditor-document-037",
+        "shimmer2-auditor-document-096",
+        "shimmer2-auditor-document-101"
+      ],
+      "loss_divisor": 4,
+      "step": 7
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-207",
+        "shimmer2-auditor-document-177",
+        "shimmer2-auditor-document-132",
+        "shimmer2-auditor-document-032"
+      ],
+      "loss_divisor": 4,
+      "step": 8
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-286",
+        "shimmer2-auditor-document-198",
+        "shimmer2-auditor-document-044",
+        "shimmer2-auditor-document-241"
+      ],
+      "loss_divisor": 4,
+      "step": 9
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-244",
+        "shimmer2-auditor-document-098",
+        "shimmer2-auditor-document-228",
+        "shimmer2-auditor-document-043"
+      ],
+      "loss_divisor": 4,
+      "step": 10
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-121",
+        "shimmer2-auditor-document-180",
+        "shimmer2-auditor-document-100",
+        "shimmer2-auditor-document-039"
+      ],
+      "loss_divisor": 4,
+      "step": 11
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-299",
+        "shimmer2-auditor-document-086",
+        "shimmer2-auditor-document-245",
+        "shimmer2-auditor-document-285"
+      ],
+      "loss_divisor": 4,
+      "step": 12
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-237",
+        "shimmer2-auditor-document-197",
+        "shimmer2-auditor-document-115",
+        "shimmer2-auditor-document-075"
+      ],
+      "loss_divisor": 4,
+      "step": 13
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-233",
+        "shimmer2-auditor-document-232",
+        "shimmer2-auditor-document-133",
+        "shimmer2-auditor-document-106"
+      ],
+      "loss_divisor": 4,
+      "step": 14
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-028",
+        "shimmer2-auditor-document-079",
+        "shimmer2-auditor-document-004",
+        "shimmer2-auditor-document-249"
+      ],
+      "loss_divisor": 4,
+      "step": 15
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-003",
+        "shimmer2-auditor-document-025",
+        "shimmer2-auditor-document-201",
+        "shimmer2-auditor-document-265"
+      ],
+      "loss_divisor": 4,
+      "step": 16
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-013",
+        "shimmer2-auditor-document-082",
+        "shimmer2-auditor-document-120",
+        "shimmer2-auditor-document-260"
+      ],
+      "loss_divisor": 4,
+      "step": 17
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-125",
+        "shimmer2-auditor-document-073",
+        "shimmer2-auditor-document-006",
+        "shimmer2-auditor-document-080"
+      ],
+      "loss_divisor": 4,
+      "step": 18
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-175",
+        "shimmer2-auditor-document-040",
+        "shimmer2-auditor-document-287",
+        "shimmer2-auditor-document-062"
+      ],
+      "loss_divisor": 4,
+      "step": 19
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-083",
+        "shimmer2-auditor-document-112",
+        "shimmer2-auditor-document-199",
+        "shimmer2-auditor-document-000"
+      ],
+      "loss_divisor": 4,
+      "step": 20
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-130",
+        "shimmer2-auditor-document-033",
+        "shimmer2-auditor-document-220",
+        "shimmer2-auditor-document-090"
+      ],
+      "loss_divisor": 4,
+      "step": 21
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-209",
+        "shimmer2-auditor-document-001",
+        "shimmer2-auditor-document-184",
+        "shimmer2-auditor-document-099"
+      ],
+      "loss_divisor": 4,
+      "step": 22
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-290",
+        "shimmer2-auditor-document-213",
+        "shimmer2-auditor-document-269",
+        "shimmer2-auditor-document-262"
+      ],
+      "loss_divisor": 4,
+      "step": 23
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-225",
+        "shimmer2-auditor-document-029",
+        "shimmer2-auditor-document-230",
+        "shimmer2-auditor-document-263"
+      ],
+      "loss_divisor": 4,
+      "step": 24
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-168",
+        "shimmer2-auditor-document-068",
+        "shimmer2-auditor-document-105",
+        "shimmer2-auditor-document-118"
+      ],
+      "loss_divisor": 4,
+      "step": 25
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-119",
+        "shimmer2-auditor-document-070",
+        "shimmer2-auditor-document-292",
+        "shimmer2-auditor-document-035"
+      ],
+      "loss_divisor": 4,
+      "step": 26
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-085",
+        "shimmer2-auditor-document-066",
+        "shimmer2-auditor-document-257",
+        "shimmer2-auditor-document-167"
+      ],
+      "loss_divisor": 4,
+      "step": 27
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-190",
+        "shimmer2-auditor-document-216",
+        "shimmer2-auditor-document-268",
+        "shimmer2-auditor-document-065"
+      ],
+      "loss_divisor": 4,
+      "step": 28
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-258",
+        "shimmer2-auditor-document-109",
+        "shimmer2-auditor-document-178",
+        "shimmer2-auditor-document-242"
+      ],
+      "loss_divisor": 4,
+      "step": 29
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-173",
+        "shimmer2-auditor-document-027",
+        "shimmer2-auditor-document-007",
+        "shimmer2-auditor-document-296"
+      ],
+      "loss_divisor": 4,
+      "step": 30
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-288",
+        "shimmer2-auditor-document-238",
+        "shimmer2-auditor-document-021",
+        "shimmer2-auditor-document-060"
+      ],
+      "loss_divisor": 4,
+      "step": 31
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-074",
+        "shimmer2-auditor-document-165",
+        "shimmer2-auditor-document-002",
+        "shimmer2-auditor-document-103"
+      ],
+      "loss_divisor": 4,
+      "step": 32
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-113",
+        "shimmer2-auditor-document-087",
+        "shimmer2-auditor-document-202",
+        "shimmer2-auditor-document-094"
+      ],
+      "loss_divisor": 4,
+      "step": 33
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-224",
+        "shimmer2-auditor-document-226",
+        "shimmer2-auditor-document-166",
+        "shimmer2-auditor-document-084"
+      ],
+      "loss_divisor": 4,
+      "step": 34
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-264",
+        "shimmer2-auditor-document-266",
+        "shimmer2-auditor-document-214",
+        "shimmer2-auditor-document-221"
+      ],
+      "loss_divisor": 4,
+      "step": 35
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-104",
+        "shimmer2-auditor-document-215",
+        "shimmer2-auditor-document-217",
+        "shimmer2-auditor-document-246"
+      ],
+      "loss_divisor": 4,
+      "step": 36
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-019",
+        "shimmer2-auditor-document-010",
+        "shimmer2-auditor-document-196",
+        "shimmer2-auditor-document-170"
+      ],
+      "loss_divisor": 4,
+      "step": 37
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-298",
+        "shimmer2-auditor-document-223",
+        "shimmer2-auditor-document-042",
+        "shimmer2-auditor-document-243"
+      ],
+      "loss_divisor": 4,
+      "step": 38
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-176",
+        "shimmer2-auditor-document-240",
+        "shimmer2-auditor-document-294",
+        "shimmer2-auditor-document-200"
+      ],
+      "loss_divisor": 4,
+      "step": 39
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-088",
+        "shimmer2-auditor-document-129",
+        "shimmer2-auditor-document-102",
+        "shimmer2-auditor-document-171"
+      ],
+      "loss_divisor": 4,
+      "step": 40
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-179",
+        "shimmer2-auditor-document-212",
+        "shimmer2-auditor-document-252",
+        "shimmer2-auditor-document-020"
+      ],
+      "loss_divisor": 4,
+      "step": 41
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-077",
+        "shimmer2-auditor-document-235",
+        "shimmer2-auditor-document-078",
+        "shimmer2-auditor-document-091"
+      ],
+      "loss_divisor": 4,
+      "step": 42
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-107",
+        "shimmer2-auditor-document-131",
+        "shimmer2-auditor-document-251",
+        "shimmer2-auditor-document-134"
+      ],
+      "loss_divisor": 4,
+      "step": 43
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-095",
+        "shimmer2-auditor-document-124",
+        "shimmer2-auditor-document-181",
+        "shimmer2-auditor-document-236"
+      ],
+      "loss_divisor": 4,
+      "step": 44
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-172",
+        "shimmer2-auditor-document-067",
+        "shimmer2-auditor-document-203",
+        "shimmer2-auditor-document-253"
+      ],
+      "loss_divisor": 4,
+      "step": 45
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-259",
+        "shimmer2-auditor-document-016",
+        "shimmer2-auditor-document-185",
+        "shimmer2-auditor-document-291"
+      ],
+      "loss_divisor": 4,
+      "step": 46
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-110",
+        "shimmer2-auditor-document-063",
+        "shimmer2-auditor-document-208",
+        "shimmer2-auditor-document-239"
+      ],
+      "loss_divisor": 4,
+      "step": 47
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-193",
+        "shimmer2-auditor-document-026",
+        "shimmer2-auditor-document-061",
+        "shimmer2-auditor-document-219"
+      ],
+      "loss_divisor": 4,
+      "step": 48
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-188",
+        "shimmer2-auditor-document-093",
+        "shimmer2-auditor-document-191",
+        "shimmer2-auditor-document-030"
+      ],
+      "loss_divisor": 4,
+      "step": 49
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-183",
+        "shimmer2-auditor-document-036",
+        "shimmer2-auditor-document-267",
+        "shimmer2-auditor-document-089"
+      ],
+      "loss_divisor": 4,
+      "step": 50
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-034",
+        "shimmer2-auditor-document-187",
+        "shimmer2-auditor-document-011",
+        "shimmer2-auditor-document-071"
+      ],
+      "loss_divisor": 4,
+      "step": 51
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-295",
+        "shimmer2-auditor-document-297",
+        "shimmer2-auditor-document-254",
+        "shimmer2-auditor-document-192"
+      ],
+      "loss_divisor": 4,
+      "step": 52
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-261",
+        "shimmer2-auditor-document-289",
+        "shimmer2-auditor-document-205",
+        "shimmer2-auditor-document-206"
+      ],
+      "loss_divisor": 4,
+      "step": 53
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-072",
+        "shimmer2-auditor-document-031",
+        "shimmer2-auditor-document-189",
+        "shimmer2-auditor-document-256"
+      ],
+      "loss_divisor": 4,
+      "step": 54
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-015",
+        "shimmer2-auditor-document-123",
+        "shimmer2-auditor-document-186",
+        "shimmer2-auditor-document-023"
+      ],
+      "loss_divisor": 4,
+      "step": 55
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-076",
+        "shimmer2-auditor-document-017",
+        "shimmer2-auditor-document-122",
+        "shimmer2-auditor-document-126"
+      ],
+      "loss_divisor": 4,
+      "step": 56
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-022",
+        "shimmer2-auditor-document-009",
+        "shimmer2-auditor-document-069",
+        "shimmer2-auditor-document-174"
+      ],
+      "loss_divisor": 4,
+      "step": 57
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-014",
+        "shimmer2-auditor-document-194",
+        "shimmer2-auditor-document-108",
+        "shimmer2-auditor-document-024"
+      ],
+      "loss_divisor": 4,
+      "step": 58
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-182",
+        "shimmer2-auditor-document-255",
+        "shimmer2-auditor-document-018",
+        "shimmer2-auditor-document-012"
+      ],
+      "loss_divisor": 4,
+      "step": 59
+    },
+    {
+      "epoch": 1,
+      "example_ids": [
+        "shimmer2-auditor-document-211",
+        "shimmer2-auditor-document-116",
+        "shimmer2-auditor-document-038",
+        "shimmer2-auditor-document-097"
+      ],
+      "loss_divisor": 4,
+      "step": 60
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-207",
+        "shimmer2-auditor-document-196",
+        "shimmer2-auditor-document-258",
+        "shimmer2-auditor-document-260"
+      ],
+      "loss_divisor": 4,
+      "step": 61
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-107",
+        "shimmer2-auditor-document-110",
+        "shimmer2-auditor-document-182",
+        "shimmer2-auditor-document-086"
+      ],
+      "loss_divisor": 4,
+      "step": 62
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-097",
+        "shimmer2-auditor-document-291",
+        "shimmer2-auditor-document-231",
+        "shimmer2-auditor-document-185"
+      ],
+      "loss_divisor": 4,
+      "step": 63
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-265",
+        "shimmer2-auditor-document-250",
+        "shimmer2-auditor-document-093",
+        "shimmer2-auditor-document-033"
+      ],
+      "loss_divisor": 4,
+      "step": 64
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-195",
+        "shimmer2-auditor-document-060",
+        "shimmer2-auditor-document-133",
+        "shimmer2-auditor-document-096"
+      ],
+      "loss_divisor": 4,
+      "step": 65
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-100",
+        "shimmer2-auditor-document-294",
+        "shimmer2-auditor-document-235",
+        "shimmer2-auditor-document-293"
+      ],
+      "loss_divisor": 4,
+      "step": 66
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-020",
+        "shimmer2-auditor-document-039",
+        "shimmer2-auditor-document-256",
+        "shimmer2-auditor-document-104"
+      ],
+      "loss_divisor": 4,
+      "step": 67
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-084",
+        "shimmer2-auditor-document-179",
+        "shimmer2-auditor-document-210",
+        "shimmer2-auditor-document-242"
+      ],
+      "loss_divisor": 4,
+      "step": 68
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-254",
+        "shimmer2-auditor-document-069",
+        "shimmer2-auditor-document-062",
+        "shimmer2-auditor-document-212"
+      ],
+      "loss_divisor": 4,
+      "step": 69
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-286",
+        "shimmer2-auditor-document-189",
+        "shimmer2-auditor-document-076",
+        "shimmer2-auditor-document-129"
+      ],
+      "loss_divisor": 4,
+      "step": 70
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-023",
+        "shimmer2-auditor-document-089",
+        "shimmer2-auditor-document-251",
+        "shimmer2-auditor-document-299"
+      ],
+      "loss_divisor": 4,
+      "step": 71
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-255",
+        "shimmer2-auditor-document-296",
+        "shimmer2-auditor-document-125",
+        "shimmer2-auditor-document-261"
+      ],
+      "loss_divisor": 4,
+      "step": 72
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-238",
+        "shimmer2-auditor-document-263",
+        "shimmer2-auditor-document-028",
+        "shimmer2-auditor-document-285"
+      ],
+      "loss_divisor": 4,
+      "step": 73
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-220",
+        "shimmer2-auditor-document-217",
+        "shimmer2-auditor-document-126",
+        "shimmer2-auditor-document-236"
+      ],
+      "loss_divisor": 4,
+      "step": 74
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-223",
+        "shimmer2-auditor-document-202",
+        "shimmer2-auditor-document-030",
+        "shimmer2-auditor-document-241"
+      ],
+      "loss_divisor": 4,
+      "step": 75
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-031",
+        "shimmer2-auditor-document-222",
+        "shimmer2-auditor-document-201",
+        "shimmer2-auditor-document-025"
+      ],
+      "loss_divisor": 4,
+      "step": 76
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-115",
+        "shimmer2-auditor-document-206",
+        "shimmer2-auditor-document-186",
+        "shimmer2-auditor-document-218"
+      ],
+      "loss_divisor": 4,
+      "step": 77
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-098",
+        "shimmer2-auditor-document-085",
+        "shimmer2-auditor-document-233",
+        "shimmer2-auditor-document-168"
+      ],
+      "loss_divisor": 4,
+      "step": 78
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-269",
+        "shimmer2-auditor-document-026",
+        "shimmer2-auditor-document-290",
+        "shimmer2-auditor-document-000"
+      ],
+      "loss_divisor": 4,
+      "step": 79
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-298",
+        "shimmer2-auditor-document-232",
+        "shimmer2-auditor-document-289",
+        "shimmer2-auditor-document-204"
+      ],
+      "loss_divisor": 4,
+      "step": 80
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-015",
+        "shimmer2-auditor-document-215",
+        "shimmer2-auditor-document-234",
+        "shimmer2-auditor-document-165"
+      ],
+      "loss_divisor": 4,
+      "step": 81
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-216",
+        "shimmer2-auditor-document-002",
+        "shimmer2-auditor-document-208",
+        "shimmer2-auditor-document-120"
+      ],
+      "loss_divisor": 4,
+      "step": 82
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-092",
+        "shimmer2-auditor-document-108",
+        "shimmer2-auditor-document-105",
+        "shimmer2-auditor-document-190"
+      ],
+      "loss_divisor": 4,
+      "step": 83
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-079",
+        "shimmer2-auditor-document-019",
+        "shimmer2-auditor-document-061",
+        "shimmer2-auditor-document-082"
+      ],
+      "loss_divisor": 4,
+      "step": 84
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-245",
+        "shimmer2-auditor-document-167",
+        "shimmer2-auditor-document-013",
+        "shimmer2-auditor-document-099"
+      ],
+      "loss_divisor": 4,
+      "step": 85
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-134",
+        "shimmer2-auditor-document-004",
+        "shimmer2-auditor-document-012",
+        "shimmer2-auditor-document-199"
+      ],
+      "loss_divisor": 4,
+      "step": 86
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-227",
+        "shimmer2-auditor-document-219",
+        "shimmer2-auditor-document-188",
+        "shimmer2-auditor-document-010"
+      ],
+      "loss_divisor": 4,
+      "step": 87
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-229",
+        "shimmer2-auditor-document-127",
+        "shimmer2-auditor-document-072",
+        "shimmer2-auditor-document-268"
+      ],
+      "loss_divisor": 4,
+      "step": 88
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-067",
+        "shimmer2-auditor-document-017",
+        "shimmer2-auditor-document-176",
+        "shimmer2-auditor-document-130"
+      ],
+      "loss_divisor": 4,
+      "step": 89
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-070",
+        "shimmer2-auditor-document-197",
+        "shimmer2-auditor-document-292",
+        "shimmer2-auditor-document-122"
+      ],
+      "loss_divisor": 4,
+      "step": 90
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-043",
+        "shimmer2-auditor-document-063",
+        "shimmer2-auditor-document-249",
+        "shimmer2-auditor-document-248"
+      ],
+      "loss_divisor": 4,
+      "step": 91
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-001",
+        "shimmer2-auditor-document-237",
+        "shimmer2-auditor-document-226",
+        "shimmer2-auditor-document-041"
+      ],
+      "loss_divisor": 4,
+      "step": 92
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-066",
+        "shimmer2-auditor-document-006",
+        "shimmer2-auditor-document-042",
+        "shimmer2-auditor-document-247"
+      ],
+      "loss_divisor": 4,
+      "step": 93
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-116",
+        "shimmer2-auditor-document-044",
+        "shimmer2-auditor-document-121",
+        "shimmer2-auditor-document-091"
+      ],
+      "loss_divisor": 4,
+      "step": 94
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-240",
+        "shimmer2-auditor-document-080",
+        "shimmer2-auditor-document-123",
+        "shimmer2-auditor-document-008"
+      ],
+      "loss_divisor": 4,
+      "step": 95
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-253",
+        "shimmer2-auditor-document-192",
+        "shimmer2-auditor-document-102",
+        "shimmer2-auditor-document-090"
+      ],
+      "loss_divisor": 4,
+      "step": 96
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-003",
+        "shimmer2-auditor-document-077",
+        "shimmer2-auditor-document-103",
+        "shimmer2-auditor-document-071"
+      ],
+      "loss_divisor": 4,
+      "step": 97
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-184",
+        "shimmer2-auditor-document-288",
+        "shimmer2-auditor-document-018",
+        "shimmer2-auditor-document-175"
+      ],
+      "loss_divisor": 4,
+      "step": 98
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-087",
+        "shimmer2-auditor-document-180",
+        "shimmer2-auditor-document-205",
+        "shimmer2-auditor-document-038"
+      ],
+      "loss_divisor": 4,
+      "step": 99
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-094",
+        "shimmer2-auditor-document-065",
+        "shimmer2-auditor-document-173",
+        "shimmer2-auditor-document-264"
+      ],
+      "loss_divisor": 4,
+      "step": 100
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-213",
+        "shimmer2-auditor-document-095",
+        "shimmer2-auditor-document-181",
+        "shimmer2-auditor-document-244"
+      ],
+      "loss_divisor": 4,
+      "step": 101
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-198",
+        "shimmer2-auditor-document-040",
+        "shimmer2-auditor-document-034",
+        "shimmer2-auditor-document-124"
+      ],
+      "loss_divisor": 4,
+      "step": 102
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-106",
+        "shimmer2-auditor-document-187",
+        "shimmer2-auditor-document-088",
+        "shimmer2-auditor-document-128"
+      ],
+      "loss_divisor": 4,
+      "step": 103
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-194",
+        "shimmer2-auditor-document-266",
+        "shimmer2-auditor-document-228",
+        "shimmer2-auditor-document-037"
+      ],
+      "loss_divisor": 4,
+      "step": 104
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-262",
+        "shimmer2-auditor-document-170",
+        "shimmer2-auditor-document-009",
+        "shimmer2-auditor-document-183"
+      ],
+      "loss_divisor": 4,
+      "step": 105
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-243",
+        "shimmer2-auditor-document-200",
+        "shimmer2-auditor-document-036",
+        "shimmer2-auditor-document-193"
+      ],
+      "loss_divisor": 4,
+      "step": 106
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-287",
+        "shimmer2-auditor-document-177",
+        "shimmer2-auditor-document-211",
+        "shimmer2-auditor-document-172"
+      ],
+      "loss_divisor": 4,
+      "step": 107
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-259",
+        "shimmer2-auditor-document-221",
+        "shimmer2-auditor-document-075",
+        "shimmer2-auditor-document-101"
+      ],
+      "loss_divisor": 4,
+      "step": 108
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-014",
+        "shimmer2-auditor-document-246",
+        "shimmer2-auditor-document-027",
+        "shimmer2-auditor-document-297"
+      ],
+      "loss_divisor": 4,
+      "step": 109
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-203",
+        "shimmer2-auditor-document-113",
+        "shimmer2-auditor-document-016",
+        "shimmer2-auditor-document-024"
+      ],
+      "loss_divisor": 4,
+      "step": 110
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-081",
+        "shimmer2-auditor-document-214",
+        "shimmer2-auditor-document-029",
+        "shimmer2-auditor-document-230"
+      ],
+      "loss_divisor": 4,
+      "step": 111
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-112",
+        "shimmer2-auditor-document-166",
+        "shimmer2-auditor-document-119",
+        "shimmer2-auditor-document-178"
+      ],
+      "loss_divisor": 4,
+      "step": 112
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-083",
+        "shimmer2-auditor-document-224",
+        "shimmer2-auditor-document-005",
+        "shimmer2-auditor-document-239"
+      ],
+      "loss_divisor": 4,
+      "step": 113
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-074",
+        "shimmer2-auditor-document-267",
+        "shimmer2-auditor-document-022",
+        "shimmer2-auditor-document-118"
+      ],
+      "loss_divisor": 4,
+      "step": 114
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-257",
+        "shimmer2-auditor-document-295",
+        "shimmer2-auditor-document-191",
+        "shimmer2-auditor-document-171"
+      ],
+      "loss_divisor": 4,
+      "step": 115
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-114",
+        "shimmer2-auditor-document-131",
+        "shimmer2-auditor-document-169",
+        "shimmer2-auditor-document-132"
+      ],
+      "loss_divisor": 4,
+      "step": 116
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-007",
+        "shimmer2-auditor-document-209",
+        "shimmer2-auditor-document-117",
+        "shimmer2-auditor-document-068"
+      ],
+      "loss_divisor": 4,
+      "step": 117
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-174",
+        "shimmer2-auditor-document-252",
+        "shimmer2-auditor-document-078",
+        "shimmer2-auditor-document-035"
+      ],
+      "loss_divisor": 4,
+      "step": 118
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-021",
+        "shimmer2-auditor-document-011",
+        "shimmer2-auditor-document-225",
+        "shimmer2-auditor-document-064"
+      ],
+      "loss_divisor": 4,
+      "step": 119
+    },
+    {
+      "epoch": 2,
+      "example_ids": [
+        "shimmer2-auditor-document-032",
+        "shimmer2-auditor-document-111",
+        "shimmer2-auditor-document-109",
+        "shimmer2-auditor-document-073"
+      ],
+      "loss_divisor": 4,
+      "step": 120
+    }
+  ]
+}

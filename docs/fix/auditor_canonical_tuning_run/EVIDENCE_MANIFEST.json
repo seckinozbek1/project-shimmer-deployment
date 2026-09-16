@@ -1,0 +1,602 @@
+{
+  "binary_storage": "Preserved locally outside git; copy separately when migrating",
+  "credential_files_scanned": 143,
+  "credential_findings": 0,
+  "duplicate_bundle_check_and_pycache_excluded": true,
+  "local_only_binaries": {
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-0/adapter_model.safetensors": {
+      "bytes": 59827904,
+      "sha256": "e32f8ce5d7f7fcae83e7ce7de8591749d9617bc7b411017277e676e9228f49d3"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_model.safetensors": {
+      "bytes": 59827904,
+      "sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/adapter_model.safetensors": {
+      "bytes": 59827904,
+      "sha256": "35ce71004edea139719c9e945469fe0a20fd6efedb008b51d82507acb30f1bcc"
+    },
+    "docs/fix/auditor_canonical_tuning_run/evidence.tar.gz": {
+      "bytes": 136498916,
+      "sha256": "e8d8b45ab44ddfa56ddcee6e9a9c99d2105c56d718d9ca8a81662ac712176613"
+    },
+    "docs/fix/auditor_canonical_tuning_run/runtime_bundle.zip": {
+      "bytes": 166301,
+      "sha256": "9775e1e83492a65678a7c38a5800b67a38b3fb88aadc71431dfba576c3c362a5"
+    }
+  },
+  "text_files": {
+    "docs/fix/AUDITOR_CANONICAL_TUNING_RESULTS.md": {
+      "bytes": 16307,
+      "sha256": "af19a6893a45567fef21b0effc2ea5ef1daf51a317cb20e25a3bf7f00dc07af9"
+    },
+    "docs/fix/auditor_canonical_tuning_run/CURRENT_PHASE.json": {
+      "bytes": 105,
+      "sha256": "e33aff9bb0abe5c8d680ce85adfe806bd6305640a240fe04b61176584986edd4"
+    },
+    "docs/fix/auditor_canonical_tuning_run/HANDOFF.md": {
+      "bytes": 1180,
+      "sha256": "0c7437dff5c141c6d14bc8c90685ed12621e48184890f31276d5beaa6dbae08a"
+    },
+    "docs/fix/auditor_canonical_tuning_run/LAUNCH_INTENT.json": {
+      "bytes": 124,
+      "sha256": "7953cd88e3caa8f9fb96321541fe5e946bee197841b73a4b7864cb59721ff75e"
+    },
+    "docs/fix/auditor_canonical_tuning_run/LOCAL_GATES.json": {
+      "bytes": 4778,
+      "sha256": "bfb1d02bb5ef587c2c1bc112f34049ede1a4e0803ccc671fa6a14d75ff8e5b93"
+    },
+    "docs/fix/auditor_canonical_tuning_run/MANDATORY_WORK_FINISHED.json": {
+      "bytes": 60,
+      "sha256": "5911d0799b4ae19f44515ebaf6ba24a6c115e2e23dafcae61b1a18b24bb34afa"
+    },
+    "docs/fix/auditor_canonical_tuning_run/POST_RUN_VERIFICATION.json": {
+      "bytes": 526,
+      "sha256": "dff294fb3286b76ce5dc4a00a62f92bceae442192a9c2e6ce434ac7b599fef07"
+    },
+    "docs/fix/auditor_canonical_tuning_run/RECOMPUTED_PER_ROW.json": {
+      "bytes": 86723,
+      "sha256": "60ed2624e6cb4855f519ea6f3782bda6b81456d9d9cc5858db229a97fe2ccf6a"
+    },
+    "docs/fix/auditor_canonical_tuning_run/RECOMPUTED_RESULTS.json": {
+      "bytes": 30371,
+      "sha256": "51356f36b9e582169f07f58ac05dfcc01765e7488073b8b6c07c9c21e7e0a7e9"
+    },
+    "docs/fix/auditor_canonical_tuning_run/TERMINATE_REQUEST": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/TERMINATION_VERIFIED.json": {
+      "bytes": 352,
+      "sha256": "38788d482aa15a1cc82ac20217aa2c39c98eb3b3d2cb62f00e7bcbf205b18b71"
+    },
+    "docs/fix/auditor_canonical_tuning_run/WATCHDOG_ARMED.json": {
+      "bytes": 59,
+      "sha256": "be282c080477e79ae44bd273430936929884a6716a0f69c94877961f84f84641"
+    },
+    "docs/fix/auditor_canonical_tuning_run/acquisition.log": {
+      "bytes": 921,
+      "sha256": "70e6d1308b670bba13f9080eaa1ef41e8eb292e27bd9217ef2a9cc612bb3ca95"
+    },
+    "docs/fix/auditor_canonical_tuning_run/acquisition_timing.json": {
+      "bytes": 92,
+      "sha256": "ad60c44eb784708e0a12522a2b03219b1324c25b1e24abab44bb781d7be91458"
+    },
+    "docs/fix/auditor_canonical_tuning_run/activation.json": {
+      "bytes": 406,
+      "sha256": "8421d2d1c29087526f8fb545a90d4cf40c00eb8e92f345917db77579db983ef3"
+    },
+    "docs/fix/auditor_canonical_tuning_run/auditor_training.log": {
+      "bytes": 767,
+      "sha256": "28a1ce220b86da15ab4784202d25b7a73a2696b8054ca0080a305f99a11609ee"
+    },
+    "docs/fix/auditor_canonical_tuning_run/auditor_training_timing.json": {
+      "bytes": 91,
+      "sha256": "04ab15aec28b8e5b735d1422ed636d151dcc16db7db047f6266072f7f053c4b7"
+    },
+    "docs/fix/auditor_canonical_tuning_run/budget.json": {
+      "bytes": 184,
+      "sha256": "216c4456071f7930c61eaba6c5bcf8920635f13f77d8412f46dfa09a83c1e664"
+    },
+    "docs/fix/auditor_canonical_tuning_run/budget_transfer.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/budget_transfer_timing.json": {
+      "bytes": 92,
+      "sha256": "a93ea13a80cf7d4872ec839aec9bcfa577eb49e73d70befd67773f42e6abad0e"
+    },
+    "docs/fix/auditor_canonical_tuning_run/bundle_check.log": {
+      "bytes": 64,
+      "sha256": "151985ba3edde22a6c3382a2a8eb433c33c6ecbb75c76397a35f3baf439111c2"
+    },
+    "docs/fix/auditor_canonical_tuning_run/bundle_check_results.json": {
+      "bytes": 38,
+      "sha256": "a9091ef8cac7387bacb20180b354ac6cb9631e87063db98dea14ee7f6842ddbc"
+    },
+    "docs/fix/auditor_canonical_tuning_run/cleanup.json": {
+      "bytes": 112,
+      "sha256": "fde6245805a136864f02de2f19a1bdb6fba2a09f792dc5c33316faa107cd5d5b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/collection_integrity.json": {
+      "bytes": 105,
+      "sha256": "67cabfe86a38949d893cf06b9941afb7c026a350fc2e9729b6cd1cdd39e2efad"
+    },
+    "docs/fix/auditor_canonical_tuning_run/cost.json": {
+      "bytes": 73,
+      "sha256": "1a6af893abba57e6288fb6966b367580b63d7e77d9740f4b8480e9a5a8dab1d9"
+    },
+    "docs/fix/auditor_canonical_tuning_run/dependencies_install.log": {
+      "bytes": 11366,
+      "sha256": "0c76f518618b0df8be261dc4185f42cc6ff05bd06767db2c690f1aa5c19b2771"
+    },
+    "docs/fix/auditor_canonical_tuning_run/dependencies_install_timing.json": {
+      "bytes": 91,
+      "sha256": "e01ca70b3f02d6452347d008814ef556dad4ca9269125ef8bb8ee3fcc86df69f"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/budget.json": {
+      "bytes": 184,
+      "sha256": "216c4456071f7930c61eaba6c5bcf8920635f13f77d8412f46dfa09a83c1e664"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/TRAINING_ATTEMPTED": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/acquisition.json": {
+      "bytes": 972,
+      "sha256": "9a8a3fa130c56d1842056dbf9d40d81b1acd9d1e25505842929afdaf6d5b4e3f"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/budget_timeline.jsonl": {
+      "bytes": 45562,
+      "sha256": "70bdc0f29f22919075d352d0f4aea6c1ee4f799d5e23c690506cc47ffb702936"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-0/README.md": {
+      "bytes": 5208,
+      "sha256": "27cb368504178fc2645e841964d16c479e7887bd43a683ca2bb047b658012767"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-0/adapter_config.json": {
+      "bytes": 908,
+      "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-0/identity.json": {
+      "bytes": 269,
+      "sha256": "029365306380cee1518430a826276664c327d130d2bf204236e56bb515488cd7"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/README.md": {
+      "bytes": 5208,
+      "sha256": "27cb368504178fc2645e841964d16c479e7887bd43a683ca2bb047b658012767"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_config.json": {
+      "bytes": 908,
+      "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/cache_1.jsonl": {
+      "bytes": 12972,
+      "sha256": "b8d7afb5977bf5b9b048f13ebd88ce23121729094b8aca956cc3017caf4daad5"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/cache_1_scored.json": {
+      "bytes": 24137,
+      "sha256": "8fdf501384392bb42f4d5f2f86742bcf5b26cc8ed8689838d099da9e76456c7d"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/cache_2.jsonl": {
+      "bytes": 12973,
+      "sha256": "50fdbe5cb2652ae868da40578d89f95a4c9f9b76de62871a42fcbadbe8688c26"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/cache_2_scored.json": {
+      "bytes": 24138,
+      "sha256": "f2d3b484299981dbfcf1e6b3209e2d17f97c3678078816cbdcb28be59b328133"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/cache_admission.json": {
+      "bytes": 909,
+      "sha256": "dbba592d034bb04a0c6318412d95ef46155911bb7231015231b293d2c5c3da93"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/context_preflight.json": {
+      "bytes": 14847,
+      "sha256": "8c77831ed01e749c322d6f23bd3a1f31cbe701dc341b940a00887bf7eb0a3c87"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/control_admission.json": {
+      "bytes": 155,
+      "sha256": "2ed0c911e9c724b329cccb98f9932067feae7217f6d66b0dc44458711bc56215"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/controls_1.jsonl": {
+      "bytes": 61872,
+      "sha256": "27179aa56e102c5ed40ff4df40dfd98bc14e3012b4686a3d04883c550f9250d5"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/controls_1_scored.json": {
+      "bytes": 115627,
+      "sha256": "c3b9de3b8dfdf960f735a2e6b9fc3e5c841b546f2e1cc4962827e3c86804bc58"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/controls_2.jsonl": {
+      "bytes": 61875,
+      "sha256": "dad0579879cf040307d2959f96148eceb4a7e2dc0a5637909159bddde1c5bc99"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/controls_2_scored.json": {
+      "bytes": 115630,
+      "sha256": "3d777fe8c93b243f5a117ca60d24521e9120c0d21590883e4ff60ecb87f8254d"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/full_dev.jsonl": {
+      "bytes": 764019,
+      "sha256": "9551596b14b36da02c9e1a4b5fc16889fa85efe103cf7f18a389def041943a01"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/full_dev_scored.json": {
+      "bytes": 1427453,
+      "sha256": "d647ffbb63413ea61996b6e1003cd76454a5bf26f2bfd2177bd659a3158926ab"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/identity.json": {
+      "bytes": 271,
+      "sha256": "c776ed2baeff735073bcc9c8649798e2f609cb5c4b0c9887a2203c48b2d75419"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/metrics.json": {
+      "bytes": 3158,
+      "sha256": "94c475a1e60b00eed4c83796a92eff00ae45bfe47816e7e5e56f321d9c278a85"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/state_restoration.json": {
+      "bytes": 278599,
+      "sha256": "280e2d1689f99fa7d212f1fa42952f9cbf9ddb91d19d714f0a93dfe19e4cede3"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/status.json": {
+      "bytes": 56,
+      "sha256": "3d9dcd30d4f4864905791f65bfa7d16e43300772dcbf7b6ad63ba90b6717703b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/README.md": {
+      "bytes": 5208,
+      "sha256": "27cb368504178fc2645e841964d16c479e7887bd43a683ca2bb047b658012767"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/adapter_config.json": {
+      "bytes": 908,
+      "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/cache_1.jsonl": {
+      "bytes": 13193,
+      "sha256": "4c593cd6b542f2f8397d91bdd35155c43c87f7c1b5a7651abf179edb820c134b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/cache_1_scored.json": {
+      "bytes": 24448,
+      "sha256": "345ef375a337878e3ce6d1e411f40d035c808abf5d20351626314a8d5d483143"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/cache_2.jsonl": {
+      "bytes": 13194,
+      "sha256": "51fce884fc1821aaa8c884c1e74587506b0a59f268d78bbc71c88b26528039b2"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/cache_2_scored.json": {
+      "bytes": 24449,
+      "sha256": "97853504a19ea76b52b8e513897917a33ead2a60dbae27f365f32a97b6d26c45"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/cache_admission.json": {
+      "bytes": 909,
+      "sha256": "dbba592d034bb04a0c6318412d95ef46155911bb7231015231b293d2c5c3da93"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/context_preflight.json": {
+      "bytes": 14847,
+      "sha256": "8c77831ed01e749c322d6f23bd3a1f31cbe701dc341b940a00887bf7eb0a3c87"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/control_admission.json": {
+      "bytes": 155,
+      "sha256": "e69dc4b363a96a189f3a2a7516356e42be4db8c12b11612a7903ad6ff078402f"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/controls_1.jsonl": {
+      "bytes": 63100,
+      "sha256": "77c642dde54c0bbcd9790b7356c9844ae280e5e7227d432728f01dbfbece152a"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/controls_1_scored.json": {
+      "bytes": 117439,
+      "sha256": "23dd339be7ff05f05bcd6d2bd591f8c3349d4bf16fd92bcb17606bc609ad3830"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/controls_2.jsonl": {
+      "bytes": 63094,
+      "sha256": "e454bf7f66b028034ce686b39465a8add904c1072b86330ee4be5bd4a9bba97d"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/controls_2_scored.json": {
+      "bytes": 117433,
+      "sha256": "3e6f57a137e6feebdec49af8b3667d188a1f9399d2aa1b8f177abcef10179e29"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/full_dev.jsonl": {
+      "bytes": 775124,
+      "sha256": "b162916f527fdcb4bc6c3008d032db8a879637ee81db48154e6bae3c4808a23c"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/full_dev_scored.json": {
+      "bytes": 1443969,
+      "sha256": "6db8c247fb70f236840f38eb3911b2f9b53560f711f6dac12dc2b80f0b951a03"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/identity.json": {
+      "bytes": 270,
+      "sha256": "260b0831350e86e2299873c491d54f85e1e35d70f8cc992a0313b63e8bbdfe60"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/metrics.json": {
+      "bytes": 3130,
+      "sha256": "f71d94e0e7fc0919421c59b579a1c27623af56841f399b9f15da85630a3b715b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/state_restoration.json": {
+      "bytes": 277701,
+      "sha256": "b67a3de2c120042846e2e39a953063561409565f12d57c68460c5ff2ce15bb0b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-60/status.json": {
+      "bytes": 56,
+      "sha256": "3d9dcd30d4f4864905791f65bfa7d16e43300772dcbf7b6ad63ba90b6717703b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoints.json": {
+      "bytes": 7887,
+      "sha256": "d9cabf17e0533f5993c3b22e89af26a3707cf461447da298d04fa630d2557e0a"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/initialization.json": {
+      "bytes": 471,
+      "sha256": "899c60283db9f694c3b80dda660da416003cea6f12d5d70e4c0f1295931ad132"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/loaded_architecture.json": {
+      "bytes": 638,
+      "sha256": "0221f332fca80ead319f82c23b53893774b81bcf8a3d621b6142c12bccf8ddb5"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/optimizer_config.json": {
+      "bytes": 33157,
+      "sha256": "ebd35a5f33106445c0cc32ed098909fe57d6cb310e58e5ef5107ad73820161e2"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/preflight.json": {
+      "bytes": 435,
+      "sha256": "c16e73da3edc30d75143c613a8615aa6dfbb843745c76f1bab7436efa0220555"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/progress.json": {
+      "bytes": 320,
+      "sha256": "5a5ed9cb0e433970dfb7d4a37ab54ca6a7684ca827c737b0e829e3df302f451a"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/selection.json": {
+      "bytes": 88,
+      "sha256": "d296f81d043ab0d460987be945ea86790e3aec17bf55d78d787499db1f1d8ed5"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/status.json": {
+      "bytes": 275,
+      "sha256": "13bd694cced6baa739103377346e879edbdd8e2f6f361feebaaef6560a9b075b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/telemetry.jsonl": {
+      "bytes": 274904,
+      "sha256": "69b2a0ee12de5151ca66099476f405c2ce206620fdea9fb97dae3cd71c901dce"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/telemetry.stop": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/training.jsonl": {
+      "bytes": 67169,
+      "sha256": "2b839e9382b7b9d2ca08c2424c4da6ba86c7c4aa5f19dbb3d1072acf9192a8e7"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/execution_manifest.json": {
+      "bytes": 3679,
+      "sha256": "d716b789ced11983065bf44dbf79de0ae5e1969b4881fb4b12c74ea0f20dd2ee"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tools/auditor_canonical_remote.py": {
+      "bytes": 21914,
+      "sha256": "a11901d9fe85bcca55b4ff3c23eb26780333904c75c6d8b371fca00444a05616"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/training_authorization.json": {
+      "bytes": 850,
+      "sha256": "557c78193065f21b8018b6f1310d2b5a1c1144703683128406c94fec0f8fa44c"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/README.md": {
+      "bytes": 3934,
+      "sha256": "3d8bd23ce4e26cdb35556e86e8572efc4fa83ad438959d72397c035254fd8611"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/binding.py": {
+      "bytes": 1740,
+      "sha256": "f1a89b3b2a412407f67a6cc44ddfd183cd4965e5b79d78a6907401e9cf35b83c"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/config_state.py": {
+      "bytes": 7962,
+      "sha256": "be20f0cfecbb1721950b6921a585a9d4ca9b803938cee7979e89e0867627a282"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/dataset.json": {
+      "bytes": 940887,
+      "sha256": "ba5289a1273eb51692a22bcd3b2d5f325643ea15e0d70b7e65f4c6147f7f3ec9"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/eval_runtime.py": {
+      "bytes": 12658,
+      "sha256": "4f8d84f9343527a046b908cb61e734c2648d5c769ad963bdc18eae1f588676aa"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/evaluation_protocol.json": {
+      "bytes": 17026,
+      "sha256": "49199195d354af5f2e4e40e3b715d927cd093cab5e289d7002a813971568ca3b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/execution_plan.json": {
+      "bytes": 44079,
+      "sha256": "5d435a48e44fca157590f7c7f1696f160a55bc38c3632e96f9f4cdac62643680"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/experiment.json": {
+      "bytes": 13508,
+      "sha256": "5f3acdb0d319ed67842a2326fc64e65e1d8847f4f83f2c7f35867a7760ad5d02"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/freeze.json": {
+      "bytes": 1890,
+      "sha256": "29a5632f226ea34a537a06a5fe596fba7884995fba74f2d38d86159f98248667"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/prepared_dev.json": {
+      "bytes": 1201027,
+      "sha256": "f307ad8984d451a230140115276bc5294c613d110636adf7ab6e6bfbe5077103"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/selection.py": {
+      "bytes": 970,
+      "sha256": "de001723fc7518ece69c6a5702e2c8b19f8b12c969d425777be72bf0a2f5388a"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/selection_rules.json": {
+      "bytes": 815,
+      "sha256": "ea4e79377bfb15d465477a1982a31cb1e06861dc9a7bfb5c820a8ce6f9a8fb86"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/source_binding.json": {
+      "bytes": 32064,
+      "sha256": "77ea9bddd485d4ddd1f0b4fbab6a0459156992fff3d6c47aba2325558debc4b3"
+    },
+    "docs/fix/auditor_canonical_tuning_run/downloaded/tuning/auditor_canonical_execution/split.json": {
+      "bytes": 11142,
+      "sha256": "befcd49cf5cf555708cc98f38f0f2a0168db18ae5ee71e5faf0910c573e1e0f8"
+    },
+    "docs/fix/auditor_canonical_tuning_run/evidence_download.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/evidence_download_timing.json": {
+      "bytes": 92,
+      "sha256": "6e60f5edcdace32aaf0b8815e6ad5e56b993be30bb53078230187d30670cb78c"
+    },
+    "docs/fix/auditor_canonical_tuning_run/evidence_hash.log": {
+      "bytes": 121,
+      "sha256": "f9ce94d49869d98af4bb5a2904a45c6454b5a4e141c37a3b990aafc8019b0687"
+    },
+    "docs/fix/auditor_canonical_tuning_run/evidence_hash_timing.json": {
+      "bytes": 91,
+      "sha256": "7be1397d6340fa13b0fc9e73db839e7062b281811abda386028a080c9d535897"
+    },
+    "docs/fix/auditor_canonical_tuning_run/execution_manifest.json": {
+      "bytes": 3679,
+      "sha256": "b1b8faa68e56febe7423a5c7b3fce4a33c2e27609f6a9c2e90155469a4905fd6"
+    },
+    "docs/fix/auditor_canonical_tuning_run/final_inventory_confirmation.json": {
+      "bytes": 170,
+      "sha256": "1616fe452c27c922dd053a39b00248196375128818c4cf62e507e752c60c8805"
+    },
+    "docs/fix/auditor_canonical_tuning_run/historical_preservation.log": {
+      "bytes": 198,
+      "sha256": "df1043949131c8ea4cd1205a38aa5f115a7e46757c92ee9f9c47c96d303ac309"
+    },
+    "docs/fix/auditor_canonical_tuning_run/images.json": {
+      "bytes": 47071,
+      "sha256": "21082b53b9c833866e1734fb3ec1031e945c41c9f7ec6138ed24c827f3c8a5f8"
+    },
+    "docs/fix/auditor_canonical_tuning_run/instance-types.json": {
+      "bytes": 2566,
+      "sha256": "b3985eb3acc064156c0fb441c91a193d57263a7e817bbe3a576a54692907a1e5"
+    },
+    "docs/fix/auditor_canonical_tuning_run/instance_state.json": {
+      "bytes": 151,
+      "sha256": "e2eeca8dbdac3bd9abc5e3a92c880a29287fe27591d7975f230e77dd62601a53"
+    },
+    "docs/fix/auditor_canonical_tuning_run/instances.json": {
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "docs/fix/auditor_canonical_tuning_run/instances_after.json": {
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "docs/fix/auditor_canonical_tuning_run/integration.log": {
+      "bytes": 927,
+      "sha256": "7bd1950e6a58a6911260754c08af40973f22a0cf00a3565cfbfc76ec1d9fca90"
+    },
+    "docs/fix/auditor_canonical_tuning_run/launch.json": {
+      "bytes": 87,
+      "sha256": "e75ffb06a5a29fa490070e0398821ea7c310b92842d36ba40bda9fe4059cc753"
+    },
+    "docs/fix/auditor_canonical_tuning_run/local_auditor_checks.json": {
+      "bytes": 5761,
+      "sha256": "460b7577c743877b634ef27e5fa9c0de2608302ea9f63febc2f683d5b8407074"
+    },
+    "docs/fix/auditor_canonical_tuning_run/manifest.json": {
+      "bytes": 1170,
+      "sha256": "bc5727a02d96d6385d28a1d03d73206e0f7b0d306919959590c33fead1aeb6bc"
+    },
+    "docs/fix/auditor_canonical_tuning_run/mkdir.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/mkdir_timing.json": {
+      "bytes": 92,
+      "sha256": "11e220d2783e4625d2374d9672527d938b04234f051e483844d5e536791a085a"
+    },
+    "docs/fix/auditor_canonical_tuning_run/pack_evidence.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/pack_evidence_timing.json": {
+      "bytes": 88,
+      "sha256": "029a3e6b9ddc9219381e4563fec0eea634a63b52fc891893c9cc1b35714aa15e"
+    },
+    "docs/fix/auditor_canonical_tuning_run/pre_acquisition.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/pre_acquisition_timing.json": {
+      "bytes": 91,
+      "sha256": "284d5b98ad4fd95d220cc1e07e7a10821b384e170a27e1650a9f79e5070d91ac"
+    },
+    "docs/fix/auditor_canonical_tuning_run/process_final.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/process_final_timing.json": {
+      "bytes": 91,
+      "sha256": "c07aab066502fb008ef783793be325f021fcd915ffae6c3fab335f5490142e4d"
+    },
+    "docs/fix/auditor_canonical_tuning_run/python_gate.log": {
+      "bytes": 50,
+      "sha256": "0b113da3ac02c2045dd8a4aeea1877f3838788d0454d61f851e2050547e3c84b"
+    },
+    "docs/fix/auditor_canonical_tuning_run/python_gate_timing.json": {
+      "bytes": 89,
+      "sha256": "2965ca2f63be02349e294ff44bbc0a7b448aca5555230edf16e7db3135878cce"
+    },
+    "docs/fix/auditor_canonical_tuning_run/runtime_transfer.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/runtime_transfer_timing.json": {
+      "bytes": 90,
+      "sha256": "65af4967685516a71f1fa6f9f71ea5d604768ce6ae3e879781060dec227173a4"
+    },
+    "docs/fix/auditor_canonical_tuning_run/ssh_ready_0.log": {
+      "bytes": 84,
+      "sha256": "a7a0f6cd5d6797c3ff4ab730ce6bddf52bd547794f7dafdbaffba0cb878b1633"
+    },
+    "docs/fix/auditor_canonical_tuning_run/ssh_ready_0_timing.json": {
+      "bytes": 91,
+      "sha256": "011f545626b99eb89b3712a0f8cbfcfe94447d916ce2253147e8f3e23d2809fc"
+    },
+    "docs/fix/auditor_canonical_tuning_run/ssh_registration.json": {
+      "bytes": 86,
+      "sha256": "bdd104fbe8d227d69e6fa0b1d45a3afe37b4dbc19b1c95775961d30b1a26f27d"
+    },
+    "docs/fix/auditor_canonical_tuning_run/stop_workloads.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/stop_workloads_timing.json": {
+      "bytes": 92,
+      "sha256": "b2e3f6d11428b91f9bfdef42a707bbf9a6d593799af47f9fdc0e1d6ce788328e"
+    },
+    "docs/fix/auditor_canonical_tuning_run/termination_requested.json": {
+      "bytes": 130,
+      "sha256": "76e16d7ab4e17b92b4c2f61a2a9b4a601dc504f297f97d547c273f47fd261ed4"
+    },
+    "docs/fix/auditor_canonical_tuning_run/torch_install.log": {
+      "bytes": 9089,
+      "sha256": "8772d9f1bbdde62cef93a53aa73434a2fd3a28bde3c337a60858d4b4197164b8"
+    },
+    "docs/fix/auditor_canonical_tuning_run/torch_install_timing.json": {
+      "bytes": 91,
+      "sha256": "a588c58fd1dc6695b8d2b28d44bc67e8b985f931565982f7f5f26810410405a8"
+    },
+    "docs/fix/auditor_canonical_tuning_run/training_authorization.json": {
+      "bytes": 850,
+      "sha256": "557c78193065f21b8018b6f1310d2b5a1c1144703683128406c94fec0f8fa44c"
+    },
+    "docs/fix/auditor_canonical_tuning_run/unpack.log": {
+      "bytes": 23,
+      "sha256": "d66d35fe3d2ec09868155a3f7875181c19f93a558ba49f3005c655e00224b545"
+    },
+    "docs/fix/auditor_canonical_tuning_run/unpack_timing.json": {
+      "bytes": 92,
+      "sha256": "8b4a63a28c839072ff17ffdcebc060ad9c7d283d9209706a1900fdd4e0e4a576"
+    },
+    "docs/fix/auditor_canonical_tuning_run/venv.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_canonical_tuning_run/venv_timing.json": {
+      "bytes": 90,
+      "sha256": "be844d93905d82d430da22d3c8cd9e00d58f5ac52d17228e4d7eb3fdfbda6622"
+    },
+    "tools/analyze_auditor_canonical.py": {
+      "bytes": 20889,
+      "sha256": "232ad42bd8774f08895670fa3da9f549295a7bd1e86af9f1504127c77a138b38"
+    },
+    "tools/report_auditor_canonical.py": {
+      "bytes": 18462,
+      "sha256": "25c6debba8047c6be9286ea6876a90cbf7b600e4fe0a7392c3f12b458a3e602a"
+    }
+  }
+}
