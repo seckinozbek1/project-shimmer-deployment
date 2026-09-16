@@ -1,0 +1,8 @@
+test_context_before_cache_success (__main__.IntegrationChecks.test_context_before_cache_success) ... ok
+test_context_failure_no_go_teardown (__main__.IntegrationChecks.test_context_failure_no_go_teardown) ... ok
+test_sources_compile_and_no_training_calls (__main__.IntegrationChecks.test_sources_compile_and_no_training_calls) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.035s
+
+OK

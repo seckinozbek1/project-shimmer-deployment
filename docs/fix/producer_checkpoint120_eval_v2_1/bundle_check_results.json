@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "denied_boundaries": 3,
+  "packaged_imports": true,
+  "scope_verified": true,
+  "integration_tests": 3,
+  "bundle_members": 30
+}

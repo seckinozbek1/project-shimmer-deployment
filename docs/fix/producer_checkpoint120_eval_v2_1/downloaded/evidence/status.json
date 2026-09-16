@@ -1,0 +1,5 @@
+{
+  "status": "COMPLETED",
+  "checkpoint_result": "PRODUCER_CHECKPOINT120_FAIL",
+  "full_dev_rows": 60
+}

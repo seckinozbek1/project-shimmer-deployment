@@ -1,0 +1,19 @@
+{
+  "action": "producer-checkpoint120-evaluation-only",
+  "adapter_sha256": "3f1e12d107f1206641902565b28ea6217d70ff2768c321a216227dbc21b702a6",
+  "auditor": false,
+  "checkpoint": 120,
+  "experiment": "second-tuning-eval-runtime-v2_1",
+  "hard_budget_usd": 3,
+  "historical_permits_reused": false,
+  "maximum_instances": 1,
+  "operator_authorized": true,
+  "protected_access": false,
+  "protocol_sha256": "69cb99388c6280cef1639eaf0f0e035e34ca8d736ba8325d8aa79e17317d7b29",
+  "request_attachment": "9ec2056f-90b3-4950-b45b-e7915a487b60",
+  "role": "producer",
+  "runtime_release_sha256": "8d1fd41d1ab059e47b1297c1c39cd29711acd8fa5446a60780f9a97faef1d1fa",
+  "soft_budget_usd": 2.5,
+  "split": "canonical",
+  "training": false
+}
