@@ -1,0 +1,12 @@
+{
+  "candidate_head_sha256": "040bef09af89ba255d859645bbc13c76e9f8a53bf8e7c795c29e01afbe6b7c23",
+  "eligible_checkpoints": [],
+  "frozen_adapter_sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+  "historical_standalone_auditor_eligible": false,
+  "mean_sha256": "0e9cfb641c2383fac4239afefe49191f38811c50db0e982ccb5dba0cdf73aee5",
+  "selected_checkpoint": null,
+  "selected_head_sha256": null,
+  "source_commit": "05ce2a0dcbfc619be6e273777ef824355f992139",
+  "std_sha256": "a668bd1a8e2ff967124d23d1b9fe37a1bd496d8e48c3a95f1159f4e820a0c311",
+  "verdict": "AUDITOR_LINEAR_PROBE_FAIL"
+}

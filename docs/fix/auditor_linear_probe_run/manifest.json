@@ -1,0 +1,45 @@
+{
+  "bundle_sha256": "98e7d22517109b4f72c2c44802e4653b3957e541bbe093b0cdd91836e8e507ce",
+  "hard_seconds": 8372.093023255815,
+  "hard_usd": 3,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "minute50_cost": 1.075,
+  "minute55_cost": 1.1825,
+  "name": "shimmer-auditor-linear-probe",
+  "projected_cost": 1.166375,
+  "projected_seconds_with_reserve": 3255.0,
+  "projection_assumptions": {
+    "cleanup_seconds": 300,
+    "features_seconds": 300,
+    "head_and_checks_seconds": 60,
+    "max_probe_tokens": 16,
+    "max_reason_tokens": 155,
+    "model_tokens_per_second": 6,
+    "outputs": 70,
+    "setup_seconds": 600
+  },
+  "region": "us-east-1",
+  "reserve_seconds": 300,
+  "soft_seconds": 4186.046511627907,
+  "soft_usd": 1.5,
+  "source_commit": "05ce2a0dcbfc619be6e273777ef824355f992139",
+  "termination_deadline_seconds": 3300,
+  "watchdog_deadline_seconds": 3180,
+  "workload_deadline_seconds": 3000
+}

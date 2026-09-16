@@ -1,0 +1,370 @@
+{
+  "diagnostic": "CLASSIFIER_FAILURE",
+  "failed_gates": [
+    {
+      "actual": 0.5333333333333333,
+      "gate": "accepted_semantic_outcomes",
+      "minimum": 0.7
+    },
+    {
+      "actual": 0.9666666666666667,
+      "gate": "contract_validity",
+      "minimum": 1.0
+    },
+    {
+      "actual": 0.6793204731285226,
+      "gate": "macro_relation_f1",
+      "minimum": 0.75
+    },
+    {
+      "actual": 0.5833333333333334,
+      "gate": "recall_DIVERGENCE",
+      "minimum": 0.6
+    },
+    {
+      "actual": 0.4166666666666667,
+      "gate": "recall_MATCH",
+      "minimum": 0.6
+    },
+    {
+      "actual": 0.4166666666666667,
+      "gate": "recall_OMISSION",
+      "minimum": 0.6
+    },
+    {
+      "actual": 2,
+      "gate": "confident_wrong_match_divergence",
+      "maximum": 0
+    },
+    {
+      "actual": 0.9583333333333334,
+      "gate": "nonregression_substantive_non_refusal_coverage"
+    }
+  ],
+  "features": {
+    "count": 300,
+    "dimension": 3072,
+    "train_only_normalization": true
+  },
+  "final_auditor": {
+    "accepted_semantic_outcomes": 0.5333333333333333,
+    "catastrophic": {
+      "confident_wrong_match_divergence": 2,
+      "governance_violations": 0,
+      "invented_evidence": 0,
+      "invented_rule": 0,
+      "producer_source_copy": 0,
+      "truncation": 0
+    },
+    "contract_validity": 0.9666666666666667,
+    "count": 60,
+    "evidence_f1": 1.0,
+    "family_accepted_rates": {
+      "shimmer2-auditor-document-045": 0,
+      "shimmer2-auditor-document-046": 0,
+      "shimmer2-auditor-document-047": 0,
+      "shimmer2-auditor-document-048": 1,
+      "shimmer2-auditor-document-049": 1,
+      "shimmer2-auditor-document-050": 0,
+      "shimmer2-auditor-document-051": 1,
+      "shimmer2-auditor-document-052": 0,
+      "shimmer2-auditor-document-053": 1,
+      "shimmer2-auditor-document-054": 1,
+      "shimmer2-auditor-document-055": 0,
+      "shimmer2-auditor-document-056": 0,
+      "shimmer2-auditor-document-057": 0,
+      "shimmer2-auditor-document-058": 1,
+      "shimmer2-auditor-document-059": 1,
+      "shimmer2-auditor-document-135": 0,
+      "shimmer2-auditor-document-136": 0,
+      "shimmer2-auditor-document-137": 0,
+      "shimmer2-auditor-document-138": 1,
+      "shimmer2-auditor-document-139": 1,
+      "shimmer2-auditor-document-140": 1,
+      "shimmer2-auditor-document-141": 1,
+      "shimmer2-auditor-document-142": 0,
+      "shimmer2-auditor-document-143": 1,
+      "shimmer2-auditor-document-144": 1,
+      "shimmer2-auditor-document-145": 1,
+      "shimmer2-auditor-document-146": 0,
+      "shimmer2-auditor-document-147": 0,
+      "shimmer2-auditor-document-148": 1,
+      "shimmer2-auditor-document-149": 1,
+      "shimmer2-auditor-document-150": 1,
+      "shimmer2-auditor-document-151": 1,
+      "shimmer2-auditor-document-152": 1,
+      "shimmer2-auditor-document-153": 1,
+      "shimmer2-auditor-document-154": 1,
+      "shimmer2-auditor-document-155": 0,
+      "shimmer2-auditor-document-156": 0,
+      "shimmer2-auditor-document-157": 0,
+      "shimmer2-auditor-document-158": 1,
+      "shimmer2-auditor-document-159": 1,
+      "shimmer2-auditor-document-160": 0,
+      "shimmer2-auditor-document-161": 0,
+      "shimmer2-auditor-document-162": 0,
+      "shimmer2-auditor-document-163": 1,
+      "shimmer2-auditor-document-164": 1,
+      "shimmer2-auditor-document-270": 0,
+      "shimmer2-auditor-document-271": 0,
+      "shimmer2-auditor-document-272": 0,
+      "shimmer2-auditor-document-273": 1,
+      "shimmer2-auditor-document-274": 1,
+      "shimmer2-auditor-document-275": 0,
+      "shimmer2-auditor-document-276": 0,
+      "shimmer2-auditor-document-277": 0,
+      "shimmer2-auditor-document-278": 1,
+      "shimmer2-auditor-document-279": 1,
+      "shimmer2-auditor-document-280": 0,
+      "shimmer2-auditor-document-281": 1,
+      "shimmer2-auditor-document-282": 0,
+      "shimmer2-auditor-document-283": 1,
+      "shimmer2-auditor-document-284": 1
+    },
+    "macro_relation_f1": 0.6793204731285226,
+    "over_refusal_rate": 0.0,
+    "per_class_recall": {
+      "ADDITION": 1.0,
+      "DIVERGENCE": 0.5833333333333334,
+      "INSUFFICIENT_EVIDENCE": 1.0,
+      "MATCH": 0.4166666666666667,
+      "OMISSION": 0.4166666666666667
+    },
+    "refusal_precision": 1.0,
+    "refusal_recall": 1.0,
+    "relation_accuracy": 0.6833333333333333,
+    "substantive_non_refusal_coverage": 0.9583333333333334
+  },
+  "head_sha256": "040bef09af89ba255d859645bbc13c76e9f8a53bf8e7c795c29e01afbe6b7c23",
+  "head_training": {
+    "final_ce": 0.00017073829862285412,
+    "final_regularization": 4.297304432839155e-06,
+    "initial_ce": 1.609437346458435,
+    "train_metrics": {
+      "accuracy": 1.0,
+      "confusion": {
+        "ADDITION": {
+          "ADDITION": 48,
+          "DIVERGENCE": 0,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 0,
+          "OMISSION": 0
+        },
+        "DIVERGENCE": {
+          "ADDITION": 0,
+          "DIVERGENCE": 48,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 0,
+          "OMISSION": 0
+        },
+        "INSUFFICIENT_EVIDENCE": {
+          "ADDITION": 0,
+          "DIVERGENCE": 0,
+          "INSUFFICIENT_EVIDENCE": 48,
+          "MATCH": 0,
+          "OMISSION": 0
+        },
+        "MATCH": {
+          "ADDITION": 0,
+          "DIVERGENCE": 0,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 48,
+          "OMISSION": 0
+        },
+        "OMISSION": {
+          "ADDITION": 0,
+          "DIVERGENCE": 0,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 0,
+          "OMISSION": 48
+        }
+      },
+      "count": 240,
+      "macro_f1": 1.0,
+      "macro_precision": 1.0,
+      "macro_recall": 1.0,
+      "per_class": {
+        "ADDITION": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "predicted": 48,
+          "recall": 1.0,
+          "support": 48
+        },
+        "DIVERGENCE": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "predicted": 48,
+          "recall": 1.0,
+          "support": 48
+        },
+        "INSUFFICIENT_EVIDENCE": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "predicted": 48,
+          "recall": 1.0,
+          "support": 48
+        },
+        "MATCH": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "predicted": 48,
+          "recall": 1.0,
+          "support": 48
+        },
+        "OMISSION": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "predicted": 48,
+          "recall": 1.0,
+          "support": 48
+        }
+      }
+    },
+    "updates": 200
+  },
+  "history": {
+    "auditor_canonical_tuning_run": 143,
+    "producer_tuning_v3_run": 134
+  },
+  "nonregression": {
+    "evidence_f1": true,
+    "over_refusal_rate": true,
+    "refusal_precision": true,
+    "refusal_recall": true,
+    "substantive_non_refusal_coverage": false
+  },
+  "performance": {
+    "cpu_percent_mean": 135.51790476190476,
+    "feature_seconds": 86.10361956900056,
+    "feature_tokens": 227276,
+    "full_dev_seconds": 366.428520425,
+    "gpu_utilization_mean": 40.798095238095236,
+    "head_seconds": 0.462147745999971,
+    "peak_host_ram": 3442638848,
+    "peak_rss": 1789046784,
+    "peak_vram_allocated": 3821079552,
+    "peak_vram_reserved": 4005560320,
+    "probe_seconds": 68.52257000399965,
+    "reason_seconds": 279.55628594099994,
+    "reason_tokens": 1904,
+    "reasons": 48
+  },
+  "raw_head": {
+    "accuracy": 0.6833333333333333,
+    "confusion": {
+      "ADDITION": {
+        "ADDITION": 12,
+        "DIVERGENCE": 0,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 0,
+        "OMISSION": 0
+      },
+      "DIVERGENCE": {
+        "ADDITION": 4,
+        "DIVERGENCE": 7,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 0,
+        "OMISSION": 1
+      },
+      "INSUFFICIENT_EVIDENCE": {
+        "ADDITION": 0,
+        "DIVERGENCE": 0,
+        "INSUFFICIENT_EVIDENCE": 12,
+        "MATCH": 0,
+        "OMISSION": 0
+      },
+      "MATCH": {
+        "ADDITION": 6,
+        "DIVERGENCE": 0,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 5,
+        "OMISSION": 1
+      },
+      "OMISSION": {
+        "ADDITION": 5,
+        "DIVERGENCE": 2,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 0,
+        "OMISSION": 5
+      }
+    },
+    "count": 60,
+    "macro_f1": 0.6793204731285226,
+    "macro_precision": 0.7873015873015874,
+    "macro_recall": 0.6833333333333333,
+    "per_class": {
+      "ADDITION": {
+        "f1": 0.6153846153846154,
+        "precision": 0.4444444444444444,
+        "predicted": 27,
+        "recall": 1.0,
+        "support": 12
+      },
+      "DIVERGENCE": {
+        "f1": 0.6666666666666666,
+        "precision": 0.7777777777777778,
+        "predicted": 9,
+        "recall": 0.5833333333333334,
+        "support": 12
+      },
+      "INSUFFICIENT_EVIDENCE": {
+        "f1": 1.0,
+        "precision": 1.0,
+        "predicted": 12,
+        "recall": 1.0,
+        "support": 12
+      },
+      "MATCH": {
+        "f1": 0.5882352941176471,
+        "precision": 1.0,
+        "predicted": 5,
+        "recall": 0.4166666666666667,
+        "support": 12
+      },
+      "OMISSION": {
+        "f1": 0.5263157894736842,
+        "precision": 0.7142857142857143,
+        "predicted": 7,
+        "recall": 0.4166666666666667,
+        "support": 12
+      }
+    }
+  },
+  "remote_status": {
+    "dev_rows": 60,
+    "feature_input_tokens": 227276,
+    "feature_seconds": 86.10361956900056,
+    "features": 300,
+    "final_frozen_weights_sha256": "ac0fee8719f665e544a5e201c756b294981ad9645642b38d144357b76eddc931",
+    "full_dev_seconds": 366.428520425,
+    "head_seconds": 0.462147745999971,
+    "head_sha256": "040bef09af89ba255d859645bbc13c76e9f8a53bf8e7c795c29e01afbe6b7c23",
+    "probe_seconds": 79.82188523399981,
+    "reason_generated_tokens": 2260,
+    "reason_seconds": 330.2459698299999,
+    "updates": 200,
+    "verdict": "AUDITOR_LINEAR_PROBE_FAIL"
+  },
+  "routing": {
+    "disagreements": [],
+    "final_refusals": 12,
+    "probe_correct": 60,
+    "raw_head_refusals": 12,
+    "veto_refusals": 12
+  },
+  "source_commit": "05ce2a0dcbfc619be6e273777ef824355f992139",
+  "termination": {
+    "billable_duration_upper_bound_seconds": 1047.457424402237,
+    "epoch": 1789587079.0543604,
+    "estimated_cost_upper_bound_usd": 0.3753389104108016,
+    "instance_id": "4f88b80b8ea74ba6acf4db8ebb784ae4",
+    "metadata": {
+      "instance_id": "4f88b80b8ea74ba6acf4db8ebb784ae4",
+      "status": "terminated"
+    },
+    "utc": "2026-09-16T19:31:19.054360+00:00"
+  },
+  "verdict": "AUDITOR_LINEAR_PROBE_FAIL",
+  "zero_resources": true
+}

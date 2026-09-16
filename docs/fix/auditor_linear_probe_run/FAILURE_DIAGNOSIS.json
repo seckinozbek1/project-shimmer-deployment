@@ -1,0 +1,707 @@
+{
+  "correct_relation_failed_reason": 9,
+  "failed_rows": [
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-045",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 2 explicit claims, including their scope and evidence, and retains both gaps (The event date is missing. The amendment ratification status is missing.) and the stated uncertainty.",
+      "generated_reason": "The extraction adds \"The event date is missing.\" and \"The amendment ratification status is missing.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-046",
+      "expected": "DIVERGENCE",
+      "expected_reason": "The extraction replaces \"CLM-A: The count is 11 pulses. (REF-40184)\" with \"CLM-A: The count is 11 boxes. (REF-40184)\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "generated_reason": "The extraction replaces \"The count is 11 pulses.\" with \"The count is 11 boxes.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "raw_head": "DIVERGENCE",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "DIVERGENCE",
+      "scored_relation": "DIVERGENCE"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-047",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The event date is missing.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The complete, delivered extraction omits the source content \"Phase 03 | The following qualifications concern a separate annex, not the numbered claim events.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "raw_head": "OMISSION",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "OMISSION",
+      "scored_relation": "OMISSION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 3
+      },
+      "example_id": "shimmer2-auditor-document-050",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 3 explicit claims, including their scope and evidence, and retains both gaps (The event date is missing. Which entry came later?) and the stated uncertainty.",
+      "generated_reason": "The extraction preserves all 3 explicit claims, including their scope and evidence, and retains both gaps (The event date is missing. The third entry recording date is uncertain.) and the stated uncertainty.",
+      "raw_head": "MATCH",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "MATCH",
+      "scored_relation": "MATCH"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": true,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 3
+      },
+      "example_id": "shimmer2-auditor-document-052",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The event date is missing.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The extraction replaces \"The event date is missing.\" with \"The event date is uncertain.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "raw_head": "DIVERGENCE",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "DIVERGENCE",
+      "scored_relation": "DIVERGENCE"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 3
+      },
+      "example_id": "shimmer2-auditor-document-055",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 3 explicit claims, including their scope and evidence, and retains both gaps (The submission date is unspecified. The observation date is missing.) and the stated uncertainty.",
+      "generated_reason": "The extraction adds \"The submission date is unspecified.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 3
+      },
+      "example_id": "shimmer2-auditor-document-056",
+      "expected": "DIVERGENCE",
+      "expected_reason": "The extraction replaces \"CLM-A: The first entry concerns the sensor rack. (REF-40224)\" with \"CLM-A: The second entry concerns the sensor rack. (REF-40224)\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "generated_reason": "The extraction adds \"The submission date is unspecified.\" and \"The reporting date is unspecified.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 3
+      },
+      "example_id": "shimmer2-auditor-document-057",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The submission date is unspecified.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The extraction adds \"The amendment effective date is unavailable.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-135",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 2 explicit claims, including their scope and evidence, and retains both gaps (The reporting date is unspecified. The event did not occur.) and the stated uncertainty.",
+      "generated_reason": "The extraction adds \"The interpretation of the second entry remains unresolved.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-136",
+      "expected": "DIVERGENCE",
+      "expected_reason": "The extraction replaces \"Whether the event occurred is unknown.\" with \"Whether the event occurred is known.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "generated_reason": "The extraction adds \"Whether the event occurred is unknown.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-137",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"Whether the event occurred is unknown.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The extraction adds \"Whether the event occurred is unknown.\" (REF-9999) without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-142",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The amendment ratification status remains unknown.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The extraction adds \"The amendment ratification status remains unknown.\" (REF-40566) without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-146",
+      "expected": "DIVERGENCE",
+      "expected_reason": "The extraction replaces \"The third entry recording date is uncertain.\" with \"The third entry recording date is certain.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "generated_reason": "The extraction adds \"The amendment effective date is unavailable.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-147",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The third entry recording date is uncertain.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The extraction adds \"The third entry recording date is uncertain.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-155",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 2 explicit claims, including their scope and evidence, and retains both gaps (The amendment effective date is unavailable. The event did not occur.) and the stated uncertainty.",
+      "generated_reason": "The extraction adds \"The amendment effective date is unavailable.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-156",
+      "expected": "DIVERGENCE",
+      "expected_reason": "The extraction replaces \"The first entry interpretation is unclear.\" with \"The first entry interpretation is clear.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "generated_reason": "The extraction replaces \"The first entry interpretation is clear.\" with \"The first entry interpretation is unclear.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "raw_head": "DIVERGENCE",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "DIVERGENCE",
+      "scored_relation": "DIVERGENCE"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-157",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The first entry interpretation is unclear.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The extraction adds \"The first entry interpretation is unclear.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-160",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 2 explicit claims, including their scope and evidence, and retains both gaps (The amendment effective date is unavailable. The second entry event date is missing.) and the stated uncertainty.",
+      "generated_reason": "The extraction adds \"End annex qualifications.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-161",
+      "expected": "DIVERGENCE",
+      "expected_reason": "The extraction replaces \"The reporting date is unknown.\" with \"The reporting date is known.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "generated_reason": "The extraction replaces \"The reporting date is known.\" with \"The reporting date is unknown.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "raw_head": "DIVERGENCE",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "DIVERGENCE",
+      "scored_relation": "DIVERGENCE"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": true,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-162",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The reporting date is unknown.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The extraction replaces \"The reporting date is unknown.\" with \"Which entry came later?\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "raw_head": "DIVERGENCE",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "DIVERGENCE",
+      "scored_relation": "DIVERGENCE"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-270",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 2 explicit claims, including their scope and evidence, and retains both gaps (The third entry was not recorded. The date is unavailable.) and the stated uncertainty.",
+      "generated_reason": "The complete, delivered extraction omits the source content \"Annotations\n[1] CLM-B: The report of the event was recorded. (REF-41081)\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "raw_head": "OMISSION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "OMISSION",
+      "scored_relation": "OMISSION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-271",
+      "expected": "DIVERGENCE",
+      "expected_reason": "The extraction replaces \"No first entry exists.\" with \"No third entry exists.\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "generated_reason": "The complete, delivered extraction omits the source content \"No first entry exists.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "raw_head": "OMISSION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "OMISSION",
+      "scored_relation": "OMISSION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-272",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The event did not occur. The amendment ratification status is missing.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The complete, delivered extraction omits the source content \"The event did not occur. (REF-41088)\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "raw_head": "OMISSION",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "OMISSION",
+      "scored_relation": "OMISSION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-275",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 2 explicit claims, including their scope and evidence, and retains both gaps (The event did not occur. The second entry event date is missing.) and the stated uncertainty.",
+      "generated_reason": "The extraction preserves all 2 explicit claims, including their scope and evidence, and retains both gaps (The second entry event date is missing. The third entry recording date is uncertain.) and the stated uncertainty.",
+      "raw_head": "MATCH",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "MATCH",
+      "scored_relation": "MATCH"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-276",
+      "expected": "DIVERGENCE",
+      "expected_reason": "The extraction replaces \"What was entered third?\" with \"What was entered second?\". This changes the same proposition, referent, or evidence association rather than preserving it.",
+      "generated_reason": "The extraction adds \"What was entered third?\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-277",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"The event did not occur. Which entry came later?\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The complete, delivered extraction omits the source content \"The event did not occur.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "raw_head": "OMISSION",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "OMISSION",
+      "scored_relation": "OMISSION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-280",
+      "expected": "MATCH",
+      "expected_reason": "The extraction preserves all 2 explicit claims, including their scope and evidence, and retains both gaps (The event did not occur. The date is unavailable.) and the stated uncertainty.",
+      "generated_reason": "The extraction adds \"The date is unavailable. Whether the submission was submitted is unknown.\" without support in any owned source span. All original claims and qualifications remain.",
+      "raw_head": "ADDITION",
+      "reason_correct": null,
+      "relation_correct": false,
+      "routed": "ADDITION",
+      "scored_relation": "ADDITION"
+    },
+    {
+      "catastrophic": {
+        "confident_wrong_match_divergence": false,
+        "governance_violations": false,
+        "invented_evidence": false,
+        "invented_rule": false,
+        "producer_source_copy": false,
+        "truncation": false
+      },
+      "error": null,
+      "evidence": {
+        "fn": 0,
+        "fp": 0,
+        "tp": 2
+      },
+      "example_id": "shimmer2-auditor-document-282",
+      "expected": "OMISSION",
+      "expected_reason": "The complete, delivered extraction omits the source content \"No first entry exists. The first entry recording date is missing.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "generated_reason": "The complete, delivered extraction omits the source content \"No first entry exists.\" while retaining the remaining material. This is a substantive omission, not a transport failure.",
+      "raw_head": "OMISSION",
+      "reason_correct": null,
+      "relation_correct": true,
+      "routed": "OMISSION",
+      "scored_relation": "OMISSION"
+    }
+  ],
+  "note": "Saved-output local diagnosis; no retuning, generation or semantic rescoring.",
+  "wrong_relations": 19
+}
