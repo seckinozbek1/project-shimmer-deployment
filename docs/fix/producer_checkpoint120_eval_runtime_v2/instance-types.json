@@ -1,0 +1,129 @@
+[
+  {
+    "metadata": {
+      "cpu": 64,
+      "gpu_count": 1,
+      "gpu_type": "GH200 (96 GB)",
+      "hourly_rate": 2.29,
+      "ram_gib": 432,
+      "storage_gib": 4096,
+      "type": "gpu_1x_gh200"
+    },
+    "architecture": "arm64",
+    "regions": [
+      "us-east-3"
+    ]
+  },
+  {
+    "metadata": {
+      "cpu": 26,
+      "gpu_count": 1,
+      "gpu_type": "B200 (180 GB SXM6)",
+      "hourly_rate": 6.99,
+      "ram_gib": 360,
+      "storage_gib": 2816,
+      "type": "gpu_1x_b200_sxm6"
+    },
+    "architecture": "x86_64",
+    "regions": []
+  },
+  {
+    "metadata": {
+      "cpu": 26,
+      "gpu_count": 1,
+      "gpu_type": "H100 (80 GB SXM5)",
+      "hourly_rate": 4.29,
+      "ram_gib": 225,
+      "storage_gib": 2816,
+      "type": "gpu_1x_h100_sxm5"
+    },
+    "architecture": "x86_64",
+    "regions": []
+  },
+  {
+    "metadata": {
+      "cpu": 26,
+      "gpu_count": 1,
+      "gpu_type": "H100 (80 GB PCIe)",
+      "hourly_rate": 3.29,
+      "ram_gib": 200,
+      "storage_gib": 1024,
+      "type": "gpu_1x_h100_pcie"
+    },
+    "architecture": "x86_64",
+    "regions": [
+      "us-west-3"
+    ]
+  },
+  {
+    "metadata": {
+      "cpu": 30,
+      "gpu_count": 1,
+      "gpu_type": "A10 (24 GB PCIe)",
+      "hourly_rate": 1.29,
+      "ram_gib": 200,
+      "storage_gib": 1400,
+      "type": "gpu_1x_a10"
+    },
+    "architecture": "x86_64",
+    "regions": [
+      "us-east-1",
+      "us-west-1"
+    ]
+  },
+  {
+    "metadata": {
+      "cpu": 14,
+      "gpu_count": 1,
+      "gpu_type": "RTX 6000 (24 GB)",
+      "hourly_rate": 0.69,
+      "ram_gib": 46,
+      "storage_gib": 512,
+      "type": "gpu_1x_rtx6000"
+    },
+    "architecture": "x86_64",
+    "regions": []
+  },
+  {
+    "metadata": {
+      "cpu": 30,
+      "gpu_count": 1,
+      "gpu_type": "A100 (40 GB PCIe)",
+      "hourly_rate": 1.99,
+      "ram_gib": 200,
+      "storage_gib": 512,
+      "type": "gpu_1x_a100"
+    },
+    "architecture": "x86_64",
+    "regions": []
+  },
+  {
+    "metadata": {
+      "cpu": 30,
+      "gpu_count": 1,
+      "gpu_type": "A100 (40 GB SXM4)",
+      "hourly_rate": 1.99,
+      "ram_gib": 200,
+      "storage_gib": 512,
+      "type": "gpu_1x_a100_sxm4"
+    },
+    "architecture": "x86_64",
+    "regions": [
+      "us-east-1",
+      "us-west-2"
+    ]
+  },
+  {
+    "metadata": {
+      "cpu": 14,
+      "gpu_count": 1,
+      "gpu_type": "A6000 (48 GB)",
+      "hourly_rate": 1.09,
+      "ram_gib": 100,
+      "storage_gib": 200,
+      "type": "gpu_1x_a6000"
+    },
+    "architecture": "x86_64",
+    "regions": []
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "operator_approved": true,
+  "destination": "https://cloud.lambda.ai",
+  "region": "us-east-1",
+  "instance_type": "gpu_1x_a10",
+  "hourly_rate": 1.29,
+  "hard_budget_usd": 3,
+  "payload": [
+    "reviewed Producer-only code",
+    "60 canonical Producer DEV rows",
+    "preserved checkpoint-120 adapter"
+  ],
+  "transport": "SSH",
+  "user_answer": "Approve this exact destination and payload"
+}

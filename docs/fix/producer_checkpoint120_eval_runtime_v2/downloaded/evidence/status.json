@@ -1,0 +1,5 @@
+{
+  "status": "CHECKPOINT120_EVALUATION_NO_GO",
+  "checkpoint_result": "PRODUCER_CHECKPOINT120_INDETERMINATE",
+  "reason": "TypeError: vars() argument must have __dict__ attribute"
+}

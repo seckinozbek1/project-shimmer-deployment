@@ -1,0 +1,20 @@
+/home/ubuntu/shimmer-checkpoint120-eval/.venv/lib/python3.12/site-packages/peft/utils/save_and_load.py:236: UserWarning: Could not find a config file in unsloth/Qwen2.5-7B-Instruct-bnb-4bit - will assume that the vocabulary was not modified.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/ubuntu/shimmer-checkpoint120-eval/tools/checkpoint120_remote.py", line 216, in <module>
+    globals()[args.action]()
+  File "/home/ubuntu/shimmer-checkpoint120-eval/tools/checkpoint120_remote.py", line 159, in execute
+    observations={mode:run('cache_'+mode,controls[0],reference=mode=='reference',probe=True) for mode in ('reference','optimized')}
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-checkpoint120-eval/tools/checkpoint120_remote.py", line 151, in run
+    result=ev.evaluate_records(model,tok,torch,[record],protocol,sink,score,reference_trace=trace if reference else None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-checkpoint120-eval/tuning/second_tuning_eval_runtime_v2/eval_runtime.py", line 147, in evaluate_records
+    with evaluation_state(model, torch_api):
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-checkpoint120-eval/tuning/second_tuning_eval_runtime_v2/eval_runtime.py", line 89, in evaluation_state
+    saved = {identity: deepcopy(vars(obj)) for identity, obj in unique.items()}
+                                ^^^^^^^^^
+TypeError: vars() argument must have __dict__ attribute

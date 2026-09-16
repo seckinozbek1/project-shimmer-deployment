@@ -1,0 +1,17 @@
+{
+  "status": "PRELAUNCH_APPROVAL_BLOCKED",
+  "checkpoint_result": "PRODUCER_CHECKPOINT120_INDETERMINATE",
+  "reason": "Automatic approval review requires explicit Lambda destination and adapter/code/DEV payload egress approval",
+  "source_commit": "bee77af53576249fc889020ac44e969777433de7",
+  "runtime_release_sha256": "4f0005934ed09593c2ca1dcefe3c6295924d9cbcac6e0e180b3fb05abdd17d49",
+  "instances_launched": 0,
+  "billable_seconds": 0,
+  "cost_usd": 0,
+  "cache_preflight": "NOT_RUN",
+  "controls": "NOT_RUN",
+  "admission": "NOT_REACHED",
+  "full_dev_rows": 0,
+  "AUDITOR_STATUS": "UNTOUCHED",
+  "PROTECTED_RECEIPT_STATUS": "UNCONSUMED",
+  "authorization_consumed": false
+}

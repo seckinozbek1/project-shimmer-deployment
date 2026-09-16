@@ -1,0 +1,61 @@
+{
+  "checkpoint_result": "PRODUCER_CHECKPOINT120_INDETERMINATE",
+  "admission": "CHECKPOINT120_EVALUATION_NO_GO",
+  "invalidating_issue": "Frozen evaluation_state snapshots vars(None) for a non-generating module generation_config",
+  "exact_remote_object_not_instrumented": true,
+  "local_none_reproduction": true,
+  "reproduction_generations": 0,
+  "context_entered": false,
+  "pinned_source": {
+    "path": "transformers/modeling_utils.py",
+    "sha256": "bf3f2b4314492a5148d69bde5ef23dbe0c63a9224970b5e83a22af0d10269a0c",
+    "line": 1884,
+    "statement": "self.generation_config = GenerationConfig.from_model_config(config) if self.can_generate() else None"
+  },
+  "cache_preflight": "INTERRUPTED_BEFORE_GENERATION",
+  "reference_controls": 0,
+  "optimized_controls": 0,
+  "full_dev_rows": 0,
+  "tokens_identity_6_of_6": null,
+  "semantic_identity_6_of_6": null,
+  "reference_tokens_per_second": null,
+  "optimized_tokens_per_second": null,
+  "speed_ratio": null,
+  "metrics": null,
+  "adapter_tensor_identity_verified": true,
+  "adapter_devices": [
+    "cuda:0"
+  ],
+  "adapter_dtypes": [
+    "torch.float32"
+  ],
+  "adapter_active": [
+    "default"
+  ],
+  "cache_helper_mentions_use_cache": false,
+  "historical_verification": {
+    "status": "EVALUATION_RUNTIME_V2_READY",
+    "runtime_release_sha256": "4f0005934ed09593c2ca1dcefe3c6295924d9cbcac6e0e180b3fb05abdd17d49",
+    "bound_files": 17,
+    "historical_files_verified": 125,
+    "protected_receipt": "UNCONSUMED",
+    "cloud_authorized": false
+  },
+  "termination": {
+    "billable_duration_upper_bound_seconds": 729.8378932476044,
+    "epoch": 1789563565.4586272,
+    "estimated_cost_upper_bound_usd": 0.2615252450803916,
+    "instance_id": "f12ae568d54c434db9ad150d9d039944",
+    "metadata": {
+      "instance_id": "f12ae568d54c434db9ad150d9d039944",
+      "status": "terminated"
+    },
+    "utc": "2026-09-16T12:59:25.458627+00:00"
+  },
+  "security_files_scanned": 104,
+  "credential_findings": 0,
+  "AUDITOR_STATUS": "UNTOUCHED",
+  "PROTECTED_RECEIPT_STATUS": "UNCONSUMED",
+  "no_second_instance": true,
+  "next_action": "Local-only runtime state-snapshot correction and real pinned-module fixture proof in a new prospective freeze; no automatic cloud retry"
+}
