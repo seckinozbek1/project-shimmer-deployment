@@ -1,0 +1,10 @@
+{
+  "tools/auditor_classifier_lora_stable.py": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+  "tuning/auditor_classifier_lora/challenges.json": "fc34f439fb1bf57ec2247f5f6d2624b7438f419b8a3e09583a72e9eb3640e52d",
+  "tuning/auditor_classifier_lora/records.json": "6ef0f387119fca3f5c9bfd7cd4b7986bddc125cfe46ac01c86763e073cba20e2",
+  "tuning/auditor_classifier_lora/schedule.json": "0ff0a7f65f915636b41ce58fed29445a07183ca18af4e60b3318bcd6648c43ad",
+  "tuning/auditor_classifier_lora_stable/parity.json": "81cdcf2df34cff9475451790edae3ac79f9f993b78eed6632584cc8ee575c9ca",
+  "tuning/auditor_classifier_lora_stable/projection.json": "8851e0e76ee89bd159cd710519be863f5e5d3bca79da1656d11bce65e4cbe847",
+  "tuning/auditor_classifier_lora_stable/seal.json": "21aa5851847dac565b7d5237149612d7ac6d9350ece43280196bcac19597ad44",
+  "tuning/auditor_classifier_lora_stable/telemetry_schema.json": "6d49fcb77c0b9a0dfaa8a852508957459d8351e0a27ecb5354f84002fe6dba6a"
+}

@@ -1,0 +1,19 @@
+{
+  "added_preflight": "32 control forwards plus 1792 full-TRAIN forwards; 10-20 minute planning allowance, not measured. Includes prior setup/evaluations/collection estimate.",
+  "hard_budget_fit_not_established": true,
+  "historical_rate_usd_per_hour": 1.29,
+  "live_price_queried": false,
+  "no_authorization_implied": true,
+  "planning_cost_usd": [
+    1.6125,
+    3.0100000000000002
+  ],
+  "planning_total_minutes": [
+    75,
+    140
+  ],
+  "training_minutes": [
+    45.8063640732443,
+    89.73119160499226
+  ]
+}

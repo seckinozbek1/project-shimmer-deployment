@@ -1,0 +1,9 @@
+{
+  "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+  "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/head-200.safetensors": "e3e40fd922714d08832f24d7eb1860a622408ac0c0f3c53b3a3b2457a2ac9dbe",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/mean.npy": "f71da5c61dcfe6186bc49146e24a1aa25029e7ce03b1aab93d903f01dcbd1c54",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/std.npy": "d78e727198c4d15a86f7293c31ff4a5c20238dba148831cd5e1e88e246793794",
+  "tuning/auditor_classifier_lora_fork/classifier_adapter_init/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+  "tuning/auditor_classifier_lora_fork/classifier_adapter_init/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+}

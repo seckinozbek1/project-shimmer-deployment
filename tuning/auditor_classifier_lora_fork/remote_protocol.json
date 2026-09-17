@@ -1,0 +1,28 @@
+{
+  "atol": 0.0002,
+  "candidate_slot": "classifier_fork",
+  "config_copy_inference_mode": true,
+  "dropout_during_preflight": false,
+  "failure": "sticky NO_GO before optimizer; no retry",
+  "functional_parity_measured_locally": false,
+  "order": [
+    "verify_artifact_hashes",
+    "load_two_named_adapter_slots",
+    "freeze_all_eval_disable_dropout",
+    "16_reference_controls",
+    "16_fork_controls",
+    "compare_hidden_normalized_logits_argmax_ce",
+    "compare_cached_controls",
+    "delete_reference",
+    "1792_fork_train_baseline_no_grad",
+    "check_predictions_metrics_ce",
+    "enable_only_fork_and_head",
+    "create_optimizer",
+    "admit_health_gate",
+    "20_numerical_updates",
+    "continue_same_schedule_448_896"
+  ],
+  "reference_slot": "historical_reference",
+  "rtol": 0.0001,
+  "runtime_trainability": "PEFT trainability is explicitly disabled for both slots throughout preflight; only candidate LoRA and head enabled after reference deletion and TRAIN baseline pass. Config source is never edited."
+}
