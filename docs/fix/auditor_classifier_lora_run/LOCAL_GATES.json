@@ -1,0 +1,20 @@
+{
+  "checkpoint_steps": [
+    448,
+    896
+  ],
+  "external_dev": 200,
+  "historical_adapter_in_payload": false,
+  "historical_dev": 48,
+  "holdout_access": false,
+  "limitations": "Parameter inventory verified with deterministic architecture fixtures locally; actual loaded GPU inventory is mandatory before training.",
+  "old_feature_cache_used": false,
+  "passed": true,
+  "provenance_exclusion": true,
+  "rows": 2040,
+  "tests": 7,
+  "torch_imported": false,
+  "train": 1792,
+  "updates": 896,
+  "weights_loaded": false
+}
