@@ -1,0 +1,29 @@
+{
+  "assets_archive": {
+    "bytes": 13149972480,
+    "filename": "assets.tar",
+    "sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6"
+  },
+  "credentials_transferred": false,
+  "excluded": [
+    "all benchmark answer keys",
+    "all other corpora",
+    "TRAIN/DEV/HOLDOUT datasets",
+    "multi-round data",
+    "operator input",
+    "durable state",
+    "credentials",
+    "Git history"
+  ],
+  "local_paths_not_transferred": true,
+  "model_bytes": 10123020635,
+  "model_cache_local": "C:\\Users\\secki\\.cache\\huggingface\\hub",
+  "model_delivery": "Use sealed assets.tar; refs/main are exactly 40 ASCII revision bytes, no newline",
+  "project_archive": {
+    "bytes": 130873143,
+    "path": "project.tar.gz",
+    "sha256": "4867e1db33e656117844028d647744a6316f2a6b8154949cde9087a1f08c138a"
+  },
+  "wheel_bytes": 3026822853,
+  "wheelhouse_local": "C:\\Users\\secki\\local\\shimmer-deployment\\output\\cloud_wheels\\ordinary_final_cp312"
+}
