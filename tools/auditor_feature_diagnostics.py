@@ -104,7 +104,7 @@ def model_state(torch, model):
         cudnn_allow_tf32=torch.backends.cudnn.allow_tf32)
 
 
-def extract_train_vector(torch, np, model, row, index, device, diagnostic_path):
+def extract_train_vector(torch, np, model, row, index, device, diagnostic_path, record_success=False):
     """Execute the original forward and pooling, persisting evidence before refusal.
 
     Index is zero based. A malformed raw shape is refused before indexing. No
@@ -116,6 +116,7 @@ def extract_train_vector(torch, np, model, row, index, device, diagnostic_path):
     context = None
     ids = torch.tensor([row['input_ids']], device=device, dtype=torch.long)
     mask = torch.ones_like(ids)
+    before = model_state(torch, model) if record_success else None
     failure = None
     try:
         with torch.inference_mode():
@@ -133,8 +134,8 @@ def extract_train_vector(torch, np, model, row, index, device, diagnostic_path):
     except Exception as exc:
         failure = 'forward_or_extraction_exception:' + type(exc).__name__
         original = exc
-    if failure:
-        receipt = dict(event='train_feature_failure', reason=failure,
+    if failure or record_success:
+        receipt = dict(event='train_feature_failure' if failure else 'train_feature_valid', reason=failure,
             index=index, row_one_based=index + 1, example_id=row['example_id'],
             prompt_sha256=row.get('prompt_sha256'), token_sha256=digest(row['input_ids']),
             input_ids_sha256=digest(ids.cpu().tolist()), attention_mask_sha256=digest(mask.cpu().tolist()),
@@ -142,9 +143,10 @@ def extract_train_vector(torch, np, model, row, index, device, diagnostic_path):
             raw_hidden=tensor_summary(torch, raw), extracted_hidden=tensor_summary(torch, hidden),
             vector=tensor_summary(torch, torch.from_numpy(vector)) if vector is not None else None,
             pooling='last_hidden_state[0,-1]; float32 CPU numpy copy',
-            model=model_state(torch, model), runtime=runtime_state(torch), forward_autocast=context,
+            model=model_state(torch, model), model_before=before, runtime=runtime_state(torch), forward_autocast=context,
             outside_autocast=autocast_state(torch, ids.device.type), extraction_path=path_identity())
         write_diagnostic(diagnostic_path, receipt)
+    if failure:
         if failure.startswith('forward_or_extraction_exception:'):
             raise RuntimeError(failure) from original
         raise RuntimeError('finite TRAIN hidden: ' + failure)
