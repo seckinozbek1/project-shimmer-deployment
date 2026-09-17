@@ -1,0 +1,27 @@
+{
+  "approved": true,
+  "arms": [
+    "O",
+    "D"
+  ],
+  "bundle_sha256": "cab6408e2fc8e6424a00448fe032b860a9bb2c394d3deb01f23ef263e81751fe",
+  "epoch": 1789662509.6452343,
+  "execution_manifest_sha256": "8cb99d5aff7967ec2d951d941d6041c5aabd2a379a7d923d670c13d45fc4b2e5",
+  "gpu": "A10 24GB",
+  "hard_usd": 2,
+  "instances": 1,
+  "max_rows_per_arm": 32,
+  "max_total_forwards": 64,
+  "maximum_hourly_rate": 1.29,
+  "no_evaluation_or_protected_data": true,
+  "no_head_fit": true,
+  "no_normalization": true,
+  "no_optimizer_or_backward": true,
+  "no_other_roadmap_work": true,
+  "no_retry": true,
+  "no_training": true,
+  "no_warmup": true,
+  "prepared_commit": "f5a6c00",
+  "region": "us-east-1",
+  "soft_usd": 1
+}
