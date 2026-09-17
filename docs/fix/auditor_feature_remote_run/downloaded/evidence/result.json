@@ -1,0 +1,627 @@
+{
+  "verdict": "REMOTE_BLOCKER_NOT_REPRODUCED",
+  "source_commit": "f8dbcd12f9e06ff115081caac9565744192bdaf7",
+  "forwards": [
+    {
+      "stage": "A",
+      "sequence": 0,
+      "index": 31,
+      "row_one_based": 32,
+      "example_id": "shimmer2-auditor-document-038",
+      "valid": true,
+      "feature_sha256": "246380b8554855bad647ebf284792f84e03147795953f8aafa73db3f7d5d989c",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.19053423404693604,
+      "local_bitwise": false,
+      "receipt_sha256": "aadbdf6e8c09c0e168f17565a5a556cc431e5acaf76ef3db6d72a31f960861d5"
+    },
+    {
+      "stage": "A",
+      "sequence": 1,
+      "index": 31,
+      "row_one_based": 32,
+      "example_id": "shimmer2-auditor-document-038",
+      "valid": true,
+      "feature_sha256": "246380b8554855bad647ebf284792f84e03147795953f8aafa73db3f7d5d989c",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.19053423404693604,
+      "local_bitwise": false,
+      "previous_cloud_max_abs": 0.0,
+      "previous_cloud_bitwise": true,
+      "receipt_sha256": "f487f35a025051aee44e9150df432181ac14ef170abb5e31db0d613913193b4e"
+    },
+    {
+      "stage": "B",
+      "sequence": 0,
+      "index": 29,
+      "row_one_based": 30,
+      "example_id": "shimmer2-auditor-document-036",
+      "valid": true,
+      "feature_sha256": "6195fd14533ce1c67d98ce5e648b14108bf26f53e2b537a57e8c2787c287b3ff",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.19481152296066284,
+      "local_bitwise": false,
+      "receipt_sha256": "99738402b03d46e72dbb0c547e270d2c7675a66b1f2ff1e02233336397047d77"
+    },
+    {
+      "stage": "B",
+      "sequence": 1,
+      "index": 30,
+      "row_one_based": 31,
+      "example_id": "shimmer2-auditor-document-037",
+      "valid": true,
+      "feature_sha256": "ab6b45af9bb96f8781bec71df2f208eb9f3a08a48efc672bd75ea953a7eff4fc",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.20355622470378876,
+      "local_bitwise": false,
+      "receipt_sha256": "a8a5c54556c3d99e621e2126e47d3684e4f6511421897c66ed3050c6eaf6357e"
+    },
+    {
+      "stage": "B",
+      "sequence": 2,
+      "index": 31,
+      "row_one_based": 32,
+      "example_id": "shimmer2-auditor-document-038",
+      "valid": true,
+      "feature_sha256": "246380b8554855bad647ebf284792f84e03147795953f8aafa73db3f7d5d989c",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.19053423404693604,
+      "local_bitwise": false,
+      "previous_cloud_max_abs": 0.0,
+      "previous_cloud_bitwise": true,
+      "receipt_sha256": "9bce8faabc966e3dc54844fc5da34da374cc1481b9ac3be3bf149aa326c13c5b"
+    },
+    {
+      "stage": "B",
+      "sequence": 3,
+      "index": 32,
+      "row_one_based": 33,
+      "example_id": "shimmer2-auditor-document-040",
+      "valid": true,
+      "feature_sha256": "e2a1969a96bc6b9ffe624d212c5a5dd663aeb287767c15b3a7aedb28b433cbfd",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.21806000173091888,
+      "local_bitwise": false,
+      "receipt_sha256": "f380a0079a7b3c291721b4b809fdf909cda8a9a51476d7c427bc7c10c13a7d6b"
+    },
+    {
+      "stage": "C",
+      "sequence": 0,
+      "index": 0,
+      "row_one_based": 1,
+      "example_id": "shimmer2-auditor-document-000",
+      "valid": true,
+      "feature_sha256": "a40f7cd4107652d3f698afaa655593d3d2b57a9b967920df69a56d65de9c3413",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "aeab4a65b661f2361b44b51fa7c4e6f740b321c5ea3777f968302a8a375ce409"
+    },
+    {
+      "stage": "C",
+      "sequence": 1,
+      "index": 1,
+      "row_one_based": 2,
+      "example_id": "shimmer2-auditor-document-001",
+      "valid": true,
+      "feature_sha256": "c808ab97d8bcff59de49dfcbbabb68b9551aa96f9201fc8c010b032e4fdf8b4a",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "58db92521af45cff4ca99ef2b92006aae26e5b5bbdda3806aeca8ebb3dc15c96"
+    },
+    {
+      "stage": "C",
+      "sequence": 2,
+      "index": 2,
+      "row_one_based": 3,
+      "example_id": "shimmer2-auditor-document-002",
+      "valid": true,
+      "feature_sha256": "c7b8d55d4000f8ef5abe5c28d05d425768dedf282e97a00fff203364a2b93e44",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "4a6c71bae13d2e42ef16ee94dc8d8d4132a88f82ffa939b371c45e414590b6ad"
+    },
+    {
+      "stage": "C",
+      "sequence": 3,
+      "index": 3,
+      "row_one_based": 4,
+      "example_id": "shimmer2-auditor-document-003",
+      "valid": true,
+      "feature_sha256": "c516084687a2318b6ecbe15859f4438ce2064498df12f4d4e5c9320a1537daf0",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "153b9c4acd3a4af8cc27945301aa1cfdc74330fd98e192288cb833e0544378ad"
+    },
+    {
+      "stage": "C",
+      "sequence": 4,
+      "index": 4,
+      "row_one_based": 5,
+      "example_id": "shimmer2-auditor-document-005",
+      "valid": true,
+      "feature_sha256": "3b11ba172ebec0a1f107937a12f27d860c0baa457621c807404f0f3bc7ebb526",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "8d4dbd14528f8ad91d9d04e9fba2e76940e359569d621a368a69f5cb9b290d94"
+    },
+    {
+      "stage": "C",
+      "sequence": 5,
+      "index": 5,
+      "row_one_based": 6,
+      "example_id": "shimmer2-auditor-document-006",
+      "valid": true,
+      "feature_sha256": "e2e12fb47688557c59c08e209eb50d5bb56a7144c101f773b0ba45d28f35df93",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "b44da8ea5c00c6870f20557fa7402c62168067b5e90ea4ad0a5c3661ca19c763"
+    },
+    {
+      "stage": "C",
+      "sequence": 6,
+      "index": 6,
+      "row_one_based": 7,
+      "example_id": "shimmer2-auditor-document-007",
+      "valid": true,
+      "feature_sha256": "4b0c2ac87b93e0706632a601b084b48b83908b268a41299259fbf058914e527e",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "c4bebed7661f8041d34e5422b623a51d874dcade78e255c3666cc665e44554de"
+    },
+    {
+      "stage": "C",
+      "sequence": 7,
+      "index": 7,
+      "row_one_based": 8,
+      "example_id": "shimmer2-auditor-document-008",
+      "valid": true,
+      "feature_sha256": "84632389b7c3502611f8672cb2d71d79973d3c83ddab1ec6800ecc9b117d013b",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "5bae1c282284b0bea92312228d9782ec3a484d4ff6f940e3bdee0748e3c2d4be"
+    },
+    {
+      "stage": "C",
+      "sequence": 8,
+      "index": 8,
+      "row_one_based": 9,
+      "example_id": "shimmer2-auditor-document-010",
+      "valid": true,
+      "feature_sha256": "bad86edba2635712516d59dc711b997ba2964add649074dca97482a1e0e25830",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "2e5ff3b9c10620b5c623752b7c5c170a6ae8507d5f30817bce12d113af02d40b"
+    },
+    {
+      "stage": "C",
+      "sequence": 9,
+      "index": 9,
+      "row_one_based": 10,
+      "example_id": "shimmer2-auditor-document-011",
+      "valid": true,
+      "feature_sha256": "cf701c4b0817522033ef1d6eb5a679910a3c521e6b2269b35dd08929101310d2",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "a0b62eb587e04bfeb1b1f5fdb332ab771fa963df360444b54e52d307c4d04151"
+    },
+    {
+      "stage": "C",
+      "sequence": 10,
+      "index": 10,
+      "row_one_based": 11,
+      "example_id": "shimmer2-auditor-document-012",
+      "valid": true,
+      "feature_sha256": "069de6fa7d57e1f18be1b2a65cec994f57cba8c97c2be1d27ef6b73ea676ac4a",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "e3a5e5995ee7f6afa18af7fe6fdccb6da90f7a3230db25340151727f7bb16040"
+    },
+    {
+      "stage": "C",
+      "sequence": 11,
+      "index": 11,
+      "row_one_based": 12,
+      "example_id": "shimmer2-auditor-document-013",
+      "valid": true,
+      "feature_sha256": "2a78a8cdfef79f002b94de2f2d3371a8619ff968332b4d08dc7fc42376f49439",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "e9fe368b9321690fadd1e0819af48d0be981d87dffbe0e1505578f34f8a5bc4f"
+    },
+    {
+      "stage": "C",
+      "sequence": 12,
+      "index": 12,
+      "row_one_based": 13,
+      "example_id": "shimmer2-auditor-document-015",
+      "valid": true,
+      "feature_sha256": "d09bf6091b317e869de57621fde35742596b64673ddbcd87ac1aae46d0dcc3da",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "f483c061f01165bceb6e5bc201ee9b5c6baabf9e5f774249100a0ff0edc67f11"
+    },
+    {
+      "stage": "C",
+      "sequence": 13,
+      "index": 13,
+      "row_one_based": 14,
+      "example_id": "shimmer2-auditor-document-016",
+      "valid": true,
+      "feature_sha256": "cf592859bb9e3ff66621dee2d62071162b0ad651f07cff1381641a73522ab64b",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "65c19d1de88246aebc0dbece6378da44d5ddea922a08e5e7e78deabc26fa7d86"
+    },
+    {
+      "stage": "C",
+      "sequence": 14,
+      "index": 14,
+      "row_one_based": 15,
+      "example_id": "shimmer2-auditor-document-017",
+      "valid": true,
+      "feature_sha256": "b78887d817e5f181b3764b51d51848be83f294278b88e5fd127241077ee13101",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "628725515d6b3a7ac6f6dcc951c9c6b663f1514abff0f7f2e8a117cbb5f37f03"
+    },
+    {
+      "stage": "C",
+      "sequence": 15,
+      "index": 15,
+      "row_one_based": 16,
+      "example_id": "shimmer2-auditor-document-018",
+      "valid": true,
+      "feature_sha256": "a23c39791b93bb51b07e96166b0a42fd9bf178c5f33f162382b57e561f13473e",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "4da957e8280d7daeeafbccd53093201eba9d6c1e950e38300924fb8c57cc4620"
+    },
+    {
+      "stage": "C",
+      "sequence": 16,
+      "index": 16,
+      "row_one_based": 17,
+      "example_id": "shimmer2-auditor-document-020",
+      "valid": true,
+      "feature_sha256": "91a7af545909d82defd850b27c333ee4092f4186fd846b34abb1b2fe33f29c4c",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "353a5988c0ded29453fc74ef38a8684e14ee2975b55dc6b82919eda576eb6f10"
+    },
+    {
+      "stage": "C",
+      "sequence": 17,
+      "index": 17,
+      "row_one_based": 18,
+      "example_id": "shimmer2-auditor-document-021",
+      "valid": true,
+      "feature_sha256": "cffe474768e42d2221176a6b4d1d35e4e4fa8f0046d6286ed37a5fb495c996ea",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "768b7a3cf7038fe6bb9e2b630163d7d96314b761a4a450733e22c574079aee43"
+    },
+    {
+      "stage": "C",
+      "sequence": 18,
+      "index": 18,
+      "row_one_based": 19,
+      "example_id": "shimmer2-auditor-document-022",
+      "valid": true,
+      "feature_sha256": "e57cb135d0f7af2e8f9c630342bb13e44e51026d587bcbdb5b24e7b00c8b6a3b",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "d77b7991ef5ece41f060fce73daf70acfdb38dc9181c5832320fbe58536504d7"
+    },
+    {
+      "stage": "C",
+      "sequence": 19,
+      "index": 19,
+      "row_one_based": 20,
+      "example_id": "shimmer2-auditor-document-023",
+      "valid": true,
+      "feature_sha256": "d438937622cf4907bd7edd1babbe5d0b9c47bc5de9aca0f09e1b4b33dba59ccb",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "c4a12c6d5c801649e70d20cb92c22eb86186b30f1cd8a2131b2b0c1cfac5bf5f"
+    },
+    {
+      "stage": "C",
+      "sequence": 20,
+      "index": 20,
+      "row_one_based": 21,
+      "example_id": "shimmer2-auditor-document-025",
+      "valid": true,
+      "feature_sha256": "ce00d8a4b0b0b56797cd13a6a2c5a81b2f4933102070387e9b712b84a1c871e6",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "9caffc5598346d0e0842b062f2b3c180efc5c91dd7d49d2571932184486f7f2a"
+    },
+    {
+      "stage": "C",
+      "sequence": 21,
+      "index": 21,
+      "row_one_based": 22,
+      "example_id": "shimmer2-auditor-document-026",
+      "valid": true,
+      "feature_sha256": "313e04f40033e0dd5c3932e4cbb8b00b05e225341a3be9797af2508d64f6d3fa",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "c7455615b9dfb0e007f03dab85151a19bddc479f9a1f7e98417dafe24ad2e74e"
+    },
+    {
+      "stage": "C",
+      "sequence": 22,
+      "index": 22,
+      "row_one_based": 23,
+      "example_id": "shimmer2-auditor-document-027",
+      "valid": true,
+      "feature_sha256": "d768168f3b4d8373e5a5474ceb7d3aa49d29467723ef72862351f91f07f1a5b8",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "41fe210622eb053dbc36c0af20a97439413ee8650837429dd251d9edc008d244"
+    },
+    {
+      "stage": "C",
+      "sequence": 23,
+      "index": 23,
+      "row_one_based": 24,
+      "example_id": "shimmer2-auditor-document-028",
+      "valid": true,
+      "feature_sha256": "7b95b45bb8c051ec9747af7b85fd267372f3c17c820bcfc99d34dfe6d44f6ae6",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "f434759c55cf9edf18139dc9ab360c16494cd19703073d268fa42c6968c401b2"
+    },
+    {
+      "stage": "C",
+      "sequence": 24,
+      "index": 24,
+      "row_one_based": 25,
+      "example_id": "shimmer2-auditor-document-030",
+      "valid": true,
+      "feature_sha256": "a4d99f03cf333dc0601c20f50e16f125689d9fdccbd0bcd82ae30e38c077349f",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "e2a18eff5bb2d9dce2464781a261735a73b33f8af91d1bcec4417a057c718ac5"
+    },
+    {
+      "stage": "C",
+      "sequence": 25,
+      "index": 25,
+      "row_one_based": 26,
+      "example_id": "shimmer2-auditor-document-031",
+      "valid": true,
+      "feature_sha256": "30b6b950d836b3d8daefc562a5c0190509d4400a877e2eef641b9e8d49555079",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "0b44bdeb28286658708b6a0f78b0ef6f34bfb163e13ad920c167eadf9393aca4"
+    },
+    {
+      "stage": "C",
+      "sequence": 26,
+      "index": 26,
+      "row_one_based": 27,
+      "example_id": "shimmer2-auditor-document-032",
+      "valid": true,
+      "feature_sha256": "a41754e2c3f029fcc28274f5173565194fb03e9f6687b0f0c80afdc30a9002de",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "a2530bdc352c16d7b9e2d1d04502ccfcfc4e95d18e154bf8d92df5f9b1fe5f29"
+    },
+    {
+      "stage": "C",
+      "sequence": 27,
+      "index": 27,
+      "row_one_based": 28,
+      "example_id": "shimmer2-auditor-document-033",
+      "valid": true,
+      "feature_sha256": "cc6318d96b00bdb031ab6233892b06e7023db28fab0d36aed87daf64ed336ba6",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "17481fb27eecdd372e777df587ec63944573fc1e65a3151f7fd2d83d93099bcf"
+    },
+    {
+      "stage": "C",
+      "sequence": 28,
+      "index": 28,
+      "row_one_based": 29,
+      "example_id": "shimmer2-auditor-document-035",
+      "valid": true,
+      "feature_sha256": "a388c3c8f31f0b19111f99f2f37928c4cc8c54469b175dabdc2f7504a5dbad18",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "receipt_sha256": "7012729925ca7e95420f368be4b5600d1741587c5dbcac9e4c47879fa6b0229f"
+    },
+    {
+      "stage": "C",
+      "sequence": 29,
+      "index": 29,
+      "row_one_based": 30,
+      "example_id": "shimmer2-auditor-document-036",
+      "valid": true,
+      "feature_sha256": "6195fd14533ce1c67d98ce5e648b14108bf26f53e2b537a57e8c2787c287b3ff",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.19481152296066284,
+      "local_bitwise": false,
+      "previous_cloud_max_abs": 0.0,
+      "previous_cloud_bitwise": true,
+      "receipt_sha256": "cc24b7877e9bfb870fa4d9f6a799eb1ad50c26ed3576ae03993598d4a0ed6e8d"
+    },
+    {
+      "stage": "C",
+      "sequence": 30,
+      "index": 30,
+      "row_one_based": 31,
+      "example_id": "shimmer2-auditor-document-037",
+      "valid": true,
+      "feature_sha256": "ab6b45af9bb96f8781bec71df2f208eb9f3a08a48efc672bd75ea953a7eff4fc",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.20355622470378876,
+      "local_bitwise": false,
+      "previous_cloud_max_abs": 0.0,
+      "previous_cloud_bitwise": true,
+      "receipt_sha256": "453c4ba1d79b2d322584b99e3481aa208e81f82a487c4f142457f61d52ba1eb7"
+    },
+    {
+      "stage": "C",
+      "sequence": 31,
+      "index": 31,
+      "row_one_based": 32,
+      "example_id": "shimmer2-auditor-document-038",
+      "valid": true,
+      "feature_sha256": "246380b8554855bad647ebf284792f84e03147795953f8aafa73db3f7d5d989c",
+      "shape": [
+        3072
+      ],
+      "historical_max_abs": 0.0,
+      "historical_bitwise": true,
+      "local_max_abs": 0.19053423404693604,
+      "local_bitwise": false,
+      "previous_cloud_max_abs": 0.0,
+      "previous_cloud_bitwise": true,
+      "receipt_sha256": "b9ccd92e60906dece8838945b1618b431f413b80827eaff16ac4a2eee888b32a"
+    }
+  ],
+  "optimizer_updates": 0,
+  "dev_rows": 0,
+  "challenge_rows": 0,
+  "protected_rows": 0,
+  "producer_rows": 0,
+  "stage_c_reason": "Original failure followed31 forwards; order dependence remains unresolved.",
+  "base_unchanged": true,
+  "complete": true,
+  "data_access": {
+    "successful_access_counts": {
+      "holdout": 0,
+      "protected_final_test": 0,
+      "producer": 0,
+      "full_shimmer_inputs": 0
+    },
+    "denied_before_open": 0,
+    "external_dev_rows": 0,
+    "historical_dev_rows": 0,
+    "shorter_rows": 0,
+    "longer_rows": 0,
+    "evaluation_opened_after_updates": null
+  },
+  "finished_epoch": 1789658287.6346302
+}

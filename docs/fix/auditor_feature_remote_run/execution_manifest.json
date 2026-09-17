@@ -1,0 +1,29 @@
+{
+  "files": {
+    "diagnostic_payload/canonical_adapter/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "diagnostic_payload/canonical_adapter/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+    "diagnostic_payload/comparison_provenance.json": "ab9e9575c1a11f9e0182799b8dcacc97f6f720a27482d96d8b6b904a3f477d87",
+    "diagnostic_payload/historical33.npy": "3eb052eadb39f6bda435c4aafbb475ce8b1559c166898796aee82525b5b4a8b8",
+    "diagnostic_payload/local30_33.npy": "777ba512611bbcc11c66e67a7e65d16190a937bb4c4da4f293911360633806ec",
+    "diagnostic_payload/rows.json": "10c315611a9a58a6aa9dc48f7746b83ca38c09a06ce4389db86c219568d132d2",
+    "diagnostic_payload/runtime_contract.json": "93cec5bb592654068d4e21232c07fe88121842254a71b119676f1b15b2507d81",
+    "tools/auditor_classifier_lora_core.py": "2db4d4d00066c4b365fbcbe09e8f4b27c7a6e4d58673253a36d635516ec8a327",
+    "tools/auditor_classifier_lora_current_core.py": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+    "tools/auditor_classifier_lora_fork.py": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+    "tools/auditor_classifier_lora_stable.py": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+    "tools/auditor_feature_diagnostics.py": "8fe1bbbd26fddd98fb116d5fcae2f7e2fd477154251544372cb3974031d47fdb",
+    "tools/auditor_feature_remote.py": "88d487eb6ed101b455c45fccd450581c2b5afe3c7890c9676c416160f24f1229",
+    "tools/auditor_final_core.py": "87ae0ee076076d5d2a985162e5684a856e73eb569c1e15469dd7f4dd7621ec1c",
+    "tools/auditor_final_remote.py": "2a549c21afefe0fd03a2437264f9d7ebed4bad8043db0adf7dfffae8eaac7189"
+  },
+  "maximum_prefix_row": 32,
+  "optimizer_updates": 0,
+  "parent_results_commit": "459d694",
+  "source_commit": "f8dbcd12f9e06ff115081caac9565744192bdaf7",
+  "stages": [
+    "A:32 twice",
+    "B:30-33 if A passes",
+    "C:1-32 from fresh load if B passes"
+  ],
+  "train_payload_rows": 33
+}

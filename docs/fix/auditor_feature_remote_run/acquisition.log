@@ -1,0 +1,5 @@
+Fetching 8 files:   0%|          | 0/8 [00:00<?, ?it/s]Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+Fetching 8 files:  12%|█▎        | 1/8 [00:00<00:01,  5.92it/s]Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+Fetching 8 files:  88%|████████▊ | 7/8 [00:00<00:00, 18.63it/s]Fetching 8 files:  88%|████████▊ | 7/8 [00:20<00:02,  2.86s/it]Error while downloading from https://huggingface.co/unsloth/Phi-3.5-mini-instruct-bnb-4bit/resolve/5c20803aa197416f43fb455e55c85178775320cb/model.safetensors: HTTPSConnectionPool(host='us.aws.cdn.hf.co', port=443): Read timed out.
+Trying to resume download...
+Fetching 8 files: 100%|██████████| 8/8 [02:43<00:00, 20.42s/it]Fetching 8 files: 100%|██████████| 8/8 [02:43<00:00, 20.42s/it]

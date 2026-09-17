@@ -1,0 +1,2 @@
+# Preserve byte-bound evidence exactly, including collected CRLF.
+* -text whitespace=cr-at-eol

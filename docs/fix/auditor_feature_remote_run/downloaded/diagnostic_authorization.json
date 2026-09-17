@@ -1,0 +1,15 @@
+{
+  "action": "auditor-feature-diagnostic-only",
+  "execution_manifest_sha256": "48a2db56c85a8f0187d1bb025d787ee481dc881888d14fc3f8806b60aec51714",
+  "hard_usd": 2,
+  "hourly_rate": 1.29,
+  "instances": 1,
+  "launch_epoch": 1789657728.8742208,
+  "operator_authorized": true,
+  "optimizer_updates": 0,
+  "region": "us-east-1",
+  "request_attachment": "88e1927a-4fc9-4c34-97c8-e4baea828218",
+  "soft_usd": 1,
+  "source_commit": "f8dbcd12f9e06ff115081caac9565744192bdaf7",
+  "workload_deadline_epoch": 1789662410.2695696
+}

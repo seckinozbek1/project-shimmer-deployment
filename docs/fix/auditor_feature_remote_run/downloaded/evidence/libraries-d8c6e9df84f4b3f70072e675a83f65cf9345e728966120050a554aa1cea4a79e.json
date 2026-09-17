@@ -1,0 +1,21 @@
+{
+  "files": {
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/bitsandbytes/libbitsandbytes_cuda121.so": "62418d40e6549f21d5e0a2827e1263bd80cac2f29b567b36d376566b918df92d",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12": "37d1141111d6b935aa84156ad61fd3575350cad8d69d0916e9db7d37eef9b816",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12": "f97bfc2cf75dc40da650eb97aff63d3e195f500cc623c74f3fe33ce2ce2b71f4",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12": "9335f6a29ca91010e2da9f40e82fb4b28e3a4ae22fd385e1293e93bf3c46c9e6",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9": "74a4c495a26d5104150241e84a10842442c024c129cdc274ad8b6a7a8794980e",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9": "8fd845207c7477700e56a0395a4a746a0dc6181358535080240819bb67f1a138",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12": "500466a2f559de622a71bb920d3d2923e69135245747a2742ee13edff0ba6085",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12": "02d3acb5fe598dd20f0fca3cc03734ad164037a22747a01900561a42d0b8448f",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/torch/lib/libcusparseLt-f80c68d1.so.0": "be6f24534f1aa85998fb58a61b9e7124281ab539cbde11f0f40d9d25795c8728",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/torch/lib/libtorch.so": "853e427fa7f4523bbde3cdf4c4b1a09075b428e223e4848dd6d292b5ea8a7388",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so": "79caeeebf8dde1155d666f49f5bfb8f40f62c3a726fd70b2b6a7942becaae8c6",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so": "55dd71f13eb4c4023d08125f657d9115cc0d27a0273c94d16fd16861cf661424",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/torch/lib/libtorch_global_deps.so": "f80c0344a1235051f95af6232bda19e8cc517eaf5ea2356e5426b089d65cb1dd",
+    "/home/ubuntu/shimmer-auditor-feature-diagnostic/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so": "c354a1a6ba8a2bdf695bbf5449635fd1073e462bbcfe49e6496a847cab0973c5",
+    "/usr/lib/x86_64-linux-gnu/libcuda.so.580.105.08": "df9183549feb062f4195e6cf130e0ef372de4a59e59dbe51554ad8c3c5b167db",
+    "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.580.105.08": "bee24a7507366126cdf7441c7fec4705e85c3a61c9669e08d70d7d86a8ed6f99"
+  },
+  "hardware_sha256": "a9f1be411ab716160506b861c4b34749ee4692f5b36714a71eb45f2e92386851"
+}

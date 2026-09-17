@@ -1,0 +1,27 @@
+test_all_nonfinite_bounded_indices_and_strict_json (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_diagnostic_write_failure_cannot_admit_row (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_live_loop_calls_shared_guard_before_cache_write (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_non_train_denied_before_forward (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_nonfinite_evidence_is_durable_before_raise (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_valid_original_pooling_and_forward_arguments (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_wrong_raw_shape_preserved_without_resize (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_all_pass_bounded_order_with_fresh_prefix (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_controller_single_launch_and_collection_before_termination (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_each_failure_prevents_later_expansion (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_no_training_calls_in_remote_diagnostic (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_success_records_raw_and_vector_state (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_data_boundary (test_auditor_final.FinalContracts) ... ok
+test_evaluation_gate (test_auditor_final.FinalContracts) ... ok
+test_final_update_identical_except_bound (test_auditor_final.FinalContracts) ... ok
+test_numerical_ce_gate (test_auditor_final.FinalContracts) ... ok
+test_scoring_and_applicability (test_auditor_final.FinalContracts) ... ok
+test_selected_values (test_auditor_final.FinalContracts) ... ok
+test_selection_does_not_reject_old_gate_failure (test_auditor_final.FinalContracts) ... ok
+test_train_schema_excludes_metadata (test_auditor_final.FinalContracts) ... ok
+test_two_complete_passes (test_auditor_final.FinalContracts) ... ok
+test_warmup (test_auditor_final.FinalContracts) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.690s
+
+OK
