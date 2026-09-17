@@ -1,0 +1,110 @@
+{
+  "calibration": {
+    "completed_joint_update_samples": 1,
+    "inference_row_seconds": 0.21573240472154015,
+    "setup_seconds": 432.21860810113515,
+    "update_seconds": 3.470272066000007
+  },
+  "conservative_per_trial": {
+    "20": {
+      "cost_usd": 0.1419,
+      "diagnostic_forwards": 12,
+      "evaluation_rows": 360,
+      "minutes": 6.6,
+      "reset_hash_logging_allowance": 90.0,
+      "seconds": 396.0,
+      "updates": 20
+    },
+    "40": {
+      "cost_usd": 0.24975833333333333,
+      "diagnostic_forwards": 14,
+      "evaluation_rows": 720,
+      "minutes": 11.616666666666667,
+      "reset_hash_logging_allowance": 90.0,
+      "seconds": 697.0,
+      "updates": 40
+    },
+    "80": {
+      "cost_usd": 0.4006166666666667,
+      "diagnostic_forwards": 16,
+      "evaluation_rows": 1080,
+      "minutes": 18.633333333333333,
+      "reset_hash_logging_allowance": 90.0,
+      "seconds": 1118.0,
+      "updates": 80
+    }
+  },
+  "historical_hourly_rate": 1.29,
+  "limitations": "One joint update is not a throughput distribution. Reset/hash/telemetry allowances and pruning mix are projections; no HPO performance or runtime measured. Budget stop overrides trial completion; no second instance or retry.",
+  "live_price_queried": false,
+  "low": {
+    "control_seconds": 6.903436951089285,
+    "cost_usd": 1.6071212509152173,
+    "minutes": 74.74982562396359,
+    "one_train_pass_seconds": 386.59246926099996,
+    "seconds": 4484.989537437816,
+    "setup_seconds": 432.21860810113515,
+    "teardown_reserve_seconds": 600,
+    "trials_by_stop_update": {
+      "20": 14,
+      "80": 1
+    }
+  },
+  "per_trial": {
+    "20": {
+      "cost_usd": 0.06437741268904802,
+      "diagnostic_forwards": 12,
+      "evaluation_rows": 360,
+      "minutes": 2.9942982646068845,
+      "reset_hash_logging_allowance": 30.0,
+      "seconds": 179.65789587641308,
+      "updates": 20
+    },
+    "40": {
+      "cost_usd": 0.11723178426117718,
+      "diagnostic_forwards": 14,
+      "evaluation_rows": 720,
+      "minutes": 5.452641128426846,
+      "reset_hash_logging_allowance": 30.0,
+      "seconds": 327.15846770561075,
+      "updates": 40
+    },
+    "80": {
+      "cost_usd": 0.19495643897297307,
+      "diagnostic_forwards": 16,
+      "evaluation_rows": 1080,
+      "minutes": 9.067741347580144,
+      "reset_hash_logging_allowance": 30.0,
+      "seconds": 544.0644808548086,
+      "updates": 80
+    }
+  },
+  "recommended_hard_ceiling_usd": 9.0,
+  "recommended_soft_budget_usd": 7.0,
+  "typical": {
+    "control_seconds": 6.903436951089285,
+    "cost_usd": 2.0796967897715843,
+    "minutes": 96.73008324518996,
+    "one_train_pass_seconds": 386.59246926099996,
+    "seconds": 5803.804994711398,
+    "setup_seconds": 432.21860810113515,
+    "teardown_reserve_seconds": 600,
+    "trials_by_stop_update": {
+      "20": 8,
+      "40": 4,
+      "80": 3
+    }
+  },
+  "worst": {
+    "control_seconds": 16.0,
+    "cost_usd": 6.873550000000001,
+    "minutes": 319.7,
+    "one_train_pass_seconds": 896.0,
+    "seconds": 19182.0,
+    "setup_seconds": 900.0,
+    "teardown_reserve_seconds": 600,
+    "trials_by_stop_update": {
+      "80": 15
+    }
+  }
+}
