@@ -1,0 +1,611 @@
+{
+  "retained_text": [
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/.gitattributes",
+      "sha256": "8b9c3028d6467ff3be7c793141927841d70f47f52d0590677438f488ca154992",
+      "bytes": 9
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/acquisition.log",
+      "sha256": "d2aeb875738205e36e40bab91d511a10e7c436674ab1b2ec27d7e1d907d15dd0",
+      "bytes": 921
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/acquisition_timing.json",
+      "sha256": "2dd3f6dc8b20656ac5ee137db21734868315cc9b88640e727f7b0a328321ebe2",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/activation.json",
+      "sha256": "102f4f8a9527628d7dc9021c47a00d16d90057d0b7a2d906d06053c97bdd3a95",
+      "bytes": 413
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/budget.json",
+      "sha256": "abeea71f3d5d4836ebd4b91a540bfe9ad1325dff5760eda5a910038bb6d4d9c3",
+      "bytes": 237
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/budget_transfer.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/budget_transfer_timing.json",
+      "sha256": "1491037b656cbad539e3dc905012028b311d02fc26626942c3a91115b2f4aec9",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/bundle_check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/bundle_check_results.json",
+      "sha256": "1b3490f8c6afe553227a76df9db313e8dc296fc1795345cadca3c3fc3d798475",
+      "bytes": 98
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/classification_only.log",
+      "sha256": "2fe719fea4fd30ee069a47023e56391ef69324e677c808ed539732d11f1de0a4",
+      "bytes": 2236
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/classification_only_timing.json",
+      "sha256": "9d1f1bc3ef14d6ea6b4a3fe3927c9898f2c87bdfc5155de34d81dc16b985de37",
+      "bytes": 90
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/cleanup.json",
+      "sha256": "fde6245805a136864f02de2f19a1bdb6fba2a09f792dc5c33316faa107cd5d5b",
+      "bytes": 112
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/collection_integrity.json",
+      "sha256": "291cd954d0c61b484f6fe656802545ddfb85d3021884509c2aaaef56799fcfa6",
+      "bytes": 105
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/controller_failure.json",
+      "sha256": "b7e9783a33af5f2db376db68d6f70c5fd4317898b6d969b8d63e52ab2fcc723a",
+      "bytes": 107
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/cost.json",
+      "sha256": "444d1fb915d6d624c65ee8eae06e42f3995ee0913cfde7256fffacda93bcfb6d",
+      "bytes": 72
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/CURRENT_PHASE.json",
+      "sha256": "9affef3daac3309a91bd210678cb3df6e5a2aca9584d207bd26e8997398babf9",
+      "bytes": 109
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/dependencies_install.log",
+      "sha256": "738b01d59b36d02a1d93d2fe1c9cec2a66473af6d66a0f505946b571ee9fe7e0",
+      "bytes": 11364
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/dependencies_install_timing.json",
+      "sha256": "4aa021bee1adf8a51bea55c87c1f6215df4312e23cf13253a8c79ab715b7b53f",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/budget.json",
+      "sha256": "abeea71f3d5d4836ebd4b91a540bfe9ad1325dff5760eda5a910038bb6d4d9c3",
+      "bytes": 237
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/acquisition.json",
+      "sha256": "515650781d5a9a6d3659097210684790656bcfd8d82205e6acc65c86c6207615",
+      "bytes": 947
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/budget_timeline.jsonl",
+      "sha256": "de30c92776c0b4987dc11bf1c6467de398b9c3daed9bbb8bae5551c72af4c2c7",
+      "bytes": 1025072
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/checkpoint-0/classifier_fork/adapter_config.json",
+      "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+      "bytes": 908
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/checkpoint-0/identity.json",
+      "sha256": "2e0f6a9e16247df64982ff5cb6827f4c2310f29f631054a9598cbe8c93117127",
+      "bytes": 487
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/checkpoint-0/README.md",
+      "sha256": "27cb368504178fc2645e841964d16c479e7887bd43a683ca2bb047b658012767",
+      "bytes": 5208
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/classifier_adapter_init/adapter_config.json",
+      "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+      "bytes": 908
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/current_train_baseline.json",
+      "sha256": "21e934dc30a6cb8a6c8abc1d26abeb388ef9bdeeb4bcaaf09a857b21e4fc64a3",
+      "bytes": 293834
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/current_train_features.jsonl",
+      "sha256": "75cd0e49a85e0fd9637141b836baf1be1c627cc6a6479127f2dcd8875441a11c",
+      "bytes": 701509
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/fork_provenance.json",
+      "sha256": "6b0e02f0d4d55728f088342895a0fb9d60ee900ce7f0dd537992fdf312b0d714",
+      "bytes": 114789
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/head_result.json",
+      "sha256": "5d2dd187a00021c8380f2b19a4e4b3a843a03de2657c600e7b9972b6754c5106",
+      "bytes": 1785
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/head_train_predictions.jsonl",
+      "sha256": "e089e4779435441dee035015bc4601181614c3c8272e8c5419c0ab247eab1f86",
+      "bytes": 351215
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/head_training.jsonl",
+      "sha256": "2bece02ebb5726615f0e251db321adb3c6d18c0bca67995b6d8c26d16d1a1ce9",
+      "bytes": 21978
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/initialization.json",
+      "sha256": "10c06fe82dd6b48f86d3088b660c8b4d94eace879efa3887a43089eef3ec50b4",
+      "bytes": 258
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/normalization.json",
+      "sha256": "8260e0ac65e873b7575d4f9cea3211cc62dfb075b6ce5c67688b9b421eca8ee9",
+      "bytes": 122698
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/numerical_health.jsonl",
+      "sha256": "89b0a26c1fe0630c32108b9f705c119f5df142269ff4bb6e08cbb0b7de060691",
+      "bytes": 11871
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/optimizer.json",
+      "sha256": "5cf726c8a360c79260417d7340ef785b0a3a6537304b57d4d87004a4608dd772",
+      "bytes": 387
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/parameter_inventory.json",
+      "sha256": "d0b9ef49e2c99cd222e0cde9ed2f34a7a241fac9bdc0f5a7c9091a518bf7fbe5",
+      "bytes": 171426
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/preflight.json",
+      "sha256": "cc568c8e0a296856bcf382e70877682b9f4d7dbb05f7b1727e57b864cea5edde",
+      "bytes": 172
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/progress.json",
+      "sha256": "a1ed70d309ef95aa9489bc897ac1cdcf769ebf273c09e2f97d922ebabe6e0d4d",
+      "bytes": 278
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/runtime_ceilings.json",
+      "sha256": "9e9f4ae92a9adf645f95b92101b306cae99234b28e246cfa5182f578f0988c10",
+      "bytes": 207
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/status.json",
+      "sha256": "60a6e6f1d69c2e513f3bd84f51b9bf4afddf13d256ae0027ac0f333b0407a65e",
+      "bytes": 199
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/telemetry.jsonl",
+      "sha256": "78b3044df71dca7f58e55acf65b0827a46871b8873af39d55892b6289ad54c57",
+      "bytes": 99585
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/training.jsonl",
+      "sha256": "439b6123984d4d00112205f4471a8b03a2d61565b9aaf6b6dc6b937dcbe23df1",
+      "bytes": 384
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/update0_parity.jsonl",
+      "sha256": "9b4b0ffd6045eb0844a832780dd747fde893c7275b9973f1b0b93b55996f44d0",
+      "bytes": 4130
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/update0_predictions.jsonl",
+      "sha256": "53c2cf7dfeab05f0e56e27e2dd48f62410c28aae85064861daacee5ffe352dcb",
+      "bytes": 462146
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/update0_summary.json",
+      "sha256": "d67ad90cf2673d91ffc4d58eece3d4349536850fb7883116bc4dd738de670194",
+      "bytes": 1642
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/execution_manifest.json",
+      "sha256": "1f4ba78fe3aae8624bbf113b49238d6f2cef1eedc905462586ad4fa4f9980968",
+      "bytes": 2611
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tools/auditor_classifier_lora_core.py",
+      "sha256": "2db4d4d00066c4b365fbcbe09e8f4b27c7a6e4d58673253a36d635516ec8a327",
+      "bytes": 7080
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tools/auditor_classifier_lora_current_core.py",
+      "sha256": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+      "bytes": 6560
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tools/auditor_classifier_lora_current_remote.py",
+      "sha256": "72d3ecf599c6e185de221566662dc2bc7a117a78c4990f55a3a55cc107931faa",
+      "bytes": 20990
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tools/auditor_classifier_lora_fork.py",
+      "sha256": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+      "bytes": 13199
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tools/auditor_classifier_lora_stable.py",
+      "sha256": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+      "bytes": 13758
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/training_authorization.json",
+      "sha256": "137a50e09d55a882948966b59bb9de8835b840d176660462892288f8e3712fa1",
+      "bytes": 759
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tuning/auditor_classifier_lora/challenges.json",
+      "sha256": "fc34f439fb1bf57ec2247f5f6d2624b7438f419b8a3e09583a72e9eb3640e52d",
+      "bytes": 11716
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tuning/auditor_classifier_lora/records.json",
+      "sha256": "6ef0f387119fca3f5c9bfd7cd4b7986bddc125cfe46ac01c86763e073cba20e2",
+      "bytes": 14337764
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tuning/auditor_classifier_lora/schedule.json",
+      "sha256": "0ff0a7f65f915636b41ce58fed29445a07183ca18af4e60b3318bcd6648c43ad",
+      "bytes": 312599
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tuning/auditor_classifier_lora_current_runtime/controls.json",
+      "sha256": "b1558c767b67d3742537ba2c4d0544d1d8c0a3b233142b0eeb68f2b70d06eb55",
+      "bytes": 1273
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/tuning/auditor_classifier_lora_current_runtime/experiment.json",
+      "sha256": "270022a3f230eb78965b24e60350d9203a724ea3995ef11a2d5def0e3a372192",
+      "bytes": 3659
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/evidence_download.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/evidence_download_timing.json",
+      "sha256": "72767efc550a7fdd2850c39d2a63ae5b0585affc4dc56f85f98fb1e0b90f58ee",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/evidence_hash.log",
+      "sha256": "7d72a4bda935aca82cf623340d29a799a0f93d28c53cb6af11b33784efe129e7",
+      "bytes": 130
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/evidence_hash_timing.json",
+      "sha256": "90d7bc8a9970593dbfef8c615b034e3c64b3fe636e1e577a5f3de9957c0afdbb",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/execution_manifest.json",
+      "sha256": "1f4ba78fe3aae8624bbf113b49238d6f2cef1eedc905462586ad4fa4f9980968",
+      "bytes": 2611
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/final_inventory_confirmation.json",
+      "sha256": "834ed52fa6c87389d977a94b37ce156b3ca2c8e14ba314ddc3d5a3bdb6e7e2fa",
+      "bytes": 87
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/images.json",
+      "sha256": "643193e5879c1495b98997ad5f934c85eb5604838415f1457f605e13e8eaebdf",
+      "bytes": 48886
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/instance_state.json",
+      "sha256": "73e32554083c49caea96868b34e84f208be2ae3c3e8defa920ddbb9ee90a3268",
+      "bytes": 151
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/instances_after.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/launch.json",
+      "sha256": "53ecc67072f65873c63d175143c39fea97d4123596d2571732168c1c44721c29",
+      "bytes": 87
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/LAUNCH_INTENT.json",
+      "sha256": "c01efc513dc46e3207f68eee20e63b45c0ed35337036092389edc3618493562e",
+      "bytes": 115
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/live_capacity.json",
+      "sha256": "fd61120047db601a1ff6af55bbb1e8d0cf293fb9ce9806f506e5417b3bea2107",
+      "bytes": 434
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/live_head_result.json",
+      "sha256": "5d2dd187a00021c8380f2b19a4e4b3a843a03de2657c600e7b9972b6754c5106",
+      "bytes": 1785
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/LOCAL_GATES.json",
+      "sha256": "ddc46b23f961d8f8234be207d53192ced338a4c19f4528aa511a1e14451382f5",
+      "bytes": 163
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/local_tests.log",
+      "sha256": "6c12c83ab6dc2b4d0866945061c84c64ebb2e51fe8201a27b0b01d59bffe1149",
+      "bytes": 167
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/local_transition_analysis/results.json",
+      "sha256": "2af220e406ed4fac7ac88cb5c6a5d35bbf690555126227ed0bded668a7514328",
+      "bytes": 193103
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/local_transition_analysis/TEST_RESULTS.json",
+      "sha256": "048566ffcd71cf53195a3e2e9fe9edb80ce1d79179dd74e333f631f4be8f5a80",
+      "bytes": 111
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/manifest.json",
+      "sha256": "162f6ae22cb3f482aef420b7a15730919a69eff94a07745063a925d42f866985",
+      "bytes": 1002
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/mkdir.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/mkdir_timing.json",
+      "sha256": "86eecfbbb793f7ed8bfc222b169553c0fea832b8accf570a7e56fa27f0c735bf",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/pack_evidence.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/pack_evidence_timing.json",
+      "sha256": "41310ceb065bfed495fb5d76761aa5bce42c0af1957f22e54d2ea77b9f3e792c",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/pre_acquisition.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/pre_acquisition_timing.json",
+      "sha256": "60c8aa47ac8474fb09298a87699a1f5c2aa8e7efb29e99a6cc48f0aaef26d21d",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/preservation_before.json",
+      "sha256": "99d37424a18f60cc44b2c521d3a12c1844b88808ac25702387c2bdb7d7d247c6",
+      "bytes": 988
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/process_final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/process_final_timing.json",
+      "sha256": "a6eb525c97b9c22628b9fe8cf077d6014ecb7437dd49e95066deb899e5d02889",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/python_gate.log",
+      "sha256": "0b113da3ac02c2045dd8a4aeea1877f3838788d0454d61f851e2050547e3c84b",
+      "bytes": 50
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/python_gate_timing.json",
+      "sha256": "3f3a06d20f63717a37e7bc02241e5389948fd497c5ce91d0929bf10b624490bb",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/RECOMPUTED_RESULTS.json",
+      "sha256": "9d5f881530ba7d4bf2420bb658912a63891c700d3f071ef26173f4f9d8f98198",
+      "bytes": 136314
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/runtime_transfer.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/runtime_transfer_timing.json",
+      "sha256": "63743d139126a844ab53979c309add1c2487a47039ec17b9c786df8476c88782",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/ssh_ready_0.log",
+      "sha256": "592e4f80938f84eb4ea24657572648847ebeef7da2ca2d516828464a257da425",
+      "bytes": 84
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/ssh_ready_0_timing.json",
+      "sha256": "91de75068bf6f8708a969fb1d552e6bb1a58cd6d3b5bc23a07f80acef21e4227",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/ssh_registration.json",
+      "sha256": "e10feeed620bf4d58edf54136c9babaad8c88e10e70b7484cb01e9f717627584",
+      "bytes": 95
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/stop_workloads.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/stop_workloads_timing.json",
+      "sha256": "32dfc7d1826abc19b111e48c74aca1bdccad1613cceba560c7549a96aa70ad65",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/termination_requested.json",
+      "sha256": "803067b2c70d8cc20ba6a8818720a34d0737ce81ceb943de6a8c309ce3a0e011",
+      "bytes": 131
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/TERMINATION_VERIFIED.json",
+      "sha256": "1d093374ad87532121f0e8021ebea2b7358b3832fd61f53dda400470941a56d6",
+      "bytes": 352
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/torch_install.log",
+      "sha256": "a59d7fda5f243ee3fbe65a8186289ac32314bd20dd88d61a3b99b5d93e81400b",
+      "bytes": 9089
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/torch_install_timing.json",
+      "sha256": "f883d176a9d7ea0cb38d966e24f7d58e4fc1f8a7e5164cd74681271206cee94c",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/training_authorization.json",
+      "sha256": "137a50e09d55a882948966b59bb9de8835b840d176660462892288f8e3712fa1",
+      "bytes": 759
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/unpack.log",
+      "sha256": "d66d35fe3d2ec09868155a3f7875181c19f93a558ba49f3005c655e00224b545",
+      "bytes": 23
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/unpack_timing.json",
+      "sha256": "dd7c5902875525bce215aaa1bf3200a959053ff79db431f1eedbb4917fdf6236",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/venv.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/venv_timing.json",
+      "sha256": "3dd2fb818895e78b85b8981e7aa32b79076d22e7031c72f1462e4f58b1b63121",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/WATCHDOG_ARMED.json",
+      "sha256": "cb3118b95a3fd4b471bfd8e786eb320ce1ee04c89809e7efe891e85f44494456",
+      "bytes": 59
+    }
+  ],
+  "local_only_files": [
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/checkpoint-0/classifier_fork/adapter_model.safetensors",
+      "sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+      "bytes": 59827904
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/checkpoint-0/head.safetensors",
+      "sha256": "027c880e6c10a13f3e7354d12665ffacca5f7d68836291feaf195c167c13f915",
+      "bytes": 49304
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/classifier_adapter_init/adapter_model.safetensors",
+      "sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+      "bytes": 59827904
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/current_train_features.npy",
+      "sha256": "06e47fd6a0244cbff94f75e66eff81b4cad417843e34d62c3b370a3468cf8287",
+      "bytes": 22020224
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/finite_partial_state.safetensors",
+      "sha256": "01ca6da63b0dcde5fe89513a75fc83a60a65208988fd780b96ca20b5f198b05a",
+      "bytes": 59884360
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/head-0.safetensors",
+      "sha256": "e69c193a7b24010e613a2471433ed8514f28e4106d0c25fdedd37e2a908c4b9d",
+      "bytes": 49304
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/head-200.safetensors",
+      "sha256": "027c880e6c10a13f3e7354d12665ffacca5f7d68836291feaf195c167c13f915",
+      "bytes": 49304
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/mean.npy",
+      "sha256": "370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5",
+      "bytes": 12416
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/std.npy",
+      "sha256": "1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a",
+      "bytes": 12416
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/telemetry.stop",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/TRAINING_ATTEMPTED",
+      "sha256": "fda842979aa3ba973d691a10657dea167b20c73820a805d45d5d4fc722bb3875",
+      "bytes": 34
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/evidence.tar.gz",
+      "sha256": "57c20dfaf7d2ca6f87296f01ed3deb0135c99e8cd86ca0a64fcc764230d3dde4",
+      "bytes": 188476352
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/known_hosts",
+      "sha256": "23b4e0cd5bdb50c9fabe1f771d2a3deacc82bcfdf8ba258f24e70e5f0fc459ad",
+      "bytes": 98
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/runtime_bundle.zip",
+      "sha256": "7161d167bec8ea7ce3f39042a89e73cd4bf7c44ba252d55ecfe74d49fe1241d9",
+      "bytes": 56084912
+    },
+    {
+      "path": "docs/fix/auditor_classifier_lora_current_runtime_run/TERMINATE_REQUEST",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ],
+  "historical_preservation_verified": {
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+    "tuning/auditor_classifier_lora_stable/seal.json": "21aa5851847dac565b7d5237149612d7ac6d9350ece43280196bcac19597ad44",
+    "tuning/auditor_classifier_lora_fork/seal.json": "4a2b42aef70ad4d336dcf2b00197dc3485fd2162d91ee216e8a1848840709ffd",
+    "tuning/auditor_external_relation_v2/holdout_receipt.json": "3027e85887fb9a1c52276633db3a6dd9c41ad2cf9b424ef3f912c4e81ec6282d",
+    "docs/fix/auditor_classifier_lora_stabilized_run/EVIDENCE_MANIFEST.json": "c5f20980e150c2eb54cd42b5b52f10c9c70751baaf7afff64dee0dbc2338a72e",
+    "docs/fix/auditor_classifier_lora_run/EVIDENCE_MANIFEST.json": "b088f557c5e21adffaa70165e4d9ad719151634a1ed6a95fde67c9063a39756a"
+  },
+  "analysis_verdict": "AUDITOR_JOINT_TRAINING_STABILIZATION_UNISOLATED"
+}

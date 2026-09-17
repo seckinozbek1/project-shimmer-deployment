@@ -1,0 +1,9 @@
+{
+  "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+  "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+  "tuning/auditor_classifier_lora_stable/seal.json": "21aa5851847dac565b7d5237149612d7ac6d9350ece43280196bcac19597ad44",
+  "tuning/auditor_classifier_lora_fork/seal.json": "4a2b42aef70ad4d336dcf2b00197dc3485fd2162d91ee216e8a1848840709ffd",
+  "tuning/auditor_external_relation_v2/holdout_receipt.json": "3027e85887fb9a1c52276633db3a6dd9c41ad2cf9b424ef3f912c4e81ec6282d",
+  "docs/fix/auditor_classifier_lora_stabilized_run/EVIDENCE_MANIFEST.json": "c5f20980e150c2eb54cd42b5b52f10c9c70751baaf7afff64dee0dbc2338a72e",
+  "docs/fix/auditor_classifier_lora_run/EVIDENCE_MANIFEST.json": "b088f557c5e21adffaa70165e4d9ad719151634a1ed6a95fde67c9063a39756a"
+}

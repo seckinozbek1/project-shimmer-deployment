@@ -1,0 +1,12 @@
+{
+  "epoch": 1789642693.9147003,
+  "phase": "train",
+  "updates": 1,
+  "eval_rows": 0,
+  "preflight_rows": 3616,
+  "remaining_seconds": 5798.0,
+  "estimated_usd": 0.4454058153569698,
+  "projected_total_usd": 2.7380224820236365,
+  "soft_reached": false,
+  "continue_run": true
+}

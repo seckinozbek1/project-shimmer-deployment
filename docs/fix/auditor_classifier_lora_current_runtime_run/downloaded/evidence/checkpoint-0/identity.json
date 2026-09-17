@@ -1,0 +1,9 @@
+{
+  "step": 0,
+  "lora_sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+  "head_sha256": "027c880e6c10a13f3e7354d12665ffacca5f7d68836291feaf195c167c13f915",
+  "config_sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+  "adapter_subdirectory": "classifier_fork",
+  "mean_sha256": "370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5",
+  "std_sha256": "1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a"
+}
