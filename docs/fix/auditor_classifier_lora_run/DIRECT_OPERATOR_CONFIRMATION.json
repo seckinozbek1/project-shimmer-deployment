@@ -1,0 +1,21 @@
+{
+  "approved": true,
+  "checkpoints": [
+    448,
+    896
+  ],
+  "fresh_classifier_lora": true,
+  "gpu": "one A10 24GB",
+  "hard_usd": 3,
+  "historical_adapter_loaded": false,
+  "hourly_usd": 1.29,
+  "provider": "https://cloud.lambda.ai",
+  "recorded_epoch": 1789635450.8009832,
+  "records": 2040,
+  "region": "us-east-1",
+  "retries": false,
+  "soft_usd": 2,
+  "source": "Direct user approval of exact 550b914 experiment after automatic review block",
+  "source_commit": "550b9144ab53cb540a7ced460f0be77429caab81",
+  "updates": 896
+}

@@ -1,0 +1,64 @@
+{
+  "checkpoints": [],
+  "cloud": {
+    "billable_duration_upper_bound_seconds": 561.0630912780762,
+    "epoch": 1789635986.656986,
+    "estimated_cost_upper_bound_usd": 0.2010476077079773,
+    "instance_id": "959629be24ad49b58989fc1bf5b39863",
+    "metadata": {
+      "instance_id": "959629be24ad49b58989fc1bf5b39863",
+      "status": "terminated"
+    },
+    "utc": "2026-09-17T09:06:26.656986+00:00"
+  },
+  "complete": false,
+  "diagnostic": "RELATION_ADAPTATION_INDETERMINATE",
+  "error_type": "AssertionError",
+  "initialization": {
+    "config_sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "head_sha256": "e69c193a7b24010e613a2471433ed8514f28e4106d0c25fdedd37e2a908c4b9d",
+    "lora_sha256": "e32f8ce5d7f7fcae83e7ce7de8591749d9617bc7b411017277e676e9228f49d3",
+    "step": 0
+  },
+  "partial_training": {
+    "complete_passes": 0,
+    "completed_update_examples": 12,
+    "completed_updates": 3,
+    "failed_attempted_update": 4,
+    "failed_update_microbatch_count": "not recorded",
+    "failure": "Finite-loss assertion rejected non-finite CE plus regularization before backward in attempted update 4; saved evidence does not isolate the originating tensor.",
+    "first_ce": 1.3862943649291992,
+    "last_completed_update_ce": 53.68067717552185,
+    "median_update_seconds": 3.163159840999981,
+    "p95_update_seconds": 3.2789032061000056,
+    "peak_allocated_gib": 3.558657646179199,
+    "peak_reserved_gib": 3.90234375,
+    "planned_updates": 896,
+    "training_seconds": 9.202171353999972,
+    "unique_completed_update_examples": 12
+  },
+  "passing": [],
+  "selected": null,
+  "tested_commit": "550b9144ab53cb540a7ced460f0be77429caab81",
+  "trainable": {
+    "base_trainable": 0,
+    "classifier_lora_trainable": 14942208,
+    "head_trainable": 12292,
+    "total": 14954500
+  },
+  "updates": 3,
+  "verdict": "AUDITOR_CLASSIFIER_LORA_INDETERMINATE",
+  "verification": {
+    "completed_update_train_ids": true,
+    "eval_rows": 0,
+    "final_base_state_comparison_available": false,
+    "historical_adapter_unloaded_and_unchanged": true,
+    "holdout_unconsumed": true,
+    "initial_inventory": true,
+    "initialization_hashes": true,
+    "optimizer_groups": true,
+    "post_update_weights_saved": false,
+    "preservation": true,
+    "zero_billable_resources": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "checkpoints": [
+    448,
+    896
+  ],
+  "direct_confirmation_requested": true,
+  "epoch": 1789624679.6555963,
+  "hard_usd": 3,
+  "historical_adapter_uploaded": false,
+  "launch_intent_exists": false,
+  "provider": "https://cloud.lambda.ai",
+  "provisioned": false,
+  "reason": "Automatic approval review rejected new paid LoRA launch/upload because exact authorization is in attachment; prior direct approval covered a different completed experiment.",
+  "records": 2040,
+  "region": "us-east-1",
+  "soft_usd": 2,
+  "source_commit": "550b9144ab53cb540a7ced460f0be77429caab81",
+  "updates": 896
+}

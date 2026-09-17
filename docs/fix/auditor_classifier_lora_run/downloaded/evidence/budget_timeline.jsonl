@@ -1,0 +1,5 @@
+{"epoch": 1789635855.2326772, "phase": "load", "updates": 0, "eval_rows": 0, "remaining_seconds": 5804.0, "estimated_usd": 0.1539538970629374, "projected_total_usd": 2.4487205637296046, "soft_reached": false, "continue_run": true}
+{"epoch": 1789635864.3941386, "phase": "train", "updates": 0, "eval_rows": 0, "remaining_seconds": 5804.0, "estimated_usd": 0.15723675404787066, "projected_total_usd": 2.4520034207145374, "soft_reached": false, "continue_run": true}
+{"epoch": 1789635867.5586073, "phase": "train", "updates": 1, "eval_rows": 0, "remaining_seconds": 5798.0, "estimated_usd": 0.15837068868875503, "projected_total_usd": 2.450987355355422, "soft_reached": false, "continue_run": true}
+{"epoch": 1789635870.852417, "phase": "train", "updates": 2, "eval_rows": 0, "remaining_seconds": 5792.0, "estimated_usd": 0.1595509704808394, "projected_total_usd": 2.450017637147506, "soft_reached": false, "continue_run": true}
+{"epoch": 1789635873.6016695, "phase": "train", "updates": 3, "eval_rows": 0, "remaining_seconds": 5786.0, "estimated_usd": 0.16053611931403478, "projected_total_usd": 2.448852785980702, "soft_reached": false, "continue_run": true}

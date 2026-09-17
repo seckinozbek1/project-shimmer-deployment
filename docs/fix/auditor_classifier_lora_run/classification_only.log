@@ -1,0 +1,10 @@
+/home/ubuntu/shimmer-auditor-classifier-lora/.venv/lib/python3.12/site-packages/peft/utils/save_and_load.py:236: UserWarning: Could not find a config file in unsloth/Phi-3.5-mini-instruct-bnb-4bit - will assume that the vocabulary was not modified.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/ubuntu/shimmer-auditor-classifier-lora/tools/auditor_classifier_lora_remote.py", line 191, in <module>
+    p=argparse.ArgumentParser();p.add_argument('action',choices=['scope','preflight','acquire','execute']);globals()[p.parse_args().action]()
+                                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-auditor-classifier-lora/tools/auditor_classifier_lora_remote.py", line 171, in execute
+    assert bool(torch.isfinite(ce+reg).item());((ce+reg)/4).backward();ce_sum+=float(ce.detach());reg_sum+=float(reg.detach())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
