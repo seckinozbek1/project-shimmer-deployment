@@ -1,0 +1,128 @@
+{
+  "architecture": "CURRENT reference features -> CURRENT TRAIN normalization -> fresh 200-update head -> exact classifier fork -> joint training",
+  "asset_hashes": {
+    "added_tokens.json": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d",
+    "config.json": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2",
+    "generation_config.json": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413",
+    "special_tokens_map.json": "58433eb58121d4754c8457e7397f14462ead767281693d628fa59a4776533978",
+    "tokenizer.json": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7",
+    "tokenizer.model": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+    "tokenizer_config.json": "c98403fdcc8cf522d8f240f04123d79358dd81192f907c3bcac1b63080296ece"
+  },
+  "base_preparation": "prepare_model_for_kbit_training; base frozen; nonquantized tensors cast to FP32 before immutable state hash",
+  "base_weight_sha256": "e6c61d932846517fc3d5bf09abb69b8c6f657b673ff8380999b15fb20cfcb64a",
+  "challenge_gates": {
+    "longer": 0.7,
+    "shorter": 0.7
+  },
+  "classes": [
+    "MATCH",
+    "DIVERGENCE",
+    "OMISSION",
+    "ADDITION"
+  ],
+  "data_admitted": false,
+  "data_verdict": "AUDITOR_EXTERNAL_RELATION_DATA_V2_NOT_READY",
+  "expected_lora_parameters": 14942208,
+  "expected_total_trainable": 14954500,
+  "gates": {
+    "external_dev": {
+      "every_class_recall": 0.6,
+      "macro_f1": 0.75,
+      "rows": 200
+    },
+    "historical_dev": {
+      "every_class_recall": 0.6,
+      "macro_f1": 0.7,
+      "rows": 48
+    }
+  },
+  "gradient_checkpointing": {
+    "enabled": true,
+    "use_reentrant": true
+  },
+  "head": {
+    "dtype": "float32",
+    "initialization": "CURRENT_RUNTIME_FRESH_200_UPDATE_HEAD",
+    "input_dim": 3072,
+    "outputs": 4,
+    "parameters": 12292
+  },
+  "head_fit": {
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "full_population": true,
+    "initialization": "zero",
+    "lr": 0.01,
+    "optimizer": "Adam",
+    "regularization": 0.001,
+    "seed": 7,
+    "updates": 200,
+    "weight_decay": 0
+  },
+  "head_sanity": {
+    "rationale": "Frozen TRAIN-only sanity: at least twice uniform four-way accuracy and macro F1; never derived from DEV.",
+    "train_accuracy_min": 0.5,
+    "train_ce_max_exclusive": "ln(4)",
+    "train_macro_f1_min": 0.5
+  },
+  "lora": {
+    "bias": "none",
+    "init_lora_weights": true,
+    "lora_alpha": 16,
+    "lora_dropout": 0.05,
+    "r": 8,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "task_type": "CAUSAL_LM"
+  },
+  "model_id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+  "normalization": "CURRENT TRAIN only; ddof0; clamp1e-6; fixed during joint training",
+  "numerical_gate": {
+    "dev_at20": false,
+    "formula": "max(10*ln(4),20*CURRENT_UPDATE0_TRAIN_CE)",
+    "microbatch_multiplier": 4,
+    "no_retry": true,
+    "updates": 20
+  },
+  "old_cache_admission": false,
+  "optimizer": {
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "head_lr": 0.001,
+    "lora_lr": 0.0001,
+    "max_grad_norm": 1,
+    "name": "AdamW",
+    "regularization": 0.001,
+    "scheduler": null,
+    "weight_decay": 0
+  },
+  "optional_update0_dev": false,
+  "reference_path": "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120",
+  "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+  "training": {
+    "accumulation": 4,
+    "checkpoints": [
+      448,
+      896
+    ],
+    "effective_batch": 4,
+    "microbatch": 1,
+    "passes": 2,
+    "seed": 7,
+    "updates": 896
+  }
+}
