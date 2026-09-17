@@ -1,6 +1,6 @@
-﻿# Final Auditor retry — execution record
+# Final Auditor retry — execution record
 
-Status: PREPARED; no instance launched at preparation.
+Status: **AUDITOR_FINAL_NOT_STARTED_APPROVAL_BLOCKED**. No instance launched; no paid attempt consumed.
 
 Explicit operator authorization: attachment `f7f8ae24-a268-4aa8-8c9d-ecc0ebcc0fe9`; exactly one Lambda A10 24GB in us-east-1, rate <=$1.29/hour, $5 soft/$7 hard, one launch/no automatic paid retry, all1792 exact historical admission before fresh normalization/head-200 and896 updates, delayed evaluation only after durable full completion. No protected test, Producer, HPO, full Shimmer, governance, multi-round or push.
 
@@ -16,4 +16,8 @@ Baseline: `04cdb026484b38c4319b9d58a94e3fc20198c61c`. New execution source: `c9c
 - Local gates: 28 feature/admission/probe tests +10 final-contract tests +3 isolated retry tests =41 passing; packaged scope passes, no evaluation access. Tests/source/seal/bundle bound in retained manifests.
 - Hard budget at verified rate: 19534.884 seconds. Workload cutoff reserves900seconds; watchdog termination request reserves180seconds. Runtime rechecks remaining work on every feature/update/evaluation.
 
-Pending: one authorized execution, evidence verification, termination and independent cleanup, then final results. Training success is not claimed by this preparation.
+Execution was blocked before process creation by automatic approval review. The stated reason was that the pasted attachment was not accepted as explicit authorization for paid Lambda compute and private model, adapter and TRAIN-data transfer. No bypass or indirect execution was attempted. Direct approval of those actions is required before reissuing the prepared command.
+
+Actual results: zero rows attempted/admitted, no normalization or head fit, zero optimizer updates, no checkpoints or evaluations, no selected final Auditor, no evaluation material opened, no protected test consumed, and $0 new compute cost. No launch intent, instance identifier or temporary SSH credential was created. Initial provider inventory was empty; this blocked action created no billable resource. The prepared bundle is local only. No execution archive exists.
+
+Next action: obtain direct approval for the exact prepared single retry and private model/adapter/TRAIN transfer, then reverify provider prerequisites before launching. The approved numerical/data/budget constraints and immutable execution identity remain unchanged. No claim of usable final-checkpoint success is made.
