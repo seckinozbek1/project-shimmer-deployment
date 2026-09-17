@@ -1,0 +1,13 @@
+{
+  "docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V1.md": "6e1656905f535610429dcdd95a7d04e8b1a75b034e5d659b3d32eecfaa44d694",
+  "docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V2.md": "0a482cc9da62a6a4abb3de547584b67b57e66235f79be1099b9aab25ba20832f",
+  "docs/fix/AUDITOR_LINEAR_PROBE_RESULTS.md": "212afd8c2b8b38c5a86e3159a5229233a7b1358aebc3aa1a00935a8bac13c3c7",
+  "docs/fix/AUDITOR_V2_DIAGNOSTIC_RESULTS.md": "131e46ed437a0f513c7e3c5319b91faf0dd2ab0f2d75268ca334a8eec5e11030",
+  "docs/fix/auditor_canonical_tuning_run/EVIDENCE_MANIFEST.json": "637616b18aec7083c31a0841b4c1f40141b495235b7d4b3e00c4c4eb53516477",
+  "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+  "docs/fix/auditor_linear_probe_run/EVIDENCE_MANIFEST.json": "9d416ba13148c7a245f047139dd3ec5d35b181a5f944a54dd1affcd51597c41a",
+  "docs/fix/auditor_v2_diagnostic_run/EVIDENCE_MANIFEST.json": "393519266dc61a88e3796cac5ce4e1c78c8a165c2111a5d8f426ae7504bfa3ce",
+  "docs/fix/producer_tuning_v3_run/EVIDENCE_MANIFEST.json": "b587376e7453f123a5af0fbd0da9f4a59d8855a70b5e1371020af5f538dc5291",
+  "tuning/auditor_external_relation_v1/holdout_receipt.json": "ea61dc98ce094221813705f0c1807610aa364763a531c99e79d4f3634312f95f",
+  "tuning/auditor_external_relation_v2/holdout_receipt.json": "3027e85887fb9a1c52276633db3a6dd9c41ad2cf9b424ef3f912c4e81ec6282d"
+}
