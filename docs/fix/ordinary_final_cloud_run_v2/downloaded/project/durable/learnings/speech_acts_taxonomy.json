@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-09-17T22:37:27.695412+00:00",
+  "source": "adaptive_spawn",
+  "speech_acts": [
+    {
+      "name": "declare",
+      "pattern": "\\b(declares?|proclaims?|announces?)\\b",
+      "evidence_count": 1,
+      "examples": [
+        "declares"
+      ]
+    },
+    {
+      "name": "note",
+      "pattern": "\\b(notes?|observes?|takes note of)\\b",
+      "evidence_count": 1,
+      "examples": [
+        "note"
+      ]
+    }
+  ]
+}

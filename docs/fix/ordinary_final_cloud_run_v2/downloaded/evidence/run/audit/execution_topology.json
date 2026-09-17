@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "execution_topology": "report_optimized",
+  "run_id": "88323b86f25e4ddc9f12deaddc4ffffa",
+  "critical_path": [
+    "task-000000"
+  ],
+  "critical_path_service_s": 15.960089843000333,
+  "task_count": 3,
+  "states": {
+    "task-000000": "failed",
+    "task-000001": "failed",
+    "task-000002": "failed"
+  },
+  "interpretation": "Observed task-service weighted dependency path, excludes queue gaps; not a speedup claim"
+}

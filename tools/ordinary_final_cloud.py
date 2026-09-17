@@ -22,6 +22,8 @@ CREDENTIAL=Path('C:/Users/secki/local/api_keys/config.py')
 REMOTE='/home/ubuntu/shimmer-ordinary-final'
 MANIFEST='dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223'
 SEAL='93d2c5b2fe371f19143abe536569fe7bf15bcf9307b3136826b6440e028a4916'
+PREPARATION='776d8c131279c88798e4a27d6099c98e8d5d7643'
+INSTANCE_NAME='shimmer-ordinary-final-776d8c1'
 
 
 def save(name,value):write(BASE/name,value)
@@ -46,7 +48,7 @@ def execute():
     save('launch_preflight.json',dict(epoch=time.time(),instances=[],instance=current,image=m['image'],manifest_sha256=MANIFEST))
     identity=BASE/'ssh_identity'
     require(not identity.exists() and not Path(str(identity)+'.pub').exists(),'Temporary key path occupied')
-    name='shimmer-ordinary-final-776d8c1'
+    name=INSTANCE_NAME
     registration=iid=ssh=host=None
     options=[]
     start=time.time()
@@ -99,7 +101,7 @@ def execute():
         save('launch.json',dict(instance_id=iid,epoch=start,hourly_rate=rate))
         permit=dict(operator_authorized=True,action='one-ordinary-final-cloud-run',
             execution_manifest_sha256=MANIFEST,seal_sha256=SEAL,source_commit=m['source_commit'],
-            preparation_commit='776d8c131279c88798e4a27d6099c98e8d5d7643',controller_sha256=sha(__file__),
+            preparation_commit=PREPARATION,controller_sha256=sha(__file__),
             soft_budget_usd=5,hard_ceiling_usd=7,provider='Lambda',instance_type='gpu_1x_a10',region='us-east-1',
             instance_id=iid,hourly_rate=rate,active_start_epoch=start,maximum_instances=1,maximum_runs=1,
             protected_data=False,multi_round=False,automatic_full_run_retry=False,

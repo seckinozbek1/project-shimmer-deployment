@@ -1,0 +1,157 @@
+{
+  "dependency_wait_task_seconds": 9.493200013821479e-05,
+  "deterministic_cpu_unavailable": "Process CPU includes model kernels, embeddings and telemetry; no isolated measurement",
+  "deterministic_nonmodel_cpu_seconds": null,
+  "interpretation": "Task wait sums are not pipeline wall-clock; use the scheduler DAG and interval unions.",
+  "per_agent": {
+    "ARCHIVIST": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 0,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": null,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "generation_seconds": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "input_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "output_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 15.956704338000236
+        }
+      }
+    },
+    "CITATION_RESOLVER": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 0,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": null,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "generation_seconds": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "input_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "output_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 4.054139543000019
+        }
+      }
+    },
+    "EMBEDDING": {
+      "calls": 16,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 0,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": null,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "generation_seconds": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "input_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "output_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 16,
+          "value": 13.776594543999636
+        }
+      }
+    },
+    "INST_FINDER": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 0,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": null,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "generation_seconds": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "input_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "output_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 3.959347770000022
+        }
+      }
+    }
+  },
+  "resource_wait_task_seconds": 35.883942539999225
+}

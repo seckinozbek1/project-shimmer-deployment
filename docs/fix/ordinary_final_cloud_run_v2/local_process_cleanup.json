@@ -1,0 +1,7 @@
+{
+  "controller_exited": true,
+  "watchdog_pid": 30776,
+  "watchdog_process_absent": true,
+  "operator_requested_stop": true,
+  "no_further_work_started": true
+}

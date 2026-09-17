@@ -1,0 +1,8 @@
+{
+  "epoch": 1789685084.2155452,
+  "instances": [],
+  "temporary_ssh_registration_absent": true,
+  "local_key_material_absent": true,
+  "no_persistent_storage_created": true,
+  "check": "Fresh post-controller provider inventory"
+}

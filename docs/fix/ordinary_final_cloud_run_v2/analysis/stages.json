@@ -1,0 +1,92 @@
+{
+  "archive_integrity": {
+    "returncode": 0,
+    "seconds": 14.109527111053467,
+    "start_epoch": 1789684520.7523305
+  },
+  "assets_transfer": {
+    "returncode": 0,
+    "seconds": 2255.2799801826477,
+    "start_epoch": 1789682265.4634752
+  },
+  "create_environment": {
+    "returncode": 0,
+    "seconds": 5.848170518875122,
+    "start_epoch": 1789684545.098738
+  },
+  "dependency_closure": {
+    "returncode": 0,
+    "seconds": 2.885387659072876,
+    "start_epoch": 1789684622.5313516
+  },
+  "evidence_download": {
+    "returncode": 0,
+    "seconds": 8.484971523284912,
+    "start_epoch": 1789684701.7943554
+  },
+  "evidence_hash": {
+    "returncode": 0,
+    "seconds": 2.1749398708343506,
+    "start_epoch": 1789684699.6194155
+  },
+  "extract_payload": {
+    "returncode": 0,
+    "seconds": 10.23399305343628,
+    "start_epoch": 1789684534.864745
+  },
+  "final_gpu_state": {
+    "returncode": 0,
+    "seconds": 2.217548370361328,
+    "start_epoch": 1789684695.1930542
+  },
+  "fresh_directory": {
+    "returncode": 0,
+    "seconds": 2.012166738510132,
+    "start_epoch": 1789682213.3280585
+  },
+  "gpu_metadata": {
+    "returncode": 0,
+    "seconds": 1.8555362224578857,
+    "start_epoch": 1789684625.418804
+  },
+  "install_pinned_wheels": {
+    "returncode": 0,
+    "seconds": 71.56742334365845,
+    "start_epoch": 1789684550.955705
+  },
+  "ordinary_workload": {
+    "returncode": 2,
+    "seconds": 61.898714780807495,
+    "start_epoch": 1789684631.3432906
+  },
+  "pack_evidence": {
+    "returncode": 0,
+    "seconds": 2.2003276348114014,
+    "start_epoch": 1789684697.419088
+  },
+  "python_gate": {
+    "returncode": 0,
+    "seconds": 2.1416172981262207,
+    "start_epoch": 1789682211.1864412
+  },
+  "ssh_ready_0": {
+    "returncode": 0,
+    "seconds": 2.1258068084716797,
+    "start_epoch": 1789682209.0566096
+  },
+  "stop_workload": {
+    "returncode": 0,
+    "seconds": 1.9414036273956299,
+    "start_epoch": 1789684693.2420053
+  },
+  "support_transfer": {
+    "returncode": 0,
+    "seconds": 50.1078200340271,
+    "start_epoch": 1789682215.3483744
+  },
+  "watchdog_receipt_transfer": {
+    "returncode": 0,
+    "seconds": 4.046727418899536,
+    "start_epoch": 1789684627.2908714
+  }
+}

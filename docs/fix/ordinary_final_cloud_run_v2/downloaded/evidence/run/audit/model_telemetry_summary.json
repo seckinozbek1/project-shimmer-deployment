@@ -1,0 +1,232 @@
+{
+  "auditor_pairing": {
+    "agreements": 0,
+    "auditor_to_verifier": [],
+    "classifier_calls": 0,
+    "classifier_failures": 0,
+    "classifier_forwards": 0,
+    "classifier_service_seconds": 0,
+    "disagreements": 0,
+    "eligible_producer_items": 0,
+    "forward_count_unknown": 0,
+    "interpretation": "Advisory pair and independent finding layers; disagreement is not an error label",
+    "joined_findings": 0,
+    "pairs_constructed": 0,
+    "producer_items": 0,
+    "producer_to_auditor": [],
+    "relation_distribution": {
+      "ADDITION": 0,
+      "DIVERGENCE": 0,
+      "MATCH": 0,
+      "OMISSION": 0
+    },
+    "unavailable": 0,
+    "unjoined_findings": 0
+  },
+  "call_wall_union_seconds": 37.74678619499991,
+  "caveats": [
+    "Service sums include overlap; wall union does not.",
+    "EOS establishes transport completion, not semantic correctness.",
+    "Resource peaks are sampled peaks at recorded intervals; CPU time includes inference and telemetry."
+  ],
+  "consumer_barriers": [
+    {
+      "after_latest_auditor_seconds": null,
+      "auditor_task_ids": [],
+      "consumer_enter_monotonic_s": 2598.524610611,
+      "consumer_phase": "phase_3_4_content_production",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": []
+    }
+  ],
+  "costs": {
+    "combined_estimate": null,
+    "infrastructure_estimate": null,
+    "invoice": false,
+    "model_api_estimate": null,
+    "unavailable": "Missing cost categories remain unknown; record explicit zero when applicable"
+  },
+  "counts": {
+    "cap_hit": 0,
+    "contract_valid": 0,
+    "empty_output": 0,
+    "refused": 0,
+    "truncated": 0
+  },
+  "critical_path_model_service": {
+    "producer": 23.970191651000277
+  },
+  "critical_path_unavailable": null,
+  "emitted": {
+    "measured_calls": 0,
+    "total_calls": 19,
+    "value": null
+  },
+  "failed_calls": 3,
+  "generation_wall_union_seconds": null,
+  "handoffs": [],
+  "input_tokens": {
+    "measured_calls": 0,
+    "total_calls": 19,
+    "value": null
+  },
+  "maximum_concurrency": 1,
+  "model_lifecycle": [
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_start",
+      "event_index": 11,
+      "model": "final-producer",
+      "monotonic_s": 2598.528848024,
+      "task": "task-000000",
+      "utc": "2026-09-17T22:37:45.019128+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_end",
+      "event_index": 12,
+      "model": "final-producer",
+      "monotonic_s": 2609.894232205,
+      "task": "task-000000",
+      "utc": "2026-09-17T22:37:56.384513+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 20,
+      "model": "final-producer",
+      "monotonic_s": 2614.489123913,
+      "task": "task-000001",
+      "utc": "2026-09-17T22:38:00.979403+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 28,
+      "model": "final-producer",
+      "monotonic_s": 2618.452029062,
+      "task": "task-000002",
+      "utc": "2026-09-17T22:38:04.942308+00:00",
+      "worker": "primary"
+    }
+  ],
+  "output_tokens": {
+    "measured_calls": 0,
+    "total_calls": 19,
+    "value": null
+  },
+  "per_agent_service": {
+    "ARCHIVIST": 15.956704338000236,
+    "CITATION_RESOLVER": 4.054139543000019,
+    "EMBEDDING": 13.776594543999636,
+    "INST_FINDER": 3.959347770000022
+  },
+  "phase_latencies": [
+    {
+      "phase": "phase_3_4_content_production",
+      "seconds": 23.983259777000058
+    }
+  ],
+  "pipeline_wall_seconds": 41.5433906799999,
+  "process_cpu_seconds": 470.250775106,
+  "resources": {
+    "cuda_allocated_bytes": {
+      "median": 0.0,
+      "peak": 12336043008,
+      "samples": 20
+    },
+    "cuda_reserved_bytes": {
+      "median": 0.0,
+      "peak": 16169041920,
+      "samples": 20
+    },
+    "gpu_power_watts": {
+      "median": 54.24,
+      "peak": 152.18,
+      "samples": 20
+    },
+    "gpu_utilization": {
+      "median": 0.0,
+      "peak": 100.0,
+      "samples": 20
+    },
+    "process_cpu_percent": {
+      "median": 298.35,
+      "peak": 2985.0,
+      "samples": 20
+    },
+    "process_rss_bytes": {
+      "median": 2455644160.0,
+      "peak": 3261800448,
+      "samples": 20
+    },
+    "swap_used_bytes": {
+      "median": 0.0,
+      "peak": 0,
+      "samples": 20
+    },
+    "system_cpu_percent": {
+      "median": 13.4,
+      "peak": 99.5,
+      "samples": 20
+    },
+    "system_ram_free_bytes": {
+      "median": 234031929344.0,
+      "peak": 234766995456,
+      "samples": 20
+    },
+    "system_ram_used_bytes": {
+      "median": 2390882304.0,
+      "peak": 3357417472,
+      "samples": 20
+    },
+    "vram_used_bytes": {
+      "median": 248512512.0,
+      "peak": 16499343360.0,
+      "samples": 20
+    }
+  },
+  "retained": {
+    "measured_calls": 0,
+    "total_calls": 19,
+    "value": null
+  },
+  "scheduler_lane_idle_seconds": 17.653220401,
+  "scheduler_timing_available": true,
+  "scheduler_wait_seconds": 35.883942539999225,
+  "schema_version": 1,
+  "semantic_critical_path": {
+    "elapsed_seconds": 23.980678444000205,
+    "gap_seconds": 0.0003439569995862257,
+    "interpretation": "Observed dependency and lane order; gaps separate; not counterfactual marginal latency",
+    "members": [
+      "task-000000",
+      "task-000001",
+      "task-000002"
+    ],
+    "service_seconds": 23.98033448700062
+  },
+  "service_totals": {
+    "other": 13.776594543999636,
+    "producer": 23.970191651000277
+  },
+  "wave_count": 1,
+  "wave_intervals": {
+    "wave-000000": {
+      "call_ids": [
+        "57602c02ea9f41748a277b8ea1f8188b",
+        "dbd3ac46dcf0485c9f9b1bac7c8db3cb",
+        "af324c9861ca441b8421a7769fb4052a"
+      ],
+      "end": 2622.505928237,
+      "start": 2598.528588056
+    }
+  }
+}
