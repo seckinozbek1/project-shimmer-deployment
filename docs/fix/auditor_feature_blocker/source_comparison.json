@@ -1,0 +1,139 @@
+{
+  "same_model_revision_assets": true,
+  "same_cloud_package_pins": true,
+  "same_final_hpo_contract": true,
+  "same_train_hpo_records": true,
+  "all_train_row_and_token_receipts_match": true,
+  "train_rows": 1792,
+  "neighborhood": [
+    {
+      "row_one_based": 30,
+      "example_id": "shimmer2-auditor-document-036",
+      "tokens": 776,
+      "token_sha256": "41655f69148cbd2af30fd651a848165481171cff00df73cfb4e2021949df2fc4"
+    },
+    {
+      "row_one_based": 31,
+      "example_id": "shimmer2-auditor-document-037",
+      "tokens": 767,
+      "token_sha256": "d9698a7a16e9c9c1057f57f9ff7c84581802a6fdfd078c1faae192727ca2676f"
+    },
+    {
+      "row_one_based": 32,
+      "example_id": "shimmer2-auditor-document-038",
+      "tokens": 781,
+      "token_sha256": "8373a53cbba09703d6a0a6ae162cb33437dcc2f1c7bfd8f44e2440d50f794fdc"
+    },
+    {
+      "row_one_based": 33,
+      "example_id": "shimmer2-auditor-document-040",
+      "tokens": 765,
+      "token_sha256": "327e538c316ee8b999daedfe67dd0d5b5889eb9489401c23d113cf3eca226f31"
+    }
+  ],
+  "executed_sources": {
+    "auditor_classifier_lora_current_runtime_run": {
+      "tools/auditor_classifier_lora_current_core.py": {
+        "expected": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+        "actual": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+        "matches": true
+      },
+      "tools/auditor_classifier_lora_current_remote.py": {
+        "expected": "72d3ecf599c6e185de221566662dc2bc7a117a78c4990f55a3a55cc107931faa",
+        "actual": "72d3ecf599c6e185de221566662dc2bc7a117a78c4990f55a3a55cc107931faa",
+        "matches": true
+      },
+      "tools/auditor_classifier_lora_fork.py": {
+        "expected": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+        "actual": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+        "matches": true
+      },
+      "tools/auditor_classifier_lora_stable.py": {
+        "expected": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+        "actual": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+        "matches": true
+      }
+    },
+    "auditor_final_run": {
+      "tools/auditor_classifier_lora_current_core.py": {
+        "expected": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+        "actual": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+        "matches": true
+      },
+      "tools/auditor_classifier_lora_fork.py": {
+        "expected": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+        "actual": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+        "matches": true
+      },
+      "tools/auditor_classifier_lora_stable.py": {
+        "expected": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+        "actual": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+        "matches": true
+      },
+      "tools/auditor_final_remote.py": {
+        "expected": "ab44b74fc6046ffaa0d1c1b71ba703f4459071d5fc138ff88c0caccf0efd2a61",
+        "actual": "ab44b74fc6046ffaa0d1c1b71ba703f4459071d5fc138ff88c0caccf0efd2a61",
+        "matches": true
+      }
+    },
+    "auditor_optuna_hpo_run": {
+      "tools/auditor_classifier_lora_current_core.py": {
+        "expected": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+        "actual": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+        "matches": true
+      },
+      "tools/auditor_classifier_lora_fork.py": {
+        "expected": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+        "actual": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+        "matches": true
+      },
+      "tools/auditor_classifier_lora_stable.py": {
+        "expected": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+        "actual": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+        "matches": true
+      },
+      "tools/auditor_optuna_hpo_remote.py": {
+        "expected": "848d8b7c407fa26a00754bb58c3c923ba70b511113a67d6b409b0ecf6f0d4929",
+        "actual": "848d8b7c407fa26a00754bb58c3c923ba70b511113a67d6b409b0ecf6f0d4929",
+        "matches": true
+      }
+    }
+  },
+  "base_state_hashes": {
+    "auditor_classifier_lora_current_runtime_run": "d07dae6b59e73394974e2699a2f66dad8c7d57be1c800c6774eccd114f38db18",
+    "auditor_final_run": "d07dae6b59e73394974e2699a2f66dad8c7d57be1c800c6774eccd114f38db18"
+  },
+  "canonical_adapter": {
+    "sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+    "config_sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "tensor_count": 448,
+    "tensor_inventory_sha256": "f4717343a66d6f84fe76253b9ca6151da402b0825d0cd573324ce38ae1d16b82"
+  },
+  "historical_feature_guard": {
+    "attempted_row_one_based": 32,
+    "completed_prefix_matches_prior_cache_bitwise": false,
+    "completed_prefix_max_abs_difference": 0.16882681846618652,
+    "completed_valid_rows": 31,
+    "failure": "Combined hidden shape==(3072,) and finite-value guard; offending shape/values not recorded, so exact cause remains unisolated.",
+    "head_fit_created": false,
+    "incomplete_feature_file_reusable": false,
+    "inferred_attempted_example_id": "shimmer2-auditor-document-038",
+    "normalization_created": false,
+    "offending_current_tensor_saved": false,
+    "optimizer_created": false,
+    "prior_attempted_row_finite": true,
+    "unwritten_rows_are_not_observations": true
+  },
+  "cloud_environment": {
+    "PYTHONHASHSEED": "7",
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "TOKENIZERS_PARALLELISM": "false"
+  },
+  "source_notes": {
+    "current_and_final_forward": "Identical get_base_model().model arguments and last_hidden_state[0,-1] extraction under inference_mode/BF16 autocast.",
+    "hpo_observe": "eval/no_grad, same backbone arguments, [:,-1,:], float32 and [0] on return; cache is reused only after separate admission.",
+    "raw_shape_historical": "Not recorded; expected (1,sequence_length,3072); failing raw/vector shape unknown."
+  }
+}

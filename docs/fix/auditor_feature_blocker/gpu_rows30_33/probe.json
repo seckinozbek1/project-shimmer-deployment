@@ -1,0 +1,4229 @@
+{
+  "completed": true,
+  "model_loaded": true,
+  "forward_rows": [
+    {
+      "row_one_based": 30,
+      "example_id": "shimmer2-auditor-document-036",
+      "tokens": 776,
+      "token_sha256": "41655f69148cbd2af30fd651a848165481171cff00df73cfb4e2021949df2fc4",
+      "shape": [
+        3072
+      ],
+      "finite": true,
+      "feature_sha256": "e7abbd118a39f2138e02b14e8c86a68d196e4242d4c2e98ccf71072f25f9cebc",
+      "repeat_bitwise_equal": true,
+      "repeat_max_abs_difference": 0.0,
+      "prior_bitwise_equal": false,
+      "prior_max_abs_difference": 0.19481152296066284
+    },
+    {
+      "row_one_based": 31,
+      "example_id": "shimmer2-auditor-document-037",
+      "tokens": 767,
+      "token_sha256": "d9698a7a16e9c9c1057f57f9ff7c84581802a6fdfd078c1faae192727ca2676f",
+      "shape": [
+        3072
+      ],
+      "finite": true,
+      "feature_sha256": "909c9fb918ccbdc34e7f53256d056f4a7ded72112cf25bca645ba1af1b4e9621",
+      "repeat_bitwise_equal": true,
+      "repeat_max_abs_difference": 0.0,
+      "prior_bitwise_equal": false,
+      "prior_max_abs_difference": 0.20355622470378876
+    },
+    {
+      "row_one_based": 32,
+      "example_id": "shimmer2-auditor-document-038",
+      "tokens": 781,
+      "token_sha256": "8373a53cbba09703d6a0a6ae162cb33437dcc2f1c7bfd8f44e2440d50f794fdc",
+      "shape": [
+        3072
+      ],
+      "finite": true,
+      "feature_sha256": "787dd9f9c2f3da21e6eedc15b3181611727ed9b6684e6b85823d27d020d89b97",
+      "repeat_bitwise_equal": true,
+      "repeat_max_abs_difference": 0.0,
+      "prior_bitwise_equal": false,
+      "prior_max_abs_difference": 0.19053423404693604
+    },
+    {
+      "row_one_based": 33,
+      "example_id": "shimmer2-auditor-document-040",
+      "tokens": 765,
+      "token_sha256": "327e538c316ee8b999daedfe67dd0d5b5889eb9489401c23d113cf3eca226f31",
+      "shape": [
+        3072
+      ],
+      "finite": true,
+      "feature_sha256": "888de52d83ba592c7b43bb3828ba4c2c0ec909f37a6b526b8474dad53688537c",
+      "repeat_bitwise_equal": true,
+      "repeat_max_abs_difference": 0.0,
+      "prior_bitwise_equal": false,
+      "prior_max_abs_difference": 0.21806000173091888
+    }
+  ],
+  "optimizer_updates": 0,
+  "extraction_path": {
+    "version": "auditor-train-hidden-v1",
+    "files": {
+      "auditor_feature_diagnostics.py": "ff6edc6b9118de77dfcc71ea406608fa3a01e9fa2d2e8c21fb1d055fc54e090f",
+      "auditor_final_remote.py": "2a549c21afefe0fd03a2437264f9d7ebed4bad8043db0adf7dfffae8eaac7189",
+      "auditor_classifier_lora_fork.py": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+      "auditor_classifier_lora_current_core.py": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16"
+    },
+    "sha256": "5d98e36baae0064766d1f06808f4b1d90e75074f787f8b2460813dce5f903f95"
+  },
+  "device": "cuda",
+  "python": "3.12.3",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "runtime_overlay": {
+    "interpreter": "C:\\Users\\secki\\anaconda3\\python.exe",
+    "python": "3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:20:11) [MSC v.1938 64 bit (AMD64)]",
+    "torch_package": "C:\\Users\\secki\\anaconda3\\pkgs\\pytorch-2.5.1-py3.12_cuda11.8_cudnn9_0",
+    "torch_version": "2.5.1",
+    "verified_files": 12500,
+    "repair": "verified_cached_package_process_overlay",
+    "global_environment_modified": false,
+    "unsafe_suppression": false
+  },
+  "packages": {
+    "accelerate": "1.13.0",
+    "bitsandbytes": "0.49.2",
+    "huggingface-hub": "0.30.2",
+    "jinja2": "3.1.4",
+    "numpy": "1.26.4",
+    "peft": "0.15.2",
+    "safetensors": "0.5.3",
+    "tokenizers": "0.21.1",
+    "torch": "2.5.1",
+    "transformers": "4.51.3"
+  },
+  "package_differences": {
+    "accelerate": {
+      "expected": "1.10.1",
+      "actual": "1.13.0"
+    },
+    "bitsandbytes": {
+      "expected": "0.48.2",
+      "actual": "0.49.2"
+    },
+    "numpy": {
+      "expected": "2.0.2",
+      "actual": "1.26.4"
+    },
+    "torch": {
+      "expected": "2.5.1+cu121",
+      "actual": "2.5.1"
+    }
+  },
+  "cuda_runtime": "11.8",
+  "gpu": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "base_assets": {
+    "added_tokens.json": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d",
+    "config.json": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2",
+    "generation_config.json": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413",
+    "special_tokens_map.json": "58433eb58121d4754c8457e7397f14462ead767281693d628fa59a4776533978",
+    "tokenizer.json": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7",
+    "tokenizer.model": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+    "tokenizer_config.json": "c98403fdcc8cf522d8f240f04123d79358dd81192f907c3bcac1b63080296ece",
+    "model.safetensors": "e6c61d932846517fc3d5bf09abb69b8c6f657b673ff8380999b15fb20cfcb64a"
+  },
+  "adapter_sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+  "adapter_tensor_hashes_verified": 448,
+  "base_state_sha256": "d07dae6b59e73394974e2699a2f66dad8c7d57be1c800c6774eccd114f38db18",
+  "base_state_matches_cloud": true,
+  "model_state": {
+    "training": false,
+    "training_module_count": 0,
+    "active_adapters": [
+      "historical_reference"
+    ],
+    "adapter_layers": [
+      {
+        "name": "base_model.model.model.layers.0.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.q_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.k_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.v_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.o_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.gate_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.up_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.down_proj",
+        "active_adapters": [
+          "historical_reference"
+        ],
+        "disabled": false,
+        "merged": false
+      }
+    ],
+    "dropout": [
+      {
+        "name": "base_model.model.model.layers.0.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.q_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.k_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.v_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.o_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.gate_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.up_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.down_proj.lora_dropout.historical_reference",
+        "p": 0.05,
+        "training": false
+      }
+    ],
+    "dropout_sha256": "6a99e2a32399c81d4586495f3c1698eb8c536ce3c40e7c15f81e0f60abe4dbbd",
+    "adapter_config": {
+      "historical_reference": {
+        "r": 8,
+        "lora_alpha": 16,
+        "lora_dropout": 0.05,
+        "inference_mode": true
+      }
+    },
+    "quantized_compute": [
+      {
+        "name": "base_model.model.model.layers.0.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.0.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.0.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.1.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.1.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.2.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.2.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.3.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.3.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.4.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.4.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.5.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.5.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.6.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.6.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.7.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.7.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.8.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.8.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.9.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.9.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.10.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.10.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.11.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.11.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.12.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.12.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.13.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.13.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.14.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.14.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.15.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.15.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.16.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.16.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.17.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.17.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.18.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.18.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.19.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.19.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.20.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.20.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.21.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.21.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.22.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.22.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.23.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.23.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.24.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.24.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.25.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.25.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.26.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.26.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.27.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.27.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.28.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.28.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.29.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.29.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.30.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.30.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.q_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.k_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.v_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.31.self_attn.o_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.gate_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.up_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      },
+      {
+        "name": "base_model.model.model.layers.31.mlp.down_proj.base_layer",
+        "compute_dtype": "torch.bfloat16",
+        "compute_type_is_set": true
+      }
+    ],
+    "parameter_groups": [
+      {
+        "dtype": "torch.float32",
+        "device": "cuda:0",
+        "requires_grad": false,
+        "tensors": 515
+      },
+      {
+        "dtype": "torch.uint8",
+        "device": "cuda:0",
+        "requires_grad": false,
+        "tensors": 224
+      }
+    ],
+    "attention_implementation": "eager",
+    "deterministic_algorithms": true,
+    "initial_seed": 7,
+    "cpu_rng_sha256": "c8bd4bab66ae461bbf7af3a29e5e7d52d97adfefbedbca0fa10cb9931b9d5298",
+    "cuda_rng_sha256": [
+      "1f281a4e0796fb60a61ac8465ede08be33c78f17d117b218255cec97679d556a"
+    ],
+    "cublas_workspace_config": ":4096:8",
+    "matmul_allow_tf32": false,
+    "cudnn_allow_tf32": false
+  },
+  "base_unchanged": true,
+  "data_access": {
+    "successful_access_counts": {
+      "holdout": 0,
+      "protected_final_test": 0,
+      "producer": 0,
+      "full_shimmer_inputs": 0
+    },
+    "denied_before_open": 0,
+    "external_dev_rows": 0,
+    "historical_dev_rows": 0,
+    "shorter_rows": 0,
+    "longer_rows": 0,
+    "evaluation_opened_after_updates": null
+  }
+}

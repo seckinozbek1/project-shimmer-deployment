@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_nonfinite_evidence_is_durable_before_raise (test_auditor_feature_diagnostics.FeatureGuard)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\test_auditor_feature_diagnostics.py", line 60, in test_nonfinite_evidence_is_durable_before_raise
+    self.run_guard(raw)
+AssertionError: RuntimeError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

@@ -1,0 +1,35 @@
+{
+  "completed": false,
+  "model_loaded": false,
+  "forward_rows": [],
+  "optimizer_updates": 0,
+  "extraction_path": {
+    "version": "auditor-train-hidden-v1",
+    "files": {
+      "auditor_feature_diagnostics.py": "7cff6d22ef2fb60d0ae905f95c43c015311b157243175e4c3f5e7c3010babc92",
+      "auditor_final_remote.py": "86f63d2c083e9b30b09efe569e07604e66cc48fec44667cf23fd4b95d447b116",
+      "auditor_classifier_lora_fork.py": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+      "auditor_classifier_lora_current_core.py": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16"
+    },
+    "sha256": "aab0e62c69f9b43674d0aa71340f7f800f5f69a54e150fba5d5a4b2ed7527d46"
+  },
+  "device": "cuda",
+  "python": "3.12.9",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "error_type": "RuntimeError",
+  "error_message": "Exactly one installed Conda PyTorch record required",
+  "data_access": {
+    "successful_access_counts": {
+      "holdout": 0,
+      "protected_final_test": 0,
+      "producer": 0,
+      "full_shimmer_inputs": 0
+    },
+    "denied_before_open": 0,
+    "external_dev_rows": 0,
+    "historical_dev_rows": 0,
+    "shorter_rows": 0,
+    "longer_rows": 0,
+    "evaluation_opened_after_updates": null
+  }
+}

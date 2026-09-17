@@ -2278,3 +2278,8 @@ unchanged. Report REMOTE_SHORT_BURST_SECURE_FEASIBILITY.md and hashed evidence i
 remote_short_burst_secure_20260915/. No full pipeline, multi-round, paid inference
 API, second instance, new quantization, serving migration or push.
 Next: task-specific compact/auditor contract A/B after deterministic fixture proofs.
+
+
+## 2026-09-17: Final Auditor feature blocker, bounded investigation
+
+Root cause unresolved. Added fail-closed hidden-feature diagnostics and offline row32/rows30-33 probe. Seventeen relevant tests pass; neutralizing finite detection is caught. Four local TRAIN rows pass finite shape and bitwise repeats; prior-cache drift persists. No optimizer/cloud/evaluation. Pinned PEFT0.15.2 installed without dependencies into ignored workspace `.tmp/auditor_feature_deps` because local PEFT was absent; no global dependency change. See `AUDITOR_FEATURE_BLOCKER_INVESTIGATION.md` for17-item source comparison, runtime limitations, evidence and minimum remote diagnostic proposal. Historical seals and consumed authorization unchanged; no image change, no general README change required. This is diagnostic preservation, not a blocker-fix claim. Next training stage after repair remains the defined final Auditor retry.
