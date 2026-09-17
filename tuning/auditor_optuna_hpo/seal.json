@@ -1,0 +1,30 @@
+{
+  "artifact_reuse": "hash-only verification locally; future live compatibility mandatory",
+  "files": {
+    "tools/auditor_classifier_lora_core.py": "2db4d4d00066c4b365fbcbe09e8f4b27c7a6e4d58673253a36d635516ec8a327",
+    "tools/auditor_classifier_lora_current_core.py": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+    "tools/auditor_classifier_lora_fork.py": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+    "tools/auditor_classifier_lora_stable.py": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+    "tools/auditor_optuna_hpo.py": "f999e5c4e0f1a15c9ec4d3aa86146e78ac21cbf5b68a11ae5c8074fd80c99550",
+    "tools/auditor_optuna_hpo_backend.py": "4bb7cadcb39fb0ed2b6906ada9f6e18d683c19080d39c34a4cea1fb9f7090bdf",
+    "tools/auditor_optuna_hpo_remote.py": "9ae59013d0c92b1a0fbb627773b5ee79e64e97fda5a62b9d1a33311a4f0200f7",
+    "tools/prepare_auditor_optuna_hpo.py": "604bcabaedcaea07f45ec955838491d4958b214253134b84e25bff3432ca7e63",
+    "tools/seal_auditor_optuna_hpo.py": "c0af2fc17e34868b16442047fc7eeae32594020b47a99aab46b094a8f4dbb1f0",
+    "tools/test_auditor_optuna_hpo.py": "4c0c036b2ff5346d7a68fd783cadf0e448a435e6dc722a54ddc409a2dfa980ed",
+    "tuning/auditor_optuna_hpo/.gitattributes": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+    "tuning/auditor_optuna_hpo/artifacts.json": "a958ece56fd9284e60fa9721dff6ed2734ffb9fb5be43110567fe8acd37a6e8c",
+    "tuning/auditor_optuna_hpo/controls.json": "b1558c767b67d3742537ba2c4d0544d1d8c0a3b233142b0eeb68f2b70d06eb55",
+    "tuning/auditor_optuna_hpo/cost_projection.json": "d1faca48adce9e6084909c2130dfd33ab60fd098af893093229112209fe283c3",
+    "tuning/auditor_optuna_hpo/current_train_baseline.json": "6df043ea6ccfc98e5e6924e516a6abf865daed2e80ecbfa3807f9aca5d8f7bf7",
+    "tuning/auditor_optuna_hpo/experiment.json": "4a3739046ac63be5ef3d98db24094617e151a1645c901189a47554d364d4618b",
+    "tuning/auditor_optuna_hpo/frozen_model.json": "270022a3f230eb78965b24e60350d9203a724ea3995ef11a2d5def0e3a372192",
+    "tuning/auditor_optuna_hpo/optuna_dependencies.json": "c0901590e52338648449cb8a180fbf4e8368c69e78af9639213bca8219041489",
+    "tuning/auditor_optuna_hpo/preparation_receipt.json": "d5d5b7a3e4f0e56ef19af9ff18eb28e2a1181e9e104ad330e817c11e306cbc8c",
+    "tuning/auditor_optuna_hpo/records_train_only.json": "963a8612a37cbbbcb00e9e44cd0e8c14ae45f7bfddbeafd066387789e454356f",
+    "tuning/auditor_optuna_hpo/runtime_contract.json": "93cec5bb592654068d4e21232c07fe88121842254a71b119676f1b15b2507d81",
+    "tuning/auditor_optuna_hpo/schedule.json": "8656d831a782038b622322c6d17b3f2aa6c2083c7add4d371fe53e769ad8ee4f",
+    "tuning/auditor_optuna_hpo/split.json": "036f550ddcd4caa5d2c7d9835c5b5af7f974297170106272973444e83bf1815a"
+  },
+  "immutable_prior_source": "00d5dcd",
+  "paid_execution_authorized": false
+}

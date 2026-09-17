@@ -1,0 +1,18 @@
+{
+  "cloud_queried": false,
+  "cloud_resources_created": 0,
+  "existing_dev_access": 0,
+  "holdout_access": 0,
+  "limits": "Local deterministic fixtures prove orchestration/contracts, not actual GPU compatibility or stability. No HPO trial on real data has run.",
+  "passed": 46,
+  "producer_execution": false,
+  "protected_access": 0,
+  "push": false,
+  "real_model_inference": false,
+  "real_model_training": false,
+  "real_model_weights_deserialized": false,
+  "scope_passed": true,
+  "seal_sha256": "863468f6fe134dbcd0d37579399b01a40fe33a967f50b456489ce49022c29614",
+  "tests": 46,
+  "verdict": "AUDITOR_OPTUNA_HPO_READY"
+}

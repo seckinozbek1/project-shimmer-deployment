@@ -1,0 +1,51 @@
+test_01_frozen_split (test_auditor_optuna_hpo.HPOTests.test_01_frozen_split) ... ok
+test_02_class_source_balance (test_auditor_optuna_hpo.HPOTests.test_02_class_source_balance) ... ok
+test_03_split_hashes (test_auditor_optuna_hpo.HPOTests.test_03_split_hashes) ... ok
+test_04_external_dev_denial (test_auditor_optuna_hpo.HPOTests.test_04_external_dev_denial) ... ok
+test_05_historical_dev_denial (test_auditor_optuna_hpo.HPOTests.test_05_historical_dev_denial) ... ok
+test_06_holdout_denial (test_auditor_optuna_hpo.HPOTests.test_06_holdout_denial) ... ok
+test_07_protected_denial (test_auditor_optuna_hpo.HPOTests.test_07_protected_denial) ... ok
+test_08_challenges_denial (test_auditor_optuna_hpo.HPOTests.test_08_challenges_denial) ... ok
+test_09_mixed_file_denial (test_auditor_optuna_hpo.HPOTests.test_09_mixed_file_denial) ... ok
+test_10_unbound_denial (test_auditor_optuna_hpo.HPOTests.test_10_unbound_denial) ... ok
+test_11_clean_reset (test_auditor_optuna_hpo.HPOTests.test_11_clean_reset) ... ok
+test_12_bad_reset_fails (test_auditor_optuna_hpo.HPOTests.test_12_bad_reset_fails) ... ok
+test_13_optimizer_state_leakage (test_auditor_optuna_hpo.HPOTests.test_13_optimizer_state_leakage) ... ok
+test_14_exact_search_space (test_auditor_optuna_hpo.HPOTests.test_14_exact_search_space) ... ok
+test_15_warmup_arithmetic (test_auditor_optuna_hpo.HPOTests.test_15_warmup_arithmetic) ... ok
+test_16_dropout_selection (test_auditor_optuna_hpo.HPOTests.test_16_dropout_selection) ... ok
+test_17_nonfinite_pruning (test_auditor_optuna_hpo.HPOTests.test_17_nonfinite_pruning) ... ok
+test_18_explosion_pruning (test_auditor_optuna_hpo.HPOTests.test_18_explosion_pruning) ... ok
+test_19_objective (test_auditor_optuna_hpo.HPOTests.test_19_objective) ... ok
+test_20_metrics (test_auditor_optuna_hpo.HPOTests.test_20_metrics) ... ok
+test_21_tie_breaks (test_auditor_optuna_hpo.HPOTests.test_21_tie_breaks) ... ok
+test_22_successive_halving_actual (test_auditor_optuna_hpo.HPOTests.test_22_successive_halving_actual) ... ok
+test_23_winner_freeze (test_auditor_optuna_hpo.HPOTests.test_23_winner_freeze) ... ok
+test_24_no_candidate (test_auditor_optuna_hpo.HPOTests.test_24_no_candidate) ... ok
+test_25_trial_and_update_caps (test_auditor_optuna_hpo.HPOTests.test_25_trial_and_update_caps) ... ok
+test_26_numerical_prune_no_candidate (test_auditor_optuna_hpo.HPOTests.test_26_numerical_prune_no_candidate) ... ok
+test_27_sampler_determinism (test_auditor_optuna_hpo.HPOTests.test_27_sampler_determinism) ... ok
+test_28_schedule_train_only (test_auditor_optuna_hpo.HPOTests.test_28_schedule_train_only) ... ok
+test_29_admission_required (test_auditor_optuna_hpo.HPOTests.test_29_admission_required) ... ok
+test_30_reuse_one_pass (test_auditor_optuna_hpo.HPOTests.test_30_reuse_one_pass) ... ok
+test_31_reuse_runtime_mismatch (test_auditor_optuna_hpo.HPOTests.test_31_reuse_runtime_mismatch) ... ok
+test_32_reuse_features_mismatch (test_auditor_optuna_hpo.HPOTests.test_32_reuse_features_mismatch) ... ok
+test_33_no_authorization_created (test_auditor_optuna_hpo.HPOTests.test_33_no_authorization_created) ... ok
+test_34_audit_deny_paths (test_auditor_optuna_hpo.HPOTests.test_34_audit_deny_paths) ... ok
+test_35_matched_diagnostic_context_rng_and_modes (test_auditor_optuna_hpo.HPOTests.test_35_matched_diagnostic_context_rng_and_modes) ... ok
+test_36_artifact_hashes_and_no_partial (test_auditor_optuna_hpo.HPOTests.test_36_artifact_hashes_and_no_partial) ... ok
+test_37_real_optuna_dependency (test_auditor_optuna_hpo.HPOTests.test_37_real_optuna_dependency) ... ok
+test_38_no_model_import (test_auditor_optuna_hpo.HPOTests.test_38_no_model_import) ... ok
+test_39_process_audit_before_open (test_auditor_optuna_hpo.HPOTests.test_39_process_audit_before_open) ... ok
+test_40_authorization_budget_reserve (test_auditor_optuna_hpo.HPOTests.test_40_authorization_budget_reserve) ... ok
+test_41_diagnostic_schedule_and_drift (test_auditor_optuna_hpo.HPOTests.test_41_diagnostic_schedule_and_drift) ... ok
+test_42_preparation_access_receipt (test_auditor_optuna_hpo.HPOTests.test_42_preparation_access_receipt) ... ok
+test_43_production_dropout_replacement (test_auditor_optuna_hpo.HPOTests.test_43_production_dropout_replacement) ... ok
+test_44_matched_telemetry (test_auditor_optuna_hpo.HPOTests.test_44_matched_telemetry) ... ok
+test_45_extra_search_parameter_denied (test_auditor_optuna_hpo.HPOTests.test_45_extra_search_parameter_denied) ... ok
+test_46_admission_thresholds_inclusive (test_auditor_optuna_hpo.HPOTests.test_46_admission_thresholds_inclusive) ... ok
+
+----------------------------------------------------------------------
+Ran 46 tests in 0.731s
+
+OK
