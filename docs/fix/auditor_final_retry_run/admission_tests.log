@@ -1,0 +1,33 @@
+test_actual_production_loop_stops_before_normalize_on_bad_row (test_auditor_feature_admission.AdmissionTests) ... ok
+test_all_1792_saved_rows_complete_and_persistence_corruption_fails (test_auditor_feature_admission.AdmissionTests) ... ok
+test_cost_is_dollars_per_hour_not_per_second (test_auditor_feature_admission.AdmissionTests) ... ok
+test_detail_capture_failure_keeps_minimal_evidence (test_auditor_feature_admission.AdmissionTests) ... ok
+test_diagnostic_io_failure_cannot_admit (test_auditor_feature_admission.AdmissionTests) ... ok
+test_dtype_and_vector_shape_refused (test_auditor_feature_admission.AdmissionTests) ... ok
+test_exact_live_copy_passes_without_evidence_or_substitution (test_auditor_feature_admission.AdmissionTests) ... ok
+test_failed_receipt_upgrade_preserves_previous_durable_receipt (test_auditor_feature_admission.AdmissionTests) ... ok
+test_finite_drift_is_durable_and_latched (test_auditor_feature_admission.AdmissionTests) ... ok
+test_late_finite_drift_beyond_prefix_stops (test_auditor_feature_admission.AdmissionTests) ... ok
+test_missing_changed_or_reordered_reference_refused (test_auditor_feature_admission.AdmissionTests) ... ok
+test_nan_and_both_infinities_stop (test_auditor_feature_admission.AdmissionTests) ... ok
+test_partial_admission_never_unlocks_downstream (test_auditor_feature_admission.AdmissionTests) ... ok
+test_raw_capture_failure_still_stops_with_vector_and_reason (test_auditor_feature_admission.AdmissionTests) ... ok
+test_saved_failed_run_refused_at_first_drift_row11 (test_auditor_feature_admission.AdmissionTests) ... ok
+test_wrong_raw_shape_stops_and_saves_raw (test_auditor_feature_admission.AdmissionTests) ... ok
+test_all_nonfinite_bounded_indices_and_strict_json (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_diagnostic_write_failure_cannot_admit_row (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_live_loop_calls_shared_guard_before_cache_write (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_non_train_denied_before_forward (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_nonfinite_evidence_is_durable_before_raise (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_valid_original_pooling_and_forward_arguments (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_wrong_raw_shape_preserved_without_resize (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_all_pass_bounded_order_with_fresh_prefix (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_controller_single_launch_and_collection_before_termination (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_each_failure_prevents_later_expansion (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_no_training_calls_in_remote_diagnostic (test_auditor_feature_remote.DiagnosticContracts) ... ok
+test_success_records_raw_and_vector_state (test_auditor_feature_remote.DiagnosticContracts) ... ok
+
+----------------------------------------------------------------------
+Ran 28 tests in 4.743s
+
+OK

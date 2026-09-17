@@ -1,0 +1,28 @@
+{
+  "a10": {
+    "architecture": "x86_64",
+    "metadata": {
+      "cpu": 30,
+      "gpu_count": 1,
+      "gpu_type": "A10 (24 GB PCIe)",
+      "hourly_rate": 1.29,
+      "ram_gib": 200,
+      "storage_gib": 1400,
+      "type": "gpu_1x_a10"
+    },
+    "regions": [
+      "us-east-1",
+      "us-west-1"
+    ]
+  },
+  "epoch": 1789665244.908606,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instances": [],
+  "pinned_image_available": true
+}
