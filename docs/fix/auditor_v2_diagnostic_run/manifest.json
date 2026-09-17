@@ -1,0 +1,34 @@
+{
+  "bundle_sha256": "ccf95d2e8f0af079d4fecad6d71ddfbc9c230c3da9effc7222543e266b726bfb",
+  "hard_seconds": 4186.046511627907,
+  "hard_usd": 1.5,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-auditor-v2-diagnostic",
+  "projected_cost": 0.86,
+  "projected_seconds_with_reserve": 2400,
+  "projected_workload_seconds": 1800,
+  "region": "us-east-1",
+  "reserve_seconds": 600,
+  "soft_seconds": 2093.0232558139537,
+  "soft_usd": 0.75,
+  "source_commit": "12a08e89d27195d384c9565b9bd93cb829df98d1",
+  "termination_deadline_seconds": 4186.046511627907,
+  "watchdog_deadline_seconds": 4066.0465116279074,
+  "workload_deadline_seconds": 3586.0465116279074
+}

@@ -1,0 +1,14 @@
+{
+  "load_seconds": 10.491623085999947,
+  "feature_seconds": 453.0981092130033,
+  "feature_vectors": 2040,
+  "feature_tokens": 1138245,
+  "input_tokens_per_second": 2512.1380488147356,
+  "head_seconds": 0.2661694000000807,
+  "classification_seconds": {
+    "external_dev": 0.006490499999927124,
+    "historical_dev": 0.0016985279999062186
+  },
+  "peak_allocated_gib": 3.558657646179199,
+  "peak_reserved_gib": 3.73046875
+}

@@ -1,0 +1,6 @@
+{
+  "state_sha256": "ac0fee8719f665e544a5e201c756b294981ad9645642b38d144357b76eddc931",
+  "backbone_trainable": 0,
+  "lora_trainable": 0,
+  "load_seconds": 10.491623085999947
+}
