@@ -1,0 +1,1172 @@
+{
+  "scope": "Saved TRAIN arrays and Python source only; no model execution or evaluation data opened.",
+  "source": {
+    "historical": {
+      "commit": "ceabb0afda9c87812e2461fd70c505fb6f9e4b9a",
+      "checks": [
+        {
+          "path": "tools/auditor_classifier_lora_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_current_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_current_remote.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_fork.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_stable.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_linear_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": false,
+          "downloaded_matches": false,
+          "archive_present": false,
+          "archive_matches": false
+        },
+        {
+          "path": "tools/auditor_v2_diagnostic.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": false,
+          "downloaded_matches": false,
+          "archive_present": false,
+          "archive_matches": false
+        },
+        {
+          "path": "tools/auditor_v2_execution.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": false,
+          "downloaded_matches": false,
+          "archive_present": false,
+          "archive_matches": false
+        },
+        {
+          "path": "tuning/second_tuning_eval_runtime_v2_1/telemetry_worker.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": false,
+          "downloaded_matches": false,
+          "archive_present": false,
+          "archive_matches": false
+        }
+      ],
+      "bundle_pyc": []
+    },
+    "failed": {
+      "commit": "b4f7e8247391e2278a7b7a1ba84f6b5915c56ced",
+      "checks": [
+        {
+          "path": "tools/auditor_classifier_lora_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_current_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_fork.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_stable.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_final_backend.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_final_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_final_launch_support.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_final_remote.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_optuna_hpo.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_optuna_hpo_backend.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/test_auditor_final.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        }
+      ],
+      "bundle_pyc": []
+    },
+    "remote": {
+      "commit": "f8dbcd12f9e06ff115081caac9565744192bdaf7",
+      "checks": [
+        {
+          "path": "tools/auditor_classifier_lora_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_current_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_fork.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_stable.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_feature_diagnostics.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_feature_remote.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_final_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_final_remote.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        }
+      ],
+      "bundle_pyc": []
+    },
+    "hpo": {
+      "commit": "ea2b72373a384e29a6344c762b8b7d12ef450741",
+      "checks": [
+        {
+          "path": "tools/auditor_classifier_lora_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_current_core.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_fork.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_classifier_lora_stable.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_optuna_hpo.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_optuna_hpo_backend.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_optuna_hpo_launch_support.py",
+          "manifest_matches_bundle": true,
+          "git_present": false,
+          "git_bytes_equal": false,
+          "git_normalized_equal": false,
+          "git_ast_equal": false,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/auditor_optuna_hpo_remote.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/clean_auditor_hpo_initialization.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/prepare_auditor_optuna_hpo.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/seal_auditor_optuna_hpo.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/test_auditor_optuna_hpo.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        },
+        {
+          "path": "tools/test_auditor_optuna_hpo_clean.py",
+          "manifest_matches_bundle": true,
+          "git_present": true,
+          "git_bytes_equal": true,
+          "git_normalized_equal": true,
+          "git_ast_equal": true,
+          "downloaded_present": true,
+          "downloaded_matches": true,
+          "archive_present": true,
+          "archive_matches": true
+        }
+      ],
+      "bundle_pyc": []
+    }
+  },
+  "failed_prefix": [
+    {
+      "row": 1,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 1.0,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 676,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 2,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 1.0,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 680,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 3,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 1.0000000000000002,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 671,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 4,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 0.9999999999999999,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 688,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 5,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 0.9999999999999999,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 735,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 6,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 1.0000000000000002,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 735,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 7,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 1.0,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 726,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 8,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 1.0,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 738,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 9,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 1.0,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 732,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 10,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": true,
+      "different_coordinates": 0,
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "cosine": 0.9999999999999999,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 732,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 11,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.13879960775375366,
+      "rms": 0.0325396137426542,
+      "cosine": 0.9997964265607422,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 727,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 12,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.11812490411102772,
+      "rms": 0.03234967101762145,
+      "cosine": 0.999797029798211,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 752,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 13,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.14645051956176758,
+      "rms": 0.033640467784584384,
+      "cosine": 0.9997836797104732,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 755,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 14,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.13253068923950195,
+      "rms": 0.033517564334156986,
+      "cosine": 0.9997820035100673,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 753,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 15,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.11783620715141296,
+      "rms": 0.0327465215009991,
+      "cosine": 0.9997921730527242,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 749,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 16,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.13003981113433838,
+      "rms": 0.030949850332813292,
+      "cosine": 0.9998155118723766,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 773,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 17,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.10239887237548828,
+      "rms": 0.02697841832605707,
+      "cosine": 0.9998581606280212,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 774,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 18,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.13813996315002441,
+      "rms": 0.03287247633150216,
+      "cosine": 0.9997837037660489,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 774,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 19,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.1287755303128506,
+      "rms": 0.031080430278597294,
+      "cosine": 0.9998135167661895,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 762,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 20,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.10023784637451172,
+      "rms": 0.02792141284203469,
+      "cosine": 0.999850052358438,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 778,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 21,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.11293438076972961,
+      "rms": 0.03196080343178587,
+      "cosine": 0.9998045604997771,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 727,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 22,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.11393296718597412,
+      "rms": 0.030753277854736145,
+      "cosine": 0.9998182460877868,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 727,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 23,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.12105333805084229,
+      "rms": 0.03267469734216698,
+      "cosine": 0.9997960501290397,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 724,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 24,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.12652286142110825,
+      "rms": 0.031100956542256558,
+      "cosine": 0.9998153929844468,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 735,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 25,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.13843226432800293,
+      "rms": 0.03189330821596692,
+      "cosine": 0.9998054028542552,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 743,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 26,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.16882681846618652,
+      "rms": 0.034369258435190134,
+      "cosine": 0.9997694791540366,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 746,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 27,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.12497973442077637,
+      "rms": 0.03118720484398278,
+      "cosine": 0.9998104300312046,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 744,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 28,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.13692444562911987,
+      "rms": 0.03693715337263824,
+      "cosine": 0.9997365126202279,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 755,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 29,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.10055053234100342,
+      "rms": 0.02954490185763109,
+      "cosine": 0.9998310248402763,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 775,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 30,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.10702069103717804,
+      "rms": 0.02637893036848451,
+      "cosine": 0.9998652519298942,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 776,
+      "train_payload_token_match": true
+    },
+    {
+      "row": 31,
+      "receipt_verified": true,
+      "historical_receipt_verified": true,
+      "token_and_id_match": true,
+      "bitwise": false,
+      "different_coordinates": 3072,
+      "max_abs": 0.12476539611816406,
+      "rms": 0.03328247808592295,
+      "cosine": 0.9997873446237041,
+      "pure_fp16_cast_match": false,
+      "pure_bf16_cast_match": false,
+      "sequence_length": 767,
+      "train_payload_token_match": true
+    }
+  ],
+  "remote_vectors": [
+    {
+      "file": "A-00-row32.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "A-01-row32.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "B-00-row30.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "B-01-row31.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "B-02-row32.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "B-03-row33.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-00-row1.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-01-row2.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-02-row3.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-03-row4.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-04-row5.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-05-row6.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-06-row7.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-07-row8.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-08-row9.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-09-row10.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-10-row11.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-11-row12.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-12-row13.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-13-row14.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-14-row15.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-15-row16.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-16-row17.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-17-row18.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-18-row19.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-19-row20.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-20-row21.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-21-row22.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-22-row23.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-23-row24.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-24-row25.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-25-row26.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-26-row27.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-27-row28.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-28-row29.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-29-row30.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-30-row31.npy",
+      "bitwise_historical": true
+    },
+    {
+      "file": "C-31-row32.npy",
+      "bitwise_historical": true
+    }
+  ],
+  "local_overlap": [
+    {
+      "row": 30,
+      "failed_local_max_abs": 0.18599724769592285,
+      "error_cosine": 0.2505392819390487
+    },
+    {
+      "row": 31,
+      "failed_local_max_abs": 0.21983540058135986,
+      "error_cosine": 0.13993252937364978
+    }
+  ],
+  "local_source": [
+    {
+      "path": "tools/auditor_feature_diagnostics.py",
+      "receipt_matches_git": true
+    },
+    {
+      "path": "tools/auditor_final_remote.py",
+      "receipt_matches_git": true
+    },
+    {
+      "path": "tools/auditor_classifier_lora_fork.py",
+      "receipt_matches_git": true
+    },
+    {
+      "path": "tools/auditor_classifier_lora_current_core.py",
+      "receipt_matches_git": true
+    }
+  ]
+}

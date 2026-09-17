@@ -1,0 +1,24 @@
+{
+  "torch": "2.5.1+cpu",
+  "device": "cpu",
+  "inline_prior_storage_alive_at_entry": [
+    false,
+    true
+  ],
+  "helper_prior_storage_alive_at_entry": [
+    false,
+    false
+  ],
+  "inline_input_inference": [
+    true,
+    true
+  ],
+  "helper_input_inference": [
+    false,
+    false
+  ],
+  "pooled_equal": true,
+  "state_hash_unchanged_after_train_and_dropout_mutation": true,
+  "scope": "Synthetic CPU model only; lifetime/hash coverage test, not a reproduction of CUDA failure.",
+  "nonpersistent_buffer_mutation_also_undetected": true
+}
