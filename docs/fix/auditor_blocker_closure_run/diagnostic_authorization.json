@@ -1,0 +1,19 @@
+{
+  "action": "auditor-blocker-closure-two-process-only",
+  "arms": [
+    "O",
+    "D"
+  ],
+  "execution_manifest_sha256": "8cb99d5aff7967ec2d951d941d6041c5aabd2a379a7d923d670c13d45fc4b2e5",
+  "hard_usd": 2,
+  "hourly_rate": 1.29,
+  "instances": 1,
+  "launch_epoch": 0,
+  "max_rows_per_arm": 32,
+  "operator_authorized": false,
+  "optimizer_updates": 0,
+  "region": "us-east-1",
+  "request_attachment": "af149acd-35f7-45a3-92aa-3ae863ec1c74",
+  "soft_usd": 1,
+  "workload_deadline_epoch": 0
+}

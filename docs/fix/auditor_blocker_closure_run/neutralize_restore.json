@@ -1,0 +1,5 @@
+{
+  "neutralized_test_failed": true,
+  "restored_test_passed": true,
+  "scope": "diagnostic comparator only, not a production fix"
+}

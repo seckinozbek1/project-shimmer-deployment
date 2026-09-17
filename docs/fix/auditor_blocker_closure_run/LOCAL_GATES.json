@@ -1,0 +1,9 @@
+{
+  "errors": 0,
+  "execution_manifest_sha256": "8cb99d5aff7967ec2d951d941d6041c5aabd2a379a7d923d670c13d45fc4b2e5",
+  "failures": 0,
+  "log_sha256": "96c73f6a977167ebdaed001bfab014a10b387b3fcffaaea25408a3288c24351e",
+  "passed": true,
+  "scope": "Synthetic CPU tests; no real-model or cloud execution",
+  "tests": 20
+}

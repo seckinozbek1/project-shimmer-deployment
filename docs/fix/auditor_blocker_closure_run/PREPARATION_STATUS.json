@@ -1,0 +1,16 @@
+{
+  "arm_d": "NOT_RUN",
+  "arm_o": "NOT_RUN",
+  "bundle_sha256": "cab6408e2fc8e6424a00448fe032b860a9bb2c394d3deb01f23ef263e81751fe",
+  "cloud_cost_usd": 0,
+  "cloud_instances_launched": 0,
+  "execution_manifest_sha256": "8cb99d5aff7967ec2d951d941d6041c5aabd2a379a7d923d670c13d45fc4b2e5",
+  "experiment_outcome": "REMOTE_DIAGNOSTIC_INCOMPLETE",
+  "final_status": "AUDITOR_BLOCKER_STILL_OPEN",
+  "operator_authorized": false,
+  "reason": "NOT_RUN_AWAITING_OPERATOR_AUTHORIZATION",
+  "retry_readiness": "RETRY_NOT_YET_JUSTIFIED",
+  "root_cause": "ROOT_CAUSE_UNRESOLVED",
+  "safe_admission_boundary_established": false,
+  "tests_passed": 20
+}

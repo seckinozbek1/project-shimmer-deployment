@@ -1,0 +1,8 @@
+{
+  "kind": "offline payload/hash/AST generation only; CPU tests separately required",
+  "maximum_total_forwards": 64,
+  "no_evaluation_payload": true,
+  "operator_authorized": false,
+  "original_files_verified": 21,
+  "passed": true
+}
