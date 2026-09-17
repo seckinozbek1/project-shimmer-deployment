@@ -1,0 +1,9 @@
+{
+  "cpu_count": 30,
+  "disk_free_bytes": 1409785802752,
+  "gpu_free_bytes": 23437180928,
+  "gpu_name": "NVIDIA A10",
+  "gpu_total_bytes": 23684841472,
+  "ram_available_bytes": 234881867776,
+  "ram_total_bytes": 238546341888
+}

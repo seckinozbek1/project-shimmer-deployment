@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "probe": "Exact pinned offline snapshot resolver; config-only temporary fixtures",
+  "manifest_sha256": "dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223",
+  "library_version": "0.30.2",
+  "library_source_sha256": "cd90da3c16f809f30253b0e0c636da166768212098e36e51687ef05f01628c43",
+  "observations": [
+    {
+      "model_id": "BAAI/bge-m3",
+      "ref_sha256": "2026ccf7afac000c3e766e351ff1e1588ca218b49b3f0da1908aeb6d79e866be",
+      "ref_bytes": 41,
+      "trailing_newline": true,
+      "sealed_strip_check_passes": true,
+      "default_revision_error": "LocalEntryNotFoundError",
+      "explicit_revision_resolves": true,
+      "fixture_without_newline_resolves": true,
+      "restored_original_fails": true,
+      "model_type": "xlm-roberta"
+    },
+    {
+      "model_id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "ref_sha256": "d33e19593413e727d8467fb3d1ee35cf866a8cd54b95a241779da28b85778b73",
+      "ref_bytes": 41,
+      "trailing_newline": true,
+      "sealed_strip_check_passes": true,
+      "default_revision_error": "LocalEntryNotFoundError",
+      "explicit_revision_resolves": true,
+      "fixture_without_newline_resolves": true,
+      "restored_original_fails": true,
+      "model_type": "llama"
+    },
+    {
+      "model_id": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "ref_sha256": "913d0c4a0b98534ad6cf0fa4b48acb38eb5658af2dd6e9f0f74aae68cab16e1a",
+      "ref_bytes": 41,
+      "trailing_newline": true,
+      "sealed_strip_check_passes": true,
+      "default_revision_error": "LocalEntryNotFoundError",
+      "explicit_revision_resolves": true,
+      "fixture_without_newline_resolves": true,
+      "restored_original_fails": true,
+      "model_type": "qwen2"
+    }
+  ],
+  "network_used": false,
+  "model_loaded": false,
+  "production_files_modified": false,
+  "cloud_retried": false
+}

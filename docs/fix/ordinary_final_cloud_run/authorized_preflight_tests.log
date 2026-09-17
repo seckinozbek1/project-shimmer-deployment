@@ -1,0 +1,19 @@
+test_actual_parser_ordinary_flags (__main__.PreparationChecks.test_actual_parser_ordinary_flags) ... ok
+test_authorization_not_inherited (__main__.PreparationChecks.test_authorization_not_inherited) ... ok
+test_changed_manifest (__main__.PreparationChecks.test_changed_manifest) ... ok
+test_changed_workload (__main__.PreparationChecks.test_changed_workload) ... ok
+test_component_summary_unknowns_and_retention (__main__.PreparationChecks.test_component_summary_unknowns_and_retention) ... ok
+test_cost_and_reserves (__main__.PreparationChecks.test_cost_and_reserves) ... ok
+test_existing_partition_recovery_is_preserved (__main__.PreparationChecks.test_existing_partition_recovery_is_preserved) ... ok
+test_hardware_admission (__main__.PreparationChecks.test_hardware_admission) ... ok
+test_multiround_and_flags_rejected_even_if_resealed (__main__.PreparationChecks.test_multiround_and_flags_rejected_even_if_resealed) ... ok
+test_numerical_contract_transport_fail_closed (__main__.PreparationChecks.test_numerical_contract_transport_fail_closed) ... ok
+test_quality_targets_not_execution_errors (__main__.PreparationChecks.test_quality_targets_not_execution_errors) ... ok
+test_runtime_bytes_and_final_environment_admitted (__main__.PreparationChecks.test_runtime_bytes_and_final_environment_admitted) ... ok
+test_seal_and_exact_tree (__main__.PreparationChecks.test_seal_and_exact_tree) ... ok
+test_watchdog_terminates_only_named_instance (__main__.PreparationChecks.test_watchdog_terminates_only_named_instance) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.632s
+
+OK

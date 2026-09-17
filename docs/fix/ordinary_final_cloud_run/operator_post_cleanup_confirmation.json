@@ -1,0 +1,8 @@
+{
+  "epoch": 1789680708.7759578,
+  "instances": [],
+  "temporary_ssh_registration_absent": true,
+  "local_key_material_absent": true,
+  "no_persistent_storage_created": true,
+  "check": "Independent post-controller read through fresh provider client"
+}

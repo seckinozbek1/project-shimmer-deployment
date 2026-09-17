@@ -1,0 +1,14 @@
+temporary_ssh_identity
+launch_one_a10
+activation
+ssh_ready_0
+python_gate
+Controller stopped: RuntimeError
+stop_workload
+final_gpu_state
+pack_evidence
+evidence_hash
+evidence_download
+terminate_instance
+terminated_and_cleaned
+PASS: pre-workload failure tears down, removes SSH credentials, confirms empty inventory and refuses second launch; all provider/SSH operations mocked

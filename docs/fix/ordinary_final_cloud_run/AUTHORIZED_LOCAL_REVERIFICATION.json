@@ -1,0 +1,12 @@
+{
+  "all_models_verified": true,
+  "all_wheels_verified": true,
+  "archive_verified": true,
+  "epoch": 1789677461.1878917,
+  "manifest_sha256": "dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223",
+  "passed": true,
+  "preparation_checks": 14,
+  "seal_sha256": "93d2c5b2fe371f19143abe536569fe7bf15bcf9307b3136826b6440e028a4916",
+  "utc": "2026-09-17T20:37:41.187891+00:00",
+  "workload_executed": false
+}
