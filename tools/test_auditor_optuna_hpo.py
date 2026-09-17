@@ -166,7 +166,7 @@ class HPOTests(unittest.TestCase):
     def admission(self):
         rows=[dict(example_id=str(i),relation=h.CLASSES[i%4]) for i in range(1792)]
         feats=np.zeros((1792,3),np.float32);m=np.zeros(3,np.float32);s=np.ones(3,np.float32);w=np.zeros((4,3),np.float32);b=np.zeros(4,np.float32)
-        baseline=dict(predicted_indices=[0]*1792,ce_range=[1.38,1.39],metrics=dict(macro_f1=.1))
+        baseline=dict(example_ids=[str(i) for i in range(1792)],predicted_indices=[0]*1792,ce_range=[1.38,1.39],metrics=dict(macro_f1=.1))
         gate=h.ReuseAdmission(np,feats,m,s,w,b,rows,[str(i) for i in range(16)],{'runtime':7},baseline)
         observe=lambda r:dict(hidden=feats[int(r['example_id'])].copy(),standardized=np.zeros(3,np.float32),logits=np.zeros(4,np.float32))
         return gate,observe

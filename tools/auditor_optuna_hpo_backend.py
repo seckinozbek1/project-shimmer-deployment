@@ -97,7 +97,14 @@ class TorchBackend:
     def observe(self, row):
         self.model.eval();self.head.eval()
         with self.t.no_grad():
-            hidden,z,logits,ce,_=self.forward(row['example_id'],h.Stability(.08585197478532791))
+            # Compatibility checks do not consume labels or apply loss gates.
+            ids=self.t.tensor([row['input_ids']],dtype=self.t.long,device=self.head.weight.device)
+            with self.t.autocast('cuda',dtype=self.t.bfloat16):
+                hidden=self.model.get_base_model().model(input_ids=ids,attention_mask=self.t.ones_like(ids),use_cache=False,return_dict=True).last_hidden_state[:,-1,:].float()
+            with self.t.autocast('cuda',enabled=False):
+                z=(hidden-self.mean)/self.std;logits=self.head(z)
+            for value in [hidden,z,logits]:
+                h.require(bool(self.t.isfinite(value).all()),'nonfinite compatibility features')
         return dict(hidden=hidden[0].cpu().numpy().copy(),standardized=z[0].cpu().numpy().copy(),logits=logits[0].cpu().numpy().copy())
 
     def norms(self, params, gradients=False):

@@ -75,7 +75,9 @@ def execute(permit_path,base_path,output):
     install_audit(access)
     seal,boundary,rows,split,artifacts=scope()
     read=lambda n:boundary.read(D/n)
-    expected=read('runtime_contract.json');baseline=read('current_train_baseline.json');controls=read('controls.json')['example_ids']
+    expected=read('runtime_contract.json');baseline=read('clean_initialization/inner_train_baseline.json');controls=read('controls.json')['example_ids']
+    fit_ids={r['example_id'] for r in split['assignments'] if r['split']=='inner_train'}
+    h.require(len(baseline['example_ids'])==1432 and set(baseline['example_ids'])==fit_ids,'INNER_TRAIN-only baseline')
     h.require(platform.python_version()==expected['python'],'Python compatibility')
     for name,version in expected['packages'].items():h.require(importlib.metadata.version(name)==version,'package compatibility '+name)
     for name,version in read('optuna_dependencies.json').items():h.require(importlib.metadata.version(name)==version,'HPO package '+name)
@@ -115,13 +117,13 @@ def execute(permit_path,base_path,output):
     model=PeftModel.from_pretrained(model,str(adapter_path),adapter_name=fork.REFERENCE,is_trainable=False)
     model.load_adapter(str(adapter_path),adapter_name=fork.CANDIDATE,is_trainable=False)
     head=torch.nn.Linear(3072,4,device='cuda',dtype=torch.float32)
-    head.load_state_dict(load_file(str(ROOT/artifacts['head-200.safetensors']['path']),device='cuda'),strict=True)
+    head.load_state_dict(load_file(str(ROOT/artifacts['hpo_head-200.safetensors']['path']),device='cuda'),strict=True)
     fork.freeze_slots(model,head)
     adapter_inventory=fork.inventory(adapter_path/'adapter_model.safetensors')
     current.verify_adapter(torch,model,fork.REFERENCE,adapter_inventory);current.verify_adapter(torch,model,fork.CANDIDATE,adapter_inventory)
     audit=stable.FrozenAudit(torch,model)
     h.require(audit.initial_hash==expected['base_state_sha256'],'prepared base function hash')
-    mean_np=np.load(ROOT/artifacts['mean.npy']['path'],allow_pickle=False);std_np=np.load(ROOT/artifacts['std.npy']['path'],allow_pickle=False)
+    mean_np=np.load(ROOT/artifacts['hpo_mean.npy']['path'],allow_pickle=False);std_np=np.load(ROOT/artifacts['hpo_std.npy']['path'],allow_pickle=False)
     features=np.load(ROOT/artifacts['current_train_features.npy']['path'],allow_pickle=False)
     h.require(features.shape==(1792,3072) and features.dtype==np.float32 and np.isfinite(features).all(),'feature cache')
     h.require(mean_np.shape==std_np.shape==(3072,) and mean_np.dtype==std_np.dtype==np.float32 and np.isfinite(mean_np).all() and np.isfinite(std_np).all() and (std_np>=1e-6).all(),'normalization cache')

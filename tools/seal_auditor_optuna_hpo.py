@@ -42,16 +42,16 @@ def seal():
     pins={name:importlib.metadata.version(name) for name in ['optuna','alembic','colorlog','sqlalchemy','Mako','typing_extensions','greenlet','colorama','MarkupSafe','packaging','tqdm','PyYAML','scipy']}
     h.require(pins['optuna']=='4.5.0','pinned Optuna')
     write(D/'optuna_dependencies.json',pins);write(D/'cost_projection.json',costs())
-    files=list(D.glob('*.json'))+[D/'.gitattributes']
-    files=[p for p in files if p.name not in ('seal.json','LOCAL_VALIDATION.json')]
-    names=['auditor_optuna_hpo.py','auditor_optuna_hpo_backend.py','auditor_optuna_hpo_remote.py','prepare_auditor_optuna_hpo.py','seal_auditor_optuna_hpo.py','test_auditor_optuna_hpo.py',
+    files=list(D.glob('*.json'))+list((D/'clean_initialization').glob('*.json'))+[D/'.gitattributes']
+    files=[p for p in files if p.name not in ('seal.json','LOCAL_VALIDATION.json','current_train_baseline.json')]
+    names=['clean_auditor_hpo_initialization.py','test_auditor_optuna_hpo_clean.py','auditor_optuna_hpo.py','auditor_optuna_hpo_backend.py','auditor_optuna_hpo_remote.py','prepare_auditor_optuna_hpo.py','seal_auditor_optuna_hpo.py','test_auditor_optuna_hpo.py',
            'auditor_classifier_lora_core.py','auditor_classifier_lora_fork.py','auditor_classifier_lora_stable.py','auditor_classifier_lora_current_core.py']
     files += [ROOT/'tools'/n for n in names]
     for p in files:
         if p.suffix=='.py':ast.parse(p.read_text())
         h.require(not credential_locations(p.read_bytes(),p.as_posix()),'Possible credential in '+p.as_posix())
     write(D/'seal.json',dict(files={p.relative_to(ROOT).as_posix():h.sha(p) for p in files},paid_execution_authorized=False,immutable_prior_source='00d5dcd',artifact_reuse='hash-only verification locally; future live compatibility mandatory'))
-    test=subprocess.run([sys.executable,'-m','unittest','discover','-s','tools','-p','test_auditor_optuna_hpo.py','-v'],cwd=ROOT,capture_output=True)
+    test=subprocess.run([sys.executable,'-m','unittest','discover','-s','tools','-p','test_auditor_optuna_hpo*.py','-v'],cwd=ROOT,capture_output=True)
     h.require(not credential_locations(test.stdout+test.stderr,'local test log'),'Possible credential in test log')
     (D/'local_tests.log').write_bytes(test.stdout+test.stderr)
     h.require(test.returncode==0,'Local tests failed: see local_tests.log')
@@ -60,8 +60,8 @@ def seal():
     (D/'scope.log').write_bytes(scope.stdout+scope.stderr)
     import re
     count=int(re.search(rb'Ran (\d+) tests',test.stderr).group(1))
-    write(D/'LOCAL_VALIDATION.json',dict(verdict='AUDITOR_OPTUNA_HPO_READY',tests=count,passed=count,scope_passed=True,seal_sha256=h.sha(D/'seal.json'),
-        cloud_resources_created=0,cloud_queried=False,real_model_inference=False,real_model_training=False,real_model_weights_deserialized=False,existing_dev_access=0,holdout_access=0,protected_access=0,producer_execution=False,push=False,
+    write(D/'LOCAL_VALIDATION.json',dict(verdict='AUDITOR_OPTUNA_HPO_CLEAN_READY',tests=count,passed=count,scope_passed=True,seal_sha256=h.sha(D/'seal.json'),
+        cloud_resources_created=0,cloud_queried=False,real_model_inference=False,real_model_training=False,real_model_weights_deserialized=False,cached_feature_linear_head_fitted=True,initialization_inner_val_exposure=0,existing_dev_access=0,holdout_access=0,protected_access=0,producer_execution=False,push=False,
         limits='Local deterministic fixtures prove orchestration/contracts, not actual GPU compatibility or stability. No HPO trial on real data has run.'))
     print(json.dumps(dict(tests=count,scope=True,seal_sha256=h.sha(D/'seal.json'),costs=costs()),indent=2))
 

@@ -11,16 +11,16 @@
     "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/current_train_features.npy",
     "sha256": "06e47fd6a0244cbff94f75e66eff81b4cad417843e34d62c3b370a3468cf8287"
   },
-  "head-200.safetensors": {
-    "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/head-200.safetensors",
-    "sha256": "027c880e6c10a13f3e7354d12665ffacca5f7d68836291feaf195c167c13f915"
+  "hpo_head-200.safetensors": {
+    "path": "tuning/auditor_optuna_hpo/clean_initialization/hpo_head-200.safetensors",
+    "sha256": "8a9f94c6a78c01c15ddb4ac07e7e80586a7d1515aefcfc6f68040fc9181aa6e3"
   },
-  "mean.npy": {
-    "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/mean.npy",
-    "sha256": "370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5"
+  "hpo_mean.npy": {
+    "path": "tuning/auditor_optuna_hpo/clean_initialization/hpo_mean.npy",
+    "sha256": "f812e63fec063220b9eaf27c3e9782005abad3cb66293491b55f93b38ad8aecf"
   },
-  "std.npy": {
-    "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/std.npy",
-    "sha256": "1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a"
+  "hpo_std.npy": {
+    "path": "tuning/auditor_optuna_hpo/clean_initialization/hpo_std.npy",
+    "sha256": "be4270e87f7df6ae7f9312bbeabc894c2f794ec897d4e9c5deeb52d84cdd2b68"
   }
 }

@@ -13,9 +13,9 @@ EVALUATIONS = (20, 40, 80)
 OPTUNA_VERSION = '4.5.0'
 FORBIDDEN = ('external_dev', 'historical_dev', 'shorter', 'longer', 'holdout', 'protected')
 ARTIFACT_HASHES = {
-    'head-200.safetensors': '027c880e6c10a13f3e7354d12665ffacca5f7d68836291feaf195c167c13f915',
-    'mean.npy': '370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5',
-    'std.npy': '1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a',
+    'hpo_head-200.safetensors': '8a9f94c6a78c01c15ddb4ac07e7e80586a7d1515aefcfc6f68040fc9181aa6e3',
+    'hpo_mean.npy': 'f812e63fec063220b9eaf27c3e9782005abad3cb66293491b55f93b38ad8aecf',
+    'hpo_std.npy': 'be4270e87f7df6ae7f9312bbeabc894c2f794ec897d4e9c5deeb52d84cdd2b68',
     'current_train_features.npy': '06e47fd6a0244cbff94f75e66eff81b4cad417843e34d62c3b370a3468cf8287',
 }
 
@@ -109,7 +109,7 @@ def config():
         diagnostic_updates=list(DIAGNOSTICS), evaluation_updates=list(EVALUATIONS), seed=7,
         objective='0.75*macro_f1 + 0.25*minimum_class_recall', candidate=dict(macro_f1=.60, every_class_recall=.45),
         ceiling=dict(mean_formula='max(10*ln(4),20*current_compatibility_train_ce)', micro_multiplier=4, prior_failure_ce=134.57772827148438),
-        initial_head_exposed_to_inner_val=True, normalization_exposed_to_inner_val=True,
+        initial_head_exposed_to_inner_val=False, normalization_exposed_to_inner_val=False,
         full_training_auto_execute=False, cloud_authorized=False)
 
 
@@ -218,7 +218,7 @@ def freeze_winner(results):
     winner = min(eligible, key=winner_key)
     return dict(verdict='AUDITOR_OPTUNA_HPO_CANDIDATE', trial_number=winner['trial_number'], hyperparameters={k:winner['params'][k] for k in sorted(PARAMS)},
                 metrics=winner['metrics'], full_training_auto_execute=False,
-                future_separate_design=dict(train_rows=1792, clean_checkpoint0=True, updates=896, checkpoints=[448,896], authorization_required=True))
+                future_separate_design=dict(train_rows=1792, normalization_fit_rows=1792, head_fit_rows=1792, head_updates=200, clean_classifier_fork=True, reuse_hpo_head=False, updates=896, checkpoints=[448,896], authorization_required=True))
 
 
 def create_study(optuna, storage=None):
@@ -298,15 +298,18 @@ class ReuseAdmission:
             for key in ('hidden','standardized','logits'):
                 require(self.np.allclose(reference[i][key],candidate[key],rtol=1e-4,atol=2e-4),'reference/fork '+key)
         remove_reference()
-        predictions=[];ces=[]
+        predictions=[];ces=[];labels=[]
+        fit_ids=set(self.baseline['example_ids'])
         for row in self.rows:
             live=observe(row);check(row,live);self.full_rows+=1
+            if row['example_id'] not in fit_ids:continue
             logits=live['logits'].astype(self.np.float64);label=CLASSES.index(row['relation']);mx=logits.max()
+            labels.append(row['relation'])
             ces.append(float(mx+self.np.log(self.np.exp(logits-mx).sum())-logits[label]))
             predictions.append(CLASSES[int(logits.argmax())])
-        m=metrics([r['relation'] for r in self.rows],predictions,ces)
-        require(predictions==[CLASSES[i] for i in self.baseline['predicted_indices']],'full TRAIN prediction equality')
-        require(self.baseline['ce_range'][0]<=m['ce']<=self.baseline['ce_range'][1],'full TRAIN CE')
-        require(abs(m['macro_f1']-self.baseline['metrics']['macro_f1'])<1e-12,'full TRAIN F1')
+        m=metrics(labels,predictions,ces)
+        require(predictions==[CLASSES[i] for i in self.baseline['predicted_indices']],'INNER_TRAIN HPO head prediction equality')
+        require(self.baseline['ce_range'][0]<=m['ce']<=self.baseline['ce_range'][1],'INNER_TRAIN HPO head CE')
+        require(abs(m['macro_f1']-self.baseline['metrics']['macro_f1'])<1e-12,'INNER_TRAIN HPO head F1')
         self.passed=True
         return dict(passed=True,full_train_passes=1,rows=self.full_rows,controls=16,ce=m['ce'],metrics=m)

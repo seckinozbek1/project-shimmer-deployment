@@ -44,8 +44,21 @@ test_43_production_dropout_replacement (test_auditor_optuna_hpo.HPOTests.test_43
 test_44_matched_telemetry (test_auditor_optuna_hpo.HPOTests.test_44_matched_telemetry) ... ok
 test_45_extra_search_parameter_denied (test_auditor_optuna_hpo.HPOTests.test_45_extra_search_parameter_denied) ... ok
 test_46_admission_thresholds_inclusive (test_auditor_optuna_hpo.HPOTests.test_46_admission_thresholds_inclusive) ... ok
+test_baseline_train_only (test_auditor_optuna_hpo_clean.CleanTests.test_baseline_train_only) ... ok
+test_clean_access_receipt (test_auditor_optuna_hpo_clean.CleanTests.test_clean_access_receipt) ... ok
+test_compatibility_baseline_ignores_inner_val_labels (test_auditor_optuna_hpo_clean.CleanTests.test_compatibility_baseline_ignores_inner_val_labels) ... ok
+test_final_training_population (test_auditor_optuna_hpo_clean.CleanTests.test_final_training_population) ... ok
+test_fit_exact_recipe_and_trace (test_auditor_optuna_hpo_clean.CleanTests.test_fit_exact_recipe_and_trace) ... ok
+test_fit_population_and_exclusion (test_auditor_optuna_hpo_clean.CleanTests.test_fit_population_and_exclusion) ... ok
+test_freeze_precedes_validation (test_auditor_optuna_hpo_clean.CleanTests.test_freeze_precedes_validation) ... ok
+test_frozen_receipt (test_auditor_optuna_hpo_clean.CleanTests.test_frozen_receipt) ... ok
+test_no_initial_exposure_flags (test_auditor_optuna_hpo_clean.CleanTests.test_no_initial_exposure_flags) ... ok
+test_no_old_initializer (test_auditor_optuna_hpo_clean.CleanTests.test_no_old_initializer) ... ok
+test_normalization_recomputed_exactly_from_inner_train (test_auditor_optuna_hpo_clean.CleanTests.test_normalization_recomputed_exactly_from_inner_train) ... ok
+test_repeat_hashes (test_auditor_optuna_hpo_clean.CleanTests.test_repeat_hashes) ... ok
+test_search_pruner_objective_unchanged (test_auditor_optuna_hpo_clean.CleanTests.test_search_pruner_objective_unchanged) ... ok
 
 ----------------------------------------------------------------------
-Ran 46 tests in 0.731s
+Ran 59 tests in 0.832s
 
 OK
