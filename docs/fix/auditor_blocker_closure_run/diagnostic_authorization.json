@@ -1,5 +1,6 @@
 {
   "action": "auditor-blocker-closure-two-process-only",
+  "approval_source": "Explicit user message approving prepared commit f5a6c00 in this conversation",
   "arms": [
     "O",
     "D"
@@ -10,7 +11,7 @@
   "instances": 1,
   "launch_epoch": 0,
   "max_rows_per_arm": 32,
-  "operator_authorized": false,
+  "operator_authorized": true,
   "optimizer_updates": 0,
   "region": "us-east-1",
   "request_attachment": "af149acd-35f7-45a3-92aa-3ae863ec1c74",
