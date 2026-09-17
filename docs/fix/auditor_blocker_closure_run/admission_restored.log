@@ -1,0 +1,6 @@
+test_finite_drift_is_durable_and_latched (test_auditor_feature_admission.AdmissionTests) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.431s
+
+OK

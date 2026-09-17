@@ -1,0 +1,8 @@
+{
+  "download_sha256_verified": true,
+  "epoch": 1789662812.044162,
+  "path": "tuning/first_domain_agnostic_v1/experiment.json",
+  "reason": "Prepared archive command includes tuning/auditor_final but omits this manifest-bound launch environment file; collected read-only separately.",
+  "remote_sha256_verified": true,
+  "sha256": "70f25204aea2b99ca6a9f0b3aca3e2ffe6c778f596946c9b4a3518dcfc459c93"
+}

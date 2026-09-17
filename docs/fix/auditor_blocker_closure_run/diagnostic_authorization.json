@@ -9,12 +9,12 @@
   "hard_usd": 2,
   "hourly_rate": 1.29,
   "instances": 1,
-  "launch_epoch": 0,
+  "launch_epoch": 1789662527.298663,
   "max_rows_per_arm": 32,
   "operator_authorized": true,
   "optimizer_updates": 0,
   "region": "us-east-1",
   "request_attachment": "af149acd-35f7-45a3-92aa-3ae863ec1c74",
   "soft_usd": 1,
-  "workload_deadline_epoch": 0
+  "workload_deadline_epoch": 1789667208.6940117
 }

@@ -1,0 +1,14 @@
+test_finite_drift_is_durable_and_latched (test_auditor_feature_admission.AdmissionTests) ... FAIL
+
+======================================================================
+FAIL: test_finite_drift_is_durable_and_latched (test_auditor_feature_admission.AdmissionTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\test_auditor_feature_admission.py", line 68, in test_finite_drift_is_durable_and_latched
+    self.extract(value)
+AssertionError: RuntimeError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.232s
+
+FAILED (failures=1)
