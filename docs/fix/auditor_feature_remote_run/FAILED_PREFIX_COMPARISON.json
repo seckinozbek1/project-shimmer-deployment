@@ -1,0 +1,6 @@
+{
+  "cloud_prefix_matches_historical_bitwise": true,
+  "failed_run_prefix_max_abs_difference": 0.16882681846618652,
+  "original_failing_row32_tensor_available": false,
+  "valid_failed_run_prefix_rows": 31
+}

@@ -2283,3 +2283,8 @@ Next: task-specific compact/auditor contract A/B after deterministic fixture pro
 ## 2026-09-17: Final Auditor feature blocker, bounded investigation
 
 Root cause unresolved. Added fail-closed hidden-feature diagnostics and offline row32/rows30-33 probe. Seventeen relevant tests pass; neutralizing finite detection is caught. Four local TRAIN rows pass finite shape and bitwise repeats; prior-cache drift persists. No optimizer/cloud/evaluation. Pinned PEFT0.15.2 installed without dependencies into ignored workspace `.tmp/auditor_feature_deps` because local PEFT was absent; no global dependency change. See `AUDITOR_FEATURE_BLOCKER_INVESTIGATION.md` for17-item source comparison, runtime limitations, evidence and minimum remote diagnostic proposal. Historical seals and consumed authorization unchanged; no image change, no general README change required. This is diagnostic preservation, not a blocker-fix claim. Next training stage after repair remains the defined final Auditor retry.
+
+
+## 2026-09-17: Authorized A10 feature diagnostic completed
+
+REMOTE_BLOCKER_NOT_REPRODUCED. Source `f8dbcd1`; one A10/us-east-1/$1.29 per hour, $1soft/$2hard. Stages A/B/C completed38 forwards; all raw/pooled vectors finite and all new vectors bitwise equal to historical cache. Original31-vector drift remains unexplained; no fix inferred. No normalization, fitting, optimizer, HPO or evaluation. Archive verified before termination; independent empty inventory and SSH cleanup confirmed. Conservative cost$0.241891. See `AUDITOR_FEATURE_REMOTE_DIAGNOSTIC_RESULTS.md` and saved-artifact verifier. Await operator authorization for any final1792-row/896-update training retry. No image/dependency change or general README change required; no push.

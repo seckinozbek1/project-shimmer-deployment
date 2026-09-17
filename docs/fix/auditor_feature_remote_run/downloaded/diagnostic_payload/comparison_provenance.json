@@ -1,0 +1,67 @@
+{
+  "historical_full_cache_sha256": "06e47fd6a0244cbff94f75e66eff81b4cad417843e34d62c3b370a3468cf8287",
+  "local_receipt_sha256": "0aec1b8bf956ebffa279ce4c50152cbda15c328599ebe780caf6b830f7c241b6",
+  "local_receipts": [
+    {
+      "example_id": "shimmer2-auditor-document-036",
+      "feature_sha256": "e7abbd118a39f2138e02b14e8c86a68d196e4242d4c2e98ccf71072f25f9cebc",
+      "finite": true,
+      "prior_bitwise_equal": false,
+      "prior_max_abs_difference": 0.19481152296066284,
+      "repeat_bitwise_equal": true,
+      "repeat_max_abs_difference": 0.0,
+      "row_one_based": 30,
+      "shape": [
+        3072
+      ],
+      "token_sha256": "41655f69148cbd2af30fd651a848165481171cff00df73cfb4e2021949df2fc4",
+      "tokens": 776
+    },
+    {
+      "example_id": "shimmer2-auditor-document-037",
+      "feature_sha256": "909c9fb918ccbdc34e7f53256d056f4a7ded72112cf25bca645ba1af1b4e9621",
+      "finite": true,
+      "prior_bitwise_equal": false,
+      "prior_max_abs_difference": 0.20355622470378876,
+      "repeat_bitwise_equal": true,
+      "repeat_max_abs_difference": 0.0,
+      "row_one_based": 31,
+      "shape": [
+        3072
+      ],
+      "token_sha256": "d9698a7a16e9c9c1057f57f9ff7c84581802a6fdfd078c1faae192727ca2676f",
+      "tokens": 767
+    },
+    {
+      "example_id": "shimmer2-auditor-document-038",
+      "feature_sha256": "787dd9f9c2f3da21e6eedc15b3181611727ed9b6684e6b85823d27d020d89b97",
+      "finite": true,
+      "prior_bitwise_equal": false,
+      "prior_max_abs_difference": 0.19053423404693604,
+      "repeat_bitwise_equal": true,
+      "repeat_max_abs_difference": 0.0,
+      "row_one_based": 32,
+      "shape": [
+        3072
+      ],
+      "token_sha256": "8373a53cbba09703d6a0a6ae162cb33437dcc2f1c7bfd8f44e2440d50f794fdc",
+      "tokens": 781
+    },
+    {
+      "example_id": "shimmer2-auditor-document-040",
+      "feature_sha256": "888de52d83ba592c7b43bb3828ba4c2c0ec909f37a6b526b8474dad53688537c",
+      "finite": true,
+      "prior_bitwise_equal": false,
+      "prior_max_abs_difference": 0.21806000173091888,
+      "repeat_bitwise_equal": true,
+      "repeat_max_abs_difference": 0.0,
+      "row_one_based": 33,
+      "shape": [
+        3072
+      ],
+      "token_sha256": "327e538c316ee8b999daedfe67dd0d5b5889eb9489401c23d113cf3eca226f31",
+      "tokens": 765
+    }
+  ],
+  "source_train_sha256": "963a8612a37cbbbcb00e9e44cd0e8c14ae45f7bfddbeafd066387789e454356f"
+}

@@ -1,0 +1,581 @@
+{
+  "archive_sha256": "f34a7f474e7cf8637e9c207db46fb57d96d0c8dabbebcfc68cb92f3e359704e6",
+  "retained_text": [
+    {
+      "bytes": 1181,
+      "path": "docs/fix/auditor_feature_remote_run/acquisition.log",
+      "sha256": "9569392af924b2e2e052dd331334eebf8c462ed6e8daf9fbc3fc4635a105fd94"
+    },
+    {
+      "bytes": 91,
+      "path": "docs/fix/auditor_feature_remote_run/acquisition_timing.json",
+      "sha256": "0b6e43a540400f606c74c242fe1023b9bad8f99eec23c30b5f515752f8a879f6"
+    },
+    {
+      "bytes": 415,
+      "path": "docs/fix/auditor_feature_remote_run/activation.json",
+      "sha256": "9f7efd90cff9bde18d50da3a90a2c468f9bf9f5b4be861a53175a09b9fd229b4"
+    },
+    {
+      "bytes": 237,
+      "path": "docs/fix/auditor_feature_remote_run/budget.json",
+      "sha256": "67303be5552970780a81533354cc25e3a8e4c6ca515bc44c57aa39bc1d6977a6"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/budget_transfer.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 91,
+      "path": "docs/fix/auditor_feature_remote_run/budget_transfer_timing.json",
+      "sha256": "5db03767563f5f109c12745f33b9f82315eedcd42d637f09ea9b5efd7a0b6081"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/bundle_check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 96,
+      "path": "docs/fix/auditor_feature_remote_run/bundle_check_results.json",
+      "sha256": "8f8d6e6c8237d6384638b42fac7c5f48d7505b6187e3d31a52fc3d3ddf56fffa"
+    },
+    {
+      "bytes": 112,
+      "path": "docs/fix/auditor_feature_remote_run/cleanup.json",
+      "sha256": "fde6245805a136864f02de2f19a1bdb6fba2a09f792dc5c33316faa107cd5d5b"
+    },
+    {
+      "bytes": 144,
+      "path": "docs/fix/auditor_feature_remote_run/collection_integrity.json",
+      "sha256": "6997d376c2a5d6180e1124a8b747a633227f80be3129fae7a6139ba73b5ff2de"
+    },
+    {
+      "bytes": 73,
+      "path": "docs/fix/auditor_feature_remote_run/cost.json",
+      "sha256": "29b4af7fb1451ed967b1b73d6769ff2e9f65ec549c0d3a075583a9a5876cf028"
+    },
+    {
+      "bytes": 107,
+      "path": "docs/fix/auditor_feature_remote_run/CURRENT_PHASE.json",
+      "sha256": "290825702e66c474ccdef73d8faeb44c4a9f18bf6193edfa8ee753b15dfca4dd"
+    },
+    {
+      "bytes": 11444,
+      "path": "docs/fix/auditor_feature_remote_run/dependencies_install.log",
+      "sha256": "a5e7a02b0b319e44289f5e2e1f419308d1c0ca1b4bd598392d726d6ecc85c42c"
+    },
+    {
+      "bytes": 91,
+      "path": "docs/fix/auditor_feature_remote_run/dependencies_install_timing.json",
+      "sha256": "b2d9013b0f34a970b51111b2e60ae484a331d3735c1a2a6ffd925f50915af0b8"
+    },
+    {
+      "bytes": 520,
+      "path": "docs/fix/auditor_feature_remote_run/diagnostic_authorization.json",
+      "sha256": "7388ca9d889ef3377ab009af605a428eccf898c05a4e50322ff2350fc635a7be"
+    },
+    {
+      "bytes": 237,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/budget.json",
+      "sha256": "67303be5552970780a81533354cc25e3a8e4c6ca515bc44c57aa39bc1d6977a6"
+    },
+    {
+      "bytes": 520,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/diagnostic_authorization.json",
+      "sha256": "7388ca9d889ef3377ab009af605a428eccf898c05a4e50322ff2350fc635a7be"
+    },
+    {
+      "bytes": 908,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/diagnostic_payload/canonical_adapter/adapter_config.json",
+      "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6"
+    },
+    {
+      "bytes": 2410,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/diagnostic_payload/comparison_provenance.json",
+      "sha256": "ab9e9575c1a11f9e0182799b8dcacc97f6f720a27482d96d8b6b904a3f477d87"
+    },
+    {
+      "bytes": 307028,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/diagnostic_payload/rows.json",
+      "sha256": "10c315611a9a58a6aa9dc48f7746b83ca38c09a06ce4389db86c219568d132d2"
+    },
+    {
+      "bytes": 1725,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/diagnostic_payload/runtime_contract.json",
+      "sha256": "93cec5bb592654068d4e21232c07fe88121842254a71b119676f1b15b2507d81"
+    },
+    {
+      "bytes": 251449,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/A-00-row32.json",
+      "sha256": "aadbdf6e8c09c0e168f17565a5a556cc431e5acaf76ef3db6d72a31f960861d5"
+    },
+    {
+      "bytes": 251449,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/A-01-row32.json",
+      "sha256": "f487f35a025051aee44e9150df432181ac14ef170abb5e31db0d613913193b4e"
+    },
+    {
+      "bytes": 882,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/acquisition.json",
+      "sha256": "357ea47eb949d50b926ce2bc8e93d3c05fe60bb6f9fbda40c091b4dac5cc6a4b"
+    },
+    {
+      "bytes": 251447,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/B-00-row30.json",
+      "sha256": "99738402b03d46e72dbb0c547e270d2c7675a66b1f2ff1e02233336397047d77"
+    },
+    {
+      "bytes": 251447,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/B-01-row31.json",
+      "sha256": "a8a5c54556c3d99e621e2126e47d3684e4f6511421897c66ed3050c6eaf6357e"
+    },
+    {
+      "bytes": 251449,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/B-02-row32.json",
+      "sha256": "9bce8faabc966e3dc54844fc5da34da374cc1481b9ac3be3bf149aa326c13c5b"
+    },
+    {
+      "bytes": 251449,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/B-03-row33.json",
+      "sha256": "f380a0079a7b3c291721b4b809fdf909cda8a9a51476d7c427bc7c10c13a7d6b"
+    },
+    {
+      "bytes": 251451,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-00-row1.json",
+      "sha256": "aeab4a65b661f2361b44b51fa7c4e6f740b321c5ea3777f968302a8a375ce409"
+    },
+    {
+      "bytes": 251447,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-01-row2.json",
+      "sha256": "58db92521af45cff4ca99ef2b92006aae26e5b5bbdda3806aeca8ebb3dc15c96"
+    },
+    {
+      "bytes": 251444,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-02-row3.json",
+      "sha256": "4a6c71bae13d2e42ef16ee94dc8d8d4132a88f82ffa939b371c45e414590b6ad"
+    },
+    {
+      "bytes": 251445,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-03-row4.json",
+      "sha256": "153b9c4acd3a4af8cc27945301aa1cfdc74330fd98e192288cb833e0544378ad"
+    },
+    {
+      "bytes": 251451,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-04-row5.json",
+      "sha256": "8d4dbd14528f8ad91d9d04e9fba2e76940e359569d621a368a69f5cb9b290d94"
+    },
+    {
+      "bytes": 251446,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-05-row6.json",
+      "sha256": "b44da8ea5c00c6870f20557fa7402c62168067b5e90ea4ad0a5c3661ca19c763"
+    },
+    {
+      "bytes": 251443,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-06-row7.json",
+      "sha256": "c4bebed7661f8041d34e5422b623a51d874dcade78e255c3666cc665e44554de"
+    },
+    {
+      "bytes": 251444,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-07-row8.json",
+      "sha256": "5bae1c282284b0bea92312228d9782ec3a484d4ff6f940e3bdee0748e3c2d4be"
+    },
+    {
+      "bytes": 251442,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-08-row9.json",
+      "sha256": "2e5ff3b9c10620b5c623752b7c5c170a6ae8507d5f30817bce12d113af02d40b"
+    },
+    {
+      "bytes": 251448,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-09-row10.json",
+      "sha256": "a0b62eb587e04bfeb1b1f5fdb332ab771fa963df360444b54e52d307c4d04151"
+    },
+    {
+      "bytes": 251451,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-10-row11.json",
+      "sha256": "e3a5e5995ee7f6afa18af7fe6fdccb6da90f7a3230db25340151727f7bb16040"
+    },
+    {
+      "bytes": 251446,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-11-row12.json",
+      "sha256": "e9fe368b9321690fadd1e0819af48d0be981d87dffbe0e1505578f34f8a5bc4f"
+    },
+    {
+      "bytes": 251451,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-12-row13.json",
+      "sha256": "f483c061f01165bceb6e5bc201ee9b5c6baabf9e5f774249100a0ff0edc67f11"
+    },
+    {
+      "bytes": 251450,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-13-row14.json",
+      "sha256": "65c19d1de88246aebc0dbece6378da44d5ddea922a08e5e7e78deabc26fa7d86"
+    },
+    {
+      "bytes": 251450,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-14-row15.json",
+      "sha256": "628725515d6b3a7ac6f6dcc951c9c6b663f1514abff0f7f2e8a117cbb5f37f03"
+    },
+    {
+      "bytes": 251452,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-15-row16.json",
+      "sha256": "4da957e8280d7daeeafbccd53093201eba9d6c1e950e38300924fb8c57cc4620"
+    },
+    {
+      "bytes": 251450,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-16-row17.json",
+      "sha256": "353a5988c0ded29453fc74ef38a8684e14ee2975b55dc6b82919eda576eb6f10"
+    },
+    {
+      "bytes": 251453,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-17-row18.json",
+      "sha256": "768b7a3cf7038fe6bb9e2b630163d7d96314b761a4a450733e22c574079aee43"
+    },
+    {
+      "bytes": 251453,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-18-row19.json",
+      "sha256": "d77b7991ef5ece41f060fce73daf70acfdb38dc9181c5832320fbe58536504d7"
+    },
+    {
+      "bytes": 251448,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-19-row20.json",
+      "sha256": "c4a12c6d5c801649e70d20cb92c22eb86186b30f1cd8a2131b2b0c1cfac5bf5f"
+    },
+    {
+      "bytes": 251450,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-20-row21.json",
+      "sha256": "9caffc5598346d0e0842b062f2b3c180efc5c91dd7d49d2571932184486f7f2a"
+    },
+    {
+      "bytes": 251456,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-21-row22.json",
+      "sha256": "c7455615b9dfb0e007f03dab85151a19bddc479f9a1f7e98417dafe24ad2e74e"
+    },
+    {
+      "bytes": 251455,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-22-row23.json",
+      "sha256": "41fe210622eb053dbc36c0af20a97439413ee8650837429dd251d9edc008d244"
+    },
+    {
+      "bytes": 251450,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-23-row24.json",
+      "sha256": "f434759c55cf9edf18139dc9ab360c16494cd19703073d268fa42c6968c401b2"
+    },
+    {
+      "bytes": 251452,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-24-row25.json",
+      "sha256": "e2a18eff5bb2d9dce2464781a261735a73b33f8af91d1bcec4417a057c718ac5"
+    },
+    {
+      "bytes": 251450,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-25-row26.json",
+      "sha256": "0b44bdeb28286658708b6a0f78b0ef6f34bfb163e13ad920c167eadf9393aca4"
+    },
+    {
+      "bytes": 251451,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-26-row27.json",
+      "sha256": "a2530bdc352c16d7b9e2d1d04502ccfcfc4e95d18e154bf8d92df5f9b1fe5f29"
+    },
+    {
+      "bytes": 251451,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-27-row28.json",
+      "sha256": "17481fb27eecdd372e777df587ec63944573fc1e65a3151f7fd2d83d93099bcf"
+    },
+    {
+      "bytes": 251449,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-28-row29.json",
+      "sha256": "7012729925ca7e95420f368be4b5600d1741587c5dbcac9e4c47879fa6b0229f"
+    },
+    {
+      "bytes": 251448,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-29-row30.json",
+      "sha256": "cc24b7877e9bfb870fa4d9f6a799eb1ad50c26ed3576ae03993598d4a0ed6e8d"
+    },
+    {
+      "bytes": 251448,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-30-row31.json",
+      "sha256": "453c4ba1d79b2d322584b99e3481aa208e81f82a487c4f142457f61d52ba1eb7"
+    },
+    {
+      "bytes": 251450,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/C-31-row32.json",
+      "sha256": "b9ccd92e60906dece8838945b1618b431f413b80827eaff16ac4a2eee888b32a"
+    },
+    {
+      "bytes": 3201,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/hardware.json",
+      "sha256": "a9f1be411ab716160506b861c4b34749ee4692f5b36714a71eb45f2e92386851"
+    },
+    {
+      "bytes": 237944,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/initialization-0.json",
+      "sha256": "957ab9bf3b0da4e701fe5888c689e00a1f26847a21f3f85bb798c127c3b1b41f"
+    },
+    {
+      "bytes": 237944,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/initialization-6.json",
+      "sha256": "957ab9bf3b0da4e701fe5888c689e00a1f26847a21f3f85bb798c127c3b1b41f"
+    },
+    {
+      "bytes": 3044,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/libraries-d8c6e9df84f4b3f70072e675a83f65cf9345e728966120050a554aa1cea4a79e.json",
+      "sha256": "82ee7847b1f0c8bd1bd6f86199d92e2c5379c34186d1c402f3010cb71ebf615e"
+    },
+    {
+      "bytes": 358,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/preflight.json",
+      "sha256": "dec3736e151a5fea7d5b84fc60eb6e74ef0adfed4769b975c43d8e8978d1ea0c"
+    },
+    {
+      "bytes": 134,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/progress.json",
+      "sha256": "beadfd9ff1619c0049fce7d3e2ce5a18492a8b622ea6cc1869557afad4627bab"
+    },
+    {
+      "bytes": 19411,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/evidence/result.json",
+      "sha256": "92ec3e0ca9e06cbd518044e5b0e9f84e6bf51075f36e04acf48965ee4e94adab"
+    },
+    {
+      "bytes": 2028,
+      "path": "docs/fix/auditor_feature_remote_run/downloaded/execution_manifest.json",
+      "sha256": "48a2db56c85a8f0187d1bb025d787ee481dc881888d14fc3f8806b60aec51714"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/evidence_download.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 92,
+      "path": "docs/fix/auditor_feature_remote_run/evidence_download_timing.json",
+      "sha256": "6af7dd4835146603003fd2db01cc4c6237fcee396ecf91c29183a19f3c5f176b"
+    },
+    {
+      "bytes": 130,
+      "path": "docs/fix/auditor_feature_remote_run/evidence_hash.log",
+      "sha256": "57c67adb89e9e4c7d388c0d1eb3381865d937f5c72a60a00b443c14d28a20207"
+    },
+    {
+      "bytes": 92,
+      "path": "docs/fix/auditor_feature_remote_run/evidence_hash_timing.json",
+      "sha256": "d97ac37a3fdfd67a06cef81b0bb2e691bfbc7f58b8a00cdde666a8e055b2798a"
+    },
+    {
+      "bytes": 2028,
+      "path": "docs/fix/auditor_feature_remote_run/execution_manifest.json",
+      "sha256": "48a2db56c85a8f0187d1bb025d787ee481dc881888d14fc3f8806b60aec51714"
+    },
+    {
+      "bytes": 207,
+      "path": "docs/fix/auditor_feature_remote_run/FAILED_PREFIX_COMPARISON.json",
+      "sha256": "51f37f47f22fa509d25ba18e39d19f1d3c69f7108a329a2e77bf2167232bc966"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/feature_diagnostic.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 91,
+      "path": "docs/fix/auditor_feature_remote_run/feature_diagnostic_timing.json",
+      "sha256": "d09bb3dd49365c325cce33225d2a8876f4f8e67081eb744782fc046f2ecd814d"
+    },
+    {
+      "bytes": 87,
+      "path": "docs/fix/auditor_feature_remote_run/final_inventory_confirmation.json",
+      "sha256": "7f30c5bff47623e550c8e18a701c6ba1facf645185b8c3d8f5cdcc60d23b50b0"
+    },
+    {
+      "bytes": 44369,
+      "path": "docs/fix/auditor_feature_remote_run/images.json",
+      "sha256": "b7db0771279aa110c2abc9c3796d662289a492392b1f7c0225fcab2e37676b5f"
+    },
+    {
+      "bytes": 135,
+      "path": "docs/fix/auditor_feature_remote_run/independent_inventory_confirmation.json",
+      "sha256": "26b6979fe569b3d054ca424edabbbebd1da1fa67c9197993a917272902e8c5f5"
+    },
+    {
+      "bytes": 151,
+      "path": "docs/fix/auditor_feature_remote_run/instance_state.json",
+      "sha256": "e1116377d01a6d85aac82efd7cc8c096a07e5b89f3dfbcbad3b3afe3fd07487e"
+    },
+    {
+      "bytes": 3,
+      "path": "docs/fix/auditor_feature_remote_run/instances_after.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "bytes": 87,
+      "path": "docs/fix/auditor_feature_remote_run/launch.json",
+      "sha256": "af77cbcbed74060c9ce30fb86ca559025f33c1a4d99e2dc35b3251626f841ad3"
+    },
+    {
+      "bytes": 146,
+      "path": "docs/fix/auditor_feature_remote_run/LAUNCH_INTENT.json",
+      "sha256": "045bc540ea4938a8da51ef5bd8e09e5a8cd450a0a9357bcd0b9748102fd8a8e0"
+    },
+    {
+      "bytes": 373,
+      "path": "docs/fix/auditor_feature_remote_run/live_preflight.json",
+      "sha256": "9b207a53182a4b0575d4d0fb4fe3e6134bfb44e9461f6745b2d9890081b7b3ea"
+    },
+    {
+      "bytes": 68,
+      "path": "docs/fix/auditor_feature_remote_run/LOCAL_GATES.json",
+      "sha256": "5668c15078d7ce7576c8ee518e578ef3151b18ba49cab61aab6fe0a7c8c8cc7d"
+    },
+    {
+      "bytes": 2074,
+      "path": "docs/fix/auditor_feature_remote_run/local_tests.log",
+      "sha256": "349f7ae0d83c401de011af0d9eea590439764e26ff830c53b7d9dd73f393dc31"
+    },
+    {
+      "bytes": 918,
+      "path": "docs/fix/auditor_feature_remote_run/manifest.json",
+      "sha256": "ba8e97c01b02734acc969ef685aea3f00e0cf58e3ca546aba3d9affa95112733"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/mkdir.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 91,
+      "path": "docs/fix/auditor_feature_remote_run/mkdir_timing.json",
+      "sha256": "8822387ef0694f96799a82580ffc0caac399a82ee3b7054be4c8d914038c12b2"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/pack_evidence.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 91,
+      "path": "docs/fix/auditor_feature_remote_run/pack_evidence_timing.json",
+      "sha256": "b70e083fa263f4cc023b180e5d0bb4fbaec031225f0859d462574e4ba9e7fe10"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/pre_acquisition.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 92,
+      "path": "docs/fix/auditor_feature_remote_run/pre_acquisition_timing.json",
+      "sha256": "5580d4ddfe2530d9560e4390cc64cf1cdef86e9674e34cc38917e2d85f9ef075"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/process_final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 90,
+      "path": "docs/fix/auditor_feature_remote_run/process_final_timing.json",
+      "sha256": "dbf8ff7564079c64e12115087aadbb8a7651b05e90bd7c6eb7537a0b4035d585"
+    },
+    {
+      "bytes": 50,
+      "path": "docs/fix/auditor_feature_remote_run/python_gate.log",
+      "sha256": "0b113da3ac02c2045dd8a4aeea1877f3838788d0454d61f851e2050547e3c84b"
+    },
+    {
+      "bytes": 92,
+      "path": "docs/fix/auditor_feature_remote_run/python_gate_timing.json",
+      "sha256": "b17dba342f74eeb7b4d235f9eb15b9168dbf9a16ad5495bd9b1d47a26e3820df"
+    },
+    {
+      "bytes": 29481,
+      "path": "docs/fix/auditor_feature_remote_run/RECOMPUTED_RESULTS.json",
+      "sha256": "56fbd55e6aea4356a54d806dad270209eac0d2672a461960e4a020bdfa3aec73"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/runtime_transfer.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 92,
+      "path": "docs/fix/auditor_feature_remote_run/runtime_transfer_timing.json",
+      "sha256": "23d6435919e9bfb8670d1e8374be8ade73a780b8d3b7dc3191bdbb3056e32507"
+    },
+    {
+      "bytes": 84,
+      "path": "docs/fix/auditor_feature_remote_run/ssh_ready_0.log",
+      "sha256": "55f53daae6ba977cfb0cd01dd27d0a0f9abf1c04e183623ec542d5bfde6d4701"
+    },
+    {
+      "bytes": 92,
+      "path": "docs/fix/auditor_feature_remote_run/ssh_ready_0_timing.json",
+      "sha256": "d1b3edca1e1c8bc099b892b4109633f1714428478c14596694aa92690ecfa38f"
+    },
+    {
+      "bytes": 95,
+      "path": "docs/fix/auditor_feature_remote_run/ssh_registration.json",
+      "sha256": "1320f1a31cd4a32fa4948f737433746dfef91f9ab5e9809377c31e290717b716"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/stop_workloads.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 92,
+      "path": "docs/fix/auditor_feature_remote_run/stop_workloads_timing.json",
+      "sha256": "63fbc2e0c99a438ae15e470a8eaa79deb8bc5e9b4cc54624c0d16b65fb04e0a4"
+    },
+    {
+      "bytes": 132,
+      "path": "docs/fix/auditor_feature_remote_run/termination_requested.json",
+      "sha256": "2c800a8bc4551cac02d628060070ca7748dc9551cf4a4ad81ef5eefbb3ef415f"
+    },
+    {
+      "bytes": 354,
+      "path": "docs/fix/auditor_feature_remote_run/TERMINATION_VERIFIED.json",
+      "sha256": "6bb6a9b1cd602d00f6e2a4dca9598b8fd18cf4d43a5083925a5a03a3a96fd64d"
+    },
+    {
+      "bytes": 9089,
+      "path": "docs/fix/auditor_feature_remote_run/torch_install.log",
+      "sha256": "25ce60bb436e65c4d8b788e125126ed919930f6be60795b6638b524051dc7bac"
+    },
+    {
+      "bytes": 91,
+      "path": "docs/fix/auditor_feature_remote_run/torch_install_timing.json",
+      "sha256": "7793e826c5cc35abc4602d97e26652b203e093a7e0fe4f7177d34a98f71d33dc"
+    },
+    {
+      "bytes": 23,
+      "path": "docs/fix/auditor_feature_remote_run/unpack.log",
+      "sha256": "d66d35fe3d2ec09868155a3f7875181c19f93a558ba49f3005c655e00224b545"
+    },
+    {
+      "bytes": 92,
+      "path": "docs/fix/auditor_feature_remote_run/unpack_timing.json",
+      "sha256": "8b1dd8808e05829370bb20240b6d463ce4bf246ed583de2dd9dc73ffc489815f"
+    },
+    {
+      "bytes": 0,
+      "path": "docs/fix/auditor_feature_remote_run/venv.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 91,
+      "path": "docs/fix/auditor_feature_remote_run/venv_timing.json",
+      "sha256": "e999afb26440e3a72a3932b325b6adeac82dfd77b029eaaba8352673d063ef56"
+    },
+    {
+      "bytes": 59,
+      "path": "docs/fix/auditor_feature_remote_run/WATCHDOG_ARMED.json",
+      "sha256": "ed4332d29e4db7d77631540e665d4f3903dd522690087fe7dc13675c4b838a2b"
+    },
+    {
+      "bytes": 79,
+      "path": "docs/fix/auditor_feature_remote_run/WORKLOAD_FINISHED.json",
+      "sha256": "49e09dd9bd07385ce29c479862ff3857e155954dcdaf5b42f25c903b02cdcd7e"
+    }
+  ],
+  "source_commit": "f8dbcd12f9e06ff115081caac9565744192bdaf7"
+}
