@@ -1,2 +1,11 @@
 prepare_auditor_classifier_lora_fork.py -text
 test_auditor_classifier_lora_fork.py -text
+
+# Preserve the exact bytes of the final Auditor workload.
+auditor_final_backend.py -text
+auditor_final_cloud.py -text
+auditor_final_core.py -text
+auditor_final_launch_support.py -text
+auditor_final_remote.py -text
+prepare_auditor_final.py -text
+test_auditor_final.py -text
