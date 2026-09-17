@@ -26,7 +26,7 @@ def main():
     out.mkdir(parents=True,exist_ok=True)
     with patch.object(builtins,'__import__',guarded),patch.object(socket.socket,'connect',denied), \
          patch.dict(sys.modules,ontology_gnn=types.ModuleType('ontology_gnn')):
-        modules=['final_integration_checks','compact_contract_checks','execution_topology_checks','report_recommendations_checks']
+        modules=['final_integration_checks','auditor_pair_checks','compact_contract_checks','execution_topology_checks','report_recommendations_checks']
         suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromModule(__import__(name)) for name in modules)
         stream=io.StringIO();result=unittest.TextTestRunner(stream=stream,verbosity=2).run(suite)
         (out/'no_generation_tests.log').write_text(stream.getvalue(),encoding='utf8')
@@ -40,13 +40,36 @@ def main():
         for name,neutralizer in [
             ('test_wrong_producer_checkpoint_refuses',lambda:patch.object(final_models,'require',lambda *a:None)),
             ('test_overlap_and_handoff',lambda:patch.object(model_telemetry,'union',lambda intervals:sum(b-a for a,b in intervals))),
-            ('test_ordinary_final_admission_stays_closed',lambda:patch.object(final_models,'admit_ordinary',lambda:None))]:
+            ('test_ordinary_final_admission_requires_valid_pair_contract',lambda:patch.object(final_models,'admit_ordinary',lambda:None))]:
             before=run_test(name)
             with neutralizer(): broken=run_test(name)
             restored=run_test(name)
             proofs.append(dict(check=name,baseline_pass=before,neutralized_test_failed=not broken,restored_pass=restored))
         import activation_checks
         activation_status,activation_detail=activation_checks.check()
+        import auditor_pairs
+        import auditor_pair_checks
+        original_compare=auditor_pairs.compare
+        def broadcast(wrapper,result):
+            original_compare(wrapper,result)
+            for finding in result['parsed']['items']:
+                finding['finding']=wrapper._auditor_pair_state[0]['auditor_relation']
+        def forged_sources(item,producer,spans,references,document_id):
+            span=next(iter(spans.values()))
+            return [dict(source_span_id=span.id,source_unit_id=span.unit_id or None,source_ref_ids=[],
+                source_hash=auditor_pairs.extraction.digest(span.text),text=span.text,
+                producer_call_id=producer.get('call_id'),ownership='invalid_fixture_fallback')]
+        for name,neutralizer in [
+            ('test_ownership_excludes_invalid_span_and_foreign_ref',lambda:patch.object(auditor_pairs,'owned_sources',forged_sources)),
+            ('test_stale_revision_excluded',lambda:patch.object(auditor_pairs,'current_revision',lambda *a:True)),
+            ('test_no_guess_from_paragraph_or_prose',lambda:patch.object(auditor_pairs,'owned_sources',forged_sources)),
+            ('test_multiple_findings_not_relabelled_and_join_only_explicit',lambda:patch.object(auditor_pairs,'compare',broadcast))]:
+            def run_pair_test():
+                return unittest.TextTestRunner(stream=io.StringIO()).run(auditor_pair_checks.PairChecks(name)).wasSuccessful()
+            before=run_pair_test()
+            with neutralizer():broken=run_pair_test()
+            restored=run_pair_test()
+            proofs.append(dict(check=name,baseline_pass=before,neutralized_test_failed=not broken,restored_pass=restored))
         receipt=dict(passed=result.wasSuccessful() and activation_status=='PASS' and all(all(p[k] for k in
             ['baseline_pass','neutralized_test_failed','restored_pass']) for p in proofs),tests=result.testsRun,
             failures=len(result.failures),errors=len(result.errors),activation_status=activation_status,

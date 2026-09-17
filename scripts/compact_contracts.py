@@ -101,6 +101,7 @@ def bind_producer(wrapper, owned, doc):
     wrapper._compact_role = '- Extract semantic fields from owned source spans; Python reconstructs source.'
     wrapper._compact_contract = PRODUCER
     wrapper._source_adapter = lambda obj: producer(obj, owned, doc)
+    wrapper._owned_source_spans = tuple(owned)
 
 
 def bind_auditor(wrapper, doc, refs, *, paragraph=1, empty_input=False):

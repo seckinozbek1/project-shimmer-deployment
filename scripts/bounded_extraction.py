@@ -135,4 +135,5 @@ def merge(results, document_id):
                 truncated=any(r.get("truncated") is True for r in results),
                 complete=complete, item_count=len(items), error=None if complete else "incomplete_extraction",
                 partition_calls=[r.get("call_id") for r in results],
+                source_ownership=[entry for r in good for entry in r.get('source_ownership', [])],
                 missing_partitions=[i for i,r in enumerate(results) if r not in good])

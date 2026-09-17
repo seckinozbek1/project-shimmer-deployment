@@ -38,6 +38,11 @@ def reference_tree(source):
             if len(node.targets) == 1 and ast.unparse(node.targets[0]) == 'wrapper._parent_call_ids':
                 return None
             return node
+        def visit_If(self, node):
+            if (ast.unparse(node.test) == "name == 'VERIFIER'" and len(node.body) == 1 and
+                isinstance(node.body[0], ast.Assign) and ast.unparse(node.body[0].targets[0]) == 'wrapper._auditor_pair_request'):
+                return None
+            return self.generic_visit(node)
     tree = RemoveFinalTelemetry().visit(tree)
     # Invert the named optimized-only adapters; retain the original pinned hashes.
     # The paired consumer is moved verbatim into a helper, then invoked in source

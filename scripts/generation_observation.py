@@ -47,6 +47,9 @@ def observe(function):
         error_type = None
         try:
             result = function(self, *args, **kwargs)
+            import auditor_pairs
+            auditor_pairs.stamp_ownership(self, result)
+            auditor_pairs.compare(self, result)
             result["generation"] = dict(self._generation_usage)
             if getattr(self,"_optimized_semantics",False) and not hasattr(self,"_source_adapter") and not result.get("ok"):
                 mark_incomplete(getattr(self,"run_context",None))
