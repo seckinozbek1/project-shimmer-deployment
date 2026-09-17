@@ -1,0 +1,8 @@
+{
+  "verdict": "AUDITOR_CLASSIFIER_LORA_INDETERMINATE",
+  "complete": false,
+  "updates": 0,
+  "error_type": "NumericalStop",
+  "error_message": "update0_logits_parity",
+  "preflight_rows": 32
+}

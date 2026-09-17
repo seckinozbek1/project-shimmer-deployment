@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/shimmer-auditor-classifier-stabilized/tools/auditor_classifier_lora_stabilized_remote.py", line 200, in <module>
+    p=argparse.ArgumentParser();p.add_argument('action',choices=['scope','preflight','acquire','execute']);globals()[p.parse_args().action]()
+                                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-auditor-classifier-stabilized/tools/auditor_classifier_lora_stabilized_remote.py", line 129, in execute
+    parity=fork.remote_preflight(torch,np,model,head,mean,std,records[:1792],read(D/'update0_controls.json'),read(D/'train_baseline.json'),parity_emit,ROOT,read(D/'runtime_bindings.json'),receipt)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-auditor-classifier-stabilized/tools/auditor_classifier_lora_fork.py", line 202, in remote_preflight
+    gate.run(rows,select,lambda r:torch_observe(torch,np,model,head,mean,std,r),remove,
+  File "/home/ubuntu/shimmer-auditor-classifier-stabilized/tools/auditor_classifier_lora_fork.py", line 137, in run
+    stable.update0(self.np,self.controls,self.np.stack([x['logits'] for x in candidate]),self.controls['example_ids'],labels)
+  File "/home/ubuntu/shimmer-auditor-classifier-stabilized/tools/auditor_classifier_lora_stable.py", line 95, in update0
+    if not np.allclose(actual_logits,target,rtol=expected['rtol'],atol=expected['atol']):raise NumericalStop('update0_logits_parity')
+                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+auditor_classifier_lora_stable.NumericalStop: update0_logits_parity

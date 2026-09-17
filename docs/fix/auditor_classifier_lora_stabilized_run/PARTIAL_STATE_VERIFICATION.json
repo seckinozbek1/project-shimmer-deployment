@@ -1,0 +1,11 @@
+{
+  "final_base_hash_available": false,
+  "finite_partial_state_sha256": "aae5bb0d89a879accee765aba5baf7ece669d396464072a2913ffcbae356c951",
+  "fork_tensors": 448,
+  "fork_values_unchanged": true,
+  "head_values_unchanged": true,
+  "optimizer_created": false,
+  "partial_tensor_parameters": 14954500,
+  "reference_removal_reached": false,
+  "training_updates": 0
+}

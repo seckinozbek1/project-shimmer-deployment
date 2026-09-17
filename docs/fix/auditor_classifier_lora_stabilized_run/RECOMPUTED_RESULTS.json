@@ -1,0 +1,81 @@
+{
+  "admission20": null,
+  "checkpoints": [],
+  "cloud": {
+    "billable_duration_upper_bound_seconds": 473.6444640159607,
+    "epoch": 1789640303.7458453,
+    "estimated_cost_upper_bound_usd": 0.16972259960571925,
+    "instance_id": "e5124f2fb1cb40368a9de4dfe1d47836",
+    "metadata": {
+      "instance_id": "e5124f2fb1cb40368a9de4dfe1d47836",
+      "status": "terminated"
+    },
+    "utc": "2026-09-17T10:18:23.745845+00:00"
+  },
+  "gpu_telemetry": {
+    "mean_utilization_percent": 38.88235294117647,
+    "p95_utilization_percent": 100.0,
+    "peak_device_memory_mib": 4193.0,
+    "scope": "whole remote model workload, including load and preflight"
+  },
+  "historical_preservation_verified": true,
+  "holdout_unconsumed": true,
+  "numerical_failures": [],
+  "partial_state": {
+    "final_base_hash_available": false,
+    "finite_partial_state_sha256": "aae5bb0d89a879accee765aba5baf7ece669d396464072a2913ffcbae356c951",
+    "fork_tensors": 448,
+    "fork_values_unchanged": true,
+    "head_values_unchanged": true,
+    "optimizer_created": false,
+    "partial_tensor_parameters": 14954500,
+    "reference_removal_reached": false,
+    "training_updates": 0
+  },
+  "passing": [],
+  "selected": null,
+  "status": {
+    "complete": false,
+    "error_message": "update0_logits_parity",
+    "error_type": "NumericalStop",
+    "preflight_rows": 32,
+    "updates": 0,
+    "verdict": "AUDITOR_CLASSIFIER_LORA_INDETERMINATE"
+  },
+  "telemetry_samples": 17,
+  "tested_commit": "23f6271d8401ab068c23747fa994130db3825dd2",
+  "trainable": null,
+  "training": {
+    "first_ce": null,
+    "last_ce": null,
+    "median_update_seconds": null,
+    "p95_update_seconds": null,
+    "peak_allocated_gib": null,
+    "updates": 0
+  },
+  "update0": {
+    "cached_control_argmax_matches": 13,
+    "cached_control_logits_pass": false,
+    "cached_control_max_logit_error": 2.514272689819336,
+    "control_ce": 0.33491623401641846,
+    "controls_compared": 16,
+    "expected_control_ce": 0.12840551137924194,
+    "failure_events": [
+      {
+        "event": "NO_GO",
+        "stage": "preflight_exception"
+      }
+    ],
+    "full_train_baseline_run": false,
+    "max_ce_error": 0.0,
+    "max_hidden_error": 0.0,
+    "max_logit_error": 0.0,
+    "max_normalized_error": 0.0,
+    "passed": false,
+    "reference_fork_argmax_identity": true,
+    "reference_fork_passed": true,
+    "rows_observed": 32
+  },
+  "verdict": "AUDITOR_CLASSIFIER_LORA_INDETERMINATE",
+  "zero_billable_resources": true
+}
