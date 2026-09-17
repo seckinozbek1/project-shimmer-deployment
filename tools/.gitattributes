@@ -16,3 +16,8 @@ analyze_auditor_blocker_closure.py -text whitespace=cr-at-eol
 test_auditor_feature_admission.py -text whitespace=cr-at-eol
 verify_auditor_blocker_closure_results.py -text whitespace=cr-at-eol
 validate_auditor_feature_admission.py -text whitespace=cr-at-eol
+
+# Exact source identity for the separately authorized final retry.
+auditor_final_retry_cloud.py -text
+prepare_auditor_final_retry.py -text
+test_auditor_final_retry.py -text
