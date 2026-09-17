@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 import auditor_final_core as f
 import auditor_classifier_lora_core as c
+from auditor_feature_diagnostics import extract_train_vector, model_state, runtime_state, path_identity
 
 ROOT=Path(__file__).resolve().parents[1]
 D=ROOT/'tuning/auditor_final';OUT=ROOT/'evidence'
@@ -113,15 +114,12 @@ def training():
         inventory=fork.inventory(reference/'adapter_model.safetensors');current.verify_adapter(torch,model,fork.REFERENCE,inventory)
         audit=stable.FrozenAudit(torch,model);f.require(audit.initial_hash==contract['base_state_sha256'],'runtime base function')
         write('initialization.json',dict(base_state_sha256=audit.initial_hash,canonical_adapter_sha256=fork.SOURCE_SHA,fresh_features=True,hpo_initializer_loaded=False))
+        write('feature_runtime.json',dict(model=model_state(torch,model),runtime=runtime_state(torch),extraction_path=path_identity()))
         features=np.lib.format.open_memmap(OUT/'train_features.npy',mode='w+',dtype=np.float32,shape=(1792,3072))
         begin=time.perf_counter()
         for i,row in enumerate(rows):
             budget.check('fresh_train_features')
-            with torch.inference_mode():
-                ids=torch.tensor([row['input_ids']],device='cuda',dtype=torch.long)
-                with torch.autocast('cuda',dtype=torch.bfloat16):hidden=model.get_base_model().model(input_ids=ids,attention_mask=torch.ones_like(ids),use_cache=False,return_dict=True).last_hidden_state[0,-1]
-                vector=hidden.float().cpu().numpy().copy()
-            f.require(vector.shape==(3072,) and np.isfinite(vector).all(),'finite TRAIN hidden')
+            vector=extract_train_vector(torch,np,model,row,i,'cuda',OUT/'train_feature_failure.json')
             features[i]=vector;features.flush();budget.features=i+1
             emit(dict(event='feature',index=i,example_id=row['example_id'],token_sha256=fork.token_hash(row['input_ids']),feature_sha256=hashlib.sha256(vector.tobytes()).hexdigest(),norm=float(np.linalg.norm(vector.astype(np.float64)))))
         mean_np,std_np=current.normalize(np,features,rows)

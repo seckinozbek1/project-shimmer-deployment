@@ -11,7 +11,7 @@ from auditor_classifier_lora_cloud import git
 from cloud_run_common import credential_locations
 
 ROOT=Path(__file__).resolve().parents[1];D=ROOT/'tuning/auditor_final';B=ROOT/'docs/fix/auditor_final_run'
-TOOLS=['auditor_final_core.py','auditor_final_backend.py','auditor_final_remote.py','auditor_final_launch_support.py','auditor_classifier_lora_core.py','auditor_classifier_lora_current_core.py','auditor_classifier_lora_fork.py','auditor_classifier_lora_stable.py','auditor_optuna_hpo.py','auditor_optuna_hpo_backend.py','test_auditor_final.py']
+TOOLS=['auditor_final_core.py','auditor_final_backend.py','auditor_final_remote.py','auditor_feature_diagnostics.py','auditor_final_launch_support.py','auditor_classifier_lora_core.py','auditor_classifier_lora_current_core.py','auditor_classifier_lora_fork.py','auditor_classifier_lora_stable.py','auditor_optuna_hpo.py','auditor_optuna_hpo_backend.py','test_auditor_final.py']
 
 
 def write(path,value):path.write_bytes((json.dumps(value,sort_keys=True,indent=2,allow_nan=False)+'\n').encode())

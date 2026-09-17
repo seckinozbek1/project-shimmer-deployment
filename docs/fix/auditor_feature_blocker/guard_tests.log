@@ -1,0 +1,12 @@
+test_all_nonfinite_bounded_indices_and_strict_json (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_diagnostic_write_failure_cannot_admit_row (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_live_loop_calls_shared_guard_before_cache_write (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_non_train_denied_before_forward (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_nonfinite_evidence_is_durable_before_raise (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_valid_original_pooling_and_forward_arguments (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+test_wrong_raw_shape_preserved_without_resize (test_auditor_feature_diagnostics.FeatureGuard) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.324s
+
+OK
