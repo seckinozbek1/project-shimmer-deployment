@@ -1,0 +1,13 @@
+{
+  "approved": true,
+  "gpu": "one A10",
+  "hard_usd": 1.5,
+  "hourly_usd": 1.29,
+  "one_linear_head_only": true,
+  "payload_records": 2040,
+  "provider": "https://cloud.lambda.ai",
+  "recorded_epoch": 1789620894.317863,
+  "region": "us-east-1",
+  "soft_usd": 0.75,
+  "source": "Direct user message after automatic approval review rejection"
+}

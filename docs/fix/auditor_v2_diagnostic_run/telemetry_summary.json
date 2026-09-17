@@ -1,0 +1,9 @@
+{
+  "max_gpu_utilization_percent": 100.0,
+  "mean_gpu_utilization_percent": 93.97167755991285,
+  "mean_process_cpu_percent": 129.83660130718954,
+  "peak_host_ram_used_gib": 3.1487388610839844,
+  "peak_process_cpu_percent": 2895.9,
+  "peak_process_rss_gib": 2.6762313842773438,
+  "samples": 459
+}

@@ -1,0 +1,76 @@
+{
+  "parameters": 12292,
+  "updates": 200,
+  "seconds": 0.2661694000000807,
+  "updates_per_second": 751.4011753414906,
+  "final_ce": 0.07926498353481293,
+  "initial_ce": 1.3862944841384888,
+  "metrics": {
+    "count": 1792,
+    "macro_f1": 0.9966492763610442,
+    "accuracy": 0.9966517857142857,
+    "per_class": {
+      "MATCH": {
+        "support": 448,
+        "predicted": 445,
+        "recall": 0.9910714285714286,
+        "f1": 0.9944008958566629,
+        "precision": 0.9977528089887641
+      },
+      "DIVERGENCE": {
+        "support": 448,
+        "predicted": 449,
+        "recall": 0.9955357142857143,
+        "f1": 0.9944258639910813,
+        "precision": 0.9933184855233853
+      },
+      "OMISSION": {
+        "support": 448,
+        "predicted": 449,
+        "recall": 1.0,
+        "f1": 0.9988851727982163,
+        "precision": 0.9977728285077951
+      },
+      "ADDITION": {
+        "support": 448,
+        "predicted": 449,
+        "recall": 1.0,
+        "f1": 0.9988851727982163,
+        "precision": 0.9977728285077951
+      }
+    },
+    "confusion": {
+      "MATCH": {
+        "MATCH": 444,
+        "DIVERGENCE": 3,
+        "OMISSION": 0,
+        "ADDITION": 1,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "DIVERGENCE": {
+        "MATCH": 1,
+        "DIVERGENCE": 446,
+        "OMISSION": 1,
+        "ADDITION": 0,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "OMISSION": {
+        "MATCH": 0,
+        "DIVERGENCE": 0,
+        "OMISSION": 448,
+        "ADDITION": 0,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "ADDITION": {
+        "MATCH": 0,
+        "DIVERGENCE": 0,
+        "OMISSION": 0,
+        "ADDITION": 448,
+        "INSUFFICIENT_EVIDENCE": 0
+      }
+    },
+    "macro_precision": 0.996654237881935,
+    "macro_recall": 0.9966517857142857
+  },
+  "head_sha256": "e3e40fd922714d08832f24d7eb1860a622408ac0c0f3c53b3a3b2457a2ac9dbe"
+}

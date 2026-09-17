@@ -1,0 +1,429 @@
+{
+  "baseline_macro_f1": 0.5991505914106533,
+  "challenges": {
+    "longer": {
+      "accuracy": 0.6666666666666666,
+      "confusion": {
+        "ADDITION": {
+          "ADDITION": 21,
+          "DIVERGENCE": 1,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 1,
+          "OMISSION": 2
+        },
+        "DIVERGENCE": {
+          "ADDITION": 2,
+          "DIVERGENCE": 16,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 7,
+          "OMISSION": 0
+        },
+        "MATCH": {
+          "ADDITION": 6,
+          "DIVERGENCE": 5,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 13,
+          "OMISSION": 1
+        }
+      },
+      "count": 75,
+      "macro_f1": 0.6746154109706376,
+      "macro_precision": 0.6901527591182764,
+      "macro_recall": 0.6666666666666666,
+      "per_class": {
+        "ADDITION": {
+          "f1": 0.7777777777777778,
+          "precision": 0.7241379310344828,
+          "predicted": 29,
+          "recall": 0.84,
+          "support": 25
+        },
+        "DIVERGENCE": {
+          "f1": 0.6808510638297872,
+          "precision": 0.7272727272727273,
+          "predicted": 22,
+          "recall": 0.64,
+          "support": 25
+        },
+        "MATCH": {
+          "f1": 0.5652173913043478,
+          "precision": 0.6190476190476191,
+          "predicted": 21,
+          "recall": 0.52,
+          "support": 25
+        }
+      }
+    },
+    "shorter": {
+      "accuracy": 0.6933333333333334,
+      "confusion": {
+        "DIVERGENCE": {
+          "ADDITION": 0,
+          "DIVERGENCE": 20,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 4,
+          "OMISSION": 1
+        },
+        "MATCH": {
+          "ADDITION": 0,
+          "DIVERGENCE": 7,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 14,
+          "OMISSION": 4
+        },
+        "OMISSION": {
+          "ADDITION": 1,
+          "DIVERGENCE": 2,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 4,
+          "OMISSION": 18
+        }
+      },
+      "count": 75,
+      "macro_f1": 0.6954951405306016,
+      "macro_precision": 0.7028758348098677,
+      "macro_recall": 0.6933333333333334,
+      "per_class": {
+        "DIVERGENCE": {
+          "f1": 0.7407407407407407,
+          "precision": 0.6896551724137931,
+          "predicted": 29,
+          "recall": 0.8,
+          "support": 25
+        },
+        "MATCH": {
+          "f1": 0.5957446808510638,
+          "precision": 0.6363636363636364,
+          "predicted": 22,
+          "recall": 0.56,
+          "support": 25
+        },
+        "OMISSION": {
+          "f1": 0.75,
+          "precision": 0.782608695652174,
+          "predicted": 23,
+          "recall": 0.72,
+          "support": 25
+        }
+      }
+    }
+  },
+  "cloud": {
+    "billable_duration_upper_bound_seconds": 990.3804514408112,
+    "epoch": 1789621856.2425563,
+    "estimated_cost_upper_bound_usd": 0.35488632843295737,
+    "instance_id": "aeceeb0efccd43f884e111cb35fd69d8",
+    "metadata": {
+      "instance_id": "aeceeb0efccd43f884e111cb35fd69d8",
+      "status": "terminated"
+    },
+    "utc": "2026-09-17T05:10:56.242556+00:00"
+  },
+  "conclusion": "RELATION_REPRESENTATION_STILL_INSUFFICIENT",
+  "external": {
+    "accuracy": 0.735,
+    "confusion": {
+      "ADDITION": {
+        "ADDITION": 45,
+        "DIVERGENCE": 1,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 1,
+        "OMISSION": 3
+      },
+      "DIVERGENCE": {
+        "ADDITION": 2,
+        "DIVERGENCE": 36,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 11,
+        "OMISSION": 1
+      },
+      "MATCH": {
+        "ADDITION": 6,
+        "DIVERGENCE": 12,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 27,
+        "OMISSION": 5
+      },
+      "OMISSION": {
+        "ADDITION": 2,
+        "DIVERGENCE": 2,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 7,
+        "OMISSION": 39
+      }
+    },
+    "count": 200,
+    "macro_f1": 0.7321081279046272,
+    "macro_precision": 0.7308801732155313,
+    "macro_recall": 0.735,
+    "per_class": {
+      "ADDITION": {
+        "f1": 0.8571428571428571,
+        "precision": 0.8181818181818182,
+        "predicted": 55,
+        "recall": 0.9,
+        "support": 50
+      },
+      "DIVERGENCE": {
+        "f1": 0.7128712871287128,
+        "precision": 0.7058823529411765,
+        "predicted": 51,
+        "recall": 0.72,
+        "support": 50
+      },
+      "MATCH": {
+        "f1": 0.5625,
+        "precision": 0.5869565217391305,
+        "predicted": 46,
+        "recall": 0.54,
+        "support": 50
+      },
+      "OMISSION": {
+        "f1": 0.7959183673469388,
+        "precision": 0.8125,
+        "predicted": 48,
+        "recall": 0.78,
+        "support": 50
+      }
+    }
+  },
+  "external_pass": false,
+  "head": {
+    "final_ce": 0.07926498353481293,
+    "head_sha256": "e3e40fd922714d08832f24d7eb1860a622408ac0c0f3c53b3a3b2457a2ac9dbe",
+    "initial_ce": 1.3862944841384888,
+    "metrics": {
+      "accuracy": 0.9966517857142857,
+      "confusion": {
+        "ADDITION": {
+          "ADDITION": 448,
+          "DIVERGENCE": 0,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 0,
+          "OMISSION": 0
+        },
+        "DIVERGENCE": {
+          "ADDITION": 0,
+          "DIVERGENCE": 446,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 1,
+          "OMISSION": 1
+        },
+        "MATCH": {
+          "ADDITION": 1,
+          "DIVERGENCE": 3,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 444,
+          "OMISSION": 0
+        },
+        "OMISSION": {
+          "ADDITION": 0,
+          "DIVERGENCE": 0,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "MATCH": 0,
+          "OMISSION": 448
+        }
+      },
+      "count": 1792,
+      "macro_f1": 0.9966492763610442,
+      "macro_precision": 0.996654237881935,
+      "macro_recall": 0.9966517857142857,
+      "per_class": {
+        "ADDITION": {
+          "f1": 0.9988851727982163,
+          "precision": 0.9977728285077951,
+          "predicted": 449,
+          "recall": 1.0,
+          "support": 448
+        },
+        "DIVERGENCE": {
+          "f1": 0.9944258639910813,
+          "precision": 0.9933184855233853,
+          "predicted": 449,
+          "recall": 0.9955357142857143,
+          "support": 448
+        },
+        "MATCH": {
+          "f1": 0.9944008958566629,
+          "precision": 0.9977528089887641,
+          "predicted": 445,
+          "recall": 0.9910714285714286,
+          "support": 448
+        },
+        "OMISSION": {
+          "f1": 0.9988851727982163,
+          "precision": 0.9977728285077951,
+          "predicted": 449,
+          "recall": 1.0,
+          "support": 448
+        }
+      }
+    },
+    "parameters": 12292,
+    "seconds": 0.2661694000000807,
+    "updates": 200,
+    "updates_per_second": 751.4011753414906
+  },
+  "historical": {
+    "accuracy": 0.5833333333333334,
+    "confusion": {
+      "ADDITION": {
+        "ADDITION": 11,
+        "DIVERGENCE": 0,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 1,
+        "OMISSION": 0
+      },
+      "DIVERGENCE": {
+        "ADDITION": 5,
+        "DIVERGENCE": 4,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 1,
+        "OMISSION": 2
+      },
+      "MATCH": {
+        "ADDITION": 5,
+        "DIVERGENCE": 0,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 5,
+        "OMISSION": 2
+      },
+      "OMISSION": {
+        "ADDITION": 2,
+        "DIVERGENCE": 2,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 0,
+        "OMISSION": 8
+      }
+    },
+    "count": 48,
+    "macro_f1": 0.566499582289056,
+    "macro_precision": 0.6314699792960663,
+    "macro_recall": 0.5833333333333333,
+    "per_class": {
+      "ADDITION": {
+        "f1": 0.6285714285714286,
+        "precision": 0.4782608695652174,
+        "predicted": 23,
+        "recall": 0.9166666666666666,
+        "support": 12
+      },
+      "DIVERGENCE": {
+        "f1": 0.4444444444444444,
+        "precision": 0.6666666666666666,
+        "predicted": 6,
+        "recall": 0.3333333333333333,
+        "support": 12
+      },
+      "MATCH": {
+        "f1": 0.5263157894736842,
+        "precision": 0.7142857142857143,
+        "predicted": 7,
+        "recall": 0.4166666666666667,
+        "support": 12
+      },
+      "OMISSION": {
+        "f1": 0.6666666666666666,
+        "precision": 0.6666666666666666,
+        "predicted": 12,
+        "recall": 0.6666666666666666,
+        "support": 12
+      }
+    }
+  },
+  "historical_macro_f1_delta": -0.03265100912159735,
+  "historical_pass": false,
+  "performance": {
+    "classification_seconds": {
+      "external_dev": 0.006490499999927124,
+      "historical_dev": 0.0016985279999062186
+    },
+    "feature_seconds": 453.0981092130033,
+    "feature_tokens": 1138245,
+    "feature_vectors": 2040,
+    "head_seconds": 0.2661694000000807,
+    "input_tokens_per_second": 2512.1380488147356,
+    "load_seconds": 10.491623085999947,
+    "peak_allocated_gib": 3.558657646179199,
+    "peak_reserved_gib": 3.73046875
+  },
+  "success": false,
+  "tested_commit": "12a08e89d27195d384c9565b9bd93cb829df98d1",
+  "train": {
+    "accuracy": 0.9966517857142857,
+    "confusion": {
+      "ADDITION": {
+        "ADDITION": 448,
+        "DIVERGENCE": 0,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 0,
+        "OMISSION": 0
+      },
+      "DIVERGENCE": {
+        "ADDITION": 0,
+        "DIVERGENCE": 446,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 1,
+        "OMISSION": 1
+      },
+      "MATCH": {
+        "ADDITION": 1,
+        "DIVERGENCE": 3,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 444,
+        "OMISSION": 0
+      },
+      "OMISSION": {
+        "ADDITION": 0,
+        "DIVERGENCE": 0,
+        "INSUFFICIENT_EVIDENCE": 0,
+        "MATCH": 0,
+        "OMISSION": 448
+      }
+    },
+    "count": 1792,
+    "macro_f1": 0.9966492763610442,
+    "macro_precision": 0.996654237881935,
+    "macro_recall": 0.9966517857142857,
+    "per_class": {
+      "ADDITION": {
+        "f1": 0.9988851727982163,
+        "precision": 0.9977728285077951,
+        "predicted": 449,
+        "recall": 1.0,
+        "support": 448
+      },
+      "DIVERGENCE": {
+        "f1": 0.9944258639910813,
+        "precision": 0.9933184855233853,
+        "predicted": 449,
+        "recall": 0.9955357142857143,
+        "support": 448
+      },
+      "MATCH": {
+        "f1": 0.9944008958566629,
+        "precision": 0.9977528089887641,
+        "predicted": 445,
+        "recall": 0.9910714285714286,
+        "support": 448
+      },
+      "OMISSION": {
+        "f1": 0.9988851727982163,
+        "precision": 0.9977728285077951,
+        "predicted": 449,
+        "recall": 1.0,
+        "support": 448
+      }
+    }
+  },
+  "verdict": "AUDITOR_V2_DIAGNOSTIC_FAIL",
+  "verification": {
+    "features": 2040,
+    "frozen_parameters_unchanged": true,
+    "holdout_unconsumed": true,
+    "torch_imported": false,
+    "train_only_normalization": true,
+    "updates": 200,
+    "zero_billable_resources": true
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "credentials": 0,
+  "files": {
+    "adapter/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "adapter/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+    "tools/auditor_linear_core.py": "450109ea96533fa440808223c1d220c1791e7ff2c8dbe95fd0d46ef62da1e4e5",
+    "tools/auditor_v2_diagnostic.py": "ffd3b99fb71c5183ac5b8c8a0fdab3d53cbd541466a0ba67a2266064027a310c",
+    "tools/auditor_v2_execution.py": "cd5310026f05a11a00c8888909f27baae247d244304b0e2468cf092fd826ad98",
+    "tools/auditor_v2_remote.py": "78fde52a3f094026dc4959433f3322c5e4bab9860ffcdca90e38a3d0eb37040d",
+    "tuning/auditor_v2_diagnostic/baseline.json": "0cd67311b57dbcea66e8d635ea1d6a42e5e88b2e298f639ceedd082a279f2daa",
+    "tuning/auditor_v2_diagnostic/challenges.json": "fc34f439fb1bf57ec2247f5f6d2624b7438f419b8a3e09583a72e9eb3640e52d",
+    "tuning/auditor_v2_diagnostic/experiment.json": "47fd4bc047f96a284c26599b799c500739e37bc504e55d0067d61ecd0cada8f5",
+    "tuning/auditor_v2_diagnostic/records.json": "6ef0f387119fca3f5c9bfd7cd4b7986bddc125cfe46ac01c86763e073cba20e2",
+    "tuning/first_domain_agnostic_v1/dependency_lock.json": "0a2c630d67f02d2d28a8ebac91c6016907232b728e50706f450354097da1dde8",
+    "tuning/second_tuning_eval_runtime_v2_1/telemetry_worker.py": "81b656352d067beb0376e9137480cd21200d0d9a1fabfc42d1a36951b42ba1cc"
+  },
+  "holdout_rows": 0,
+  "producer_payloads": 0,
+  "protected_files": 0,
+  "rows": 2040,
+  "source_commit": "12a08e89d27195d384c9565b9bd93cb829df98d1"
+}

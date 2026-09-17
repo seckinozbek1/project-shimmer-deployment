@@ -1,0 +1,9 @@
+{
+  "epoch": 1789621735.3819938,
+  "phase": "historical_dev",
+  "features": 2040,
+  "projected_remaining_seconds": 90.0,
+  "estimated_usd": 0.3115779601812363,
+  "soft_reached": false,
+  "continue_run": true
+}

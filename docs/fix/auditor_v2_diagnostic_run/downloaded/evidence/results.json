@@ -1,0 +1,251 @@
+{
+  "external": {
+    "count": 200,
+    "macro_f1": 0.7321081279046272,
+    "accuracy": 0.735,
+    "per_class": {
+      "MATCH": {
+        "support": 50,
+        "predicted": 46,
+        "recall": 0.54,
+        "f1": 0.5625,
+        "precision": 0.5869565217391305
+      },
+      "DIVERGENCE": {
+        "support": 50,
+        "predicted": 51,
+        "recall": 0.72,
+        "f1": 0.7128712871287128,
+        "precision": 0.7058823529411765
+      },
+      "OMISSION": {
+        "support": 50,
+        "predicted": 48,
+        "recall": 0.78,
+        "f1": 0.7959183673469388,
+        "precision": 0.8125
+      },
+      "ADDITION": {
+        "support": 50,
+        "predicted": 55,
+        "recall": 0.9,
+        "f1": 0.8571428571428571,
+        "precision": 0.8181818181818182
+      }
+    },
+    "confusion": {
+      "MATCH": {
+        "MATCH": 27,
+        "DIVERGENCE": 12,
+        "OMISSION": 5,
+        "ADDITION": 6,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "DIVERGENCE": {
+        "MATCH": 11,
+        "DIVERGENCE": 36,
+        "OMISSION": 1,
+        "ADDITION": 2,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "OMISSION": {
+        "MATCH": 7,
+        "DIVERGENCE": 2,
+        "OMISSION": 39,
+        "ADDITION": 2,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "ADDITION": {
+        "MATCH": 1,
+        "DIVERGENCE": 1,
+        "OMISSION": 3,
+        "ADDITION": 45,
+        "INSUFFICIENT_EVIDENCE": 0
+      }
+    },
+    "macro_precision": 0.7308801732155313,
+    "macro_recall": 0.735
+  },
+  "historical": {
+    "count": 48,
+    "macro_f1": 0.566499582289056,
+    "accuracy": 0.5833333333333334,
+    "per_class": {
+      "MATCH": {
+        "support": 12,
+        "predicted": 7,
+        "recall": 0.4166666666666667,
+        "f1": 0.5263157894736842,
+        "precision": 0.7142857142857143
+      },
+      "DIVERGENCE": {
+        "support": 12,
+        "predicted": 6,
+        "recall": 0.3333333333333333,
+        "f1": 0.4444444444444444,
+        "precision": 0.6666666666666666
+      },
+      "OMISSION": {
+        "support": 12,
+        "predicted": 12,
+        "recall": 0.6666666666666666,
+        "f1": 0.6666666666666666,
+        "precision": 0.6666666666666666
+      },
+      "ADDITION": {
+        "support": 12,
+        "predicted": 23,
+        "recall": 0.9166666666666666,
+        "f1": 0.6285714285714286,
+        "precision": 0.4782608695652174
+      }
+    },
+    "confusion": {
+      "MATCH": {
+        "MATCH": 5,
+        "DIVERGENCE": 0,
+        "OMISSION": 2,
+        "ADDITION": 5,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "DIVERGENCE": {
+        "MATCH": 1,
+        "DIVERGENCE": 4,
+        "OMISSION": 2,
+        "ADDITION": 5,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "OMISSION": {
+        "MATCH": 0,
+        "DIVERGENCE": 2,
+        "OMISSION": 8,
+        "ADDITION": 2,
+        "INSUFFICIENT_EVIDENCE": 0
+      },
+      "ADDITION": {
+        "MATCH": 1,
+        "DIVERGENCE": 0,
+        "OMISSION": 0,
+        "ADDITION": 11,
+        "INSUFFICIENT_EVIDENCE": 0
+      }
+    },
+    "macro_precision": 0.6314699792960663,
+    "macro_recall": 0.5833333333333333
+  },
+  "challenges": {
+    "longer": {
+      "count": 75,
+      "macro_f1": 0.6746154109706376,
+      "accuracy": 0.6666666666666666,
+      "per_class": {
+        "MATCH": {
+          "support": 25,
+          "predicted": 21,
+          "recall": 0.52,
+          "f1": 0.5652173913043478,
+          "precision": 0.6190476190476191
+        },
+        "DIVERGENCE": {
+          "support": 25,
+          "predicted": 22,
+          "recall": 0.64,
+          "f1": 0.6808510638297872,
+          "precision": 0.7272727272727273
+        },
+        "ADDITION": {
+          "support": 25,
+          "predicted": 29,
+          "recall": 0.84,
+          "f1": 0.7777777777777778,
+          "precision": 0.7241379310344828
+        }
+      },
+      "confusion": {
+        "MATCH": {
+          "MATCH": 13,
+          "DIVERGENCE": 5,
+          "OMISSION": 1,
+          "ADDITION": 6,
+          "INSUFFICIENT_EVIDENCE": 0
+        },
+        "DIVERGENCE": {
+          "MATCH": 7,
+          "DIVERGENCE": 16,
+          "OMISSION": 0,
+          "ADDITION": 2,
+          "INSUFFICIENT_EVIDENCE": 0
+        },
+        "ADDITION": {
+          "MATCH": 1,
+          "DIVERGENCE": 1,
+          "OMISSION": 2,
+          "ADDITION": 21,
+          "INSUFFICIENT_EVIDENCE": 0
+        }
+      },
+      "macro_precision": 0.6901527591182764,
+      "macro_recall": 0.6666666666666666
+    },
+    "shorter": {
+      "count": 75,
+      "macro_f1": 0.6954951405306016,
+      "accuracy": 0.6933333333333334,
+      "per_class": {
+        "MATCH": {
+          "support": 25,
+          "predicted": 22,
+          "recall": 0.56,
+          "f1": 0.5957446808510638,
+          "precision": 0.6363636363636364
+        },
+        "DIVERGENCE": {
+          "support": 25,
+          "predicted": 29,
+          "recall": 0.8,
+          "f1": 0.7407407407407407,
+          "precision": 0.6896551724137931
+        },
+        "OMISSION": {
+          "support": 25,
+          "predicted": 23,
+          "recall": 0.72,
+          "f1": 0.75,
+          "precision": 0.782608695652174
+        }
+      },
+      "confusion": {
+        "MATCH": {
+          "MATCH": 14,
+          "DIVERGENCE": 7,
+          "OMISSION": 4,
+          "ADDITION": 0,
+          "INSUFFICIENT_EVIDENCE": 0
+        },
+        "DIVERGENCE": {
+          "MATCH": 4,
+          "DIVERGENCE": 20,
+          "OMISSION": 1,
+          "ADDITION": 0,
+          "INSUFFICIENT_EVIDENCE": 0
+        },
+        "OMISSION": {
+          "MATCH": 4,
+          "DIVERGENCE": 2,
+          "OMISSION": 18,
+          "ADDITION": 1,
+          "INSUFFICIENT_EVIDENCE": 0
+        }
+      },
+      "macro_precision": 0.7028758348098677,
+      "macro_recall": 0.6933333333333334
+    }
+  },
+  "external_pass": false,
+  "historical_pass": false,
+  "success": false,
+  "conclusion": "RELATION_REPRESENTATION_STILL_INSUFFICIENT",
+  "baseline_macro_f1": 0.5991505914106533,
+  "historical_macro_f1_delta": -0.03265100912159735,
+  "verdict": "AUDITOR_V2_DIAGNOSTIC_FAIL"
+}
