@@ -1,0 +1,31 @@
+{
+  "cloud_authorized": false,
+  "files": {
+    "docs/fix/.gitattributes": "ad6331ee72a45e1cbcd8b5091cde0f94a8c8caf1e3caae924a01b42d2e28e236",
+    "docs/fix/AUDITOR_CLASSIFIER_LORA_INITIALIZATION_COMPATIBILITY.md": "2203cfb67053c5390c02a577c6c94bfc4f4c5fe05e7f0caaf0c780b9a7536aec",
+    "tools/.gitattributes": "d793618b6c5e6f3e4f363ae8945dc7a3cff12018c2ab2748879b390d9184b76f",
+    "tools/auditor_classifier_lora_fork.py": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+    "tools/prepare_auditor_classifier_lora_fork.py": "9f07473392261d27443455fb55d8822495b45b8c1669678bd7fc4c5fefd787ad",
+    "tools/test_auditor_classifier_lora_fork.py": "20dc4b831633b2fa266d56c798905f39bc7f1d2a3531a8daee8affe02ef17dba",
+    "tuning/auditor_classifier_lora_fork/.gitattributes": "567001a7389b2aa6365b1a5a1bac15a1d09d09c56a562f6fb8a7d99e3648071e",
+    "tuning/auditor_classifier_lora_fork/.gitignore": "8d7dbd08afac584008b83c8fb7b1f161a9b3f3391df82b8958286c4b211383bc",
+    "tuning/auditor_classifier_lora_fork/README.md": "1f5aae84fc6af067d3dc36ebea4bbad71fd5ddd3bb186bb83a98e28897fb71f4",
+    "tuning/auditor_classifier_lora_fork/adapter_copy.json": "2a7d2a485bb521137899458f35a7f3d5ea74a178a375ff3cd427babd85f56e8a",
+    "tuning/auditor_classifier_lora_fork/bindings.json": "0eba1633ba3f7f4c8e347aab8acac504943449cce7a44e3b5b31f1d18003fedf",
+    "tuning/auditor_classifier_lora_fork/classifier_adapter_init/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "tuning/auditor_classifier_lora_fork/experiment.json": "cdbc9a6415b57a9242aee0af630645fe00ff07b30de1ed5c48ba1245dd36763b",
+    "tuning/auditor_classifier_lora_fork/local_validation.json": "9ad89e88375a453f7c0c213118e755002405e07d02a28ef2029b3820a1e905ea",
+    "tuning/auditor_classifier_lora_fork/projection.json": "f902629613b4b5f0bd9876e2ec7d70e63e49889fae81c16da0141f945b47e244",
+    "tuning/auditor_classifier_lora_fork/remote_protocol.json": "133805cce7e9c10fec42c25f032d45bc669184b44b3f57c7c631918822b592b0",
+    "tuning/auditor_classifier_lora_fork/runtime_bindings.json": "723630d50840acd27e97d06ac0bacfa94e31846fc5b8b33756590509ebf59cc5",
+    "tuning/auditor_classifier_lora_fork/train_baseline.json": "5d618e9e9e3b97413f71c99b77578607c361b80402d4a9d6c7aa2ea3f701b2c1",
+    "tuning/auditor_classifier_lora_fork/update0_controls.json": "7bbf06acba96177dd90f5a032d5ab43a4326e65acd7f49927f8a2ad2715f04d6"
+  },
+  "implementation_commit": "9928d08d9f1e25f77035d8d1ed66fd390c9b6e41",
+  "local_only_binary": {
+    "path": "tuning/auditor_classifier_lora_fork/classifier_adapter_init/adapter_model.safetensors",
+    "sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+  },
+  "readiness": "AUDITOR_CLASSIFIER_LORA_STABILIZED_READY",
+  "real_model_parity_measured": false
+}
