@@ -1,6 +1,7 @@
 {
   "action": "auditor-final-training-evaluation",
   "authorization": "Explicit user final retry attachment f7f8ae24-a268-4aa8-8c9d-ecc0ebcc0fe9; one launch; all1792 exact admission;896 updates; delayed DEV; no second paid attempt, protected test, Producer, full Shimmer or push",
+  "direct_operator_approval": "I approve the prepared single Lambda A10 retry, including model/adapter/TRAIN-data transfer, evaluation transfer only after 896 updates, and the $7 hard ceiling.",
   "evaluation_after_updates": 896,
   "execution_manifest_sha256": "474d5354fe4bc6beee227e1586bb5da92647080984fe55f0f8adb003acc577d4",
   "gpus": 1,
@@ -8,7 +9,7 @@
   "hourly_rate": 1.29,
   "instance_type": "gpu_1x_a10",
   "instances": 1,
-  "launch_epoch": 0,
+  "launch_epoch": 1789665911.2306736,
   "operator_authorized": true,
   "params": {
     "dropout": 0.05,
@@ -22,6 +23,5 @@
   "soft_budget_usd": 5.0,
   "source_commit": "c9c2380ad11abe8e8795ce13ed5d84a8b97f42df",
   "updates": 896,
-  "workload_deadline_epoch": 0,
-  "direct_operator_approval": "I approve the prepared single Lambda A10 retry, including model/adapter/TRAIN-data transfer, evaluation transfer only after 896 updates, and the $7 hard ceiling."
+  "workload_deadline_epoch": 1789684546.1143944
 }

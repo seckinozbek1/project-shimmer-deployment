@@ -1,0 +1,15 @@
+{
+  "successful_access_counts": {
+    "holdout": 0,
+    "protected_final_test": 0,
+    "producer": 0,
+    "full_shimmer_inputs": 0
+  },
+  "denied_before_open": 0,
+  "external_dev_rows": 200,
+  "historical_dev_rows": 48,
+  "shorter_rows": 75,
+  "longer_rows": 75,
+  "evaluation_opened_after_updates": 896,
+  "evaluation_open_epoch": 1789670319.3830667
+}

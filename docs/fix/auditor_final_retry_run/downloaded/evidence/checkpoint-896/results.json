@@ -1,0 +1,512 @@
+{
+  "step": 896,
+  "identity": {
+    "step": 896,
+    "lora_sha256": "0ec8212f5288e5960f1e816d93c9c7e1206eed7c380b45cf355ae0825ecc1b5e",
+    "config_sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "head_sha256": "6a2fcf89d3e843d5364443c20add30f0542e9dfbf00ff3b0e4d78ede397fdc3a",
+    "mean_sha256": "370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5",
+    "std_sha256": "1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a",
+    "base_state_sha256": "d07dae6b59e73394974e2699a2f66dad8c7d57be1c800c6774eccd114f38db18"
+  },
+  "metrics": {
+    "external": {
+      "count": 200,
+      "accuracy": 0.795,
+      "per_class": {
+        "MATCH": {
+          "support": 50,
+          "predicted": 70,
+          "precision": 0.5857142857142857,
+          "recall": 0.82,
+          "f1": 0.6833333333333333
+        },
+        "DIVERGENCE": {
+          "support": 50,
+          "predicted": 38,
+          "precision": 0.868421052631579,
+          "recall": 0.66,
+          "f1": 0.75
+        },
+        "OMISSION": {
+          "support": 50,
+          "predicted": 45,
+          "precision": 0.9333333333333333,
+          "recall": 0.84,
+          "f1": 0.8842105263157894
+        },
+        "ADDITION": {
+          "support": 50,
+          "predicted": 47,
+          "precision": 0.9148936170212766,
+          "recall": 0.86,
+          "f1": 0.8865979381443299
+        }
+      },
+      "macro_precision": 0.8255905721751187,
+      "macro_recall": 0.7949999999999999,
+      "macro_f1": 0.8010354494483631,
+      "confusion": {
+        "MATCH": {
+          "MATCH": 41,
+          "DIVERGENCE": 4,
+          "OMISSION": 2,
+          "ADDITION": 3
+        },
+        "DIVERGENCE": {
+          "MATCH": 16,
+          "DIVERGENCE": 33,
+          "OMISSION": 0,
+          "ADDITION": 1
+        },
+        "OMISSION": {
+          "MATCH": 7,
+          "DIVERGENCE": 1,
+          "OMISSION": 42,
+          "ADDITION": 0
+        },
+        "ADDITION": {
+          "MATCH": 6,
+          "DIVERGENCE": 0,
+          "OMISSION": 1,
+          "ADDITION": 43
+        }
+      },
+      "per_class_recall": {
+        "MATCH": 0.82,
+        "DIVERGENCE": 0.66,
+        "OMISSION": 0.84,
+        "ADDITION": 0.86
+      },
+      "minimum_class_recall": 0.66,
+      "confusion_matrix": [
+        [
+          41,
+          4,
+          2,
+          3
+        ],
+        [
+          16,
+          33,
+          0,
+          1
+        ],
+        [
+          7,
+          1,
+          42,
+          0
+        ],
+        [
+          6,
+          0,
+          1,
+          43
+        ]
+      ],
+      "classes": [
+        "MATCH",
+        "DIVERGENCE",
+        "OMISSION",
+        "ADDITION"
+      ],
+      "prediction_classes": [
+        "MATCH",
+        "DIVERGENCE",
+        "OMISSION",
+        "ADDITION"
+      ],
+      "mean_ce": 1.3738938644395438,
+      "classifier_contract_validity": 1.0,
+      "substantive_non_refusal_coverage": 1.0,
+      "refusal_precision": null,
+      "refusal_recall": null,
+      "contract_validity": null,
+      "evidence_precision": null,
+      "evidence_recall": null,
+      "evidence_f1": null,
+      "accepted_semantic_outcomes": null,
+      "refusal_and_explanation_metrics_applicability": "not applicable: four-way substantive classifier; no refusal/explanation/CONFIDENT field",
+      "catastrophic": {
+        "nonfinite_logits": 0,
+        "invalid_class": 0,
+        "invented_evidence": null,
+        "confident_wrong_match_divergence": null,
+        "truncation": null,
+        "producer_source_copy": null,
+        "governance_violations": null
+      },
+      "classification_error_counts": {
+        "total": 41,
+        "false_match": 29,
+        "wrong_match_or_divergence": 34
+      }
+    },
+    "historical": {
+      "count": 48,
+      "accuracy": 0.4791666666666667,
+      "per_class": {
+        "MATCH": {
+          "support": 12,
+          "predicted": 17,
+          "precision": 0.4117647058823529,
+          "recall": 0.5833333333333334,
+          "f1": 0.4827586206896552
+        },
+        "DIVERGENCE": {
+          "support": 12,
+          "predicted": 7,
+          "precision": 1.0,
+          "recall": 0.5833333333333334,
+          "f1": 0.7368421052631579
+        },
+        "OMISSION": {
+          "support": 12,
+          "predicted": 1,
+          "precision": 1.0,
+          "recall": 0.08333333333333333,
+          "f1": 0.15384615384615385
+        },
+        "ADDITION": {
+          "support": 12,
+          "predicted": 23,
+          "precision": 0.34782608695652173,
+          "recall": 0.6666666666666666,
+          "f1": 0.45714285714285713
+        }
+      },
+      "macro_precision": 0.6898976982097187,
+      "macro_recall": 0.4791666666666667,
+      "macro_f1": 0.457647434235456,
+      "confusion": {
+        "MATCH": {
+          "MATCH": 7,
+          "DIVERGENCE": 0,
+          "OMISSION": 0,
+          "ADDITION": 5
+        },
+        "DIVERGENCE": {
+          "MATCH": 1,
+          "DIVERGENCE": 7,
+          "OMISSION": 0,
+          "ADDITION": 4
+        },
+        "OMISSION": {
+          "MATCH": 5,
+          "DIVERGENCE": 0,
+          "OMISSION": 1,
+          "ADDITION": 6
+        },
+        "ADDITION": {
+          "MATCH": 4,
+          "DIVERGENCE": 0,
+          "OMISSION": 0,
+          "ADDITION": 8
+        }
+      },
+      "per_class_recall": {
+        "MATCH": 0.5833333333333334,
+        "DIVERGENCE": 0.5833333333333334,
+        "OMISSION": 0.08333333333333333,
+        "ADDITION": 0.6666666666666666
+      },
+      "minimum_class_recall": 0.08333333333333333,
+      "confusion_matrix": [
+        [
+          7,
+          0,
+          0,
+          5
+        ],
+        [
+          1,
+          7,
+          0,
+          4
+        ],
+        [
+          5,
+          0,
+          1,
+          6
+        ],
+        [
+          4,
+          0,
+          0,
+          8
+        ]
+      ],
+      "classes": [
+        "MATCH",
+        "DIVERGENCE",
+        "OMISSION",
+        "ADDITION"
+      ],
+      "prediction_classes": [
+        "MATCH",
+        "DIVERGENCE",
+        "OMISSION",
+        "ADDITION"
+      ],
+      "mean_ce": 3.4274132633842833,
+      "classifier_contract_validity": 1.0,
+      "substantive_non_refusal_coverage": 1.0,
+      "refusal_precision": null,
+      "refusal_recall": null,
+      "contract_validity": null,
+      "evidence_precision": null,
+      "evidence_recall": null,
+      "evidence_f1": null,
+      "accepted_semantic_outcomes": null,
+      "refusal_and_explanation_metrics_applicability": "not applicable: four-way substantive classifier; no refusal/explanation/CONFIDENT field",
+      "catastrophic": {
+        "nonfinite_logits": 0,
+        "invalid_class": 0,
+        "invented_evidence": null,
+        "confident_wrong_match_divergence": null,
+        "truncation": null,
+        "producer_source_copy": null,
+        "governance_violations": null
+      },
+      "classification_error_counts": {
+        "total": 25,
+        "false_match": 10,
+        "wrong_match_or_divergence": 10
+      }
+    },
+    "longer": {
+      "count": 75,
+      "accuracy": 0.6933333333333334,
+      "per_class": {
+        "MATCH": {
+          "support": 25,
+          "predicted": 34,
+          "precision": 0.5588235294117647,
+          "recall": 0.76,
+          "f1": 0.6440677966101694
+        },
+        "DIVERGENCE": {
+          "support": 25,
+          "predicted": 17,
+          "precision": 0.8823529411764706,
+          "recall": 0.6,
+          "f1": 0.7142857142857143
+        },
+        "ADDITION": {
+          "support": 25,
+          "predicted": 22,
+          "precision": 0.8181818181818182,
+          "recall": 0.72,
+          "f1": 0.7659574468085106
+        }
+      },
+      "macro_precision": 0.7531194295900178,
+      "macro_recall": 0.6933333333333334,
+      "macro_f1": 0.7081036525681315,
+      "confusion": {
+        "MATCH": {
+          "MATCH": 19,
+          "DIVERGENCE": 2,
+          "OMISSION": 1,
+          "ADDITION": 3
+        },
+        "DIVERGENCE": {
+          "MATCH": 9,
+          "DIVERGENCE": 15,
+          "OMISSION": 0,
+          "ADDITION": 1
+        },
+        "ADDITION": {
+          "MATCH": 6,
+          "DIVERGENCE": 0,
+          "OMISSION": 1,
+          "ADDITION": 18
+        }
+      },
+      "per_class_recall": {
+        "MATCH": 0.76,
+        "DIVERGENCE": 0.6,
+        "ADDITION": 0.72
+      },
+      "minimum_class_recall": 0.6,
+      "confusion_matrix": [
+        [
+          19,
+          2,
+          1,
+          3
+        ],
+        [
+          9,
+          15,
+          0,
+          1
+        ],
+        [
+          6,
+          0,
+          1,
+          18
+        ]
+      ],
+      "classes": [
+        "MATCH",
+        "DIVERGENCE",
+        "ADDITION"
+      ],
+      "prediction_classes": [
+        "MATCH",
+        "DIVERGENCE",
+        "OMISSION",
+        "ADDITION"
+      ],
+      "mean_ce": 2.0385596969316553,
+      "classifier_contract_validity": 1.0,
+      "substantive_non_refusal_coverage": 1.0,
+      "refusal_precision": null,
+      "refusal_recall": null,
+      "contract_validity": null,
+      "evidence_precision": null,
+      "evidence_recall": null,
+      "evidence_f1": null,
+      "accepted_semantic_outcomes": null,
+      "refusal_and_explanation_metrics_applicability": "not applicable: four-way substantive classifier; no refusal/explanation/CONFIDENT field",
+      "catastrophic": {
+        "nonfinite_logits": 0,
+        "invalid_class": 0,
+        "invented_evidence": null,
+        "confident_wrong_match_divergence": null,
+        "truncation": null,
+        "producer_source_copy": null,
+        "governance_violations": null
+      },
+      "classification_error_counts": {
+        "total": 23,
+        "false_match": 15,
+        "wrong_match_or_divergence": 17
+      }
+    },
+    "shorter": {
+      "count": 75,
+      "accuracy": 0.8,
+      "per_class": {
+        "MATCH": {
+          "support": 25,
+          "predicted": 33,
+          "precision": 0.6666666666666666,
+          "recall": 0.88,
+          "f1": 0.7586206896551724
+        },
+        "DIVERGENCE": {
+          "support": 25,
+          "predicted": 21,
+          "precision": 0.8571428571428571,
+          "recall": 0.72,
+          "f1": 0.782608695652174
+        },
+        "OMISSION": {
+          "support": 25,
+          "predicted": 21,
+          "precision": 0.9523809523809523,
+          "recall": 0.8,
+          "f1": 0.8695652173913043
+        }
+      },
+      "macro_precision": 0.8253968253968255,
+      "macro_recall": 0.7999999999999999,
+      "macro_f1": 0.8035982008995503,
+      "confusion": {
+        "MATCH": {
+          "MATCH": 22,
+          "DIVERGENCE": 2,
+          "OMISSION": 1,
+          "ADDITION": 0
+        },
+        "DIVERGENCE": {
+          "MATCH": 7,
+          "DIVERGENCE": 18,
+          "OMISSION": 0,
+          "ADDITION": 0
+        },
+        "OMISSION": {
+          "MATCH": 4,
+          "DIVERGENCE": 1,
+          "OMISSION": 20,
+          "ADDITION": 0
+        }
+      },
+      "per_class_recall": {
+        "MATCH": 0.88,
+        "DIVERGENCE": 0.72,
+        "OMISSION": 0.8
+      },
+      "minimum_class_recall": 0.72,
+      "confusion_matrix": [
+        [
+          22,
+          2,
+          1,
+          0
+        ],
+        [
+          7,
+          18,
+          0,
+          0
+        ],
+        [
+          4,
+          1,
+          20,
+          0
+        ]
+      ],
+      "classes": [
+        "MATCH",
+        "DIVERGENCE",
+        "OMISSION"
+      ],
+      "prediction_classes": [
+        "MATCH",
+        "DIVERGENCE",
+        "OMISSION",
+        "ADDITION"
+      ],
+      "mean_ce": 1.3910828455433415,
+      "classifier_contract_validity": 1.0,
+      "substantive_non_refusal_coverage": 1.0,
+      "refusal_precision": null,
+      "refusal_recall": null,
+      "contract_validity": null,
+      "evidence_precision": null,
+      "evidence_recall": null,
+      "evidence_f1": null,
+      "accepted_semantic_outcomes": null,
+      "refusal_and_explanation_metrics_applicability": "not applicable: four-way substantive classifier; no refusal/explanation/CONFIDENT field",
+      "catastrophic": {
+        "nonfinite_logits": 0,
+        "invalid_class": 0,
+        "invented_evidence": null,
+        "confident_wrong_match_divergence": null,
+        "truncation": null,
+        "producer_source_copy": null,
+        "governance_violations": null
+      },
+      "classification_error_counts": {
+        "total": 15,
+        "false_match": 11,
+        "wrong_match_or_divergence": 14
+      }
+    },
+    "old_quality_gates": {
+      "external": true,
+      "historical": false,
+      "shorter": true,
+      "longer": true
+    },
+    "all_old_quality_gates_pass": false
+  },
+  "evaluation_after_updates": 896
+}

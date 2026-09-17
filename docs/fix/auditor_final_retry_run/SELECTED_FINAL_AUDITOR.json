@@ -1,0 +1,64 @@
+{
+  "automatic_further_training": false,
+  "base": {
+    "architecture": "LlamaForCausalLM",
+    "asset_hashes": {
+      "added_tokens.json": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d",
+      "config.json": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2",
+      "generation_config.json": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413",
+      "special_tokens_map.json": "58433eb58121d4754c8457e7397f14462ead767281693d628fa59a4776533978",
+      "tokenizer.json": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7",
+      "tokenizer.model": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+      "tokenizer_config.json": "c98403fdcc8cf522d8f240f04123d79358dd81192f907c3bcac1b63080296ece"
+    },
+    "attn_implementation": "eager",
+    "base_autocast": "bfloat16",
+    "base_preparation": "prepare_model_for_kbit_training; base frozen; nonquantized tensors cast to FP32 before immutable state hash",
+    "base_state_sha256": "d07dae6b59e73394974e2699a2f66dad8c7d57be1c800c6774eccd114f38db18",
+    "base_weight_sha256": "e6c61d932846517fc3d5bf09abb69b8c6f657b673ff8380999b15fb20cfcb64a",
+    "classifier_dtype": "float32",
+    "cuda_runtime": "12.1",
+    "gradient_checkpointing": {
+      "enabled": true,
+      "use_reentrant": true
+    },
+    "model_id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+    "packages": {
+      "accelerate": "1.10.1",
+      "bitsandbytes": "0.48.2",
+      "huggingface-hub": "0.30.2",
+      "jinja2": "3.1.4",
+      "numpy": "2.0.2",
+      "peft": "0.15.2",
+      "safetensors": "0.5.3",
+      "tokenizers": "0.21.1",
+      "torch": "2.5.1+cu121",
+      "transformers": "4.51.3"
+    },
+    "platform": "linux_x86_64",
+    "python": "3.12.3",
+    "quantization": "NF4",
+    "revision": "5c20803aa197416f43fb455e55c85178775320cb"
+  },
+  "base_state_sha256": "d07dae6b59e73394974e2699a2f66dad8c7d57be1c800c6774eccd114f38db18",
+  "checkpoint_path": "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896",
+  "config_sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+  "final_test_consumed": false,
+  "head_sha256": "6a2fcf89d3e843d5364443c20add30f0542e9dfbf00ff3b0e4d78ede397fdc3a",
+  "hyperparameters": {
+    "dropout": 0.05,
+    "head_lr": 0.0009721418411547451,
+    "lora_peak_lr": 1.2943234833221302e-06,
+    "warmup_steps": 10
+  },
+  "lora_sha256": "0ec8212f5288e5960f1e816d93c9c7e1206eed7c380b45cf355ae0825ecc1b5e",
+  "mean_sha256": "370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5",
+  "normalization_paths": [
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/mean.npy",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/std.npy"
+  ],
+  "quality_gates_passed": false,
+  "source_commit": "c9c2380ad11abe8e8795ce13ed5d84a8b97f42df",
+  "std_sha256": "1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a",
+  "step": 896
+}

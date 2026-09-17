@@ -1,0 +1,7 @@
+{
+  "rows": 1792,
+  "comparison": "exact FP32 byte SHA-256; no tolerance",
+  "historical_receipts_sha256": "75cd0e49a85e0fd9637141b836baf1be1c627cc6a6479127f2dcd8875441a11c",
+  "fresh_live_vectors": true,
+  "reference_substitution": false
+}

@@ -1,0 +1,22 @@
+{
+  "state_empty": true,
+  "gradients_empty": true,
+  "seed": 7,
+  "initial_parameter_sha256": "01b666cf97d5827a7c2063630b7ee918bf8af5e69ea1f40d0d92f73b8a159722",
+  "params": {
+    "lora_peak_lr": 1.2943234833221302e-06,
+    "head_lr": 0.0009721418411547451,
+    "warmup_steps": 10,
+    "dropout": 0.05
+  },
+  "groups": [
+    {
+      "lr": 1.2943234833221303e-07,
+      "numel": 14942208
+    },
+    {
+      "lr": 0.0009721418411547451,
+      "numel": 12292
+    }
+  ]
+}
