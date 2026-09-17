@@ -1,0 +1,15 @@
+{
+  "cloud_provisioned": false,
+  "execution_manifest_sha256": "dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223",
+  "hard_ceiling_usd": 7,
+  "hourly_rate_ceiling_usd": 1.29,
+  "integration_validation_sha256": "4695a6cface279d35419f3b41cf3bd1e391c4c231d13147f5a8c4e7101a5c0cb",
+  "model_executed": false,
+  "operator_authorized": false,
+  "preparation_validation_sha256": "979136c4ca9efc2a84d8858a8eb18bfe58b6009b8f0724cacc6b05f83077d380",
+  "report_sha256": "7411df41afa5a29c88cff963ab648413ec16c8c0e8eac400401c5e859f7d14f1",
+  "runtime_source_commit": "2f0d0f706fd0b68f757f664cb19d1956e69c27a1",
+  "seal_sha256": "93d2c5b2fe371f19143abe536569fe7bf15bcf9307b3136826b6440e028a4916",
+  "soft_budget_usd": 5,
+  "status": "ORDINARY_FINAL_CLOUD_RUN_READY_FOR_AUTHORIZATION"
+}

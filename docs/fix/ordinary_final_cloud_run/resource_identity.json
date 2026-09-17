@@ -1,0 +1,132 @@
+{
+  "producer": {
+    "config": {
+      "hidden_size": 3584,
+      "num_hidden_layers": 28,
+      "num_attention_heads": 28,
+      "num_key_value_heads": 4,
+      "vocab_size": 152064,
+      "max_position_embeddings": 32768
+    },
+    "stored_tensor_bytes": 5547098094,
+    "fp32_cast_extra_bytes": 2180656128,
+    "adapter_files": {
+      "adapter": {
+        "sha256": "8354d6545272399ea6771f1a6b560309e882fd7348f5c2be9cbd1bab01160703",
+        "bytes": 80792096
+      },
+      "adapter_config": {
+        "sha256": "cd672d24a74575fe9bec0e0589aa84a41f3078d5a23edaaee8ae1cafbc683507",
+        "bytes": 906
+      }
+    },
+    "base_files": {
+      "config.json": {
+        "sha256": "c9b481809ae2e99227ac323b77a9da0b5387a0a21f46329327132273435fa3f7",
+        "bytes": 1338
+      },
+      "generation_config.json": {
+        "sha256": "424e77633729a4c63a0810e0fa32e3344b03499cd3a0b2fc626bfae19e7eb923",
+        "bytes": 271
+      },
+      "tokenizer.json": {
+        "sha256": "9c5ae00e602b8860cbd784ba82a8aa14e8feecec692e7076590d014d7b7fdafa",
+        "bytes": 11421896
+      },
+      "tokenizer_config.json": {
+        "sha256": "0553ada6e92b1a29b4431c72782c6e5e6ab675ef0b20ceb2833cd1074c7fb932",
+        "bytes": 7362
+      },
+      "special_tokens_map.json": {
+        "sha256": "b5acd1507cb3a3539e63369cb4a2b675a599cf13afe62282d371518288967797",
+        "bytes": 614
+      },
+      "added_tokens.json": {
+        "sha256": "58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b",
+        "bytes": 605
+      },
+      "merges.txt": {
+        "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+        "bytes": 1671853
+      },
+      "vocab.json": {
+        "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+        "bytes": 2776833
+      },
+      "model.safetensors": {
+        "sha256": "99b85155b7bb40344d8c3938c8ec1147b27028804bca5d2e5559cb8e6533747d",
+        "bytes": 5547254622
+      }
+    },
+    "kv_bytes_per_token_bf16": 57344
+  },
+  "auditor": {
+    "config": {
+      "hidden_size": 3072,
+      "num_hidden_layers": 32,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 32,
+      "vocab_size": 32064,
+      "max_position_embeddings": 131072
+    },
+    "stored_tensor_bytes": 2264131172,
+    "fp32_cast_extra_bytes": 394401792,
+    "adapter_files": {
+      "adapter": {
+        "sha256": "0ec8212f5288e5960f1e816d93c9c7e1206eed7c380b45cf355ae0825ecc1b5e",
+        "bytes": 59827904
+      },
+      "adapter_config": {
+        "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+        "bytes": 908
+      },
+      "head": {
+        "sha256": "6a2fcf89d3e843d5364443c20add30f0542e9dfbf00ff3b0e4d78ede397fdc3a",
+        "bytes": 49304
+      },
+      "mean": {
+        "sha256": "370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5",
+        "bytes": 12416
+      },
+      "std": {
+        "sha256": "1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a",
+        "bytes": 12416
+      }
+    },
+    "base_files": {
+      "added_tokens.json": {
+        "sha256": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d",
+        "bytes": 293
+      },
+      "config.json": {
+        "sha256": "efc10243cb105a2fbb4069d1686dcffe52cce4bcb5acf3ddf17dff415939aca2",
+        "bytes": 3808
+      },
+      "generation_config.json": {
+        "sha256": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413",
+        "bytes": 140
+      },
+      "special_tokens_map.json": {
+        "sha256": "58433eb58121d4754c8457e7397f14462ead767281693d628fa59a4776533978",
+        "bytes": 571
+      },
+      "tokenizer.json": {
+        "sha256": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7",
+        "bytes": 1844436
+      },
+      "tokenizer.model": {
+        "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+        "bytes": 499723
+      },
+      "tokenizer_config.json": {
+        "sha256": "c98403fdcc8cf522d8f240f04123d79358dd81192f907c3bcac1b63080296ece",
+        "bytes": 3367
+      },
+      "model.safetensors": {
+        "sha256": "e6c61d932846517fc3d5bf09abb69b8c6f657b673ff8380999b15fb20cfcb64a",
+        "bytes": 2264298476
+      }
+    },
+    "kv_bytes_per_token_bf16": 393216
+  }
+}
