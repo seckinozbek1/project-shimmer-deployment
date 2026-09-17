@@ -56,3 +56,7 @@ tools/analyze_auditor_classifier_lora.py -text
 docs/fix/AUDITOR_CLASSIFIER_LORA_PREFLIGHT.md -text
 docs/fix/AUDITOR_CLASSIFIER_LORA_RESULTS.md -text
 docs/fix/auditor_classifier_lora_run/** -text
+tuning/auditor_classifier_lora_stable/** -text
+tools/prepare_auditor_classifier_lora_stable.py -text
+tools/test_auditor_classifier_lora_stable.py -text
+docs/fix/AUDITOR_CLASSIFIER_LORA_STABILIZATION.md -text

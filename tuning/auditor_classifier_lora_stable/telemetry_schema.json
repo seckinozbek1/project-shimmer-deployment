@@ -1,0 +1,48 @@
+{
+  "events": [
+    "microbatch_boundary",
+    "pre_forward_parameters",
+    "gradients",
+    "clipped_gradients",
+    "post_step_parameters",
+    "update_complete",
+    "STOP",
+    "NUMERICAL_ADMISSION_20_PASS"
+  ],
+  "failures": "Persist first failing stage before raising; latch stop; no rollback/reinitialization/retry.",
+  "frozen_state": "Use FrozenAudit.unchanged each step; full base-state hash additionally at update20/448/896. Persist initial and comparison hashes.",
+  "full_tensors_dumped": false,
+  "per_microbatch": [
+    "update",
+    "microbatch",
+    "stage",
+    "dtype",
+    "finite",
+    "min",
+    "max",
+    "max_abs",
+    "norm_min",
+    "norm_mean",
+    "norm_max",
+    "CE",
+    "regularization",
+    "total_loss",
+    "head_gradient_norm",
+    "lora_gradient_norm",
+    "combined_gradient_norm"
+  ],
+  "per_update": [
+    "head_gradient_norm",
+    "lora_gradient_norm",
+    "combined_pre_clip_norm",
+    "combined_post_clip_norm",
+    "head_parameter_norm",
+    "lora_parameter_norm",
+    "head_finite",
+    "lora_finite",
+    "mean_ce",
+    "ceiling",
+    "unauthorized_parameter_unchanged"
+  ],
+  "save_on_failure": "Future runner must persist compact telemetry and finite partial state before teardown; not implemented as a cloud controller in this blocked local package."
+}
