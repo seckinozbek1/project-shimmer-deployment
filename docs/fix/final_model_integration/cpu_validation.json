@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "tests": 3,
+  "backbone": "synthetic fake",
+  "device": "cpu",
+  "model_weights_loaded": false,
+  "command": ".venv/Scripts/python.exe scripts/final_classifier_cpu_checks.py -v"
+}

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import sys
+import time
+import model_telemetry
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from functools import wraps
@@ -23,6 +25,9 @@ def _now():
 class RunCompletion:
     def __init__(self, run_context):
         self.run_context = run_context
+        self.cpu_start = time.process_time()
+        model_telemetry.emit(run_context, 'pipeline_start')
+        self.resource_sampler = model_telemetry.Sampler(run_context)
         self.record = {"schema_version": 1, "run_id": run_context.run_id,
                        "state": "running", "started_at": _now(), "finished_at": None,
                        "reached_end": False, "exit_code": None,
@@ -43,6 +48,8 @@ class RunCompletion:
                            amendment_count=amendment_count)
 
     def finish(self, exit_code, error=None):
+        self.resource_sampler.close()
+        model_telemetry.emit(self.run_context, 'pipeline_end', process_cpu_seconds=time.process_time()-self.cpu_start)
         if error is not None:
             state = "interrupted" if isinstance(error, (KeyboardInterrupt, SystemExit)) else "failed"
         else:
@@ -54,6 +61,7 @@ class RunCompletion:
         self.record.update(state=state, exit_code=exit_code, finished_at=_now(),
                            error_type=type(error).__name__ if error is not None else None)
         self._write()
+        model_telemetry.recompute(self.run_context.run_dir)
 
 
 def begin(run_context):

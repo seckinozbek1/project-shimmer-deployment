@@ -92,6 +92,8 @@ class Runtime:
         wrapper._optimized_semantics = self.optimized
         original_dispatch = wrapper.dispatch
         self.run_context = wrapper.run_context
+        if wrapper.run_context is not None:
+            wrapper.run_context._telemetry_scheduler = self.scheduler
 
         @wraps(original_dispatch)
         def dispatch(*args, **kwargs):
@@ -152,6 +154,9 @@ class Runtime:
             self.scheduler.close()
         finally:
             self.write()
+            if self.run_context is not None:
+                import model_telemetry
+                model_telemetry.recompute(self.run_context.run_dir)
 
 
 def wrapper_factory(function):

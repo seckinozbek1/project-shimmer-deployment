@@ -56,6 +56,8 @@ convention:
 
 from __future__ import annotations
 
+import model_telemetry
+
 import json
 import math
 import re
@@ -210,7 +212,7 @@ def _sbert_model():
 
 
 def _encode(model, texts):
-    return model.encode(list(texts), normalize_embeddings=True)
+    return model_telemetry.semantic_encode(model, list(texts), normalize_embeddings=True)
 
 
 def vote_sbert(candidate, positives, negatives, threshold):

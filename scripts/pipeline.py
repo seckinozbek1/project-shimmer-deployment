@@ -1457,6 +1457,8 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
         tasks = []
         for name, payload in (("VERIFIER", verifier_payload), ("FACT_CHECKER", fc_payload)):
             wrapper = _build_wrapper(name, orch, keys)
+            wrapper._parent_call_ids = ([proc['call_id']] if proc and proc.get('call_id') else
+                                        list(proc.get('partition_calls', [])) if proc else [])
             tasks.append(_run_one(wrapper, payload,
                                   f"{run_objectives}\nDocument: {doc['name']}",
                                   max_tokens=AUDIT_MAX_TOKENS,
@@ -2717,7 +2719,10 @@ def _items_for(results, agent, *, doc_id=None, scope=None):
         if scope is not None and r.get("scope") != scope:
             continue
         out.extend(decode_items(r.get("parsed")))
-    return current_items(out)
+    retained = current_items(out)
+    import model_telemetry
+    model_telemetry.retention(results, retained, agent, doc_id, scope)
+    return retained
 
 
 def _structural_inventory(production_results: list) -> list[dict]:
@@ -3969,6 +3974,16 @@ def main(argv=None):
     parser = _build_arg_parser()
     localization.localize_parser(parser)
     args = parser.parse_args(argv)
+
+    import final_models
+    if final_models.mode() == 'final':
+        if args.multi_round or args.multi_round_manifest or args.task != 'review':
+            parser.error('Frozen final models are limited to ordinary Review')
+        if args.backend_profile != 'local':
+            parser.error('Frozen final models require explicit --backend-profile local')
+        for role in ('producer', 'auditor'):
+            final_models.verify(role)
+        final_models.admit_ordinary()
 
     # Do not read case material or alter prompts on an ordinary invocation.
     multi_record = None
