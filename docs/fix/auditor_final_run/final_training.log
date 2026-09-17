@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/shimmer-auditor-final/tools/auditor_final_remote.py", line 245, in <module>
+    else:globals()[args.action]()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-auditor-final/tools/auditor_final_remote.py", line 124, in training
+    f.require(vector.shape==(3072,) and np.isfinite(vector).all(),'finite TRAIN hidden')
+  File "/home/ubuntu/shimmer-auditor-final/tools/auditor_final_core.py", line 16, in require
+    if not ok:raise RuntimeError(message)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: finite TRAIN hidden

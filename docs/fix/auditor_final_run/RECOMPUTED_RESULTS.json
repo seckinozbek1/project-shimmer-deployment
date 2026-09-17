@@ -1,0 +1,48 @@
+{
+  "checkpoints": [],
+  "collection_sha256": "0d948c9dea0dd8129d18ce10d5a3e4268b48a57269a687ba03a8548646eed617",
+  "duration_upper_bound_seconds": 548.0512142181396,
+  "estimated_cost_upper_bound_usd": 0.19638501842816672,
+  "feature_failure_evidence": {
+    "attempted_row_one_based": 32,
+    "completed_prefix_matches_prior_cache_bitwise": false,
+    "completed_prefix_max_abs_difference": 0.16882681846618652,
+    "completed_valid_rows": 31,
+    "failure": "Combined hidden shape==(3072,) and finite-value guard; offending shape/values not recorded, so exact cause remains unisolated.",
+    "head_fit_created": false,
+    "incomplete_feature_file_reusable": false,
+    "inferred_attempted_example_id": "shimmer2-auditor-document-038",
+    "normalization_created": false,
+    "offending_current_tensor_saved": false,
+    "optimizer_created": false,
+    "prior_attempted_row_finite": true,
+    "unwritten_rows_are_not_observations": true
+  },
+  "historical_evidence_preserved": true,
+  "hourly_rate": 1.29,
+  "limitations": "No checkpoint evaluation exists; no quality metrics can be reported. Saved failure evidence/source/artifact hashes verified. No model forward or new training. Refusal/explanation/evidence-generation metrics are not applicable.",
+  "numerical_summary": {
+    "completed_updates": 0,
+    "head_and_lora_nonzero_deltas_every_update": null,
+    "max_completed_mean_ce": null,
+    "max_post_clip_norm": null
+  },
+  "params": {
+    "dropout": 0.05,
+    "head_lr": 0.0009721418411547451,
+    "lora_peak_lr": 1.2943234833221302e-06,
+    "warmup_steps": 10
+  },
+  "selected": null,
+  "source_commit": "b4f7e8247391e2278a7b7a1ba84f6b5915c56ced",
+  "ssh_cleanup": true,
+  "training": {
+    "complete": false,
+    "error": "finite TRAIN hidden",
+    "error_type": "RuntimeError",
+    "updates": 0
+  },
+  "training_updates_verified": 0,
+  "verdict": "AUDITOR_FINAL_INCOMPLETE",
+  "zero_billable_resources": true
+}

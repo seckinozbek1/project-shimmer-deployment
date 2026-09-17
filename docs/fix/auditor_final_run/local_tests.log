@@ -1,0 +1,15 @@
+test_data_boundary (test_auditor_final.FinalContracts.test_data_boundary) ... ok
+test_evaluation_gate (test_auditor_final.FinalContracts.test_evaluation_gate) ... ok
+test_final_update_identical_except_bound (test_auditor_final.FinalContracts.test_final_update_identical_except_bound) ... ok
+test_numerical_ce_gate (test_auditor_final.FinalContracts.test_numerical_ce_gate) ... ok
+test_scoring_and_applicability (test_auditor_final.FinalContracts.test_scoring_and_applicability) ... ok
+test_selected_values (test_auditor_final.FinalContracts.test_selected_values) ... ok
+test_selection_does_not_reject_old_gate_failure (test_auditor_final.FinalContracts.test_selection_does_not_reject_old_gate_failure) ... ok
+test_train_schema_excludes_metadata (test_auditor_final.FinalContracts.test_train_schema_excludes_metadata) ... ok
+test_two_complete_passes (test_auditor_final.FinalContracts.test_two_complete_passes) ... ok
+test_warmup (test_auditor_final.FinalContracts.test_warmup) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.023s
+
+OK
