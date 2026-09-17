@@ -17,6 +17,8 @@ meaningful content per chunk.
 
 from __future__ import annotations
 
+import model_telemetry
+
 import reference_builder
 import hashlib
 import json
@@ -179,6 +181,7 @@ def _load_model(st, name):
                 print(f"[embedding_store] WARN: model {name!r} unavailable "
                       f"({type(e).__name__}: {e})", file=sys.stderr, flush=True)
     if model is not None:
+        model._shimmer_model_id = name
         # Observability: log the model, its actual device, and embedding dimension,
         # so every run shows the retrieval model loaded on the GPU (or CPU) and at
         # what dimension (mirrors the BP-6 Qwen device log).
@@ -484,7 +487,7 @@ def build_store(
         texts = [p["text"] for p in plist]
         t0 = time.monotonic()
         try:
-            emb = model.encode(texts, batch_size=32, show_progress_bar=False,
+            emb = model_telemetry.semantic_encode(model, texts, batch_size=32, show_progress_bar=False,
                                convert_to_numpy=True, normalize_embeddings=True)
         except Exception as e:
             print(f"[embedding_store] encode failed for {mname!r} "
@@ -644,7 +647,7 @@ def query_store(store: dict, query_text: str, n: int = 20) -> list[dict]:
         if model is None:
             continue
         try:
-            q = model.encode([query_text], convert_to_numpy=True,
+            q = model_telemetry.semantic_encode(model, [query_text], convert_to_numpy=True,
                              normalize_embeddings=True)[0]
         except Exception as e:
             print(f"[embedding_store] query encode failed for {mname!r} "

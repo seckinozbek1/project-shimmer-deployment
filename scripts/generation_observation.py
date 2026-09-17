@@ -4,6 +4,7 @@ import hashlib
 import json
 import threading
 import time
+import model_telemetry
 
 _LOCK = threading.RLock()
 
@@ -35,7 +36,10 @@ def observe(function):
     @wraps(function)
     def run(self, *args, **kwargs):
         started = time.perf_counter()
+        started_at = model_telemetry.now()
+        self._telemetry_phase = kwargs.get('phase')
         self._generation_usage = {}
+        self._backend_timing = {}
         self._observed_contract_valid = None
         self._generation_call_id = None
         self._requested_output_budget = None
@@ -79,6 +83,7 @@ def observe(function):
                        )
             row.update(u)
             append(getattr(self, "run_context", None), row)
+            model_telemetry.call_record(self, result, started, started_at, error_type)
     return run
 
 

@@ -21,6 +21,24 @@ ROOT = Path(__file__).resolve().parent.parent
 def reference_tree(source):
     """Remove ONLY named additive adapters; keep pinned reference function hashes."""
     tree = ast.parse(source)
+    # Remove named telemetry additions and the final-mode startup refusal only.
+    # Keep the historical function hashes: no re-baselining of review semantics.
+    class RemoveFinalTelemetry(ast.NodeTransformer):
+        def visit_FunctionDef(self, node):
+            if node.name == 'main':
+                node.body = [x for x in node.body if not (
+                    isinstance(x, ast.Import) and [a.name for a in x.names] == ['final_models'] or
+                    isinstance(x, ast.If) and ast.unparse(x.test) == "final_models.mode() == 'final'")]
+            if node.name == '_items_for':
+                expected = ast.parse('retained = current_items(out)\nimport model_telemetry\nmodel_telemetry.retention(results, retained, agent, doc_id, scope)\nreturn retained').body
+                assert [ast.dump(x) for x in node.body[-4:]] == [ast.dump(x) for x in expected]
+                node.body[-4:] = ast.parse('return current_items(out)').body
+            return self.generic_visit(node)
+        def visit_Assign(self, node):
+            if len(node.targets) == 1 and ast.unparse(node.targets[0]) == 'wrapper._parent_call_ids':
+                return None
+            return node
+    tree = RemoveFinalTelemetry().visit(tree)
     # Invert the named optimized-only adapters; retain the original pinned hashes.
     # The paired consumer is moved verbatim into a helper, then invoked in source
     # order. Reconstruct its original loop body to verify reference equivalence.

@@ -30,6 +30,8 @@ import agent_activation
 import agent_briefs
 import run_options
 import generation_observation
+import final_models
+import model_telemetry
 from bus_reader import (_estimate_tokens, assemble_context,
                         begin_truncation_capture, end_truncation_capture)
 from constitution import CheckResult, Constitution
@@ -170,6 +172,7 @@ def _load_qwen(model_id):
     at most one generation model occupies the GPU at a time (L2 memory strategy).
     VRAM is measured and logged after every load."""
     import execution_topology
+    final_models.release_reference_residency()
     resident = execution_topology.resident_model(model_id)
     if resident is not None:
         return resident
@@ -592,6 +595,16 @@ class AgentWrapper:
 
     def _record_cost(self, r, *, duration_ms=0):
         self._generation_usage = dict(r.usage or {}, backend_success=r.ok, backend_call_seconds=duration_ms / 1000)
+        finished = time.perf_counter()
+        model_telemetry.emit(self.run_context, 'physical_backend_receipt',
+            call_id=getattr(self, '_cost_call_id', '') or uuid.uuid4().hex,
+            agent=self.name, backend=r.backend, model_id=r.model,
+            designation={'local_producer':'producer','local_auditor':'auditor'}.get(r.backend),
+            start_monotonic_s=finished-duration_ms/1000, end_monotonic_s=finished,
+            total_service_seconds=duration_ms/1000, timing_resolution_seconds=.001,
+            backend_success=r.ok, input_tokens=(r.usage or {}).get('input_tokens'),
+            output_tokens=(r.usage or {}).get('output_tokens'),
+            truncated=(r.usage or {}).get('truncated'))
         if self.cost_tracker is None: return
         u = r.usage or {}
         self.cost_tracker.record(
@@ -830,7 +843,10 @@ class AgentWrapper:
         generation_started = time.perf_counter()
         with torch.no_grad():
             out = mdl.generate(**inputs, max_new_tokens=max_new_tokens)
-        generation_seconds = time.perf_counter() - generation_started
+        generation_ended = time.perf_counter()
+        generation_seconds = generation_ended - generation_started
+        model_telemetry.emit(self.run_context, "generation_interval", call_id=getattr(self, "_cost_call_id", None),
+            start_monotonic_s=generation_started, end_monotonic_s=generation_ended)
         generated_count = int(out.shape[-1]) - int(inputs["input_ids"].shape[1])
         last_token = int(out[0][-1]) if generated_count else None
         eos_ids = getattr(getattr(mdl, "generation_config", None), "eos_token_id", None)
@@ -845,7 +861,7 @@ class AgentWrapper:
             "output_tokens": out_tokens,
             "truncated": truncated, "finish_reason": stop_reason,
             "requested_max_output_tokens": max_new_tokens,
-            "generation_seconds": generation_seconds, "time_to_first_token_seconds": None,
+            "generation_seconds": generation_seconds, "generation_finished_at": model_telemetry.now(), "time_to_first_token_seconds": None,
             "chat_template_applied": template_applied,
             "rendered_prompt_sha256": generation_observation.prompt_identity(prompt),
             "cap_hit": out_tokens >= max_new_tokens,
@@ -873,7 +889,15 @@ class AgentWrapper:
                            error=f"no model configured for agent {self.name!r} in agent_registry.json")
             _record_cost(r); return r
         try:
-            tok, mdl = _load_qwen(model_id)
+            if final_models.mode() == 'final' and self.backend == 'local_producer':
+                final_models.require(model_id == final_models.specification('producer')['model_id'], 'Tuned Producer base selection mismatch')
+                tok, mdl = final_models.resident('producer', self.run_context)
+                self._model_identity = mdl._shimmer_identity
+            else:
+                self._model_identity = dict(model_mode='base', adapter_checkpoint=None,
+                    adapter_sha256=None, runtime_engine='transformers',
+                    model_revision=None, base_reason='explicit base mode' if final_models.mode() == 'base' else 'generative Auditor evidence/other task; not final classifier')
+                tok, mdl = _load_qwen(model_id)
         except Exception as e:
             r = CallResult(self.backend, model_id, "", ok=False, error=f"local model load failed: {e}")
             _record_cost(r); return r
@@ -887,7 +911,10 @@ class AgentWrapper:
         generation_started = time.perf_counter()
         with torch.no_grad():
             out = mdl.generate(**inputs, max_new_tokens=max_new_tokens)
-        generation_seconds = time.perf_counter() - generation_started
+        generation_ended = time.perf_counter()
+        generation_seconds = generation_ended - generation_started
+        model_telemetry.emit(self.run_context, "generation_interval", call_id=getattr(self, "_cost_call_id", None),
+            start_monotonic_s=generation_started, end_monotonic_s=generation_ended)
         generated_count = int(out.shape[-1]) - int(inputs["input_ids"].shape[1])
         last_token = int(out[0][-1]) if generated_count else None
         eos_ids = getattr(getattr(mdl, "generation_config", None), "eos_token_id", None)
@@ -916,7 +943,7 @@ class AgentWrapper:
             "output_tokens": out_tokens,
             "truncated": truncated, "finish_reason": stop_reason,
             "requested_max_output_tokens": max_new_tokens,
-            "generation_seconds": generation_seconds, "time_to_first_token_seconds": None,
+            "generation_seconds": generation_seconds, "generation_finished_at": model_telemetry.now(), "time_to_first_token_seconds": None,
             "chat_template_applied": template_applied,
             "rendered_prompt_sha256": generation_observation.prompt_identity(prompt),
             "cap_hit": out_tokens >= max_new_tokens,
@@ -924,6 +951,7 @@ class AgentWrapper:
         })
         _record_cost(r); return r
 
+    @model_telemetry.observe_dispatch
     def dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
         """Route a cache-structured (stable_prefix, dynamic_suffix) prompt to the
         backend. Claude marks the stable prefix as an explicit cache breakpoint;

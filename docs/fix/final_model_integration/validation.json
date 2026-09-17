@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "tests": 83,
+  "failures": 0,
+  "errors": 0,
+  "activation_status": "PASS",
+  "activation_detail": "actual dispatch/audit joins, conservative fallback, dense parity, bounded legal/editorial work, masking/refusal, privacy, NFR and no-op refusal",
+  "neutralize_fail_restore_pass": [
+    {
+      "check": "test_wrong_producer_checkpoint_refuses",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_overlap_and_handoff",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_ordinary_final_admission_stays_closed",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    }
+  ],
+  "model_loads": 0,
+  "network_allowed": false,
+  "multi_round_executed": false
+}
