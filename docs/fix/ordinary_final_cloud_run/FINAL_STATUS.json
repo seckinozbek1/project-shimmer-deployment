@@ -1,0 +1,40 @@
+{
+  "auditor896_receipts": 0,
+  "cost_estimates": {
+    "combined_estimate": 0.9937605556726455,
+    "infrastructure_estimate": 0.9937605556726455,
+    "invoice": false,
+    "model_api_estimate": 0,
+    "unavailable": "Missing cost categories remain unknown; record explicit zero when applicable"
+  },
+  "evidence_verified": true,
+  "exactly_one_instance": true,
+  "full_run_retried": false,
+  "inventory_empty": true,
+  "maximum_one_workload_invocation": true,
+  "multi_round_executed": false,
+  "pipeline_completion": null,
+  "pipeline_started": false,
+  "producer168_receipts": 0,
+  "protected_data_accessed": false,
+  "quality_claim": null,
+  "remote_result": {
+    "collection_and_teardown_pending": true,
+    "execution_integrity_passed": false,
+    "failed_backend_attempts": 0,
+    "pipeline_exit_code": 1,
+    "quality_claim": null,
+    "reasons": [
+      "pipeline_not_completed",
+      "required_telemetry_missing"
+    ]
+  },
+  "semantic_call_receipts": 0,
+  "status": "ORDINARY_FINAL_CLOUD_RUN_FAILED",
+  "subsequent_roadmap_work_started": false,
+  "temporary_ssh_removed": true,
+  "terminal_error": {
+    "error_type": "SystemExit"
+  },
+  "within_hard_ceiling": true
+}

@@ -1,0 +1,50 @@
+{
+  "RUN_CLAIMED": {
+    "sha256": "29855ae6396d9044a8c2d6c57baf47eb876c96d42b8555874833ce7642609cca",
+    "bytes": 18
+  },
+  "WATCHDOG_ARMED.json": {
+    "sha256": "196aa07d92230ee1aa13d6d5d45b6ce9b3a894c2186cf0bb6c30f687d6a10c00",
+    "bytes": 218
+  },
+  "evidence/network.jsonl": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "evidence/result.json": {
+    "sha256": "53e85636fca39a626b7a151f2942e8ee5e1e6c96e802ce14074a94f5ddfa58eb",
+    "bytes": 252
+  },
+  "evidence/terminal_error.json": {
+    "sha256": "36912e0ff1d3a4dc416eef620da508a7d8767495c0dd7c7735c157d3cc91f555",
+    "bytes": 33
+  },
+  "execution_manifest.json": {
+    "sha256": "dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223",
+    "bytes": 2954527
+  },
+  "hardware_admission.json": {
+    "sha256": "163b4bb8d0d35b1432826fdaefa925dbf16e80cf31274fb4bac14ecbab327417",
+    "bytes": 227
+  },
+  "operator_authorization.json": {
+    "sha256": "37e887ea51110aa7fcbb4c708acf8eee549ff5752e7de224501458720a579f3f",
+    "bytes": 985
+  },
+  "seal.json": {
+    "sha256": "93d2c5b2fe371f19143abe536569fe7bf15bcf9307b3136826b6440e028a4916",
+    "bytes": 250
+  },
+  "topology.json": {
+    "sha256": "730211411774849ed175cf4c087acc6b4281ccade1866d53b773011cf9510bb0",
+    "bytes": 143
+  },
+  "workload.stderr.log": {
+    "sha256": "d5a530d22ee3c7914dc6c56c796dcd4ae4e444ab4e82fc2142b4ee1b801e62b7",
+    "bytes": 1761
+  },
+  "workload.stdout.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}
