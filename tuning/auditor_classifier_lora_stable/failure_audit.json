@@ -1,0 +1,30 @@
+{
+  "causal_limit": "Observed configuration was unstable; no ablation or tensor-stage evidence identifies zero initialization, LR, base kernels, activations or optimizer state as the unique cause.",
+  "completed_update_ce": [
+    1.3862943649291992,
+    58.268070220947266,
+    53.68067717552185
+  ],
+  "dtype_path": {
+    "base_compute": "BF16 autocast / mixed FP32 embedding and RMSNorm arithmetic",
+    "base_storage": "NF4 packed uint8",
+    "ce": "FP32",
+    "classifier_lora_parameters": "FP32",
+    "clipping": "combined max norm 1; only returned pre-clip norm logged",
+    "final_normalized_hidden": "FP32 inferred from pinned LlamaRMSNorm and recorded FP32 norm weight; activation dtype not logged",
+    "gradients": "FP32 parameter-gradient storage expected; per-tensor gradient dtypes not logged",
+    "head_weights_and_matmul": "FP32; outside BF16 autocast",
+    "hidden_for_head": "explicit FP32 cast",
+    "logits": "FP32",
+    "optimizer": "AdamW on FP32 LoRA/head groups; no per-step parameter-finiteness log",
+    "prompt_ids": "int64",
+    "regularization": "FP32",
+    "total_and_divide_by_four": "FP32"
+  },
+  "executed_source_sha256": "490f548a208e1f213dfecfb1ab47da452de39b05a0d194e6b290efc5ec4a29f3",
+  "failed_attempted_update": 4,
+  "new_fp32_contract_is_instrumented_enforcement_not_a_proven_root_cause_fix": true,
+  "observed_failure": "Non-finite CE + regularization at pre-backward assertion; first offending tensor was not logged.",
+  "old_head_was_already_fp32": true,
+  "verdict": "NUMERICAL_FAILURE_SOURCE_NOT_ISOLATED"
+}

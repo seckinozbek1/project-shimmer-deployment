@@ -1,0 +1,12 @@
+{
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/external_dev.jsonl": "d57ee227c4a2fc7bcb994c3f24c504c85d0335fdcbcabaa5c73f52f9a8782b4d",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/features.jsonl": "215d395c72faa9ff0088480892e48422a1f60fb4f1be798238651f4719536999",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/features.npy": "e5c879ed50cc8bb11f18fe17cd6d060a9afec399b6cca71971125e75aa4aa208",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/head-200.safetensors": "e3e40fd922714d08832f24d7eb1860a622408ac0c0f3c53b3a3b2457a2ac9dbe",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/head_result.json": "86cd83f80dee3babca244ce9147d2b4ef7390ff2059ee6549f0992ec22297cee",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/historical_dev.jsonl": "eb4a23225d41d8db37d1a159f2cb7f81ff05a8d94f94fdad3f8ba2ed04386054",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/mean.npy": "f71da5c61dcfe6186bc49146e24a1aa25029e7ce03b1aab93d903f01dcbd1c54",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/normalization.json": "80cf26b410c614e534033c2b5791631f5c19e0e0be9720b7d7e2ef71fc3b92bc",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/results.json": "0239ce80c2b52308929355b50217ab1113a7b0bf4ac280377a706ee0fff209be",
+  "docs/fix/auditor_v2_diagnostic_run/downloaded/evidence/std.npy": "d78e727198c4d15a86f7293c31ff4a5c20238dba148831cd5e1e88e246793794"
+}

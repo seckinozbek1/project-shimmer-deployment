@@ -1,0 +1,19 @@
+{
+  "all_saved_metrics_identical": true,
+  "atol": 0.0002,
+  "base_or_lora_weights_loaded": false,
+  "cached_train_ce": 0.07926499843597412,
+  "external_dev_rows": 200,
+  "future_fresh_representation_parity_proven": false,
+  "historical_dev_rows": 48,
+  "max_error_vs_independent_row_reference": 9.5367431640625e-06,
+  "max_error_vs_saved_dev_logits": 5.7220458984375e-06,
+  "max_train_row_ce": 1.3393553495407104,
+  "prediction_identity": true,
+  "rows_checked": 2040,
+  "rtol": 0.0001,
+  "saved_logit_rows": 248,
+  "torch_imported": false,
+  "train_logits_limitation": "No per-row TRAIN logits/predictions were persisted; TRAIN metrics match, and all TRAIN predictions match independent per-row recomputation.",
+  "train_rows": 1792
+}

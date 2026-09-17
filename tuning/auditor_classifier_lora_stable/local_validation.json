@@ -1,0 +1,28 @@
+{
+  "base_or_lora_weights_loaded": false,
+  "cloud_access": false,
+  "generation": false,
+  "historical_files_unchanged": true,
+  "holdout_access": false,
+  "model_inference": false,
+  "parent_commit": "3a7e708e0b5734667e7dbd3bac4cd874949d561d",
+  "preserved_source_hashes": {
+    "docs/fix/auditor_classifier_lora_run/EVIDENCE_MANIFEST.json": "b088f557c5e21adffaa70165e4d9ad719151634a1ed6a95fde67c9063a39756a",
+    "docs/fix/auditor_classifier_lora_run/downloaded/evidence/parameter_inventory.json": "2a14dbca39164ac7ef0d0b7d529bb2ea114632c4cdab7b446b9cbbe39b59c752",
+    "docs/fix/auditor_classifier_lora_run/downloaded/evidence/training.jsonl": "47863b579829fe9397b69040a0a3fd59d103fd8dc0b31436d1f20df71c4603df",
+    "docs/fix/auditor_classifier_lora_run/downloaded/tools/auditor_classifier_lora_remote.py": "490f548a208e1f213dfecfb1ab47da452de39b05a0d194e6b290efc5ec4a29f3",
+    "docs/fix/auditor_v2_diagnostic_run/EVIDENCE_MANIFEST.json": "393519266dc61a88e3796cac5ce4e1c78c8a165c2111a5d8f426ae7504bfa3ce",
+    "tuning/auditor_classifier_lora/experiment.json": "b4b7af53a878dbe15f3cad611b21554ebe4d598b66e2cae86501e334568920ae",
+    "tuning/auditor_v2_diagnostic/experiment.json": "47fd4bc047f96a284c26599b799c500739e37bc504e55d0067d61ecd0cada8f5"
+  },
+  "push": false,
+  "real_training": false,
+  "saved_head_numerical_artifact_read": true,
+  "tests": {
+    "actual_torch_hooks_executed": false,
+    "command": "python -m unittest discover -s tools -p test_auditor_classifier_lora_stable.py",
+    "count": 23,
+    "failed": 0,
+    "passed": 23
+  }
+}

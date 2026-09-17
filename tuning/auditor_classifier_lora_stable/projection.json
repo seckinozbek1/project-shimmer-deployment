@@ -1,0 +1,22 @@
+{
+  "assumptions": "Three finite updates are weak timing evidence. Upper training allowance adds 20% instrumentation overhead to historical p95; no stability or completion guarantee. Setup, two 248-row checkpoint evaluations, update0 TRAIN controls, hashing/collection/teardown included in total planning range.",
+  "cloud_authorized": false,
+  "historical_rate_usd_per_hour": 1.29,
+  "historical_update_p95_seconds": 5.007320960100015,
+  "live_price_queried": false,
+  "planning_cost_usd": [
+    1.3975,
+    2.58
+  ],
+  "planning_total_minutes": [
+    65,
+    120
+  ],
+  "price_and_capacity_recheck_required_before_separately_authorized_run": true,
+  "prior_three_update_mean_seconds": 3.067390451333324,
+  "readiness_blocked": true,
+  "training_minutes": [
+    45.8063640732443,
+    89.73119160499226
+  ]
+}
