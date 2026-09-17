@@ -1,0 +1,6 @@
+{
+  "classification": "PREPARED_NOT_AUTHORIZED",
+  "execution_manifest_sha256": "dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223",
+  "operator_authorized": false,
+  "source_commit": "2f0d0f706fd0b68f757f664cb19d1956e69c27a1"
+}

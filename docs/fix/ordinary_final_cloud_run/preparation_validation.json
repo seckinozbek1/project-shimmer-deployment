@@ -1,0 +1,29 @@
+{
+  "archive_verified": true,
+  "check_source_sha256": "3133a08e937742f58490865d504e7724d4b3608d5e7e487b0d10af397c714c49",
+  "cloud_writes": 0,
+  "effect_proofs": [
+    {
+      "baseline_pass": true,
+      "neutralized_fail": true,
+      "restored_pass": true,
+      "test": "test_seal_and_exact_tree"
+    },
+    {
+      "baseline_pass": true,
+      "neutralized_fail": true,
+      "restored_pass": true,
+      "test": "test_authorization_not_inherited"
+    }
+  ],
+  "manifest_sha256": "dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223",
+  "model_loads": 0,
+  "multi_round_executed": false,
+  "passed": true,
+  "pipeline_executions": 0,
+  "prepare_source_sha256": "ab0da45c0c4337c4f764ed73bb37eade77e32b8656f47bc79603887469978e5d",
+  "protected_data_accessed": false,
+  "runtime_wheel_closure": true,
+  "seal_sha256": "93d2c5b2fe371f19143abe536569fe7bf15bcf9307b3136826b6440e028a4916",
+  "tests": 14
+}

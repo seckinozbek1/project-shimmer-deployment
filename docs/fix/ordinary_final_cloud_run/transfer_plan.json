@@ -1,0 +1,24 @@
+{
+  "credentials_transferred": false,
+  "excluded": [
+    "all benchmark answer keys",
+    "all other corpora",
+    "TRAIN/DEV/HOLDOUT datasets",
+    "multi-round data",
+    "operator input",
+    "durable state",
+    "credentials",
+    "Git history"
+  ],
+  "local_paths_not_transferred": true,
+  "model_bytes": 10123020635,
+  "model_cache_local": "C:\\Users\\secki\\.cache\\huggingface\\hub",
+  "model_delivery": "Copy only manifest-listed snapshot files; create refs/main equal to pinned revision",
+  "project_archive": {
+    "bytes": 130873143,
+    "path": "project.tar.gz",
+    "sha256": "4867e1db33e656117844028d647744a6316f2a6b8154949cde9087a1f08c138a"
+  },
+  "wheel_bytes": 3026822853,
+  "wheelhouse_local": "C:\\Users\\secki\\local\\shimmer-deployment\\output\\cloud_wheels\\ordinary_final_cp312"
+}
