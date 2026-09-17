@@ -15,7 +15,7 @@
       "us-west-1"
     ]
   },
-  "epoch": 1789665244.908606,
+  "epoch": 1789665883.4928808,
   "image": {
     "architecture": "x86_64",
     "family": "lambda-stack-24-04",

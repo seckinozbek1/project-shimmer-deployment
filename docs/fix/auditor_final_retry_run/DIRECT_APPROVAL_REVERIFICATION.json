@@ -1,0 +1,9 @@
+{
+  "epoch": 1789665877.362492,
+  "verified": true,
+  "execution_manifest_sha256": "474d5354fe4bc6beee227e1586bb5da92647080984fe55f0f8adb003acc577d4",
+  "bundle_sha256": "f2d38f0989af23a4b9497d7b63ce6f057a7d56a6dcf57f3f3961477c1550fc82",
+  "all_source_and_test_hashes_match": true,
+  "launch_intent_absent": true,
+  "direct_operator_approval": "I approve the prepared single Lambda A10 retry, including model/adapter/TRAIN-data transfer, evaluation transfer only after 896 updates, and the $7 hard ceiling."
+}
