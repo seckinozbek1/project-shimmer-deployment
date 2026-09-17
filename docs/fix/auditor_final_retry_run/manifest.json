@@ -1,0 +1,32 @@
+{
+  "baseline_commit": "04cdb026484b38c4319b9d58a94e3fc20198c61c",
+  "bundle_sha256": "f2d38f0989af23a4b9497d7b63ce6f057a7d56a6dcf57f3f3961477c1550fc82",
+  "hard_seconds": 19534.883720930233,
+  "hard_usd": 7.0,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-auditor-final-retry",
+  "region": "us-east-1",
+  "reserve_seconds": 900,
+  "soft_seconds": 13953.488372093023,
+  "soft_usd": 5.0,
+  "source_commit": "c9c2380ad11abe8e8795ce13ed5d84a8b97f42df",
+  "termination_deadline_seconds": 19534.883720930233,
+  "watchdog_deadline_seconds": 19354.883720930233,
+  "workload_deadline_seconds": 18634.883720930233
+}

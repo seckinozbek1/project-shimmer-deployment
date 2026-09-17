@@ -1,0 +1,10 @@
+{
+  "execution_manifest_sha256": "474d5354fe4bc6beee227e1586bb5da92647080984fe55f0f8adb003acc577d4",
+  "logs": {
+    "admission_tests.log": "ca38836d45ac906a66faaca0f69cf4b9c5e1bcfd48da65371e9d384f3de03d4f",
+    "bundle_check.log": "3564e3aced16f1138b96805c1f8b5ef64ad72bd8a7106a88122fbf981711c114",
+    "final_contract_tests.log": "685c22d7ebb91759c33f8b80dc01eb105ee8a9f0b7e375b1ce149c0300489218",
+    "retry_tests.log": "b3e0cfd457887b12d1621e97de1efc11e25e45f043a5e720ca18ff83176fc5d1"
+  },
+  "passed": true
+}

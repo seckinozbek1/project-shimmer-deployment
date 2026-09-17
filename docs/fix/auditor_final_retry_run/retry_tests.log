@@ -1,0 +1,8 @@
+test_authorization_refused_before_provider (test_auditor_final_retry.RetryTests) ... ok
+test_consumed_marker_stops_before_provider (test_auditor_final_retry.RetryTests) ... ok
+test_delayed_evaluation_and_single_launch_structure (test_auditor_final_retry.RetryTests) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.013s
+
+OK
