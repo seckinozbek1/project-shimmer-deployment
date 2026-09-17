@@ -21,3 +21,6 @@ validate_auditor_feature_admission.py -text whitespace=cr-at-eol
 auditor_final_retry_cloud.py -text
 prepare_auditor_final_retry.py -text
 test_auditor_final_retry.py -text
+
+# Preserve post-retry evidence analyzer bytes.
+analyze_auditor_final_retry.py -text

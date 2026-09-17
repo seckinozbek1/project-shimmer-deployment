@@ -1,0 +1,4 @@
+/home/ubuntu/shimmer-auditor-final/.venv/lib/python3.12/site-packages/peft/utils/save_and_load.py:236: UserWarning: Could not find a config file in unsloth/Phi-3.5-mini-instruct-bnb-4bit - will assume that the vocabulary was not modified.
+  warnings.warn(
+/home/ubuntu/shimmer-auditor-final/.venv/lib/python3.12/site-packages/torch/utils/checkpoint.py:87: UserWarning: None of the inputs have requires_grad=True. Gradients will be None
+  warnings.warn(

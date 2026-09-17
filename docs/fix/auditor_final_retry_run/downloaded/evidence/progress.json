@@ -1,0 +1,12 @@
+{
+  "epoch": 1789670457.541652,
+  "phase": "evaluate_896",
+  "updates": 896,
+  "feature_rows": 1792,
+  "eval_rows": 495,
+  "remaining_seconds": 180.65,
+  "estimated_usd": 1.629094767264525,
+  "projected_with_reserve_usd": 2.0163276839311917,
+  "soft_reached": false,
+  "continue_run": true
+}

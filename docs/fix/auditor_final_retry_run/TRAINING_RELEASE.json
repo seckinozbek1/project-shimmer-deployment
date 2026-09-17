@@ -1,0 +1,16 @@
+{
+  "completion": {
+    "checkpoints": [
+      448,
+      896
+    ],
+    "complete": true,
+    "epoch": 1789670294.5188081,
+    "evaluation_rows_opened": 0,
+    "seal_sha256": "00b1b47b1534f17b8aae8d293977c94deae3ebaf2d2fded4c62c8cb0f03a0198",
+    "source_commit": "c9c2380ad11abe8e8795ce13ed5d84a8b97f42df",
+    "updates": 896
+  },
+  "epoch": 1789670300.1811526,
+  "evaluation_payload_not_previously_opened": true
+}

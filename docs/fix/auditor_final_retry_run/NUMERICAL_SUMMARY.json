@@ -1,0 +1,54 @@
+{
+  "ce": {
+    "min": 6.854528251665215e-07,
+    "max": 5.908917336491868
+  },
+  "head_gradient_norm": {
+    "min": 4.364782141244669e-05,
+    "max": 60.671178405798344
+  },
+  "lora_gradient_norm": {
+    "min": 0.0009569946492024406,
+    "max": 810.3379185993797
+  },
+  "pre_clip_norm": {
+    "min": 0.0009579895045960342,
+    "max": 811.2720493933342
+  },
+  "post_clip_norm": {
+    "min": 0.0009579895045960342,
+    "max": 1.0000001064543587
+  },
+  "head_parameter_delta_norm": {
+    "min": 0.013985735663245801,
+    "max": 0.10776124761349462
+  },
+  "lora_parameter_delta_norm": {
+    "min": 0.0004986496053479047,
+    "max": 0.0019829234323596296
+  },
+  "actual_head_lr": {
+    "min": 0.0009721418411547451,
+    "max": 0.0009721418411547451
+  },
+  "actual_lora_lr": {
+    "min": 1.2943234833221303e-07,
+    "max": 1.2943234833221302e-06
+  },
+  "microbatches": 3584,
+  "maximum_micro_ce": 20.327367782592773,
+  "optimizer_state": {
+    "448": {
+      "parameters_with_state": 450,
+      "min_step": 448,
+      "max_step": 448,
+      "moments_finite": true
+    },
+    "896": {
+      "parameters_with_state": 450,
+      "min_step": 896,
+      "max_step": 896,
+      "moments_finite": true
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "verdict": "AUDITOR_FINAL_COMPLETE",
+  "source_commit": "c9c2380ad11abe8e8795ce13ed5d84a8b97f42df",
+  "training_updates_verified": 896,
+  "zero_billable_resources": true,
+  "ssh_cleanup": true,
+  "estimated_cost_upper_bound_usd": 1.6791548249324162,
+  "collection_sha256": "6a6b8d9e43e9eda31dbeb31fa0ff9d849dbcb63aa3d31c38c7f9a52cfe0e3207",
+  "selected_step": 896,
+  "train_admission": 1792,
+  "old_quality_gates_all_pass": false,
+  "protected_test_consumed": false,
+  "additional_training_authorized": false,
+  "pushed": false
+}

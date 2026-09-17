@@ -1,0 +1,45 @@
+{
+  "updates": 200,
+  "rows": 1792,
+  "ce": 0.08585196733474731,
+  "metrics": {
+    "accuracy": 0.9927455357142857,
+    "macro_f1": 0.9927336256393637,
+    "per_class_recall": {
+      "MATCH": 0.9821428571428571,
+      "DIVERGENCE": 0.9888392857142857,
+      "OMISSION": 1.0,
+      "ADDITION": 1.0
+    },
+    "minimum_class_recall": 0.9821428571428571,
+    "ce": 0.08585196733474731,
+    "confusion_matrix": [
+      [
+        440,
+        5,
+        0,
+        3
+      ],
+      [
+        4,
+        443,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        448,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        448
+      ]
+    ]
+  },
+  "deterministic_repeat_forward_gradients_all_200": true,
+  "head_sha256": "027c880e6c10a13f3e7354d12665ffacca5f7d68836291feaf195c167c13f915"
+}

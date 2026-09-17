@@ -1,0 +1,84 @@
+{
+  "progress.json": {
+    "epoch": 1789670457.541652,
+    "phase": "evaluate_896",
+    "updates": 896,
+    "feature_rows": 1792,
+    "eval_rows": 495,
+    "remaining_seconds": 180.65,
+    "estimated_usd": 1.629094767264525,
+    "projected_with_reserve_usd": 2.0163276839311917,
+    "soft_reached": false,
+    "continue_run": true
+  },
+  "feature_admission.json": {
+    "rows": 1792,
+    "comparison": "exact FP32 byte SHA-256; no tolerance",
+    "historical_receipts_sha256": "75cd0e49a85e0fd9637141b836baf1be1c627cc6a6479127f2dcd8875441a11c",
+    "fresh_live_vectors": true,
+    "reference_substitution": false
+  },
+  "head_fit.json": {
+    "updates": 200,
+    "rows": 1792,
+    "ce": 0.08585196733474731,
+    "head_sha256": "027c880e6c10a13f3e7354d12665ffacca5f7d68836291feaf195c167c13f915"
+  },
+  "training_status.json": {
+    "complete": true,
+    "updates": 896,
+    "training_seconds": 3425.4928403650065,
+    "median_update_seconds": 3.733809233999864,
+    "max_memory_gib": 3.558657646179199
+  },
+  "TRAINING_COMPLETE.json": {
+    "complete": true,
+    "updates": 896,
+    "checkpoints": [
+      448,
+      896
+    ],
+    "epoch": 1789670294.5188081,
+    "source_commit": "c9c2380ad11abe8e8795ce13ed5d84a8b97f42df",
+    "seal_sha256": "00b1b47b1534f17b8aae8d293977c94deae3ebaf2d2fded4c62c8cb0f03a0198",
+    "evaluation_rows_opened": 0
+  },
+  "status.json": {
+    "verdict": "AUDITOR_FINAL_WORKFLOW_COMPLETE",
+    "selected_step": 896,
+    "selected_identity": {
+      "step": 896,
+      "lora_sha256": "0ec8212f5288e5960f1e816d93c9c7e1206eed7c380b45cf355ae0825ecc1b5e",
+      "config_sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+      "head_sha256": "6a2fcf89d3e843d5364443c20add30f0542e9dfbf00ff3b0e4d78ede397fdc3a",
+      "mean_sha256": "370b185841099279202b09540b45231f70fc1b109795faf520369964831678f5",
+      "std_sha256": "1221aff7ce64f090635267884183baabbd521e9a1738221555f074b4478f304a",
+      "base_state_sha256": "d07dae6b59e73394974e2699a2f66dad8c7d57be1c800c6774eccd114f38db18"
+    },
+    "all_old_quality_gates_pass": false,
+    "reason": "Finite complete candidate; prefer all old gates passing, then historical macro F1, external macro F1, minimum co-primary recall, lower step.",
+    "final_test_consumed": false,
+    "further_tuning_authorized": false,
+    "complete": true,
+    "updates": 896,
+    "eval_forward_rows": 496,
+    "epoch": 1789670461.108135
+  },
+  "latest_update": {
+    "update": 896,
+    "seconds": 7.2464124429998265,
+    "ce": 0.16694034174224726,
+    "head_gradient_norm": 8.438231550378815,
+    "lora_gradient_norm": 172.43319036953457,
+    "pre_clip_norm": 172.63953455890095,
+    "post_clip_norm": 0.9999999505673357,
+    "head_parameter_delta_norm": 0.016466522746609754,
+    "lora_parameter_delta_norm": 0.0007269213589650083,
+    "actual_head_lr": 0.0009721418411547451,
+    "actual_lora_lr": 1.2943234833221302e-06
+  },
+  "saved_checkpoints": [
+    448,
+    896
+  ]
+}
