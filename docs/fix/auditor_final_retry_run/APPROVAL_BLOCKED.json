@@ -1,0 +1,16 @@
+{
+  "status": "AUDITOR_FINAL_NOT_STARTED_APPROVAL_BLOCKED",
+  "epoch": 1789665565.1961167,
+  "provider_launches": 0,
+  "optimizer_updates": 0,
+  "admitted_rows": 0,
+  "estimated_cost_usd": 0,
+  "launch_intent_absent": true,
+  "local_ssh_credentials_absent": true,
+  "action": "tools/auditor_final_retry_cloud.py execute",
+  "review_reason": "Automatic approval review rejected paid cloud execution and private model/adapter/TRAIN egress because it did not accept the pasted attachment as explicit user authorization. Direct approval is required; no workaround or retry attempted.",
+  "prepared_source_commit": "c9c2380ad11abe8e8795ce13ed5d84a8b97f42df",
+  "preparation_commit": "b0c47e6",
+  "training_started": false,
+  "evaluation_material_opened": false
+}
