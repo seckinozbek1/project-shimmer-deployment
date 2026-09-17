@@ -1,0 +1,334 @@
+{
+  "local_only_binaries": {
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/finite_partial_state.safetensors": {
+      "bytes": 59884360,
+      "sha256": "aae5bb0d89a879accee765aba5baf7ece669d396464072a2913ffcbae356c951"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/evidence.tar.gz": {
+      "bytes": 56276679,
+      "sha256": "0d7c7ac66df8a6d92e183d1f58f43b64c5457d6f6123bbcb5125341716f02be8"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/runtime_bundle.zip": {
+      "bytes": 111691728,
+      "sha256": "784bcdcbac6c0ec0a0db45ee9528c4f3ac19cfae33bfd9b80672a9e7e004bfed"
+    }
+  },
+  "source_payload_files": "Additional downloaded tuning copies are retained locally; exact hashes are in execution_manifest.json and committed source.",
+  "tested_commit": "23f6271d8401ab068c23747fa994130db3825dd2",
+  "text_files": {
+    "docs/fix/auditor_classifier_lora_stabilized_run/CURRENT_PHASE.json": {
+      "bytes": 109,
+      "sha256": "1b2c1dd10e3c1247aded5fd26aae80857f6622873f4b0a53ba2100c7ad47e3c3"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/LAUNCH_INTENT.json": {
+      "bytes": 115,
+      "sha256": "8028f67598b08812e9dcd889702a31b72aa0e244c7b58d2d9f24b4d60fd62d78"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/LOCAL_GATES.json": {
+      "bytes": 163,
+      "sha256": "9c1440df5c1a894175d576b2cb1815b28fd8d92f11e9d64d9189b8a506d3cb10"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/PARTIAL_STATE_VERIFICATION.json": {
+      "bytes": 365,
+      "sha256": "195c959af1d6ab2f0a3f7976d28a158dada5be059b74e4f1fdb52ba6c0459b8e"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/RECOMPUTED_RESULTS.json": {
+      "bytes": 2469,
+      "sha256": "b7cb3709c4b04e167780d7d493300531ff464d0d16be0cbc08b3f0698afc6820"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/TERMINATION_VERIFIED.json": {
+      "bytes": 354,
+      "sha256": "42dacf592b66c30530786dfd61da9a7e331527a937bbc4675602113e35759670"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/WATCHDOG_ARMED.json": {
+      "bytes": 59,
+      "sha256": "c2204e37cc1d4ddb41abe1fe22aabce566f09d4e96b4c58b023be8ac1bdccac0"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/acquisition.log": {
+      "bytes": 921,
+      "sha256": "c47c1ecfd3861b492b2af3e08337c1c0882412839eb00208e28bb0b5b23aef2f"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/acquisition_timing.json": {
+      "bytes": 91,
+      "sha256": "fcb0d4273b7f6dac15a238e7f061476eb7931f21d4a0801fd45258835807f5b5"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/activation.json": {
+      "bytes": 417,
+      "sha256": "6103e3115cfb787320c66155ea3c62aac674d537ba392c3fed57a90308de04d5"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/budget.json": {
+      "bytes": 237,
+      "sha256": "c9c3a9e1fdb5d3dceb6d48c84457c30363ebc490e1be6eb2fae54f4a6ec70cf1"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/budget_transfer.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/budget_transfer_timing.json": {
+      "bytes": 92,
+      "sha256": "de53ff181f50b133c3912c97ba6e760dd6dc1d33a8f1162474b5b3157ce5399b"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/bundle_check.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/bundle_check_results.json": {
+      "bytes": 98,
+      "sha256": "78294b96f3428ecebd3077fadaec45325bd851ff44a9a94fbc4a8c429cc641fd"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/classification_only.log": {
+      "bytes": 1896,
+      "sha256": "cf94ce5f55a59a2ccb2dbe8cb3f87d7d1e9b8251a50c1c63f3b30ca31825ab1d"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/classification_only_timing.json": {
+      "bytes": 92,
+      "sha256": "5c6bcc1b6465491865b00b8443d6610314009285c593c49ca49800c06867437c"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/cleanup.json": {
+      "bytes": 112,
+      "sha256": "fde6245805a136864f02de2f19a1bdb6fba2a09f792dc5c33316faa107cd5d5b"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/collection_integrity.json": {
+      "bytes": 104,
+      "sha256": "299e70bff45324ac894b78db03791df9c14586087264f5a39a4d2ea85db72395"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/controller_failure.json": {
+      "bytes": 107,
+      "sha256": "b7e9783a33af5f2db376db68d6f70c5fd4317898b6d969b8d63e52ab2fcc723a"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/cost.json": {
+      "bytes": 73,
+      "sha256": "b6cff404032fc0fc1b33b3abe67502d2c7368590ad300ee0ace9e64b95011d00"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/dependencies_install.log": {
+      "bytes": 11366,
+      "sha256": "b13e84cbd03dafcbaf91f583607ec7c6588a737cc1f01d6496a11261ed47741c"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/dependencies_install_timing.json": {
+      "bytes": 92,
+      "sha256": "2c7a6d64fd966882b272b25882ae893a1752782804bd228abd46f57ec3184033"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/budget.json": {
+      "bytes": 237,
+      "sha256": "c9c3a9e1fdb5d3dceb6d48c84457c30363ebc490e1be6eb2fae54f4a6ec70cf1"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/acquisition.json": {
+      "bytes": 949,
+      "sha256": "68d5d6a7e33e92c6a26f5e3c6cb40533f9a093a89d4cca00ce61ed4994b22b0a"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/budget_timeline.jsonl": {
+      "bytes": 8450,
+      "sha256": "31f9f5f8b5bbc3957515b1792f127cb36c92eee785f3f9e672fb82dd8683bd3a"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/initialization.json": {
+      "bytes": 323,
+      "sha256": "18a1dd772e708d2dbec1bcab80218f1c3bf6285edb963d9d67653b9a52f98f46"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/preflight.json": {
+      "bytes": 172,
+      "sha256": "5813852619c31518b66d19e221be02465fb7b9b7ccd9d50b526d6d65e7cb0e7d"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/progress.json": {
+      "bytes": 278,
+      "sha256": "dcb57b0e0b699b86473f96069d86c8295c9a4e76b0184d734457773c35048bcc"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/status.json": {
+      "bytes": 195,
+      "sha256": "5bc9930d914ae862baf3ba573b11657811bb14eb4220845f6e4e929d4e5d7ba8"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/telemetry.jsonl": {
+      "bytes": 2110,
+      "sha256": "81e5c0d2e4f032fe4f0d23c9b63cffcba3e5989191df7325567d43dd5d4cca0c"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/update0_parity.jsonl": {
+      "bytes": 3053,
+      "sha256": "66f49ed6e1d514348aabc53cde71a318d1664d943d706211c54dbe8939e3d98b"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/evidence/update0_predictions.jsonl": {
+      "bytes": 8109,
+      "sha256": "3a186609f9d4a96731cbf22b0e8b2f732f6d24287202bc671da6cc0b2ceecdba"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/execution_manifest.json": {
+      "bytes": 3331,
+      "sha256": "c4d5463bf4e1f92d06a7a69b7ff9b112c9db6eaa4a61cbb60012a3cda4e9d385"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/tools/auditor_classifier_lora_core.py": {
+      "bytes": 7080,
+      "sha256": "2db4d4d00066c4b365fbcbe09e8f4b27c7a6e4d58673253a36d635516ec8a327"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/tools/auditor_classifier_lora_fork.py": {
+      "bytes": 13199,
+      "sha256": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/tools/auditor_classifier_lora_stabilized_remote.py": {
+      "bytes": 15582,
+      "sha256": "95914228bd9e1965b3f6a9de961f2fb3220de0d659503ff1f2405a4b5836d8e1"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/tools/auditor_classifier_lora_stable.py": {
+      "bytes": 13758,
+      "sha256": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/downloaded/training_authorization.json": {
+      "bytes": 749,
+      "sha256": "11e8fd25a2360a17be727487982065eed1552e4bbe919a217d8bd297f6c7681f"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/evidence_download.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/evidence_download_timing.json": {
+      "bytes": 90,
+      "sha256": "7f994cfa74fd5c39bc21795c8e09b76146ac1fb0eee3716138251bf5d03f4e18"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/evidence_hash.log": {
+      "bytes": 133,
+      "sha256": "2be5fb7907d24f3600d999fb4a9e76b9993f839a92a7645162a6497fe35ec957"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/evidence_hash_timing.json": {
+      "bytes": 92,
+      "sha256": "8850d392f2eb9649148b4dd600d679de0b8d83e35c237581f34ec75cb61d86d1"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/execution_manifest.json": {
+      "bytes": 3331,
+      "sha256": "c4d5463bf4e1f92d06a7a69b7ff9b112c9db6eaa4a61cbb60012a3cda4e9d385"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/final_inventory_confirmation.json": {
+      "bytes": 88,
+      "sha256": "d981304c9a1392ebda6d63a75813edfb16c3073a028e7b32f0a040080553c17d"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/images.json": {
+      "bytes": 48886,
+      "sha256": "c96ce41b7bc02972c51d360367069e4c6c6bb9b8f2632fee7bdebbe8fd4dd396"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/instance_state.json": {
+      "bytes": 151,
+      "sha256": "b2c112b5a7af19d3a923635e9cd417d41d67c1d9ab2121994a2ea2b7fe536086"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/instances_after.json": {
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/launch.json": {
+      "bytes": 87,
+      "sha256": "c81c86c98f9157691fcd750b5bde9b3216f80baff91ce98577a44b73d7ad70ca"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/live_capacity.json": {
+      "bytes": 434,
+      "sha256": "539b18ed9cd303c293b8d1474eb8296c06fdd83afb61072d48999c16e03a38c6"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/local_tests.log": {
+      "bytes": 157,
+      "sha256": "f2c4cb655f8abcf9643f27cbcb7ad5c68a045075c720f104b1e7650dfc443d72"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/manifest.json": {
+      "bytes": 989,
+      "sha256": "fa7f16c22281d78c90807c090d343ab7e5ad93a5ebf06fae1dee7ab4c9d71b2f"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/mkdir.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/mkdir_timing.json": {
+      "bytes": 91,
+      "sha256": "62b68d9d5c351790abd0eb8655c517be69fe62d0884c757b01465f96aa286f23"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/pack_evidence.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/pack_evidence_timing.json": {
+      "bytes": 91,
+      "sha256": "3facd1b94f8c7eeda124647b35c024cddb14ca4a06d96f93bd1e13b538603ba1"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/pre_acquisition.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/pre_acquisition_timing.json": {
+      "bytes": 91,
+      "sha256": "a922f9b3ad4a02ba23cd4d94b41414114b37cd33b423edf9ceb9b2e8d5e4b178"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/preservation_before.json": {
+      "bytes": 1723,
+      "sha256": "823d04c1043fb2d67aa30e3b406337228695ade7544c357daf9fac261fc769cf"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/process_final.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/process_final_timing.json": {
+      "bytes": 91,
+      "sha256": "3cd7ef5953ea6c445d10ad0d04f26082148adbe9e4bc64460f30845ea2dfdce6"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/python_gate.log": {
+      "bytes": 50,
+      "sha256": "0b113da3ac02c2045dd8a4aeea1877f3838788d0454d61f851e2050547e3c84b"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/python_gate_timing.json": {
+      "bytes": 91,
+      "sha256": "ed3adcc30606a1b6035c7fa50389ea64f5eaccf3c8284afb757fe963b850f805"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/runtime_transfer.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/runtime_transfer_timing.json": {
+      "bytes": 91,
+      "sha256": "a261af27909fba43d8e653e6cd795050bb4612821b1c052fdc6fc6c07e551ed3"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/ssh_ready_0.log": {
+      "bytes": 83,
+      "sha256": "c706d90a7a5737dd81528311a151f3769de586f3d404a819c03ce7c57da9ec38"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/ssh_ready_0_timing.json": {
+      "bytes": 92,
+      "sha256": "6744a47ee8f5c1102f3f886d7241bd5660c13fbb03f769b26ce8a53880cec732"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/ssh_registration.json": {
+      "bytes": 98,
+      "sha256": "21317d31b42368674573be3cbdcf66122713b4932f33558f322f6b3926946d83"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/stop_workloads.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/stop_workloads_timing.json": {
+      "bytes": 92,
+      "sha256": "6ac8e225cbbdc66527dfb27c5c04f7424c3cbcda5f30cddc433fb6925e1e7922"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/termination_requested.json": {
+      "bytes": 132,
+      "sha256": "9f2fe416b53f4dc7e18389e1d2f9f48185201c3d1e5e42a3d484e92d83b8598c"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/torch_install.log": {
+      "bytes": 9089,
+      "sha256": "83b04b3da2f085dcc70f93685b664d12f6614bfd181d42987d55eb44ea0aac8b"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/torch_install_timing.json": {
+      "bytes": 90,
+      "sha256": "95972e469d18bfb19c0058fb154a1a37ecbae59d5ea3b0dd9a20f109a92a7c49"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/training_authorization.json": {
+      "bytes": 749,
+      "sha256": "11e8fd25a2360a17be727487982065eed1552e4bbe919a217d8bd297f6c7681f"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/unpack.log": {
+      "bytes": 23,
+      "sha256": "d66d35fe3d2ec09868155a3f7875181c19f93a558ba49f3005c655e00224b545"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/unpack_timing.json": {
+      "bytes": 92,
+      "sha256": "f496bb3fc7efbf3e0f137a8dad0febbd50787c42f7faa31e14f31f0bbcc7ae8d"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/venv.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "docs/fix/auditor_classifier_lora_stabilized_run/venv_timing.json": {
+      "bytes": 92,
+      "sha256": "98d5bd34375a2ae80a5e63f4531fb92bd9dc4624f196ddc7948d759a6be12c9c"
+    }
+  },
+  "verdict": "AUDITOR_CLASSIFIER_LORA_INDETERMINATE",
+  "zero_billable_resources": true
+}
