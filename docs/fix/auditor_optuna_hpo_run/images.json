@@ -1,0 +1,1815 @@
+[
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "8f07a192-2bc7-474b-9df5-7d664034fbaa",
+    "region": "us-west-3",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "44fac5cf-a5de-4b0b-9d09-3aa1483c7173",
+    "region": "us-west-3",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "fab3336b-5a3f-403c-bbe3-beee62cd7cbe",
+    "region": "us-west-3",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "f9a628b7-1df6-4f41-9da2-e5b560a1ec96",
+    "region": "us-west-3",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "13a27f0a-8ae7-410b-839a-afc3d8cfdee3",
+    "region": "us-west-3",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "0f5effac-7274-4142-bdbe-c981a7a528f2",
+    "region": "us-west-3",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "7ad92dca-f3d0-417a-ab8b-e90f32bb0520",
+    "region": "us-west-3",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "c1964bf3-f0bc-4aed-8584-03eb27efca1c",
+    "region": "us-west-3",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "16b41dcb-8f7b-4f7c-a123-ea95e828e39c",
+    "region": "us-west-3",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "6df77351-e13a-4f4f-aacb-59e0bf28828d",
+    "region": "us-west-3",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "d4745ca5-abd9-474d-842d-3fe60ee2eb66",
+    "region": "us-west-3",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "496dafa8-8dab-4a2d-afbf-b94e5d09d53f",
+    "region": "us-west-3",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "3cfd8a13-321c-4830-969f-111918b58166",
+    "region": "us-west-3",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "6ebca197-2aba-419e-9eab-79445b2a9e19",
+    "region": "us-west-3",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "a9207a11-7ed6-4dc4-850e-5685434b2704",
+    "region": "us-west-3",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "792d0d50-890a-47e9-97c0-804be807cdf9",
+    "region": "us-midwest-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "f024e4d8-da8e-4592-8296-61dc6e112ba9",
+    "region": "us-midwest-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "7780bf81-418d-4153-bf15-55ac3e8b45b2",
+    "region": "us-midwest-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "36d3e594-b925-4ef2-b803-0094a76571f6",
+    "region": "us-midwest-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "8f4debd5-42f5-4ef9-bce7-76a30d0e4d24",
+    "region": "us-midwest-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "0ce63c6f-cd1c-462b-a42c-c824ee8be160",
+    "region": "us-midwest-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "2c4d24ea-5e89-461d-a587-f44199e62338",
+    "region": "us-midwest-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "907d5334-5657-41ae-8ba8-fe6812649668",
+    "region": "us-midwest-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "e948bca3-d1b6-4e83-a3ba-1ac58af35af0",
+    "region": "us-midwest-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "c5ae8f4b-f876-4d3d-aab8-7e4f77838a5d",
+    "region": "us-midwest-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "b742e4a3-5a33-4375-8804-6df6b255514a",
+    "region": "us-midwest-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "42e03f08-e4c6-4f56-9bb7-9e66d309873b",
+    "region": "us-midwest-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "0958c796-070d-4861-ab03-ce7f3f1734b3",
+    "region": "us-midwest-2",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "9f24a1a9-ea8c-4cef-adb2-ccaa21ff344a",
+    "region": "us-midwest-2",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "asia-northeast-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "asia-northeast-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "asia-northeast-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "asia-northeast-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "asia-northeast-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "asia-northeast-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "asia-northeast-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "asia-northeast-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "asia-northeast-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "asia-northeast-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "asia-northeast-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "asia-northeast-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "asia-northeast-2",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "asia-northeast-2",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "asia-northeast-2",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9e74896d-7fdf-4a54-901c-1aaa8677dc0e",
+    "region": "us-east-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "fd0d8bdb-e434-4dba-afaa-9d33fff09b32",
+    "region": "us-east-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "ec47896a-d162-41e4-b6fe-f5feb7d33cd8",
+    "region": "us-east-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "c21e7e35-0129-43af-8276-9101bf4b74ea",
+    "region": "us-east-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "9373db11-32a2-467e-a436-0a456748f092",
+    "region": "us-east-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e7cb3a69-fd51-4d0c-a4f3-dd6fc980319a",
+    "region": "us-east-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b0b2214b-b2a6-4135-8e5f-f59d51934a4a",
+    "region": "us-east-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "a96feed1-5684-4687-8bee-953558350062",
+    "region": "us-east-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "d81f8657-2a16-43bb-a810-f6033afcc399",
+    "region": "us-east-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "222dd329-2d28-4b09-9c94-078b515a3a23",
+    "region": "us-east-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "d20a72ff-75f4-4a70-8a9a-c6161c210dce",
+    "region": "us-east-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "08151eac-0619-4cd3-acab-5786a5fda1e4",
+    "region": "us-east-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "39c66112-e8af-4ecb-a690-2ea525cf0ef2",
+    "region": "us-east-2",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "3b31c30c-7645-4e80-ad5d-0c5652ebb616",
+    "region": "us-east-2",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "a96996c5-02d3-49eb-8914-c1ddb20d3b08",
+    "region": "us-east-2",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-legacy-22-04",
+    "id": "f98d87fb-93d4-436b-bf2a-58ae7b4a3b77",
+    "region": "us-south-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "75d1f341-bd93-4509-9555-48430d8135c7",
+    "region": "us-south-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "872d8128-f8bb-48fd-8270-d96b5cf4e412",
+    "region": "us-south-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "7b07933b-2d62-4597-997c-17fbc76130b1",
+    "region": "us-south-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "fc830359-21b0-41ff-8627-080e392d172a",
+    "region": "us-south-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "679702d0-1cab-49ce-929c-253cddb428a1",
+    "region": "us-south-2",
+    "version": "22.4.5-1866"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "056db8a4-67eb-4152-9db9-532d95a087d5",
+    "region": "us-south-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "8f48d3b4-f916-422c-8619-978d6c1d26ce",
+    "region": "us-south-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "35814568-0122-4932-ac4c-3a5e33b2327a",
+    "region": "us-south-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "d0050873-8576-4415-b074-2843f6286a80",
+    "region": "us-south-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-legacy-22-04",
+    "id": "15c1034f-5e2e-4b7a-9ebd-8c8847440e1c",
+    "region": "us-south-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-legacy-22-04",
+    "id": "7667b0f8-a7e0-4653-bd38-18c2b9a20e70",
+    "region": "us-south-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "286092df-662d-4818-8b90-4670d7f2535f",
+    "region": "us-south-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "9dbea942-2fa9-4e81-9310-50c779a2412d",
+    "region": "us-south-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "21c00c0d-7a24-49ad-8192-a6858dd00dad",
+    "region": "us-south-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "fb633aee-2605-41b8-b653-953322f50cd3",
+    "region": "us-south-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "c03081da-ca59-4e02-a273-c70ec2853806",
+    "region": "us-south-2",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "fcdc36ad-41b5-4688-a584-8d1f2d08d478",
+    "region": "us-south-2",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "694f7ddf-5c43-41d5-b9cf-f3ff88f4f795",
+    "region": "us-south-2",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "us-east-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "us-east-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "us-east-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "us-east-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "us-east-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "us-east-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "us-east-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "us-east-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "us-east-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "us-east-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "us-east-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "us-east-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "us-east-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "f6e3ecd8-ee09-46e9-8b94-36fd4d0c6b56",
+    "region": "us-south-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "dc3d205d-bb11-47b8-ab49-29d9a518393a",
+    "region": "us-south-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "eaeaace1-c080-4c9d-8544-485f2b3208a4",
+    "region": "us-south-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "5488873a-c214-4c2a-9261-59db4434d818",
+    "region": "us-south-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "683e340e-931c-412c-be9a-cdf2959eff1b",
+    "region": "us-south-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "2bea0d7c-b427-4e4c-97a0-b467f614cd0e",
+    "region": "us-south-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "7299a1d1-928b-441c-80ec-d099fcdf7439",
+    "region": "us-south-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "54ea7a76-7d4d-4d67-a5ee-57f5a729315a",
+    "region": "us-south-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-legacy-22-04",
+    "id": "44a27ce7-8294-4129-9103-e62d5c14df58",
+    "region": "us-south-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "3cbfbff4-1a2d-42f7-9285-1738fd50182e",
+    "region": "us-south-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "d084e71d-a08f-4378-89cc-7ce5ce1dacd8",
+    "region": "us-south-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "bc09a11b-f2f1-4e83-a7ab-3eec67f4fd13",
+    "region": "us-south-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "bc089187-a08c-410f-bc29-5da775ee0a04",
+    "region": "us-south-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-legacy-22-04",
+    "id": "9ad08af3-e8dd-4196-82bb-142727f11fa6",
+    "region": "us-south-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "a7ffcea0-9fb6-4bbf-973c-e36c7b711ade",
+    "region": "us-south-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "e74fbc9b-b153-4192-9011-bb116fbb121a",
+    "region": "us-south-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-legacy-22-04",
+    "id": "61855cae-8d3b-4fba-b42f-441ef64cdef7",
+    "region": "us-south-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "38e2d3e5-cb1e-4c0e-8b96-8e69b516e300",
+    "region": "us-south-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "australia-east-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "australia-east-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "australia-east-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "australia-east-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "australia-east-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "australia-east-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "australia-east-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "australia-east-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "australia-east-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "australia-east-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "australia-east-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "australia-east-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "australia-east-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "australia-east-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "australia-east-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "arm64",
+    "family": "gpu-base-22-04",
+    "id": "581be1b7-d9b2-4d69-97de-b2508d0a8b7a",
+    "region": "us-east-3",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "arm64",
+    "family": "lambda-stack-24-04",
+    "id": "e5300d31-0449-4583-8829-7d66868f1075",
+    "region": "us-east-3",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "arm64",
+    "family": "lambda-stack-22-04",
+    "id": "ee7dc72d-4410-4333-ab24-8a95ee9cd3a0",
+    "region": "us-east-3",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "arm64",
+    "family": "gpu-base-24-04",
+    "id": "9e8dc28a-4e81-402b-9a48-57aa2dc1c89f",
+    "region": "us-east-3",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "arm64",
+    "family": "lambda-stack-24-04",
+    "id": "a48f8a1a-5dd3-4dca-8488-8c36bd9e6221",
+    "region": "us-east-3",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "arm64",
+    "family": "lambda-stack-22-04",
+    "id": "e4148e63-a603-4163-b3e4-07602648f525",
+    "region": "us-east-3",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "arm64",
+    "family": "lambda-stack-22-04",
+    "id": "0eb41057-8eb0-4303-8364-ca93b87e49b5",
+    "region": "us-east-3",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "arm64",
+    "family": "lambda-stack-24-04",
+    "id": "e57d5fc7-36e7-4f9a-953f-3429c1f7e3b7",
+    "region": "us-east-3",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "arm64",
+    "family": "lambda-stack-22-04",
+    "id": "78512ef8-8f06-45eb-9ce6-aee96622f787",
+    "region": "us-east-3",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "us-midwest-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "us-midwest-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-midwest-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "us-midwest-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "us-midwest-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "us-midwest-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "us-midwest-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "us-midwest-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "us-midwest-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "us-midwest-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "us-midwest-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "us-midwest-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "us-midwest-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "us-midwest-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "us-midwest-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "f72ac1dc-bd65-4df1-b8a5-2d831cca5774",
+    "region": "us-southeast-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ac0211cc-695e-4c21-a51e-5d2705001293",
+    "region": "us-southeast-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "ccda5336-8ba8-4656-9ad9-9905d5354e3c",
+    "region": "us-southeast-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "0c29be65-5203-4bb8-9e9d-1a6d2c61581a",
+    "region": "us-southeast-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "us-west-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "us-west-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-west-2",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "us-west-2",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "us-west-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "us-west-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "us-west-2",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "us-west-2",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "us-west-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "us-west-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "us-west-2",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "us-west-2",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "us-west-2",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "us-west-2",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "us-west-2",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "asia-south-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "asia-south-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "asia-south-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "asia-south-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "asia-south-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "asia-south-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "asia-south-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "asia-south-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "asia-south-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "asia-south-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "asia-south-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "asia-south-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "asia-south-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "asia-south-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "asia-south-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "me-west-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "me-west-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "me-west-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "me-west-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "me-west-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "me-west-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "me-west-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "me-west-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "me-west-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "me-west-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "me-west-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "me-west-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "me-west-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "me-west-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "me-west-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "europe-central-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "europe-central-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "europe-central-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "europe-central-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "europe-central-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "europe-central-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "europe-central-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "europe-central-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "europe-central-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "europe-central-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "europe-central-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "europe-central-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "europe-central-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "europe-central-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "europe-central-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "us-west-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "us-west-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-west-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "us-west-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "us-west-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "us-west-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "us-west-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "us-west-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "us-west-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "us-west-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "us-west-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "us-west-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "us-west-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "us-west-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "us-west-1",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "528a4083-53f0-450b-8362-eb3f4ad7e924",
+    "region": "us-south-3",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "5ad679bf-743c-4125-adc1-5a027c7005c9",
+    "region": "us-south-3",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "d15b4fce-db68-4ad8-ad21-23e4018b8bcd",
+    "region": "us-south-3",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "37678846-b61d-40bd-8e43-e9a3ce614580",
+    "region": "us-south-3",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "548747a0-0856-441a-bd43-18265d0d88f6",
+    "region": "us-south-3",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "48c2d203-57ec-4a7f-b168-3f8730dbcf0f",
+    "region": "us-south-3",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "8999be6b-5882-4968-8df1-573770b07529",
+    "region": "us-south-3",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "b23e2b09-babd-4fd8-a9fa-2621c2b3d8e4",
+    "region": "us-south-3",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "2459bf44-f1df-4449-985d-7fc29c5a7bef",
+    "region": "us-south-3",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e16ee41c-94ba-4682-97e3-848f4a834423",
+    "region": "us-south-3",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "17ba87d4-7e2e-41c1-aeca-ae2db20b41a4",
+    "region": "us-south-3",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "b389a52f-2e75-4b1c-b21c-4ba4bb42fca8",
+    "region": "us-south-3",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "26cd4787-f1aa-4c30-bb16-b4476daba409",
+    "region": "us-south-3",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "2362a139-8323-4443-81b8-58e96f0f64f4",
+    "region": "us-south-3",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "418327d8-1ec8-43dd-9b42-8c786bf5fe18",
+    "region": "us-south-3",
+    "version": "22.4.5-1026"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "asia-northeast-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "ebb89814-904a-4af5-91fe-7570059b1105",
+    "region": "asia-northeast-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "asia-northeast-1",
+    "version": "24.4.4-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "44fab622-b98a-49fe-ac6d-e4ce5531532f",
+    "region": "asia-northeast-1",
+    "version": "22.4.5-2141"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "87d67ca4-8160-4c27-bc1d-fa620b23d14e",
+    "region": "asia-northeast-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "e6adfdc4-cbd6-4880-bc7f-4d8b8d97f9df",
+    "region": "asia-northeast-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "b07e0f25-6628-4da9-b88b-02a5253e8926",
+    "region": "asia-northeast-1",
+    "version": "24.4.3-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "e088ff42-1a2a-4c80-a2d6-98909b1b5d6d",
+    "region": "asia-northeast-1",
+    "version": "22.4.5-1722"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "5ca753ed-0408-480d-a749-c17935e83072",
+    "region": "asia-northeast-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "gpu-base-22-04",
+    "id": "87a00082-3c81-48e9-aa2f-38197fa4c244",
+    "region": "asia-northeast-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "55d11912-9ff1-4079-9202-3058709784ee",
+    "region": "asia-northeast-1",
+    "version": "24.4.2-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "4ff21799-3c5e-4448-963e-046700d652c0",
+    "region": "asia-northeast-1",
+    "version": "22.4.5-1459"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-24-04",
+    "id": "6c389693-2b2d-47a3-93da-052c2331bd98",
+    "region": "asia-northeast-1",
+    "version": "24.4.2-20250626"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "ubuntu-22-04",
+    "id": "46b7dad7-8b02-4cea-8c12-8ede60b39698",
+    "region": "asia-northeast-1",
+    "version": "22.4.5-20250702"
+  },
+  {
+    "architecture": "x86_64",
+    "family": "lambda-stack-22-04",
+    "id": "1ccaf2d0-3e9e-49cf-a8a4-4e2d2d181b77",
+    "region": "asia-northeast-1",
+    "version": "22.4.5-1026"
+  }
+]

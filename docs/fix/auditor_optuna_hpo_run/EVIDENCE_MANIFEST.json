@@ -1,0 +1,582 @@
+{
+  "verdict": "AUDITOR_OPTUNA_HPO_CANDIDATE",
+  "source_commit": "ea2b72373a384e29a6344c762b8b7d12ef450741",
+  "retained_text": [
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/.gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+      "bytes": 8
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/acquisition.log",
+      "sha256": "16e4be1a57de22aaddbb06f2be23b884d3ef4578e62677b51f1a769eb41e1cc0",
+      "bytes": 921
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/acquisition_timing.json",
+      "sha256": "0ef44c5b004f940a2b352a669f8f3aa210b907577af71500270e1536e08585cd",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/activation.json",
+      "sha256": "bc92dc1055be6bd56c97ce0d788b4300e551dc1331a39db419df6bf146913140",
+      "bytes": 409
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/budget.json",
+      "sha256": "918dfdcae7009e87653facdac1499451d841110401624109fc540e417b9d63ef",
+      "bytes": 237
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/budget_transfer.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/budget_transfer_timing.json",
+      "sha256": "3f4b2237c7cca7ab965b3b9192a16e7fa643a46d80b6b906a0e69d97aea8b703",
+      "bytes": 90
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/bundle_check.log",
+      "sha256": "185b7ea8418ef788905202f74aae1a0daa9d64b8adfdc404ca8555a8b5730642",
+      "bytes": 35
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/bundle_check_results.json",
+      "sha256": "19d86c70af4c4c7e8375154c06fb5e481a8643cacc7450e1d5abe7672f414d61",
+      "bytes": 95
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/classification_only.log",
+      "sha256": "eb014c1a57a5273672cbb4b0c84b5d07f5103d46d44a5c6dcb9c584ae4db1183",
+      "bytes": 2028
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/classification_only_timing.json",
+      "sha256": "51699f74651bbc7d5f914bd3a6ca4c2d5e6f93dc1c2ade0af6a36492165f7f44",
+      "bytes": 90
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/cleanup.json",
+      "sha256": "fde6245805a136864f02de2f19a1bdb6fba2a09f792dc5c33316faa107cd5d5b",
+      "bytes": 112
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/collection_integrity.json",
+      "sha256": "33a00af8068726dc2240cf0eef466b6784db921007d79dd1e2dbeeb5e93662b4",
+      "bytes": 104
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/cost.json",
+      "sha256": "4bfceb0de9d9d6565ec5285d272c925e665d5ab8eb5ff42eab05125998cc6473",
+      "bytes": 73
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/CURRENT_PHASE.json",
+      "sha256": "74f59c2c56ff1ecf50f1ad21b2b173d6181c205b1f58657a7b1d2d408a600ae6",
+      "bytes": 109
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/dependencies_install.log",
+      "sha256": "b04412525786165339096310d8ad7d50135260492093715bc3c40c3dd71243ab",
+      "bytes": 14064
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/dependencies_install_timing.json",
+      "sha256": "634bc576654c51b4e3b35c593df84edf9704208ab5c2b6b9ef9f75b57a3bb877",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/budget.json",
+      "sha256": "918dfdcae7009e87653facdac1499451d841110401624109fc540e417b9d63ef",
+      "bytes": 237
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/evidence/acquisition.json",
+      "sha256": "f353a6179d2ad3546eb6ae3e3e3dcf537019f4859c0adfd7df6cee1999bee2e4",
+      "bytes": 914
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/evidence/data_access.json",
+      "sha256": "aeebc755efbee32e22688ddfae6356a1c1bfe0fa2512730692d413541038fcc3",
+      "bytes": 1304
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/evidence/events.jsonl",
+      "sha256": "1c541689a3ec22709c80c5855f4d94557d5c359d0070c0e4c773380474d1f441",
+      "bytes": 36770421
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/evidence/HPO_ATTEMPTED",
+      "sha256": "19cc818957b2300a334e15085f178ccf5ce5238c5470f1c0c5b0edc92fcd2c06",
+      "bytes": 41
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/evidence/operational_preflight.json",
+      "sha256": "1180bbbb61c8ec790cc9b37fdea9b55edb5cfcd503d5f8cc24563e30fae8b18a",
+      "bytes": 729
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/evidence/trials.json",
+      "sha256": "632650899e130c61ad43e733579d87d628acc1ef1d9431f79416856007826ac6",
+      "bytes": 9078
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/evidence/winner.json",
+      "sha256": "e8c17a3559bf7e271d2edd35c843ab7b6cf2e6d749e279f35fbcf4c9d3395a88",
+      "bytes": 1195
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/execution_manifest.json",
+      "sha256": "6a203b39c52f1792bfdc4ed88f95105b07fab41a9e0172a608396f76fefcca2c",
+      "bytes": 5256
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/auditor_classifier_lora_core.py",
+      "sha256": "2db4d4d00066c4b365fbcbe09e8f4b27c7a6e4d58673253a36d635516ec8a327",
+      "bytes": 7080
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/auditor_classifier_lora_current_core.py",
+      "sha256": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+      "bytes": 6560
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/auditor_classifier_lora_fork.py",
+      "sha256": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+      "bytes": 13199
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/auditor_classifier_lora_stable.py",
+      "sha256": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+      "bytes": 13758
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/auditor_optuna_hpo.py",
+      "sha256": "09a804938e6c29bcf80694ee33b45d642a649278df9102080255c3f65eabb010",
+      "bytes": 16861
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/auditor_optuna_hpo_backend.py",
+      "sha256": "ff0157983b06cc75bc7d59c2ffd9922d3e010e82ec0b7568496ca73cede49b3d",
+      "bytes": 11690
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/auditor_optuna_hpo_launch_support.py",
+      "sha256": "747527eb6d4bad2a2672424ad6f645b1a3caf408b5943ce469831786d6ec1b46",
+      "bytes": 2226
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/auditor_optuna_hpo_remote.py",
+      "sha256": "848d8b7c407fa26a00754bb58c3c923ba70b511113a67d6b409b0ecf6f0d4929",
+      "bytes": 11212
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/clean_auditor_hpo_initialization.py",
+      "sha256": "905356125f02797b4b07dd3604cd14b03cdc3ddaf313013bad45eb6e386d4a35",
+      "bytes": 8690
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/prepare_auditor_optuna_hpo.py",
+      "sha256": "3d41062df118c856e4ba40e3af8da9617525e44f12cba908895b3959a2cbb711",
+      "bytes": 5615
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/seal_auditor_optuna_hpo.py",
+      "sha256": "3133399ecc05618f884da5ca5ca58c09cd01f6940f526e17c9a811393ab3c3d2",
+      "bytes": 5842
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/test_auditor_optuna_hpo.py",
+      "sha256": "1b551591bb8630f21d24a384401b28755187b06cd483763aa909dba7120fa9e5",
+      "bytes": 18635
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tools/test_auditor_optuna_hpo_clean.py",
+      "sha256": "96626a96f874183be635da8c7c217c2643e6ce6de1d4be8f92dbee54ad0f4f89",
+      "bytes": 7124
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/training_authorization.json",
+      "sha256": "ebb5256e9c7fc3fd92cc0ea2c6416282342a24336a780f570921fc86bf955f65",
+      "bytes": 742
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/.gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+      "bytes": 8
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/artifacts.json",
+      "sha256": "6ef6aad82c703a32e147db93ab80371e44cb4d1d96d98d35680956fb1955fbba",
+      "bytes": 1315
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/fit_receipt.json",
+      "sha256": "1b2957da7fbdb051b8af5e548c8a62bed84d368a769ddc2bc6272a21d07f7567",
+      "bytes": 998
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/fit_trace.json",
+      "sha256": "8476b9c66830e4190516edbe4b2aeeac8d5795577c600b7d5d4eecf7a3625de2",
+      "bytes": 25899
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/FROZEN.json",
+      "sha256": "cd20f9916883fc7fe01e4ff6f3fc7cadbf81f340d326988e5d22fd2956698e41",
+      "bytes": 99593
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/inner_train_baseline.json",
+      "sha256": "83aa5a7b4f4136cd9953b923d10885aa438307593aa21bbacb12a59ce6100aa4",
+      "bytes": 108490
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/starting_metrics.json",
+      "sha256": "1003632766af20f532d2ed2f03ec9560aef33db05c6f26e0c22e6164e4dcf785",
+      "bytes": 1315
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/unchanged_search.json",
+      "sha256": "165c351aaa324aa7c85d858c32b1f64aa53a28614414433869db5680f4037585",
+      "bytes": 2030
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/controls.json",
+      "sha256": "b1558c767b67d3742537ba2c4d0544d1d8c0a3b233142b0eeb68f2b70d06eb55",
+      "bytes": 1273
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/cost_projection.json",
+      "sha256": "d1faca48adce9e6084909c2130dfd33ab60fd098af893093229112209fe283c3",
+      "bytes": 3141
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/experiment.json",
+      "sha256": "eb4a2a62552dd15e0b523db1e4379c797c6f764752f3c6d0a65e9c5787c755e6",
+      "bytes": 1534
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/frozen_model.json",
+      "sha256": "270022a3f230eb78965b24e60350d9203a724ea3995ef11a2d5def0e3a372192",
+      "bytes": 3659
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/optuna_dependencies.json",
+      "sha256": "c0901590e52338648449cb8a180fbf4e8368c69e78af9639213bca8219041489",
+      "bytes": 305
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/preparation_receipt.json",
+      "sha256": "18bd76edc6f698e5ff6bd79452bf11db429d07f53effafa685bdb0ed48d1f1c3",
+      "bytes": 3934
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/records_train_only.json",
+      "sha256": "963a8612a37cbbbcb00e9e44cd0e8c14ae45f7bfddbeafd066387789e454356f",
+      "bytes": 12522133
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/runtime_contract.json",
+      "sha256": "93cec5bb592654068d4e21232c07fe88121842254a71b119676f1b15b2507d81",
+      "bytes": 1725
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/schedule.json",
+      "sha256": "8656d831a782038b622322c6d17b3f2aa6c2083c7add4d371fe53e769ad8ee4f",
+      "bytes": 22668
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/seal.json",
+      "sha256": "4fe9b330440b4559732d1880f3c267eb8f0937b776faa42e36d7cf27e9095c1b",
+      "bytes": 3810
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/split.json",
+      "sha256": "036f550ddcd4caa5d2c7d9835c5b5af7f974297170106272973444e83bf1815a",
+      "bytes": 340765
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/evidence_download.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/evidence_download_timing.json",
+      "sha256": "8544ff052bd990cc8b815667223b3edfaa57d919f45ef6f0bd249cf9c7e685c1",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/evidence_hash.log",
+      "sha256": "9950f9d4c0e93c43c9e0922587ea0919e57a654906b4cd3acd637aaba1bca428",
+      "bytes": 122
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/evidence_hash_timing.json",
+      "sha256": "f90a9e3aed56e6198faa67a0d7aa801cdede54ad28bda37522ee52f4a4864d5a",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/execution_manifest.json",
+      "sha256": "6a203b39c52f1792bfdc4ed88f95105b07fab41a9e0172a608396f76fefcca2c",
+      "bytes": 5256
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/final_inventory_confirmation.json",
+      "sha256": "dfd34372101d8472998fcb1a4cd5224cd74463b9db2298631a0a084127121b15",
+      "bytes": 88
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/images.json",
+      "sha256": "4a0512561c7826391f4c543d180813b55497c5a82a125a3f896914cad00d34b3",
+      "bytes": 47071
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/independent_inventory_confirmation.json",
+      "sha256": "eab31222d07043a0c7b4751d36f62236aa4b75f3711ab9d8d56dd23144ed7272",
+      "bytes": 177
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/instance_state.json",
+      "sha256": "d2a7d4c610fb24aad356cc9312d33bdf7aa05f45d52632b3a6328a30f1c16ef3",
+      "bytes": 151
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/instances_after.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/launch.json",
+      "sha256": "60a8d338458ac586582fa67b865acd8651c29137d6b464791d295dd74755bd54",
+      "bytes": 87
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/LAUNCH_INTENT.json",
+      "sha256": "9cb561ac4aa5ef459408e8b0d26b42736db046dd933a87ec4d608470376f1ca6",
+      "bytes": 130
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/live_preflight.json",
+      "sha256": "507ef9a8c6ebbf30f9e1762c9935d0e2a3a1b093198d522e49cca44a39555f27",
+      "bytes": 404
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/LOCAL_GATES.json",
+      "sha256": "9eeef45f02e741da47f4fe8f649a39881f0a1a0401ebde76d2251a0aa7fd3c34",
+      "bytes": 152
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/MANDATORY_WORK_FINISHED.json",
+      "sha256": "d4d4bc7d3126316f865c33f5cb0adf95471330138d5e42bdab28ade41e13ee1f",
+      "bytes": 54
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/manifest.json",
+      "sha256": "21b8aef3b2ab6938d30a0c3264fdbf5fe3842ab522c3fae460665f660a59e261",
+      "bytes": 1002
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/mkdir.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/mkdir_timing.json",
+      "sha256": "2212e1b203c2d51170b94d06851173222b6204a3bd41ffaaf71694c8c2d7ef3e",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/pack_evidence.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/pack_evidence_timing.json",
+      "sha256": "7187b911e0e335174fe1b9728efaeb0d58451712a171328b40018ed649bad80f",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/pre_acquisition.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/pre_acquisition_timing.json",
+      "sha256": "3724851be7bebb061ddda18680bc83ea0d8e61af15e28f83754a348af09a9f1c",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/preservation_before.json",
+      "sha256": "c95e1a00fd56b479dcb35b12c14a5fd0271021c451d9cd2fe7ce428869c9137b",
+      "bytes": 1582
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/process_final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/process_final_timing.json",
+      "sha256": "550e87a0d44eb015f90dd4e5fd3a68fef7c7d08db551f14ad19590de1cc824a4",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/python_gate.log",
+      "sha256": "0b113da3ac02c2045dd8a4aeea1877f3838788d0454d61f851e2050547e3c84b",
+      "bytes": 50
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/python_gate_timing.json",
+      "sha256": "973cce4eb9e29dc5bb2066fd15cfb166a1fd8542d757fa3ca395ff83d42be6e1",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/RECOMPUTED_RESULTS.json",
+      "sha256": "318d127c4c79000c42798219a77670590b0d4f1ab718453fc3fca3985018eccc",
+      "bytes": 28343
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/runtime_transfer.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/runtime_transfer_timing.json",
+      "sha256": "a53b7e6df71021661e1a6332a57a7e538b5b6110c5c276664f368fa5ad5bb38b",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/SELECTED_HYPERPARAMETERS.json",
+      "sha256": "7f88f6033650555e6187473b13c2f0fa0035b24fe3561c57ef9e4bfeb896ac10",
+      "bytes": 128
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/ssh_ready_0.log",
+      "sha256": "4ec160805749abe4b15c5ff849d178031c32ca0e57af36ce97555b1e026fea7d",
+      "bytes": 82
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/ssh_ready_0_timing.json",
+      "sha256": "bc2862fe78165d9c1772ad52dccd9e9d991ef00a53adad3162af3129c7a0377a",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/ssh_registration.json",
+      "sha256": "91397f8621f69062c7c6d7cf449bb4a876680e23ad02b5109747972a391b1bcd",
+      "bytes": 93
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/stop_workloads.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/stop_workloads_timing.json",
+      "sha256": "aa03ce8cc9be2d8a77d684b6b9c3e9d368c5e3cacf11db04239ac7028696262b",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/TERMINATE_REQUEST",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/termination_requested.json",
+      "sha256": "854406d488914d88b3450e714d07332f4e9699f22c7b24d1186207b823bdb119",
+      "bytes": 130
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/TERMINATION_VERIFIED.json",
+      "sha256": "9271bcc9c102438b47f97d2e3c45b222b0147d20067b8f6a22c1b7df1e842d92",
+      "bytes": 352
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/torch_install.log",
+      "sha256": "cbc37649993b0be65e77fff4f5e5b7cd0b37defacfff5030a4ab9e01005550d3",
+      "bytes": 9091
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/torch_install_timing.json",
+      "sha256": "bd78937817cf5b5c4d4d07003553b1d3807ae707562c20fb7c1685be4647ce0d",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/training_authorization.json",
+      "sha256": "ebb5256e9c7fc3fd92cc0ea2c6416282342a24336a780f570921fc86bf955f65",
+      "bytes": 742
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/TRIAL_SUMMARY.json",
+      "sha256": "8504ea810b51da0540eb4bafac5e494f721ddca3ae1660e79ae19bb5381175ba",
+      "bytes": 14827
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/unpack.log",
+      "sha256": "d66d35fe3d2ec09868155a3f7875181c19f93a558ba49f3005c655e00224b545",
+      "bytes": 23
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/unpack_timing.json",
+      "sha256": "e7c52b115757a75e14a75427e3434d3b25cc8d578b62bb3097ab33835f889951",
+      "bytes": 92
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/venv.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/venv_timing.json",
+      "sha256": "c40aaa2e8afbff0fd9a04b303924f5d266d98da321ae229abba74015bdd8ef94",
+      "bytes": 91
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/WATCHDOG_ARMED.json",
+      "sha256": "eca718f09693cab347fae864688d1668ecca7c9e76b3f0647abc016a38407916",
+      "bytes": 59
+    }
+  ],
+  "local_only_files": [
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/evidence/study.sqlite3",
+      "sha256": "ae3e8f93fcbc83ba90a82a3095c6f1ad38b2e683c438d21a6f02edeec22c3b07",
+      "bytes": 122880
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/hpo_head-200.safetensors",
+      "sha256": "8a9f94c6a78c01c15ddb4ac07e7e80586a7d1515aefcfc6f68040fc9181aa6e3",
+      "bytes": 49304
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/hpo_mean.npy",
+      "sha256": "f812e63fec063220b9eaf27c3e9782005abad3cb66293491b55f93b38ad8aecf",
+      "bytes": 12416
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/downloaded/tuning/auditor_optuna_hpo/clean_initialization/hpo_std.npy",
+      "sha256": "be4270e87f7df6ae7f9312bbeabc894c2f794ec897d4e9c5deeb52d84cdd2b68",
+      "bytes": 12416
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/evidence.tar.gz",
+      "sha256": "e2376ea9a10523da45226d720dff067f39f882da3d7ea5c8027fe96366068c2b",
+      "bytes": 13899713
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/known_hosts",
+      "sha256": "f10886b338e77ececf021e0377f4609e62613ad0ed2ca2b2c0c33833f74bcdf6",
+      "bytes": 96
+    },
+    {
+      "path": "docs/fix/auditor_optuna_hpo_run/runtime_bundle.zip",
+      "sha256": "7cf61f5d150c8bbf523daffea77675bcf7faf61b76d6121a85684d55b934e44f",
+      "bytes": 76616104
+    }
+  ],
+  "historical_preservation_verified": true,
+  "zero_billable_resources": true,
+  "authorization_consumed": true,
+  "full_training_authorized": false
+}

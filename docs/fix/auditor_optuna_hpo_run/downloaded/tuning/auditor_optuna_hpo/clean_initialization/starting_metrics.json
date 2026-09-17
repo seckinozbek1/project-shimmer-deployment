@@ -1,0 +1,81 @@
+{
+  "artifacts_changed_after_validation": false,
+  "freeze_sha256": "cd20f9916883fc7fe01e4ff6f3fc7cadbf81f340d326988e5d22fd2956698e41",
+  "information_only": true,
+  "inner_train": {
+    "accuracy": 1.0,
+    "ce": 0.06518124947326996,
+    "confusion_matrix": [
+      [
+        358,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        358,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        358,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        358
+      ]
+    ],
+    "macro_f1": 1.0,
+    "minimum_class_recall": 1.0,
+    "per_class_recall": {
+      "ADDITION": 1.0,
+      "DIVERGENCE": 1.0,
+      "MATCH": 1.0,
+      "OMISSION": 1.0
+    }
+  },
+  "inner_val": {
+    "accuracy": 0.7638888888888888,
+    "ce": 0.7857790373311665,
+    "confusion_matrix": [
+      [
+        59,
+        9,
+        10,
+        12
+      ],
+      [
+        16,
+        72,
+        1,
+        1
+      ],
+      [
+        8,
+        3,
+        71,
+        8
+      ],
+      [
+        9,
+        1,
+        7,
+        73
+      ]
+    ],
+    "macro_f1": 0.7644957853659579,
+    "minimum_class_recall": 0.6555555555555556,
+    "per_class_recall": {
+      "ADDITION": 0.8111111111111111,
+      "DIVERGENCE": 0.8,
+      "MATCH": 0.6555555555555556,
+      "OMISSION": 0.7888888888888889
+    }
+  }
+}

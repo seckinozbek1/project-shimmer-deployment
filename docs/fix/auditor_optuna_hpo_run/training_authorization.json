@@ -1,0 +1,21 @@
+{
+  "action": "auditor-optuna-train-only-hpo",
+  "authorization": "Explicit operator approval of clean HPO at ea2b723; no second study/instance, no forbidden DEV or final run",
+  "full_training_authorized": false,
+  "gpus": 1,
+  "hard_budget_usd": 9.0,
+  "hourly_rate": 1.29,
+  "instance_type": "gpu_1x_a10",
+  "instances": 1,
+  "launch_epoch": 1789647250.2511268,
+  "max_trials": 15,
+  "max_updates": 80,
+  "n_jobs": 1,
+  "operator_authorized": true,
+  "provider": "https://cloud.lambda.ai",
+  "region": "us-east-1",
+  "seal_sha256": "4fe9b330440b4559732d1880f3c267eb8f0937b776faa42e36d7cf27e9095c1b",
+  "soft_budget_usd": 7.0,
+  "source_commit": "ea2b72373a384e29a6344c762b8b7d12ef450741",
+  "workload_deadline_epoch": 1789666785.1348476
+}

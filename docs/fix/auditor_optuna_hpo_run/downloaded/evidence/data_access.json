@@ -1,0 +1,33 @@
+{
+  "access_counts": {
+    "external_dev": 0,
+    "historical_dev": 0,
+    "shorter": 0,
+    "longer": 0,
+    "holdout": 0,
+    "protected": 0
+  },
+  "denied_before_open": 0,
+  "boundary": {
+    "access_counts": {
+      "external_dev": 0,
+      "historical_dev": 0,
+      "shorter": 0,
+      "longer": 0,
+      "holdout": 0,
+      "protected": 0
+    },
+    "allowed_reads": {
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/experiment.json": 1,
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/records_train_only.json": 1,
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/split.json": 1,
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/schedule.json": 1,
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/artifacts.json": 1,
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/runtime_contract.json": 1,
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/clean_initialization/inner_train_baseline.json": 1,
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/controls.json": 1,
+      "/home/ubuntu/shimmer-auditor-optuna-hpo/tuning/auditor_optuna_hpo/optuna_dependencies.json": 1
+    },
+    "denied_attempts": []
+  }
+}

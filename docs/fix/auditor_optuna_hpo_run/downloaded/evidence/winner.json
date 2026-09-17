@@ -1,0 +1,63 @@
+{
+  "verdict": "AUDITOR_OPTUNA_HPO_CANDIDATE",
+  "trial_number": 11,
+  "hyperparameters": {
+    "dropout": 0.05,
+    "head_lr": 0.0009721418411547451,
+    "lora_peak_lr": 1.2943234833221302e-06,
+    "warmup_steps": 10
+  },
+  "metrics": {
+    "accuracy": 0.7416666666666667,
+    "macro_f1": 0.744266564484037,
+    "per_class_recall": {
+      "MATCH": 0.7,
+      "DIVERGENCE": 0.6777777777777778,
+      "OMISSION": 0.8111111111111111,
+      "ADDITION": 0.7777777777777778
+    },
+    "minimum_class_recall": 0.6777777777777778,
+    "ce": 1.2818141838364647,
+    "confusion_matrix": [
+      [
+        63,
+        6,
+        10,
+        11
+      ],
+      [
+        22,
+        61,
+        6,
+        1
+      ],
+      [
+        10,
+        2,
+        73,
+        5
+      ],
+      [
+        11,
+        1,
+        8,
+        70
+      ]
+    ]
+  },
+  "full_training_auto_execute": false,
+  "future_separate_design": {
+    "train_rows": 1792,
+    "normalization_fit_rows": 1792,
+    "head_fit_rows": 1792,
+    "head_updates": 200,
+    "clean_classifier_fork": true,
+    "reuse_hpo_head": false,
+    "updates": 896,
+    "checkpoints": [
+      448,
+      896
+    ],
+    "authorization_required": true
+  }
+}

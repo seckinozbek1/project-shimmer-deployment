@@ -1,0 +1,22 @@
+{
+  "a10": [
+    {
+      "architecture": "x86_64",
+      "metadata": {
+        "cpu": 30,
+        "gpu_count": 1,
+        "gpu_type": "A10 (24 GB PCIe)",
+        "hourly_rate": 1.29,
+        "ram_gib": 200,
+        "storage_gib": 1400,
+        "type": "gpu_1x_a10"
+      },
+      "regions": [
+        "us-east-1",
+        "us-west-1"
+      ]
+    }
+  ],
+  "epoch": 1789647057.0710933,
+  "instances": []
+}

@@ -1,0 +1,26 @@
+{
+  "adapter_config.json": {
+    "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/checkpoint-0/classifier_fork/adapter_config.json",
+    "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6"
+  },
+  "adapter_model.safetensors": {
+    "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/checkpoint-0/classifier_fork/adapter_model.safetensors",
+    "sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+  },
+  "current_train_features.npy": {
+    "path": "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/current_train_features.npy",
+    "sha256": "06e47fd6a0244cbff94f75e66eff81b4cad417843e34d62c3b370a3468cf8287"
+  },
+  "hpo_head-200.safetensors": {
+    "path": "tuning/auditor_optuna_hpo/clean_initialization/hpo_head-200.safetensors",
+    "sha256": "8a9f94c6a78c01c15ddb4ac07e7e80586a7d1515aefcfc6f68040fc9181aa6e3"
+  },
+  "hpo_mean.npy": {
+    "path": "tuning/auditor_optuna_hpo/clean_initialization/hpo_mean.npy",
+    "sha256": "f812e63fec063220b9eaf27c3e9782005abad3cb66293491b55f93b38ad8aecf"
+  },
+  "hpo_std.npy": {
+    "path": "tuning/auditor_optuna_hpo/clean_initialization/hpo_std.npy",
+    "sha256": "be4270e87f7df6ae7f9312bbeabc894c2f794ec897d4e9c5deeb52d84cdd2b68"
+  }
+}
