@@ -32,6 +32,22 @@ def require(value, message):
         raise RuntimeError(message)
 
 
+def cache_ref_bytes(model):
+    """Hub refs are exact revision bytes, not newline-terminated text files."""
+    revision = model['revision']
+    require(isinstance(revision, str) and re.fullmatch(r'[0-9a-f]{40}', revision),
+            'Invalid pinned cache revision')
+    return revision.encode('ascii')
+
+
+def admit_cache_ref(directory, model):
+    expected = cache_ref_bytes(model)
+    require(model['cache_ref'] == dict(bytes=len(expected), sha256=hashlib.sha256(expected).hexdigest()),
+            'Cache ref manifest mismatch')
+    require((Path(directory)/'refs/main').read_bytes() == expected,
+            'Cache ref must equal exact pinned revision bytes (no whitespace)')
+
+
 def write(path, value):
     Path(path).write_text(json.dumps(value, indent=2, sort_keys=True)+'\n', encoding='utf8')
 
@@ -175,7 +191,7 @@ def execute(base):
     cache = base/'hf_cache/hub'
     for model in manifest['models']:
         directory = cache/('models--'+model['model_id'].replace('/','--'))
-        require((directory/'refs/main').read_text().strip() == model['revision'], 'Cache revision mismatch')
+        admit_cache_ref(directory, model)
         snapshot = directory/'snapshots'/model['revision']
         require({p.relative_to(snapshot).as_posix() for p in snapshot.rglob('*') if p.is_file()} == set(model['files']), 'Unsealed cache files')
         for name, entry in model['files'].items():

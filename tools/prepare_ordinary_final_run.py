@@ -1,4 +1,5 @@
 """Prepare only: hash-bound final ordinary workload, without model imports/cloud writes."""
+import argparse
 import hashlib
 import io
 import json
@@ -9,7 +10,8 @@ import zipfile
 
 from prepare_cloud_run import git, make_source, pins, validate_wheels
 from cloud_run_common import credential_locations
-from ordinary_final_run import ARGV, TOPOLOGY, sha, read, write, require
+from ordinary_final_run import ARGV, TOPOLOGY, sha, read, write, require, cache_ref_bytes
+from prepare_ordinary_final_assets import build_assets
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT/'docs/fix/ordinary_final_cloud_run'
@@ -29,7 +31,14 @@ def runtime_source(source):
     return files
 
 
-def prepare():
+def prepare(output):
+    global OUT
+    original = OUT
+    OUT = Path(output).resolve()
+    require(not (OUT/'execution_manifest.json').exists(), 'Refuse to reseal an existing execution identity')
+    OUT.mkdir(parents=True,exist_ok=True)
+    for name in ('runtime.candidate.lock','provider_inventory.json'):
+        (OUT/name).write_bytes((original/name).read_bytes())
     source = git(ROOT, 'rev-parse', '2f0d0f7').decode().strip()
     files = runtime_source(source)
     # Only the explicitly selected ordinary input files may enter this bundle.
@@ -71,7 +80,10 @@ def prepare():
         if model != 'BAAI/bge-m3':
             role='producer' if model==spec['producer']['model_id'] else 'auditor'
             require({n:e['sha256'] for n,e in entries.items()} == spec[role]['base_hashes'], 'Base hashes changed')
-        models.append(dict(model_id=model,revision=revision,files=entries))
+        item = dict(model_id=model,revision=revision,files=entries)
+        ref = cache_ref_bytes(item)
+        item['cache_ref'] = dict(bytes=len(ref),sha256=hashlib.sha256(ref).hexdigest())
+        models.append(item)
     locked = pins(OUT/'runtime.candidate.lock')
     wheels = validate_wheels(WHEELS, locked)
     runtime_files = {}
@@ -92,6 +104,7 @@ def prepare():
     require(provider['instances']==[], 'Provider inventory not empty')
     selected = next(x for x in provider['instance_types'] if x['metadata']['type']=='gpu_1x_a10')
     require('us-east-1' in selected['regions'] and selected['metadata']['hourly_rate']<=1.29, 'A10 unavailable/rate changed')
+    assets = build_assets(OUT/'assets.tar',models,wheels,cache,WHEELS)
     manifest = dict(schema_version=1,source_commit=source,source_archive_sha256=sha(OUT/'project.tar.gz'),
         classification='PREPARED_NOT_AUTHORIZED',max_runs=1,model_mode='final',multi_round=False,protected_test=False,
         workload=dict(name='clinical_reference',review_targets=1,grounding_documents=1,conventions=1,
@@ -99,7 +112,10 @@ def prepare():
         project_files={n:hashlib.sha256(d).hexdigest() for n,d in sorted(files.items())},
         local_control_hashes={n:sha(ROOT/n) for n in ('tools/ordinary_final_watchdog.py',
             'tools/cloud_run_watchdog.py','tools/cloud_run_common.py','tools/ordinary_final_run.py')},
-        support_files=support,models=models,packages=locked,wheels=wheels,runtime_file_hashes=runtime_files,
+        support_files=support,models=models,assets_archive=assets,
+        preparation_source_hashes={n:sha(ROOT/n) for n in
+            ('tools/prepare_ordinary_final_run.py','tools/prepare_ordinary_final_assets.py')},
+        packages=locked,wheels=wheels,runtime_file_hashes=runtime_files,
         argv=ARGV,topology=TOPOLOGY,provider='Lambda',region='us-east-1',instance=selected,
         provider_observed_at=provider['observed_at'],image=provider['images'][0],max_hourly_rate=1.29,
         soft_budget_usd=5,hard_ceiling_usd=7,workload_stop_reserve_seconds=900,termination_reserve_seconds=180,
@@ -120,11 +136,14 @@ def prepare():
         wheel_bytes=sum((WHEELS/e['filename']).stat().st_size for e in wheels.values()),
         model_cache_local=str(cache),wheelhouse_local=str(WHEELS),
         local_paths_not_transferred=True,credentials_transferred=False,
-        model_delivery='Copy only manifest-listed snapshot files; create refs/main equal to pinned revision',
+        assets_archive={k:v for k,v in assets.items() if k!='members'},
+        model_delivery='Use sealed assets.tar; refs/main are exactly 40 ASCII revision bytes, no newline',
         excluded=['all benchmark answer keys','all other corpora','TRAIN/DEV/HOLDOUT datasets',
                   'multi-round data','operator input','durable state','credentials','Git history']))
     print('Prepared sealed ordinary final run; no authorization, model load or provisioning')
 
 
 if __name__ == '__main__':
-    prepare()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output-dir',type=Path,required=True)
+    prepare(parser.parse_args().output_dir)

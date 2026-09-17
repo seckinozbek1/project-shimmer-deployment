@@ -1,0 +1,10 @@
+{
+  "manifest_sha256": "f06584d937b732fe65b5966081768ad922751c6e7cc0324d45b74c49ad3552b5",
+  "model_weights_and_configs_unchanged": true,
+  "ordinary_runtime_and_workload_unchanged": true,
+  "passed": true,
+  "project_archive_verified": true,
+  "requires_new_authorization": true,
+  "seal_sha256": "96f2f496d37b009423f231e660ab5ec7ef41b93a46b07aefd5c3030e95302701",
+  "source_commit": "2f0d0f706fd0b68f757f664cb19d1956e69c27a1"
+}

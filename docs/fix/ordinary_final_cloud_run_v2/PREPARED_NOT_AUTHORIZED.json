@@ -1,0 +1,27 @@
+{
+  "cloud_launched_after_failure": false,
+  "execution_manifest_sha256": "f06584d937b732fe65b5966081768ad922751c6e7cc0324d45b74c49ad3552b5",
+  "existing_effect_proofs": 7,
+  "integration_tests": 104,
+  "model_loads": 0,
+  "new_effect_proofs": 3,
+  "operator_authorized": false,
+  "requires_new_authorization": true,
+  "seal_sha256": "96f2f496d37b009423f231e660ab5ec7ef41b93a46b07aefd5c3030e95302701",
+  "source_hashes": {
+    "tools/ordinary_final_run.py": "d0ad366f363e2a6da87a433a08c6fe8927a731f92db95fb8593e6860d5c5d201",
+    "tools/ordinary_final_startup_checks.py": "a922ffb9fdb1981d50c82679db2c27d5acdbf45cb4bc753f38cf90b535efc822",
+    "tools/ordinary_final_startup_gate.py": "280a5074cbfcce4a82641fdedbb0c8f90d54cfb972adacadffaedc412a2bc0a7",
+    "tools/prepare_ordinary_final_assets.py": "96037ad5e5080aae230ded33900886a4e3c028c258ccb73e932cb0271a1d2916",
+    "tools/prepare_ordinary_final_run.py": "061624f3ccf4560af1cfe8fe8a8c15955cc146d107492187ab948f0401df73d7",
+    "tools/verify_ordinary_final_assets.py": "8745ecc377c9b15093c21e3d8314afda043695daef7d891e68a09599c3ba6641"
+  },
+  "startup_preparation_tests": 18,
+  "status": "STARTUP_BLOCKER_FIXED_NEW_EXECUTION_SEALED",
+  "validation_hashes": {
+    "docs\\fix\\ordinary_final_cloud_run_v2\\asset_verification.json": "d1358b3e6536d182fa3d1da28be26fe1d810cff37071f54138d4cb3da53dbb36",
+    "docs\\fix\\ordinary_final_cloud_run_v2\\source_validation.json": "788d87941a4ed244e7709eb89db23aab322234c0a8346e8ba00a620f6d109529",
+    "docs\\fix\\ordinary_final_startup_fix\\integration_validation.json": "4695a6cface279d35419f3b41cf3bd1e391c4c231d13147f5a8c4e7101a5c0cb",
+    "docs\\fix\\ordinary_final_startup_fix\\startup_validation.json": "823f278be5a2438434d526e6c91d74483e7d653d8571c7119b21333599d794f9"
+  }
+}
