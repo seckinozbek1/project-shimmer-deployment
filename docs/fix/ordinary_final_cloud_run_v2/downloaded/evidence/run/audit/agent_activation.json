@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "run_id": "88323b86f25e4ddc9f12deaddc4ffffa",
+  "activation_mode": "dense",
+  "policy": "conservative_reference_with_existing_phase_gates",
+  "actual_call_definition": "wrapper dispatch attempted; successful generation is a separate cost/backend outcome",
+  "agents": [
+    "PROCESSOR",
+    "VERIFIER",
+    "FACT_CHECKER",
+    "PRACTICE_AUDITOR",
+    "LEGAL_ANALYST",
+    "STYLE_GUARDIAN",
+    "ARCHIVIST",
+    "INST_FINDER",
+    "CITATION_RESOLVER",
+    "SPEECH_ACT_TAGGER",
+    "REDACTOR",
+    "AMENDMENT_DRAFTER",
+    "EDITOR_CLERK",
+    "EDITOR_HEAD_OF_UNIT",
+    "EDITOR_HEAD_OF_SECTION",
+    "EDITOR_HEAD_OF_DEPARTMENT",
+    "EDITOR_DEPUTY_DG",
+    "EDITOR_DG"
+  ],
+  "decisions": [
+    {
+      "decision_id": 1,
+      "agent": "ARCHIVIST",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "corpus_level_analysis",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "structural_inventory_legal_wide_practice_bus",
+      "doc_id": "",
+      "state": "execution_failure",
+      "actual_call": true,
+      "call_id": "57602c02ea9f41748a277b8ea1f8188b",
+      "error_type": "RuntimeError",
+      "elapsed_seconds": 15.958869964999849
+    },
+    {
+      "decision_id": 2,
+      "agent": "INST_FINDER",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "corpus_level_analysis",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "institution_registry_audit_bus_context",
+      "doc_id": "",
+      "state": "execution_failure",
+      "actual_call": true,
+      "call_id": "dbd3ac46dcf0485c9f9b1bac7c8db3cb",
+      "error_type": "RuntimeError",
+      "elapsed_seconds": 3.961638790000052
+    },
+    {
+      "decision_id": 3,
+      "agent": "CITATION_RESOLVER",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "corpus_level_analysis",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "citation_graph_audit_bus_context",
+      "doc_id": "",
+      "state": "execution_failure",
+      "actual_call": true,
+      "call_id": "af324c9861ca441b8421a7769fb4052a",
+      "error_type": "RuntimeError",
+      "elapsed_seconds": 4.056235361999825
+    }
+  ],
+  "agent_states": [
+    {
+      "agent": "PROCESSOR",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "VERIFIER",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "FACT_CHECKER",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "PRACTICE_AUDITOR",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "LEGAL_ANALYST",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "STYLE_GUARDIAN",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "ARCHIVIST",
+      "state": "execution_failure",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        1
+      ]
+    },
+    {
+      "agent": "INST_FINDER",
+      "state": "execution_failure",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        2
+      ]
+    },
+    {
+      "agent": "CITATION_RESOLVER",
+      "state": "execution_failure",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        3
+      ]
+    },
+    {
+      "agent": "SPEECH_ACT_TAGGER",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "REDACTOR",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "AMENDMENT_DRAFTER",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "EDITOR_CLERK",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "EDITOR_HEAD_OF_UNIT",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "EDITOR_HEAD_OF_SECTION",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "EDITOR_HEAD_OF_DEPARTMENT",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "EDITOR_DEPUTY_DG",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    },
+    {
+      "agent": "EDITOR_DG",
+      "state": "phase_not_reached",
+      "eligible": null,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": []
+    }
+  ]
+}

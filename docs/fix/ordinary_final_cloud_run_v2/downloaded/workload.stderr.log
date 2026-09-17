@@ -1,0 +1,68 @@
+[pipeline] mode: standalone
+[pipeline] run folder: /home/ubuntu/shimmer-ordinary-final/evidence/run
+[sensitivity-gate] WARNING: the full LAW-IV sensitivity layer is BUILT AND WIRED (INFRA-041) but NOT ACTIVATED; masking of outbound payloads is inert until the operator activates it. Operator redaction rules still apply locally.
+[sensitivity-gate] OVERRIDE accepted for this run; logged to sensitivity_overrides.jsonl.
+[pipeline] backend-profile=local: 17 agents remapped to local backends (REDACTOR stays qwen_local)
+[model-gate] skipped PROCESSOR (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped VERIFIER (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped FACT_CHECKER (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped PRACTICE_AUDITOR (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped LEGAL_ANALYST (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped STYLE_GUARDIAN (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped ARCHIVIST (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped INST_FINDER (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped CITATION_RESOLVER (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped SPEECH_ACT_TAGGER (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped REDACTOR (qwen_local): cannot verify 'Qwen/Qwen2.5-7B-Instruct' (no key / local backend)
+[model-gate] skipped AMENDMENT_DRAFTER (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_CLERK (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_HEAD_OF_UNIT (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_HEAD_OF_SECTION (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_HEAD_OF_DEPARTMENT (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_DEPUTY_DG (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_DG (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[redaction-gate] WAIVED for this run (no redaction; reason=operator_declared_non_sensitive); logged to redaction_waivers.jsonl.
+{"ts": "2026-09-17T22:37:27.629047+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "0", "agent": "", "doc_id": "", "event": "phase_start phase=0 step=date_cascade_cutoff"}
+invalid pdf header: b'# Ana'
+EOF marker not found
+invalid pdf header: b'# Ret'
+EOF marker not found
+[role-resolution] tier 1: operator manifest names 1 target(s)
+[pipeline] WARNING: 1 document(s) could not be dated from the filename, their own text, or container metadata, so they are NOT under review:
+[pipeline]   not reviewed (undated): analyte_reference_ranges.md
+[pipeline]   Name them in input/context/_review_targets.json, or set cutoff_type to 'all' in config/review_scope.json, to review them anyway. The date is not guessed from the network.
+[pipeline] role resolution: 1 forced under review, 1 forced grounding; the rest by date cutoff
+invalid pdf header: b'# Ret'
+EOF marker not found
+[pipeline] WARN: result_sheet.md may be misclassified: first page does not match expected content (0 keywords matched)
+{"ts": "2026-09-17T22:37:27.683290+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "0", "agent": "", "doc_id": "", "event": "prior_versions declared=0 loaded=0 conflict=0"}
+{"ts": "2026-09-17T22:37:27.683346+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "0", "agent": "", "doc_id": "", "event": "corpus_loaded context_docs=2 operational_docs=1"}
+
+=== PROJECT SHIMMER: pre-run estimate ===
+  Operational documents: 1
+  Context documents:     2
+  Estimated Claude:      $0.5220
+  Estimated GPT-4o:      $0.1725
+  Estimated TOTAL:       $0.6945
+===========================================
+
+{"ts": "2026-09-17T22:37:27.696430+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "0", "agent": "", "doc_id": "", "event": "convention_registry rules=5 review_enabled=True"}
+{"ts": "2026-09-17T22:37:27.696504+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "0", "agent": "", "doc_id": "", "event": "external_rules files=0 rules=0 conflicts_open=0"}
+{"ts": "2026-09-17T22:37:27.696722+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "0", "agent": "", "doc_id": "", "event": "convention_assignment rules=5 untagged=5 unassigned=0"}
+[embedding_store] model 'BAAI/bge-m3' loaded on cpu (dim=1024)
+{"ts": "2026-09-17T22:37:44.183678+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "0", "agent": "", "doc_id": "", "event": "reference_index entries=62"}
+[embedding_store] building from 2 documents in /home/ubuntu/shimmer-ordinary-final/project/input/context
+[embedding_store] embedded 11 passages with 'BAAI/bge-m3' in 0.5s
+{"ts": "2026-09-17T22:37:45.011234+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "0", "agent": "", "doc_id": "", "event": "embedding_store_loaded passages=11"}
+[local-progress] event=memory peak_ram_gb=4.09 peak_vram_mb=0.0 completed=0/11
+[progress] event=start docs=1 status=running
+[progress] phase=1/9 status=running
+{"ts": "2026-09-17T22:37:45.014581+00:00", "level": "INFO", "run_id": "88323b86f25e4ddc9f12deaddc4ffffa", "phase": "3-4", "agent": "", "doc_id": "", "event": "phase_start phase=3-4 step=content_production"}
+[progress] phase=3/9 status=running
+[progress] phase=3/9 agent=ARCHIVIST status=running
+[progress] phase=3/9 agent=INST_FINDER status=running
+[progress] phase=3/9 agent=CITATION_RESOLVER status=running
+[local-progress] event=memory peak_ram_gb=4.09 peak_vram_mb=0.0 completed=0/11
+[local-progress] event=memory peak_ram_gb=4.71 peak_vram_mb=1039.5 completed=0/11
+[local-progress] event=memory peak_ram_gb=4.93 peak_vram_mb=8120.8 completed=0/11
+[local-progress] event=memory peak_ram_gb=5.11 peak_vram_mb=14604.9 completed=0/11

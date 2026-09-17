@@ -1,0 +1,10 @@
+{
+  "lanes": [
+    {
+      "device": "cuda:0",
+      "name": "primary",
+      "resident_limit": 1
+    }
+  ],
+  "schema_version": 1
+}

@@ -1,4 +1,5 @@
 """Verify collected bytes and derive ordinary-run results. No model/provider access."""
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -12,7 +13,9 @@ ROOT=Path(__file__).resolve().parents[1]
 BASE=ROOT/'docs/fix/ordinary_final_cloud_run'
 
 
-def analyze():
+def analyze(bundle=BASE):
+    global BASE
+    BASE=Path(bundle).resolve()
     integrity=read(BASE/'collection_integrity.json')
     archive=BASE/'collected_evidence.tar.gz'
     require(sha(archive)==integrity['sha256'],'Collected archive integrity mismatch')
@@ -72,4 +75,7 @@ def analyze():
     print(json.dumps(status,indent=2))
 
 
-if __name__=='__main__':analyze()
+if __name__=='__main__':
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bundle',type=Path,default=BASE)
+    analyze(parser.parse_args().bundle)
