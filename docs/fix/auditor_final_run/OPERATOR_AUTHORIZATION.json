@@ -1,0 +1,26 @@
+{
+  "received_epoch": 1789654781.5090425,
+  "source_commit": "b4f7e8247391e2278a7b7a1ba84f6b5915c56ced",
+  "destination": "https://cloud.lambda.ai",
+  "instance_type": "gpu_1x_a10",
+  "gpu_count": 1,
+  "region": "us-east-1",
+  "hourly_rate": 1.29,
+  "maximum_instances": 1,
+  "soft_budget_usd": 5.0,
+  "hard_budget_usd": 7.0,
+  "initial_payload": [
+    "1792 Auditor TRAIN records",
+    "clean canonical Auditor step120 adapter",
+    "pinned model/runtime metadata",
+    "required runtime code"
+  ],
+  "evaluation_payload_after_completed_updates": 896,
+  "automatic_paid_retry": false,
+  "hpo": false,
+  "producer": false,
+  "protected_final_test": false,
+  "full_shimmer": false,
+  "multi_round": false,
+  "teardown_required": true
+}

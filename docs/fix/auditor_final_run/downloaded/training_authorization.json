@@ -1,0 +1,26 @@
+{
+  "action": "auditor-final-training-evaluation",
+  "authorization": "Explicit final896 plus delayed448/896 evaluation; one instance; no retry/HPO/protected/Producer/full Shimmer/push",
+  "evaluation_after_updates": 896,
+  "execution_manifest_sha256": "75ca31be8f8c5c0d05a7eb8ef1c5f66b5509ad5475f6b0bf98a29d2ee0f17955",
+  "gpus": 1,
+  "hard_budget_usd": 7.0,
+  "hourly_rate": 1.29,
+  "instance_type": "gpu_1x_a10",
+  "instances": 1,
+  "launch_epoch": 1789654743.2931626,
+  "operator_authorized": true,
+  "params": {
+    "dropout": 0.05,
+    "head_lr": 0.0009721418411547451,
+    "lora_peak_lr": 1.2943234833221302e-06,
+    "warmup_steps": 10
+  },
+  "provider": "https://cloud.lambda.ai",
+  "region": "us-east-1",
+  "seal_sha256": "0e3a196344856cb59915106a57cf74559ba456f62b83510a1fae28d3ae82158f",
+  "soft_budget_usd": 5.0,
+  "source_commit": "b4f7e8247391e2278a7b7a1ba84f6b5915c56ced",
+  "updates": 896,
+  "workload_deadline_epoch": 1789673378.1768835
+}
