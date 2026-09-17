@@ -8,6 +8,11 @@ ROOT=Path(__file__).resolve().parents[1]
 BASE=ROOT/'docs/fix/auditor_blocker_closure_run'
 
 
+def cost_usd(elapsed_seconds, hourly_rate):
+ s.require(elapsed_seconds>=0 and hourly_rate>=0,"Nonnegative cost inputs")
+ return elapsed_seconds*hourly_rate/3600
+
+
 def analyze():
  s.require((BASE/'TERMINATION_VERIFIED.json').exists(),'Teardown verification required')
  cleanup=s.read(BASE/'independent_inventory_confirmation.json')
@@ -54,7 +59,7 @@ def analyze():
  if outcome!=s.OUTCOMES[-1]:
   s.require(arms['O']['finished_epoch']<=arms['D']['process']['observed_epoch'],'Sequential fresh processes')
   if any(not value['capture_complete'] for value in coverage.values()):outcome=s.OUTCOMES[-1]
- result=dict(outcome=outcome,arms=arms,capture_coverage=coverage,root_cause='ROOT_CAUSE_UNRESOLVED',safe_admission_boundary_established=False,training_authorized=False,estimated_cost_upper_bound_usd=(cleanup['epoch']-s.read(BASE/'launch.json')['epoch'])*s.read(BASE/'manifest.json')['hourly_rate'],interpretation='Evidence verified; causal analysis and any production safeguard require separate review. No automatic training.')
+ result=dict(outcome=outcome,arms=arms,capture_coverage=coverage,root_cause='ROOT_CAUSE_UNRESOLVED',safe_admission_boundary_established=False,training_authorized=False,estimated_cost_upper_bound_usd=cost_usd(cleanup['epoch']-s.read(BASE/'launch.json')['epoch'],s.read(BASE/'manifest.json')['hourly_rate']),interpretation='Evidence verified; causal analysis and any production safeguard require separate review. No automatic training.')
  s.write(BASE/'RECOMPUTED_RESULTS.json',result);print(json.dumps(dict(outcome=outcome,training_authorized=False)))
 
 if __name__=='__main__':analyze()

@@ -9,3 +9,10 @@ auditor_final_launch_support.py -text
 auditor_final_remote.py -text
 prepare_auditor_final.py -text
 test_auditor_final.py -text
+
+# Preserve blocker admission source and verification hashes.
+auditor_feature_diagnostics.py -text whitespace=cr-at-eol
+analyze_auditor_blocker_closure.py -text whitespace=cr-at-eol
+test_auditor_feature_admission.py -text whitespace=cr-at-eol
+verify_auditor_blocker_closure_results.py -text whitespace=cr-at-eol
+validate_auditor_feature_admission.py -text whitespace=cr-at-eol

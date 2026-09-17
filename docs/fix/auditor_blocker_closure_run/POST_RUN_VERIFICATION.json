@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "manifest_files": 33,
+  "train_reference_rows": 1792,
+  "live_forward_receipts": 64,
+  "exact_live_vectors": 64,
+  "diagnostic_model_input_receipts_verified": 32,
+  "sequential_fresh_processes": true,
+  "forbidden_access": false,
+  "collection_before_termination": true,
+  "independent_empty_inventory": true,
+  "preserved_frozen_files": {
+    "tuning/auditor_final/runtime_contract.json": true,
+    "tuning/auditor_final/seal.json": true,
+    "docs/fix/auditor_optuna_hpo_run/SELECTED_HYPERPARAMETERS.json": true
+  },
+  "root_cause": "ROOT_CAUSE_UNRESOLVED"
+}

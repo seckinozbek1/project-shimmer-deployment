@@ -1,0 +1,73 @@
+{
+  "arms": {
+    "D": {
+      "arm": "D",
+      "data_access": {
+        "denied_before_open": 0,
+        "evaluation_opened_after_updates": null,
+        "external_dev_rows": 0,
+        "historical_dev_rows": 0,
+        "longer_rows": 0,
+        "shorter_rows": 0,
+        "successful_access_counts": {
+          "full_shimmer_inputs": 0,
+          "holdout": 0,
+          "producer": 0,
+          "protected_final_test": 0
+        }
+      },
+      "finished_epoch": 1789663030.8538258,
+      "forwards": 32,
+      "matched_rows": 32,
+      "optimizer_updates": 0,
+      "process": {
+        "cwd": "/home/ubuntu/shimmer-auditor-final",
+        "executable": "/home/ubuntu/shimmer-auditor-final/.venv/bin/python",
+        "linux_start_ticks": "36486",
+        "observed_epoch": 1789663005.668844,
+        "pid": 3809,
+        "ppid": 3635,
+        "python": "3.12.3"
+      },
+      "status": "MATCHES"
+    },
+    "O": {
+      "arm": "O",
+      "data_access": {
+        "denied_before_open": 0,
+        "evaluation_opened_after_updates": null,
+        "external_dev_rows": 0,
+        "historical_dev_rows": 0,
+        "longer_rows": 0,
+        "shorter_rows": 0,
+        "successful_access_counts": {
+          "full_shimmer_inputs": 0,
+          "holdout": 0,
+          "producer": 0,
+          "protected_final_test": 0
+        }
+      },
+      "finished_epoch": 1789663004.9838216,
+      "forwards": 32,
+      "matched_rows": 32,
+      "optimizer_updates": 0,
+      "process": {
+        "cwd": "/home/ubuntu/shimmer-auditor-final",
+        "executable": "/home/ubuntu/shimmer-auditor-final/.venv/bin/python",
+        "linux_start_ticks": "34100",
+        "observed_epoch": 1789662981.8056514,
+        "pid": 3636,
+        "ppid": 3635,
+        "python": "3.12.3"
+      },
+      "status": "MATCHES"
+    }
+  },
+  "capture_coverage": {},
+  "estimated_cost_upper_bound_usd": 0.2232846483429273,
+  "interpretation": "Evidence verified; causal analysis and any production safeguard require separate review. No automatic training.",
+  "outcome": "BOTH_MATCH_THROUGH_32",
+  "root_cause": "ROOT_CAUSE_UNRESOLVED",
+  "safe_admission_boundary_established": false,
+  "training_authorized": false
+}

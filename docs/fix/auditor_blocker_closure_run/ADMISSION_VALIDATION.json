@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "tests": 33,
+  "neutralized_failed": true,
+  "restored_passed": true,
+  "no_real_model_forwards": true,
+  "no_cloud_calls": true,
+  "source_hashes": {
+    "tools/auditor_feature_diagnostics.py": "30b5ed42a5b91c64dc1c3588911574dfb56ddb18ba1275a92351dc56f0b7d164",
+    "tools/auditor_final_remote.py": "32771cb4ad3fda9d9ce86d01223b5edd4d7a4febd4383d2086649bb2ce180713",
+    "tools/test_auditor_feature_admission.py": "4c3abb5e34de9a2776c3988134328bef459af63a07a93e52f7860daa52857926",
+    "tools/analyze_auditor_blocker_closure.py": "7c0253eaad9aa79e38ce436e9980b3c8dc2e6caab0a750e2a40e2199d6af399e",
+    "tuning/auditor_final/historical_train_features.jsonl": "75cd0e49a85e0fd9637141b836baf1be1c627cc6a6479127f2dcd8875441a11c"
+  },
+  "test_logs": {
+    "admission_tests.log": "fc7a00b7982d27573cab357bfc7df10094311045833a8aa8eb7923c77d856bcc",
+    "admission_neutralized.log": "183fc6c57ae5e68e7a1fabbd42424b07bae5d54352087a16db51bfd49a43b55e",
+    "admission_restored.log": "37cb5a6a267ed699a7f2bc995161395e66f52c9a33b50b655cbe206a97768c4c"
+  }
+}

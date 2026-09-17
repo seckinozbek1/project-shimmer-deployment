@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 import auditor_final_core as f
 import auditor_classifier_lora_core as c
-from auditor_feature_diagnostics import extract_train_vector, model_state, runtime_state, path_identity
+from auditor_feature_diagnostics import extract_train_vector, model_state, runtime_state, path_identity, HistoricalAdmission
 
 ROOT=Path(__file__).resolve().parents[1]
 D=ROOT/'tuning/auditor_final';OUT=ROOT/'evidence'
@@ -107,6 +107,7 @@ def training():
         import auditor_classifier_lora_stable as stable
         import auditor_optuna_hpo as h
         from auditor_final_backend import FinalBackend
+        admission=HistoricalAdmission(np,rows,D/'historical_train_features.jsonl')
         base=load_base(torch,contract);reference=D/'canonical_adapter'
         f.require(c.sha(reference/'adapter_model.safetensors')==fork.SOURCE_SHA and c.sha(reference/'adapter_config.json')==fork.CONFIG_SHA,'canonical source')
         model=PeftModel.from_pretrained(base,str(reference),adapter_name=fork.REFERENCE,is_trainable=False)
@@ -119,9 +120,10 @@ def training():
         begin=time.perf_counter()
         for i,row in enumerate(rows):
             budget.check('fresh_train_features')
-            vector=extract_train_vector(torch,np,model,row,i,'cuda',OUT/'train_feature_failure.json')
+            vector=extract_train_vector(torch,np,model,row,i,'cuda',OUT/'train_feature_failure.json',admission=admission)
             features[i]=vector;features.flush();budget.features=i+1
             emit(dict(event='feature',index=i,example_id=row['example_id'],token_sha256=fork.token_hash(row['input_ids']),feature_sha256=hashlib.sha256(vector.tobytes()).hexdigest(),norm=float(np.linalg.norm(vector.astype(np.float64)))))
+        write('feature_admission.json',admission.require_complete(features))
         mean_np,std_np=current.normalize(np,features,rows)
         np.save(OUT/'mean.npy',mean_np,allow_pickle=False);np.save(OUT/'std.npy',std_np,allow_pickle=False)
         write('normalization.json',dict(train_rows=1792,dev_fit_rows=0,fresh_feature_passes=1,feature_seconds=time.perf_counter()-begin,

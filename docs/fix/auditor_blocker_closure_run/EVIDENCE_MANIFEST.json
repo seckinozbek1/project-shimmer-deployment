@@ -1,0 +1,875 @@
+{
+  "retained_text": [
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/.gitattributes",
+      "bytes": 29,
+      "sha256": "730a35ae3d558080083c3103d9ac8100c3f6561678092abe341701dfa331eb1d"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/acquisition.log",
+      "bytes": 919,
+      "sha256": "3b05456b80cbc8a1d16b1c86e2bb13f1de34a8445da3d424046490adb830687d"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/acquisition_timing.json",
+      "bytes": 92,
+      "sha256": "09fe4b5b33c0f1fe9833795919921b82ac1cb2fd46f2aef9d493630cc678aa8b"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/activation.json",
+      "bytes": 409,
+      "sha256": "a6235eed7e1e383447401443bf8932f4f651ff6eb662c44d7a848c2727c3712e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/admission_neutralized.log",
+      "bytes": 706,
+      "sha256": "183fc6c57ae5e68e7a1fabbd42424b07bae5d54352087a16db51bfd49a43b55e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/admission_restored.log",
+      "bytes": 199,
+      "sha256": "37cb5a6a267ed699a7f2bc995161395e66f52c9a33b50b655cbe206a97768c4c"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/admission_tests.log",
+      "bytes": 3236,
+      "sha256": "fc7a00b7982d27573cab357bfc7df10094311045833a8aa8eb7923c77d856bcc"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/ADMISSION_VALIDATION.json",
+      "bytes": 1089,
+      "sha256": "f70bf441a7ed33b6158fdd5f3708b83d5a6b45c8f9e394d022abe8d6d13191a0"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/auditor_blocker_arm.py",
+      "bytes": 9628,
+      "sha256": "157d200698ecf35091226ff0bfaa217eba4169a3444310034f8e69d985baea2c"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/auditor_blocker_helper.py",
+      "bytes": 8393,
+      "sha256": "94b00b46eee2761dcd9295556038be3856766297688efc2ce5bc030082772774"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/budget.json",
+      "bytes": 236,
+      "sha256": "ad85ce463a4f4b7c84f6a61edc0f0936c449cb5460c1b72f93cf6322efa99505"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/budget_transfer.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/budget_transfer_timing.json",
+      "bytes": 92,
+      "sha256": "ff15256a3d4d986b50a9e5b873de405ef969fe5a46660b4122aaaaf5ae6a2642"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/bundle_check_results.json",
+      "bytes": 236,
+      "sha256": "8945fd3e7e68eac8fdbc0a4736ba3f9f06564afa6bc73178bf5a5859d660b163"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/cleanup.json",
+      "bytes": 112,
+      "sha256": "fde6245805a136864f02de2f19a1bdb6fba2a09f792dc5c33316faa107cd5d5b"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/collection_integrity.json",
+      "bytes": 144,
+      "sha256": "5208376e903e267e21d48d58e21e1bfcff721d5c9ea7fae7013e1cb0a4b7de93"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/cost.json",
+      "bytes": 73,
+      "sha256": "98f42155c36afccdc4f7733db09bbba37a8a0c25fdfbffc326212df14bfb88c0"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/CURRENT_PHASE.json",
+      "bytes": 108,
+      "sha256": "22025e23ba7af9d715e7124b2a4fa74cae0e3a0e40f371997243a3298646dc54"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/dependencies_install.log",
+      "bytes": 11448,
+      "sha256": "2aad7c861deee55cbe6e7291869f18cfc7ddcd37a67069ebd683c7134175f6fe"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/dependencies_install_timing.json",
+      "bytes": 92,
+      "sha256": "1c224ef4275aa40ea2d653d9cb2a903a502ca4275c622e47004fe78a6a7fe5ee"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/diagnostic_authorization.json",
+      "bytes": 626,
+      "sha256": "ee9397a0ec43ddebd8cc098a3f575f1139daa487df4b6717482993853a996ade"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/acquisition.json",
+      "bytes": 785,
+      "sha256": "bd4758683cdeba4365926c889e5743ff2202e86a4bdf141818ed33ca05548905"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/ARM_ATTEMPTED",
+      "bytes": 37,
+      "sha256": "ff862bb63954002326948e2fbb87d79a08916b1048bda8b5b1f81712c005247b"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/events.jsonl",
+      "bytes": 8879,
+      "sha256": "134826cbe70be31a7d2a90cdb146d953ced1207ecb02c7385347514c61d567bc"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/initialization.json",
+      "bytes": 253,
+      "sha256": "41d4a0514b83ea53e3efae63d9048853d397db26367d18a0357b1965e3dc4904"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/progress.json",
+      "bytes": 170,
+      "sha256": "507c1f3cd9f0faebc7c90d008d8ad0540617eb5f720f318ffe1e681600a64ea5"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/result.json",
+      "bytes": 767,
+      "sha256": "2f484f424a2bfb99c253f22b27bf05907cb4c70138750a741f0aee93bd07d9e1"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-01.json",
+      "bytes": 251175,
+      "sha256": "e946f31d0507802a4431a1a1cb4646cb4cb8d53493b0c01fac284f6ed6f24eb4"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-02.json",
+      "bytes": 251171,
+      "sha256": "6424eeb3dc9069d92ce909fd0eff733fecd0973bfe482f1d60f0ef343562189e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-03.json",
+      "bytes": 251168,
+      "sha256": "9c40dd812f206876c84dfbb58d5a427d94ba40bad43bcaae31cea98d1c96e2a1"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-04.json",
+      "bytes": 251169,
+      "sha256": "a88f561ae361299887f3dcf7a8bbf44d4981fdc195386864d98033fce2bef5f5"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-05.json",
+      "bytes": 251175,
+      "sha256": "2b89c25981b5eb219b72ced3f6421d50f21df4f502dfdfc083f06a4068b8e496"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-06.json",
+      "bytes": 251170,
+      "sha256": "057e65e544e12652e26692df94aec5518141505f6f0f2b15c4ac98bc24e6ee20"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-07.json",
+      "bytes": 251167,
+      "sha256": "5eb21e829dcf10c84fe8eec2f53a10c43fa79eefa93a7da6cb3f22507a807b43"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-08.json",
+      "bytes": 251168,
+      "sha256": "320efd399030cdcbdd6770d259b4c2839cf9ca593e86a4023978560104d75662"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-09.json",
+      "bytes": 251166,
+      "sha256": "fa88cd4bae7f21f3978acf0e0000de975ef0722b0a25b4c6a95f5f9662e56d0d"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-10.json",
+      "bytes": 251172,
+      "sha256": "dfe5070ddd82ad57a87c74246b7fdc055698a07ffc707183cbd0faccc01a8afe"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-11.json",
+      "bytes": 251174,
+      "sha256": "cf968599e3cb255b8ffb62d259fa02e8c335a7fe8c33b1cbb799f796314dc5e2"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-12.json",
+      "bytes": 251169,
+      "sha256": "e5a721c402728c3f7fa9c1456f900e21a991c555353fd6d6f87ca09ebb98782b"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-13.json",
+      "bytes": 251174,
+      "sha256": "e439a344d05405b7cbfc473b0933596f134a18ad8cfb7934c9babd4c962af635"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-14.json",
+      "bytes": 251173,
+      "sha256": "7a281c447aac2066ad0c56799acb5d334df4c773c30388406d7ecdb62e140c46"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-15.json",
+      "bytes": 251173,
+      "sha256": "9249b9437511168f258de1fa83d4ade6e16acef1cca780f6970fee78fb88e0a5"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-16.json",
+      "bytes": 251175,
+      "sha256": "9f620c8f9f850809c31c3cc1ca086d1d50a169849df950dacce20f141a197358"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-17.json",
+      "bytes": 251173,
+      "sha256": "9ef00b04c4b855b2eca00a62145e1bb4dd2e004fc15fd6623aa0d71fc505765a"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-18.json",
+      "bytes": 251176,
+      "sha256": "57b1e8c5e5b3fc187660cb5b61868211b8ee83d92e48d1edb63c7166e1c9bfdc"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-19.json",
+      "bytes": 251176,
+      "sha256": "ec76fa4229255a8697acf5a81ce7a9a6f3009790740277710e59016dc1c6b5e1"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-20.json",
+      "bytes": 251171,
+      "sha256": "53e590d5652c8751756048304aa9888418aac46a6cc347abdd6802314a1cf205"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-21.json",
+      "bytes": 251173,
+      "sha256": "5d84222741d0acc10930dc37026628f1c6fa8bb75c4909a6b31934e407ae4620"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-22.json",
+      "bytes": 251179,
+      "sha256": "ceb4228a58dd1e469e54b0e0683adf86c84960bb52effef7a75a2faf10fcb472"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-23.json",
+      "bytes": 251178,
+      "sha256": "457429b65a2b9df09f6d8a842054c8568cf652756747969cd7f5449e0f5046ee"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-24.json",
+      "bytes": 251173,
+      "sha256": "8c8c1a8e2617fc624638be98fd3ff70c41a799c5085987095ee57a60f552b91d"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-25.json",
+      "bytes": 251175,
+      "sha256": "737c12a4e092ae28ef8a9d7b9ca30e639ed93362a9e036b67a48c68759350c1b"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-26.json",
+      "bytes": 251173,
+      "sha256": "8a9bbe635e09b740582f75b257deb46808b9b005c442fa0d0c7f5eb9b3752e29"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-27.json",
+      "bytes": 251174,
+      "sha256": "eb325ad345f9889ad351f225a764e21c13b77503ba389551b223da22a2191913"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-28.json",
+      "bytes": 251174,
+      "sha256": "32c4658de59a2bc80f8f8302e88e6da2b7a70af43d61801a00f4ae719524599e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-29.json",
+      "bytes": 251172,
+      "sha256": "03c94c2c2b7857205990755ff01290e78b49fb822c9c01d7e65a8c6a7d5a67d9"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-30.json",
+      "bytes": 251171,
+      "sha256": "cd174c6e8f58757c15328ba27f5e4b21389e0a9beaec4d5c89fd192f13fdd254"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-31.json",
+      "bytes": 251171,
+      "sha256": "e8350fcb8e790eb0e90b216b55082b5ecfa521bcf780dff5a0a0d92e07cceb97"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/row-32.json",
+      "bytes": 251173,
+      "sha256": "06fd1848f9e51a3d15f2493fce596f4991ecae916d3ea12d953c9e8088146e6c"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/O/ARM_ATTEMPTED",
+      "bytes": 37,
+      "sha256": "ff862bb63954002326948e2fbb87d79a08916b1048bda8b5b1f81712c005247b"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/O/events.jsonl",
+      "bytes": 8879,
+      "sha256": "134826cbe70be31a7d2a90cdb146d953ced1207ecb02c7385347514c61d567bc"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/O/initialization.json",
+      "bytes": 253,
+      "sha256": "41d4a0514b83ea53e3efae63d9048853d397db26367d18a0357b1965e3dc4904"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/O/progress.json",
+      "bytes": 171,
+      "sha256": "636bfc0c6a48342938358718c24c446696fb120e1f1146de686f42aeb93d5889"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/O/result.json",
+      "bytes": 768,
+      "sha256": "c2e9a7ef3494ceec183602f4458b6383f2aa5f24b3c1984a7fd06e2a478f5d7e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/O.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/preflight.json",
+      "bytes": 330,
+      "sha256": "e9fccc88f8f07900b7d5eb45e025de34b00fe5dfd405f0109661f4d470dc7911"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/result.json",
+      "bytes": 1917,
+      "sha256": "691d70cf52ebbf501c2af1f983e1e6440b60ea2a196a89e4b7125b472ba794db"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/TWO_ARMS_ATTEMPTED",
+      "bytes": 35,
+      "sha256": "5388cc2f0888cceb77c6b3bb9f4ca5dcdd5f6c65dd9874b448046dad22607974"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/first_domain_agnostic_v1/experiment.json",
+      "bytes": 2448,
+      "sha256": "70f25204aea2b99ca6a9f0b3aca3e2ffe6c778f596946c9b4a3518dcfc459c93"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/evidence_download.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/evidence_download_timing.json",
+      "bytes": 91,
+      "sha256": "25e678a471e26d1e415270c54f63fa23eefb935c0c5a1caa7d18e5fba4fc09ab"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/evidence_hash.log",
+      "bytes": 117,
+      "sha256": "71730b9e12d5dd8d5fb8bb57ffcb28be6a2cadc161520166dc8738620990c422"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/evidence_hash_timing.json",
+      "bytes": 91,
+      "sha256": "0f070b2788f57a4dedff7984ea024aaa22ada029a8644c3aa8b120e360113e25"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/execution_manifest.json",
+      "bytes": 5020,
+      "sha256": "8cb99d5aff7967ec2d951d941d6041c5aabd2a379a7d923d670c13d45fc4b2e5"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/feature_diagnostic.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/feature_diagnostic_timing.json",
+      "bytes": 91,
+      "sha256": "38e08bde89f61eb0301d6a3e514292b481475f2c279cce8798991a3366ad4032"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/final_inventory_confirmation.json",
+      "bytes": 88,
+      "sha256": "427ea8cfddfe45b03ab8615a17baee644e916c40d09755c5fbc25fd22cf09cb9"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/FINAL_STATUS.json",
+      "bytes": 737,
+      "sha256": "685acede5ce6513997318618e8fb484bfc4be95d69217456314e0e1dd76fc138"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/independent_inventory_confirmation.json",
+      "bytes": 135,
+      "sha256": "bad1938ee56cb40c8f038d85df45ba2f5c4868ce5f201e84aa9efc5a0127a700"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/instance_state.json",
+      "bytes": 151,
+      "sha256": "d743f2283102ebfc4e73707b3557a1688cb09677a5d40fbf46db08bb36c7ffa8"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/instances_after.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/launch.json",
+      "bytes": 86,
+      "sha256": "5bc774431d675130acc57d12470c76bf51ba5a79f1510f4220de8db12d72bc41"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/LAUNCH_INTENT.json",
+      "bytes": 157,
+      "sha256": "d4fc78d503ea8ac29abc93c6c14e17603f97ec8022d77467026584a1dcb2645a"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/live_preflight.json",
+      "bytes": 398,
+      "sha256": "8cafab98c8a546e583cc00f0d9036c9457c77a95648bbea9190ac2e3613f692d"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/LOCAL_GATES.json",
+      "bytes": 319,
+      "sha256": "6897331899ae6c4071263b23910638c8c95ece959d50671fc60c183245e7934d"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/local_tests.log",
+      "bytes": 1775,
+      "sha256": "96c73f6a977167ebdaed001bfab014a10b387b3fcffaaea25408a3288c24351e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/manifest.json",
+      "bytes": 908,
+      "sha256": "d7e930bcad14d0bbf4b56dbc20f5502d984b0e745c1164f2848cb7374cb5f42e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/mkdir.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/mkdir_timing.json",
+      "bytes": 89,
+      "sha256": "23f463629e9fc55b8f5455a412e66704f64c37504cd57ab7e5684c16e033cf87"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/neutralize_restore.json",
+      "bytes": 133,
+      "sha256": "7c4112581570319febd4b5ae02423934b219446d1e90b1cea4e133973da206cc"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/OPERATOR_AUTHORIZATION.json",
+      "bytes": 716,
+      "sha256": "2e8702f2aa8e8c2b0043d230e33809e853d19cfc4f0f39b4b69aecaf775f2ef6"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/pack_evidence.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/pack_evidence_timing.json",
+      "bytes": 91,
+      "sha256": "55bb35ba99e85264a55c4a3c3a16145369d8e8ade22b2da1f1eca95b1130d682"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/POST_RUN_VERIFICATION.json",
+      "bytes": 601,
+      "sha256": "4107cab1abf2318eb23f8d03e0c2ff32a49c3a9d2bce9248b0f6c2d73f996bc3"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/pre_acquisition.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/pre_acquisition_timing.json",
+      "bytes": 91,
+      "sha256": "d1911ff978d8f122df9591336e118ea29b4eccd47caa606fcac04709bde17a86"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/PRE_LAUNCH_REVERIFICATION.json",
+      "bytes": 369,
+      "sha256": "5112416265f9f9cc46b97c66ce3d762ae6eac76f61beb15421dee1af70bb9d93"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/PREPARATION_STATUS.json",
+      "bytes": 639,
+      "sha256": "1e95cdc068575913e5d5dcf01b8eb2a89319fcf683c2b8d6874fdc59da3fc16a"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/preservation.json",
+      "bytes": 858,
+      "sha256": "34bddd2f4e78d9c1facde20f9b81f30a9372a650bb7ef6cd51ab0fe007f149dd"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/process_final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/process_final_timing.json",
+      "bytes": 92,
+      "sha256": "4363614a1f6cb77ff40eb5d2915f8e5ef3c95b4bb4d95154085cdebfc60a1383"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/python_gate.log",
+      "bytes": 50,
+      "sha256": "0b113da3ac02c2045dd8a4aeea1877f3838788d0454d61f851e2050547e3c84b"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/python_gate_timing.json",
+      "bytes": 92,
+      "sha256": "e621d9e2c3b1fd557ecd0d32e5baebdc573c53bf2c2e318a2495d5458d94273e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/RECOMPUTED_RESULTS.json",
+      "bytes": 2190,
+      "sha256": "efa57478eaf65158ba210d76bb7b1ee64418036e7e7820e48fae97d1700af610"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/runtime_transfer.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/runtime_transfer_timing.json",
+      "bytes": 92,
+      "sha256": "f6508eebcde5739212e3714e55b9bc7e4662035037d5be55369657c5ea06af4e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/ssh_ready_0.log",
+      "bytes": 82,
+      "sha256": "bc656e398b4b4aad6069c48462ef0c79a72fcaa0e2124a20a30d8e13a3e3982b"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/ssh_ready_0_timing.json",
+      "bytes": 91,
+      "sha256": "612786447cb6e1553077e999c5cff959c257a778f7b2c7c861fbfa4ad07e673e"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/ssh_registration.json",
+      "bytes": 92,
+      "sha256": "66e39bed6d0a6504d1f3faccdfe618c346875ce757c7679abfd75eb10e009bd5"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/stop_workloads.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/stop_workloads_timing.json",
+      "bytes": 91,
+      "sha256": "2449c8b901c2a09590ea60ae3da3751e8d488d49722b73dde46dd855e756229c"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/supplemental_collection.json",
+      "bytes": 401,
+      "sha256": "8f6c3422e0c0c4b8706807bc64d571b390f8ac03950a68f8acf33d1333e94bae"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/termination_requested.json",
+      "bytes": 132,
+      "sha256": "a1455260c62d265cbefa452458423ef2eb2b98ba86d7773c3abcb875cfc17ab8"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/TERMINATION_VERIFIED.json",
+      "bytes": 354,
+      "sha256": "77ca5d641c758405a5ae813c35b8b37891a7440e82fdf8d44cf703a10d880657"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/torch_install.log",
+      "bytes": 9089,
+      "sha256": "031e082d530052d6d068962bf401c4a41eb4d70400d31cdd75471d15192eea42"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/torch_install_timing.json",
+      "bytes": 92,
+      "sha256": "abca0849f24157219a5a5a649298d50f7c8e1c7c1dc1dc7beebf3cbab48bda23"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/unpack.log",
+      "bytes": 23,
+      "sha256": "d66d35fe3d2ec09868155a3f7875181c19f93a558ba49f3005c655e00224b545"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/unpack_timing.json",
+      "bytes": 91,
+      "sha256": "47ed33654e877582bf77d160d7eeba1dd703e56c806c72b2ca3bb54ebd268353"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/venv.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/venv_timing.json",
+      "bytes": 91,
+      "sha256": "94dd4f41bd8ba95c3e241aac47c5461361c5befae16d497537d97ad50addafca"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/WATCHDOG_ARMED.json",
+      "bytes": 59,
+      "sha256": "3ca52c3f9c8ee8a4d57e68d0b6a449d3b8fe1fd1d9ecd4d25e5bfed80274fdeb"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/WORKLOAD_FINISHED.json",
+      "bytes": 80,
+      "sha256": "c213275a19d04e294e0411f866c7130469dc3aaca7c7110aa1ba062fb59ce2ba"
+    }
+  ],
+  "local_bulk_and_payload": [
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/budget.json",
+      "bytes": 236,
+      "sha256": "ad85ce463a4f4b7c84f6a61edc0f0936c449cb5460c1b72f93cf6322efa99505"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/closure_payload/historical32.npy",
+      "bytes": 393344,
+      "sha256": "77e29508dc5e5146414acbedeb8ca1734e0bcb5f4085ffcc6f5dac4dc94b92af"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/closure_payload/provenance.json",
+      "bytes": 13470,
+      "sha256": "9bce006fb35f82bcfaabda0ee47db40a4778ff4c4235912a1d00ba0d59e9f154"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/diagnostic_authorization.json",
+      "bytes": 626,
+      "sha256": "ee9397a0ec43ddebd8cc098a3f575f1139daa487df4b6717482993853a996ade"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/D/train_features.npy",
+      "bytes": 22020224,
+      "sha256": "e73e9f7a1d64fd066a4e30c8b818d01f843268f9aa3631a5ca29cce13aaa0382"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/evidence/O/train_features.npy",
+      "bytes": 22020224,
+      "sha256": "e73e9f7a1d64fd066a4e30c8b818d01f843268f9aa3631a5ca29cce13aaa0382"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/execution_manifest.json",
+      "bytes": 5020,
+      "sha256": "8cb99d5aff7967ec2d951d941d6041c5aabd2a379a7d923d670c13d45fc4b2e5"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/analyze_auditor_blocker_closure.py",
+      "bytes": 4891,
+      "sha256": "cf7459119701073bb4f20c6438132a5accdda6adc83daa1b2ad9c3bd0be3663d"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_blocker_arm.py",
+      "bytes": 9628,
+      "sha256": "157d200698ecf35091226ff0bfaa217eba4169a3444310034f8e69d985baea2c"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_blocker_closure_cloud.py",
+      "bytes": 15456,
+      "sha256": "f25c61d280cbb8e764d3d45d1f4292ce3a5d2ce1be648358ecd29f4ce8e0d148"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_blocker_helper.py",
+      "bytes": 8393,
+      "sha256": "94b00b46eee2761dcd9295556038be3856766297688efc2ce5bc030082772774"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_blocker_support.py",
+      "bytes": 12432,
+      "sha256": "deb01614b24e56bc341af643d4fcfe3e8a163156463f4346b0ed4cbeccef8a06"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_classifier_lora_core.py",
+      "bytes": 7080,
+      "sha256": "2db4d4d00066c4b365fbcbe09e8f4b27c7a6e4d58673253a36d635516ec8a327"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_classifier_lora_current_core.py",
+      "bytes": 6560,
+      "sha256": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_classifier_lora_fork.py",
+      "bytes": 13199,
+      "sha256": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_classifier_lora_stable.py",
+      "bytes": 13758,
+      "sha256": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_feature_diagnostics.py",
+      "bytes": 8264,
+      "sha256": "8fe1bbbd26fddd98fb116d5fcae2f7e2fd477154251544372cb3974031d47fdb"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_final_backend.py",
+      "bytes": 2659,
+      "sha256": "fad9a28e52238aef42f1b14c173b4bd0a915abf9c2ffe0dcddc8aa4c44ac0111"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_final_core.py",
+      "bytes": 7843,
+      "sha256": "87ae0ee076076d5d2a985162e5684a856e73eb569c1e15469dd7f4dd7621ec1c"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_final_launch_support.py",
+      "bytes": 2116,
+      "sha256": "d5a0b6566ec59c10fa4e4246469221b24da832c9259ac8700aea954e67391109"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_final_remote.py",
+      "bytes": 20083,
+      "sha256": "ab44b74fc6046ffaa0d1c1b71ba703f4459071d5fc138ff88c0caccf0efd2a61"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_optuna_hpo.py",
+      "bytes": 16861,
+      "sha256": "09a804938e6c29bcf80694ee33b45d642a649278df9102080255c3f65eabb010"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/auditor_optuna_hpo_backend.py",
+      "bytes": 11690,
+      "sha256": "ff0157983b06cc75bc7d59c2ffd9922d3e010e82ec0b7568496ca73cede49b3d"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/cloud_run_common.py",
+      "bytes": 7952,
+      "sha256": "efd7b1c4ed1e2f312c20def16fe7d45d171b62665abc6e9fc246df82d1b7d99f"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/prepare_auditor_blocker_closure.py",
+      "bytes": 11186,
+      "sha256": "6fa722a43afd57195e905cb68c926ac92e878302d7a7cb576251524eb6f2a437"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/test_auditor_blocker_closure.py",
+      "bytes": 10522,
+      "sha256": "1d91efc5e1be535d4752fc6019131d5e27a2f25808fb57eec30db4bee5dd10aa"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tools/test_auditor_final.py",
+      "bytes": 4829,
+      "sha256": "f9a60a9c25c861f78ea3dcd02a71253a635e279b47ac9d60a4d1937f87e4cad7"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/.gitattributes",
+      "bytes": 8,
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/canonical_adapter/adapter_config.json",
+      "bytes": 908,
+      "sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/canonical_adapter/adapter_model.safetensors",
+      "bytes": 59827904,
+      "sha256": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/controls.json",
+      "bytes": 1273,
+      "sha256": "b1558c767b67d3742537ba2c4d0544d1d8c0a3b233142b0eeb68f2b70d06eb55"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/evaluation_bindings.json",
+      "bytes": 446,
+      "sha256": "bcf1e45a1b723fad3efedd6411827a1bc38575c9866eed2845fc2d80870ab2d6"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/experiment.json",
+      "bytes": 813,
+      "sha256": "45a174db86a77ba0ac04252c00c408f1bed7bbb2a45fc7365c7c43b737779c89"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/records_train_only.json",
+      "bytes": 12522133,
+      "sha256": "963a8612a37cbbbcb00e9e44cd0e8c14ae45f7bfddbeafd066387789e454356f"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/runtime_contract.json",
+      "bytes": 1725,
+      "sha256": "93cec5bb592654068d4e21232c07fe88121842254a71b119676f1b15b2507d81"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/schedule.json",
+      "bytes": 312599,
+      "sha256": "0ff0a7f65f915636b41ce58fed29445a07183ca18af4e60b3318bcd6648c43ad"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/downloaded/tuning/auditor_final/seal.json",
+      "bytes": 2362,
+      "sha256": "0e3a196344856cb59915106a57cf74559ba456f62b83510a1fae28d3ae82158f"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/evidence.tar.gz",
+      "bytes": 57464126,
+      "sha256": "358b115d3414167d06a1ec39347771ec705443d907f732f461ea5813040b4749"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/runtime_bundle.zip",
+      "bytes": 56426002,
+      "sha256": "cab6408e2fc8e6424a00448fe032b860a9bb2c394d3deb01f23ef263e81751fe"
+    },
+    {
+      "path": "docs/fix/auditor_blocker_closure_run/TERMINATE_REQUEST",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "local_bulk_policy": "Archives, arrays, weights and duplicate executed payload are retained locally with hashes; no private SSH key material. Only first32 rows of each 1792-row arm memmap were observed.",
+  "analysis_changes": [
+    {
+      "path": "docs/fix/AUDITOR_BLOCKER_CLOSURE.md",
+      "bytes": 22100,
+      "sha256": "ae628922fd54cb680a718d24d7d51fec764ada63839d2f3052cd8731061b0d09"
+    },
+    {
+      "path": "tools/analyze_auditor_blocker_closure.py",
+      "bytes": 5002,
+      "sha256": "7c0253eaad9aa79e38ce436e9980b3c8dc2e6caab0a750e2a40e2199d6af399e"
+    },
+    {
+      "path": "tools/auditor_feature_diagnostics.py",
+      "bytes": 13579,
+      "sha256": "30b5ed42a5b91c64dc1c3588911574dfb56ddb18ba1275a92351dc56f0b7d164"
+    },
+    {
+      "path": "tools/auditor_final_remote.py",
+      "bytes": 20136,
+      "sha256": "32771cb4ad3fda9d9ce86d01223b5edd4d7a4febd4383d2086649bb2ce180713"
+    },
+    {
+      "path": "tools/test_auditor_feature_admission.py",
+      "bytes": 11126,
+      "sha256": "4c3abb5e34de9a2776c3988134328bef459af63a07a93e52f7860daa52857926"
+    },
+    {
+      "path": "tools/verify_auditor_blocker_closure_results.py",
+      "bytes": 5667,
+      "sha256": "ae1c68590522f6f0df450e55569d680336fa43325f158f0cc79adf0628436f0e"
+    },
+    {
+      "path": "tools/validate_auditor_feature_admission.py",
+      "bytes": 2206,
+      "sha256": "343c0736da9bf20c8dd19fce99140ffaeea3ab1d16c5f272e08b87bc8924310f"
+    },
+    {
+      "path": "tuning/auditor_final/historical_train_features.jsonl",
+      "bytes": 701509,
+      "sha256": "75cd0e49a85e0fd9637141b836baf1be1c627cc6a6479127f2dcd8875441a11c"
+    },
+    {
+      "path": "tools/.gitattributes",
+      "bytes": 740,
+      "sha256": "4395ec87f098211b2db45ddbe0b042e5cf69560c41c5d271f61709b8cbe9dfb2"
+    },
+    {
+      "path": "docs/fix/.gitattributes",
+      "bytes": 116,
+      "sha256": "dca128125d0b67ed351c2395d4520ce28ed3a8468f4a44674805f8ecdb598868"
+    }
+  ],
+  "secret_scan": "No candidate credentials in selected text; values never printed."
+}

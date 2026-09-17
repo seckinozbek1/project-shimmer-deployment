@@ -1,0 +1,19 @@
+{
+  "status": "AUDITOR_BLOCKER_CLOSED_SAFE_ADMISSION",
+  "experiment": "BOTH_MATCH_THROUGH_32",
+  "root_cause": "ROOT_CAUSE_UNRESOLVED",
+  "safe_admission": "SAFE_ADMISSION_BOUNDARY_ESTABLISHED",
+  "retry_readiness": "RETRY_REASONABLE",
+  "training_authorized": false,
+  "forwards": 64,
+  "optimizer_updates": 0,
+  "new_local_real_model_forwards": 0,
+  "tests": 33,
+  "provider_inventory_empty": true,
+  "temporary_credentials_removed": true,
+  "estimated_cost_upper_bound_usd": 0.2232846483429273,
+  "approved_execution_commit": "f5a6c00",
+  "approval_commit": "1e230d9",
+  "diagnostic_consumed": true,
+  "note": "Post-teardown local safeguard review; not a causal fix. No training or further cloud authorization."
+}

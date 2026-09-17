@@ -7,10 +7,11 @@ import importlib.metadata
 import json
 import os
 import platform
+import tempfile
 from collections import Counter
 from pathlib import Path
 
-VERSION = 'auditor-train-hidden-v1'
+VERSION = 'auditor-train-hidden-v2'
 
 
 def digest(value):
@@ -20,11 +21,16 @@ def digest(value):
 def write_diagnostic(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open('w', encoding='utf8') as stream:
-        json.dump(value, stream, indent=2, allow_nan=False)
-        stream.write('\n')
-        stream.flush()
-        os.fsync(stream.fileno())
+    descriptor, temporary = tempfile.mkstemp(dir=path.parent, prefix=path.name + '.')
+    try:
+        with os.fdopen(descriptor, 'w', encoding='utf8') as stream:
+            json.dump(value, stream, indent=2, allow_nan=False)
+            stream.write('\n')
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
 
 
 def path_identity():
@@ -104,12 +110,14 @@ def model_state(torch, model):
         cudnn_allow_tf32=torch.backends.cudnn.allow_tf32)
 
 
-def extract_train_vector(torch, np, model, row, index, device, diagnostic_path, record_success=False):
+def extract_train_vector(torch, np, model, row, index, device, diagnostic_path, record_success=False, admission=None):
     """Execute the original forward and pooling, persisting evidence before refusal.
 
     Index is zero based. A malformed raw shape is refused before indexing. No
     successful row is logged here or admitted until the live shape/finite guard.
     """
+    if admission is not None:
+        admission.check_input(index, row)
     if row['split'] != 'train':
         raise RuntimeError('TRAIN-only feature diagnostic')
     raw = hidden = vector = None
@@ -134,6 +142,36 @@ def extract_train_vector(torch, np, model, row, index, device, diagnostic_path, 
     except Exception as exc:
         failure = 'forward_or_extraction_exception:' + type(exc).__name__
         original = exc
+    if admission is not None:
+        if failure is None:
+            failure = admission.vector_reason(vector, index)
+        if failure:
+            admission.failed = True
+            # Preserve the boundary before expensive summaries or device transfers.
+            minimal = dict(event='train_feature_failure', reason=failure, index=index,
+                example_id=row['example_id'], token_sha256=digest(row['input_ids']),
+                input_ids_sha256=digest([row['input_ids']]),
+                attention_mask_sha256=digest([[1]*len(row['input_ids'])]),
+                expected_feature_sha256=admission.receipts[index]['feature_sha256'],
+                actual_feature_sha256=hashlib.sha256(vector.tobytes()).hexdigest() if vector is not None else None,
+                capture_complete=False)
+            write_diagnostic(diagnostic_path, minimal)
+            if vector is not None:
+                with Path(diagnostic_path).with_suffix('.npy').open('wb') as stream:
+                    np.save(stream, vector, allow_pickle=False)
+                    stream.flush(); os.fsync(stream.fileno())
+                minimal['vector_file_sha256'] = hashlib.sha256(Path(diagnostic_path).with_suffix('.npy').read_bytes()).hexdigest()
+                write_diagnostic(diagnostic_path, minimal)
+            if raw is not None:
+                try:
+                    with Path(diagnostic_path).with_suffix('.pt').open('wb') as stream:
+                        torch.save(raw.detach().cpu(), stream)
+                        stream.flush(); os.fsync(stream.fileno())
+                    minimal['raw_file_sha256'] = hashlib.sha256(Path(diagnostic_path).with_suffix('.pt').read_bytes()).hexdigest()
+                    write_diagnostic(diagnostic_path, minimal)
+                except Exception as exc:
+                    minimal['raw_capture_error'] = type(exc).__name__
+                    write_diagnostic(diagnostic_path, minimal)
     if failure or record_success:
         receipt = dict(event='train_feature_failure' if failure else 'train_feature_valid', reason=failure,
             index=index, row_one_based=index + 1, example_id=row['example_id'],
@@ -145,9 +183,72 @@ def extract_train_vector(torch, np, model, row, index, device, diagnostic_path, 
             pooling='last_hidden_state[0,-1]; float32 CPU numpy copy',
             model=model_state(torch, model), model_before=before, runtime=runtime_state(torch), forward_autocast=context,
             outside_autocast=autocast_state(torch, ids.device.type), extraction_path=path_identity())
+        if admission is not None and failure:
+            receipt.update(admission=minimal, capture_complete='raw_capture_error' not in minimal)
         write_diagnostic(diagnostic_path, receipt)
     if failure:
         if failure.startswith('forward_or_extraction_exception:'):
             raise RuntimeError(failure) from original
         raise RuntimeError('finite TRAIN hidden: ' + failure)
+    if admission is not None:
+        admission.accepted += 1
     return vector
+
+
+HISTORICAL_RECEIPTS_SHA256 = '75cd0e49a85e0fd9637141b836baf1be1c627cc6a6479127f2dcd8875441a11c'
+
+
+class HistoricalAdmission:
+    """Exact FP32 byte-hash admission for every fresh TRAIN observation.
+
+    The reference contains only immutable comparison receipts, never features to
+    return to the caller. No tolerance, substitution, resume or partial pass.
+    """
+    def __init__(self, np, rows, reference_path):
+        self.np = np
+        self.accepted = 0
+        self.failed = False
+        raw = Path(reference_path).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != HISTORICAL_RECEIPTS_SHA256:
+            raise RuntimeError('historical TRAIN receipt identity')
+        self.receipts = [json.loads(line) for line in raw.splitlines()]
+        if len(rows) != 1792 or len(self.receipts) != 1792:
+            raise RuntimeError('complete 1792 TRAIN reference required')
+        for index, (row, receipt) in enumerate(zip(rows, self.receipts)):
+            if (receipt['index'] != index or not receipt['finite'] or
+                    not self.same_input(row, receipt)):
+                raise RuntimeError('historical TRAIN input binding')
+
+    @staticmethod
+    def same_input(row, receipt):
+        return (row['split'] == 'train' and row['example_id'] == receipt['example_id'] and
+                row['prompt_sha256'] == receipt['prompt_sha256'] and
+                digest(row['input_ids']) == receipt['token_sha256'])
+
+    def check_input(self, index, row):
+        if (self.failed or index != self.accepted or not 0 <= index < 1792 or
+                not self.same_input(row, self.receipts[index])):
+            self.failed = True
+            raise RuntimeError('TRAIN admission latched/order/input failure')
+
+    def vector_reason(self, vector, index):
+        if vector is None or vector.shape != (3072,):
+            return 'historical_vector_shape'
+        if vector.dtype != self.np.dtype('<f4'):
+            return 'historical_vector_dtype'
+        if not self.np.isfinite(vector).all():
+            return 'historical_vector_nonfinite'
+        if hashlib.sha256(vector.tobytes()).hexdigest() != self.receipts[index]['feature_sha256']:
+            return 'historical_finite_drift'
+        return None
+
+    def require_complete(self, features):
+        good = not self.failed and self.accepted == 1792 and features.shape == (1792, 3072)
+        if good:
+            good = all(self.vector_reason(features[i], i) is None for i in range(1792))
+        if not good:
+            self.failed = True
+            raise RuntimeError('TRAIN admission incomplete/failed/persistence mismatch')
+        return dict(rows=1792, comparison='exact FP32 byte SHA-256; no tolerance',
+                    historical_receipts_sha256=HISTORICAL_RECEIPTS_SHA256,
+                    fresh_live_vectors=True, reference_substitution=False)

@@ -1,148 +1,158 @@
-# Auditor blocker closure — prepared diagnostic, awaiting authorization
+ï»¿# Auditor blocker closure â€” completed diagnostic and fail-closed admission
 
 ## 1. Executive verdict
 
-**AUDITOR_BLOCKER_STILL_OPEN**
+**AUDITOR_BLOCKER_CLOSED_SAFE_ADMISSION**
 
-Root cause: **ROOT_CAUSE_UNRESOLVED**. Safe production admission boundary: **not established**. Final Auditor training retry: **RETRY_NOT_YET_JUSTIFIED**.
+Experiment: **BOTH_MATCH_THROUGH_32**. Root cause: **ROOT_CAUSE_UNRESOLVED**. Safeguard: **SAFE_ADMISSION_BOUNDARY_ESTABLISHED**. Technical retry assessment: **RETRY_REASONABLE**, subject to separate final-training authorization and a newly reviewed execution identity. **No training is authorized or was performed by this task.**
 
-The exact two-process experiment is prepared and locally tested. **No cloud resource was launched, no provider API was called, and neither arm ran on an A10.** The prepared authorization explicitly has `operator_authorized: false`.
+The single approved A10 ran Arm O and then Arm D in fresh sequential processes. Each produced 32 finite `(3072,)` FP32 vectors exactly equal to historical bytes. Total: **64 forwards, zero warmups, zero optimizer updates**. Neither arm diverged; no first-divergence capture was triggered. The original cause is not fixed or proven transient.
 
-Experiment outcome: **REMOTE_DIAGNOSTIC_INCOMPLETE**, specifically **NOT_RUN_AWAITING_OPERATOR_AUTHORIZATION**. This describes execution status, not another unsuccessful numerical reproduction. No causal conclusion follows from the synthetic CPU tests.
+The justified local change rejects every newly extracted TRAIN vector unless its FP32 byte SHA-256 exactly matches its immutable historical receipt. This covers all **1,792** rows, not only a prefix. Input/order binding, failure latching, and a complete persisted-feature check stop execution before normalization, head fitting or optimizer creation. The reference contains receipts only, so it cannot supply a replacement vector. The original failed observations are rejected at their first finite drift, **row 11**.
 
-The five requested reports were read completely. The latest evidence remains: ten exact historical vectors, finite divergence on rows 11–31, and a terminal combined shape/finite failure on row 32 whose offending tensor was lost. The subsequent instrumented A10 success did not reproduce the original process lifecycle. This preparation addresses that specific gap; it does not authorize training or another roadmap item.
+All 33 relevant local CPU tests pass. Neutralizing the admission predicate fails the finite-drift regression; restoration passes. The experiment demonstrates reproducibility of the live prefix; deterministic tests establish the admission control. Neither establishes full-run device stability or successful future optimization.
 
-## 2. Exact experiment identities
+The instance is terminated, independent provider inventory is empty, and temporary provider/local SSH credentials are removed. Conservative elapsed-time cost through independent confirmation is **$0.2232846483**, below both budgets. This is an estimate, not a provider invoice. Nothing was pushed and no other Shimmer work was started.
 
-| Item | Prepared identity |
+## 2. Authorization and exact execution identities
+
+The operator explicitly approved the prepared diagnostic in `f5a6c00`. Approval, fresh preflight and source/bundle reverification were recorded in `1e230d9` before provisioning. The five prerequisite reports were read completely before preparation; the prior forensic finding remains ten exact rows, 21 finite divergent rows, and an unretained row-32 admission failure.
+
+| Item | Executed identity |
 |---|---|
-| Baseline forensic commit | `d0b218e` |
-| Original execution source | `b4f7e8247391e2278a7b7a1ba84f6b5915c56ced` |
-| Original source bytes | Manifest-verified members of `docs/fix/auditor_final_run/runtime_bundle.zip` |
+| Prepared diagnostic commit | `f5a6c00` |
+| Forensic baseline | `d0b218e` |
+| Failed execution source copied into diagnostic | `b4f7e8247391e2278a7b7a1ba84f6b5915c56ced` |
 | Execution-manifest SHA-256 | `8cb99d5aff7967ec2d951d941d6041c5aabd2a379a7d923d670c13d45fc4b2e5` |
 | Runtime-bundle SHA-256 | `cab6408e2fc8e6424a00448fe032b860a9bb2c394d3deb01f23ef263e81751fe` |
-| Instance, if authorized | Exactly one Lambda `gpu_1x_a10`, NVIDIA A10 24GB, `us-east-1` |
-| Image | `f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0`, lambda-stack-24-04, version 24.4.4-2141 |
-| Rate | Historical cap $1.29/hour; fresh provider price/capacity verification required before launch; no acceptance of a higher rate |
-| Budget | $1 soft / $2 hard ceiling; one launch, no automatic retry or second instance |
-| Arm execution | One O process, wait for exit, then one D process; each at most rows 1–32; at most 64 forwards total |
-| Working directory | `/home/ubuntu/shimmer-auditor-final`, matching the failed run on a new instance |
-| Model/runtime | Original sealed runtime contract, canonical adapter, checkpoint revision, eager attention, NF4/BF16, package pins and seed settings |
-| Historical comparison | First 32 vectors derived from immutable full TRAIN cache SHA-256 `06e47fd6a0244cbff94f75e66eff81b4cad417843e34d62c3b370a3468cf8287`; each vector and token binding checked against its original receipt |
-| Data payload | Original sealed 1,792 TRAIN records retained for startup/allocation fidelity; only first 32 may be forwarded; 32 historical comparison vectors; no DEV/challenge contents |
+| Provider instance | `80c398d739444f09b239ffa1cec0340b`; exactly one Lambda A10 24GB, `us-east-1` |
+| Verified rate and caps | $1.29/hour; $1 soft / $2 hard |
+| Image | `f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0`, lambda-stack-24-04, 24.4.4-2141 |
+| Working directory / Python | `/home/ubuntu/shimmer-auditor-final`; `.venv/bin/python`, Python 3.12.3 |
+| Base state SHA-256, both arms | `d07dae6b59e73394974e2699a2f66dad8c7d57be1c800c6774eccd114f38db18` |
+| Canonical adapter SHA-256, both arms | `733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6` |
+| Historical full TRAIN array SHA-256 | `06e47fd6a0244cbff94f75e66eff81b4cad417843e34d62c3b370a3468cf8287` |
+| Historical TRAIN receipts SHA-256 | `75cd0e49a85e0fd9637141b836baf1be1c627cc6a6479127f2dcd8875441a11c` |
+| Collected archive SHA-256 | `358b115d3414167d06a1ec39347771ec705443d907f732f461ea5813040b4749` |
 
-The manifest identifies new diagnostic source by **file-content hashes**, not by falsely attributing it to the baseline commit. The generated arm/helper source is retained for direct review. The final local commit contains the reviewed new code and preparation evidence. The approximately 60MB runtime ZIP remains locally retained, with its hash, rather than duplicating the canonical adapter in Git.
+The sealed runtime, base revision, quantization and adapter construction were the prepared design. All 33 manifest-bound remote files were verified after collection. New generated source is identified by content hashes in the manifest, not falsely attributed to the old baseline commit. Post-run admission and analyzer edits described below were **not** in the paid execution; its original source remains in the approved bundle and downloaded archive.
 
-Artifacts:
+References: [execution manifest](auditor_blocker_closure_run/execution_manifest.json), [operator authorization](auditor_blocker_closure_run/OPERATOR_AUTHORIZATION.json), [pre-launch reverification](auditor_blocker_closure_run/PRE_LAUNCH_REVERIFICATION.json), [fresh inventory/capacity/price preflight](auditor_blocker_closure_run/live_preflight.json), [post-run verification](auditor_blocker_closure_run/POST_RUN_VERIFICATION.json).
 
-- [Execution manifest](auditor_blocker_closure_run/execution_manifest.json)
-- [Launch/budget specification](auditor_blocker_closure_run/manifest.json)
-- [Unapproved authorization](auditor_blocker_closure_run/diagnostic_authorization.json)
-- [Generated shared arm source](auditor_blocker_closure_run/auditor_blocker_arm.py)
-- [Generated helper with boundary callback](auditor_blocker_closure_run/auditor_blocker_helper.py)
-- [Local test gates](auditor_blocker_closure_run/LOCAL_GATES.json)
+## 3. Arm O â€” original lifecycle
 
-This is preparation of the authorized diagnostic payload, not work on roadmap packaging or release readiness.
+**32/32 exact matches, finite `(3072,)`, zero updates.** PID `3636`, parent `3635`, Linux start ticks `34100`. Observed process start epoch `1789662981.8056514`; completion `1789663004.9838216`.
 
-## 3. Arm O result and exact path
+The generated source preserves the original failed source's `scope`, `runtime` and `load_base` ASTs, import/environment ordering, base preparation, adapter load/verification, unused head creation/lifetime, eval/freeze state and `(1792,3072)` memmap allocation. Only rows 1â€“32 are forwarded. Original training authorization is replaced with diagnostic authorization, and the remaining-work estimate is bounded to this experiment. The executable has no downstream normalization, fitting, optimizer or evaluation entry point.
 
-**NOT RUN.** No live parity or finite-shape result is claimed.
+The inline branch creates IDs inside inference mode, creates an all-ones mask in the model call, runs BF16 autocast, selects `[0,-1]`, and makes the normal FP32 CPU copy. CPU parity precedes memmap persistence. The prior pooled view remains alive into the next forward, preserving the original output-storage lifetime. Successful forwards add no GPU reductions, tensor scans, layer hooks, allocator probes or model-state snapshots.
 
-`prepare_auditor_blocker_closure.py` derives the arm from the failed run's exact preserved Python source. The original `scope`, `runtime`, and `load_base` function ASTs are unchanged; tests compare them directly. The original imports inside initialization, base loading, canonical adapter loading/verification, unused head construction, eval/freeze state, base hash, and `(1792,3072)` FP32 memmap allocation are copied from the failed path.
+Explicit replay limitations: the raw output is named for failure capture; the mask is named by an assignment expression and survives until comparison, then is released. Naming raw shares storage already retained by the pooled view, but the mask has a slightly longer lifetime. Both arms add CPU reference allocation/comparison. This is a faithful bounded replay, not a claim of zero perturbation or recreation of the original expired device/process state.
 
-The common authorization function is replaced with diagnostic-only authorization; the remaining-work budget estimate is replaced because an estimate for 896 updates would refuse this bounded experiment. The original signal-handler/budget object remains. These changes affect both arms equally. No original training permit is supplied, and the generated executable has no normalization, fitting, optimizer, evaluation, or training entry point.
+Evidence: [O result](auditor_blocker_closure_run/downloaded/evidence/O/result.json), [O feature receipts](auditor_blocker_closure_run/downloaded/evidence/O/events.jsonl), [generated arm](auditor_blocker_closure_run/auditor_blocker_arm.py).
 
-O creates IDs inside inference mode, uses the original all-ones mask construction in the original model call, performs BF16 autocast, selects `[0,-1]`, and makes the normal FP32 CPU NumPy copy. The CPU vector is compared byte-for-byte with historical **before memmap persistence**. Exact matches retain original memmap flush and feature-event behavior. Prior `hidden` remains alive into the next forward, preserving the original output-storage lifetime.
+## 4. Arm D â€” helper lifecycle
 
-Two small, explicit accommodations are necessary to retain the requested failing evidence: the full raw result is named before selecting its last token, and the original `ones_like(ids)` mask is named using an assignment expression in the call. These references survive through the CPU comparison, then are dropped on success. They add no GPU reduction, scan, hook, or allocation probe. The mask therefore lives slightly longer after the forward than the original anonymous argument; the raw reference shares storage already retained by the last-token view. This is not claimed to be a zero-perturbation replay of an expired process. Both arms also necessarily incur the new CPU historical comparison and reference-array allocation.
+**32/32 exact matches, finite `(3072,)`, zero updates.** PID `3809`, parent `3635`, Linux start ticks `36486`. Observed process start epoch `1789663005.668844`; completion `1789663030.8538258`. O completed before D started; executable and working directory matched. The supervisor used two blocking, sequential child invocations, not same-process reloads.
 
-Malformed raw output is captured at the boundary, including indexing failures; no subsequent forward occurs. Unexpected forward exceptions yield an incomplete arm rather than being mislabeled as historical numerical divergence.
+Common cold startup, loader, adapter, head lifetime, memmap, rows and budgets match O. D uses the then-current diagnostic helper with success receipts, through a generated callback after CPU copy and before successful logging. Inputs are created outside inference mode; forward remains inside inference/BF16 autocast. Helper locals expire before the next call. No earlier warmups or other real-model forwards occurred.
 
-## 4. Arm D result and intended contrast
+All 32 success receipts independently verify token/IDs/mask bindings, raw/pooled/vector finiteness, zero training modules, active enabled/unmerged historical adapter, eval dropout, BF16 quantized compute, eager attention, deterministic algorithms and disabled TF32. No state discrepancy was found. Detailed native/buffer capture was deliberately reserved for divergence and was not invoked.
 
-**NOT RUN.** No live parity or finite-shape result is claimed.
+Evidence: [D result](auditor_blocker_closure_run/downloaded/evidence/D/result.json), [D feature receipts](auditor_blocker_closure_run/downloaded/evidence/D/events.jsonl), [first success receipt](auditor_blocker_closure_run/downloaded/evidence/D/row-01.json), [last success receipt](auditor_blocker_closure_run/downloaded/evidence/D/row-32.json), [executed generated helper](auditor_blocker_closure_run/auditor_blocker_helper.py).
 
-D is the same executable in a second fresh Python process. It uses the same scope, authorization/environment ordering, runtime initialization, loader, adapter, unused-head lifetime, memmap size, data order, budget logic, CPU parity check, and persistence. Unlike the previous A/B/C diagnostic, there are no earlier warmup forwards or same-process model reloads.
+Both memmaps allocate 1,792 rows for lifecycle fidelity. **Only their first 32 rows are observations.** Unwritten rows are not evidence of model output.
 
-Only the extraction branch changes: D uses the current diagnostic helper with `record_success=True`. A diagnostic-only generated copy adds a boundary callback after the normal CPU copy, before successful receipt creation/return. This permits immediate comparison and raw-tensor preservation without a second forward or layer hook. On exact match the helper follows its existing success-receipt path; its locals then expire before the next call. Its input tensors are created outside inference mode, while the model call remains inside inference mode/BF16 autocast.
+## 5. First divergence and evidence integrity
 
-The production helper is unchanged. The generated copy's only functional additions are the optional callback argument and callback invocation; they are visible in the retained source. The callback never substitutes, casts, repairs, skips, or returns a historical vector as an observation.
+There was **no new first divergence**. The original row-11 transition and missing row-32 tensor remain the unresolved historical boundary. The prepared capture mechanism was exercised synthetically, not by an actual cloud fault in this experiment.
 
-The supervisor invokes O with blocking `subprocess.run`, verifies its terminal result, then invokes D with another `subprocess.run`. Each arm records PID and Linux process-start ticks. A reused PID or an incomplete arm prevents a completed experiment classification. One-time supervisor and arm attempt markers prevent automatic resume/retry. Separate acquisition/preflight support processes execute zero model forwards; the two arm processes are the only inference processes.
+The remote archive was hash-verified before termination. Its prepared tar command omitted the manifest-bound launch-environment file `tuning/first_domain_agnostic_v1/experiment.json` because it included only `tuning/auditor_final`. That single file was collected separately, read-only, with remote and local hash verification before workload completion. No payload or forward logic was changed. The supplemental file and archive together satisfy all 33 manifest hashes. See [supplemental collection receipt](auditor_blocker_closure_run/supplemental_collection.json).
 
-## 5. First-divergence capture
+`verify_auditor_blocker_closure_results.py` additionally binds all 1,792 historical receipts to the existing full TRAIN array and serialized inputs, checks all 64 event hashes/bytes against historical, verifies the 32 D model/input receipts and process order, and confirms collection/cleanup receipts. It uses no model and opens no DEV/challenge/protected payload.
 
-**No new divergence boundary exists yet.** The historical observed boundary remains row 11, document-012, with the unexplained row-32 terminal failure.
+Remaining verification limits: no new failure means no fault-time native-library/buffer/device evidence; source and parameter hashes cannot reconstruct old transient native state; O retains the necessary minor capture accommodations; final hardware billing is not independently invoiced here. Neither version pins nor successful recurrence prove the original process had identical nonpersistent state.
 
-The prepared comparator requires FP32 shape `(3072,)`, finiteness, and exact byte equality. No `allclose` tolerance is used; even a one-ULP finite change or a signed-zero byte change is refused. Raw shape is checked separately using metadata. On the first bad boundary:
+## 6. Ranked causal assessment
 
-1. A minimal strict-JSON boundary receipt is flushed and fsynced.
-2. The produced CPU vector, if one exists, is saved and fsynced separately.
-3. Raw hidden values are retained as a CPU tensor file with dtype preserved, if safely recoverable.
-4. Only then are detailed post-boundary probes attempted. Each result/error is durably recorded, and no additional model forward is invoked.
+Ranking is investigative priority, not a probability estimate. No candidate explains all original observations strongly enough to claim causality. See the earlier [full root-cause analysis](AUDITOR_FAILURE_ROOT_CAUSE_ANALYSIS.md) for the four-run semantic comparison and saved-evidence falsification.
 
-Post-boundary capture covers input/token/mask hashes; raw/pooled/vector shapes, dtypes/devices and finite/NaN/+Inf/-Inf summaries; model train state; adapter active/disabled/merged state; dropout and quantized compute flags; every named parameter hash; persistent and nonpersistent named buffers (values and hashes); Python/NumPy/Torch/CUDA RNG hashes; relevant module file/origin metadata; mapped native-library paths/maps/hashes; Torch build and CUDA/cuDNN/bitsandbytes identities; driver; allocator summary; and whitelisted deterministic/native environment settings. NVIDIA ECC/retirement/row-remap information and filtered Xid/NVRM messages are collected if available. Unavailable commands and failed captures are reported, not interpreted as a clean device.
+| Rank / candidate | Supporting evidence | Falsification / expected observation | Verdict after O/D |
+|---|---|---|---|
+| 1. Original execution-specific model/native/device state changed around row 11 | Ten initial exact rows followed by all-coordinate finite drift, then terminal refusal; cold cloud runs match | A persistent deterministic input/source fault should recur at the same boundary. Neither O nor D does. Original fault-time state/tensor is absent, so native buffer, device and other state mechanisms cannot be separated | Plausible boundary; exact mechanism untestable from preserved evidence |
+| 2. Inline output lifetime/input inference context alone causes the failure | Original and helper differ in lifetime and ID context; prior CPU probe confirms these differences | Under common startup, a sufficient deterministic inline defect predicts O divergence and D match. Both match. Rare allocation sensitivity is not eliminated by one replay | Unlikely as a sufficient deterministic cause; conditional sensitivity remains unproved |
+| 3. Success instrumentation repairs or masks a deterministic defect | Earlier successful A10 diagnostic was instrumented | New O has no success-time GPU scans/state snapshots yet matches. If such instrumentation were necessary, O should fail | Unlikely; not a demonstrated fix |
+| 4. Wrong persistent base/adapter/source/token identity | Such differences can alter all coordinates | Verified source/assets and token bindings, ten exact original rows, and new complete-prefix parity contradict a static identity mismatch. A static mismatch would usually affect row 1 as well | Unlikely for verified identities; hashes do not certify all runtime state |
+| 5. Row-32 content or deterministic sequence-length failure | Original guard failed on that row | Historical row32 and repeated later A10 row32 are finite, including this sequential O and D; earlier forensic length comparison did not show a new maximum at row11 | Ruled out as an unconditional input-only failure in the pinned path |
+| 6. Local-vs-cloud runtime difference explains the original cloud transition | Local execution is deterministic but differs numerically from cloud | This explains local mismatch, not ten exact then 21 drifting original cloud rows; both new pinned A10 processes reproduce historical | Not an explanation of the original failure |
 
-A wrong raw shape can prevent pooling, especially in D. In that case no CPU vector is invented: the raw tensor and receipt are retained and the absence of a vector is explicit. I/O failure also stops execution. The post-run analyzer refuses a fully classified completed experiment when required capture is incomplete. It never deserializes the saved `.pt` files to run code or loads a model.
+A transient GPU fault is one possible member of the first boundary, not an established explanation. No recovered Xid/ECC report or offending tensor proves it. The two original symptoms could share a mechanism, but that is also unproven.
 
-Successful O forwards contain no new GPU reductions, full-tensor scans, layer hooks, allocator sampling, or runtime-state snapshots. Successful D instrumentation is the intended experimental contrast.
+**ROOT_CAUSE_UNRESOLVED.** No causal numerical or lifecycle fix was implemented.
 
-## 6. Causal interpretation and root-cause status
+## 7. Safe admission boundary
 
-There is no new A10 evidence yet, so **ROOT_CAUSE_UNRESOLVED** remains mandatory. Local tests demonstrate diagnostic mechanics, not the cause of the original row-11 transition or row-32 failure.
+**SAFE_ADMISSION_BOUNDARY_ESTABLISHED** for admission of fresh TRAIN features to normalization/fitting. The narrow CPU boundary is observable and enforceable even though its upstream failure mechanism is unknown.
 
-After authorization and execution, report exactly one of:
+A prefix-only check cannot prevent later finite drift. The implementation therefore covers every one of the 1,792 rows:
 
-| Outcome | Required interpretation |
+1. `HistoricalAdmission` validates the immutable historical receipt-file SHA-256 and binds every row index, example ID, prompt hash and serialized token hash to TRAIN-only inputs before model loading.
+2. Before each forward, it enforces order and a nonfailed state. The ordinary live forward/pooling/CPU copy still runs; no historical feature values are loaded by this gate.
+3. Raw shape and vector shape/finiteness remain mandatory. Each FP32 vector's byte SHA-256 must equal its historical receipt exactly. This is cryptographic exact-byte admission, with no numeric tolerance or `allclose`; the normal SHA-256 collision assumption applies.
+4. On first finite drift or raw/vector failure, the gate latches failure, durably records a minimal receipt, saves the observed CPU vector and raw tensor when recoverable, then records detailed model/runtime/tensor summaries. Further forwards are refused. Atomic JSON replacement preserves the minimal receipt if a later detail write fails. I/O/capture failures do not permit progress.
+5. Before normalization, the gate requires all 1,792 successful admissions and rechecks every persisted vector against its receipt. Partial extraction, ignored failure, or changed persisted features cannot unlock fitting. An admission receipt is written only after this check.
+
+Only comparison receipts were copied to `tuning/auditor_final/historical_train_features.jsonl`, byte-identical to historical. There is no historical-vector substitution, sanitization, row skipping, cache-as-observation reuse or automatic resume. The helper's default behavior remains available for bounded diagnostics; the production extraction call explicitly requires the admission object.
+
+Production changes are confined to `auditor_feature_diagnostics.py`, the live final extraction call/completion boundary in `auditor_final_remote.py`, and the immutable TRAIN comparison receipts. Existing frozen HPO values, datasets, architecture, runtime contract, schedule and consumed seal remain unchanged. No final payload was resealed, bundled or launched; the old source seal intentionally cannot admit the changed code. Future execution needs a separately reviewed identity and authorization, not reuse of this diagnostic permit.
+
+The guarantee is limited to extracted-feature admission. It does not prove future optimization stability, general hardware correctness, or completion of the full extraction. A benign but nonidentical future runtime will be refused rather than tolerated. Diagnostic persistence cannot be guaranteed if storage/device access itself is unavailable; such errors still stop the process.
+
+## 8. Deterministic validation and minimal analysis correction
+
+Before launch, the prepared diagnostic passed **20/20 CPU tests**, with a diagnostic-comparator neutralize/fail/restore/pass check: [original gates](auditor_blocker_closure_run/LOCAL_GATES.json), [log](auditor_blocker_closure_run/local_tests.log), [mutation receipt](auditor_blocker_closure_run/neutralize_restore.json). Those are preserved prelaunch results for the approved source, not claimed as tests of the later admission change.
+
+After teardown, **33/33 tests passed**: 16 admission/cost regressions, seven existing extraction regressions and ten existing final-contract tests. Coverage includes:
+
+- exact live CPU-copy acceptance; all 1,792 saved historical vectors passing complete admission;
+- one-ULP finite drift refusal and persistent failure latch; later row101 drift refusal;
+- saved failed-run rows1â€“10 passing and row11 failing before any later row;
+- malformed shape, wrong dtype, NaN/+Inf/-Inf, changed/missing reference and input/order refusal;
+- incomplete admission and post-persistence corruption blocking completion;
+- actual production-loop AST executed with synthetic extraction, proving failed admission prevents memmap writes/normalization; downstream fitting and optimizer calls structurally follow completion;
+- durable minimal/vector/raw evidence, raw/detail-capture failure and atomic receipt-upgrade failure;
+- unchanged final contracts and the corrected cost units.
+
+Neutralizing `HistoricalAdmission.vector_reason` to unconditional success makes the finite-drift test fail because the exception no longer occurs. Restoring it passes. No source neutralization remains. [Validation and source hashes](auditor_blocker_closure_run/ADMISSION_VALIDATION.json), [33-test log](auditor_blocker_closure_run/admission_tests.log), [neutralized failure](auditor_blocker_closure_run/admission_neutralized.log), [restored pass](auditor_blocker_closure_run/admission_restored.log).
+
+Reproduce locally with `.venv/Scripts/python.exe tools/validate_auditor_feature_admission.py`; it uses synthetic tensors and saved TRAIN evidence, not real-model inference. `python tools/verify_auditor_blocker_closure_results.py` verifies retained receipts. Neither launches resources or trains.
+
+A post-run analyzer bug multiplied elapsed seconds by the hourly rate without dividing by 3,600. Only that derived estimate was wrong; controller/watchdog cost logic and timing receipts already used correct units. `cost_usd` now performs the conversion and has a one-hour regression. The corrected [recomputed results](auditor_blocker_closure_run/RECOMPUTED_RESULTS.json) reports $0.2232846483. The executed analyzer source is retained unchanged in the archive. Its `safe_admission_boundary_established: false` field is deliberately the experiment-only classification; the subsequent reviewed production-safeguard verdict is in this report and `FINAL_STATUS.json`.
+
+## 9. Budget, collection and teardown
+
+| Event (UTC, 2026-09-17) | Evidence |
 |---|---|
-| `O_DIVERGES_D_MATCHES` | Strong evidence of extraction lifecycle/instrumentation sensitivity under common startup; inspect the preserved boundary and smallest source/state differences before considering a causal fix |
-| `BOTH_DIVERGE` | Helper is not a sufficient distinction; inspect preserved first-divergence runtime/model state; no training retry |
-| `O_MATCHES_D_DIVERGES` | Helper path is suspect; no promotion of that helper as a remedy |
-| `BOTH_MATCH_THROUGH_32` | Nonreproduction; evaluate a fail-closed production admission mechanism without claiming the original cause was fixed |
-| `REMOTE_DIAGNOSTIC_INCOMPLETE` | Missing arm, resource/runtime failure, invalid process/order evidence, or inadequate required capture; no closure claim |
+| 16:28:47.299 â€” one launch | Empty inventory, A10 us-east-1 availability and $1.29 rate verified before launch |
+| 16:36:44.984 â€” O complete | 32 exact matches |
+| 16:36:45.669 â€” D observed start | Distinct PID/start ticks, after O exit |
+| 16:37:10.854 â€” D complete | 32 exact matches |
+| 16:37:14.474 â€” supervisor completion recorded | Exit code 0; no automatic continuation |
+| 16:37:33.880 â€” archive verified locally | 57,464,126 bytes; archive hash above |
+| 16:37:40.130 â€” termination requested | After verified collection |
+| 16:39:05.986 â€” termination verified | Provider status terminated |
+| 16:39:10.419 â€” independent cleanup confirmation | Inventory empty; temporary SSH registration absent; local key material absent |
 
-There is no automatic second experiment, layer replay, parameter sweep, or training continuation in the code. The analyzer verifies receipts and produces an outcome; it does not automatically declare a causal fix, safe admission, or training authorization.
+Elapsed time through independent confirmation: **623.119949 seconds**. At $1.29/hour: **$0.2232846483**. The workload stayed below the $1 soft budget and $2 hard ceiling; no additional instance, launch retry or multi-round execution occurred. Watchdog and reserve protection were armed; normal completion/teardown occurred long before their cutoffs.
 
-## 7. Safe admission boundary and retry readiness
+Both arms report zero forbidden accesses and zero DEV/historical-DEV/challenge rows. No normalization, head fitting, optimizer/backward/training, HPO, protected test, Producer or full Shimmer was executed. Dependency acquisition and provider-support processes performed no model forwards.
 
-**SAFE_ADMISSION_BOUNDARY_ESTABLISHED is not claimed. RETRY_NOT_YET_JUSTIFIED.** Production behavior was not changed because the required discriminating experiment has not run.
+Receipts: [collection integrity](auditor_blocker_closure_run/collection_integrity.json), [termination confirmation](auditor_blocker_closure_run/TERMINATION_VERIFIED.json), [independent empty inventory and credentials](auditor_blocker_closure_run/independent_inventory_confirmation.json), [cleanup](auditor_blocker_closure_run/cleanup.json), [evidence inventory](auditor_blocker_closure_run/EVIDENCE_MANIFEST.json).
 
-A future bounded-prefix gate can prove that the prefix matched and can prevent fitting after an observed prefix mismatch. It cannot, by itself, prove that finite divergence never occurs on rows 33–1792. Shape/finiteness checks on those later rows would still admit finite drift there. Therefore the broad statement “prevents divergent finite features from ever entering training” is stronger than a 32-row-only guarantee.
+## 10. Retry assessment, unknowns and exact next action
 
-If both arms match, the next causal/safety analysis must address this explicitly. One possible stronger boundary is CPU historical parity on every newly extracted TRAIN row, with no historical substitution and no extra model forwards, plus a final complete-admission check before normalization. That is a proposal, not an implemented or authorized production change here. Alternatively, any bounded-prefix-only safeguard must state its restricted guarantee and justify its operational sufficiency. Neither broad safety nor closure is inferred merely from `BOTH_MATCH_THROUGH_32`.
+**RETRY_REASONABLE** technically: two distinct cold extraction lifecycles reproduce the historical prefix; the live extraction boundary now refuses finite drift anywhere in the full TRAIN pass; complete fresh-feature admission is mandatory before any fitting; regression tests reject the actually preserved original failure at row11. This is an operational containment decision, not causal repair or an assurance that the retry will complete.
 
-The frozen HPO parameters, datasets, architecture, original successful cache, historical evidence, current final source and existing consumed training authorization remain unchanged. No final training can start through the prepared arm executable regardless of its outcome.
+Unknown: the original row11 internal transition, row32 offending shape/values, original native/device state, whether both symptoms shared a mechanism, whether unobserved rows33â€“1792 will match on a future cold extraction, and whether subsequent optimization will remain stable. The new gate may stop a future run on those later rows; that is its intended behavior.
 
-## 8. Code changes and neutralize/fail/restore/pass evidence
-
-New diagnostic-only source:
-
-- `tools/prepare_auditor_blocker_closure.py`: deterministic payload creation, historical/input/source bindings, generated shared arm/helper, false authorization.
-- `tools/auditor_blocker_support.py`: immediate CPU parity, post-boundary capture, bounded supervisor, diagnostic authorization and acquisition support.
-- `tools/auditor_blocker_closure_cloud.py`: isolated one-instance controller derived from the earlier diagnostic controller, with an explicit pre-provider authorization gate, sealed-source/test binding, budget/watchdog, collection and teardown.
-- `tools/analyze_auditor_blocker_closure.py`: post-teardown artifact verification and outcome classification; no model execution.
-- `tools/test_auditor_blocker_closure.py`: local deterministic tests.
-
-**20/20 tests passed** under local Torch 2.5.1+cpu. See [full test log](auditor_blocker_closure_run/local_tests.log). Tests cover exact passes; one-ULP finite drift; shape and NaN/+Inf/-Inf failures; dtype/signed-zero distinctions; durable refusal and I/O failure; both generated arms through 32 synthetic rows; first finite drift stopping at row 11; invalid vectors excluded from memmap persistence; original-versus-helper input inference context; unchanged loader/runtime/scope ASTs; absence of downstream fitting/training calls; sequential child dispatch; incomplete-O stopping; consumed-attempt refusal; authorization refusal before provider construction; and analyzer refusal before teardown.
-
-The cloud-refusal test mocks provider construction and verifies it was never called. Generated-arm tests use a synthetic CPU model and mocked acquisition/runtime/adapter gates; they are not Linux/A10 model validation and do not claim full real-device capture succeeded.
-
-[Neutralize/restore receipt](auditor_blocker_closure_run/neutralize_restore.json): replacing the diagnostic comparator's decision function with unconditional success makes the finite-drift regression fail; restoring the function makes it pass. The mutation is temporary in memory and was restored. This proves the diagnostic admission check is load-bearing for that test. It is **not** a production-fix regression or a demonstrated repair of the unknown native failure.
-
-## 9. Cloud budget and teardown status
-
-No new launch, instance, SSH registration, paid workload, collection archive, or teardown event exists. New cloud cost is **$0**. A fresh live inventory was not requested during preparation; old empty-inventory receipts are not represented as a new provider check.
-
-If separately authorized, the controller must verify empty inventory, exact A10 capacity/price, and the pinned image before provisioning. At the $1.29/hour cap the $2 elapsed-time budget is 5,581.395 seconds; workload cutoff is 4,681.395 seconds, leaving a 900-second collection/teardown reserve. The watchdog requests termination by 5,401.395 seconds, before the hard deadline. The $1 soft checkpoint requires the remaining work and reserve to fit. Provider teardown delay remains an operational risk; the ceiling is enforced by cutoffs/watchdog requests, not a guarantee of provider billing latency.
-
-The controller collects and hashes evidence before teardown when possible, then terminates regardless of workload success. Independent empty inventory and temporary SSH/local-key cleanup are required. A collection failure must not postpone termination. No second instance or launch retry is permitted.
-
-## 10. Exact next action
-
-**Stop here for separate operator authorization.** This boundary comes directly from the request attachment: “Do not launch cloud compute unless separately authorized by the operator” and “Prepare the exact experiment and stop for authorization before provisioning.”
-
-The requested approval is only for the manifest and bundle hashes above: **one Lambda A10 24GB in us-east-1, O then D in two fresh sequential processes, at most 32 TRAIN forwards per arm, $1 soft/$2 hard, no warmup or training, no second instance/retry**. It does not authorize a final Auditor training retry.
-
-After explicit authorization, bind that approval to the existing manifest, reverify the prepared source/test/bundle hashes and provider prerequisites, then use `tools/auditor_blocker_closure_cloud.py execute`. The remote workload command is `.venv/bin/python -B -u tools/auditor_blocker_support.py run`; the supervisor alone dispatches the two arms. After verified teardown, run `tools/analyze_auditor_blocker_closure.py`, update this report with the actual outcome/capture evidence, and perform the requested causal or safe-admission analysis. No approval was written during preparation.
-
-Remaining unknowns are the original internal row-11 transition, original offending row-32 shape/values, relevant old device/native state, whether the two observed failures share one cause, and whether either cold path will reproduce them. The prepared diagnostic is designed to preserve the first new divergence if it occurs. Until its results justify closure, **AUDITOR_BLOCKER_STILL_OPEN** remains the final status and all other Project Shimmer roadmap work remains stopped. Producer Optuna HPO remains post-roadmap, after packaging.
+No further remote diagnostic is required to establish this admission boundary, and none is authorized. No automatic final retry follows. **Stop after this local results/safeguard commit.** A final Auditor training attempt requires separate operator authorization and review of the changed source/admission reference and execution identity. The consumed diagnostic/final authorizations are not reset. No packaging, release, Producer or other roadmap work is part of this closure.

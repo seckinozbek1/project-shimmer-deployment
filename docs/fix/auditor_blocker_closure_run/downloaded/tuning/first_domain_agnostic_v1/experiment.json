@@ -1,0 +1,58 @@
+{
+  "experiment": "first-domain-agnostic-tuning-v1",
+  "source_commit": "a4e369fbfb18f1f547ab207334fe3698627b9d7b",
+  "approved_pool_sha256": "c7ffd85ff793a6bb710b7ab9c677e7a34a555bdd4de638133d671b0f25639600",
+  "counts": {
+    "producer": {
+      "train": 32,
+      "dev": 32
+    },
+    "auditor": {
+      "train": 46,
+      "dev": 24
+    }
+  },
+  "use": "training_pipeline_dry_run",
+  "training_authorized": false,
+  "real_model_training": false,
+  "human_review_status": "PENDING",
+  "acceptance_source": "benchmark/first_tuning_experiment_v1/acceptance_registration.json",
+  "acceptance_sha256": "8b70b096b128183707b2cc77c7577efebc8a5232336316a498f133306e3495da",
+  "acceptance_criteria": 27,
+  "catastrophic_zero_limits": 6,
+  "R07_preserved": true,
+  "selection_rule": "zero catastrophic failures, then 100% contract validity; then role semantic mean; ties earliest step, then adapter hash",
+  "protected_rule": "both role selection freezes verified before any protected read; exactly one paired BASE/TUNED evaluation; no feedback to selection",
+  "runtime": {
+    "python": "3.12.3",
+    "platform": "linux_x86_64",
+    "cuda": "12.1",
+    "driver_minimum": "525.60.13",
+    "gpu_count": 1
+  },
+  "environment": {
+    "PYTHONHASHSEED": "7",
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "TOKENIZERS_PARALLELISM": "false"
+  },
+  "dry_run_runtime": {
+    "transformers": "4.51.3",
+    "tokenizers": "0.21.1",
+    "huggingface-hub": "0.30.2",
+    "jinja2": "3.1.4"
+  },
+  "expected_commands": [
+    "python -B tuning/first_domain_agnostic_v1/dry_run.py",
+    "python -B tuning/first_domain_agnostic_v1/train.py --role producer --authorization /secure/operator-authorization.json",
+    "python -B tuning/first_domain_agnostic_v1/train.py --role auditor --authorization /secure/operator-authorization.json"
+  ],
+  "no_automatic_fallback": true,
+  "protected_component_hashes": {
+    "tuning/first_domain_agnostic_v1/protected_eval.py": "fdcf8d1efb1651afb5b75866a30e7b4e80610a43b1c28c9e54aaa84efb0315c2",
+    "tuning/first_domain_agnostic_v1/protected_population.json": "e086e0cec1198a011d3b44d9c6493953b21c359c51e3a12805d6a4e31b3dff10",
+    "benchmark/first_tuning_experiment_v1/registration.py": "bd6b70b4c31027b4aa469fe52565da83abd0e360d497f22c7f3b1a58ea8ec046",
+    "benchmark/machine_adjudication_v1/r06.py": "263b7f4d56f53c71a03b0f1ef681f4dc87dc4a4cbb30df43863847c1823fa769"
+  }
+}
