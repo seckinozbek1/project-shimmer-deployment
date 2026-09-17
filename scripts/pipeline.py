@@ -1459,6 +1459,9 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
             wrapper = _build_wrapper(name, orch, keys)
             wrapper._parent_call_ids = ([proc['call_id']] if proc and proc.get('call_id') else
                                         list(proc.get('partition_calls', [])) if proc else [])
+            if name == 'VERIFIER':
+                wrapper._auditor_pair_request = dict(document=doc, producer=proc,
+                    references=[entry.as_dict() for entry in reference_index.find_by_document(doc['id'])])
             tasks.append(_run_one(wrapper, payload,
                                   f"{run_objectives}\nDocument: {doc['name']}",
                                   max_tokens=AUDIT_MAX_TOKENS,

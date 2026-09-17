@@ -302,11 +302,50 @@ def summarize(raw, scheduler=()):
         if r.get('task_id') in membership:
             contributions[r.get('designation') or 'other'] += r['total_service_seconds']
     generations = [(r['start_monotonic_s'],r['end_monotonic_s']) for r in raw if r['event']=='generation_interval']
+    pair_rows = [r for r in raw if r['event']=='auditor_pair']
+    coverage = [r for r in raw if r['event']=='auditor_pair_coverage']
+    joined = [item for r in raw if r['event']=='auditor_verifier_join' for item in r['findings']]
+    pair_call_ids = {r['classifier_call_id'] for r in pair_rows}
+    pair_calls = [r for r in calls if r['call_id'] in pair_call_ids]
+    waves = {}
+    for r in calls:
+        wave = r.get('wave_id')
+        if wave:
+            interval = waves.setdefault(wave,dict(start=r['start_monotonic_s'],end=r['end_monotonic_s'],call_ids=[]))
+            interval['start']=min(interval['start'],r['start_monotonic_s'])
+            interval['end']=max(interval['end'],r['end_monotonic_s'])
+            interval['call_ids'].append(r['call_id'])
+    barriers=[]
+    for e in scheduler:
+        if e['event']=='phase_enter':
+            required=e.get('required_tasks',[])
+            auditor_tasks={r['task_id'] for r in calls if r.get('designation')=='auditor' and r.get('task_id') in required}
+            auditor_ends=[task_events[t]['task_end']['monotonic_s'] for t in auditor_tasks if 'task_end' in task_events[t]]
+            barriers.append(dict(consumer_phase=e['phase'],required_task_ids=required,
+                auditor_task_ids=sorted(auditor_tasks), consumer_enter_monotonic_s=e['monotonic_s'],
+                after_latest_auditor_seconds=e['monotonic_s']-max(auditor_ends) if auditor_ends else None,
+                interpretation='Observed completion-to-consumer interval, not counterfactual avoidable wait'))
+    pairing=dict(producer_items=sum(r['producer_items'] for r in coverage),pairs_constructed=len(pair_rows),
+        eligible_producer_items=sum(r.get('eligible_producer_items',0) for r in coverage),
+        unavailable=sum(r['unavailable_items'] for r in coverage),classifier_calls=len(pair_calls),
+        classifier_forwards=sum(r.get('forward_attempted') is True for r in pair_rows),
+        forward_count_unknown=sum(r.get('forward_attempted') is None for r in pair_rows),
+        classifier_failures=sum(r['classifier_status']=='failed' for r in pair_rows),
+        relation_distribution={label:sum(r.get('auditor_relation')==label for r in pair_rows)
+                               for label in ('MATCH','DIVERGENCE','OMISSION','ADDITION')},
+        classifier_service_seconds=sum(r['total_service_seconds'] for r in pair_calls),
+        joined_findings=sum(r['auditor_pair_id'] is not None for r in joined),
+        unjoined_findings=sum(r['auditor_pair_id'] is None for r in joined),
+        agreements=sum(r['agreement']=='agree' for r in joined),disagreements=sum(r['agreement']=='disagree' for r in joined),
+        producer_to_auditor=[h for h in handoffs if h['child'] in pair_call_ids],
+        auditor_to_verifier=[h for h in handoffs if h['parent'] in pair_call_ids],
+        interpretation='Advisory pair and independent finding layers; disagreement is not an error label')
     return dict(schema_version=1, pipeline_wall_seconds=ends[-1]['monotonic_s']-begins[0]['monotonic_s'] if begins and ends else None,
         process_cpu_seconds=ends[-1].get('process_cpu_seconds') if ends else None,
         call_wall_union_seconds=union(intervals), service_totals=dict(totals), per_agent_service=dict(agents),
         semantic_critical_path=path, critical_path_unavailable=path_error,
         critical_path_model_service=dict(contributions), generation_wall_union_seconds=union(generations) if generations else None,
+        auditor_pairing=pairing, wave_intervals=waves, consumer_barriers=barriers,
         phase_latencies=phases, wave_count=len({r['wave_id'] for r in calls if r.get('wave_id')}),
         maximum_concurrency=maximum, handoffs=handoffs,
         scheduler_wait_seconds=sum(e.get('scheduler_wait_s',0) for e in scheduler if e['event']=='assigned'),

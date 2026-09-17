@@ -129,10 +129,13 @@ class IntegrationChecks(unittest.TestCase):
             self.assertIsNone(first['pipeline_wall_seconds'])
             self.assertIsNone(first['semantic_critical_path'])
 
-    def test_ordinary_final_admission_stays_closed(self):
-        with patch.dict(os.environ,SHIMMER_MODEL_MODE='final'):
-            with self.assertRaisesRegex(RuntimeError,'FINAL_MODEL_INTEGRATION_BLOCKED'):
-                frozen.admit_ordinary()
+    def test_ordinary_final_admission_requires_valid_pair_contract(self):
+        import auditor_pairs
+        with patch.dict(os.environ,SHIMMER_MODEL_MODE='final'),patch.object(frozen,'verify_runtime'):
+            frozen.admit_ordinary()
+            with patch.object(auditor_pairs,'contract_self_check',return_value=False):
+                with self.assertRaisesRegex(RuntimeError,'pairing contract'):
+                    frozen.admit_ordinary()
         with patch.dict(os.environ,SHIMMER_MODEL_MODE='base'):
             frozen.admit_ordinary()
 

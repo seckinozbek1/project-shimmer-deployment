@@ -1542,6 +1542,8 @@ class AgentWrapper:
         situation = {"agent": self.name, "action": "execute_task",
                      "tags": ["task_execution", self.spec.get("category", "")]}
         check = self.check_constitution(situation)
+        import auditor_pairs
+        work_payload = auditor_pairs.prepare_context(self, work_payload)
         # local D2: capture what each budget CUT while the package is assembled.
         # Off unless SHIMMER_DUMP_PROMPTS=1, so default behavior is unchanged.
         dump_prompts = os.environ.get("SHIMMER_DUMP_PROMPTS") == "1"

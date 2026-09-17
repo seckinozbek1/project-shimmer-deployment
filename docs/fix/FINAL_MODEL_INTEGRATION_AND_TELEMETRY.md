@@ -34,26 +34,18 @@ Recorded before implementation, from executable source:
 
 ## Finding and status
 
-`FINAL_MODEL_INTEGRATION_BLOCKED`
+`FINAL_MODELS_INTEGRATED_TELEMETRY_READY`
 
-Artifact loaders and telemetry foundations are implemented and deterministically
-validated, but **Auditor896 is not installed as the ordinary VERIFIER judge**.
-The future tuned ordinary cloud run is blocked. This is not
-`FINAL_MODELS_INTEGRATED_TELEMETRY_READY`.
+The operator-approved pairing contract resolves the blocker from `093afce`.
+Auditor896 now runs on explicit Producer-item/source pairs and supplies advisory
+typed context to ordinary VERIFIER. VERIFIER retains its rich finding contract,
+independent judgments, zero/one/multiple findings, and refusal behavior. There is
+no equality gate and no classifier-label broadcast to findings.
 
-The executable ordinary contract permits multiple paragraph findings, each with
-its own relation. It requires paragraph/finding/severity/reasoning; `original`,
-`output` and source refs are not all mandatory. A deterministic fixture passes
-`AgentWrapper.parse_contract_output` with two findings (MATCH and OMISSION) and
-without original/output/ref_ids. The trained head returns one of four labels for
-one serialized source/extraction pair. It supplies neither paired source ownership,
-reasoning, selected evidence, nor an insufficient-evidence/refusal class.
-
-Consequently neither a single whole-document prediction nor copying a label onto
-each returned finding is a faithful adapter. An agreement filter would introduce
-new refusal semantics. Guessing pairs from paragraph integers or model-written
-prose would invent the missing provenance. None of those changes is silently
-installed. The required scope-preserving pairing contract is a real blocker.
+See [Auditor pairing contract](AUDITOR_PAIRING_CONTRACT.md) for the source-level
+bridge, fixtures, effect proofs and current validation. Readiness means the
+implementation and deterministic gates pass; no real model or cloud performance
+claim is made. The next full cloud run requires separate authorization.
 
 ## Producer168 integration
 
@@ -66,8 +58,8 @@ The loader uses the existing lane residency budget, or the reference resident ca
 and exposes model/revision/checkpoint/hash/engine metadata.
 
 The default is explicitly recorded `base` mode. Ordinary pipeline startup with
-`SHIMMER_MODEL_MODE=final` verifies the artifact set and then refuses with the
-integration blocker above. Thus this commit does not misrepresent an ordinary base
+`SHIMMER_MODEL_MODE=final` verifies the artifact set, pinned runtime and executable pairing-contract
+self-check, then admits ordinary Review. Thus this commit does not misrepresent an ordinary base
 run as tuned, or admit a Producer-only approximation of the requested final pair.
 No Producer prompt, generation budget or typed extraction semantics was changed.
 Producer168 did not pass every historical V3 quality gate; its use here follows the
@@ -75,7 +67,7 @@ operator's frozen selection, not a new quality or performance claim.
 
 ## Auditor896 preparation and preserved admission
 
-`final_models.load('auditor', device)` is a prepared, non-default inference loader.
+`final_models.load('auditor', device)` is the pair-scoped final-mode inference loader.
 It binds the canonical LlamaForCausalLM base (despite the repository's Phi name),
 NF4/BF16/eager execution, PEFT classifier_fork, saved FP32 head and fixed FP32
 mean/std. It prepares the k-bit base as in final evaluation, freezes parameters,
@@ -91,8 +83,8 @@ feature admission implementation is unchanged. Old step120 TRAIN feature hashes
 are not falsely used as an oracle for checkpoint896 on new inputs.
 
 The loader has not been exercised with real model weights. CPU tests use a fake
-backbone and small synthetic tensors only. The prepared loader is **not** evidence
-that the ordinary fidelity contract has been integrated. Trial11,120,448 and mixed
+backbone and small synthetic tensors only. The advisory ordinary integration is separately proven by mocked live-wrapper
+fixtures; a classifier label never substitutes for the rich finding contract. Trial11,120,448 and mixed
 head/normalization identities are rejected, including altered descriptor hashes.
 There is no implicit checkpoint448 debug fallback.
 
@@ -178,9 +170,10 @@ all work. Synthetic serial, parallel and gapped DAGs verify the distinction.
 operation or embedding dependency outside those tasks. The summary is an observed
 semantic-task path, not a fully instrumented causal graph for the entire pipeline.
 Reference-serial runs lacking scheduler events report that path as unavailable.
-Downstream Auditor-specific wait and complete per-wave intervals still require
-additional explicit consumer/barrier attribution. No comprehensive critical-path
-readiness claim is made by this blocked commit.
+The pair bridge now records both handoffs, an explicit context-ready barrier,
+per-wave intervals, and downstream phase consumer dependencies. The summary reports
+observed completion-to-consumer gaps and path service separately; it does not infer
+counterfactual avoidable wait or assign every CPU operation to a model.
 
 ## Resources, cost and derived summary
 
@@ -216,7 +209,7 @@ known zero). These are estimates, never invoices. No provider rate is hardcoded.
 
 ## Deterministic validation and effect proofs
 
-`python scripts/final_integration_no_generation_gate.py`: 83 unittest checks pass,
+`python scripts/final_integration_no_generation_gate.py`: 104 unittest checks pass,
 plus the existing ordinary activation effect-proof suite. Model/provider imports
 are blocked; Windows asyncio's local wakeup socketpair is permitted while external
 connections are denied. The unused ontology-GNN module is stubbed for importing
@@ -228,8 +221,9 @@ ordinary contract gap, untouched compact contracts, source identity, activation,
 dense/sparse parity, truncation versus transport/contract success, retention,
 DAG overlap/gaps/concurrency, cost conversion and recomputation.
 
-Three new load-bearing controls passed neutralize/fail/restore/pass: frozen
-checkpoint validation; interval-union accounting; final-mode blocker admission.
+Seven load-bearing controls pass neutralize/fail/restore/pass: frozen checkpoint
+validation, interval-union accounting, valid pair-contract startup admission, source
+ownership, stale revision exclusion, no-guess behavior, and no label broadcast.
 See `final_model_integration/validation.json` and `no_generation_tests.log`.
 Historical reference function AST hashes remain pinned: the comparison removes
 only the explicitly named telemetry additions and final-mode admission block,
@@ -253,16 +247,9 @@ runtime results describe past evaluation, not a future tuned ordinary run.
 
 ## Exact next action and stop boundary
 
-Resolve the ordinary fidelity comparison contract locally: define how each
-classified source/extraction pair is owned, linked to Producer item/revision IDs,
-and joined to multiple typed findings; retain an explicit evidence/reasoning and
-refusal path. Add fixtures proving mixed relations, missing pairs, empty/refused
-outputs, incomplete deliveries and source refs without assigning one label to a
-whole document. This needs an explicit architecture decision where it changes
-existing routing/refusal behavior. Then finish the outstanding telemetry consumer
-and CPU/barrier coverage and rerun deterministic gates before declaring readiness.
-
-Do not start the instrumented cloud run from this commit. No cloud compute, real
-model workload, protected test, training, HPO, multi-round, benchmark, deployment,
-packaging, push or other roadmap stage was performed. Prepared code is committed
-locally; the operator receives the blocker instead of a false readiness status.
+Await separate authorization for the instrumented ordinary pre-multi-round full
+cloud run. The former generic integration blocker is removed. Missing or mixed
+artifacts, invalid runtime, and malformed pairing integration still fail startup.
+No cloud resource, real model workload, protected test, training, HPO, multi-round,
+performance benchmark, deployment, packaging or push was performed in this task.
+The implementation, report and deterministic evidence are committed locally.

@@ -264,12 +264,11 @@ def classifier_messages(value):
 
 
 
-ORDINARY_BLOCKER = (
-    'FINAL_MODEL_INTEGRATION_BLOCKED: ordinary VERIFIER permits multiple findings '
-    'without required source/extraction pairs; final896 emits one relation per '
-    'pair. No approved evidence-preserving pairing/refusal bridge exists.')
-
-
 def admit_ordinary():
     if mode() == 'final':
-        raise RuntimeError(ORDINARY_BLOCKER)
+        import auditor_pairs
+        if not auditor_pairs.contract_self_check():
+            raise RuntimeError('Auditor pairing contract not admitted')
+        verify('producer')
+        verify('auditor')
+        verify_runtime()
