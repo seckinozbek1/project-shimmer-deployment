@@ -1,0 +1,25 @@
+{
+  "cloud_authorized": false,
+  "execution_authorized": false,
+  "files": {
+    ".gitattributes": "f19860eb3f77cc73a772622f91a9b68d5a2f2132d32845fd32d47f73bf36c564",
+    "docs/fix/AUDITOR_CLASSIFIER_LORA_STABILIZATION.md": "ddcd2c15c851543a9c9f07799a28ae87fa44b9cfa560a6198c62dcfc2ba38ee7",
+    "tools/auditor_classifier_lora_stable.py": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+    "tools/prepare_auditor_classifier_lora_stable.py": "e3ea51d05ccc709f4e7546aeebf47bcf608df8729144286e6b9586eef6ed7633",
+    "tools/test_auditor_classifier_lora_stable.py": "63b252d234b9df535002713fb2eb2272d11b8824199f81d9fac0342d569ab596",
+    "tuning/auditor_classifier_lora_stable/README.md": "d8424a4c1d3938262bd35f5414091d58d672b8c7d138900a8a85947c9ec56503",
+    "tuning/auditor_classifier_lora_stable/challenges.json_binding.json": "7f3757cc4ab8e85cc9be6382302a8fa97e6a736fb10cbe579ef13ba1daaed9ae",
+    "tuning/auditor_classifier_lora_stable/experiment.json": "b959ca6162fac2e2a113260d94382ef33910b7acc636625fcc8de372b909d792",
+    "tuning/auditor_classifier_lora_stable/failure_audit.json": "4ea5dfc6e62bb3a9f72dc0441281e339e379ea60d64ce4887fd2b15ed1c53fa6",
+    "tuning/auditor_classifier_lora_stable/local_validation.json": "21777b0f468dd47c48fba6ba64ea4a203abba16486023a6bc4257bc6f173a5c5",
+    "tuning/auditor_classifier_lora_stable/parity.json": "81cdcf2df34cff9475451790edae3ac79f9f993b78eed6632584cc8ee575c9ca",
+    "tuning/auditor_classifier_lora_stable/projection.json": "8851e0e76ee89bd159cd710519be863f5e5d3bca79da1656d11bce65e4cbe847",
+    "tuning/auditor_classifier_lora_stable/records.json_binding.json": "8541d71ec3f5e8d85c336233b4d6d2c083549d99009f7aa1fc567756cf9de811",
+    "tuning/auditor_classifier_lora_stable/schedule.json_binding.json": "8dab47220e572cd330f3c4e2cd00541a0814f82fedab53ab0b34aebafcd0499e",
+    "tuning/auditor_classifier_lora_stable/source_bindings.json": "307aa6cee2db71c88534e62182206e4fe44d862674d1778b4ab61718f174463b",
+    "tuning/auditor_classifier_lora_stable/telemetry_schema.json": "6d49fcb77c0b9a0dfaa8a852508957459d8351e0a27ecb5354f84002fe6dba6a",
+    "tuning/auditor_classifier_lora_stable/update0_controls.json": "5496dd26b7a752bcf26a36616c5f9dec4c5b820f09da98ad13123e0f2c307241"
+  },
+  "implementation_commit": "662b921182e0f83f089ab05e188e05c46af7b68d",
+  "readiness": "AUDITOR_CLASSIFIER_LORA_STABILIZED_NOT_READY"
+}
