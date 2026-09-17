@@ -1,5 +1,7 @@
 # Auditor Optuna HPO — local preparation
 
+Historical preparation below. Its initialization has been superseded by [the INNER_TRAIN-only correction](AUDITOR_OPTUNA_HPO_CLEAN_INITIALIZATION.md); current status is **AUDITOR_OPTUNA_HPO_CLEAN_READY**. The original cost/search design remains applicable.
+
 **AUDITOR_OPTUNA_HPO_READY**
 
 Prepared after `00d5dcd`. This status means local preparation and deterministic contract tests passed. It is not a finding that a real optimizer configuration is stable, a final Auditor PASS, or permission to launch. No real HPO trial has run. Prior `AUDITOR_JOINT_TRAINING_STABILIZATION_UNISOLATED` and `AUDITOR_EXTERNAL_RELATION_DATA_V2_NOT_READY` verdicts remain unchanged.

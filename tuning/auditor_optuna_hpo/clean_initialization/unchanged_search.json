@@ -1,0 +1,93 @@
+{
+  "previous_commit": "d00a136",
+  "previous_configuration": {
+    "accumulation": 4,
+    "candidate": {
+      "every_class_recall": 0.45,
+      "macro_f1": 0.6
+    },
+    "ceiling": {
+      "mean_formula": "max(10*ln(4),20*current_compatibility_train_ce)",
+      "micro_multiplier": 4,
+      "prior_failure_ce": 134.57772827148438
+    },
+    "cloud_authorized": false,
+    "diagnostic_updates": [
+      0,
+      1,
+      2,
+      5,
+      10,
+      20,
+      40,
+      80
+    ],
+    "evaluation_updates": [
+      20,
+      40,
+      80
+    ],
+    "full_training_auto_execute": false,
+    "initial_head_exposed_to_inner_val": true,
+    "max_trials": 15,
+    "max_updates": 80,
+    "microbatch": 1,
+    "n_jobs": 1,
+    "normalization_exposed_to_inner_val": true,
+    "objective": "0.75*macro_f1 + 0.25*minimum_class_recall",
+    "optimizer": {
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "eps": 1e-08,
+      "head_regularization": 0.001,
+      "max_grad_norm": 1.0,
+      "name": "AdamW",
+      "scheduler_after_warmup": null,
+      "weight_decay": 0
+    },
+    "optuna_version": "4.5.0",
+    "pruner": {
+      "bootstrap_count": 0,
+      "min_early_stopping_rate": 0,
+      "min_resource": 20,
+      "name": "SuccessiveHalvingPruner",
+      "reduction_factor": 2
+    },
+    "sampler": {
+      "n_startup_trials": 10,
+      "name": "TPESampler",
+      "seed": 7
+    },
+    "search": {
+      "dropout": [
+        0.0,
+        0.05
+      ],
+      "head_lr": {
+        "high": 0.001,
+        "log": true,
+        "low": 0.0001
+      },
+      "lora_peak_lr": {
+        "high": 0.0001,
+        "log": true,
+        "low": 1e-06
+      },
+      "warmup_steps": [
+        0,
+        5,
+        10,
+        20,
+        40
+      ]
+    },
+    "seed": 7
+  },
+  "changed_configuration_fields": [
+    "initial_head_exposed_to_inner_val",
+    "normalization_exposed_to_inner_val"
+  ],
+  "search_pruner_objective_caps_unchanged": true
+}

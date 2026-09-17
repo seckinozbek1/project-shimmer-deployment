@@ -49,7 +49,8 @@ def prepare():
     # Hash-only reads, never safetensors/NumPy deserialization or model weights loading.
     artifacts={}
     for name,digest in h.ARTIFACT_HASHES.items():
-        p=E/name;h.require(h.sha(p)==digest,'current artifact identity')
+        p=(E/name) if name=='current_train_features.npy' else (D/'clean_initialization'/name)
+        h.require(h.sha(p)==digest,'current artifact identity')
         artifacts[name]=dict(path=p.relative_to(ROOT).as_posix(),sha256=digest)
     for name in ['adapter_model.safetensors','adapter_config.json']:
         p=E/'checkpoint-0/classifier_fork'/name
@@ -67,7 +68,7 @@ def prepare():
     counts={s:dict(rows=sum(r['split']==s for r in split['assignments']),by_class=dict(Counter(r['relation'] for r in split['assignments'] if r['split']==s)),by_source=dict(Counter(r['source_family'] for r in split['assignments'] if r['split']==s))) for s in ('inner_train','inner_val')}
     write(D/'preparation_receipt.json',dict(counts=counts,source_bindings={p.relative_to(ROOT).as_posix():h.sha(p) for p in names},data_access=boundary.receipt(),
         process_audit=process_access,prompt_source_fields=['normalized input only'],all_1792_prompt_token_hashes_match=True,local_model_load=False,model_inference=False,model_training=False,cloud_resources_created=0,
-        initializer_exposure='head-200 supervised fit and normalization previously used all TRAIN including INNER_VAL; HPO selection diagnostic only',source_commit='00d5dcd'))
+        initializer_exposure='HPO-specific head and normalization fitted on INNER_TRAIN only; see clean_initialization/FROZEN.json',source_commit='00d5dcd'))
     print(json.dumps(dict(counts=counts,split_hash=split['split_sha256'],access_counts=boundary.access_counts),indent=2))
 
 

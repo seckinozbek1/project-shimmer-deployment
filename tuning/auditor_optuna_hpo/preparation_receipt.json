@@ -52,10 +52,12 @@
     },
     "denied_attempts": []
   },
-  "initializer_exposure": "head-200 supervised fit and normalization previously used all TRAIN including INNER_VAL; HPO selection diagnostic only",
+  "initialization_correction_receipt": "clean_initialization/fit_receipt.json",
+  "initializer_exposure": "HPO-specific INNER_TRAIN-only head/mean/std; zero INNER_VAL fit contributions; see clean_initialization/FROZEN.json",
   "local_model_load": false,
   "model_inference": false,
   "model_training": false,
+  "previous_preparation_commit": "d00a136",
   "process_audit": {
     "access_counts": {
       "external_dev": 0,
