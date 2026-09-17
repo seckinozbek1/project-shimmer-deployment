@@ -1,0 +1,14 @@
+{
+  "adapter_tensors_deserialized": false,
+  "cloud_access": false,
+  "credential_scan_passed": true,
+  "head_numeric_artifact_read": true,
+  "historical_evidence_unchanged": true,
+  "model_inference": false,
+  "original_seal_verified": true,
+  "parent_commit": "34fbbc4df266fe4530566d4b51cc251e229860be",
+  "tests_failed": 0,
+  "tests_passed": 41,
+  "torch_imported": false,
+  "training": false
+}
