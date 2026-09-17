@@ -1,0 +1,29 @@
+{
+  "external_dev": 200,
+  "files": {
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "docs/fix/auditor_canonical_tuning_run/downloaded/evidence/checkpoint-120/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+    "tools/auditor_classifier_lora_core.py": "2db4d4d00066c4b365fbcbe09e8f4b27c7a6e4d58673253a36d635516ec8a327",
+    "tools/auditor_classifier_lora_current_core.py": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+    "tools/auditor_classifier_lora_current_remote.py": "72d3ecf599c6e185de221566662dc2bc7a117a78c4990f55a3a55cc107931faa",
+    "tools/auditor_classifier_lora_fork.py": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+    "tools/auditor_classifier_lora_stable.py": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+    "tools/auditor_linear_core.py": "450109ea96533fa440808223c1d220c1791e7ff2c8dbe95fd0d46ef62da1e4e5",
+    "tools/auditor_v2_diagnostic.py": "ffd3b99fb71c5183ac5b8c8a0fdab3d53cbd541466a0ba67a2266064027a310c",
+    "tools/auditor_v2_execution.py": "cd5310026f05a11a00c8888909f27baae247d244304b0e2468cf092fd826ad98",
+    "tuning/auditor_classifier_lora/challenges.json": "fc34f439fb1bf57ec2247f5f6d2624b7438f419b8a3e09583a72e9eb3640e52d",
+    "tuning/auditor_classifier_lora/records.json": "6ef0f387119fca3f5c9bfd7cd4b7986bddc125cfe46ac01c86763e073cba20e2",
+    "tuning/auditor_classifier_lora/schedule.json": "0ff0a7f65f915636b41ce58fed29445a07183ca18af4e60b3318bcd6648c43ad",
+    "tuning/auditor_classifier_lora_current_runtime/controls.json": "b1558c767b67d3742537ba2c4d0544d1d8c0a3b233142b0eeb68f2b70d06eb55",
+    "tuning/auditor_classifier_lora_current_runtime/data_bindings.json": "159f2f8154490247bcfed073cd1bfc23fa507a424aabbad6b3fbcdad56d476ed",
+    "tuning/auditor_classifier_lora_current_runtime/experiment.json": "270022a3f230eb78965b24e60350d9203a724ea3995ef11a2d5def0e3a372192",
+    "tuning/auditor_classifier_lora_current_runtime/runtime_bindings.json": "b99da1b39719466a3a9b581e0a4a58bd3b556b91032d7376fbca7d42d4ec9d39",
+    "tuning/first_domain_agnostic_v1/dependency_lock.json": "0a2c630d67f02d2d28a8ebac91c6016907232b728e50706f450354097da1dde8",
+    "tuning/second_tuning_eval_runtime_v2_1/telemetry_worker.py": "81b656352d067beb0376e9137480cd21200d0d9a1fabfc42d1a36951b42ba1cc"
+  },
+  "historical_dev": 48,
+  "holdout_rows": 0,
+  "records": 2040,
+  "source_commit": "ceabb0afda9c87812e2461fd70c505fb6f9e4b9a",
+  "train": 1792
+}

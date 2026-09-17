@@ -1,0 +1,21 @@
+/home/ubuntu/shimmer-auditor-classifier-current/.venv/lib/python3.12/site-packages/peft/utils/save_and_load.py:236: UserWarning: Could not find a config file in unsloth/Phi-3.5-mini-instruct-bnb-4bit - will assume that the vocabulary was not modified.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/ubuntu/shimmer-auditor-classifier-current/tools/auditor_classifier_lora_current_remote.py", line 247, in <module>
+    p=argparse.ArgumentParser();p.add_argument('action',choices=['scope','preflight','acquire','execute']);globals()[p.parse_args().action]()
+                                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-auditor-classifier-current/tools/auditor_classifier_lora_current_remote.py", line 222, in execute
+    fork.prospective_update(torch,model,head,mean,std,[by[i] for i in batch['example_ids']],batch,opt,health,lambda:audit.unchanged(full=batch['step'] in (20,448,896)))
+  File "/home/ubuntu/shimmer-auditor-classifier-current/tools/auditor_classifier_lora_fork.py", line 212, in prospective_update
+    return stable.prospective_update(torch,model,head,mean,std,rows,batch,optimizer,health,unauthorized_unchanged)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-auditor-classifier-current/tools/auditor_classifier_lora_stable.py", line 196, in prospective_update
+    gate.backward(float(ce.detach()),lambda:(loss/4).backward())
+  File "/home/ubuntu/shimmer-auditor-classifier-current/tools/auditor_classifier_lora_stable.py", line 45, in backward
+    self.require(math.isfinite(ce) and ce<=4*self.ceiling,'microbatch_ce_explosion',ce=ce if math.isfinite(ce) else None)
+  File "/home/ubuntu/shimmer-auditor-classifier-current/tools/auditor_classifier_lora_stable.py", line 25, in require
+    if not condition:self.stop(stage,**context)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/shimmer-auditor-classifier-current/tools/auditor_classifier_lora_stable.py", line 21, in stop
+    raise NumericalStop(stage)
+auditor_classifier_lora_stable.NumericalStop: microbatch_ce_explosion

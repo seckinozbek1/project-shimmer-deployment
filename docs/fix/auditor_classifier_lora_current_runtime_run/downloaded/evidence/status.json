@@ -1,0 +1,8 @@
+{
+  "verdict": "AUDITOR_CLASSIFIER_LORA_INDETERMINATE",
+  "complete": false,
+  "updates": 1,
+  "error_type": "NumericalStop",
+  "error_message": "microbatch_ce_explosion",
+  "preflight_rows": 3616
+}

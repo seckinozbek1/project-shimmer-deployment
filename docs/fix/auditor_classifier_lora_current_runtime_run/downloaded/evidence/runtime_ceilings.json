@@ -1,0 +1,6 @@
+{
+  "mean_update_ce_ceiling": 13.862943611198906,
+  "microbatch_ce_ceiling": 55.451774444795625,
+  "current_update0_train_ce": 0.08585197478532791,
+  "formula": "max(10*ln(4),20*CURRENT_UPDATE0_TRAIN_CE)"
+}

@@ -1,0 +1,74 @@
+{
+  "parameters": 12292,
+  "updates": 200,
+  "seconds": 1.5866692349999312,
+  "ce": 0.08585196733474731,
+  "metrics": {
+    "count": 1792,
+    "accuracy": 0.9927455357142857,
+    "per_class": {
+      "MATCH": {
+        "support": 448,
+        "predicted": 444,
+        "precision": 0.990990990990991,
+        "recall": 0.9821428571428571,
+        "f1": 0.9865470852017937
+      },
+      "DIVERGENCE": {
+        "support": 448,
+        "predicted": 448,
+        "precision": 0.9888392857142857,
+        "recall": 0.9888392857142857,
+        "f1": 0.9888392857142857
+      },
+      "OMISSION": {
+        "support": 448,
+        "predicted": 449,
+        "precision": 0.9977728285077951,
+        "recall": 1.0,
+        "f1": 0.9988851727982163
+      },
+      "ADDITION": {
+        "support": 448,
+        "predicted": 451,
+        "precision": 0.9933481152993349,
+        "recall": 1.0,
+        "f1": 0.996662958843159
+      }
+    },
+    "macro_precision": 0.9927378051281017,
+    "macro_recall": 0.9927455357142857,
+    "macro_f1": 0.9927336256393637,
+    "confusion": {
+      "MATCH": {
+        "MATCH": 440,
+        "DIVERGENCE": 5,
+        "OMISSION": 0,
+        "ADDITION": 3
+      },
+      "DIVERGENCE": {
+        "MATCH": 4,
+        "DIVERGENCE": 443,
+        "OMISSION": 1,
+        "ADDITION": 0
+      },
+      "OMISSION": {
+        "MATCH": 0,
+        "DIVERGENCE": 0,
+        "OMISSION": 448,
+        "ADDITION": 0
+      },
+      "ADDITION": {
+        "MATCH": 0,
+        "DIVERGENCE": 0,
+        "OMISSION": 0,
+        "ADDITION": 448
+      }
+    }
+  },
+  "head_sha256": "027c880e6c10a13f3e7354d12665ffacca5f7d68836291feaf195c167c13f915",
+  "deterministic_algorithms": true,
+  "repeat_forward_bitwise_equal": true,
+  "repeat_forward_and_gradients_all_200": true,
+  "seed": 7
+}
