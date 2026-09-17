@@ -1,0 +1,15 @@
+{
+  "seed": 7,
+  "head_zero": true,
+  "lora_B_zero": true,
+  "fresh_lora": true,
+  "historical_adapter_loaded": false,
+  "initial": {
+    "step": 0,
+    "lora_sha256": "e32f8ce5d7f7fcae83e7ce7de8591749d9617bc7b411017277e676e9228f49d3",
+    "head_sha256": "e69c193a7b24010e613a2471433ed8514f28e4106d0c25fdedd37e2a908c4b9d",
+    "config_sha256": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6"
+  },
+  "base_state_sha256": "3910a108dbf7236a4c520e5a199541677a417a4494ff8673948d2a0520c49019",
+  "load_seconds": 9.146854001999998
+}

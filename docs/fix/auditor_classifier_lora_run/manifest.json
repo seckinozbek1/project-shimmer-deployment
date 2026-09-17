@@ -1,0 +1,41 @@
+{
+  "bundle_sha256": "18e370646c30d35fd9a954618e76026ce214b4a195da8c46cc09af5089656fe7",
+  "hard_seconds": 8372.093023255815,
+  "hard_usd": 3,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-auditor-classifier-lora",
+  "projected_cost": 2.6172666666666666,
+  "projected_seconds_with_reserve": 7304,
+  "projection": {
+    "evaluation": 248,
+    "seconds_per_update": 6,
+    "setup": 900,
+    "state_hash_and_save": 180,
+    "teardown": 600,
+    "updates": 896
+  },
+  "region": "us-east-1",
+  "reserve_seconds": 600,
+  "soft_seconds": 5581.395348837209,
+  "soft_usd": 2,
+  "source_commit": "550b9144ab53cb540a7ced460f0be77429caab81",
+  "termination_deadline_seconds": 8372.093023255815,
+  "watchdog_deadline_seconds": 8252.093023255815,
+  "workload_deadline_seconds": 7772.093023255815
+}

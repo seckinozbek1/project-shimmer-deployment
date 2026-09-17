@@ -32,7 +32,45 @@ def analyze():
         if (target/name).is_file():assert c.sha(target/name)==digest,name
     for name,digest in c.read(B/'preservation_before.json').items():assert c.sha(ROOT/name)==digest,name
     if not status['complete']:
-        result=dict(status,selected=None,passing=[],cloud=c.read(B/'TERMINATION_VERIFIED.json'))
+        # Verify the evidence that exists; do not promote an interrupted attempt
+        # to a valid checkpoint result or claim a missing final base comparison.
+        inventory=c.read(E/'parameter_inventory.json');counts=c.inventory(inventory['items'])
+        assert counts==inventory['counts'] and not inventory['historical_adapter_loaded']
+        spec=c.read(D/'experiment.json');optimizer=c.read(E/'optimizer.json')
+        assert optimizer['config']==spec['optimizer']
+        assert optimizer['groups']==[dict(lr=1e-4,parameters=c.LORA_PARAMS),dict(lr=.01,parameters=c.HEAD_PARAMS)]
+        plan=c.read(D/'schedule.json');history=lines(E/'training.jsonl')
+        assert len(history)==status['updates']
+        for row,batch in zip(history,plan):
+            assert all(row[k]==batch[k] for k in ['step','epoch','example_ids'])
+            assert row['examples_processed']==row['step']*4 and row['lrs']==[1e-4,.01]
+            assert all(math.isfinite(row[k]) for k in ['ce','regularization','loss','gradient_norm'])
+            assert math.isclose(row['loss'],row['ce']+row['regularization'],abs_tol=1e-6)
+        import numpy as np
+        from safetensors.numpy import load_file
+        identity=c.read(E/'checkpoint-0/identity.json')
+        for file,key in [('adapter_model.safetensors','lora_sha256'),('head.safetensors','head_sha256'),('adapter_config.json','config_sha256')]:
+            assert c.sha(E/'checkpoint-0'/file)==identity[key]
+        adapter=load_file(str(E/'checkpoint-0/adapter_model.safetensors'))
+        assert len(adapter)==448 and sum(v.size for v in adapter.values())==c.LORA_PARAMS
+        assert all((v==0).all() for n,v in adapter.items() if '.lora_B.' in n)
+        head=load_file(str(E/'checkpoint-0/head.safetensors'))
+        assert head['weight'].shape==(4,3072) and head['bias'].shape==(4,) and all((v==0).all() for v in head.values())
+        assert not (E/'checkpoint-448').exists() and not (E/'checkpoint-896').exists()
+        assert c.read(E/'progress.json')['eval_rows']==0
+        durations=[x['update_seconds'] for x in history]
+        assert 'torch' not in sys.modules
+        result=dict(status,selected=None,passing=[],cloud=c.read(B/'TERMINATION_VERIFIED.json'),tested_commit=manifest['source_commit'],trainable=counts,
+            initialization=identity,checkpoints=[],partial_training=dict(completed_updates=len(history),planned_updates=896,
+                completed_update_examples=len(history)*4,unique_completed_update_examples=len({i for x in history for i in x['example_ids']}),complete_passes=0,
+                first_ce=history[0]['ce'],last_completed_update_ce=history[-1]['ce'],training_seconds=sum(durations),
+                median_update_seconds=float(np.median(durations)),p95_update_seconds=float(np.percentile(durations,95)),
+                peak_allocated_gib=max(x['peak_allocated_gib'] for x in history),peak_reserved_gib=max(x['peak_reserved_gib'] for x in history),
+                failed_attempted_update=len(history)+1,failed_update_microbatch_count='not recorded',
+                failure='Finite-loss assertion rejected non-finite CE plus regularization before backward in attempted update 4; saved evidence does not isolate the originating tensor.'),
+            verification=dict(initial_inventory=True,optimizer_groups=True,completed_update_train_ids=True,initialization_hashes=True,
+                historical_adapter_unloaded_and_unchanged=True,holdout_unconsumed=True,preservation=True,zero_billable_resources=True,
+                final_base_state_comparison_available=False,post_update_weights_saved=False,eval_rows=0))
         write_json(B/'RECOMPUTED_RESULTS.json',result);return result
     assert status['updates']==896 and status['examples']==3584 and status['passes']==2
     records=c.read(D/'records.json');spec=c.read(D/'experiment.json');challenges=c.read(D/'challenges.json');plan=c.read(D/'schedule.json')

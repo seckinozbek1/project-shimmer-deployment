@@ -1,0 +1,11 @@
+{
+  "billable_duration_upper_bound_seconds": 561.0630912780762,
+  "epoch": 1789635986.656986,
+  "estimated_cost_upper_bound_usd": 0.2010476077079773,
+  "instance_id": "959629be24ad49b58989fc1bf5b39863",
+  "metadata": {
+    "instance_id": "959629be24ad49b58989fc1bf5b39863",
+    "status": "terminated"
+  },
+  "utc": "2026-09-17T09:06:26.656986+00:00"
+}

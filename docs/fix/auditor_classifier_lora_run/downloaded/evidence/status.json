@@ -1,0 +1,7 @@
+{
+  "verdict": "AUDITOR_CLASSIFIER_LORA_INDETERMINATE",
+  "diagnostic": "RELATION_ADAPTATION_INDETERMINATE",
+  "complete": false,
+  "updates": 3,
+  "error_type": "AssertionError"
+}
