@@ -1,0 +1,25 @@
+test_d_first_finite_drift_stops (test_auditor_blocker_closure.GeneratedArmTests) ... ok
+test_d_matches_32 (test_auditor_blocker_closure.GeneratedArmTests) ... ok
+test_d_wrong_shape_stops (test_auditor_blocker_closure.GeneratedArmTests) ... ok
+test_o_first_finite_drift_stops (test_auditor_blocker_closure.GeneratedArmTests) ... ok
+test_o_matches_32 (test_auditor_blocker_closure.GeneratedArmTests) ... ok
+test_o_wrong_shape_stops (test_auditor_blocker_closure.GeneratedArmTests) ... ok
+test_dtype_and_signed_zero_are_bitwise (test_auditor_blocker_closure.ParityTests) ... ok
+test_evidence_io_failure_stops (test_auditor_blocker_closure.ParityTests) ... ok
+test_exact_passes_without_capture (test_auditor_blocker_closure.ParityTests) ... ok
+test_finite_drift_fails (test_auditor_blocker_closure.ParityTests) ... ok
+test_neutralize_fail_restore_pass (test_auditor_blocker_closure.ParityTests) ... ok
+test_nonfinite_fails (test_auditor_blocker_closure.ParityTests) ... ok
+test_shape_fails (test_auditor_blocker_closure.ParityTests) ... ok
+test_analyzer_refuses_without_teardown (test_auditor_blocker_closure.ProtocolTests) ... ok
+test_cloud_refused_before_provider (test_auditor_blocker_closure.ProtocolTests) ... ok
+test_generated_code_bounds_and_shared_loader (test_auditor_blocker_closure.ProtocolTests) ... ok
+test_incomplete_o_prevents_d (test_auditor_blocker_closure.ProtocolTests) ... ok
+test_outcomes (test_auditor_blocker_closure.ProtocolTests) ... ok
+test_two_sequential_subprocesses_and_no_resume (test_auditor_blocker_closure.ProtocolTests) ... ok
+test_unauthorized_refused_before_runtime (test_auditor_blocker_closure.ProtocolTests) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 14.621s
+
+OK

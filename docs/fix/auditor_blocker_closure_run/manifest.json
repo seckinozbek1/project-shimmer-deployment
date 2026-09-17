@@ -1,0 +1,27 @@
+{
+  "baseline_commit": "d0b218e",
+  "bundle_sha256": "cab6408e2fc8e6424a00448fe032b860a9bb2c394d3deb01f23ef263e81751fe",
+  "execution_manifest_sha256": "8cb99d5aff7967ec2d951d941d6041c5aabd2a379a7d923d670c13d45fc4b2e5",
+  "hard_seconds": 5581.395348837209,
+  "hard_usd": 2,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-auditor-blocker-closure",
+  "rate_status": "Historical cap; must reverify before provisioning",
+  "region": "us-east-1",
+  "reserve_seconds": 900,
+  "soft_seconds": 2790.6976744186045,
+  "soft_usd": 1,
+  "termination_deadline_seconds": 5581.395348837209,
+  "watchdog_deadline_seconds": 5401.395348837209,
+  "workload_deadline_seconds": 4681.395348837209
+}
