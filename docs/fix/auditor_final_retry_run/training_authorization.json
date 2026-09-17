@@ -22,5 +22,6 @@
   "soft_budget_usd": 5.0,
   "source_commit": "c9c2380ad11abe8e8795ce13ed5d84a8b97f42df",
   "updates": 896,
-  "workload_deadline_epoch": 0
+  "workload_deadline_epoch": 0,
+  "direct_operator_approval": "I approve the prepared single Lambda A10 retry, including model/adapter/TRAIN-data transfer, evaluation transfer only after 896 updates, and the $7 hard ceiling."
 }
