@@ -1,0 +1,38 @@
+{
+  "accumulation": 4,
+  "checkpoints": [
+    448,
+    896
+  ],
+  "evaluation_after_updates": 896,
+  "fresh_live_feature_passes": 1,
+  "gpus": 1,
+  "hard_budget_usd": 7.0,
+  "head_fit_rows": 1792,
+  "head_updates": 200,
+  "instances": 1,
+  "microbatch": 1,
+  "normalization_rows": 1792,
+  "optimizer": {
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "max_grad_norm": 1.0,
+    "name": "AdamW",
+    "regularization": 0.001,
+    "weight_decay": 0
+  },
+  "params": {
+    "dropout": 0.05,
+    "head_lr": 0.0009721418411547451,
+    "lora_peak_lr": 1.2943234833221302e-06,
+    "warmup_steps": 10
+  },
+  "quality_failure_stops_training": false,
+  "seed": 7,
+  "selection": "prefer_all_old_gates_pass_then_historical_f1_external_f1_min_recall_lower_step",
+  "soft_budget_usd": 5.0,
+  "updates": 896
+}

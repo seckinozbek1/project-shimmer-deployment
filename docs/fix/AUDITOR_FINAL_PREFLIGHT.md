@@ -1,0 +1,19 @@
+# Final Auditor workflow preflight
+
+One explicitly authorized final Auditor workflow; $5 soft/$7 hard, one Lambda A10 24GB in us-east-1. Live inventory empty, live rate $1.29/hour, region available. No provisioning occurred during preparation.
+
+Exactly Trial11's four values: LoRA peakLR1.2943234833221302e-6, headLR0.0009721418411547451, warmup10, dropout.05. No Optuna study. Two complete seed7 TRAIN passes, microbatch1/accumulation4,896 AdamW updates. Canonical step120 classifier fork, rank8/alpha16 and existing target modules; frozen NF4/BF16 base and FP32 trainable parameters. Existing betas, epsilon, clipping and regularization remain unchanged.
+
+Fresh single live1792-row hidden pass; fresh TRAIN-only population mean/std(clamp1e-6); fresh zero-initialized deterministic200-update full-population head fit using the established Adam procedure. No HPO head/normalization or HPO trained adapter is loaded. Sixteen reference/fork controls also compare to the new feature/head results; no second1792-row extraction.
+
+Checkpoint448 is saved without DEV access, then training continues to896 regardless of old quality gates. Only after verified896 completion may the controller first open/hash/upload the original evaluation files. Expected hashes are copied from the prior committed manifest; the preparation stage does not read DEV/challenges. External200 and historical48 are scored for both checkpoints. SHORTER75/LONGER75 are frozen external-DEV subsets and use the same saved logits. Classification metrics include accuracy/F1/recall/confusion/CE, applicable classifier contract and error counts. Refusal, generated evidence, reasoning and CONFIDENT-field catastrophe metrics are explicitly not applicable to this four-way substantive classifier; its separate refusal mechanism is unchanged and untested here.
+
+Selection is frozen before evaluation: prefer candidates passing all existing gates, then historical macroF1, external macroF1, minimum recall across both co-primary sets, and lower checkpoint. A finite fully evaluated candidate remains usable when old quality gates fail; deficiencies will be reported without another tuning cycle.
+
+Numerical checks: finite tensor/loss/gradient/parameter gates, established TRAIN-baseline CE-explosion ceiling, pre/post clipping, head/LoRA gradient norms and parameter deltas, actual group LRs, clean initial state/gradients/RNG/empty optimizer, finite Adam moments with exact step counts at448/896, frozen base checks and checkpoint SHA256.
+
+Forbidden-before-open guards deny HOLDOUT/protected/Producer/full-run input paths. Evaluation payload access is additionally denied during training and absent from the initial upload. Successful forbidden access counters and denied attempts are saved separately for training and evaluation. No generation, Producer, governance, full Shimmer, multi-round, second instance, retry or new HPO. No push.
+
+Planning estimate including setup/evaluation/collection: typical8723.2sec($3.125813), conservative13010.4sec($4.662060). These are projections, not billed cost. Runtime remaining-work estimates use measured update durations with margin. Work stops before the hard deadline with900sec reserved; independent termination watchdog is armed for hard-minus120sec. Evidence is downloaded and hash-verified before termination whenever infrastructure permits; final independent inventory and SSH-key removal are mandatory.
+
+Validation: 10 local tests pass, covering exact selected values,896/two-pass schedule, warmup bounds, delayed evaluation gate, denied paths, numerical CE checks, proven update-body equivalence except final bounds/checkpoint audit points, selection despite old-gate failure, scoring applicability and prompt-record schema. All modules compile; source and packaged scope are hash-bound. The execution manifest records the ensuing committed source identity and initial working-tree state. Prior HPO/source evidence is preserved.

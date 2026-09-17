@@ -1,0 +1,25 @@
+{
+  "files": {
+    "tools/auditor_classifier_lora_core.py": "2db4d4d00066c4b365fbcbe09e8f4b27c7a6e4d58673253a36d635516ec8a327",
+    "tools/auditor_classifier_lora_current_core.py": "922213e10ea8cb41620671ebebfe4c9aade8034d5a2b1990ebbf843c31ce7a16",
+    "tools/auditor_classifier_lora_fork.py": "7642f833e62f3bdc76b2b46eefd80c45d5a2c603cdc752285a3fe448fc29fc65",
+    "tools/auditor_classifier_lora_stable.py": "f096102acd9068cf95a3f74726aeb1edb83be261674ec4054ca87e4490c45099",
+    "tools/auditor_final_backend.py": "fad9a28e52238aef42f1b14c173b4bd0a915abf9c2ffe0dcddc8aa4c44ac0111",
+    "tools/auditor_final_core.py": "87ae0ee076076d5d2a985162e5684a856e73eb569c1e15469dd7f4dd7621ec1c",
+    "tools/auditor_final_launch_support.py": "d5a0b6566ec59c10fa4e4246469221b24da832c9259ac8700aea954e67391109",
+    "tools/auditor_final_remote.py": "ab44b74fc6046ffaa0d1c1b71ba703f4459071d5fc138ff88c0caccf0efd2a61",
+    "tools/auditor_optuna_hpo.py": "09a804938e6c29bcf80694ee33b45d642a649278df9102080255c3f65eabb010",
+    "tools/auditor_optuna_hpo_backend.py": "ff0157983b06cc75bc7d59c2ffd9922d3e010e82ec0b7568496ca73cede49b3d",
+    "tools/test_auditor_final.py": "f9a60a9c25c861f78ea3dcd02a71253a635e279b47ac9d60a4d1937f87e4cad7",
+    "tuning/auditor_final/.gitattributes": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+    "tuning/auditor_final/canonical_adapter/adapter_config.json": "af6a53d6c24938eeaa74b5aaf753ebe7b67cf2b5be76d9fd5454fa6fdaa4d8b6",
+    "tuning/auditor_final/canonical_adapter/adapter_model.safetensors": "733eb0005f898d1ff61aa72a92d84c1b35f11d52a9a09f3b0aafa73dfb35ade6",
+    "tuning/auditor_final/controls.json": "b1558c767b67d3742537ba2c4d0544d1d8c0a3b233142b0eeb68f2b70d06eb55",
+    "tuning/auditor_final/evaluation_bindings.json": "bcf1e45a1b723fad3efedd6411827a1bc38575c9866eed2845fc2d80870ab2d6",
+    "tuning/auditor_final/experiment.json": "45a174db86a77ba0ac04252c00c408f1bed7bbb2a45fc7365c7c43b737779c89",
+    "tuning/auditor_final/records_train_only.json": "963a8612a37cbbbcb00e9e44cd0e8c14ae45f7bfddbeafd066387789e454356f",
+    "tuning/auditor_final/runtime_contract.json": "93cec5bb592654068d4e21232c07fe88121842254a71b119676f1b15b2507d81",
+    "tuning/auditor_final/schedule.json": "0ff0a7f65f915636b41ce58fed29445a07183ca18af4e60b3318bcd6648c43ad"
+  },
+  "scope": "one final Auditor train then evaluate; no HPO"
+}
