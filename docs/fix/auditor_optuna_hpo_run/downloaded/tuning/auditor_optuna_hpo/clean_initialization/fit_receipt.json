@@ -1,0 +1,40 @@
+{
+  "access": {
+    "access_counts": {
+      "external_dev": 0,
+      "historical_dev": 0,
+      "holdout": 0,
+      "longer": 0,
+      "protected": 0,
+      "shorter": 0
+    },
+    "denied_before_open": 0
+  },
+  "backbone_inference": false,
+  "backbone_loaded": false,
+  "cloud": false,
+  "events": [
+    {
+      "event": "fit_inputs_selected",
+      "inner_val_fit_rows": 0,
+      "rows": 1432
+    },
+    {
+      "event": "repeatability_passed",
+      "identical_artifact_hashes": true,
+      "updates_each": 200
+    },
+    {
+      "event": "initialization_frozen",
+      "sha256": "cd20f9916883fc7fe01e4ff6f3fc7cadbf81f340d326988e5d22fd2956698e41"
+    },
+    {
+      "after_freeze_sha256": "cd20f9916883fc7fe01e4ff6f3fc7cadbf81f340d326988e5d22fd2956698e41",
+      "event": "inner_val_information_only_evaluation",
+      "gradient_rows": 0,
+      "rows": 360
+    }
+  ],
+  "feature_sha256_after": "06e47fd6a0244cbff94f75e66eff81b4cad417843e34d62c3b370a3468cf8287",
+  "head_fit_authorized": true
+}

@@ -1,0 +1,33 @@
+{
+  "bundle_sha256": "7cf61f5d150c8bbf523daffea77675bcf7faf61b76d6121a85684d55b934e44f",
+  "hard_seconds": 25116.279069767443,
+  "hard_usd": 9.0,
+  "hourly_rate": 1.29,
+  "image": {
+    "architecture": "x86_64",
+    "family": "lambda-stack-24-04",
+    "id": "f9ba07bd-c60b-4e08-ab29-5d9be6bd62d0",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "ram_gib": 200,
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "name": "shimmer-auditor-clean-optuna-hpo",
+  "projected_cost": 6.873550000000001,
+  "projected_seconds_with_reserve": 19182,
+  "region": "us-east-1",
+  "reserve_seconds": 600,
+  "soft_seconds": 19534.883720930233,
+  "soft_usd": 7.0,
+  "source_commit": "ea2b72373a384e29a6344c762b8b7d12ef450741",
+  "termination_deadline_seconds": 25116.279069767443,
+  "watchdog_deadline_seconds": 24996.279069767443,
+  "workload_deadline_seconds": 19534.883720930233
+}

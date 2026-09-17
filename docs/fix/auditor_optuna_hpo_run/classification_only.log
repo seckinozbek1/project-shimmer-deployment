@@ -1,0 +1,18 @@
+[I 2026-09-17 12:29:26,408] A new study created in RDB with name: auditor-inner-train-stability-seed7
+/home/ubuntu/shimmer-auditor-optuna-hpo/.venv/lib/python3.12/site-packages/torch/utils/checkpoint.py:87: UserWarning: None of the inputs have requires_grad=True. Gradients will be None
+  warnings.warn(
+[I 2026-09-17 12:38:57,808] Trial 0 finished with value: 0.6691929448780518 and parameters: {'lora_peak_lr': 1.4210736239935751e-06, 'head_lr': 0.0006024469253300581, 'warmup_steps': 10, 'dropout': 0.05}. Best is trial 0 with value: 0.6691929448780518.
+[I 2026-09-17 12:41:47,152] Trial 1 pruned. successive_halving
+[I 2026-09-17 12:42:06,750] Trial 2 pruned. mean_update_ce_explosion
+[I 2026-09-17 12:44:55,814] Trial 3 pruned. successive_halving
+[I 2026-09-17 12:50:27,184] Trial 4 pruned. successive_halving
+[I 2026-09-17 12:50:38,542] Trial 5 pruned. mean_update_ce_explosion
+[I 2026-09-17 12:56:03,418] Trial 6 pruned. successive_halving
+[I 2026-09-17 13:01:28,536] Trial 7 pruned. successive_halving
+[I 2026-09-17 13:06:53,443] Trial 8 pruned. successive_halving
+[I 2026-09-17 13:09:39,782] Trial 9 pruned. successive_halving
+[I 2026-09-17 13:19:11,445] Trial 10 finished with value: 0.7092114305717089 and parameters: {'lora_peak_lr': 1.907993811216726e-06, 'head_lr': 0.0008605999813193345, 'warmup_steps': 10, 'dropout': 0.05}. Best is trial 10 with value: 0.7092114305717089.
+[I 2026-09-17 13:28:42,846] Trial 11 finished with value: 0.7276443678074722 and parameters: {'lora_peak_lr': 1.2943234833221302e-06, 'head_lr': 0.0009721418411547451, 'warmup_steps': 10, 'dropout': 0.05}. Best is trial 11 with value: 0.7276443678074722.
+[I 2026-09-17 13:38:15,020] Trial 12 finished with value: 0.6821288355048846 and parameters: {'lora_peak_lr': 1.0878373585863338e-06, 'head_lr': 0.0009802363828597211, 'warmup_steps': 10, 'dropout': 0.05}. Best is trial 11 with value: 0.7276443678074722.
+[I 2026-09-17 13:41:04,218] Trial 13 pruned. successive_halving
+[I 2026-09-17 13:43:53,442] Trial 14 pruned. successive_halving

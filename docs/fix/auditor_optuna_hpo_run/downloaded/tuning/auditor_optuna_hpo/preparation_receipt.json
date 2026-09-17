@@ -1,0 +1,86 @@
+{
+  "all_1792_prompt_token_hashes_match": true,
+  "cloud_resources_created": 0,
+  "counts": {
+    "inner_train": {
+      "by_class": {
+        "ADDITION": 358,
+        "DIVERGENCE": 358,
+        "MATCH": 358,
+        "OMISSION": 358
+      },
+      "by_source": {
+        "PAWS": 640,
+        "WikiAtomic": 640,
+        "historical": 152
+      },
+      "rows": 1432
+    },
+    "inner_val": {
+      "by_class": {
+        "ADDITION": 90,
+        "DIVERGENCE": 90,
+        "MATCH": 90,
+        "OMISSION": 90
+      },
+      "by_source": {
+        "PAWS": 160,
+        "WikiAtomic": 160,
+        "historical": 40
+      },
+      "rows": 360
+    }
+  },
+  "data_access": {
+    "access_counts": {
+      "external_dev": 0,
+      "historical_dev": 0,
+      "holdout": 0,
+      "longer": 0,
+      "protected": 0,
+      "shorter": 0
+    },
+    "allowed_reads": {
+      "C:\\Users\\secki\\local\\shimmer-deployment\\docs\\fix\\auditor_classifier_lora_current_runtime_run\\downloaded\\evidence\\checkpoint-0\\identity.json": 1,
+      "C:\\Users\\secki\\local\\shimmer-deployment\\docs\\fix\\auditor_classifier_lora_current_runtime_run\\downloaded\\evidence\\current_train_baseline.json": 1,
+      "C:\\Users\\secki\\local\\shimmer-deployment\\docs\\fix\\auditor_classifier_lora_current_runtime_run\\downloaded\\evidence\\current_train_features.jsonl": 1,
+      "C:\\Users\\secki\\local\\shimmer-deployment\\docs\\fix\\auditor_classifier_lora_current_runtime_run\\downloaded\\evidence\\initialization.json": 1,
+      "C:\\Users\\secki\\local\\shimmer-deployment\\tuning\\auditor_classifier_lora_current_runtime\\controls.json": 1,
+      "C:\\Users\\secki\\local\\shimmer-deployment\\tuning\\auditor_classifier_lora_current_runtime\\experiment.json": 1,
+      "C:\\Users\\secki\\local\\shimmer-deployment\\tuning\\auditor_external_relation_v2\\merged_four_way_train.jsonl": 1,
+      "C:\\Users\\secki\\local\\shimmer-deployment\\tuning\\first_domain_agnostic_v1\\dependency_lock.json": 1
+    },
+    "denied_attempts": []
+  },
+  "initialization_correction_receipt": "clean_initialization/fit_receipt.json",
+  "initializer_exposure": "HPO-specific INNER_TRAIN-only head/mean/std; zero INNER_VAL fit contributions; see clean_initialization/FROZEN.json",
+  "local_model_load": false,
+  "model_inference": false,
+  "model_training": false,
+  "previous_preparation_commit": "d00a136",
+  "process_audit": {
+    "access_counts": {
+      "external_dev": 0,
+      "historical_dev": 0,
+      "holdout": 0,
+      "longer": 0,
+      "protected": 0,
+      "shorter": 0
+    },
+    "denied_before_open": 0
+  },
+  "prompt_source_fields": [
+    "normalized input only"
+  ],
+  "source_bindings": {
+    "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/checkpoint-0/identity.json": "2e0f6a9e16247df64982ff5cb6827f4c2310f29f631054a9598cbe8c93117127",
+    "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/current_train_baseline.json": "21e934dc30a6cb8a6c8abc1d26abeb388ef9bdeeb4bcaaf09a857b21e4fc64a3",
+    "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/current_train_features.jsonl": "75cd0e49a85e0fd9637141b836baf1be1c627cc6a6479127f2dcd8875441a11c",
+    "docs/fix/auditor_classifier_lora_current_runtime_run/downloaded/evidence/initialization.json": "10c06fe82dd6b48f86d3088b660c8b4d94eace879efa3887a43089eef3ec50b4",
+    "tuning/auditor_classifier_lora_current_runtime/controls.json": "b1558c767b67d3742537ba2c4d0544d1d8c0a3b233142b0eeb68f2b70d06eb55",
+    "tuning/auditor_classifier_lora_current_runtime/experiment.json": "270022a3f230eb78965b24e60350d9203a724ea3995ef11a2d5def0e3a372192",
+    "tuning/auditor_external_relation_v2/merged_four_way_train.jsonl": "df8aafe1b883406bc63d9ab4093b76995465e7c35617b629c38eca1e43ce80e2",
+    "tuning/first_domain_agnostic_v1/dependency_lock.json": "0a2c630d67f02d2d28a8ebac91c6016907232b728e50706f450354097da1dde8"
+  },
+  "source_commit": "00d5dcd"
+}
