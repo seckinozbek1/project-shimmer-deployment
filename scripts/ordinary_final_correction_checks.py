@@ -36,6 +36,7 @@ ROOT = Path(__file__).resolve().parents[1]
 import agent_wrapper
 import auditor_pairs
 import bounded_extraction as extraction
+import paired_review
 import compact_contracts as cc
 from agent_wrapper import AgentWrapper, CallResult
 from reference_builder import ReferenceIndex, paragraph_ranges, _PARA_RE
@@ -145,6 +146,10 @@ def concatenating_dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
     """dispatch as it was before the correction: one concatenated user turn."""
     full = stable_prefix + ("\n\n" + dynamic_suffix if dynamic_suffix else "")
     return self.call_local(full, **kwargs)
+
+
+# Captured before any patch so a neutralised stand-in cannot call itself.
+_ORIGINAL_AMENDMENT_FROM_FINDING = paired_review.amendment_from_finding
 
 
 def no_grounding(text, spans, entries):
@@ -505,6 +510,115 @@ class CorrectionChecks(unittest.TestCase):
         self.assertEqual(payload["processor_draft"]["items"][0]["item_id"], "PROCESSOR:probe:s")
         self.assertEqual([d for d in decisions if d["agent"] == "VERIFIER" and not d["activated"]], [])
 
+    # ---- A8: only computed findings become amendments ---------------------------------
+
+    def _v7_phase6_inputs(self):
+        """v7's own recorded phase-6 inputs: PRACTICE_AUDITOR's computed envelope and
+        VERIFIER's model-authored one, each with the backend and model the run posted
+        them under. Skips when the v7 evidence is not on disk."""
+        path = ROOT / "docs/fix/ordinary_final_cloud_run_v7/downloaded/evidence/run/logs/agent_bus.jsonl"
+        if not path.exists():
+            return None, None
+        computed = model = None
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            body = (json.loads(line).get("body") or {})
+            payload = body.get("payload")
+            if not isinstance(payload, dict) or not payload.get("items"):
+                continue
+            row = {"scope": "doc", "doc_id": "result_sheet", "agent": payload["agent"], "ok": True,
+                   "backend": body.get("backend"), "model": body.get("model"),
+                   "parsed": {"agent": payload["agent"], "doc_id": "result_sheet", "items": payload["items"]}}
+            if payload["agent"] == "PRACTICE_AUDITOR":
+                computed = row
+            elif payload["agent"] == "VERIFIER":
+                model = row
+        return computed, model
+
+    def test_promotion_only_computed_findings_reach_the_promoter(self):
+        import paired_review
+        computed, model = self._v7_phase6_inputs()
+        if computed is None or model is None:
+            self.skipTest("v7 evidence not on disk")
+        # The run's own provenance: computed records are posted paired/python.
+        self.assertEqual((computed["backend"], computed["model"]), ("paired", "python"))
+        self.assertEqual(model["backend"], "local_auditor")
+        selected = paired_review.computed_finding_items([computed, model], doc_id="result_sheet")
+        self.assertEqual([i["unit_id"] for i in selected],
+                         ["u01-result-res-alder", "u02-result-res-birch", "u05-result-res-elder"])
+        # Every VERIFIER record is excluded, including the two that became v7's
+        # false positive and its wrong-reason amendment.
+        verifier_units = {i["unit_id"] for i in model["parsed"]["items"]}
+        self.assertIn("u03-result-res-cedar", verifier_units)
+        self.assertIn("u06-result-res-firth", verifier_units)
+        self.assertFalse(verifier_units & {i["unit_id"] for i in selected} - {"u01-result-res-alder", "u02-result-res-birch", "u05-result-res-elder"})
+        for item in model["parsed"]["items"]:
+            self.assertFalse(any(item is s for s in selected))
+        # Promotion over the narrowed input yields exactly the three computed amendments.
+        built, added = paired_review.ensure_amendments_for_findings([], selected, unit_texts={})
+        self.assertEqual((added, len(built)), (3, 3))
+        self.assertEqual({a["finding_unit_id"] for a in built},
+                         {"u01-result-res-alder", "u02-result-res-birch", "u05-result-res-elder"})
+        # Against the pre-correction input, the two wrong ones come back.
+        wide = [dict(i) for i in computed["parsed"]["items"] + model["parsed"]["items"]]
+        wide_built, wide_added = paired_review.ensure_amendments_for_findings([], wide, unit_texts={})
+        self.assertEqual(wide_added, 5)
+        self.assertEqual({a["finding_unit_id"] for a in wide_built} - {a["finding_unit_id"] for a in built},
+                         {"u03-result-res-cedar", "u06-result-res-firth"})
+
+    def test_promotion_provenance_stamp_and_sentence_follow_the_source(self):
+        import paired_review
+        item = {"kind": "finding", "record_verdict": "irregular", "rule_id": "CONV-001",
+                "unit_id": "u01", "relation": "above_band", "value_a": 148, "unit_a": "mmol/L",
+                "value_b": 145, "unit_b": "mmol/L", "source_refs": ["REF-0001"],
+                "field_label": "measured value", "explanation": "declared"}
+        computed = paired_review.amendment_from_finding(item, unit_texts={})
+        self.assertEqual(computed["derived_from"], "computed_finding")
+        self.assertIn("Computed in code from the figures in this unit, not judged by a model.",
+                      computed["comment"])
+        authored = paired_review.amendment_from_finding(item, unit_texts={}, computed_provenance=False)
+        self.assertEqual(authored["derived_from"], "model_finding")
+        self.assertNotIn("Computed in code from the figures in this unit", authored["comment"])
+        self.assertIn("Reported by the agent named above", authored["comment"])
+        # Only the computed stamp is exempt from the arithmetic guard.
+        _, refused_flagged = paired_review.suppress_contradicted_amendments(
+            [authored], {}, {}, set())
+        self.assertEqual(refused_flagged, [])  # no unit text: the guard abstains, it does not invent
+        both, added = paired_review.ensure_amendments_for_findings(
+            [], [item], unit_texts={}, computed_provenance=False)
+        self.assertEqual((added, both[0]["derived_from"]), (1, "model_finding"))
+
+    def test_promotion_v7_deliverable_amendments_are_reproduced_and_narrowed(self):
+        """The two wrong v7 amendments exist in the shipped deliverable, carry the
+        computed stamp, and the arithmetic guard does not catch them even when the
+        stamp is corrected: the call-site narrowing is what removes them."""
+        import paired_review
+        path = ROOT / "docs/fix/ordinary_final_cloud_run_v7/downloaded/evidence/run/deliverables/result_sheet/review_data.json"
+        if not path.exists():
+            self.skipTest("v7 evidence not on disk")
+        shipped = json.loads(path.read_text(encoding="utf-8"))["amendments"]
+        wrong = [a for a in shipped if a["finding_unit_id"] in ("u03-result-res-cedar", "u06-result-res-firth")]
+        self.assertEqual(len(wrong), 2)
+        for a in wrong:
+            self.assertEqual(a["derived_from"], "computed_finding")
+            self.assertIn("Computed in code from the figures in this unit, not judged by a model.", a["comment"])
+        text = (ROOT / "benchmark/corpora/clinical_reference/context/result_sheet.md")
+        if not text.exists():
+            self.skipTest("corpus not on disk")
+        import pairing_map
+        unit_texts = paired_review.unit_texts_for(text.read_text(encoding="utf-8"), "result_sheet")
+        vocabulary = set()
+        for unit in unit_texts.values():
+            vocabulary |= pairing_map.unit_fields(unit.get("text", ""))
+        rules = {"CONV-001": {"id": "CONV-001", "rule": "The measured value stated for a result must fall "
+                                                       "inside the reference range recorded for its test."}}
+        corrected = [dict(a, derived_from="model_finding") for a in wrong]
+        kept, refused = paired_review.suppress_contradicted_amendments(corrected, unit_texts, rules, vocabulary)
+        # Measured, not assumed: the guard computes no check for a band rule on these
+        # units, so it abstains on both. The stamp fix alone would not have removed them.
+        self.assertEqual((len(kept), len(refused)), (2, 0))
+
     # ---- A5: the pairing gate on partial deliveries -----------------------------------
 
     def _merged_delivery(self, *, partial, receipt=True, truncated_partition=False):
@@ -565,7 +679,7 @@ class CorrectionChecks(unittest.TestCase):
                          ("partial", "OMISSION", "classified"))
         self.assertEqual(payload["auditor_pair_context"]["pairs"][0]["delivery"], "partial")
         # The run-level summary carries the same figure, computed from real telemetry when it is on disk.
-        telemetry = V5.parent.parent.parent / "ordinary_final_cloud_run_v6/downloaded/evidence/run"
+        telemetry = ROOT / "docs/fix/ordinary_final_cloud_run_v6/downloaded/evidence/run"
         if (telemetry / "logs/model_telemetry.jsonl").exists():
             rows = [json.loads(l) for l in (telemetry / "logs/model_telemetry.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
             scheduler = [json.loads(l) for l in (telemetry / "audit/execution_topology.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -697,6 +811,12 @@ def check_record():
                                        "field; the v6 FACT_CHECKER output is still refused")
 
 
+def check_promotion():
+    return _verdict(("test_promotion_",), "only findings Python computed reach the amendment promoter, the provenance stamp "
+                                          "and sentence follow the source, and v7's two model-authored amendments are "
+                                          "reproduced from the shipped deliverable and excluded by the narrowing")
+
+
 # (test, owner, attribute, mutant): each neutralises the one mechanism the test asserts.
 NEUTRALIZATIONS = [
     ("test_grounding_correct_citation_passes_fabricated_and_mismatched_fail", extraction, "grounding", no_grounding),
@@ -709,6 +829,15 @@ NEUTRALIZATIONS = [
     ("test_alias_application_travels_with_result_bus_and_observation", agent_wrapper, "core_field_aliases", lambda: {}),
     ("test_verifier_record_example_carries_required_fields", AgentWrapper, "_record_example_required", lambda self, required: {}),
     ("test_verifier_not_called_without_a_draft_and_recorded", None, "_verifier_has_a_draft", lambda state: True),
+    # Neutralise the selector by restoring the pre-correction behaviour: every
+    # result's items, whoever authored them, which is what v7 passed to the promoter.
+    ("test_promotion_only_computed_findings_reach_the_promoter", paired_review, "computed_finding_items",
+     lambda results, agent=None, doc_id=None: [i for r in results or []
+                                               for i in ((r.get("parsed") or {}).get("items") or [])]),
+    # Neutralise the provenance flag by ignoring it, which is the unconditional
+    # "computed_finding" stamp and sentence v7 shipped.
+    ("test_promotion_provenance_stamp_and_sentence_follow_the_source", paired_review, "amendment_from_finding",
+     lambda item, **kw: _ORIGINAL_AMENDMENT_FROM_FINDING(item, **{**kw, "computed_provenance": True})),
     ("test_verifier_called_with_a_partial_draft_and_marked", None, "_accepted_draft",
      lambda proc: (((proc or {}).get("parsed") if proc and proc.get("ok") else None), False)),
     ("test_pairing_partial_delivery_pairs_receipt_bound_items_and_marks_them", auditor_pairs, "delivery_scope",

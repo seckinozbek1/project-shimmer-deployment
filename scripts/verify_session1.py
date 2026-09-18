@@ -24603,6 +24603,24 @@ def check_265_typed_record_example_complete_and_verifier_skipped_without_draft()
     return check_verifier()
 
 
+def check_269_only_computed_findings_become_amendments():
+    """Run 6f896263 (v7, 2026-09-18): VERIFIER ran with a draft for the first time
+    and wrote five typed records with record_verdict "irregular", none computed by
+    anything (four had value_a equal to value_b). They were passed to the amendment
+    promoter beside the real computed findings, and the two whose (unit, rule) no
+    computed amendment already held became operator-facing amendments: a false
+    positive on a clean distractor and a fabricated reason on the right unit. Both
+    carried derived_from "computed_finding" and the sentence "Computed in code from
+    the figures in this unit, not judged by a model", so they also bypassed
+    suppress_contradicted_amendments. pipeline.py states the invariant that no
+    amendment is ever taken from the model; the promoter now receives only the
+    findings posted under the computed backend, and the stamp and sentence follow
+    the source. Measured: with the stamp corrected but the input unchanged the
+    arithmetic guard still abstains on both, so the narrowing is what removes them."""
+    from ordinary_final_correction_checks import check_promotion
+    return check_promotion()
+
+
 def check_266_pairing_gate_is_item_scoped_and_partial_pairs_are_marked():
     """Run 0cbc7f26 (v6): one refused PROCESSOR partition left four accepted items
     unseen by every auditor, and the advisory classifier had no pairs, as in every
@@ -24973,6 +24991,8 @@ CHECKS = [
      check_267_bounded_requests_carry_the_validated_layout),
     ("268 the typed-record example carries the agent's declared values and names its own verdict field",
      check_268_record_example_carries_declared_values),
+    ("269 only findings Python computed become amendments, and provenance follows the source",
+     check_269_only_computed_findings_become_amendments),
 ]
 
 

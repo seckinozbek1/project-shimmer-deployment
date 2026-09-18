@@ -5,12 +5,69 @@
   "held_out": "The pipeline never reads benchmark/. This key is consulted only by tools/score_corpus.py after a run, and the scorer matches mechanically on unit id and rule id.",
   "task_given_to_the_pipeline": "Review result_sheet.md against the five rules in lab_conventions.md, grounded in analyte_reference_ranges.md. For every rule, find every result it applies to, check it, and report each violation with the figures that conflict, the rule it breaks (by the operator's own id), and the reference passage it rests on.",
   "planted": [
-    {"unit": "RES-ALDER",  "rule": "CONV-L01", "what": "measured value above the upper bound of its reference range", "relation": "above_band"},
-    {"unit": "RES-BIRCH",  "rule": "CONV-L01", "what": "measured value below the lower bound of its reference range", "relation": "below_band"},
-    {"unit": "RES-ELDER",  "rule": "CONV-L01", "what": "measured value above the upper bound of its reference range", "relation": "above_band"},
-    {"unit": "RES-FIRTH",  "rule": "CONV-L02", "what": "result states no sample identifier", "relation": "missing_field"},
-    {"unit": "sheet",      "rule": "CONV-L03", "what": "per-laboratory counts do not sum to the declared total", "relation": "sum_mismatch"}
+    {
+      "unit": "RES-ALDER",
+      "rule": "CONV-L01",
+      "what": "measured value above the upper bound of its reference range",
+      "relation": "above_band",
+      "claim": {
+        "relation": "above_band",
+        "field_label": "measured value",
+        "value_a": 148,
+        "value_b": 145
+      }
+    },
+    {
+      "unit": "RES-BIRCH",
+      "rule": "CONV-L01",
+      "what": "measured value below the lower bound of its reference range",
+      "relation": "below_band",
+      "claim": {
+        "relation": "below_band",
+        "field_label": "measured value",
+        "value_a": 3.1,
+        "value_b": 3.5
+      }
+    },
+    {
+      "unit": "RES-ELDER",
+      "rule": "CONV-L01",
+      "what": "measured value above the upper bound of its reference range",
+      "relation": "above_band",
+      "claim": {
+        "relation": "above_band",
+        "field_label": "measured value",
+        "value_a": 24,
+        "value_b": 17
+      }
+    },
+    {
+      "unit": "RES-FIRTH",
+      "rule": "CONV-L02",
+      "what": "result states no sample identifier",
+      "relation": "missing_field",
+      "claim": {
+        "relation": "missing_field",
+        "field_label": "sample identifier"
+      }
+    },
+    {
+      "unit": "sheet",
+      "rule": "CONV-L03",
+      "what": "per-laboratory counts do not sum to the declared total",
+      "relation": "sum_mismatch",
+      "claim": {
+        "relation": "sum_mismatch",
+        "field_label": "result count declared",
+        "value_a": 7,
+        "value_b": 6
+      }
+    }
   ],
-  "clean": ["RES-CEDAR", "RES-DAMSON"],
-  "notes": "Five planted defects across six results plus the sheet header. Two results are clean distractors: any amendment against them is a false positive. The sheet-level count defect lives in the header block above the first heading, which the unit splitter may or may not treat as a unit; it is planted honestly and scored honestly either way."
+  "clean": [
+    "RES-CEDAR",
+    "RES-DAMSON"
+  ],
+  "notes": "Five planted defects across six results plus the sheet header. Two results are clean distractors: any amendment against them is a false positive. The sheet-level count defect lives in the header block above the first heading, which the unit splitter may or may not treat as a unit; it is planted honestly and scored honestly either way.",
+  "claim_note": "Each planted entry now states its reason in the Finding record's own typed vocabulary (relation, field_label, and the two figures where the defect is arithmetic), so tools/score_corpus.py can ask whether a located finding states the SAME REASON rather than only landing on the right unit. The figures are read from the document and analyte_reference_ranges.md Section One: ALDER sodium 148 against the 145 upper bound, BIRCH potassium 3.1 against the 3.5 lower bound, ELDER total bilirubin 24 against the 17 upper bound. RES-FIRTH states no figure because its defect is an absent field, the sample identifier. The sheet entry compares the declared per-laboratory counts, 4 plus 3 equals 7, against the declared total of 6. Added 2026-09-19, AFTER the v5, v6 and v7 deliverables were written and read; no planted entry, unit, rule or clean list changed, so every location-only figure those runs already scored is unchanged and only the reason check becomes answerable."
 }

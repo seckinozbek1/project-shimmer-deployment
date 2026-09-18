@@ -2011,7 +2011,50 @@ def _repair_unit_id(unit_id, unit_texts):
     return hits[0]
 
 
-def amendment_from_finding(item, *, document_level="document-level", unit_texts=None):
+def computed_finding_items(results, agent=None, *, doc_id=None):
+    """The typed items of results Python COMPUTED, never a model's own answer.
+
+    The discriminator is structural and already written at the post: a computed
+    paired-review record is posted with backend "paired" and model "python" or
+    "python+model" (pipeline.py's paired review, "computed in code from the
+    unit's own figures; no model judged these values"), while an agent's own
+    reply carries its real backend and model id (local_auditor /
+    unsloth/Phi-3.5-..., claude_api, and so on). Nothing here reads an agent
+    name: PRACTICE_AUDITOR's judged-absence items are posted under the MODEL's
+    backend on purpose, and they are model answers whoever wrote them.
+
+    Run 6f896263 (v7, 2026-09-18) is why this exists. VERIFIER ran for the first
+    time with a draft and wrote five typed records, all record_verdict
+    "irregular", all with value_a equal to value_b, none computed by anything.
+    They were passed to ensure_amendments_for_findings beside the real computed
+    findings, and the two whose (unit, rule) no computed amendment already held
+    became operator-facing amendments on a clean distractor (RES-CEDAR) and on
+    the right unit for a fabricated reason (RES-FIRTH). pipeline.py states the
+    invariant "NO amendment is ever taken from the model ... cannot exist by
+    construction"; this function is what makes that true at the call site
+    instead of hoping a downstream check catches it.
+    """
+    out = []
+    for r in results or []:
+        if not isinstance(r, dict) or not r.get("ok"):
+            continue
+        if agent is not None and r.get("agent") != agent:
+            continue
+        if doc_id is not None and r.get("doc_id") != doc_id:
+            continue
+        if str(r.get("backend") or "") != "paired":
+            continue
+        if not str(r.get("model") or "").startswith("python"):
+            continue
+        parsed = r.get("parsed")
+        items = parsed.get("items") if isinstance(parsed, dict) else None
+        if isinstance(items, list):
+            out.extend(i for i in items if isinstance(i, dict))
+    return out
+
+
+def amendment_from_finding(item, *, document_level="document-level", unit_texts=None,
+                           computed_provenance=True):
     """Build an amendment from a typed Finding record, with no model involved.
 
     unit_texts: the {unit_id: {"text": ..., ...}} map unit_texts_for(doc["text"],
@@ -2111,7 +2154,14 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     parts = [computed]
     if explanation and explanation.strip() and explanation.strip() != computed:
         parts.append(explanation.strip())
-    parts.append("Computed in code from the figures in this unit, not judged by a model.")
+    # v7: this sentence used to be unconditional, so the two amendments built
+    # from VERIFIER's fabricated records told the operator they were computed in
+    # code and not judged by a model, which was false of both. The provenance a
+    # comment states is now the provenance the caller passes; an amendment built
+    # from a model's own record says so instead.
+    parts.append("Computed in code from the figures in this unit, not judged by a model."
+                 if computed_provenance else
+                 "Reported by the agent named above, not computed in code from this unit's figures.")
     parts.append("Grounded in %s." % citation)
     comment = " ".join(parts)
     unit_record = (unit_texts or {}).get(unit_id) if unit_id else None
@@ -2133,7 +2183,11 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         "severity": "required",
         "finding_type": "factual",
         "ref_ids": refs or [],
-        "derived_from": "computed_finding",
+        # The stamp states WHERE THIS CAME FROM, and suppress_contradicted_
+        # amendments exempts "computed_finding" from its arithmetic check. In v7
+        # both model-authored amendments carried this stamp, so the guard written
+        # for exactly that error never examined either of them.
+        "derived_from": "computed_finding" if computed_provenance else "model_finding",
         "finding_unit_id": item.get("unit_id"),
         "finding_rule_id": rule_id,
         # The TYPED record, carried through rather than dropped. finding_type
@@ -2283,7 +2337,7 @@ def severity_of_rule(rule_id, rules_by_id):
 
 def ensure_amendments_for_findings(amendments, findings, *, document_level="document-level",
                                    unit_texts=None, refusal_sink=None,
-                                   rules_by_id=None):
+                                   rules_by_id=None, computed_provenance=True):
     """Add an amendment for every irregular Finding not already represented.
 
     unit_texts: passed straight through to amendment_from_finding (see its own
@@ -2349,7 +2403,8 @@ def ensure_amendments_for_findings(amendments, findings, *, document_level="docu
                                          "severity": _sev,
                                          "finding_stands": True})
                 continue
-        built = amendment_from_finding(item, document_level=document_level, unit_texts=unit_texts)
+        built = amendment_from_finding(item, document_level=document_level, unit_texts=unit_texts,
+                                       computed_provenance=computed_provenance)
         if built is None:
             if refusal_sink is not None:
                 reason = ("no rule id under any known field name "
