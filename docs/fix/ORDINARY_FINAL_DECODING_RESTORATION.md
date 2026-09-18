@@ -115,7 +115,7 @@ separate the two, the same gate was run on a clean worktree of the parent commit
 the same interpreter and host. Receipt: `main_gate_comparison.json`, logs
 `baseline_gate_at_HEAD.log` and `main_gate.log`.
 
-| | Parent commit | Working tree |
+| | Parent commit | This change |
 |---|---|---|
 | Total checks | 262 | 263 |
 | Failures | 30 | 28 |
@@ -125,7 +125,14 @@ The 28 failures are identical in both and all environment-caused: 17 are
 `ModuleNotFoundError: No module named 'fastapi'`, the rest follow from that and from an absent
 `pypdf`, in an interpreter that lacks both. Checks 28 and 31 fail only at the baseline because a
 fresh worktree has no gitignored `input/` directory; that is a worktree artifact, not a fix.
-The total grew by one because check 262 was added, and it passes.
+The total grew by one because check 262 was added, and it passes in every run.
+
+The gate was run twice on this change. Check 256 (startup readiness is non-mutating) failed in
+the first run and passed in the second, and passes in isolation. It compares a before and after
+snapshot of its own temporary fixture and has no contact with the decoding policy, so it is
+order dependent inside a full run rather than a regression; it is the only check that differs
+between the two runs. Both logs and the comparison receipt are kept rather than only the
+favourable one.
 
 One existing check needed a fixture correction, not a code change:
 `report_recommendations_checks.test_native_template_and_eos_telemetry_on_local_call` ended its

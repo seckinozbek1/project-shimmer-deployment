@@ -1,5 +1,5 @@
 {
-  "interpretation": "Same interpreter, same host. The gate is not green in this environment and was not before this change; every failure traces to packages absent from this interpreter (fastapi, pypdf). Checks 28 and 31 differ only because a fresh git worktree has no gitignored input/ directory.",
+  "interpretation": "Same interpreter and host. The gate is not green in this environment and was not before this change: every failure traces to fastapi and pypdf being absent from this interpreter. Checks 28 and 31 fail only at the baseline because a fresh git worktree has no gitignored input/ directory. Check 256 is order dependent inside a full run: it failed in run 1, passed in run 2 and passes in isolation, and it has no contact with the decoding policy.",
   "baseline_commit": "09aa90f",
   "baseline_total": 262,
   "baseline_failing": [
@@ -34,8 +34,40 @@
     257,
     259
   ],
+  "working_tree_commit": "8d46fe9",
   "working_tree_total": 263,
-  "working_tree_failing": [
+  "run_1_failing": [
+    91,
+    96,
+    101,
+    108,
+    110,
+    112,
+    117,
+    118,
+    121,
+    126,
+    129,
+    140,
+    146,
+    193,
+    196,
+    203,
+    210,
+    213,
+    214,
+    246,
+    247,
+    248,
+    250,
+    251,
+    252,
+    255,
+    256,
+    257,
+    259
+  ],
+  "run_2_failing": [
     91,
     96,
     101,
@@ -70,7 +102,9 @@
     28,
     31
   ],
-  "identical_pre_existing_failures": 28,
-  "check_262": "PASS",
+  "order_dependent_between_runs": [
+    256
+  ],
+  "check_262": "PASS in both runs",
   "dominant_cause": "ModuleNotFoundError: No module named 'fastapi'"
 }
