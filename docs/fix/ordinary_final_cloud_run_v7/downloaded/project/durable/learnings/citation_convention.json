@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-09-18T15:24:21.557680+00:00",
+  "source": "adaptive_spawn",
+  "rules": [
+    {
+      "name": "legal section",
+      "pattern": "\\b(?:Article|Section|Chapter|Clause|Annex|Protocol)\\s+[A-Z0-9]+(?:\\.[A-Z0-9]+)*\\b",
+      "sample_count": 5
+    }
+  ]
+}

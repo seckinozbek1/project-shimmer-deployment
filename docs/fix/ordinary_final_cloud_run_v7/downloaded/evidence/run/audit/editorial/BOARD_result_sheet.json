@@ -1,0 +1,31 @@
+{
+  "state": "REVIEWED",
+  "rounds": 0,
+  "ranks_run": [
+    "EDITOR_CLERK"
+  ],
+  "terminal_cap_reached": false,
+  "failed": null,
+  "consolidated": [
+    {
+      "ref": "REF-0007",
+      "governing": {
+        "rank": "EDITOR_CLERK",
+        "verdict": "concern",
+        "verdict_l": "concern",
+        "rationale": "The amendments correctly identify irregularities based on the conventions and reference data. However, the findings should explicitly state the specific reference range and the exact measured value that conflicts, rather than just stating the measured value alone.",
+        "confidence": "CONFIDENT"
+      },
+      "superseded": [],
+      "chain": [
+        {
+          "rank": "EDITOR_CLERK",
+          "verdict": "concern",
+          "verdict_l": "concern",
+          "rationale": "The amendments correctly identify irregularities based on the conventions and reference data. However, the findings should explicitly state the specific reference range and the exact measured value that conflicts, rather than just stating the measured value alone.",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    }
+  ]
+}

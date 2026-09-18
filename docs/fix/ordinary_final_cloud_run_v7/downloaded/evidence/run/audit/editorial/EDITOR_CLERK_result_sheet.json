@@ -1,0 +1,26 @@
+{
+  "state": "RAW",
+  "rank": "EDITOR_CLERK",
+  "ok": true,
+  "error": null,
+  "parsed": {
+    "agent": "EDITOR_CLERK",
+    "doc_id": "result_sheet",
+    "items": [
+      {
+        "kind": "editorial_observation",
+        "rationale": "The amendments correctly identify irregularities based on the conventions and reference data. However, the findings should explicitly state the specific reference range and the exact measured value that conflicts, rather than just stating the measured value alone.",
+        "ref": "REF-0007",
+        "ref_ids": [
+          "REF-0007"
+        ],
+        "verdict": "concern",
+        "confidence": "CONFIDENT",
+        "ts": "2026-09-18T15:32:49.071438+00:00",
+        "revision": 1,
+        "item_id": "EDITOR_CLERK:editorial_observation:REF-0007:0"
+      }
+    ]
+  },
+  "raw_text": "{\"agent\": \"EDITOR_CLERK\", \"doc_id\": \"result_sheet\", \"items\": [{\"confident\": true, \"kind\": \"editorial_observation\", \"rationale\": \"The amendments correctly identify irregularities based on the conventions and reference data. However, the findings should explicitly state the specific reference range and the exact measured value that conflicts, rather than just stating the measured value alone.\", \"ref\": \"REF-0007\", \"ref_ids\": [\"REF-0007\"], \"verdict\": \"concern\"}]}"
+}

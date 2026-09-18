@@ -1,0 +1,354 @@
+{
+  "timestamp": "2026-09-18T15:32:49.070651+00:00",
+  "total_cost_usd": 0.0,
+  "total_calls": 18,
+  "total_failures": 0,
+  "by_family": {
+    "qwen": {
+      "calls": 11,
+      "input_tokens": 37438,
+      "output_tokens": 1716,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 264340
+    },
+    "other": {
+      "calls": 7,
+      "input_tokens": 62535,
+      "output_tokens": 3157,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 212076
+    }
+  },
+  "by_agent": {
+    "ARCHIVIST": {
+      "calls": 1,
+      "input_tokens": 5210,
+      "output_tokens": 110,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 30080
+    },
+    "INST_FINDER": {
+      "calls": 1,
+      "input_tokens": 4981,
+      "output_tokens": 23,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 6873
+    },
+    "CITATION_RESOLVER": {
+      "calls": 1,
+      "input_tokens": 5007,
+      "output_tokens": 130,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 20039
+    },
+    "PROCESSOR": {
+      "calls": 4,
+      "input_tokens": 3194,
+      "output_tokens": 188,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 24783
+    },
+    "SPEECH_ACT_TAGGER": {
+      "calls": 1,
+      "input_tokens": 4315,
+      "output_tokens": 924,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 117252
+    },
+    "LEGAL_ANALYST": {
+      "calls": 2,
+      "input_tokens": 9712,
+      "output_tokens": 226,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 36453
+    },
+    "VERIFIER": {
+      "calls": 1,
+      "input_tokens": 17204,
+      "output_tokens": 1253,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 95264
+    },
+    "FACT_CHECKER": {
+      "calls": 1,
+      "input_tokens": 10189,
+      "output_tokens": 975,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 57356
+    },
+    "PRACTICE_AUDITOR": {
+      "calls": 5,
+      "input_tokens": 35142,
+      "output_tokens": 929,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 59456
+    },
+    "EDITOR_CLERK": {
+      "calls": 1,
+      "input_tokens": 5019,
+      "output_tokens": 115,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 28860
+    }
+  },
+  "by_phase": {
+    "3": {
+      "calls": 9,
+      "input_tokens": 28089,
+      "output_tokens": 1492,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 218449
+    },
+    "": {
+      "calls": 1,
+      "input_tokens": 4330,
+      "output_tokens": 109,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 17031
+    },
+    "5": {
+      "calls": 2,
+      "input_tokens": 27393,
+      "output_tokens": 2228,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 152620
+    },
+    "5.5": {
+      "calls": 5,
+      "input_tokens": 35142,
+      "output_tokens": 929,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 59456
+    },
+    "editorial_board": {
+      "calls": 1,
+      "input_tokens": 5019,
+      "output_tokens": 115,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 28860
+    }
+  },
+  "by_doc": {
+    "": {
+      "calls": 4,
+      "input_tokens": 19528,
+      "output_tokens": 372,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 74023
+    },
+    "result_sheet": {
+      "calls": 9,
+      "input_tokens": 45303,
+      "output_tokens": 3572,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 342937
+    },
+    "u01-result-res-alder": {
+      "calls": 1,
+      "input_tokens": 6974,
+      "output_tokens": 169,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 10910
+    },
+    "u02-result-res-birch": {
+      "calls": 1,
+      "input_tokens": 7046,
+      "output_tokens": 147,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 9669
+    },
+    "u03-result-res-cedar": {
+      "calls": 1,
+      "input_tokens": 7048,
+      "output_tokens": 215,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 13499
+    },
+    "u04-result-res-damson": {
+      "calls": 1,
+      "input_tokens": 7047,
+      "output_tokens": 214,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 13634
+    },
+    "u05-result-res-elder": {
+      "calls": 1,
+      "input_tokens": 7027,
+      "output_tokens": 184,
+      "cost_usd": 0.0,
+      "failures": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cached_input_tokens": 0,
+      "duration_ms": 11744
+    }
+  },
+  "pricing": {
+    "claude-opus": {
+      "backend": "claude_api",
+      "match": [
+        "claude-opus"
+      ],
+      "input_per_mtok": 5.0,
+      "output_per_mtok": 25.0,
+      "cache_read_multiplier": 0.1,
+      "cache_write_multiplier": 1.25,
+      "label": "Claude Opus ($5/$25 per Mtok)"
+    },
+    "claude-sonnet": {
+      "backend": "claude_api",
+      "match": [
+        "claude-sonnet"
+      ],
+      "input_per_mtok": 3.0,
+      "output_per_mtok": 15.0,
+      "cache_read_multiplier": 0.1,
+      "cache_write_multiplier": 1.25,
+      "label": "Claude Sonnet ($3/$15 per Mtok)"
+    },
+    "claude-haiku": {
+      "backend": "claude_api",
+      "match": [
+        "claude-haiku"
+      ],
+      "input_per_mtok": 1.0,
+      "output_per_mtok": 5.0,
+      "cache_read_multiplier": 0.1,
+      "cache_write_multiplier": 1.25,
+      "label": "Claude Haiku ($1/$5 per Mtok)"
+    },
+    "gpt-4o": {
+      "backend": "openai_api",
+      "match": [
+        "gpt-4o",
+        "gpt",
+        "openai"
+      ],
+      "input_per_mtok": 2.5,
+      "output_per_mtok": 10.0,
+      "cached_input_multiplier": 0.5,
+      "label": "GPT-4o ($2.50/$10 per Mtok)"
+    },
+    "qwen-local": {
+      "backend": "qwen_local",
+      "match": [
+        "qwen"
+      ],
+      "input_per_mtok": 0.0,
+      "output_per_mtok": 0.0,
+      "label": "Qwen local (zero cloud cost)"
+    },
+    "local-producer": {
+      "backend": "local_producer",
+      "match": [
+        "Qwen",
+        "qwen"
+      ],
+      "input_per_mtok": 0.0,
+      "output_per_mtok": 0.0,
+      "label": "Local producer (zero cloud cost)"
+    },
+    "local-auditor": {
+      "backend": "local_auditor",
+      "match": [
+        "Phi",
+        "phi"
+      ],
+      "input_per_mtok": 0.0,
+      "output_per_mtok": 0.0,
+      "label": "Local auditor (zero cloud cost)"
+    }
+  }
+}

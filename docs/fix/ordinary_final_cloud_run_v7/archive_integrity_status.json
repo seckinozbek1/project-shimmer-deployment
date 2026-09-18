@@ -1,0 +1,12 @@
+{
+  "connection": "ok",
+  "deadline_epoch": 1789745196.0729113,
+  "exit_code": 0,
+  "last_poll_epoch": 1789744913.9972007,
+  "phase": "archive_integrity",
+  "polls": 2,
+  "remote_pid": "2216",
+  "remote_work": "completed",
+  "started_epoch": 1789744896.0729113,
+  "unreachable_polls": 0
+}
