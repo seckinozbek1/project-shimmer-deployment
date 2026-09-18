@@ -1,0 +1,91 @@
+{
+  "archive_members": 160,
+  "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "binding": {
+    "assets_rebound_not_rebuilt": true,
+    "assets_reused_from": "docs/fix/ordinary_final_cloud_run_v4",
+    "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+    "bundle": "docs/fix/ordinary_final_cloud_run_v5",
+    "classification": "PREPARED_NOT_AUTHORIZED",
+    "hard_ceiling_usd": 7,
+    "instance_type": "gpu_1x_a10",
+    "manifest_sha256": "06c78beb7831bc0075686205dde68c771cc1593fa4e509c43a148ea209b977b6",
+    "max_hourly_rate": 1.29,
+    "preparation_commit": "fbfc6f83df7a77a7f8ef458e455c07a25a441e6e",
+    "project_sha256": "b70cbded794a9ad97dbc50f84db996fec4f50706df43ae69c7d5389f2b28879d",
+    "region": "us-east-1",
+    "seal_sha256": "fa867ee889e30a2db1777783b8e4999f941395de15448b318752c4ac1a26013b",
+    "soft_budget_usd": 5,
+    "source_commit": "fbfc6f83df7a77a7f8ef458e455c07a25a441e6e"
+  },
+  "decoding_policy_admitted": {
+    "local_auditor": {
+      "kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          32000,
+          32007
+        ],
+        "num_beams": 1,
+        "pad_token_id": 32009,
+        "use_cache": true
+      },
+      "sha256": "49199195d354af5f2e4e40e3b715d927cd093cab5e289d7002a813971568ca3b",
+      "source": "tuning/auditor_canonical_execution/evaluation_protocol.json",
+      "status": "restored"
+    },
+    "local_producer": {
+      "kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          151645
+        ],
+        "num_beams": 1,
+        "pad_token_id": 151654,
+        "use_cache": true
+      },
+      "sha256": "51da77c94497ef74b5f913901c20abbe965101dbbb950cb0d5b62b4c16b3cc1a",
+      "source": "tuning/producer_v3/evaluation_protocol.json",
+      "status": "restored"
+    },
+    "qwen_local": {
+      "kwargs": {
+        "do_sample": false,
+        "num_beams": 1,
+        "use_cache": true
+      },
+      "sha256": "a51a93f054918712177e9178367c9afdd7495da735575504c2475a1294f299c6",
+      "source": "config/decoding_policy.json",
+      "status": "new"
+    }
+  },
+  "generated_members": [
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/classifier_fork/adapter_model.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/head.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/mean.npy",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/std.npy",
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/adapter_model.safetensors",
+    "input/context/_review_targets.json",
+    "input/context/analyte_reference_ranges.md",
+    "input/context/result_sheet.md",
+    "input/conventions/lab_conventions.md"
+  ],
+  "head_commit": "fbfc6f83df7a77a7f8ef458e455c07a25a441e6e",
+  "head_moved_by_evidence_only": [],
+  "manifest_sha256": "06c78beb7831bc0075686205dde68c771cc1593fa4e509c43a148ea209b977b6",
+  "members_compared_to_sealed_commit": 151,
+  "model_workload": false,
+  "passed": true,
+  "project_sha256": "b70cbded794a9ad97dbc50f84db996fec4f50706df43ae69c7d5389f2b28879d",
+  "project_tree_verified": true,
+  "provider_contacted": false,
+  "refs_exact_40_bytes": {
+    "hf_cache/hub/models--BAAI--bge-m3/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Phi-3.5-mini-instruct-bnb-4bit/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Qwen2.5-7B-Instruct-bnb-4bit/refs/main": 40
+  },
+  "seal_sha256": "fa867ee889e30a2db1777783b8e4999f941395de15448b318752c4ac1a26013b",
+  "sealed_runtime_is_what_launches": true,
+  "source_commit": "fbfc6f83df7a77a7f8ef458e455c07a25a441e6e",
+  "source_tests_and_validation_hashes_match": true
+}
