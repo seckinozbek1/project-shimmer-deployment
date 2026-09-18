@@ -148,6 +148,18 @@ processing swarm governed by an append-only constitution.
 - Prompts are self-contained: a job spec carries the context needed to execute it. The
   changelog and any external ledger are maintained outside Claude Code unless the spec
   says otherwise.
+- PROGRESS-A: any phase that takes more than a couple of minutes reports MEASURED PROGRESS in
+  every sitrep, not just its name. Four values, every time: how much of the work is done
+  against the total, how long it has been running, the current rate, and the remaining time
+  at that rate. Where the tool gives no progress (the controller captures scp with no
+  output), measure it with a read-only observation of the work itself (a `stat` of the
+  partial file on the instance over the run's own key, a count of finished items in the
+  log) and state it as measured, never as inferred. Where nothing can be measured, say so
+  and say why; never substitute an estimate for a reading. This applies to the asset
+  upload, the seed copy, model acquisition, wheel installation, the workload's own
+  generation progress, and any local phase of similar length, including the rehearsal's
+  polarities and long gate runs. Set the sitrep up this way before the phase starts; it
+  should not need asking (it was asked for during the v12 upload, 2026-09-19).
 
 ## The verify gate
 
