@@ -15,7 +15,7 @@ test in Section One of the reference corpus. A measured value above the upper bo
 the lower bound of that reference range is an irregularity. State the measured value, its
 unit, and the bound it falls outside.
 
-## CONV-L02 , conv-result-completeness [required]
+## CONV-L02 , conv-result-completeness [required] [scope: test] [requires: sample identifier, measured value, analysing laboratory]
 
 Every result must state its sample identifier, its test, its measured value and its analysing
 laboratory. A missing field is an irregularity. State which field is absent from which result.

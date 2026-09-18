@@ -2,7 +2,8 @@
 
 Status: **CORRECTIONS_PROVEN_LOCALLY**. Local only: no cloud, no model execution, no weight
 loading. Seven items were put on the table; two were defects and are corrected, five were not
-defects and are reported with the evidence that decides each. No weights, HPO settings,
+defects and are reported with the evidence that decides each; item 1's RES-FIRTH cause was then
+corrected by operator decision in the operator's own conventions file. No weights, HPO settings,
 telemetry architecture, workload or routing changed. The one behaviour change is in phase 6 and
 is stated under item 2.
 
@@ -32,13 +33,32 @@ nearest miss, but it is guarded by `if entry["paired"] or entry.get("undecided")
 RES-FIRTH has both (CONV-001 paired, three rules undecided). So the safety net is switched off
 by the unit being partly reviewable.
 
-This is a real defect, and it is NOT corrected here. The fix is either a declared `requires:`
-on the rule (which routes absence to Python through the existing `absence_path: computed` path,
-and is the operator's file to edit, not mine) or a change to the pairing rule itself so that a
-rule naming a field a unit lacks pairs as an absence question rather than being rejected. The
-second touches the pairing contract, which is outside what this pass is allowed to change, and
-the first is an operator decision about their own conventions. Both are stated for you rather
-than chosen by me.
+**Corrected by operator decision (2026-09-19), in the operator's own file.** The CONV-L02
+heading in `lab_conventions.md` now declares
+`[scope: test] [requires: sample identifier, measured value, analysing laboratory]`. Two things
+the evidence decided about the shape of that declaration:
+
+- A `requires:` declaration alone changes nothing. `paired_review.absence_plans` skips any rule
+  with no `scope_declaration` (line 1381: `if not rule or not
+  pairing_map.scope_declaration(rule): continue`), so without a scope the rule would still have
+  been rejected on RES-FIRTH by its text-named fields. The scope is what makes the rule pair on
+  every result: `test` is a field every result carries, so all six units are in scope, and the
+  declared required fields are then decided by Python on each.
+- The three fields declared are the three the rule's own text names beside the scope field.
+  Declaring only `sample identifier` would have left the other two to nothing, since a scoped
+  rule's text-named fields are never requirements; on this corpus the two extra declarations
+  change no outcome (every result carries them), and on a future sheet they are the same
+  arithmetic.
+
+Measured, through the real parser, splitter, pairing map and planner with no model: CONV-002 now
+pairs on all six units; exactly one `absence_computed` plan exists, on `u06-result-res-firth`
+for `sample identifier`; the finding is `missing_field`, irregular, on that unit; the amendment
+names `sample identifier` and `CONV-L02` and carries the RES-FIRTH passage; the enriched key's
+reason check confirms it. And CONV-002 asks the model nothing anywhere: the five
+PRACTICE_AUDITOR calls v7 spent on CONV-002 (one per complete unit, each an `uncomputable` plan
+the model answered with nothing) no longer exist, because a scoped rule is settled by Python.
+On this corpus the whole convention review is therefore computed. Check 270 holds this, with a
+neutralization that reads no scope and reproduces the v7 rejection.
 
 **Why the sheet count defect is missed.** `pairing_map.split_units` produces six units, one per
 `## Result` heading. The header block carrying "Total result count declared: 6 / Northgate 4 /

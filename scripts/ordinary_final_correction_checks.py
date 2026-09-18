@@ -37,6 +37,7 @@ import agent_wrapper
 import auditor_pairs
 import bounded_extraction as extraction
 import paired_review
+import pairing_map
 import compact_contracts as cc
 from agent_wrapper import AgentWrapper, CallResult
 from reference_builder import ReferenceIndex, paragraph_ranges, _PARA_RE
@@ -510,6 +511,90 @@ class CorrectionChecks(unittest.TestCase):
         self.assertEqual(payload["processor_draft"]["items"][0]["item_id"], "PROCESSOR:probe:s")
         self.assertEqual([d for d in decisions if d["agent"] == "VERIFIER" and not d["activated"]], [])
 
+    # ---- A9: the declared absence on CONV-L02 reaches the computed path ----------------
+
+    def _clinical_review(self):
+        """The clinical corpus through the real parser, splitter, pairing map and
+        planner, with no model: (units_by_id, rules_by_id, entries, plans)."""
+        import shutil
+        import convention_parser
+        import pairing_map
+        corpus = ROOT / "benchmark/corpora/clinical_reference"
+        if not (corpus / "conventions/lab_conventions.md").exists():
+            self.skipTest("clinical corpus not on disk")
+        with tempfile.TemporaryDirectory() as folder:
+            tree = Path(folder)
+            (tree / "input" / "conventions").mkdir(parents=True)
+            shutil.copy(corpus / "conventions/lab_conventions.md", tree / "input/conventions/review_conventions.md")
+            registry = convention_parser.parse_conventions(tree).as_dict()
+        rules = registry["conventions"]
+        rules_by_id = {r["id"]: r for r in rules}
+        text = (corpus / "context/result_sheet.md").read_text(encoding="utf-8")
+        units = pairing_map.split_units(text, document_id="result_sheet")
+        units_by_id = {u["unit_id"]: u for u in units}
+        vocabulary = pairing_map.field_vocabulary(units)
+        entries = pairing_map.pair_units(units, rules, vocabulary=vocabulary)
+        pairs = [(e["unit_id"], p["rule_id"]) for e in entries for p in e["paired"]]
+        plans = paired_review.plan_calls(units_by_id, pairs, rules_by_id, vocabulary,
+                                         needed_fields_for=lambda t: pairing_map.needed_fields(t, vocabulary))
+        return units_by_id, rules_by_id, entries, plans
+
+    def test_declared_absence_is_parsed_from_the_operator_heading(self):
+        _, rules_by_id, _, _ = self._clinical_review()
+        rule = rules_by_id["CONV-002"]
+        self.assertEqual(rule["category"], "conv-l02")
+        self.assertEqual(rule["severity"], "required")
+        self.assertEqual([e["label"] for e in rule["scope"]], ["test"])
+        self.assertEqual(rule["requires"], ["sample identifier", "measured value", "analysing laboratory"])
+        # The other four rules are untouched by the declaration.
+        for rid in ("CONV-001", "CONV-003", "CONV-004", "CONV-005"):
+            self.assertEqual((rules_by_id[rid]["scope"], rules_by_id[rid]["requires"]), ([], []), rid)
+
+    def test_declared_absence_reaches_the_computed_path_on_res_firth(self):
+        """v5, v6 and v7 all missed RES-FIRTH's missing sample identifier because the
+        pairing map rejected the completeness rule on the one unit that lacked the
+        field. With the scope declared the rule pairs on every result and Python
+        decides the absence with no call; the finding, the amendment and the
+        scorer's reason check all name the missing identifier."""
+        import pairing_map
+        import sys
+        units_by_id, rules_by_id, entries, plans = self._clinical_review()
+        firth = next(e for e in entries if e["unit_id"] == "u06-result-res-firth")
+        self.assertIn("CONV-002", [p["rule_id"] for p in firth["paired"]])
+        self.assertEqual([r for r in firth["rejected"] if r["rule_id"] == "CONV-002"], [])
+        absences = [p for p in plans if p["kind"] == "absence_computed"]
+        self.assertEqual([(p["unit"]["unit_id"], p["rule"]["id"], p["checks"][0]["stated_field"]) for p in absences],
+                         [("u06-result-res-firth", "CONV-002", "sample identifier")])
+        # No unit is asked a model question about CONV-002 any more: Python decides it.
+        self.assertEqual([p for p in plans if p["rule"].get("id") == "CONV-002" and p["kind"] != "absence_computed"], [])
+        self.assertEqual([p for p in plans if p["kind"] == "absence_judged"], [])
+        plan = absences[0]
+        item = paired_review.finding_from_check(unit_id="u06-result-res-firth", rule=plan["rule"],
+                                                check=plan["checks"][0], source_rule_id="CONV-L02", refs=["REF-0001"])
+        self.assertEqual((item["relation"], item["record_verdict"], item["unit_id"]),
+                         ("missing_field", "irregular", "u06-result-res-firth"))
+        self.assertEqual(pairing_map._norm_label(item.get("field_label") or item.get("stated_field") or ""),
+                         pairing_map._norm_label("sample identifier"))
+        amendment = paired_review.amendment_from_finding(item, unit_texts=units_by_id)
+        self.assertIsNotNone(amendment)
+        self.assertIn("sample identifier", amendment["comment"].lower())
+        self.assertIn("CONV-L02", amendment["comment"])
+        self.assertEqual(amendment["derived_from"], "computed_finding")
+        self.assertIn("## Result RES-FIRTH", amendment["original_text"])
+        # The enriched key's claim for RES-FIRTH is confirmed by this finding.
+        sys.path.insert(0, str(ROOT / "tools"))
+        import score_corpus
+        key = json.loads((ROOT / "benchmark/corpora/clinical_reference/answer_key.json").read_text(encoding="utf-8"))
+        claim = next(e["claim"] for e in key["planted"] if e["unit"] == "RES-FIRTH")
+        ok, why = score_corpus._reason_matches(claim, [item])
+        self.assertTrue(ok, why)
+        # CONV-001's pairing is undisturbed on every result (its bands are read from the
+        # reference table by reference_bands_for, which this planner call does not wire;
+        # three runs and the gate's own band checks hold that path).
+        for entry in entries:
+            self.assertIn("CONV-001", [p["rule_id"] for p in entry["paired"]], entry["unit_id"])
+            self.assertIn("CONV-002", [p["rule_id"] for p in entry["paired"]], entry["unit_id"])
+
     # ---- A8: only computed findings become amendments ---------------------------------
 
     def _v7_phase6_inputs(self):
@@ -811,6 +896,13 @@ def check_record():
                                        "field; the v6 FACT_CHECKER output is still refused")
 
 
+def check_declared_absence():
+    return _verdict(("test_declared_absence_",), "CONV-L02's declared scope and required fields are parsed from the operator's "
+                                                 "heading, RES-FIRTH's missing sample identifier reaches the computed absence "
+                                                 "path with no model call, and the finding, the amendment and the key's reason "
+                                                 "check all name the missing identifier")
+
+
 def check_promotion():
     return _verdict(("test_promotion_",), "only findings Python computed reach the amendment promoter, the provenance stamp "
                                           "and sentence follow the source, and v7's two model-authored amendments are "
@@ -831,6 +923,10 @@ NEUTRALIZATIONS = [
     ("test_verifier_not_called_without_a_draft_and_recorded", None, "_verifier_has_a_draft", lambda state: True),
     # Neutralise the selector by restoring the pre-correction behaviour: every
     # result's items, whoever authored them, which is what v7 passed to the promoter.
+    # Neutralise the declaration's effect: a pairing map that reads no scope is the
+    # pre-declaration behaviour, under which CONV-002 was rejected on RES-FIRTH.
+    ("test_declared_absence_reaches_the_computed_path_on_res_firth", pairing_map, "scope_declaration",
+     lambda rule: []),
     ("test_promotion_only_computed_findings_reach_the_promoter", paired_review, "computed_finding_items",
      lambda results, agent=None, doc_id=None: [i for r in results or []
                                                for i in ((r.get("parsed") or {}).get("items") or [])]),
