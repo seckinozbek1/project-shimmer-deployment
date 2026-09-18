@@ -1,0 +1,257 @@
+[
+  {
+    "check": "test_ledger_covers_preamble_tables_and_unicode",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_hydrate_requires_complete_coverage_and_correct_identity",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_deduplicate_exact_but_refuse_conflicting_or_context_items",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 2
+  },
+  {
+    "check": "test_merge_order_and_incomplete_not_success",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_eos_at_cap_is_complete_unknown_is_unknown",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_wave_overlaps_freezes_context_and_posts_in_order",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 2
+  },
+  {
+    "check": "test_live_wrapper_keeps_contract_valid_separate_from_complete",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_processor_live_adapter_merges_and_retries_only_failed_partition",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_exact_comparison_requires_typed_unconditional_proof",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 2
+  },
+  {
+    "check": "test_exact_comparison_live_branch_emits_record_without_dispatch",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_incomplete_extraction_prevents_completed_status",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_projection_critical_path_capacity_and_missing_measurements",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  },
+  {
+    "check": "test_deterministic_reuse_invalidates_on_source_identity_or_budget",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 2
+  },
+  {
+    "check": "test_family_separation_reads_model_configuration",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 2
+  },
+  {
+    "check": "test_native_template_and_eos_telemetry_on_local_call",
+    "status": "PASS",
+    "baseline": {
+      "failures": 0,
+      "errors": 0
+    },
+    "neutralized": {
+      "failures": 1,
+      "errors": 0
+    },
+    "restored": {
+      "failures": 0,
+      "errors": 0
+    },
+    "mutated_branch_invocations": 1
+  }
+]

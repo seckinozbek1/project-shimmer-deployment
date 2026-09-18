@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "tests": 136,
+  "tests": 138,
   "failures": 0,
   "errors": 0,
   "activation_status": "PASS",
@@ -121,6 +121,13 @@
       "neutralized_test_failed": true,
       "restored_pass": true,
       "mutated_branch_invocations": 2
+    },
+    {
+      "check": "test_declared_absence_reaches_the_computed_path_on_res_firth",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 41
     },
     {
       "check": "test_promotion_only_computed_findings_reach_the_promoter",

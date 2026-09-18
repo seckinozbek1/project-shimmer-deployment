@@ -117,6 +117,9 @@ test_unsound_or_unknown_policy_refuses (decoding_policy_checks.DecodingPolicyChe
 test_alias_application_travels_with_result_bus_and_observation (ordinary_final_correction_checks.CorrectionChecks.test_alias_application_travels_with_result_bus_and_observation) ... ok
 test_alias_declared_in_config_maps_only_unambiguous_values (ordinary_final_correction_checks.CorrectionChecks.test_alias_declared_in_config_maps_only_unambiguous_values) ... ok
 test_alias_v5_outputs_parse_and_the_mapping_is_recorded (ordinary_final_correction_checks.CorrectionChecks.test_alias_v5_outputs_parse_and_the_mapping_is_recorded) ... ok
+test_declared_absence_is_parsed_from_the_operator_heading (ordinary_final_correction_checks.CorrectionChecks.test_declared_absence_is_parsed_from_the_operator_heading) ... ok
+test_declared_absence_reaches_the_computed_path_on_res_firth (ordinary_final_correction_checks.CorrectionChecks.test_declared_absence_reaches_the_computed_path_on_res_firth)
+v5, v6 and v7 all missed RES-FIRTH's missing sample identifier because the ... ok
 test_grounding_correct_citation_passes_fabricated_and_mismatched_fail (ordinary_final_correction_checks.CorrectionChecks.test_grounding_correct_citation_passes_fabricated_and_mismatched_fail) ... ok
 test_grounding_places_each_indexed_passage_in_its_span (ordinary_final_correction_checks.CorrectionChecks.test_grounding_places_each_indexed_passage_in_its_span) ... ok
 test_grounding_v5_raw_outputs_correct_citation_passes_mismatched_refused (ordinary_final_correction_checks.CorrectionChecks.test_grounding_v5_raw_outputs_correct_citation_passes_mismatched_refused) ... ok
@@ -139,6 +142,6 @@ test_verifier_record_example_carries_required_fields (ordinary_final_correction_
 test_verifier_v5_raw_output_still_fails_the_contract (ordinary_final_correction_checks.CorrectionChecks.test_verifier_v5_raw_output_still_fails_the_contract) ... ok
 
 ----------------------------------------------------------------------
-Ran 136 tests in 4.222s
+Ran 138 tests in 4.188s
 
 OK

@@ -24621,6 +24621,20 @@ def check_269_only_computed_findings_become_amendments():
     return check_promotion()
 
 
+def check_270_declared_absence_on_conv_l02_reaches_the_computed_path():
+    """Runs v5, v6 and v7 all missed RES-FIRTH's missing sample identifier: the
+    pairing map rejected the completeness rule on the one unit that lacked the
+    field, and unmatched_findings was switched off by the unit's other paired rule.
+    The operator declared [scope: test] [requires: sample identifier, measured
+    value, analysing laboratory] on CONV-L02 (a requires declaration alone changes
+    nothing: absence_plans skips a rule with no scope). The rule now pairs on every
+    result and Python decides the absence with no model call; the finding, the
+    amendment and the enriched key's reason check all name the missing identifier,
+    and CONV-002 asks the model nothing anywhere."""
+    from ordinary_final_correction_checks import check_declared_absence
+    return check_declared_absence()
+
+
 def check_266_pairing_gate_is_item_scoped_and_partial_pairs_are_marked():
     """Run 0cbc7f26 (v6): one refused PROCESSOR partition left four accepted items
     unseen by every auditor, and the advisory classifier had no pairs, as in every
@@ -24993,6 +25007,8 @@ CHECKS = [
      check_268_record_example_carries_declared_values),
     ("269 only findings Python computed become amendments, and provenance follows the source",
      check_269_only_computed_findings_become_amendments),
+    ("270 CONV-L02's declared scope and required fields route RES-FIRTH's absence to the computed path",
+     check_270_declared_absence_on_conv_l02_reaches_the_computed_path),
 ]
 
 
