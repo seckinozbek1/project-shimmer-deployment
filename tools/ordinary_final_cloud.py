@@ -3,6 +3,7 @@
 No runtime source modification, model acquisition outside the transfer allowlist,
 second instance, or full-run retry. Provider diagnostics are allowlisted.
 """
+import base64
 import json
 import os
 from pathlib import Path
@@ -27,6 +28,70 @@ INSTANCE_NAME='shimmer-ordinary-final-776d8c1'
 
 
 def save(name,value):write(BASE/name,value)
+
+
+# A remote phase runs detached from any one connection. Run v3 (2026-09-18) lost a
+# phase whose remote work had finished because the single connection carrying it
+# stopped delivering and the client never noticed; the workload phase has the same
+# shape with the remaining budget as its deadline. So every phase's work now runs
+# under setsid/nohup on the instance, writing its output and exit code to files in
+# this directory, and completion is polled over fresh short connections until the
+# phase's own deadline. An unreachable poll is recorded and retried; it is never a
+# phase result. Remote liveness and connection health are two separate facts.
+PHASES='phases'
+FIRST_POLL=2
+POLL_INTERVAL=10
+PROGRESS_MARKER='---PROGRESS---'
+
+
+def detached_launch_command(remote,label,command):
+    """One short remote command: store `command` as a script, start it detached, print its pid.
+
+    Two guards close the launch race in which the session's hang-up reaches the child
+    between fork and exec, before setsid and nohup have taken effect (seen on a real
+    Linux shell one launch in four): the launching shell ignores HUP before forking,
+    which the child inherits across fork and exec, and the launcher does not return
+    until the detached wrapper has written its started marker. A wrapper that never
+    starts fails the launch itself, at once, instead of surfacing later as DEAD."""
+    base=remote+'/'+PHASES
+    script,out,err,rc,pid,started=(base+'/'+label+ext for ext in ('.sh','.out','.err','.rc','.pid','.started'))
+    encoded=base64.b64encode(command.encode('utf8')).decode('ascii')
+    wrapper=('echo started > '+shlex.quote(started)+'; sh '+shlex.quote(script)+' > '+shlex.quote(out)
+             +' 2> '+shlex.quote(err)+'; echo $? > '+shlex.quote(rc))
+    return ('mkdir -p '+shlex.quote(base)+' && printf %s '+shlex.quote(encoded)+' | base64 -d > '+shlex.quote(script)
+            +" && trap '' HUP && (setsid nohup sh -c "+shlex.quote(wrapper)+' > /dev/null 2>&1 < /dev/null & echo $! > '
+            +shlex.quote(pid)+'); i=0; while [ ! -f '+shlex.quote(started)+' ] && [ $i -lt 100 ]; do sleep 0.1; i=$((i+1)); done; '
+            +'test -f '+shlex.quote(started)+' && cat '+shlex.quote(pid))
+
+
+def detached_poll_command(remote,label,progress=None):
+    """One short remote command reporting RC=<code>, RUNNING or DEAD, then an optional progress tail."""
+    base=remote+'/'+PHASES+'/'+label
+    line=('if [ -f '+shlex.quote(base+'.rc')+' ]; then printf "RC=%s\\n" "$(cat '+shlex.quote(base+'.rc')+')"; '
+          'elif kill -0 "$(cat '+shlex.quote(base+'.pid')+' 2>/dev/null)" 2>/dev/null; then echo RUNNING; else echo DEAD; fi')
+    if progress:
+        line+='; echo '+PROGRESS_MARKER+'; tail -n 12 '+shlex.quote(progress)+' 2>/dev/null'
+    return line
+
+
+def poll_outcome(returncode,stdout):
+    """Classify one completion poll: (kind, exit_code, progress_lines).
+
+    kind is one of unreachable (the connection failed or answered nonsense: retry),
+    running, dead (the wrapper vanished without an exit code) or completed."""
+    if returncode!=0:
+        return 'unreachable',None,[]
+    text=stdout.decode('utf8',errors='replace')
+    head,_,tail=text.partition(PROGRESS_MARKER)
+    lines=[l.strip() for l in head.splitlines() if l.strip()]
+    progress=[l.rstrip() for l in tail.splitlines() if l.strip()]
+    first=lines[0] if lines else ''
+    if first.startswith('RC='):
+        try:return 'completed',int(first[3:].strip()),progress
+        except ValueError:return 'unreachable',None,progress
+    if first=='RUNNING':return 'running',None,progress
+    if first=='DEAD':return 'dead',None,progress
+    return 'unreachable',None,progress
 
 
 def execute():
@@ -56,8 +121,8 @@ def execute():
         save('CURRENT_PHASE.json',dict(phase=label,epoch=time.time(),instance_id=iid,
             estimated_infrastructure_usd=max(0,time.time()-start)*rate/3600 if iid else 0))
         print(label,flush=True)
-    def transport(label,argv,timeout=60,required=True):
-        phase(label)
+    def transport(label,argv,timeout=60,required=True,announce=True,record=True,tolerate_timeout=False):
+        if announce:phase(label)
         if iid:
             remaining=start+7/rate*3600-240-time.time()
             require(remaining>0,'Termination reserve reached')
@@ -65,6 +130,9 @@ def execute():
         begin=time.time()
         try:r=subprocess.run(argv,capture_output=True,timeout=timeout)
         except subprocess.TimeoutExpired:
+            if tolerate_timeout:
+                # A poll that hangs is an unreachable poll, not a phase result.
+                return subprocess.CompletedProcess(args=argv,returncode=255,stdout=b'',stderr=b'')
             save(label+'_timing.json',dict(start_epoch=begin,seconds=time.time()-begin,timeout=True))
             raise RuntimeError('Transport deadline exceeded') from None
         data=r.stdout+r.stderr
@@ -72,17 +140,71 @@ def execute():
         if hits:
             save('SECURITY_STOP.json',dict(file=label,line=hits[0]['line']))
             raise RuntimeError('Possible credential detected; diagnostics withheld')
-        (BASE/(label+'.log')).write_bytes(data)
-        save(label+'_timing.json',dict(start_epoch=begin,seconds=time.time()-begin,returncode=r.returncode))
+        if record:
+            (BASE/(label+'.log')).write_bytes(data)
+            save(label+'_timing.json',dict(start_epoch=begin,seconds=time.time()-begin,returncode=r.returncode))
         require(not required or r.returncode==0,'Execution phase failed: '+label)
         return r
+    def detached(label,command,timeout,required):
+        """Run a remote phase detached from any one connection and poll for its exit code.
+
+        The work runs under setsid/nohup on the instance and writes its output and
+        exit code to files; completion is polled over fresh short connections until
+        the phase's deadline. An unreachable poll is recorded and retried, never
+        counted as the phase's result, so a connection that dies after the remote
+        work completed (the v3 failure) cannot consume the phase. The remote work's
+        liveness and the connection's health are recorded as two separate facts."""
+        phase(label)
+        remaining=start+7/rate*3600-240-time.time()
+        require(remaining>0,'Termination reserve reached')
+        timeout=min(timeout,max(1,int(remaining)))
+        begin=time.time()
+        deadline=begin+timeout
+        progress=REMOTE+'/workload.stderr.log' if label=='ordinary_workload' else None
+        r=transport(label+'_start',ssh+[detached_launch_command(REMOTE,label,command)],60,True,announce=False)
+        lines=r.stdout.decode('utf8',errors='replace').strip().splitlines()
+        pid=lines[-1].strip() if lines else ''
+        status=dict(phase=label,started_epoch=begin,deadline_epoch=deadline,remote_pid=pid,polls=0,unreachable_polls=0,
+                    connection='ok',remote_work='running',last_poll_epoch=time.time(),exit_code=None)
+        save(label+'_status.json',status);save('phase_status.json',status)
+        wait=FIRST_POLL
+        while True:
+            now=time.time()
+            if now>=deadline:
+                status.update(remote_work='not finished by the phase deadline')
+                save(label+'_status.json',status);save('phase_status.json',status)
+                raise RuntimeError('Phase deadline exceeded: '+label)
+            time.sleep(min(wait,max(0,deadline-now)))
+            wait=POLL_INTERVAL
+            r=transport(label+'_poll',ssh+[detached_poll_command(REMOTE,label,progress)],30,False,
+                        announce=False,record=False,tolerate_timeout=True)
+            kind,code,progress_lines=poll_outcome(r.returncode,r.stdout)
+            status['polls']+=1;status['last_poll_epoch']=time.time()
+            if kind=='unreachable':
+                status['unreachable_polls']+=1;status['connection']='unreachable'
+                status['remote_work']='unknown (connection unreachable)'
+            else:
+                status['connection']='ok';status['remote_work']=kind
+                if progress_lines:
+                    (BASE/'workload_progress.log').write_text('\n'.join(progress_lines)+'\n',encoding='utf8')
+            if kind=='completed':status['exit_code']=code
+            save(label+'_status.json',status);save('phase_status.json',status)
+            if kind in ('completed','dead'):break
+        base=REMOTE+'/'+PHASES+'/'+label
+        r=transport(label+'_collect',ssh+['cat '+shlex.quote(base+'.out')+' '+shlex.quote(base+'.err')],120,False,announce=False)
+        (BASE/(label+'.log')).write_bytes(r.stdout+r.stderr)
+        code=status['exit_code']
+        save(label+'_timing.json',dict(start_epoch=begin,seconds=time.time()-begin,returncode=code,detached=True,
+            remote_pid=pid,polls=status['polls'],unreachable_polls=status['unreachable_polls'],remote_work=status['remote_work']))
+        require(not required or code==0,'Execution phase failed: '+label)
+        return subprocess.CompletedProcess(args=[label],returncode=-1 if code is None else code,stdout=r.stdout,stderr=b'')
     def remote(label,command,timeout=60,required=True):
         require(ssh is not None,'SSH unavailable')
         if time.time()>start+5/rate*3600 and label not in {'stop_workload','pack_evidence','evidence_hash','final_gpu_state'}:
             save('soft_budget_assessment.json',dict(phase=label,epoch=time.time(),continued=False,
                 reason='No justified remaining-work estimate; preserve evidence and terminate'))
             raise RuntimeError('Soft budget reached before next phase')
-        return transport(label,ssh+[command],timeout,required)
+        return detached(label,command,timeout,required)
     try:
         phase('temporary_ssh_identity')
         r=subprocess.run(['ssh-keygen','-t','ed25519','-N','','-f',str(identity),'-C',name],capture_output=True)
