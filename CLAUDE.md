@@ -71,6 +71,17 @@ processing swarm governed by an append-only constitution.
   question per unit in scope (`absence_path: judged`), its answer stamped with the unit and rule.
   Scope is never derived from text or counts; the operator declares it. Labels are the
   operator's own words and appear in no code.
+- UNITS-A: `pairing_map.split_units` makes a PREAMBLE unit (kind `preamble`, id `u00-` plus
+  the document's own title slug, index 0) of the text before the first body heading whenever
+  that text carries content beyond heading lines and rules. It is never a heading ordinal,
+  so no `u01..uNN` id moves, and the extraction ledger keeps every span identity and offset
+  (`benchmark/fixtures/unit_identity_before_preamble.json` pins both on all twelve corpus
+  documents; check 273). The preamble is excluded from `unmatched_findings`: "no rule applies"
+  is its normal state, not a missing field. Measured, not preferred: the clinical sheet's
+  declared result counts sat above its first heading and were unreachable in five runs; they
+  are reachable now, and STILL not computable, because the per-laboratory labels carry a comma
+  the structural label reader does not admit. Widening that reader is a separate decision on
+  every corpus, not a way to reach a catch.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.

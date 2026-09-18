@@ -124,7 +124,8 @@ per request as in every validated input, with every indexed
 passage marked by its own reference id, and a cited reference is grounded by
 Python's placement of that passage in the span. Accepted items of a partition
 whose sibling failed still reach the auditors and the advisory classifier,
-marked partial. It is
+marked partial. A document's title block is its own unit (`u00`), so a rule
+about a document-level figure can reach it; existing unit ids never move. It is
 experimental, with real-model quality and performance still unverified. See the
 [Report Recommendations implementation](docs/fix/REPORT_RECOMMENDATIONS_IMPLEMENTATION.md). Dense activation is
 the default; sparse activation retains the conservative policy. Neither option

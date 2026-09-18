@@ -1,7 +1,10 @@
 """Lossless source ledger and compact PROCESSOR wire format.
 
-Source offsets cover the entire input, including preambles and table surrounds
-not represented by pairing_map units. Unit identity is reused, never renumbered.
+Source offsets cover the entire input, including table surrounds not represented by
+pairing_map units and a preamble the splitter makes no unit of. Unit identity is
+reused, never renumbered: a document's preamble unit (u00, added 2026-09-19) owns the
+same span it always occupied, with the same identity and offsets, measured on every
+corpus document.
 """
 from __future__ import annotations
 
