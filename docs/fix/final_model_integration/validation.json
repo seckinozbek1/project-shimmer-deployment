@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "tests": 104,
+  "tests": 128,
   "failures": 0,
   "errors": 0,
   "activation_status": "PASS",
@@ -23,6 +23,104 @@
       "baseline_pass": true,
       "neutralized_test_failed": true,
       "restored_pass": true
+    },
+    {
+      "check": "test_call_local_passes_restored_kwargs_and_pipeline_budget",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_call_qwen_passes_the_new_redactor_policy_and_the_model_stop_set",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_protocol_drift_refuses_before_any_model_load",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 24
+    },
+    {
+      "check": "test_failed_local_call_records_module_and_raising_frame",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_grounding_correct_citation_passes_fabricated_and_mismatched_fail",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_grounding_v5_raw_outputs_correct_citation_passes_mismatched_refused",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_prompt_validated_messages_shape",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 2
+    },
+    {
+      "check": "test_prompt_dev_row_reproduces_the_protocol_hash",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_prompt_build_returns_the_two_turns_and_no_context",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_prompt_dispatch_sends_system_and_user_turns",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_alias_v5_outputs_parse_and_the_mapping_is_recorded",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_alias_application_travels_with_result_bus_and_observation",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_verifier_record_example_carries_required_fields",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_verifier_not_called_without_a_draft_and_recorded",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 2
     },
     {
       "check": "test_ownership_excludes_invalid_span_and_foreign_ref",

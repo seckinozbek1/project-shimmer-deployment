@@ -136,10 +136,13 @@ class RecommendationChecks(unittest.TestCase):
         runtime=self.runtime(1); w=runtime.attach(self.wrapper()); counts=[]
         def dispatch(instance,stable,dynamic="",**kwargs):
             owned=instance._fixture_spans if hasattr(instance,"_fixture_spans") else None
-            # Read only the explicitly bounded work payload sent by the live wrapper.
-            raw=dynamic.split("## Work payload\n",1)[1]
-            payload,_=json.JSONDecoder().raw_decode(raw)
-            ids=[s["span_id"] for s in payload["source_spans"]]; counts.append(ids)
+            # The live wrapper sends the validated two-turn shape: the compact contract
+            # plus policy as the system turn and one canonical payload as the user turn.
+            import compact_contracts as cc
+            self.assertEqual(stable,cc.validated_system())
+            payload=json.loads(dynamic)
+            self.assertEqual(list(payload),["context_only_spans","production_contract","required_refs","role","routed_rules","source_spans","supplied_refs"])
+            ids=[s["alias"] for s in payload["source_spans"]]; counts.append(ids)
             items=[dict(span=x,claims=[],questions=[],uncertainty=[],status="empty",refs=[]) for x in ids]
             self.assertEqual(kwargs["max_new_tokens"],1536)
             return self.fake_result(instance,dict(items=items),len(counts)==1)

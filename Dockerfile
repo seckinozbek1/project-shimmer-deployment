@@ -135,6 +135,10 @@ COPY corpus_ingest/ ./corpus_ingest/
 # policy from at run time (config/decoding_policy.json names them, digest-pinned).
 COPY tuning/producer_v3/evaluation_protocol.json ./tuning/producer_v3/
 COPY tuning/auditor_canonical_execution/evaluation_protocol.json ./tuning/auditor_canonical_execution/
+# The frozen DEV rows and their rendered prompts: check 263 renders a DEV row
+# through the runtime's compact prompt builder and requires the protocol's
+# recorded prompt hash byte for byte (config/compact_extraction_prompt.json).
+COPY tuning/producer_v3/dataset.json tuning/producer_v3/prepared_dev.json ./tuning/producer_v3/
 # Declared synthetic inputs used by checks 236, 238 and 239. Their behavior
 # must be executable in the product image as well as the source checkout.
 COPY benchmark/fixtures/rule_condition_fixture.md benchmark/fixtures/severity_effect_fixture.md benchmark/fixtures/external_rules_fixture.json ./benchmark/fixtures/

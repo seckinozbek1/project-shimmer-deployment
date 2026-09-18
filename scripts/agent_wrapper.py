@@ -437,6 +437,69 @@ def _iter_balanced_json(text):
 #     array carrying all citations (interp #3).
 CORE_ITEM_REQUIRED = ("ref", "kind", "confidence")  # model-owned; verdict optional
 
+# Model-written spellings of a core field that the parser maps onto the canonical
+# key, declared in config/agent_contracts.json under core_field_aliases and never
+# typed here. Run 110990c1 (v5, 2026-09-18): the tuned Producer wrote the key
+# `confident` where the prompt names `confidence` four or five times, in three of
+# six item-bearing calls; the value was right each time (CONFIDENT twice, true
+# once) and every one of those calls failed its contract on that key alone. The
+# same base under sampling never wrote it in 145 items, and the flip is one argmax
+# decision at the key's first token (the fragment `conf` against the whole-word
+# token `confidence`), so it follows the model, not the prompt. A parser that reads
+# the declared alias holds whether the origin is the adapter or value priming. An
+# alias is applied only when the canonical key is absent and the value maps
+# without interpretation; everything else is refused exactly as before.
+_CORE_FIELD_ALIASES = None
+
+
+def core_field_aliases():
+    global _CORE_FIELD_ALIASES
+    if _CORE_FIELD_ALIASES is None:
+        try:
+            declared = json.loads((project_root() / "config" / "agent_contracts.json").read_text(encoding="utf-8"))
+            aliases = declared.get("core_field_aliases") or {}
+        except (OSError, ValueError):
+            aliases = {}
+        _CORE_FIELD_ALIASES = {str(k): str(v) for k, v in aliases.items()
+                               if isinstance(k, str) and isinstance(v, str) and v in CORE_ITEM_REQUIRED}
+    return _CORE_FIELD_ALIASES
+
+
+def core_field_value(field, value):
+    """The canonical value an aliased core field may carry, or None when the value
+    would need interpreting (the alias is then left where the model put it and the
+    item fails as missing the field, as before)."""
+    if field == "confidence":
+        if isinstance(value, bool):
+            return "CONFIDENT" if value else "UNCERTAIN"
+        if isinstance(value, str) and value.strip().upper() in ("CONFIDENT", "UNCERTAIN"):
+            return value.strip().upper()
+        return None
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def normalize_core_aliases(obj, aliases=None):
+    """Map the declared aliases onto their canonical core keys, item by item, and
+    return what was applied as 'items[i].alias->field' strings. Nothing is applied
+    when the canonical key is already present and non-empty."""
+    aliases = core_field_aliases() if aliases is None else aliases
+    applied = []
+    if not aliases or not is_envelope(obj):
+        return applied
+    for i, item in enumerate(obj["items"]):
+        if not isinstance(item, dict):
+            continue
+        for alias, field in aliases.items():
+            if alias not in item or item.get(field) not in (None, ""):
+                continue
+            mapped = core_field_value(field, item[alias])
+            if mapped is None:
+                continue
+            item[field] = mapped
+            del item[alias]
+            applied.append(f"items[{i}].{alias}->{field}")
+    return applied
+
 
 def _is_scalar(v) -> bool:
     return v is None or isinstance(v, (str, int, float, bool))
@@ -878,11 +941,19 @@ class AgentWrapper:
         })
         _record_cost(r); return r
 
-    def call_local(self, prompt, *, max_new_tokens=1024):
+    def call_local(self, prompt, *, max_new_tokens=1024, system=None):
         """Generic local inference for local_producer/local_auditor backends.
         Same loading and generation pattern as call_qwen, same shared model
-        cache (_load_qwen / _QWEN_MODELS), reports the agent's own backend."""
+        cache (_load_qwen / _QWEN_MODELS), reports the agent's own backend.
+
+        `system`, when given, is sent as the system turn of the native chat
+        template with `prompt` as the user turn: the shape the tuned Producer was
+        evaluated on (config/compact_extraction_prompt.json). Without it the whole
+        prompt is one user turn, exactly as before."""
         _t0 = time.perf_counter()
+        template_applied = bool(getattr(self, "_optimized_semantics", False))
+        if system is not None and not template_applied:
+            raise ValueError("A system message needs the native chat template")
         def _record_cost(r):
             self._record_cost(r, duration_ms=int((time.perf_counter() - _t0) * 1000))
 
@@ -917,12 +988,12 @@ class AgentWrapper:
         except Exception as e:
             r = CallResult(self.backend, model_id, "", ok=False, error=f"local model load failed: {e}")
             _record_cost(r); return r
-        template_applied = bool(getattr(self, "_optimized_semantics", False))
         if template_applied:
             if not getattr(tok, "chat_template", None):
                 raise ValueError("Configured local tokenizer has no chat template")
-            prompt = tok.apply_chat_template([{"role": "user", "content": prompt}],
-                                            tokenize=False, add_generation_prompt=True)
+            messages = ([{"role": "system", "content": system}] if system is not None else []) + \
+                       [{"role": "user", "content": prompt}]
+            prompt = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
         with torch.no_grad():
@@ -982,6 +1053,10 @@ class AgentWrapper:
             full = stable_prefix + ("\n\n" + dynamic_suffix if dynamic_suffix else "")
             return self.call_qwen(full, **kwargs)
         if self.backend in ("local_producer", "local_auditor"):
+            if getattr(self, "_compact_messages", None):
+                # The validated shape: the contract is the system turn and the
+                # payload the user turn, never one concatenated user turn.
+                return self.call_local(dynamic_suffix, system=stable_prefix, **kwargs)
             full = stable_prefix + ("\n\n" + dynamic_suffix if dynamic_suffix else "")
             return self.call_local(full, **kwargs)
         return CallResult(self.backend, "?", "", ok=False, error=f"unknown backend {self.backend!r}")
@@ -1023,6 +1098,9 @@ class AgentWrapper:
                 obj = adapter(obj)
             except ValueError as exc:
                 return obj, [str(exc)]
+        # A declared alias of a core key is read as that key before validation;
+        # what was mapped travels with the result and the bus post.
+        self.last_contract_normalizations = normalize_core_aliases(obj)
         missing = self._contract_missing(obj)
         if is_envelope(obj):
             return make_envelope(obj["agent"], obj["doc_id"], obj["items"]), missing
@@ -1250,29 +1328,52 @@ class AgentWrapper:
                 lines.append(f"- {field}: {sentence}")
         if not lines:
             return ""
-        example = json.dumps({
-            "ref": "REF-0001", "kind": "finding", "confidence": "CONFIDENT",
+        # v5 (run 110990c1, 2026-09-18): this example used to carry none of the
+        # agent's own required fields, and VERIFIER on the local base copied it
+        # field for field, omitted paragraph/finding/severity/reasoning, and failed
+        # its contract while explaining that severity and reasoning "are not
+        # provided in the input". The example is now built from THIS agent's
+        # required list, so the shape it shows is contract-complete.
+        required = [f for f in (self.contract.get("required") or [])
+                    if f not in ("ref", "kind", "confidence")]
+        example_item = {"ref": "REF-0001", "kind": "finding", "confidence": "CONFIDENT"}
+        example_item.update(self._record_example_required(required))
+        example_item.update({
             "rule_id": "CONV-001", "unit_id": "<the unit this is about>",
             "relation": sch["relations"][0], "record_verdict": sch["verdicts"][-1],
-            "verdict": "<your own contract's verdict value, unchanged>",
             "value_a": 12.5, "unit_a": "<unit>", "value_b": 13.0, "unit_b": "<unit>",
             "source_refs": ["REF-0001"],
             "explanation": "<one or two sentences for the person reading the review>",
             "ref_ids": ["REF-0001"],
-        }, ensure_ascii=False)
+        })
+        example_item.setdefault("verdict", "<your own contract's verdict value, unchanged>")
+        example = json.dumps(example_item, ensure_ascii=False)
         return (
             "## The typed finding record\n"
             "When a finding is a comparison of two figures, state it in FIELDS, not in "
             "a sentence. Another agent reads your fields; only a person reads your "
-            "explanation. Set these on the item itself, flat, alongside the core fields:\n"
+            "explanation. Set these on the item itself, flat, alongside the core fields "
+            f"and alongside your contract's own required fields {required}, which every "
+            "item keeps: the record adds fields, it never replaces them.\n"
             + "\n".join(lines) + "\n"
             f"relation is one of {list(sch['relations'])}; record_verdict is one of "
             f"{list(sch['verdicts'])}. Keep your own `verdict` field as your "
             f"contract defines it: record_verdict is an additional field, not a "
             f"replacement.\n"
             f"Worked example: {example}\n"
-            "A finding that is not a comparison of figures does not need these fields.\n\n"
+            "A finding that is not a comparison of figures does not need these fields, "
+            f"but it still carries {required}.\n\n"
         )
+
+    def _record_example_required(self, required):
+        """The agent's own required fields, as placeholders, for the typed-record
+        worked example; `verdict` keeps the sentence the record section already
+        used for it."""
+        placeholders = {}
+        for name in required:
+            placeholders[name] = ("<your own contract's verdict value, unchanged>" if name == "verdict"
+                                  else f"<{name}>")
+        return placeholders
 
     def _field_forms_text(self) -> str:
         """structure H2b: state the contract's declared field forms IN THE PROMPT.
@@ -1370,6 +1471,9 @@ class AgentWrapper:
         item_kind/required (already read above), not the static, mostly-generic
         _worked_item_example renderer, so it is non-empty, concrete, and still
         contract-derived rather than hand-written."""
+        if getattr(self, "_compact_messages", None):
+            # The validated shape carries no anchor: the user turn is the payload alone.
+            return ""
         if getattr(self, "_compact_contract", None):
             return "\nComplete the task-specific compact JSON contract above.\n"
         does = self.spec.get("does") or []
@@ -1446,6 +1550,12 @@ class AgentWrapper:
         Same information as prompt_template(pkg.as_text(), work), only reordered
         stable-first (constitution/conventions and the output contract move ahead
         of the per-call sections)."""
+        compact = getattr(self, "_compact_messages", None)
+        if compact:
+            # PROCESSOR under report_optimized: exactly the two turns checkpoint 168
+            # was evaluated on (compact_contracts.validated_messages). The context
+            # package is still assembled for the call evidence; none of it is sent.
+            return compact[0], compact[1]
         work_str = work if isinstance(work, str) else json.dumps(work, ensure_ascii=False, indent=2)
         stable = self._stable_agent_block()
         stable += "\n\n" + self._execution_instructions()
@@ -1641,7 +1751,7 @@ class AgentWrapper:
                 convention_registry=convention_registry,
                 reference_index_excerpt=reference_index_excerpt,
                 prompt_chars=len(stable_prefix) + len(dynamic_suffix),
-                rendered=getattr(pkg, "rendered", None)))
+                rendered=getattr(self, "_compact_rendered", None) or getattr(pkg, "rendered", None)))
         except Exception as e:  # never fail a call for its own bookkeeping
             evidence_written = None
             log_event(_LOG, f"call_evidence_write_error error_type={type(e).__name__}",
@@ -1691,7 +1801,9 @@ class AgentWrapper:
         # Backends preserve true/false/unknown completeness. Transport success
         # does not establish contract validity or semantic acceptance.
         truncated = result.usage.get("truncated")
+        self.last_contract_normalizations = []
         parsed, missing = self.parse_contract_output(result.raw_text)
+        normalized = list(getattr(self, "last_contract_normalizations", []) or [])
         self._observed_contract_valid = parsed is not None and not missing
         if getattr(self, "_optimized_semantics", False) and truncated is not False:
             missing = list(missing) + ["response completeness not established"]
@@ -1709,6 +1821,7 @@ class AgentWrapper:
                     "event": "CONTRACT_VIOLATION",
                     "backend": result.backend, "model": result.model,
                     "missing_fields": missing,
+                    "contract_normalized": normalized,
                     "raw_excerpt": result.raw_text[:400],
                     "raw_text_path": str(raw_text_path) if raw_text_path else None,
                     "raw_text_bytes": len(result.raw_text.encode("utf-8")) if result.raw_text else 0,
@@ -1722,6 +1835,7 @@ class AgentWrapper:
             )
             return {"ok": False, "agent": self.name, "backend": result.backend, "model": result.model,
                     "parsed": parsed, "raw_text": result.raw_text, "contract_missing": missing,
+                    "contract_normalized": normalized,
                     "raw_text_path": str(raw_text_path) if raw_text_path else None,
                     "error": "contract_violation", "truncated": truncated,
                     "parse_trace": dict(self.last_parse_trace),
@@ -1766,7 +1880,7 @@ class AgentWrapper:
         self.post_to_bus(recipient=recipient, channel=channel, msg_type="INFORM",
                          body={"event": "AGENT_OUTPUT", "backend": result.backend, "model": result.model,
                                "item_count": item_count, "parse_trace": parse_trace,
-                               "truncated": truncated,
+                               "truncated": truncated, "contract_normalized": normalized,
                                "payload": posted_payload, "call_id": call_id},
                          constitution_check=self.build_constitution_check(
                              laws_consulted=["LAW-V"],
@@ -1775,5 +1889,6 @@ class AgentWrapper:
                                          else "no governing rule yet; novel action recorded")))
         return {"ok": True, "agent": self.name, "backend": result.backend, "model": result.model,
                 "parsed": parsed, "raw_text": result.raw_text, "contract_missing": [], "error": None,
+                "contract_normalized": normalized,
                 "item_count": item_count, "parse_trace": parse_trace, "truncated": truncated,
                 "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}

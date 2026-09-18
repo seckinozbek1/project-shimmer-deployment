@@ -262,7 +262,7 @@ class ReferenceIndex:
         out = []
         if not text:
             return out
-        paras = [p.strip() for p in _PARA_RE.split(text) if p.strip()]
+        paras = [paragraph for _, _, paragraph in paragraph_ranges(text)]
         page_estimate = 1
         running_chars = 0
         chars_per_page = 3000
@@ -284,3 +284,30 @@ class ReferenceIndex:
             if running_chars > page_estimate * chars_per_page:
                 page_estimate += 1
         return out
+
+
+def paragraph_ranges(text):
+    """The paragraphs index_document indexes, each with its [start, end) offsets in `text`.
+
+    One splitter (_PARA_RE) for the index and for anything that must locate an
+    indexed paragraph again (bounded_extraction.grounding): two splitters that
+    must agree are one splitter. Returns [(start, end, paragraph_text), ...] in
+    document order, the paragraph text stripped exactly as index_document
+    stores it.
+    """
+    out = []
+    cursor = 0
+    text = text or ""
+    for match in _PARA_RE.finditer(text):
+        piece = text[cursor:match.start()]
+        stripped = piece.strip()
+        if stripped:
+            start = cursor + piece.index(stripped)
+            out.append((start, start + len(stripped), stripped))
+        cursor = match.end()
+    piece = text[cursor:]
+    stripped = piece.strip()
+    if stripped:
+        start = cursor + piece.index(stripped)
+        out.append((start, start + len(stripped), stripped))
+    return out

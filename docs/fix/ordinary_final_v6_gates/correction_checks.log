@@ -1,0 +1,19 @@
+test_alias_application_travels_with_result_bus_and_observation (ordinary_final_correction_checks.CorrectionChecks.test_alias_application_travels_with_result_bus_and_observation) ... ok
+test_alias_declared_in_config_maps_only_unambiguous_values (ordinary_final_correction_checks.CorrectionChecks.test_alias_declared_in_config_maps_only_unambiguous_values) ... ok
+test_alias_v5_outputs_parse_and_the_mapping_is_recorded (ordinary_final_correction_checks.CorrectionChecks.test_alias_v5_outputs_parse_and_the_mapping_is_recorded) ... ok
+test_correct_citation_passes_fabricated_and_mismatched_fail (ordinary_final_correction_checks.CorrectionChecks.test_correct_citation_passes_fabricated_and_mismatched_fail) ... ok
+test_grounding_places_each_indexed_passage_in_its_span (ordinary_final_correction_checks.CorrectionChecks.test_grounding_places_each_indexed_passage_in_its_span) ... ok
+test_prompt_build_returns_the_two_turns_and_no_context (ordinary_final_correction_checks.CorrectionChecks.test_prompt_build_returns_the_two_turns_and_no_context) ... ok
+test_prompt_dev_row_reproduces_the_protocol_hash (ordinary_final_correction_checks.CorrectionChecks.test_prompt_dev_row_reproduces_the_protocol_hash) ... ok
+test_prompt_dispatch_sends_system_and_user_turns (ordinary_final_correction_checks.CorrectionChecks.test_prompt_dispatch_sends_system_and_user_turns) ... ok
+test_prompt_validated_messages_shape (ordinary_final_correction_checks.CorrectionChecks.test_prompt_validated_messages_shape) ... ok
+test_v5_raw_outputs_correct_citation_passes_mismatched_refused (ordinary_final_correction_checks.CorrectionChecks.test_v5_raw_outputs_correct_citation_passes_mismatched_refused) ... ok
+test_verifier_called_with_a_draft (ordinary_final_correction_checks.CorrectionChecks.test_verifier_called_with_a_draft) ... ok
+test_verifier_not_called_without_a_draft_and_recorded (ordinary_final_correction_checks.CorrectionChecks.test_verifier_not_called_without_a_draft_and_recorded) ... ok
+test_verifier_record_example_carries_required_fields (ordinary_final_correction_checks.CorrectionChecks.test_verifier_record_example_carries_required_fields) ... ok
+test_verifier_v5_raw_output_still_fails_the_contract (ordinary_final_correction_checks.CorrectionChecks.test_verifier_v5_raw_output_still_fails_the_contract) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 5.722s
+
+OK

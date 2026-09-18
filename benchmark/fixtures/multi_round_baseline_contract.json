@@ -43,7 +43,7 @@
     "_gather_docs": "6291d3023b4d8ef0132cf02aaced91dfebaaefbba9498d0b575f76fb636462e0",
     "_deepen_legal_analyst_findings_local": "ad57ca75ef8189186e2dbffa6a02545eb0532f4fb81b42a264ddc094a9379aae",
     "phase_3_4_content_production": "6b6624b26c1284f73f9c8879d23b8bd702d4efd066b73868f5fdb5b3d0b0695b",
-    "phase_5_audit": "f912acf842ab22cbe7fcd69370d56b7a6db72f6e12aa35d9a6e413d45f5767a3",
+    "phase_5_audit": "666447426d314c1c9208257565698595a85647a6b993d71926b3ec8f85e816f0",
     "_prior_docs_for": "b7301219374e01b85dc3ca336d9534aa11f89fa87ebd7ee46866b848ed1c5354",
     "_forced_roles": "dd7c1cef1c40b6ccdabbed761b080f55a1e9f9bedfaafd46c31385d0792d9a31",
     "_prior_comparison": "e79d78b21b90a8a1275ac4023b8d7a0267b943e6da590701edf31ae29bc2a340",
@@ -87,6 +87,24 @@
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
     "_cost_projection": "b470a481f0ed1b4875b2b19a0fe985b4529bee827a6ccbc6d1f1e1b6e19db924",
     "_build_arg_parser": "7e3aba77e623e857825eeb6ff1cdb12b61e32db0e9dab9be9ab541d52522833c",
-    "main": "d458a0aa12d2705d8a360067543ef2fd1335ee90747cbc8f15cb47c1a2f54211"
-  }
+    "main": "d458a0aa12d2705d8a360067543ef2fd1335ee90747cbc8f15cb47c1a2f54211",
+    "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee"
+  },
+  "reference_amendments": [
+    {
+      "date": "2026-09-19",
+      "reason": "Operator-directed correction after ordinary final run v5 (110990c1): a document with no accepted PROCESSOR draft records VERIFIER as not called and its advisory pairing as unavailable instead of sending VERIFIER verify_draft_against_source with nothing to verify. The pre-multi-round pipeline contract changes on that one condition; every other pinned function keeps its baseline hash.",
+      "document": "docs/fix/ORDINARY_FINAL_V5_CORRECTIONS.md",
+      "functions": {
+        "phase_5_audit": {
+          "from": "f912acf842ab22cbe7fcd69370d56b7a6db72f6e12aa35d9a6e413d45f5767a3",
+          "to": "666447426d314c1c9208257565698595a85647a6b993d71926b3ec8f85e816f0"
+        },
+        "_verifier_has_a_draft": {
+          "from": null,
+          "to": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee"
+        }
+      }
+    }
+  ]
 }

@@ -26,7 +26,7 @@ def main():
     out.mkdir(parents=True,exist_ok=True)
     with patch.object(builtins,'__import__',guarded),patch.object(socket.socket,'connect',denied), \
          patch.dict(sys.modules,ontology_gnn=types.ModuleType('ontology_gnn')):
-        modules=['final_integration_checks','auditor_pair_checks','compact_contract_checks','execution_topology_checks','report_recommendations_checks','decoding_policy_checks']
+        modules=['final_integration_checks','auditor_pair_checks','compact_contract_checks','execution_topology_checks','report_recommendations_checks','decoding_policy_checks','ordinary_final_correction_checks']
         suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromModule(__import__(name)) for name in modules)
         stream=io.StringIO();result=unittest.TextTestRunner(stream=stream,verbosity=2).run(suite)
         (out/'no_generation_tests.log').write_text(stream.getvalue(),encoding='utf8')
@@ -60,6 +60,24 @@ def main():
             before=run_decoding_test(name)
             with patch.object(owner,attribute,replacement): broken=run_decoding_test(name)
             restored=run_decoding_test(name)
+            proofs.append(dict(check=name,baseline_pass=before,neutralized_test_failed=not broken,
+                               restored_pass=restored,mutated_branch_invocations=len(invocations)))
+            if not invocations:
+                proofs[-1]['neutralized_test_failed']=False
+        # The four v5 corrections (grounding, validated prompt shape, core-field
+        # alias, typed-record example and the no-draft VERIFIER skip): the same
+        # neutralize/fail/restore/pass with invocation counting.
+        import ordinary_final_correction_checks as corrections
+        def run_correction_test(name):
+            return unittest.TextTestRunner(stream=io.StringIO()).run(corrections.CorrectionChecks(name)).wasSuccessful()
+        for name,owner,attribute,mutant in corrections.NEUTRALIZATIONS:
+            invocations=[]
+            def replacement(*a,_mutant=mutant,**k):
+                invocations.append(1)
+                return _mutant(*a,**k)
+            before=run_correction_test(name)
+            with patch.object(owner,attribute,replacement): broken=run_correction_test(name)
+            restored=run_correction_test(name)
             proofs.append(dict(check=name,baseline_pass=before,neutralized_test_failed=not broken,
                                restored_pass=restored,mutated_branch_invocations=len(invocations)))
             if not invocations:

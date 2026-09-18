@@ -1,0 +1,546 @@
+"""Executed proofs of the four corrections after ordinary final run v5 (110990c1).
+
+No weights, no torch, no provider. Every mechanism is exercised on fixtures and,
+where the run's own evidence is on disk, on the v5 raw outputs themselves:
+
+  A1  refs are grounded by Python's placement of indexed passages in source spans
+      (bounded_extraction.grounding), not by an id written inside the span text;
+  A2  the PROCESSOR call sends the two turns checkpoint 168 was evaluated on, and
+      a DEV row rendered through the runtime builder reproduces the protocol's
+      recorded prompt hash byte for byte;
+  A3  a declared core-field alias (`confident` for `confidence`) is read as the
+      canonical key when the canonical key is absent and the value maps without
+      interpretation, and every application is recorded;
+  A4  the typed-record worked example carries the agent's own required fields,
+      and a document without an accepted PROCESSOR draft records VERIFIER as not
+      called instead of asking it to verify nothing.
+
+NEUTRALIZATIONS lists, per test, the one mechanism whose removal must make that
+test fail (the integration gate runs neutralize/fail/restore/pass over them).
+"""
+import asyncio
+import contextlib
+import hashlib
+import io
+import json
+import os
+import re
+import tempfile
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+import agent_wrapper
+import bounded_extraction as extraction
+import compact_contracts as cc
+from agent_wrapper import AgentWrapper, CallResult
+from reference_builder import ReferenceIndex, paragraph_ranges, _PARA_RE
+
+FIXTURE = json.loads((ROOT / "docs/fix/compact_contract_ab/fixture.json").read_text(encoding="utf-8"))
+REAL = FIXTURE["real_document"]
+V5 = ROOT / "docs/fix/ordinary_final_cloud_run_v5/downloaded/evidence/run"
+V5_SHEET = ROOT / "benchmark/corpora/clinical_reference/context/result_sheet.md"
+V5_SHEET_SHA256 = "d0f332c85d4a1ef419adfa7b18355f28ff129fffeefaeecc8bf2a4c9a4b368a2"
+VALIDATED_KEYS = ["context_only_spans", "production_contract", "required_refs", "role",
+                  "routed_rules", "source_spans", "supplied_refs"]
+CHAT_TEMPLATE = "<|im_start|>system\n{system}<|im_end|>\n<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n"
+
+
+def contracts():
+    return json.loads((ROOT / "config/agent_contracts.json").read_text(encoding="utf-8"))["contracts"]
+
+
+def bare_wrapper(name, backend="local_producer"):
+    w = object.__new__(AgentWrapper)
+    w.name, w.backend, w.model, w.run_context, w.cost_tracker = name, backend, "fixture", None, None
+    w.contract = contracts()[name]
+    w.spec = {"does": ["fixture job"], "does_not": []}
+    w.last_parse_trace = {}
+    return w
+
+
+def index_twice(text, doc):
+    """The pipeline's own reference index over one document, context copy then
+    operational copy, exactly as a review run indexes a document that is both."""
+    index = ReferenceIndex(ROOT)
+    for input_type in ("context", "operational"):
+        index.index_document(input_type=input_type, document_id=doc, document_name=doc + ".md", text=text)
+    return [e.as_dict() for e in index.find_by_document(doc)]
+
+
+def compact_wire(spans, refs_for=None):
+    return dict(items=[dict(span=extraction.wire_id(s), claims=[], questions=["Q for " + extraction.wire_id(s)],
+                            uncertainty=[], status="extracted",
+                            refs=list((refs_for or {}).get(extraction.wire_id(s), []))) for s in spans])
+
+
+def raw_violation(agent, task):
+    """The v5 raw output of one contract violation, or None when the evidence is absent."""
+    folder = V5 / "audit/contract_violations"
+    if not folder.exists():
+        return None
+    for path in sorted(folder.glob(agent + "_*" + task + ".txt")):
+        return path.read_text(encoding="utf-8").split("# ---\n", 1)[1]
+    return None
+
+
+def v5_entries():
+    path = V5 / "audit/reference_index.json"
+    if not path.exists():
+        return None
+    return [e for e in json.loads(path.read_text(encoding="utf-8"))["entries"] if e.get("document_id") == "result_sheet"]
+
+
+class Inputs(dict):
+    def to(self, device):
+        return self
+
+
+class RecordingTokenizer:
+    chat_template = "configured"
+
+    def __init__(self):
+        self.messages = []
+
+    def apply_chat_template(self, messages, **kw):
+        self.messages.append([dict(m) for m in messages])
+        return CHAT_TEMPLATE.format(system=messages[0]["content"], user=messages[-1]["content"]) \
+            if len(messages) == 2 else "USER-ONLY:" + messages[-1]["content"]
+
+    def __call__(self, prompt, **kw):
+        return Inputs(input_ids=SimpleNamespace(shape=(1, 3)))
+
+    def decode(self, ids, **kw):
+        return '{"items":[]}'
+
+
+class Output:
+    def __init__(self, ids):
+        self.ids, self.shape = list(ids), (1, len(ids))
+
+    def __getitem__(self, key):
+        return self.ids
+
+
+TORCH = SimpleNamespace(no_grad=contextlib.nullcontext, cuda=SimpleNamespace(is_available=lambda: False))
+
+
+def wide_build_prompt(self, pkg, work):
+    """build_prompt as it was before the correction: the wide agent prompt, whatever
+    the wrapper carries in _compact_messages."""
+    work_str = work if isinstance(work, str) else json.dumps(work, ensure_ascii=False, indent=2)
+    stable = self._stable_agent_block() + "\n\n" + self._execution_instructions()
+    st = pkg.stable_text()
+    if st:
+        stable = stable + "\n## Context\n" + st
+    dyn = "\n\n".join(f"=== {h} ===\n{b}" for h, b in pkg.dynamic_sections() if h != "WORK_PAYLOAD")
+    return stable, (dyn + "\n\n" if dyn else "") + f"## Work payload\n{work_str}\n"
+
+
+def concatenating_dispatch(self, stable_prefix, dynamic_suffix="", **kwargs):
+    """dispatch as it was before the correction: one concatenated user turn."""
+    full = stable_prefix + ("\n\n" + dynamic_suffix if dynamic_suffix else "")
+    return self.call_local(full, **kwargs)
+
+
+def no_grounding(text, spans, entries):
+    aliases = [extraction.wire_id(s) for s in spans]
+    return {a: [] for a in aliases}, {a: [] for a in aliases}, []
+
+
+class CorrectionChecks(unittest.TestCase):
+    # ---- A1: grounding by Python's passage placement ------------------------------
+
+    def test_grounding_places_each_indexed_passage_in_its_span(self):
+        text, doc = REAL["source"], REAL["doc"]
+        self.assertNotRegex(text, r"REF-\d{4}|CLM-")
+        entries = index_twice(text, doc)
+        spans = extraction.ledger(text, doc)
+        self.assertGreater(len(spans), 1)
+        citable, markers, supplied = extraction.grounding(text, spans, entries)
+        placed = [ref for group in citable.values() for ref in group]
+        self.assertEqual(sorted(placed), sorted(e["ref_id"] for e in entries))  # every entry, once
+        self.assertEqual(len(placed), len(set(placed)))
+        operational = {e["ref_id"] for e in entries if e["input_type"] == "operational"}
+        self.assertTrue(supplied and set(supplied) <= operational)  # the shown id is the operational copy's
+        ranges = paragraph_ranges(text)
+        self.assertEqual([p for _, _, p in ranges], [p.strip() for p in _PARA_RE.split(text) if p.strip()])
+        for span in spans:
+            alias = extraction.wire_id(span)
+            shown = extraction.annotate(span.text, markers[alias])
+            for offset, ref in markers[alias]:
+                self.assertIn("(" + ref + ")", shown)
+                self.assertTrue(any(min(end, span.end) - span.start == offset for _, end, _ in ranges))
+            self.assertEqual(shown.replace(" (REF-", "").count(")"), span.text.count(")") + len(markers[alias]))
+        # An entry whose paragraph index does not fit the text is skipped, never guessed.
+        foreign = dict(entries[0], ref_id="REF-7777", location=dict(entries[0]["location"], paragraph=999))
+        self.assertNotIn("REF-7777", [r for g in extraction.grounding(text, spans, entries + [foreign])[0].values() for r in g])
+
+    def test_grounding_correct_citation_passes_fabricated_and_mismatched_fail(self):
+        text, doc = REAL["source"], REAL["doc"]
+        entries = index_twice(text, doc)
+        spans = extraction.ledger(text, doc)
+        citable, _, _ = extraction.grounding(text, spans, entries)
+        first, second = extraction.wire_id(spans[0]), extraction.wire_id(spans[1])
+        own = citable[first][0]
+        result = cc.producer(compact_wire(spans, {first: [own]}), spans, doc, citable)
+        self.assertEqual(result["items"][0]["ref_ids"], [own])
+        self.assertEqual("".join(i["draft_text"] for i in result["items"]), text)
+        with self.assertRaisesRegex(ValueError, "Ungrounded extraction evidence"):
+            cc.producer(compact_wire(spans, {first: ["REF-9999"]}), spans, doc, citable)  # invented
+        with self.assertRaisesRegex(ValueError, "Ungrounded extraction evidence"):
+            cc.producer(compact_wire(spans, {first: [citable[second][0]]}), spans, doc, citable)  # another span's passage
+        with self.assertRaisesRegex(ValueError, "Ungrounded extraction evidence"):
+            cc.producer(compact_wire(spans, {first: [own]}), spans, doc, None)  # no placement, no inline id: refused as before
+        inline = FIXTURE["source"]
+        inline_spans = extraction.ledger(inline, FIXTURE["doc"])
+        wire = compact_wire(inline_spans, {extraction.wire_id(inline_spans[0]): ["REF-0001"]})
+        self.assertEqual(cc.producer(wire, inline_spans, FIXTURE["doc"], None)["items"][0]["ref_ids"], ["REF-0001"])
+
+    def test_grounding_v5_raw_outputs_correct_citation_passes_mismatched_refused(self):
+        entries = v5_entries()
+        raw = {task: raw_violation("PROCESSOR", task) for task in ("task-000003", "task-000004", "task-000007", "task-000008")}
+        if entries is None or not V5_SHEET.exists() or any(v is None for v in raw.values()):
+            self.skipTest("v5 evidence not on disk")
+        text = V5_SHEET.read_text(encoding="utf-8")
+        self.assertEqual(hashlib.sha256(text.encode("utf-8")).hexdigest(), V5_SHEET_SHA256)
+        spans = extraction.ledger(text, "result_sheet")
+        self.assertEqual([extraction.wire_id(s) for s in spans], ["s0", "s14c", "s1cd", "s251", "s2d3", "s35d", "s3e6"])
+        citable, markers, supplied = extraction.grounding(text, spans, entries)
+        self.assertEqual(len(supplied), 21)  # one shown id per indexed paragraph, the operational copy's
+        self.assertTrue(all(ref.startswith("REF-00") and 37 <= int(ref[4:]) <= 57 for ref in supplied))
+        by_task = {t: json.loads(v) for t, v in raw.items()}
+        partitions = extraction.partitions(spans)
+
+        def parse(task, owned):
+            w = bare_wrapper("PROCESSOR")
+            w._optimized_semantics = True
+            cc.bind_producer(w, owned, "result_sheet", citable={extraction.wire_id(s): citable[extraction.wire_id(s)] for s in owned})
+            return w.parse_contract_output(json.dumps(by_task[task]))
+        parsed, missing = parse("task-000003", partitions[0])   # cited each span's own paragraph
+        self.assertEqual(missing, [])
+        self.assertEqual([i["ref_ids"] for i in parsed["items"]], [["REF-0039"], ["REF-0041"], ["REF-0045"], ["REF-0027"]])
+        _, missing = parse("task-000008", partitions[1])         # cited the next paragraph's id each time
+        self.assertEqual(missing, ["Ungrounded extraction evidence"])
+        for task, owned in (("task-000004", partitions[1]), ("task-000007", partitions[0])):
+            _, missing = parse(task, owned)                      # still refused: the uncertainty key is absent
+            self.assertEqual(missing, ["Exact compact extraction fields required"])
+        forged = json.loads(raw["task-000003"])
+        forged["items"][0]["refs"] = ["REF-9999"]
+        w = bare_wrapper("PROCESSOR")
+        cc.bind_producer(w, partitions[0], "result_sheet", citable=citable)
+        self.assertEqual(w.parse_contract_output(json.dumps(forged))[1], ["Ungrounded extraction evidence"])
+
+    # ---- A2: the validated prompt shape --------------------------------------------
+
+    def test_prompt_validated_messages_shape(self):
+        text, doc = REAL["source"], REAL["doc"]
+        entries = index_twice(text, doc)
+        spans = extraction.ledger(text, doc)
+        for owned in extraction.partitions(spans):
+            system, user, citable, supplied = cc.validated_messages(text, owned, spans, entries)
+            self.assertTrue(system.startswith(cc.PRODUCER))
+            self.assertEqual(system, cc.validated_system())
+            self.assertEqual(hashlib.sha256(system.encode("utf-8")).hexdigest(), cc.prompt_declaration()["system_sha256"])
+            payload = json.loads(user)
+            self.assertEqual(list(payload), VALIDATED_KEYS)
+            self.assertEqual(user, cc.canonical(payload))
+            self.assertEqual([s["alias"] for s in payload["source_spans"]], [extraction.wire_id(s) for s in owned])
+            for shown, span in zip(payload["source_spans"], owned):
+                self.assertNotEqual(shown["text"], span.text)  # marked
+                self.assertEqual(re.sub(r" \(REF-\d{4}\)", "", shown["text"]), span.text)  # and nothing but marked
+            self.assertEqual(payload["supplied_refs"], supplied)
+            self.assertTrue(all(len(c["text"]) <= 400 + 12 * 4 for c in payload["context_only_spans"]))
+            self.assertEqual(payload["required_refs"], [])
+            self.assertEqual(payload["role"], "producer")
+            self.assertEqual(payload["production_contract"], "semantic-task-v1")
+            for needle in ("## Context", "## Work payload", "You are PROCESSOR", "CONV-", "LAW-"):
+                self.assertNotIn(needle, system + user)
+            self.assertLess(len(system) + len(user), 8000)
+            self.assertEqual(list(citable), [extraction.wire_id(s) for s in owned])
+
+    def test_prompt_dev_row_reproduces_the_protocol_hash(self):
+        declaration = cc.prompt_declaration()
+        protocol = json.loads((ROOT / declaration["validated_protocol"]).read_bytes().replace(b"\r\n", b"\n").decode("utf-8"))
+        rows = {r["example_id"]: r for r in json.loads((ROOT / declaration["validated_dataset"]).read_text(encoding="utf-8"))}
+        prepared = {r["example_id"]: r for r in json.loads((ROOT / declaration["validated_prepared_dev"]).read_text(encoding="utf-8"))}
+        checked = 0
+        for example_id in protocol["dev_ids"][:12]:
+            row = rows[example_id]["input"]
+            payload = cc.validated_payload([(s["alias"], s["text"]) for s in row["source_spans"]],
+                                           [(s["alias"], s["text"]) for s in row["context_only_spans"]],
+                                           row["supplied_refs"], required_refs=row["required_refs"],
+                                           routed_rules=row["routed_rules"])
+            self.assertEqual(payload["production_contract"], row["production_contract"])
+            self.assertEqual(payload["role"], row["role"])
+            rendered = CHAT_TEMPLATE.format(system=cc.validated_system(), user=cc.canonical(payload))
+            self.assertEqual(rendered, prepared[example_id]["prompt"])
+            self.assertEqual(hashlib.sha256(rendered.encode("utf-8")).hexdigest(),
+                             protocol["prompt_bindings"][example_id]["prompt_sha256"])
+            checked += 1
+        self.assertEqual(checked, 12)
+        # Through the model's own template when it is on disk (never fetched).
+        try:
+            os.environ.setdefault("HF_HUB_OFFLINE", "1")
+            from transformers import AutoTokenizer
+            tok = AutoTokenizer.from_pretrained("unsloth/Qwen2.5-7B-Instruct-bnb-4bit", local_files_only=True)
+        except Exception:
+            return
+        example_id = protocol["dev_ids"][0]
+        row = rows[example_id]["input"]
+        payload = cc.validated_payload([(s["alias"], s["text"]) for s in row["source_spans"]],
+                                       [(s["alias"], s["text"]) for s in row["context_only_spans"]],
+                                       row["supplied_refs"], required_refs=row["required_refs"], routed_rules=row["routed_rules"])
+        rendered = tok.apply_chat_template([{"role": "system", "content": cc.validated_system()},
+                                            {"role": "user", "content": cc.canonical(payload)}],
+                                           tokenize=False, add_generation_prompt=True)
+        self.assertEqual(hashlib.sha256(rendered.encode("utf-8")).hexdigest(),
+                         protocol["prompt_bindings"][example_id]["prompt_sha256"])
+
+    def test_prompt_build_returns_the_two_turns_and_no_context(self):
+        w = bare_wrapper("PROCESSOR")
+        w._stable_agent_block = lambda: "STABLE"
+        w._execution_instructions = lambda: "EXEC"
+        pkg = SimpleNamespace(stable_text=lambda: "CTX", dynamic_sections=lambda: [("X", "y")], rendered=None)
+        text, doc = REAL["source"], REAL["doc"]
+        spans = extraction.ledger(text, doc)
+        system, user, citable, supplied = cc.validated_messages(text, spans, spans, index_twice(text, doc))
+        cc.bind_producer(w, spans, doc, citable=citable, messages=(system, user, supplied))
+        self.assertEqual(w.build_prompt(pkg, {"unused": True}), (system, user))
+        self.assertEqual(w._role_anchor_text(), "")
+        self.assertEqual(w._compact_rendered["reference_ids"], supplied)
+        plain = bare_wrapper("PROCESSOR")
+        plain._stable_agent_block = lambda: "STABLE"
+        plain._execution_instructions = lambda: "EXEC"
+        stable, dynamic = plain.build_prompt(pkg, {"k": 1})
+        self.assertIn("## Context", stable)
+        self.assertIn("## Work payload", dynamic)
+
+    def test_prompt_dispatch_sends_system_and_user_turns(self):
+        w = bare_wrapper("PROCESSOR")
+        w._optimized_semantics = True
+        w._compact_messages = ("SYSTEM TURN", '{"items":[]}')
+        calls, tok = [], RecordingTokenizer()
+        model = SimpleNamespace(device="cpu", generation_config=SimpleNamespace(eos_token_id=[9]),
+                                generate=lambda **kw: (calls.append(kw), Output([1, 2, 3, 9]))[1],
+                                _shimmer_identity=dict(model_mode="base"))
+        with patch.dict(os.environ, SHIMMER_MODEL_MODE="base"), \
+                patch.object(agent_wrapper.importlib, "import_module", side_effect=lambda n: TORCH if n == "torch" else object()), \
+                patch.object(agent_wrapper, "_load_qwen", return_value=(tok, model)):
+            result = w.dispatch("SYSTEM TURN", '{"items":[]}', max_new_tokens=4)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(tok.messages, [[{"role": "system", "content": "SYSTEM TURN"}, {"role": "user", "content": '{"items":[]}'}]])
+        self.assertEqual(result.usage["rendered_prompt_sha256"],
+                         hashlib.sha256(CHAT_TEMPLATE.format(system="SYSTEM TURN", user='{"items":[]}').encode("utf-8")).hexdigest())
+        self.assertTrue(result.usage["chat_template_applied"])
+        raw = bare_wrapper("PROCESSOR")
+        with patch.dict(os.environ, SHIMMER_MODEL_MODE="base"), \
+                patch.object(agent_wrapper.importlib, "import_module", side_effect=lambda n: TORCH if n == "torch" else object()), \
+                patch.object(agent_wrapper, "_load_qwen", return_value=(tok, model)):
+            with self.assertRaisesRegex(ValueError, "system message"):
+                raw.call_local("x", max_new_tokens=4, system="s")  # never a system turn without the native template
+
+    # ---- A3: the declared core-field alias ------------------------------------------
+
+    def test_alias_declared_in_config_maps_only_unambiguous_values(self):
+        declared = json.loads((ROOT / "config/agent_contracts.json").read_text(encoding="utf-8"))["core_field_aliases"]
+        self.assertEqual(declared, {"confident": "confidence"})
+        self.assertEqual(agent_wrapper.core_field_aliases(), declared)
+        cases = [({"confident": "CONFIDENT"}, "CONFIDENT", True), ({"confident": "uncertain"}, "UNCERTAIN", True),
+                 ({"confident": True}, "CONFIDENT", True), ({"confident": False}, "UNCERTAIN", True),
+                 ({"confident": "maybe"}, None, False), ({"confident": 0.9}, None, False),
+                 ({"confidence": "UNCERTAIN", "confident": "CONFIDENT"}, "UNCERTAIN", False),
+                 ({"confidance": "CONFIDENT"}, None, False)]
+        for item, expected, applied in cases:
+            obj = {"agent": "ARCHIVIST", "doc_id": "d", "items": [dict(item, ref="REF-0001", kind="finding")]}
+            notes = agent_wrapper.normalize_core_aliases(obj)
+            self.assertEqual(notes, ["items[0].confident->confidence"] if applied else [], item)
+            self.assertEqual(obj["items"][0].get("confidence"), expected, item)
+            w = bare_wrapper("ARCHIVIST")
+            missing = w._contract_missing(obj)
+            self.assertEqual("items[0].confidence" in missing, expected is None, item)
+
+    def test_alias_v5_outputs_parse_and_the_mapping_is_recorded(self):
+        raws = {("ARCHIVIST", "task-000000"): raw_violation("ARCHIVIST", "task-000000"),
+                ("LEGAL_ANALYST", "task-000009"): raw_violation("LEGAL_ANALYST", "task-000009"),
+                ("EDITOR_CLERK", "task-000017"): raw_violation("EDITOR_CLERK", "task-000017")}
+        synthetic = json.dumps({"agent": "ARCHIVIST", "doc_id": "d", "items": [
+            {"confident": "CONFIDENT", "element": "fixture", "ref": "REF-0001", "ref_ids": ["REF-0001"], "kind": "inventory"}]})
+        for (agent, task), raw in list(raws.items()) + [(("ARCHIVIST", "synthetic"), synthetic)]:
+            if raw is None:
+                continue
+            self.assertIn('"confident"', raw)
+            w = bare_wrapper(agent)
+            parsed, missing = w.parse_contract_output(raw)
+            self.assertEqual(missing, [], (agent, task))
+            self.assertEqual(w.last_contract_normalizations, ["items[0].confident->confidence"], (agent, task))
+            item = parsed["items"][0]
+            self.assertIn(item["confidence"], ("CONFIDENT", "UNCERTAIN"))
+            self.assertNotIn("confident", item)
+        if all(v is None for v in raws.values()):
+            self.skipTest("v5 evidence not on disk; synthetic case only")
+
+    def test_alias_application_travels_with_result_bus_and_observation(self):
+        from constitution import Constitution
+        from message_bus import MessageBus
+        from run_context import for_run_dir
+        with tempfile.TemporaryDirectory() as folder:
+            ctx = for_run_dir(ROOT, Path(folder))
+            bus = MessageBus.open(Path(folder) / "bus.jsonl")
+            w = AgentWrapper("EDITOR_CLERK", Constitution.load(ROOT / "config/constitution.json"), bus,
+                             {"EDITOR_CLERK": dict(backend="local_producer", model="fixture")}, contracts(),
+                             keys={"fixture": True}, run_context=ctx)
+            raw = json.dumps({"agent": "EDITOR_CLERK", "doc_id": "d", "items": [
+                {"confident": True, "kind": "editorial_observation", "rationale": "Fixture.", "ref": "REF-0001",
+                 "ref_ids": ["REF-0001"], "verdict": "sound"}]})
+            w.dispatch = lambda *a, **k: CallResult("local_producer", "fixture", raw, usage={"truncated": False})
+            result = w.run_task(work_payload={"task": "fixture", "document_id": "d"})
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["contract_normalized"], ["items[0].confident->confidence"])
+            self.assertEqual(result["parsed"]["items"][0]["confidence"], "CONFIDENT")
+            posted = [m for m in bus.read_all() if m["body"].get("event") == "AGENT_OUTPUT"][-1]
+            self.assertEqual(posted["body"]["contract_normalized"], ["items[0].confident->confidence"])
+            rows = [json.loads(l) for l in (ctx.logs_dir() / "generation_observation.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+            self.assertEqual(rows[-1]["contract_normalized"], ["items[0].confident->confidence"])
+            self.assertIs(rows[-1]["contract_valid"], True)
+
+    # ---- A4: the typed-record example and the no-draft VERIFIER call ------------------
+
+    def test_verifier_record_example_carries_required_fields(self):
+        for agent in ("VERIFIER", "LEGAL_ANALYST"):
+            w = bare_wrapper(agent, backend="local_auditor")
+            text = w._finding_record_text()
+            self.assertTrue(text)
+            example = json.loads(text.split("Worked example: ", 1)[1].split("\n", 1)[0])
+            required = [f for f in w.contract["required"] if f not in ("ref", "kind", "confidence")]
+            for field in required:
+                self.assertIn(field, example, (agent, field))
+            self.assertIn("relation", example)
+            self.assertIn("record_verdict", example)
+            self.assertIn(str(required), text)
+            self.assertIn("never replaces them", text)
+        self.assertEqual(bare_wrapper("ARCHIVIST")._finding_record_text(), "")  # no record section for the rest
+
+    def test_verifier_v5_raw_output_still_fails_the_contract(self):
+        raw = raw_violation("VERIFIER", "task-000010")
+        if raw is None:
+            self.skipTest("v5 evidence not on disk")
+        w = bare_wrapper("VERIFIER", backend="local_auditor")
+        parsed, missing = w.parse_contract_output(raw)
+        self.assertEqual(sorted(missing), sorted(["items[0].paragraph", "items[0].finding", "items[0].severity", "items[0].reasoning"]))
+
+    def _phase_5(self, processor_ok):
+        import pipeline
+        import agent_activation as activation
+        from harness.run_agent import build_orchestrator
+        calls = []
+
+        async def fake_run_one(wrapper, work_payload, run_objectives, **kwargs):
+            calls.append((wrapper.name, dict(work_payload)))
+            return {"ok": True, "agent": wrapper.name, "parsed": {"agent": wrapper.name, "doc_id": "probe", "items": []},
+                    "call_id": "call-" + wrapper.name, "contract_missing": [], "error": None, "truncated": False}
+        with tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, {"SHIMMER_BACKEND_PROFILE": "local"}):
+            orch = build_orchestrator(ROOT, Path(folder))
+            for name, (backend, model) in pipeline._LOCAL_PROFILE.items():
+                orch.registry[name].update(backend=backend, model=model)
+            audit = activation.initialize(orch.run_context, orch.registry, "sparse")
+            doc = {"id": "probe", "name": "probe.md", "text": "## Entry A\nA declared source passage.\n"}
+            draft = {"agent": "PROCESSOR", "doc_id": "probe", "items": [
+                {"section_id": "s", "draft_text": doc["text"], "extraction_method": "source_span", "ref": "document-level",
+                 "kind": "extraction", "confidence": "UNCERTAIN", "item_id": "PROCESSOR:probe:s", "revision": 1}]}
+            production = [{"scope": "doc", "doc_id": "probe", "agent": "PROCESSOR", "ok": processor_ok,
+                           "parsed": draft if processor_ok else None, "call_id": "proc-call",
+                           "error": None if processor_ok else "incomplete_extraction", "truncated": False}]
+            with patch.object(pipeline, "_run_one", fake_run_one):
+                out = asyncio.run(pipeline.phase_5_audit(orch, {"offline_fixture": True}, [doc], production,
+                                                         "Fixture objective", {"conventions": []}, ReferenceIndex(ROOT)))
+            decisions = json.loads(audit.path.read_text(encoding="utf-8"))["decisions"]
+            telemetry_path = orch.run_context.logs_dir() / "model_telemetry.jsonl"
+            events = [json.loads(l) for l in telemetry_path.read_text(encoding="utf-8").splitlines() if l.strip()] if telemetry_path.exists() else []
+        return calls, out, decisions, events
+
+    def test_verifier_not_called_without_a_draft_and_recorded(self):
+        calls, out, decisions, events = self._phase_5(processor_ok=False)
+        self.assertEqual([c[0] for c in calls], ["FACT_CHECKER"])
+        self.assertEqual([r["agent"] for r in out], ["FACT_CHECKER"])
+        self.assertFalse(calls[0][1]["processor_draft_available"])
+        skipped = [d for d in decisions if d["agent"] == "VERIFIER" and not d["activated"]]
+        self.assertEqual(len(skipped), 1)
+        self.assertEqual(skipped[0]["reason"], "processor_draft_unavailable")
+        self.assertEqual(skipped[0]["evidence"]["processor_error"], "incomplete_extraction")
+        unavailable = [e for e in events if e["event"] == "auditor_pair_unavailable"]
+        coverage = [e for e in events if e["event"] == "auditor_pair_coverage"]
+        self.assertEqual([u["reason"] for u in unavailable], ["processor_draft_unavailable"])
+        self.assertEqual(coverage[-1]["classifier_calls"], 0)
+        self.assertEqual(coverage[-1]["unavailable_items"], 1)
+
+    def test_verifier_called_with_a_draft(self):
+        calls, out, decisions, _ = self._phase_5(processor_ok=True)
+        self.assertEqual([c[0] for c in calls], ["VERIFIER", "FACT_CHECKER"])
+        self.assertEqual([r["agent"] for r in out], ["VERIFIER", "FACT_CHECKER"])
+        self.assertTrue(calls[0][1]["processor_draft_available"])
+        self.assertEqual([d for d in decisions if d["agent"] == "VERIFIER" and not d["activated"]], [])
+
+
+def _grouped(prefix):
+    names = [n for n in unittest.defaultTestLoader.getTestCaseNames(CorrectionChecks) if n.startswith(prefix)]
+    suite = unittest.TestSuite(CorrectionChecks(n) for n in names)
+    stream = io.StringIO()
+    result = unittest.TextTestRunner(stream=stream, verbosity=1).run(suite)
+    return result, stream.getvalue()
+
+
+def _verdict(prefixes, summary):
+    ran, skipped, log = 0, 0, ""
+    for prefix in prefixes:
+        result, text = _grouped(prefix)
+        ran += result.testsRun
+        skipped += len(result.skipped)
+        log += text
+        if not result.wasSuccessful():
+            return ("FAIL", text[-3000:])
+    return ("PASS", "%d checks (%d skipped for absent v5 evidence): %s" % (ran, skipped, summary))
+
+
+def check_grounding():
+    return _verdict(("test_grounding_", "test_prompt_"),
+                    "refs grounded by Python's passage placement, invented and mismatched refs refused, "
+                    "the validated two-turn prompt reproduces the protocol's DEV prompt hash")
+
+
+def check_alias():
+    return _verdict(("test_alias_",), "declared alias read as the canonical key, recorded on result, bus and observation")
+
+
+def check_verifier():
+    return _verdict(("test_verifier_",), "typed-record example contract-complete, VERIFIER skipped and recorded without a draft")
+
+
+# (test, owner, attribute, mutant): each neutralises the one mechanism the test asserts.
+NEUTRALIZATIONS = [
+    ("test_grounding_correct_citation_passes_fabricated_and_mismatched_fail", extraction, "grounding", no_grounding),
+    ("test_grounding_v5_raw_outputs_correct_citation_passes_mismatched_refused", extraction, "grounding", no_grounding),
+    ("test_prompt_validated_messages_shape", cc, "validated_system", lambda: cc.PRODUCER),
+    ("test_prompt_dev_row_reproduces_the_protocol_hash", cc, "validated_system", lambda: cc.PRODUCER),
+    ("test_prompt_build_returns_the_two_turns_and_no_context", AgentWrapper, "build_prompt", wide_build_prompt),
+    ("test_prompt_dispatch_sends_system_and_user_turns", AgentWrapper, "dispatch", concatenating_dispatch),
+    ("test_alias_v5_outputs_parse_and_the_mapping_is_recorded", agent_wrapper, "core_field_aliases", lambda: {}),
+    ("test_alias_application_travels_with_result_bus_and_observation", agent_wrapper, "core_field_aliases", lambda: {}),
+    ("test_verifier_record_example_carries_required_fields", AgentWrapper, "_record_example_required", lambda self, required: {}),
+    ("test_verifier_not_called_without_a_draft_and_recorded", None, "_verifier_has_a_draft", lambda state: True),
+]
+
+
+def _bind_pipeline_owner():
+    """pipeline is imported lazily (it is heavy); the owner of the last neutralization is resolved here."""
+    import pipeline
+    return [(n, pipeline if o is None else o, a, m) for n, o, a, m in NEUTRALIZATIONS]
+
+
+NEUTRALIZATIONS = _bind_pipeline_owner()
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

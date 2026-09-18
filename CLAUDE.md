@@ -348,7 +348,9 @@ processing swarm governed by an append-only constitution.
   source (`scripts/`, `config/`, `tools/`, `corpus_ingest/`, the three root markdown
   files, `requirements.txt`), the two frozen evaluation protocols the decoding policy is
   read from (`tuning/producer_v3/evaluation_protocol.json`,
-  `tuning/auditor_canonical_execution/evaluation_protocol.json`) and the three declared
+  `tuning/auditor_canonical_execution/evaluation_protocol.json`), the Producer DEV rows
+  and rendered prompts check 263 reproduces (`tuning/producer_v3/dataset.json`,
+  `tuning/producer_v3/prepared_dev.json`) and the three declared
   synthetic `benchmark/fixtures/`
   files used by the condition, severity and external-rule checks; the entry point takes `serve`, `run` (through
   `tools/run_local_demo.py`, never naming the pipeline file) or `verify` (the gate with
@@ -389,6 +391,42 @@ processing swarm governed by an append-only constitution.
   RuntimeError at its first sampling step. Check 262, the integration gate and
   `tools/ordinary_final_decoding_gate.py` (every family, instrumented cumsum, strict mode
   on CUDA) hold this; each has neutralize/fail/restore/pass proofs.
+- EXTRACTION-A: under `report_optimized` the PROCESSOR call sends EXACTLY the two turns
+  checkpoint 168 was evaluated on (`compact_contracts.validated_messages`): the compact
+  contract plus the frozen semantic policy as the system turn, read from
+  `config/compact_extraction_prompt.json` and never typed into a script, and one canonical
+  payload (`context_only_spans`, `production_contract`, `required_refs`, `role`,
+  `routed_rules`, `source_spans`, `supplied_refs`; sorted keys, compact separators) as the
+  user turn, through the model's own chat template. No context package, reference passages,
+  rules, bus, briefs or anchor reach the model on that path. Check 263 renders a DEV row
+  through the runtime builder and requires the protocol's recorded prompt sha256 byte for
+  byte. Measured, not preferred: run 110990c1 (v5, 2026-09-18) ran the checkpoint on a
+  14k-character agent prompt with the contract mid-prompt and failed 4 of 4 partitions,
+  where the same checkpoint had 102 of 102 valid items on the 2.5k-character validated shape.
+- EXTRACTION-B: a cited ref is grounded by PYTHON'S OWN PLACEMENT of indexed passages in
+  source spans (`bounded_extraction.grounding`, one paragraph splitter shared with the
+  reference index, `reference_builder.paragraph_ranges`), never by an id written inside the
+  span's text alone. Every indexed passage inside a span is shown as ` (REF-NNNN)` at its
+  end, the way the training spans carried their references, and the validator's citable set
+  is the same placement. An id the index does not hold, or one that names another span's
+  passage, is refused as `Ungrounded extraction evidence` exactly as before. v5: no real
+  document carries inline ids, so every non-empty refs array was refused; the v5 raw outputs
+  are the proof, task-000003 passes and task-000008 (each ref one paragraph off) is refused.
+- ENVELOPE-A: a model-written spelling of a core key is read as that key ONLY when it is
+  declared in `config/agent_contracts.json` `core_field_aliases` (today `confident` for
+  `confidence`), the canonical key is absent, and the value maps without interpretation
+  (`CONFIDENT`/`UNCERTAIN` as written, `true` to CONFIDENT, `false` to UNCERTAIN); every
+  application is recorded as `contract_normalized` on the result, the bus post, the
+  observation row and the telemetry call record. v5: the tuned Producer wrote `confident` in
+  three of six item-bearing calls with the right value each time and each failed on that key
+  alone; the same base under sampling never did in 145 items; the flip is one argmax at the
+  key's first token, so the parser holds whether the origin is the adapter or value priming.
+  Never widen the alias list from a hunch: an alias is a measured model habit, declared.
+- VERIFIER-A: the typed-record worked example is built from the agent's own `required` list
+  (`_record_example_required`), so it is contract-complete; and a document with no accepted
+  PROCESSOR draft records VERIFIER as `not_called` (`processor_draft_unavailable`) and its
+  advisory pairing as unavailable (`auditor_pairs.record_unavailable`) instead of asking
+  VERIFIER to verify nothing. FACT_CHECKER keeps its call. Check 265 holds both.
 - `scripts/pipeline.py`: the pipeline driver (the flags above).
 
 ## Key paths
@@ -489,7 +527,9 @@ The operator-authorized local optimization is documented in
 `docs/fix/REPORT_RECOMMENDATIONS_IMPLEMENTATION.md`. `report_optimized` is an
 explicit ordinary local topology; reference defaults stay available. Its
 PROCESSOR wire aliases hydrate into the unchanged canonical source extraction
-contract, with mandatory ownership/coverage and a provisional 1536-token bound.
+contract, with mandatory ownership/coverage and a provisional 1536-token bound;
+the call itself is sent in the validated two-turn shape with Python-placed
+reference markers (EXTRACTION-A and EXTRACTION-B above).
 A source ledger never silently omits preamble or table-surround text. Do not
 promote this path based on fixture/tokenizer measurements alone. No full model
 run, cloud work or multi-round execution was authorized by this implementation.

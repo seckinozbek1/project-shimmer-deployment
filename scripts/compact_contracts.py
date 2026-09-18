@@ -3,10 +3,15 @@
 Identity and source reconstruction are routing facts. Claims, gaps, uncertainty,
 judgments and selected evidence always come from the response, never from routing.
 """
+from functools import lru_cache
 import json
+from pathlib import Path
 import re
 
 import bounded_extraction as extraction
+
+ROOT = Path(__file__).resolve().parents[1]
+PROMPT_DECLARATION = ROOT / 'config/compact_extraction_prompt.json'
 
 PRODUCER = '''Return only one JSON object: {"items":[{"span":"s0","claims":[],"questions":[],"uncertainty":[],"status":"empty","refs":[]}]}.
 Exactly one item per owned source_spans alias; multiple observations belong in its arrays.
@@ -37,7 +42,12 @@ def envelope(obj):
     return obj['items']
 
 
-def producer(obj, owned, doc):
+def producer(obj, owned, doc, citable=None):
+    """`citable` is Python's own decision of which indexed passages lie inside which
+    owned span (bounded_extraction.grounding): a ref is grounded when it is one of
+    those, or when its id is written inside the span's text as the training spans
+    wrote theirs. A ref that is neither (an id the index does not hold, or one that
+    names a passage of another span) is refused as before."""
     items = envelope(obj)
     by_alias = {extraction.wire_id(s): s for s in owned}
     seen = set()
@@ -53,7 +63,8 @@ def producer(obj, owned, doc):
         span = by_alias[alias]
         if not set(item['claims']) <= set(re.findall(r'\bCLM-[A-Za-z0-9-]+', span.text)):
             raise ValueError('Ungrounded claim id')
-        if not set(item['refs']) <= set(re.findall(r'\bREF-\d{4,}\b', span.text)):
+        grounded = set(re.findall(r'\bREF-\d{4,}\b', span.text)) | set((citable or {}).get(alias, ()))
+        if not set(item['refs']) <= grounded:
             raise ValueError('Ungrounded extraction evidence')
         semantic = any(item[k] for k in ('claims','questions','uncertainty'))
         if item['status'] != ('extracted' if semantic else 'empty'):
@@ -95,13 +106,81 @@ def auditor(obj, doc, required_refs, available_refs, *, paragraph=1, empty_input
     return dict(agent='VERIFIER', doc_id=doc, items=result)
 
 
-def bind_producer(wrapper, owned, doc):
+def bind_producer(wrapper, owned, doc, *, citable=None, messages=None):
+    """`messages` = (system, user, supplied) from validated_messages: the wrapper then
+    sends exactly those two messages through the model's chat template (the shape
+    checkpoint 168 was evaluated on) instead of the wide agent prompt, and records
+    the supplied ref ids as what was rendered."""
     if wrapper.name != 'PROCESSOR':
         raise ValueError('Extraction routing mismatch')
     wrapper._compact_role = '- Extract semantic fields from owned source spans; Python reconstructs source.'
     wrapper._compact_contract = PRODUCER
-    wrapper._source_adapter = lambda obj: producer(obj, owned, doc)
+    wrapper._compact_grounding = dict(citable or {})
+    wrapper._source_adapter = lambda obj: producer(obj, owned, doc, wrapper._compact_grounding)
     wrapper._owned_source_spans = tuple(owned)
+    if messages is not None:
+        system, user, supplied = messages
+        wrapper._compact_messages = (system, user)
+        wrapper._compact_rendered = dict(reference_ids=list(supplied), convention_ids=[],
+                                         bus_messages_rendered=0, bus_messages_dropped=0,
+                                         convention_text_truncated=False, reference_text_truncated=False)
+
+
+@lru_cache(maxsize=1)
+def prompt_declaration():
+    """config/compact_extraction_prompt.json: the validated prompt shape, read once."""
+    return json.loads(PROMPT_DECLARATION.read_text(encoding='utf-8'))
+
+
+def validated_system():
+    """The system message checkpoint 168 was evaluated under: the compact contract
+    followed by the frozen semantic policy, read from the declaration, never typed here."""
+    return PRODUCER + prompt_declaration()['system_suffix']
+
+
+def canonical(value):
+    """The evaluation runtime's serialisation of a user payload: sorted keys, compact separators."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+
+
+def validated_payload(source_spans, context_spans, supplied_refs, *, required_refs=(), routed_rules=()):
+    """The user object of the validated shape. `source_spans` and `context_spans` are
+    [(alias, text)]; the key set is exactly the one every DEV prompt carried."""
+    declaration = prompt_declaration()
+    return dict(context_only_spans=[dict(alias=alias, text=text) for alias, text in context_spans],
+                production_contract=declaration['production_contract'],
+                required_refs=list(required_refs), role=declaration['role'],
+                routed_rules=list(routed_rules),
+                source_spans=[dict(alias=alias, text=text) for alias, text in source_spans],
+                supplied_refs=list(supplied_refs))
+
+
+def validated_messages(text, owned, all_spans, entries):
+    """(system, user, citable, supplied) for one bounded partition, in the validated
+    shape: every indexed passage inside a span is marked with its own id at its end,
+    the boundary context keeps the 400-character clip the wide payload used, and the
+    refs the model may cite for an owned span are exactly the passages Python located
+    inside it. Nothing else (no reference passages, rules, bus, constitution, briefs,
+    anchor) reaches the model on this path."""
+    citable, markers, _ = extraction.grounding(text, all_spans, entries)
+    indices = {s.id: i for i, s in enumerate(all_spans)}
+    first, last = indices[owned[0].id], indices[owned[-1].id]
+    shown, source, context = [], [], []
+    for span in owned:
+        alias = extraction.wire_id(span)
+        source.append((alias, extraction.annotate(span.text, markers.get(alias, []))))
+        shown.extend(ref for _, ref in markers.get(alias, []))
+    for i, span in enumerate(all_spans):
+        if i not in {first - 1, last + 1}:
+            continue
+        alias = extraction.wire_id(span)
+        window, kept = extraction.clip_markers(span.text, markers.get(alias, []), tail=i < first)
+        context.append((alias, extraction.annotate(window, kept)))
+        shown.extend(ref for _, ref in kept)
+    supplied = sorted(set(shown))
+    payload = validated_payload(source, context, supplied)
+    owned_citable = {extraction.wire_id(s): list(citable.get(extraction.wire_id(s), [])) for s in owned}
+    return validated_system(), canonical(payload), owned_citable, supplied
 
 
 def bind_auditor(wrapper, doc, refs, *, paragraph=1, empty_input=False):

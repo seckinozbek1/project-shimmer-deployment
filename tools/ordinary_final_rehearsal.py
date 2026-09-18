@@ -313,4 +313,10 @@ def main(out):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir', type=Path, required=True)
-    raise SystemExit(main(parser.parse_args().output_dir))
+    parser.add_argument('--source-bundle', type=Path, default=None,
+                        help='the sealed bundle whose archive, runner and locks are rehearsed (default: the v4 bundle)')
+    arguments = parser.parse_args()
+    if arguments.source_bundle is not None:
+        # The archive rehearsed is the one about to be launched, never a stale one.
+        SOURCE_BUNDLE = arguments.source_bundle if arguments.source_bundle.is_absolute() else (ROOT / arguments.source_bundle).resolve()
+    raise SystemExit(main(arguments.output_dir))

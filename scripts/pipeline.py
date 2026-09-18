@@ -1373,6 +1373,14 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
             wrapper = _build_wrapper(agent_name, orch, keys)
             if agent_name == "LEGAL_ANALYST" and provision_refs:
                 refs_excerpt = provision_refs
+            elif agent_name == "PROCESSOR" and semantic_waves.enabled():
+                # The validated compact prompt renders no reference passages: it marks
+                # every indexed passage inside a source span with that passage's own
+                # id, so the bounded extraction needs the document's whole index, not
+                # the 30-entry excerpt sized for a wide prompt (v5: that excerpt ended
+                # at REF-0045 and the operational copy's later paragraphs were never
+                # citable).
+                refs_excerpt = _doc_refs_all(reference_index, doc['id'])
             else:
                 refs_excerpt = _doc_refs_excerpt(reference_index, doc['id'])
             tasks.append(_run_one(wrapper, payload,
@@ -1416,6 +1424,12 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     return results
 
 
+def _verifier_has_a_draft(draft_state):
+    """VERIFIER's task is verify_draft_against_source: without an accepted PROCESSOR
+    draft there is nothing to verify, and the call is not made (see phase_5_audit)."""
+    return bool(draft_state.get("processor_draft_available"))
+
+
 @execution_topology.phase_boundary
 async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
                         convention_registry, reference_index, max_concurrent_docs=4):
@@ -1454,14 +1468,33 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
                     "The extraction is unavailable or was cut short. Its missing "
                     "content is not evidence that the source lacks that content; "
                     "use the supplied source when checking it.")
-        tasks = []
+        tasks, names = [], []
+        if not _verifier_has_a_draft(draft_state):
+            # v5 (run 110990c1, 2026-09-18): every PROCESSOR partition had failed its
+            # contract and VERIFIER was still sent verify_draft_against_source with no
+            # draft, a note saying so and the source alone; it answered with a figure
+            # comparison in the typed-record shape and failed its contract. A
+            # verification with nothing to verify is not a call to make: it is
+            # recorded as not called with the reason, and the advisory pairing is
+            # recorded as unavailable so the coverage figures stay complete.
+            # FACT_CHECKER keeps its call: it checks claims against the source.
+            import auditor_pairs
+            agent_activation.not_called(orch.run_context, "VERIFIER",
+                reason="processor_draft_unavailable", source_phase="5", doc_id=doc["id"],
+                evidence=dict(draft_state, processor_call_id=(proc or {}).get("call_id"),
+                              processor_error=(proc or {}).get("error")),
+                trigger_source="operational_document")
+            auditor_pairs.record_unavailable(orch.run_context, doc["id"], "processor_draft_unavailable")
         for name, payload in (("VERIFIER", verifier_payload), ("FACT_CHECKER", fc_payload)):
+            if name == "VERIFIER" and not _verifier_has_a_draft(draft_state):
+                continue
             wrapper = _build_wrapper(name, orch, keys)
             wrapper._parent_call_ids = ([proc['call_id']] if proc and proc.get('call_id') else
                                         list(proc.get('partition_calls', [])) if proc else [])
             if name == 'VERIFIER':
                 wrapper._auditor_pair_request = dict(document=doc, producer=proc,
                     references=[entry.as_dict() for entry in reference_index.find_by_document(doc['id'])])
+            names.append(name)
             tasks.append(_run_one(wrapper, payload,
                                   f"{run_objectives}\nDocument: {doc['name']}",
                                   max_tokens=AUDIT_MAX_TOKENS,
@@ -1473,7 +1506,7 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
                                   _progress=(5, doc_pos[doc["id"]], n_docs, name)))
         audit_results = await _gather_or_serial(tasks)
         return [{"scope": "doc", "doc_id": doc["id"], "agent": name, **r}
-                for name, r in zip(("VERIFIER", "FACT_CHECKER"), audit_results)]
+                for name, r in zip(names, audit_results)]
 
     for sub in await _gather_docs(op_docs, _process_doc, max_concurrent_docs):
         out.extend(sub)
@@ -2695,6 +2728,12 @@ def _first_explanation(result):
 
 def _doc_refs_excerpt(reference_index, document_id):
     return [e.as_dict() for e in reference_index.find_by_document(document_id)[:30]]
+
+
+def _doc_refs_all(reference_index, document_id):
+    """Every entry of one document, for the compact extraction's grounding (the
+    validated prompt renders none of them, so no prompt budget is at stake)."""
+    return [e.as_dict() for e in reference_index.find_by_document(document_id)]
 
 
 def _items_for(results, agent, *, doc_id=None, scope=None):

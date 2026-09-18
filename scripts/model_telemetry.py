@@ -189,6 +189,7 @@ def call_record(wrapper, result, started, started_at, error=None):
         tokens_per_second=count/generation if count is not None and generation and generation > 0 else None,
         throughput_basis='generation including prefill', backend_success=usage.get('backend_success'),
         contract_valid=valid, semantically_complete=result.get('complete'),
+        contract_normalized=list(result.get('contract_normalized') or []),
         emitted_count=len(items) if isinstance(items, list) else None,
         retained_count=None, refused=isinstance(parsed, dict) and parsed.get('status') == 'refused',
         empty_output=None if items is None else not bool(items),

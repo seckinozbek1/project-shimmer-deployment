@@ -227,6 +227,14 @@ class MultiRoundChecks(unittest.TestCase):
             normalized = ast.dump(node, include_attributes=False).replace(", type_params=[]", "")
             digests[node.name] = hashlib.sha256(normalized.encode()).hexdigest()
         self.assertEqual(digests, baseline["function_ast_sha256"])
+        # A deliberate change to the pre-multi-round contract is recorded as an amendment
+        # (from the baseline hash to the pinned one, with reason and document); the pin
+        # must agree with the record.
+        for amendment in baseline.get("reference_amendments", []):
+            self.assertTrue(amendment.get("reason") and amendment.get("document"))
+            for name, hashes in amendment["functions"].items():
+                self.assertEqual(hashes["to"], baseline["function_ast_sha256"][name], name)
+                self.assertNotEqual(hashes["from"], hashes["to"], name)
 
     def test_saved_api_auth_identity_and_safe_projection(self):
         import importlib.util
