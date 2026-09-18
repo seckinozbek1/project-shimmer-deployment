@@ -1,0 +1,230 @@
+{
+  "RUN_CLAIMED": {
+    "sha256": "35dafb19f3a676cffcd2ed517958044ccf68815b6d6bc9f6cab2a467bc99d407",
+    "bytes": 16
+  },
+  "WATCHDOG_ARMED.json": {
+    "sha256": "a401d5e6f73dfdd3d0f094d2b45973f4440574d960a7ae419e746a68acbe9cdc",
+    "bytes": 218
+  },
+  "evidence/network.jsonl": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "evidence/result.json": {
+    "sha256": "36ba890b872dbfde437a6a6c470b2388fcad0c2603e3abecac6fa0b0ba35523c",
+    "bytes": 251
+  },
+  "evidence/run/audit/absence_quote_prediction.json": {
+    "sha256": "1a8df06f9bd130732c17a33974f5ea8f9139d62064ac9e62e7bf0c0e6241ebbb",
+    "bytes": 1407
+  },
+  "evidence/run/audit/agent_activation.json": {
+    "sha256": "70d28dfd8be7237fd04787b390453052bd532989cef658d52f7dab35f43df100",
+    "bytes": 28777
+  },
+  "evidence/run/audit/audit_synthesis.md": {
+    "sha256": "d60979985e860b27b187fc2a17c5afa9cd08c018d2fd6a5c2b78794fd81dad70",
+    "bytes": 204
+  },
+  "evidence/run/audit/contract_violations/FACT_CHECKER_20260918T180032_task-000011.txt": {
+    "sha256": "92337b9df5901990a80c0eca9799a1fb5ce22017e7687d68c65ef30efe290cd4",
+    "bytes": 2629
+  },
+  "evidence/run/audit/convention_assignment.json": {
+    "sha256": "ea347b619e05537412524b234a9866b0f9a250002c8ff55fb8fc76be8d569e8b",
+    "bytes": 1306
+  },
+  "evidence/run/audit/delta_proposals.json": {
+    "sha256": "5469c2361bdcf4f769f2f37e6b3bc5f44edbd89e232f5317a12ececbc905a909",
+    "bytes": 75
+  },
+  "evidence/run/audit/editorial/BOARD_result_sheet.json": {
+    "sha256": "63511a4fcad0c6bfad531ec583af690176335552736c29d8d0b07feee59afc13",
+    "bytes": 919
+  },
+  "evidence/run/audit/editorial/EDITOR_CLERK_result_sheet.json": {
+    "sha256": "293f8e0ceb55ca6974f726bc61589dc255f2e306cb37489e1aa6a43962c8297d",
+    "bytes": 1106
+  },
+  "evidence/run/audit/execution_topology.json": {
+    "sha256": "137cd9f14c287feef2010e638116333942bba5579de550efb7542e6b85a02dde",
+    "bytes": 851
+  },
+  "evidence/run/audit/execution_topology.jsonl": {
+    "sha256": "7114c5070c32f249374b6379fddf80d635741ab5c9a1ed7d6e416c2ec6552a98",
+    "bytes": 39836
+  },
+  "evidence/run/audit/model_telemetry_summary.json": {
+    "sha256": "e0b2c0bd1133c8e39efddcc732d7d46e553a68e0fb455aed33883cce33295e7c",
+    "bytes": 25603
+  },
+  "evidence/run/audit/pairing_map.json": {
+    "sha256": "d98cb6166945875cb72ac4ce0273c222e899c9124e5a366ed406a4b6b9372229",
+    "bytes": 16312
+  },
+  "evidence/run/audit/reference_index.json": {
+    "sha256": "14e9f0db210bb4db14ca27d8876536ba9539ef188f7649fde22359bff9952652",
+    "bytes": 37405
+  },
+  "evidence/run/audit/run_completion.json": {
+    "sha256": "6e5bb2f7cea7fcb54f66533c2abe4b3630c548583e58f53a9e91329416fffee7",
+    "bytes": 341
+  },
+  "evidence/run/audit/run_identity.json": {
+    "sha256": "532bfb53a4680710c78c17aa6cbb9ba9930604d74cb94da60f0922599fad3294",
+    "bytes": 68
+  },
+  "evidence/run/audit/run_options.json": {
+    "sha256": "1d29f3bfc13027af8610562dc9992d7916cdd884b82df445839b7621cbca1767",
+    "bytes": 110
+  },
+  "evidence/run/audit/undated_documents.json": {
+    "sha256": "111e34a6dd0582bb7a99d370443a7481477d840561f727f834431ca16026fb49",
+    "bytes": 669
+  },
+  "evidence/run/deliverables/_run_summary.md": {
+    "sha256": "c8b4c23b381c2ee07532bd32318663fbe18aad8208627ee8e064f1813a115fb5",
+    "bytes": 901
+  },
+  "evidence/run/deliverables/result_sheet/document_summary.md": {
+    "sha256": "2d5c7ab86f330824b0b83aae1c1877841783a8b4c9f0bf778048aa78df75418f",
+    "bytes": 2846
+  },
+  "evidence/run/deliverables/result_sheet/grounding_summary.md": {
+    "sha256": "e2217bad5f2d0794aae5472e99f6b4c61e900dde017b7abed0d489090511d46f",
+    "bytes": 3263
+  },
+  "evidence/run/deliverables/result_sheet/review_data.json": {
+    "sha256": "d293fc7434238314cb74098addf89004a2e34273c0a6d360b19296e8f8a3c4bb",
+    "bytes": 5121
+  },
+  "evidence/run/deliverables/result_sheet/review_findings.md": {
+    "sha256": "09308a386146fc212749d0a41605b146937782af39daf321e2ee15e66aeda417",
+    "bytes": 2445
+  },
+  "evidence/run/deliverables/result_sheet/reviewed_document.md": {
+    "sha256": "8292c5f52d2559da227cfee6e725f96f3a4a0e6d7cee9253f08393cee5b74d85",
+    "bytes": 22495
+  },
+  "evidence/run/deliverables/result_sheet/tracked_changes.docx": {
+    "sha256": "e42b9b1d25c69dae098c9e85249022687a3fabef2afe84ea0c5f525fcd467763",
+    "bytes": 41276
+  },
+  "evidence/run/logs/agent_bus.jsonl": {
+    "sha256": "f9b299f6bdb7b7a59d6a118126665f2dfb6d56f88d36221dfe9cbe278411e9d2",
+    "bytes": 41770
+  },
+  "evidence/run/logs/call_evidence.jsonl": {
+    "sha256": "8ece4b68559d3064cd6f375a7a5a37b1d197ee88bf7f24c9e5eb9a4fb1e065f4",
+    "bytes": 19785
+  },
+  "evidence/run/logs/cost_tracker.json": {
+    "sha256": "2626563478e99c5520de4c2e2e3207263268a82a86e34273ea524fc8995f8c60",
+    "bytes": 6781
+  },
+  "evidence/run/logs/cost_tracker.jsonl": {
+    "sha256": "7c2dfb2a0a582ca41db2ab7a4c97d614b23e0e76d9ae5cbe6f13a76d3f3bba93",
+    "bytes": 6139
+  },
+  "evidence/run/logs/generation_observation.jsonl": {
+    "sha256": "0d2d66a18b5eb9a66fdf33a3fc2a3ac31a93cffa2801658b9cab1e84981ea38c",
+    "bytes": 22010
+  },
+  "evidence/run/logs/model_telemetry.jsonl": {
+    "sha256": "4df3f7e9b5e27ef37ef23ac2272dcfaba1e36152d821ad6e31d0c09cb852a2ac",
+    "bytes": 314232
+  },
+  "evidence/run/logs/prompt_structure.jsonl": {
+    "sha256": "f04433d71bb7bfd245919cfce7239273c242519002c630e6f032a00f6e5f486e",
+    "bytes": 5785
+  },
+  "evidence/run/logs/run_summary_20260918_180059.md": {
+    "sha256": "418a22edbe9e174b5066cec868abaa43f3d0e0feec063c8fe910c1a0c0a3e8ac",
+    "bytes": 823
+  },
+  "execution_manifest.json": {
+    "sha256": "8c5de3eaf7f1145d154c352f73ac9343716e63b5e697ae007cfab8f14c6af3d6",
+    "bytes": 2982219
+  },
+  "hardware_admission.json": {
+    "sha256": "ea420ee4dacd19a451e34d6d6252eaa3c6b8f08e03a9da3cc3d9543d8d67f1f9",
+    "bytes": 227
+  },
+  "operator_authorization.json": {
+    "sha256": "2f90336e62779f2ac620ea2b7d39ae2addbe9527c54263f4cf5e58af1305dd71",
+    "bytes": 986
+  },
+  "project/durable/cache/embedding_store.pkl": {
+    "sha256": "9fd954c2efc070d565ae17f8a3d40e69a5c6c81bc7e4396eed4e1042dbc73ecd",
+    "bytes": 49824
+  },
+  "project/durable/governance/redaction_waivers.jsonl": {
+    "sha256": "0f981829ed23c8e6cb420113b3a43fd7f59632afdc3877221db23830878d3c8b",
+    "bytes": 287
+  },
+  "project/durable/governance/sensitivity_overrides.jsonl": {
+    "sha256": "d265b6f4fa1a545a25ad973c286e15c77726a4f631cc54a6876d0c2a5d3880dc",
+    "bytes": 417
+  },
+  "project/durable/learnings/citation_convention.json": {
+    "sha256": "8b3ee8df4e763aba976edac7707a8e200fc2bab6045b5dc2923c8ced3efb7749",
+    "bytes": 306
+  },
+  "project/durable/learnings/document_dates.json": {
+    "sha256": "27a83d4f4bf3525e362f5da38227e1f5689878826fa138d2b07e96287db2b66b",
+    "bytes": 433
+  },
+  "project/durable/learnings/institution_registry.json": {
+    "sha256": "79eace6080e62c643a8891549e3c11e6d42cf1fc19940ffc76072dca10f8b06f",
+    "bytes": 1220
+  },
+  "project/durable/learnings/spawn_log.jsonl": {
+    "sha256": "000c62cf1622ce10e1414cf1b32fb7547de27ee60539a4e4008d4ba37f6f773b",
+    "bytes": 118
+  },
+  "project/durable/learnings/speech_acts_taxonomy.json": {
+    "sha256": "8900d92cfbb108a7c7738190aa44ce699f7a2058e5e18340c0e92f96cda8f8b0",
+    "bytes": 474
+  },
+  "project/durable/reference/LINGUISTIC_IDENTITY.md": {
+    "sha256": "a2fbd80c99314874274d244d5ba76b99ce795df0e3e101f355e6d34555318869",
+    "bytes": 221
+  },
+  "project/durable/reference/situational_awareness.md": {
+    "sha256": "8fb49725b21e80000c68aba449ac08adb2a3047202b6ce00483e510857651adc",
+    "bytes": 327
+  },
+  "project/ontology/stores/gnn_state.json": {
+    "sha256": "0c02eab7d862707377edb7b309c623237887c48a15058b99dc309e0fea5d6647",
+    "bytes": 26145
+  },
+  "project/ontology/stores/graph.json": {
+    "sha256": "8282df8eac5faba8f12f0ccb1bd68ce821e5bce007a0bb3ed2eecf0f08a71308",
+    "bytes": 7220
+  },
+  "project/ontology/stores/provisions.jsonl": {
+    "sha256": "5ff078885a448519cb382b9992188a9c6957955f2642f14bb68af22270bbf399",
+    "bytes": 4605
+  },
+  "project/ontology/stores/provisions_log.jsonl": {
+    "sha256": "cfd863537ae0b8f27dcc3724639fdb3fad1494b6856eca4ab2f85fc3278c407d",
+    "bytes": 526
+  },
+  "seal.json": {
+    "sha256": "5ba3c0b1cffebc581c9bd6a10581caf3613da5a693961402afa3e340790ee8c3",
+    "bytes": 250
+  },
+  "topology.json": {
+    "sha256": "730211411774849ed175cf4c087acc6b4281ccade1866d53b773011cf9510bb0",
+    "bytes": 143
+  },
+  "workload.stderr.log": {
+    "sha256": "ab8409c94c200975b5dd27496b763fd34ed3caf74923565653f39e07097ae464",
+    "bytes": 37526
+  },
+  "workload.stdout.log": {
+    "sha256": "6dd1b961846790e60dfa0ac5b06de2c29726e088c967c2d0defd9225b8dd41be",
+    "bytes": 223
+  }
+}

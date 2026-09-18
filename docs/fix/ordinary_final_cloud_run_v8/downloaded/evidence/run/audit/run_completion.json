@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "run_id": "a66496726e454cfab8a6358ecfbce8be",
+  "state": "stopped",
+  "started_at": "2026-09-18T17:53:33.357979+00:00",
+  "finished_at": "2026-09-18T18:01:00.060368+00:00",
+  "reached_end": true,
+  "exit_code": 0,
+  "document_count": 1,
+  "amendment_count": 4,
+  "error_type": null,
+  "semantic_complete": false
+}

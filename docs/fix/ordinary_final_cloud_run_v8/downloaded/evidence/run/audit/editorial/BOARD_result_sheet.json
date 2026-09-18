@@ -1,0 +1,31 @@
+{
+  "state": "REVIEWED",
+  "rounds": 0,
+  "ranks_run": [
+    "EDITOR_CLERK"
+  ],
+  "terminal_cap_reached": false,
+  "failed": null,
+  "consolidated": [
+    {
+      "ref": "REF-0007",
+      "governing": {
+        "rank": "EDITOR_CLERK",
+        "verdict": "sound",
+        "verdict_l": "sound",
+        "rationale": "The amendments correctly identify irregularities based on the conventions and reference corpus. The findings are clear, grounded, and necessary for compliance.",
+        "confidence": "CONFIDENT"
+      },
+      "superseded": [],
+      "chain": [
+        {
+          "rank": "EDITOR_CLERK",
+          "verdict": "sound",
+          "verdict_l": "sound",
+          "rationale": "The amendments correctly identify irregularities based on the conventions and reference corpus. The findings are clear, grounded, and necessary for compliance.",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    }
+  ]
+}
