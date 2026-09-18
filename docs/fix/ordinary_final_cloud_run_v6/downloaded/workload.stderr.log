@@ -1,0 +1,262 @@
+[pipeline] mode: standalone
+[pipeline] run folder: /home/ubuntu/shimmer-ordinary-final/evidence/run
+[sensitivity-gate] WARNING: the full LAW-IV sensitivity layer is BUILT AND WIRED (INFRA-041) but NOT ACTIVATED; masking of outbound payloads is inert until the operator activates it. Operator redaction rules still apply locally.
+[sensitivity-gate] OVERRIDE accepted for this run; logged to sensitivity_overrides.jsonl.
+[pipeline] backend-profile=local: 17 agents remapped to local backends (REDACTOR stays qwen_local)
+[model-gate] skipped PROCESSOR (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped VERIFIER (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped FACT_CHECKER (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped PRACTICE_AUDITOR (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped LEGAL_ANALYST (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped STYLE_GUARDIAN (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped ARCHIVIST (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped INST_FINDER (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped CITATION_RESOLVER (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped SPEECH_ACT_TAGGER (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped REDACTOR (qwen_local): cannot verify 'Qwen/Qwen2.5-7B-Instruct' (no key / local backend)
+[model-gate] skipped AMENDMENT_DRAFTER (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_CLERK (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_HEAD_OF_UNIT (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_HEAD_OF_SECTION (local_producer): cannot verify 'unsloth/Qwen2.5-7B-Instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_HEAD_OF_DEPARTMENT (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_DEPUTY_DG (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[model-gate] skipped EDITOR_DG (local_auditor): cannot verify 'unsloth/Phi-3.5-mini-instruct-bnb-4bit' (no key / local backend)
+[redaction-gate] WAIVED for this run (no redaction; reason=operator_declared_non_sensitive); logged to redaction_waivers.jsonl.
+{"ts": "2026-09-18T13:26:31.002349+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "0", "agent": "", "doc_id": "", "event": "phase_start phase=0 step=date_cascade_cutoff"}
+invalid pdf header: b'# Ana'
+EOF marker not found
+invalid pdf header: b'# Ret'
+EOF marker not found
+[role-resolution] tier 1: operator manifest names 1 target(s)
+[pipeline] WARNING: 1 document(s) could not be dated from the filename, their own text, or container metadata, so they are NOT under review:
+[pipeline]   not reviewed (undated): analyte_reference_ranges.md
+[pipeline]   Name them in input/context/_review_targets.json, or set cutoff_type to 'all' in config/review_scope.json, to review them anyway. The date is not guessed from the network.
+[pipeline] role resolution: 1 forced under review, 1 forced grounding; the rest by date cutoff
+invalid pdf header: b'# Ret'
+EOF marker not found
+[pipeline] WARN: result_sheet.md may be misclassified: first page does not match expected content (0 keywords matched)
+{"ts": "2026-09-18T13:26:31.054625+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "0", "agent": "", "doc_id": "", "event": "prior_versions declared=0 loaded=0 conflict=0"}
+{"ts": "2026-09-18T13:26:31.054682+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "0", "agent": "", "doc_id": "", "event": "corpus_loaded context_docs=2 operational_docs=1"}
+
+=== PROJECT SHIMMER: pre-run estimate ===
+  Operational documents: 1
+  Context documents:     2
+  Estimated Claude:      $0.5220
+  Estimated GPT-4o:      $0.1725
+  Estimated TOTAL:       $0.6945
+===========================================
+
+{"ts": "2026-09-18T13:26:31.067690+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "0", "agent": "", "doc_id": "", "event": "convention_registry rules=5 review_enabled=True"}
+{"ts": "2026-09-18T13:26:31.067764+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "0", "agent": "", "doc_id": "", "event": "external_rules files=0 rules=0 conflicts_open=0"}
+{"ts": "2026-09-18T13:26:31.067986+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "0", "agent": "", "doc_id": "", "event": "convention_assignment rules=5 untagged=5 unassigned=0"}
+[embedding_store] model 'BAAI/bge-m3' loaded on cpu (dim=1024)
+{"ts": "2026-09-18T13:26:45.507130+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "0", "agent": "", "doc_id": "", "event": "reference_index entries=62"}
+[embedding_store] building from 2 documents in /home/ubuntu/shimmer-ordinary-final/project/input/context
+[embedding_store] embedded 11 passages with 'BAAI/bge-m3' in 0.5s
+{"ts": "2026-09-18T13:26:46.243838+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "0", "agent": "", "doc_id": "", "event": "embedding_store_loaded passages=11"}
+[local-progress] event=memory peak_ram_gb=4.09 peak_vram_mb=0.0 completed=0/11
+[progress] event=start docs=1 status=running
+[progress] phase=1/9 status=running
+{"ts": "2026-09-18T13:26:46.247204+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "3-4", "agent": "", "doc_id": "", "event": "phase_start phase=3-4 step=content_production"}
+[progress] phase=3/9 status=running
+[progress] phase=3/9 agent=ARCHIVIST status=running
+[progress] phase=3/9 agent=INST_FINDER status=running
+[progress] phase=3/9 agent=CITATION_RESOLVER status=running
+[local-progress] event=memory peak_ram_gb=4.11 peak_vram_mb=0.0 completed=0/11
+[local-progress] event=memory peak_ram_gb=4.79 peak_vram_mb=2079.0 completed=0/11
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.11 peak_vram_mb=8120.8 completed=0/11
+[local-progress] event=memory peak_ram_gb=5.27 peak_vram_mb=8120.8 completed=0/11
+[local-progress] event=memory peak_ram_gb=5.28 peak_vram_mb=8120.8 completed=0/11
+                                                                                                                                                                                                                                                [COST] ARCHIVIST          +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (1 calls)/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.28 peak_vram_mb=13579.2 completed=0/11
+[local-progress] event=memory peak_ram_gb=5.28 peak_vram_mb=13579.2 completed=0/11
+                                                                                                                                                                                                                                                [COST] INST_FINDER        +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (2 calls)/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=0/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=0/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=0/11
+                                                                                                                                                                                                                                                [COST] CITATION_RESOLVER  +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (3 calls)[local-progress] event=semantic_wave_done physical_calls=3 completed=3
+[progress] phase=3/9 agent=ARCHIVIST status=done
+[progress] phase=3/9 agent=INST_FINDER status=done
+[progress] phase=3/9 agent=CITATION_RESOLVER status=done
+{"ts": "2026-09-18T13:27:41.246798+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "3-4", "agent": "ARCHIVIST", "doc_id": "", "event": "structural_inventory elements=1 source=ARCHIVIST"}
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[progress] phase=3/9 doc=1/1 agent=PROCESSOR status=running
+[progress] phase=3/9 doc=1/1 agent=SPEECH_ACT_TAGGER status=running
+[progress] phase=3/9 doc=1/1 agent=LEGAL_ANALYST status=running
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+                                                                                                                                                                                                                                                [COST] PROCESSOR          +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (4 calls)/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+                                                                                                                                                                                                                                                [COST] PROCESSOR          +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (5 calls)/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+                                                                                                                                                                                                                                                [COST] SPEECH_ACT_TAGGER  +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (6 calls)/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+                                                                                                                                                                                                                                                [COST] LEGAL_ANALYST      +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (7 calls)/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=3/11
+                                                                                                                                                                                                                                                [COST] PROCESSOR          +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (8 calls)[local-progress] event=semantic_wave_done physical_calls=5 completed=8
+[progress] phase=3/9 doc=1/1 agent=PROCESSOR status=done
+[progress] phase=3/9 doc=1/1 agent=SPEECH_ACT_TAGGER status=done
+[progress] phase=3/9 doc=1/1 agent=LEGAL_ANALYST status=done
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=8/12
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=8/12
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=8/12
+                                                                                                                                                                                                                                                [COST] LEGAL_ANALYST      +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (9 calls)[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=16.0 outcome=held_n items=1 completed=9/12
+{"ts": "2026-09-18T13:30:34.099860+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "3-4", "agent": "", "doc_id": "", "event": "phase_done phase=3-4 duration_ms=227852"}
+{"ts": "2026-09-18T13:30:34.100046+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "3-4", "agent": "", "doc_id": "", "event": "structural_inventory_pulled elements=1"}
+{"ts": "2026-09-18T13:30:34.100084+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5", "agent": "", "doc_id": "", "event": "phase_start phase=5 step=verification_fact_check"}
+[progress] phase=5/9 status=running
+[progress] phase=5/9 doc=1/1 agent=FACT_CHECKER status=running
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=9/12
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=9/12
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=9/12
+                                                                                                                                                                                                                                                [COST] FACT_CHECKER       +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (10 calls)[local-progress] event=semantic_wave_done physical_calls=1 completed=10
+[progress] phase=5/9 doc=1/1 agent=FACT_CHECKER status=done
+{"ts": "2026-09-18T13:30:50.722668+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5", "agent": "", "doc_id": "", "event": "phase_done phase=5 duration_ms=16622"}
+{"ts": "2026-09-18T13:30:50.722724+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5.5", "agent": "", "doc_id": "", "event": "phase_start phase=5.5 step=convention_review"}
+[progress] phase=5.5/9 status=running
+{"ts": "2026-09-18T13:30:50.724038+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5.5", "agent": "", "doc_id": "result_sheet", "event": "pairing_map units=6 rules=5 pairs=11 rejected=1 undecided=18 unmatched=0"}
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=10/12
+{"ts": "2026-09-18T13:30:51.685488+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5.5", "agent": "", "doc_id": "result_sheet", "event": "reference_tables tables=2 ranged=2"}
+{"ts": "2026-09-18T13:30:51.727444+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5.5", "agent": "", "doc_id": "result_sheet", "event": "paired_review pairs=11 dropped_by_cap=0 planned=11 saved=0"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=10/12
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=10/12
+                                                                                                                                                                                                                                                [COST] PRACTICE_AUDITOR   +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (11 calls)[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=10/12
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=10/12
+                                                                                                                                                                                                                                                [COST] PRACTICE_AUDITOR   +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (12 calls)[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=10/12
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=10/12
+[local-progress] event=memory peak_ram_gb=5.29 peak_vram_mb=13579.2 completed=10/12
+                                                                                                                                                                                                                                                [COST] PRACTICE_AUDITOR   +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (13 calls)[local-progress] event=memory peak_ram_gb=5.31 peak_vram_mb=13579.2 completed=10/12
+[local-progress] event=memory peak_ram_gb=5.31 peak_vram_mb=13579.2 completed=10/12
+                                                                                                                                                                                                                                                [COST] PRACTICE_AUDITOR   +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (14 calls)[local-progress] event=memory peak_ram_gb=5.31 peak_vram_mb=13579.2 completed=10/12
+[local-progress] event=memory peak_ram_gb=5.31 peak_vram_mb=13579.2 completed=10/12
+                                                                                                                                                                                                                                                [COST] PRACTICE_AUDITOR   +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (15 calls)[local-progress] event=semantic_wave_done physical_calls=5 completed=15
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+{"ts": "2026-09-18T13:31:50.528544+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5.5", "agent": "", "doc_id": "result_sheet", "event": "paired_review_not_judged count=0 reattributed=0 absence_computed=0 absence_judged=0"}
+{"ts": "2026-09-18T13:31:50.528602+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5.5", "agent": "", "doc_id": "result_sheet", "event": "paired_review_calls planned=11 made=5 not_judged=0 absence_computed=0"}
+{"ts": "2026-09-18T13:31:50.529424+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5.5", "agent": "", "doc_id": "result_sheet", "event": "paired_review_findings agent=PRACTICE_AUDITOR count=3"}
+{"ts": "2026-09-18T13:31:50.530798+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "5.5", "agent": "", "doc_id": "", "event": "phase_done phase=5.5 duration_ms=59808"}
+
+{"ts": "2026-09-18T13:31:50.530857+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6", "agent": "", "doc_id": "", "event": "phase_start phase=6 step=synthesis_deliverables"}
+[progress] phase=6/9 status=running
+{"ts": "2026-09-18T13:31:50.531516+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6", "agent": "", "doc_id": "", "event": "retrieval_mode mode=semantic"}
+{"ts": "2026-09-18T13:31:50.765110+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6", "agent": "AMENDMENT_DRAFTER", "doc_id": "result_sheet", "event": "amendment_drafter_skipped reason=template_path"}
+{"ts": "2026-09-18T13:31:50.766381+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6", "agent": "AMENDMENT_DRAFTER", "doc_id": "result_sheet", "event": "amendments_built_from_findings count=3"}
+{"ts": "2026-09-18T13:31:50.825124+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6", "agent": "", "doc_id": "", "event": "phase_done phase=6 duration_ms=294"}
+{"ts": "2026-09-18T13:31:50.825181+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6", "agent": "", "doc_id": "result_sheet", "event": "deliverables_written files=10 amendments=3 validator_errors=0"}
+{"ts": "2026-09-18T13:31:50.825321+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6.5", "agent": "", "doc_id": "", "event": "phase_start phase=6.5 step=editorial_review_board max_rounds=5 confidence_threshold=0.7 sensitive_skip=0"}
+[progress] phase=6.5/9 status=running
+[local-progress] event=memory peak_ram_gb=5.31 peak_vram_mb=13579.2 completed=15/15
+[local-progress] event=memory peak_ram_gb=5.34 peak_vram_mb=13579.2 completed=15/15
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/shimmer-ordinary-final/venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:653: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+[local-progress] event=memory peak_ram_gb=5.39 peak_vram_mb=13579.2 completed=15/15
+[local-progress] event=memory peak_ram_gb=5.39 peak_vram_mb=13579.2 completed=15/15
+[local-progress] event=memory peak_ram_gb=5.39 peak_vram_mb=13579.2 completed=15/15
+[local-progress] event=memory peak_ram_gb=5.39 peak_vram_mb=13579.2 completed=15/15
+                                                                                                                                                                                                                                                [COST] EDITOR_CLERK       +$0.0000 | Claude: $0.0000 | GPT: $0.0000 | TOTAL: $0.0000 (16 calls){"ts": "2026-09-18T13:32:16.990653+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6.5", "agent": "", "doc_id": "", "event": "phase_done phase=6.5 duration_ms=26165"}
+{"ts": "2026-09-18T13:32:16.990716+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "6.5", "agent": "", "doc_id": "", "event": "editorial_summary reviewed=1 all_sound=0 failed=0 total=1 advisory=1"}
+[progress] phase=7/9 status=running
+{"ts": "2026-09-18T13:32:16.991615+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "7", "agent": "", "doc_id": "", "event": "phase_done phase=7 duration_ms=0"}
+{"ts": "2026-09-18T13:32:16.991662+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "7", "agent": "", "doc_id": "", "event": "audit_synthesis findings=0 deltas=0"}
+{"ts": "2026-09-18T13:32:16.991692+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "9", "agent": "", "doc_id": "", "event": "phase_start phase=9 step=redaction_screening waived=1"}
+[progress] phase=9/9 status=running
+{"ts": "2026-09-18T13:32:16.991734+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "9", "agent": "", "doc_id": "", "event": "phase_skipped phase=9 reason=non_sensitive_mode"}
+{"ts": "2026-09-18T13:32:16.992682+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "8", "agent": "", "doc_id": "", "event": "phase_start phase=8 step=persist_run_summary"}
+
+=== final cost ===
+  Claude:   $0.0000
+  GPT-4o:   $0.0000
+  TOTAL:    $0.0000
+  calls: 16  failures: 0
+  bus messages: 38
+{"ts": "2026-09-18T13:32:16.996546+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "8", "agent": "", "doc_id": "", "event": "oge_capture scope=default provisions_appended=3 provisions_superseded=2 stubs_skipped=0 accumulator_size=0 sensitive=False"}
+{"ts": "2026-09-18T13:32:16.997502+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "8", "agent": "", "doc_id": "", "event": "oge_graph_rebuilt scope=default nodes=12 edges=2"}
+{"ts": "2026-09-18T13:32:17.014571+00:00", "level": "INFO", "run_id": "0cbc7f262a7448479517aba8a2c9ae1f", "phase": "8", "agent": "", "doc_id": "", "event": "oge_gnn_updated delta=12 nodes=12 loss=0.117711 device=cuda"}
+[progress] event=complete docs=1 amendments=3 cost=0.00 blocked=0 status=done

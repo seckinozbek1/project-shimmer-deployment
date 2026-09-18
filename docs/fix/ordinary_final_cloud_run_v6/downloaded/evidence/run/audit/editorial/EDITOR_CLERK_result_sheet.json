@@ -1,0 +1,26 @@
+{
+  "state": "RAW",
+  "rank": "EDITOR_CLERK",
+  "ok": true,
+  "error": null,
+  "parsed": {
+    "agent": "EDITOR_CLERK",
+    "doc_id": "result_sheet",
+    "items": [
+      {
+        "kind": "editorial_observation",
+        "rationale": "Each result must include a sample identifier, test, measured value, and analysing laboratory. The original texts are missing the sample identifier and analysing laboratory for all three findings.",
+        "ref": "REF-0007",
+        "ref_ids": [
+          "REF-0007"
+        ],
+        "verdict": "serious_concern",
+        "confidence": "CONFIDENT",
+        "ts": "2026-09-18T13:32:16.982354+00:00",
+        "revision": 1,
+        "item_id": "EDITOR_CLERK:editorial_observation:REF-0007:0"
+      }
+    ]
+  },
+  "raw_text": "{\"agent\": \"EDITOR_CLERK\", \"doc_id\": \"result_sheet\", \"items\": [{\"confident\": true, \"kind\": \"editorial_observation\", \"rationale\": \"Each result must include a sample identifier, test, measured value, and analysing laboratory. The original texts are missing the sample identifier and analysing laboratory for all three findings.\", \"ref\": \"REF-0007\", \"ref_ids\": [\"REF-0007\"], \"verdict\": \"serious_concern\"}]}"
+}

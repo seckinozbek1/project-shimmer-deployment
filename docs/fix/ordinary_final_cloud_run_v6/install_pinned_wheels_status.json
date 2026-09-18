@@ -1,0 +1,12 @@
+{
+  "connection": "ok",
+  "deadline_epoch": 1789739674.0810516,
+  "exit_code": 0,
+  "last_poll_epoch": 1789737951.438618,
+  "phase": "install_pinned_wheels",
+  "polls": 7,
+  "remote_pid": "2491",
+  "remote_work": "completed",
+  "started_epoch": 1789737874.0810516,
+  "unreachable_polls": 0
+}

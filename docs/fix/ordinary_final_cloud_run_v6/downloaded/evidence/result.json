@@ -1,0 +1,11 @@
+{
+  "collection_and_teardown_pending": true,
+  "execution_integrity_passed": false,
+  "failed_backend_attempts": 0,
+  "pipeline_exit_code": 0,
+  "quality_claim": null,
+  "reasons": [
+    "pipeline_not_completed",
+    "required_contract_failure"
+  ]
+}

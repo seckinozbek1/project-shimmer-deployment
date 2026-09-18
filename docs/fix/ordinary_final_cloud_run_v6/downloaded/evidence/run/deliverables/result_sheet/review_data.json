@@ -1,0 +1,90 @@
+{
+  "document_id": "result_sheet",
+  "amendments": [
+    {
+      "ref": "REF-0007",
+      "kind": "amendment",
+      "confidence": "CONFIDENT",
+      "location": "REF-0007",
+      "convention_ref": "CONV-001",
+      "original_text": "## Result RES-ALDER\n\nSample identifier: SPEC-ALDER\nTest: Sodium\nMeasured value: 148 mmol/L\nAnalysing laboratory: Northgate\n\n---",
+      "proposed_text": null,
+      "action": "flag",
+      "comment": "The computed value is 148.0 mmol/L, above the reference bound of 145.0 mmol/L. measured value against the range against Sodium in the reference corpus gives 148.0 mmol/L against a stated range of 135.0 to 145.0. Computed in code from the figures in this unit, not judged by a model. Grounded in CONV-001 (CONV-L01) at REF-0007.",
+      "severity": "required",
+      "finding_type": "factual",
+      "ref_ids": [
+        "REF-0007"
+      ],
+      "derived_from": "computed_finding",
+      "finding_unit_id": "u01-result-res-alder",
+      "finding_rule_id": "CONV-001",
+      "finding_relation": "above_band",
+      "finding_field_label": "measured value",
+      "finding_value_a": 148.0,
+      "finding_unit_a": "mmol/L",
+      "finding_value_b": 145.0,
+      "finding_unit_b": "mmol/L",
+      "agent": "PRACTICE_AUDITOR",
+      "source_convention_ref": "CONV-L01"
+    },
+    {
+      "ref": "REF-0007",
+      "kind": "amendment",
+      "confidence": "CONFIDENT",
+      "location": "REF-0007",
+      "convention_ref": "CONV-001",
+      "original_text": "## Result RES-BIRCH\n\nSample identifier: SPEC-BIRCH\nTest: Potassium\nMeasured value: 3.1 mmol/L\nAnalysing laboratory: Northgate\n\n---",
+      "proposed_text": null,
+      "action": "flag",
+      "comment": "The computed value is 3.1 mmol/L, below the reference bound of 3.5 mmol/L. measured value against the range against Potassium in the reference corpus gives 3.1 mmol/L against a stated range of 3.5 to 5.0. Computed in code from the figures in this unit, not judged by a model. Grounded in CONV-001 (CONV-L01) at REF-0007.",
+      "severity": "required",
+      "finding_type": "factual",
+      "ref_ids": [
+        "REF-0007"
+      ],
+      "derived_from": "computed_finding",
+      "finding_unit_id": "u02-result-res-birch",
+      "finding_rule_id": "CONV-001",
+      "finding_relation": "below_band",
+      "finding_field_label": "measured value",
+      "finding_value_a": 3.1,
+      "finding_unit_a": "mmol/L",
+      "finding_value_b": 3.5,
+      "finding_unit_b": "mmol/L",
+      "agent": "PRACTICE_AUDITOR",
+      "source_convention_ref": "CONV-L01"
+    },
+    {
+      "ref": "REF-0007",
+      "kind": "amendment",
+      "confidence": "CONFIDENT",
+      "location": "REF-0007",
+      "convention_ref": "CONV-001",
+      "original_text": "## Result RES-ELDER\n\nSample identifier: SPEC-ELDER\nTest: Total bilirubin\nMeasured value: 24 umol/L\nAnalysing laboratory: Eastfield\n\n---",
+      "proposed_text": null,
+      "action": "flag",
+      "comment": "The computed value is 24.0 umol/L, above the reference bound of 17.0 umol/L. measured value against the range against Total bilirubin in the reference corpus gives 24.0 umol/L against a stated range of 1.7 to 17.0. Computed in code from the figures in this unit, not judged by a model. Grounded in CONV-001 (CONV-L01) at REF-0007.",
+      "severity": "required",
+      "finding_type": "factual",
+      "ref_ids": [
+        "REF-0007"
+      ],
+      "derived_from": "computed_finding",
+      "finding_unit_id": "u05-result-res-elder",
+      "finding_rule_id": "CONV-001",
+      "finding_relation": "above_band",
+      "finding_field_label": "measured value",
+      "finding_value_a": 24.0,
+      "finding_unit_a": "umol/L",
+      "finding_value_b": 17.0,
+      "finding_unit_b": "umol/L",
+      "agent": "PRACTICE_AUDITOR",
+      "source_convention_ref": "CONV-L01"
+    }
+  ],
+  "prior_comparisons": [],
+  "prior_refusals": [],
+  "prior_orphans": [],
+  "_validator_errors": []
+}

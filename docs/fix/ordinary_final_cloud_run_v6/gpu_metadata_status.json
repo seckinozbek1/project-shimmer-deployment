@@ -1,0 +1,12 @@
+{
+  "connection": "ok",
+  "deadline_epoch": 1789737991.069986,
+  "exit_code": 0,
+  "last_poll_epoch": 1789737966.9127145,
+  "phase": "gpu_metadata",
+  "polls": 1,
+  "remote_pid": "2761",
+  "remote_work": "completed",
+  "started_epoch": 1789737961.069986,
+  "unreachable_polls": 0
+}
