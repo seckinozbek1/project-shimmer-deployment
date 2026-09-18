@@ -23483,8 +23483,15 @@ def check_245_processor_extraction_reaches_its_auditors():
                     or not payload.get("processor_draft_note")
                     or (kind == "failed" and payload.get("processor_draft") is not None)):
                 return _fail("an unavailable or cut extraction is passed as a complete draft")
-    if any(len(rows) != 2 for rows in result["audits"].values()):
-        return _fail("the fixture did not reach both phase-5 auditors in every state")
+    # v5 correction (VERIFIER-A): with no accepted PROCESSOR draft there is nothing for
+    # VERIFIER to verify, so only FACT_CHECKER is called in the failed state; a valid
+    # partial draft still reaches both auditors, marked truncated.
+    expected_rows = {"whole": 2, "partial": 2, "failed": 1}
+    if any(len(rows) != expected_rows[kind] for kind, rows in result["audits"].items()):
+        return _fail("the fixture did not reach the phase-5 auditors as declared per state "
+                     "(both with a draft, FACT_CHECKER alone without one)")
+    if [p.get("task") for p in result["audits"]["failed"]] != ["extract_and_verify_claims"]:
+        return _fail("without an accepted draft the one phase-5 call must be FACT_CHECKER's")
     board_budgets = [budget for agent, backend, budget in result["budgets"]
                      if agent == "EDITOR_CLERK" and backend == "local_producer"]
     if not result["board_ok"] or board_budgets != [min(result["board_requested"], 8192)]:
@@ -23497,7 +23504,8 @@ def check_245_processor_extraction_reaches_its_auditors():
     return _ok("real local production and audit phases preserve all 61 declared extraction "
                "items (%d tokenizer tokens); the old 2048 production limit and 4096 "
                "backstop cannot fit this reply; both auditors receive the last item, "
-               "failed best-effort objects are withheld, and valid partial drafts are "
+               "failed best-effort objects are withheld and VERIFIER is not called without a "
+               "draft, and valid partial drafts are "
                "explicitly marked truncated; the real board caller receives %d tokens from its "
                "configured request, while ordinary production/audit and cloud budgets stay unchanged"
                % (result["tokens"], board_budgets[0]))
@@ -24557,6 +24565,44 @@ def check_262_local_generate_sites_carry_the_frozen_decoding_policy():
     return check()
 
 
+def check_263_compact_extraction_grounding_and_validated_prompt_shape():
+    """Run 110990c1 (v5, 2026-09-18): the compact validator accepted a ref only
+    when its id was written inside the span's own text, which the training spans
+    carried inline and no real document provides, so every non-empty refs array
+    was refused; and the checkpoint ran on a 14k-character agent prompt with the
+    contract buried mid-prompt, where it was evaluated on a 2.5k-character
+    system-plus-payload prompt. Python now decides which indexed passages lie in
+    which span (bounded_extraction.grounding), marks them in the text it shows
+    and validates against the same decision; the PROCESSOR call sends exactly
+    the two validated turns. Proven on the fixture document, on a DEV row that
+    must reproduce the protocol's recorded prompt hash, and on the v5 raw
+    outputs where present (a correct citation passes, a mismatched or invented
+    one is refused)."""
+    from ordinary_final_correction_checks import check_grounding
+    return check_grounding()
+
+
+def check_264_core_field_alias_is_read_and_recorded():
+    """v5: the tuned Producer wrote the key `confident` for `confidence` in three
+    of six item-bearing calls, value right each time, and each call failed on that
+    key alone. The alias is declared in config/agent_contracts.json, read by the
+    parser only when the canonical key is absent and the value maps without
+    interpretation, and every application is recorded on the result, the bus post
+    and the observation row."""
+    from ordinary_final_correction_checks import check_alias
+    return check_alias()
+
+
+def check_265_typed_record_example_complete_and_verifier_skipped_without_draft():
+    """v5: the typed-record worked example carried none of VERIFIER's required
+    fields and the local base copied it; and VERIFIER was sent
+    verify_draft_against_source with no draft. The example is built from the
+    agent's own required list, and a document without an accepted PROCESSOR
+    draft records VERIFIER as not called and its pairing as unavailable."""
+    from ordinary_final_correction_checks import check_verifier
+    return check_verifier()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24885,6 +24931,12 @@ CHECKS = [
     ("261 explicit multi-round typed evidence and baseline isolation", check_261_multi_round),
     ("262 local generate sites carry the frozen decoding policy read from the evaluation protocols",
      check_262_local_generate_sites_carry_the_frozen_decoding_policy),
+    ("263 compact extraction grounds refs by Python's own passage placement and sends the validated prompt shape",
+     check_263_compact_extraction_grounding_and_validated_prompt_shape),
+    ("264 a declared core-field alias is read as the canonical key and recorded",
+     check_264_core_field_alias_is_read_and_recorded),
+    ("265 the typed-record example carries the required fields and VERIFIER is not called without a draft",
+     check_265_typed_record_example_complete_and_verifier_skipped_without_draft),
 ]
 
 

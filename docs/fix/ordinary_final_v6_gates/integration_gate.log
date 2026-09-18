@@ -1,0 +1,465 @@
+cost_tracker: model 'fixture' (backend 'local_producer') matches no pricing row and no recognizable provider; costed at $0.00 (no known row to fall back to)
+cost_tracker: model 'fixture' (backend 'local_producer') matches no pricing row and no recognizable provider; costed at $0.00 (no known row to fall back to)
+{"ts": "2026-09-18T12:22:05.138363+00:00", "level": "INFO", "run_id": "5f666ee0b72e4ca5a86b51b8969aeb6b", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=1/0
+{"ts": "2026-09-18T12:22:05.173370+00:00", "level": "INFO", "run_id": "f8d47c5b9fd84dc3a0aed6e340e08b17", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=2/0
+[progress] phase=5.5/9 doc=1/1 agent=STYLE_GUARDIAN status=running
+[local-progress] event=agent_start agent=STYLE_GUARDIAN phase=5.5 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=STYLE_GUARDIAN status=done
+[local-progress] event=agent_done agent=STYLE_GUARDIAN phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=3/0
+{"ts": "2026-09-18T12:22:05.218776+00:00", "level": "INFO", "run_id": "b89372cb1a0c45aeaaeb1a482ea22e19", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=4/0
+[progress] phase=5.5/9 doc=1/1 agent=STYLE_GUARDIAN status=running
+[local-progress] event=agent_start agent=STYLE_GUARDIAN phase=5.5 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=STYLE_GUARDIAN status=done
+[local-progress] event=agent_done agent=STYLE_GUARDIAN phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=5/0
+{"ts": "2026-09-18T12:22:05.263628+00:00", "level": "INFO", "run_id": "42db4b840d3f4e8da5fed8c11e5c67b8", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=6/0
+{"ts": "2026-09-18T12:22:05.317169+00:00", "level": "INFO", "run_id": "b010d32c578046968beae3c4bf27f370", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=7/0
+{"ts": "2026-09-18T12:22:05.349368+00:00", "level": "INFO", "run_id": "cf70293eee6c41a29fc60513471fdff9", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=8/0
+[progress] phase=3/9 agent=ARCHIVIST status=running
+[local-progress] event=agent_start agent=ARCHIVIST phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=ARCHIVIST status=done
+[local-progress] event=agent_done agent=ARCHIVIST phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=9/0
+[progress] phase=3/9 agent=INST_FINDER status=running
+[local-progress] event=agent_start agent=INST_FINDER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=INST_FINDER status=done
+[local-progress] event=agent_done agent=INST_FINDER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=10/0
+[progress] phase=3/9 agent=CITATION_RESOLVER status=running
+[local-progress] event=agent_start agent=CITATION_RESOLVER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=CITATION_RESOLVER status=done
+[local-progress] event=agent_done agent=CITATION_RESOLVER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=11/0
+[progress] phase=3/9 doc=1/1 agent=PROCESSOR status=running
+[local-progress] event=agent_start agent=PROCESSOR phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=PROCESSOR status=done
+[local-progress] event=agent_done agent=PROCESSOR phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=12/0
+[progress] phase=3/9 doc=1/1 agent=SPEECH_ACT_TAGGER status=running
+[local-progress] event=agent_start agent=SPEECH_ACT_TAGGER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=SPEECH_ACT_TAGGER status=done
+[local-progress] event=agent_done agent=SPEECH_ACT_TAGGER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=13/0
+[progress] phase=3/9 doc=1/1 agent=LEGAL_ANALYST status=running
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=LEGAL_ANALYST status=done
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=14/0
+[progress] phase=5/9 doc=1/1 agent=VERIFIER status=running
+[local-progress] event=agent_start agent=VERIFIER phase=5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5/9 doc=1/1 agent=VERIFIER status=done
+[local-progress] event=agent_done agent=VERIFIER phase=5 elapsed_s=0.0 outcome=held_empty items=0 completed=15/0
+[progress] phase=5/9 doc=1/1 agent=FACT_CHECKER status=running
+[local-progress] event=agent_start agent=FACT_CHECKER phase=5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5/9 doc=1/1 agent=FACT_CHECKER status=done
+[local-progress] event=agent_done agent=FACT_CHECKER phase=5 elapsed_s=0.0 outcome=held_empty items=0 completed=16/0
+[progress] phase=3/9 agent=ARCHIVIST status=running
+[local-progress] event=agent_start agent=ARCHIVIST phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=ARCHIVIST status=done
+[local-progress] event=agent_done agent=ARCHIVIST phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=17/0
+[progress] phase=3/9 agent=INST_FINDER status=running
+[local-progress] event=agent_start agent=INST_FINDER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=INST_FINDER status=done
+[local-progress] event=agent_done agent=INST_FINDER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=18/0
+[progress] phase=3/9 agent=CITATION_RESOLVER status=running
+[local-progress] event=agent_start agent=CITATION_RESOLVER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=CITATION_RESOLVER status=done
+[local-progress] event=agent_done agent=CITATION_RESOLVER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=19/0
+[progress] phase=3/9 doc=1/1 agent=PROCESSOR status=running
+[local-progress] event=agent_start agent=PROCESSOR phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=PROCESSOR status=done
+[local-progress] event=agent_done agent=PROCESSOR phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=20/0
+[progress] phase=3/9 doc=1/1 agent=SPEECH_ACT_TAGGER status=running
+[local-progress] event=agent_start agent=SPEECH_ACT_TAGGER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=SPEECH_ACT_TAGGER status=done
+[local-progress] event=agent_done agent=SPEECH_ACT_TAGGER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=21/0
+[progress] phase=3/9 doc=1/1 agent=LEGAL_ANALYST status=running
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=LEGAL_ANALYST status=done
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=22/0
+[progress] phase=5/9 doc=1/1 agent=VERIFIER status=running
+[local-progress] event=agent_start agent=VERIFIER phase=5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5/9 doc=1/1 agent=VERIFIER status=done
+[local-progress] event=agent_done agent=VERIFIER phase=5 elapsed_s=0.0 outcome=held_empty items=0 completed=23/0
+[progress] phase=5/9 doc=1/1 agent=FACT_CHECKER status=running
+[local-progress] event=agent_start agent=FACT_CHECKER phase=5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5/9 doc=1/1 agent=FACT_CHECKER status=done
+[local-progress] event=agent_done agent=FACT_CHECKER phase=5 elapsed_s=0.0 outcome=held_empty items=0 completed=24/0
+[progress] phase=3/9 agent=ARCHIVIST status=running
+[local-progress] event=agent_start agent=ARCHIVIST phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=ARCHIVIST status=done
+[local-progress] event=agent_done agent=ARCHIVIST phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=25/0
+[progress] phase=3/9 agent=INST_FINDER status=running
+[local-progress] event=agent_start agent=INST_FINDER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=INST_FINDER status=done
+[local-progress] event=agent_done agent=INST_FINDER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=26/0
+[progress] phase=3/9 agent=CITATION_RESOLVER status=running
+[local-progress] event=agent_start agent=CITATION_RESOLVER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 agent=CITATION_RESOLVER status=done
+[local-progress] event=agent_done agent=CITATION_RESOLVER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=27/0
+[progress] phase=3/9 doc=1/1 agent=PROCESSOR status=running
+[local-progress] event=agent_start agent=PROCESSOR phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=PROCESSOR status=done
+[local-progress] event=agent_done agent=PROCESSOR phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=28/0
+[progress] phase=3/9 doc=1/1 agent=SPEECH_ACT_TAGGER status=running
+[local-progress] event=agent_start agent=SPEECH_ACT_TAGGER phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=SPEECH_ACT_TAGGER status=done
+[local-progress] event=agent_done agent=SPEECH_ACT_TAGGER phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=29/0
+[progress] phase=3/9 doc=1/1 agent=LEGAL_ANALYST status=running
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=3 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=3/9 doc=1/1 agent=LEGAL_ANALYST status=done
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=3 elapsed_s=0.0 outcome=held_empty items=0 completed=30/0
+[progress] phase=5/9 doc=1/1 agent=VERIFIER status=running
+[local-progress] event=agent_start agent=VERIFIER phase=5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5/9 doc=1/1 agent=VERIFIER status=done
+[local-progress] event=agent_done agent=VERIFIER phase=5 elapsed_s=0.0 outcome=held_empty items=0 completed=31/0
+[progress] phase=5/9 doc=1/1 agent=FACT_CHECKER status=running
+[local-progress] event=agent_start agent=FACT_CHECKER phase=5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5/9 doc=1/1 agent=FACT_CHECKER status=done
+[local-progress] event=agent_done agent=FACT_CHECKER phase=5 elapsed_s=0.0 outcome=held_empty items=0 completed=32/0
+[pipeline] deepening cap: 8 pass-one findings, deepening the first 6; the remaining 2 keep their pass-one form and are still reported
+{"ts": "2026-09-18T12:22:07.283772+00:00", "level": "INFO", "run_id": "", "phase": "3", "agent": "", "doc_id": "", "event": "deepen_capped total=8 deepened=6 undeepened=2"}
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=33/6
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=34/6
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=35/6
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=36/6
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=37/6
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=38/6
+[pipeline] deepening cap: 8 pass-one findings, deepening the first 6; the remaining 2 keep their pass-one form and are still reported
+{"ts": "2026-09-18T12:22:07.374792+00:00", "level": "INFO", "run_id": "", "phase": "3", "agent": "", "doc_id": "", "event": "deepen_capped total=8 deepened=6 undeepened=2"}
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=39/12
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=40/12
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=41/12
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=42/12
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=43/12
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=44/12
+[pipeline] deepening cap: 8 pass-one findings, deepening the first 6; the remaining 2 keep their pass-one form and are still reported
+{"ts": "2026-09-18T12:22:07.465929+00:00", "level": "INFO", "run_id": "", "phase": "3", "agent": "", "doc_id": "", "event": "deepen_capped total=8 deepened=6 undeepened=2"}
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=45/18
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=46/18
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=47/18
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=48/18
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=49/18
+[local-progress] event=agent_start agent=LEGAL_ANALYST phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=LEGAL_ANALYST phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=50/18
+[local-progress] event=agent_start agent=AMENDMENT_DRAFTER phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=AMENDMENT_DRAFTER phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=51/18
+[local-progress] event=agent_start agent=AMENDMENT_DRAFTER phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=AMENDMENT_DRAFTER phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=52/18
+[local-progress] event=agent_start agent=AMENDMENT_DRAFTER phase=- model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[local-progress] event=agent_done agent=AMENDMENT_DRAFTER phase=- elapsed_s=0.0 outcome=held_empty items=0 completed=53/18
+[redaction-rules] operator_in_force=True source=operator (1 operator rule(s))
+[redaction-rules] operator_in_force=True source=operator (1 operator rule(s))
+[redaction-rules] operator_in_force=True source=operator (1 operator rule(s))
+[redaction-rules] operator_in_force=False source=none (0 operator rule(s))
+
+================ REDACTION BLOCK (LAW-IV) ================
+  BLOCKED deliverable: 'probe.md' (doc id: probe)
+  Why:    redaction did not pass: no operator redaction rule is in force  (failure_kind = no_operator_rule)
+  Where:  phase 'redaction', step REDACT_RULES
+  Next:   Redaction is required but NO operator rule compiled, so there is nothing the operator has declared redactable. The engine does NOT invent default categories (operator-sovereignty). Supply a compiling redaction convention, or re-run with --no-redaction-override to consciously declare redact-nothing for THIS run (logged to the governance ledger). Never a silent default; never a silent ship.
+  This deliverable was NOT confirmed clean - it is BLOCKED, not skipped.
+=========================================================
+[redaction-rules] operator_in_force=False source=none (0 operator rule(s))
+
+================ REDACTION BLOCK (LAW-IV) ================
+  BLOCKED deliverable: 'probe.md' (doc id: probe)
+  Why:    redaction did not pass: no operator redaction rule is in force  (failure_kind = no_operator_rule)
+  Where:  phase 'redaction', step REDACT_RULES
+  Next:   Redaction is required but NO operator rule compiled, so there is nothing the operator has declared redactable. The engine does NOT invent default categories (operator-sovereignty). Supply a compiling redaction convention, or re-run with --no-redaction-override to consciously declare redact-nothing for THIS run (logged to the governance ledger). Never a silent default; never a silent ship.
+  This deliverable was NOT confirmed clean - it is BLOCKED, not skipped.
+=========================================================
+[redaction-rules] operator_in_force=False source=none (0 operator rule(s))
+
+================ REDACTION BLOCK (LAW-IV) ================
+  BLOCKED deliverable: 'probe.md' (doc id: probe)
+  Why:    redaction did not pass: no operator redaction rule is in force  (failure_kind = no_operator_rule)
+  Where:  phase 'redaction', step REDACT_RULES
+  Next:   Redaction is required but NO operator rule compiled, so there is nothing the operator has declared redactable. The engine does NOT invent default categories (operator-sovereignty). Supply a compiling redaction convention, or re-run with --no-redaction-override to consciously declare redact-nothing for THIS run (logged to the governance ledger). Never a silent default; never a silent ship.
+  This deliverable was NOT confirmed clean - it is BLOCKED, not skipped.
+=========================================================
+{"ts": "2026-09-18T12:22:09.591975+00:00", "level": "INFO", "run_id": "64f38de2b03d4faea4dc0a9bb599225d", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+{"ts": "2026-09-18T12:22:09.591975+00:00", "level": "INFO", "run_id": "64f38de2b03d4faea4dc0a9bb599225d", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "reference_tables tables=0 ranged=0"}
+{"ts": "2026-09-18T12:22:09.593978+00:00", "level": "INFO", "run_id": "64f38de2b03d4faea4dc0a9bb599225d", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "paired_review pairs=0 dropped_by_cap=0 planned=0 saved=0"}
+{"ts": "2026-09-18T12:22:09.597993+00:00", "level": "INFO", "run_id": "64f38de2b03d4faea4dc0a9bb599225d", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "paired_review_not_judged count=0 reattributed=0 absence_computed=0 absence_judged=0"}
+{"ts": "2026-09-18T12:22:09.597993+00:00", "level": "INFO", "run_id": "64f38de2b03d4faea4dc0a9bb599225d", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "paired_review_calls planned=0 made=0 not_judged=0 absence_computed=0"}
+{"ts": "2026-09-18T12:22:09.633966+00:00", "level": "INFO", "run_id": "85248d1bfe184177a79b9f4572a20f32", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=54/18
+{"ts": "2026-09-18T12:22:09.669323+00:00", "level": "INFO", "run_id": "56dfeafc69254947a8c959e6a8a6e67e", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=55/18
+{"ts": "2026-09-18T12:22:09.705167+00:00", "level": "INFO", "run_id": "1383bc205b914b63aac38945ad8bbad5", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=56/18
+[progress] phase=5.5/9 doc=1/1 agent=STYLE_GUARDIAN status=running
+[local-progress] event=agent_start agent=STYLE_GUARDIAN phase=5.5 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=STYLE_GUARDIAN status=done
+[local-progress] event=agent_done agent=STYLE_GUARDIAN phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=57/18
+{"ts": "2026-09-18T12:22:09.747903+00:00", "level": "INFO", "run_id": "ae4448a407b045c59ba15c640bcabcf6", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=58/18
+[progress] phase=5.5/9 doc=1/1 agent=STYLE_GUARDIAN status=running
+[local-progress] event=agent_start agent=STYLE_GUARDIAN phase=5.5 model=unsloth/Qwen2.5-7B-Instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=STYLE_GUARDIAN status=done
+[local-progress] event=agent_done agent=STYLE_GUARDIAN phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=59/18
+{"ts": "2026-09-18T12:22:09.800561+00:00", "level": "INFO", "run_id": "689455da454f4366898b9db3bd8ac0ed", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=60/18
+{"ts": "2026-09-18T12:22:09.836948+00:00", "level": "INFO", "run_id": "f101e2911f0d4d558838961bf3c3da5b", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=61/18
+{"ts": "2026-09-18T12:22:09.874816+00:00", "level": "INFO", "run_id": "c5a1242f87c24f3ebc5368e2ca21c8eb", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=62/18
+{"ts": "2026-09-18T12:22:09.913453+00:00", "level": "INFO", "run_id": "521b07cd6ed740be9a9488cb5dc35204", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=63/18
+{"ts": "2026-09-18T12:22:09.955337+00:00", "level": "INFO", "run_id": "91baf61602e3481badbeb9e2822da74e", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=64/18
+{"ts": "2026-09-18T12:22:09.990740+00:00", "level": "INFO", "run_id": "f785a7e38bbf45edb5bd912e0d33a101", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=65/18
+{"ts": "2026-09-18T12:22:10.025140+00:00", "level": "INFO", "run_id": "8d375366adbc40e5b995d0ec6bb8a5d4", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=66/18
+{"ts": "2026-09-18T12:22:10.060790+00:00", "level": "INFO", "run_id": "76bd95178b3145f586a0fb36f41daa44", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=67/18
+{"ts": "2026-09-18T12:22:10.292725+00:00", "level": "INFO", "run_id": "146b8622df104dfea59777e61cb50f24", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=68/18
+{"ts": "2026-09-18T12:22:10.328191+00:00", "level": "INFO", "run_id": "8f7a1a48151f4dbb8e0bb32f073d3ba1", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=69/18
+{"ts": "2026-09-18T12:22:10.361939+00:00", "level": "INFO", "run_id": "fadba4bf602341139880f35028a91024", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=70/18
+{"ts": "2026-09-18T12:22:10.395810+00:00", "level": "INFO", "run_id": "b7059472a1dd466faa010e61286743ee", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=71/18
+{"ts": "2026-09-18T12:22:10.431036+00:00", "level": "INFO", "run_id": "9ecfdc0d1b504335ba79894b1b34c74d", "phase": "5.5", "agent": "", "doc_id": "probe", "event": "pairing_map units=1 rules=1 pairs=0 rejected=0 undecided=1 unmatched=1"}
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=running
+[local-progress] event=agent_start agent=PRACTICE_AUDITOR phase=5.5 model=unsloth/Phi-3.5-mini-instruct-bnb-4bit resident_before=- swap=no
+[progress] phase=5.5/9 doc=1/1 agent=PRACTICE_AUDITOR status=done
+[local-progress] event=agent_done agent=PRACTICE_AUDITOR phase=5.5 elapsed_s=0.0 outcome=held_empty items=0 completed=72/18
+{
+  "passed": true,
+  "tests": 128,
+  "failures": 0,
+  "errors": 0,
+  "activation_status": "PASS",
+  "activation_detail": "actual dispatch/audit joins, conservative fallback, dense parity, bounded legal/editorial work, masking/refusal, privacy, NFR and no-op refusal",
+  "neutralize_fail_restore_pass": [
+    {
+      "check": "test_wrong_producer_checkpoint_refuses",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_overlap_and_handoff",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_ordinary_final_admission_requires_valid_pair_contract",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_call_local_passes_restored_kwargs_and_pipeline_budget",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_call_qwen_passes_the_new_redactor_policy_and_the_model_stop_set",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_protocol_drift_refuses_before_any_model_load",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 24
+    },
+    {
+      "check": "test_failed_local_call_records_module_and_raising_frame",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_grounding_correct_citation_passes_fabricated_and_mismatched_fail",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_grounding_v5_raw_outputs_correct_citation_passes_mismatched_refused",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_prompt_validated_messages_shape",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 2
+    },
+    {
+      "check": "test_prompt_dev_row_reproduces_the_protocol_hash",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_prompt_build_returns_the_two_turns_and_no_context",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_prompt_dispatch_sends_system_and_user_turns",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_alias_v5_outputs_parse_and_the_mapping_is_recorded",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_alias_application_travels_with_result_bus_and_observation",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_verifier_record_example_carries_required_fields",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_verifier_not_called_without_a_draft_and_recorded",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 2
+    },
+    {
+      "check": "test_ownership_excludes_invalid_span_and_foreign_ref",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_stale_revision_excluded",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_no_guess_from_paragraph_or_prose",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_multiple_findings_not_relabelled_and_join_only_explicit",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    }
+  ],
+  "model_loads": 0,
+  "network_allowed": false,
+  "multi_round_executed": false
+}

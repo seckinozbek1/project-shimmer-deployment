@@ -100,6 +100,11 @@ def prepare(output, source_commit='HEAD', reuse_assets=None):
     # absent, so require them present by name rather than trusting the prefixes.
     for name in (decoding_policy.DECLARATION, 'scripts/decoding_policy.py'):
         require(name in files, 'Decoding policy source absent from the bound commit: '+name)
+    # The validated PROCESSOR prompt declaration (EXTRACTION-A) is read at the first
+    # bounded partition, long after admission; an archive without it would fail the
+    # run forty minutes in. Require it by name for the same reason as the policy.
+    require('config/compact_extraction_prompt.json' in files,
+            'Compact extraction prompt declaration absent from the bound commit')
     decoding = {b: dict(status=p['status'],source=p['source'],sha256=p['sha256'],kwargs=p['kwargs'])
                 for b, p in decoding_policy.summary(ROOT).items()}
     # Only the explicitly selected ordinary input files may enter this bundle.

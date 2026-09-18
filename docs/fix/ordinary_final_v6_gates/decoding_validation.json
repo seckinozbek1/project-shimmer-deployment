@@ -1,0 +1,209 @@
+{
+  "cuda_available": true,
+  "deterministic_mode_restored": true,
+  "device": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "effect_proofs": [
+    {
+      "baseline_pass": true,
+      "check": "test_producer_family",
+      "mutated_branch_invocations": 2,
+      "neutralized": "decoding_policy.policy",
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "baseline_pass": true,
+      "check": "test_auditor_family",
+      "mutated_branch_invocations": 1,
+      "neutralized": "decoding_policy.policy",
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "baseline_pass": true,
+      "check": "test_redactor_family",
+      "mutated_branch_invocations": 1,
+      "neutralized": "decoding_policy.policy",
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "baseline_pass": true,
+      "check": "test_producer_family",
+      "mutated_branch_invocations": 2,
+      "neutralized": "ordinary_final_decoding_checks.cumsum_recorder",
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "baseline_pass": true,
+      "check": "test_redactor_family",
+      "mutated_branch_invocations": 2,
+      "neutralized": "ordinary_final_decoding_checks.cumsum_recorder",
+      "neutralized_fail": true,
+      "restored_pass": true
+    }
+  ],
+  "errors": 0,
+  "failures": 0,
+  "families": {
+    "auditor": {
+      "backend": "local_auditor",
+      "cuda_strict_determinism": "policy chain passed; raw chain does not sample",
+      "effective": {
+        "do_sample": false,
+        "eos_token_id": [
+          32000,
+          32007
+        ],
+        "num_beams": 1,
+        "pad_token_id": 32009,
+        "repetition_penalty": 1.0,
+        "use_cache": true
+      },
+      "family": "auditor",
+      "generation_config": {
+        "do_sample": null,
+        "repetition_penalty": null,
+        "temperature": null,
+        "top_k": null,
+        "top_p": null
+      },
+      "generation_config_sha256": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413",
+      "model_id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "pinned_sha256": "947a61ace98e9f1b22d0253687956cd30a7b8201b86c83a80e1bf5791c9b0413",
+      "policy_chain": [],
+      "policy_chain_float_cumsum": 0,
+      "policy_status": "restored",
+      "raw_chain": [],
+      "raw_chain_float_cumsum": 0,
+      "raw_config_samples_with_top_p": false,
+      "raw_eos_token_id": 32000,
+      "raw_pad_token_id": 32000,
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb",
+      "site": "agent_wrapper.call_local",
+      "site_kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          32000,
+          32007
+        ],
+        "num_beams": 1,
+        "pad_token_id": 32009,
+        "use_cache": true
+      }
+    },
+    "producer": {
+      "backend": "local_producer",
+      "cuda_strict_determinism": "policy chain passed; raw chain raised cumsum_cuda_kernel",
+      "effective": {
+        "do_sample": false,
+        "eos_token_id": [
+          151645
+        ],
+        "num_beams": 1,
+        "pad_token_id": 151654,
+        "repetition_penalty": 1.05,
+        "use_cache": true
+      },
+      "family": "producer",
+      "generation_config": {
+        "do_sample": true,
+        "repetition_penalty": 1.05,
+        "temperature": 0.7,
+        "top_k": 20,
+        "top_p": 0.8
+      },
+      "generation_config_sha256": "424e77633729a4c63a0810e0fa32e3344b03499cd3a0b2fc626bfae19e7eb923",
+      "model_id": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "pinned_sha256": "424e77633729a4c63a0810e0fa32e3344b03499cd3a0b2fc626bfae19e7eb923",
+      "policy_chain": [
+        "RepetitionPenaltyLogitsProcessor"
+      ],
+      "policy_chain_float_cumsum": 0,
+      "policy_status": "restored",
+      "raw_chain": [
+        "RepetitionPenaltyLogitsProcessor",
+        "TemperatureLogitsWarper",
+        "TopKLogitsWarper",
+        "TopPLogitsWarper"
+      ],
+      "raw_chain_float_cumsum": 1,
+      "raw_config_samples_with_top_p": true,
+      "raw_eos_token_id": [
+        151645,
+        151643
+      ],
+      "raw_pad_token_id": 151654,
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d",
+      "site": "agent_wrapper.call_local",
+      "site_kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          151645
+        ],
+        "num_beams": 1,
+        "pad_token_id": 151654,
+        "use_cache": true
+      }
+    },
+    "redactor": {
+      "backend": "qwen_local",
+      "cuda_strict_determinism": "policy chain passed; raw chain raised cumsum_cuda_kernel",
+      "effective": {
+        "do_sample": false,
+        "eos_token_id": [
+          151645,
+          151643
+        ],
+        "num_beams": 1,
+        "pad_token_id": 151643,
+        "repetition_penalty": 1.05,
+        "use_cache": true
+      },
+      "family": "redactor",
+      "generation_config": {
+        "do_sample": true,
+        "repetition_penalty": 1.05,
+        "temperature": 0.7,
+        "top_k": 20,
+        "top_p": 0.8
+      },
+      "generation_config_sha256": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "pinned_sha256": null,
+      "policy_chain": [
+        "RepetitionPenaltyLogitsProcessor"
+      ],
+      "policy_chain_float_cumsum": 0,
+      "policy_status": "new",
+      "raw_chain": [
+        "RepetitionPenaltyLogitsProcessor",
+        "TemperatureLogitsWarper",
+        "TopKLogitsWarper",
+        "TopPLogitsWarper"
+      ],
+      "raw_chain_float_cumsum": 1,
+      "raw_config_samples_with_top_p": true,
+      "raw_eos_token_id": [
+        151645,
+        151643
+      ],
+      "raw_pad_token_id": 151643,
+      "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+      "site": "agent_wrapper.call_qwen",
+      "site_kwargs": {
+        "do_sample": false,
+        "num_beams": 1,
+        "use_cache": true
+      }
+    }
+  },
+  "generation_calls": 0,
+  "model_loads": 0,
+  "network_allowed": false,
+  "passed": true,
+  "tests": 3,
+  "torch": "2.5.1",
+  "transformers": "4.51.3"
+}

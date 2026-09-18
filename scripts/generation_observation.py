@@ -81,6 +81,7 @@ def observe(function):
                        time_to_first_token_seconds=u.get("time_to_first_token_seconds"),
                        complete_response=None if u.get("truncated") is None else not u["truncated"],
                        contract_valid=self._observed_contract_valid,
+                       contract_normalized=list(r.get("contract_normalized") or []),
                        accepted_semantic_output=accepted, output_item_count=len(items),
                        useful_accepted_item_count=len(items) if accepted and not kwargs.get("items_are_advisory") else 0,
                        useful_accepted_tokens=None, semantic_quality="unmeasured",

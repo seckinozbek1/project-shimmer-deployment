@@ -117,7 +117,11 @@ scaling remain unverified. See the
 bounded scheduling and explicit resident workers for ordinary Review. The
 earlier DAG adapter retains rolling-bus semantic ordering. The explicit local
 `report_optimized` topology adds bounded source-span extraction, sibling semantic
-waves, exact-comparison reason rendering and completion-aware telemetry. It is
+waves, exact-comparison reason rendering and completion-aware telemetry. Its
+PROCESSOR call is sent in the exact two-turn shape the tuned checkpoint was
+evaluated on (`config/compact_extraction_prompt.json`), with every indexed
+passage marked by its own reference id, and a cited reference is grounded by
+Python's placement of that passage in the span. It is
 experimental, with real-model quality and performance still unverified. See the
 [Report Recommendations implementation](docs/fix/REPORT_RECOMMENDATIONS_IMPLEMENTATION.md). Dense activation is
 the default; sparse activation retains the conservative policy. Neither option

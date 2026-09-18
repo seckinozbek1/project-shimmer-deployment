@@ -137,3 +137,90 @@ def merge(results, document_id):
                 partition_calls=[r.get("call_id") for r in results],
                 source_ownership=[entry for r in good for entry in r.get('source_ownership', [])],
                 missing_partitions=[i for i,r in enumerate(results) if r not in good])
+
+
+def _entry_field(entry, name, default=None):
+    if isinstance(entry, dict):
+        return entry.get(name, default)
+    return getattr(entry, name, default)
+
+
+def grounding(text, spans, entries):
+    """Which indexed passages lie inside which source span, decided by Python from
+    the reference index, never from the model or from prose.
+
+    Returns (citable, markers, supplied):
+      citable:  {alias: [ref ids of every indexed passage located inside that span,
+                 every copy of the document included]}
+      markers:  {alias: [(offset_in_span, ref_id), ...]} one marker per passage, the
+                operational copy's id preferred, at the passage's end
+      supplied: sorted ref ids that appear in a marker
+
+    The compact validator's grounding rule used to accept a ref only when its id was
+    written inside the span's own text, which the training spans carried inline and
+    no real document does (v5: 0 REF literals in the document, so every non-empty
+    refs array was refused). An entry is placed by its paragraph index in the same
+    paragraph split the index used (reference_builder.paragraph_ranges) and must
+    match that paragraph's first line; anything that does not fit is skipped, never
+    guessed.
+    """
+    from reference_builder import paragraph_ranges
+    ranges = paragraph_ranges(text)
+    citable = {wire_id(s): [] for s in spans}
+    passages = {}
+    for entry in entries or ():
+        location = _entry_field(entry, "location") or {}
+        index = location.get("paragraph") if isinstance(location, dict) else None
+        ref_id = _entry_field(entry, "ref_id")
+        if not isinstance(index, int) or isinstance(index, bool) or not (1 <= index <= len(ranges)):
+            continue
+        if not isinstance(ref_id, str) or not ref_id:
+            continue
+        start, end, paragraph = ranges[index - 1]
+        excerpt = str(_entry_field(entry, "text_excerpt") or "")
+        anchor = excerpt.splitlines()[0].strip() if excerpt.strip() else ""
+        if not anchor or not paragraph.startswith(anchor):
+            continue
+        span = next((s for s in spans if s.start <= start < s.end), None)
+        if span is None:
+            continue
+        alias = wire_id(span)
+        if ref_id not in citable[alias]:
+            citable[alias].append(ref_id)
+        offset = min(end, span.end) - span.start
+        passages.setdefault((alias, offset), []).append(entry)
+    markers = {alias: [] for alias in citable}
+    for (alias, offset), group in sorted(passages.items()):
+        preferred = sorted(group, key=lambda e: (_entry_field(e, "input_type") != "operational",
+                                                 str(_entry_field(e, "ref_id"))))[0]
+        markers[alias].append((offset, _entry_field(preferred, "ref_id")))
+    supplied = sorted({ref for group in markers.values() for _, ref in group})
+    return citable, markers, supplied
+
+
+def annotate(text, markers):
+    """`text` with ' (REF-NNNN)' at the end of each indexed passage, the way the
+    checkpoint's training spans carried their references. Prompt text only: the
+    source the pipeline reconstructs is the ledger's, never this."""
+    out = text
+    for offset, ref_id in sorted(markers, reverse=True):
+        at = min(max(int(offset), 0), len(out))
+        # The marker sits inside the sentence's final full stop, as in training.
+        if at > 0 and out[at - 1] == ".":
+            at -= 1
+        out = out[:at] + " (" + ref_id + ")" + out[at:]
+    return out
+
+
+def clip_markers(text, markers, *, tail, limit=400):
+    """The boundary-context clip the wide payload used (the previous span's last
+    `limit` characters, the next span's first `limit`), with the markers that fall
+    inside the window re-based to it; a marker outside the window is dropped."""
+    if tail:
+        window = text[-limit:]
+        shift = len(text) - len(window)
+        kept = [(offset - shift, ref) for offset, ref in markers if offset - shift >= 0]
+    else:
+        window = text[:limit]
+        kept = [(offset, ref) for offset, ref in markers if offset <= len(window)]
+    return window, kept

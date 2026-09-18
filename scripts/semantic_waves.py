@@ -202,8 +202,16 @@ async def execute_plans(plans):
                 clone = runtime.attach(replace(w))
                 clone._bounded_output_budget = 1536
                 import compact_contracts
-                compact_contracts.bind_producer(clone, owned, base.get("document_id", ""))
-                calls.append((clone, dict(k, work_payload=extraction.payload(base,owned,spans))))
+                # The validated prompt shape (config/compact_extraction_prompt.json):
+                # the contract as the system message, one canonical payload as the
+                # user message, indexed passages marked with their own ids. The
+                # work payload recorded for the call is that user object, so the
+                # call evidence names exactly the keys the model was sent.
+                system, user, citable, supplied = compact_contracts.validated_messages(
+                    base["document_text"], owned, spans, k.get("reference_index_excerpt") or [])
+                compact_contracts.bind_producer(clone, owned, base.get("document_id", ""),
+                                                citable=citable, messages=(system, user, supplied))
+                calls.append((clone, dict(k, work_payload=json.loads(user))))
         else:
             calls.append((w,k))
         groups.append((begin,len(calls),w.name,base.get("document_id", "")))

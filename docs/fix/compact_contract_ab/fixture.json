@@ -16,5 +16,10 @@
         ]
       }
     ]
+  },
+  "real_document": {
+    "note": "A document shaped like the one the pipeline reviews: several paragraphs, headings and separators, and NO inline REF-* or CLM-* id anywhere. Its references exist only in the reference index that the pipeline builds from it, one entry per paragraph, twice (a context copy and an operational copy), exactly as run 110990c1 (v5) indexed its result sheet. The compact validator used to accept a ref only when its id was written inside the span's text, which this document, like every real one, never provides.",
+    "doc": "sheet-fixture",
+    "source": "# Returned Batch Sheet, Review Copy\n\nBatch: BATCH-FIXTURE. Two entries returned for review. No identifiers are recorded on this sheet.\n\nTotal entry count declared: 2\nEntry count declared, first bench: 1\n\n---\n\n## Entry ENT-ALPHA\n\nItem identifier: ITEM-ALPHA\nReading: 12 units\nBench: first\n\n---\n\n## Entry ENT-BRAVO\n\nReading: 9 units\nBench: second\n"
   }
 }

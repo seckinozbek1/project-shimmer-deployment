@@ -296,3 +296,13 @@ def contract_self_check():
     if finding_pair(dict(paragraph=1,finding='MATCH'),[pairs[0]['record']]) is not None:
         raise RuntimeError('Auditor finding join guesses ownership')
     return True
+
+
+def record_unavailable(context, document_id, reason):
+    """The two coverage events prepare_context emits, for a document whose VERIFIER
+    call was never made (no PROCESSOR draft to verify): the analyzer's pairing
+    figures then say unavailable with the reason instead of saying nothing."""
+    telemetry.emit(context, 'auditor_pair_unavailable', document_id=document_id,
+        status='AUDITOR_PAIR_UNAVAILABLE', producer_item_id=None, producer_revision=None, reason=reason)
+    telemetry.emit(context, 'auditor_pair_coverage', document_id=document_id, producer_items=0,
+        pairs_constructed=0, unavailable_items=1, eligible_producer_items=0, classifier_calls=0, failed_pairs=0)

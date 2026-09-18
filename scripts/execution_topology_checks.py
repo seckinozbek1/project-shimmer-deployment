@@ -44,6 +44,9 @@ def reference_tree(source):
                 return None
             return self.generic_visit(node)
     tree = RemoveFinalTelemetry().visit(tree)
+    # v5 correction (EXTRACTION-B): the bounded extraction's whole-index reference
+    # list is an optimized-only helper; the reference path never calls it.
+    tree.body = [n for n in tree.body if not (isinstance(n, ast.FunctionDef) and n.name == "_doc_refs_all")]
     # Invert the named optimized-only adapters; retain the original pinned hashes.
     # The paired consumer is moved verbatim into a helper, then invoked in source
     # order. Reconstruct its original loop body to verify reference equivalence.
@@ -72,6 +75,16 @@ def reference_tree(source):
                     continue
                 body.append(x)
             loop.body=body
+            # v5 correction (EXTRACTION-B): under semantic_waves the PROCESSOR call is
+            # given the document's whole reference index for grounding; the reference
+            # path keeps its 30-entry excerpt, so the elif is an optimized-only
+            # adapter and the pinned hash stands.
+            inner=next(x for x in node.body if isinstance(x,ast.AsyncFunctionDef) and x.name=="_process_doc")
+            agents=next(x for x in inner.body if isinstance(x,ast.For) and ast.unparse(x.iter)=="PRODUCTION_AGENTS_PER_DOC")
+            for x in agents.body:
+                if isinstance(x,ast.If) and ast.unparse(x.test)=="agent_name == 'LEGAL_ANALYST' and provision_refs":
+                    assert len(x.orelse)==1 and isinstance(x.orelse[0],ast.If) and                         ast.unparse(x.orelse[0].test)=="agent_name == 'PROCESSOR' and semantic_waves.enabled()"
+                    x.orelse=x.orelse[0].orelse
         if node.name == "_paired_convention_review":
             helper=next(x for x in node.body if isinstance(x,ast.FunctionDef) and x.name=="consume_judgment")
             assert [a.arg for a in helper.args.args]==["plan_index","plan","unit","rule","checks","agent","source_rule_id","refs","r"]
@@ -437,6 +450,14 @@ class AdapterChecks(unittest.TestCase):
                   for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
         self.assertEqual(pinned["baseline_commit"], "804afa57537a7d80b8df9622fc884fc065b4a4ba")
         self.assertEqual(actual, pinned["function_ast_sha256"])
+        # A deliberate change to the reference path is never silent: it is recorded
+        # as an amendment (from the baseline hash to the pinned one, with the
+        # reason and the document) and the pin must agree with the record.
+        for amendment in pinned.get("reference_amendments", []):
+            self.assertTrue(amendment.get("reason") and amendment.get("document"))
+            for name, hashes in amendment["functions"].items():
+                self.assertEqual(hashes["to"], pinned["function_ast_sha256"][name], name)
+                self.assertNotEqual(hashes["from"], hashes["to"], name)
 
     def test_parser_independent_defaults(self):
         import agent_activation
