@@ -1,0 +1,33 @@
+{
+  "auditor896_receipts": 0,
+  "collected_evidence_members": 0,
+  "cost_estimates": {
+    "combined_estimate": 0.1485738285601139,
+    "infrastructure_estimate": 0.1485738285601139,
+    "invoice": false,
+    "model_api_estimate": 0,
+    "unavailable": "Missing cost categories remain unknown; record explicit zero when applicable"
+  },
+  "evidence_verified": true,
+  "exactly_one_instance": true,
+  "failure_kind": "controller defect: the detached launcher pre-creates <remote>/phases, so the fresh-directory precondition test ! -e <remote> cannot pass",
+  "failure_phase": "fresh_directory",
+  "full_run_retried": false,
+  "inventory_empty": true,
+  "maximum_one_workload_invocation": true,
+  "multi_round_executed": false,
+  "pipeline_completion": null,
+  "pipeline_started": false,
+  "producer168_receipts": 0,
+  "protected_data_accessed": false,
+  "quality_claim": null,
+  "remote_result": null,
+  "semantic_call_receipts": 0,
+  "status": "ORDINARY_FINAL_CLOUD_RUN_FAILED",
+  "subsequent_roadmap_work_started": false,
+  "temporary_ssh_removed": true,
+  "terminal_error": null,
+  "transport_mechanism_outcome": "every detached phase completed on its first poll; connection ok throughout; zero unreachable polls",
+  "within_hard_ceiling": true,
+  "written_by": "hand from the bundle receipts: the analyzer needs the remote copy of the manifest, which was never transferred because the failure preceded the support transfer"
+}
