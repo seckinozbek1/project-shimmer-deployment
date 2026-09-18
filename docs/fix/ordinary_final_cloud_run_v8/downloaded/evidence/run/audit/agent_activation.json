@@ -1,0 +1,1050 @@
+{
+  "schema_version": 1,
+  "run_id": "a66496726e454cfab8a6358ecfbce8be",
+  "activation_mode": "dense",
+  "policy": "conservative_reference_with_existing_phase_gates",
+  "actual_call_definition": "wrapper dispatch attempted; successful generation is a separate cost/backend outcome",
+  "agents": [
+    "PROCESSOR",
+    "VERIFIER",
+    "FACT_CHECKER",
+    "PRACTICE_AUDITOR",
+    "LEGAL_ANALYST",
+    "STYLE_GUARDIAN",
+    "ARCHIVIST",
+    "INST_FINDER",
+    "CITATION_RESOLVER",
+    "SPEECH_ACT_TAGGER",
+    "REDACTOR",
+    "AMENDMENT_DRAFTER",
+    "EDITOR_CLERK",
+    "EDITOR_HEAD_OF_UNIT",
+    "EDITOR_HEAD_OF_SECTION",
+    "EDITOR_HEAD_OF_DEPARTMENT",
+    "EDITOR_DEPUTY_DG",
+    "EDITOR_DG"
+  ],
+  "decisions": [
+    {
+      "decision_id": 1,
+      "agent": "ARCHIVIST",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "corpus_level_analysis",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "structural_inventory_legal_wide_practice_bus",
+      "doc_id": "",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "a03226544e89428ca78c23e48d1e1406",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 29.452197310999964
+    },
+    {
+      "decision_id": 2,
+      "agent": "INST_FINDER",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "corpus_level_analysis",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "institution_registry_audit_bus_context",
+      "doc_id": "",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "4a6f5ccf2cf948aea04d11cd6541197f",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 6.817421545999878
+    },
+    {
+      "decision_id": 3,
+      "agent": "CITATION_RESOLVER",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "corpus_level_analysis",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "citation_graph_audit_bus_context",
+      "doc_id": "",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "86f3e8d4a913413785395bd046e7339b",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 19.88672567200001
+    },
+    {
+      "decision_id": 4,
+      "agent": "PROCESSOR",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "unspecified",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "draft_auditors_and_per_agent_report",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "0ce1b0270c8d458bbcdee44407e94e5a",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 6.6722550869999395
+    },
+    {
+      "decision_id": 5,
+      "agent": "PROCESSOR",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "unspecified",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "draft_auditors_and_per_agent_report",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "1931644f91f641eb968aaa39d5b41e5d",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 6.797059283000181
+    },
+    {
+      "decision_id": 6,
+      "agent": "PROCESSOR",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "unspecified",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "draft_auditors_and_per_agent_report",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "5d04d10daf5c49f3ad883218eac6929b",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 7.002567674000147
+    },
+    {
+      "decision_id": 7,
+      "agent": "PROCESSOR",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "unspecified",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "draft_auditors_and_per_agent_report",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "f0b14c42ecc7432b8d2023218699ed38",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 3.7972764329997517
+    },
+    {
+      "decision_id": 8,
+      "agent": "SPEECH_ACT_TAGGER",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "per_document_analysis",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "per_agent_report_bus_context",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "06d58232cbe144da8f8a1cc4549b6fb2",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 115.63611433400001
+    },
+    {
+      "decision_id": 9,
+      "agent": "LEGAL_ANALYST",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "reference_scheduled",
+      "evidence": {
+        "task": "per_document_analysis",
+        "expertise_exclusion": "not_established"
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "3",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "legal_findings_amendments_report_bus",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "f9fed1c8f08c496588300b6c13db8e56",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 18.740118812999754
+    },
+    {
+      "decision_id": 10,
+      "agent": "LEGAL_ANALYST",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "local_finding_deepening",
+      "evidence": {
+        "finding_index": 0,
+        "item_id": "LEGAL_ANALYST:finding:REF-0072:0"
+      },
+      "trigger_source": "legal_pass_one",
+      "decision_kind": "structural",
+      "source_phase": "3-4",
+      "refire_count": 1,
+      "refire_limit": 6,
+      "downstream_consumer": "revised_legal_finding_and_bus",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "e11806f807f04785b1df2512c11ea873",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 16.526424344000134
+    },
+    {
+      "decision_id": 11,
+      "agent": "VERIFIER",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "source_and_draft_audit",
+      "evidence": {
+        "processor_draft_available": true,
+        "processor_draft_truncated": false,
+        "processor_draft_partial": false,
+        "processor_missing_partitions": 0
+      },
+      "trigger_source": "operational_document",
+      "decision_kind": "structural",
+      "source_phase": "5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "amendments_audit_synthesis_report_bus",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "d271fee0504c4ae0a592b52495c4f815",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 113.06623410100019
+    },
+    {
+      "decision_id": 12,
+      "agent": "FACT_CHECKER",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "source_and_draft_audit",
+      "evidence": {
+        "processor_draft_available": true,
+        "processor_draft_truncated": false,
+        "processor_draft_partial": false,
+        "processor_missing_partitions": 0
+      },
+      "trigger_source": "operational_document",
+      "decision_kind": "structural",
+      "source_phase": "5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "amendments_audit_synthesis_web_references_report_bus",
+      "doc_id": "result_sheet",
+      "state": "execution_failure",
+      "actual_call": true,
+      "call_id": "79425c1983174ce1b86bbdfc02e80395",
+      "outcome": "contract_violation",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 55.80019551999976
+    },
+    {
+      "decision_id": 13,
+      "agent": "STYLE_GUARDIAN",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "different_assigned_plan_consumer",
+      "evidence": {
+        "selected_agent": "PRACTICE_AUDITOR",
+        "rule_id": "CONV-001",
+        "unit_id": "u01-result-res-alder",
+        "plan_index": 0
+      },
+      "trigger_source": "convention_assignment",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 14,
+      "agent": "PRACTICE_AUDITOR",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "exact_comparison_reason_rendered",
+      "evidence": {
+        "unit_id": "u01-result-res-alder",
+        "rule_id": "CONV-001",
+        "plan_index": 0
+      },
+      "trigger_source": "paired_plan",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "typed_finding_and_deterministic_reason",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 15,
+      "agent": "STYLE_GUARDIAN",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "different_assigned_plan_consumer",
+      "evidence": {
+        "selected_agent": "PRACTICE_AUDITOR",
+        "rule_id": "CONV-001",
+        "unit_id": "u01-result-res-alder",
+        "plan_index": 1
+      },
+      "trigger_source": "convention_assignment",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 16,
+      "agent": "PRACTICE_AUDITOR",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "exact_comparison_reason_rendered",
+      "evidence": {
+        "unit_id": "u01-result-res-alder",
+        "rule_id": "CONV-001",
+        "plan_index": 1
+      },
+      "trigger_source": "paired_plan",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "typed_finding_and_deterministic_reason",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 17,
+      "agent": "STYLE_GUARDIAN",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "different_assigned_plan_consumer",
+      "evidence": {
+        "selected_agent": "PRACTICE_AUDITOR",
+        "rule_id": "CONV-001",
+        "unit_id": "u02-result-res-birch",
+        "plan_index": 2
+      },
+      "trigger_source": "convention_assignment",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 18,
+      "agent": "PRACTICE_AUDITOR",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "exact_comparison_reason_rendered",
+      "evidence": {
+        "unit_id": "u02-result-res-birch",
+        "rule_id": "CONV-001",
+        "plan_index": 2
+      },
+      "trigger_source": "paired_plan",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "typed_finding_and_deterministic_reason",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 19,
+      "agent": "STYLE_GUARDIAN",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "different_assigned_plan_consumer",
+      "evidence": {
+        "selected_agent": "PRACTICE_AUDITOR",
+        "rule_id": "CONV-001",
+        "unit_id": "u02-result-res-birch",
+        "plan_index": 3
+      },
+      "trigger_source": "convention_assignment",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 20,
+      "agent": "PRACTICE_AUDITOR",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "exact_comparison_reason_rendered",
+      "evidence": {
+        "unit_id": "u02-result-res-birch",
+        "rule_id": "CONV-001",
+        "plan_index": 3
+      },
+      "trigger_source": "paired_plan",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "typed_finding_and_deterministic_reason",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 21,
+      "agent": "STYLE_GUARDIAN",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "different_assigned_plan_consumer",
+      "evidence": {
+        "selected_agent": "PRACTICE_AUDITOR",
+        "rule_id": "CONV-001",
+        "unit_id": "u05-result-res-elder",
+        "plan_index": 4
+      },
+      "trigger_source": "convention_assignment",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 22,
+      "agent": "PRACTICE_AUDITOR",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "exact_comparison_reason_rendered",
+      "evidence": {
+        "unit_id": "u05-result-res-elder",
+        "rule_id": "CONV-001",
+        "plan_index": 4
+      },
+      "trigger_source": "paired_plan",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "typed_finding_and_deterministic_reason",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 23,
+      "agent": "STYLE_GUARDIAN",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "different_assigned_plan_consumer",
+      "evidence": {
+        "selected_agent": "PRACTICE_AUDITOR",
+        "rule_id": "CONV-001",
+        "unit_id": "u05-result-res-elder",
+        "plan_index": 5
+      },
+      "trigger_source": "convention_assignment",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 24,
+      "agent": "PRACTICE_AUDITOR",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "exact_comparison_reason_rendered",
+      "evidence": {
+        "unit_id": "u05-result-res-elder",
+        "rule_id": "CONV-001",
+        "plan_index": 5
+      },
+      "trigger_source": "paired_plan",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "typed_finding_and_deterministic_reason",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 25,
+      "agent": "STYLE_GUARDIAN",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "different_assigned_plan_consumer",
+      "evidence": {
+        "selected_agent": "PRACTICE_AUDITOR",
+        "rule_id": "CONV-002",
+        "unit_id": "u06-result-res-firth",
+        "plan_index": 6
+      },
+      "trigger_source": "convention_assignment",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "bus_and_phase_consumer",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 26,
+      "agent": "PRACTICE_AUDITOR",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "declared_absence_computed",
+      "evidence": {
+        "unit_id": "u06-result-res-firth",
+        "rule_id": "CONV-002",
+        "plan_index": 6
+      },
+      "trigger_source": "paired_plan",
+      "decision_kind": "structural",
+      "source_phase": "5.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "computed_finding",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 27,
+      "agent": "AMENDMENT_DRAFTER",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "polish_option_disabled",
+      "evidence": {
+        "amendment_polish": false
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "6",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "amendment_template",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 28,
+      "agent": "EDITOR_CLERK",
+      "eligible": true,
+      "activated": true,
+      "activation_mode": "dense",
+      "reason": "editorial_entry",
+      "evidence": {
+        "round": 0,
+        "trigger": null
+      },
+      "trigger_source": "readable_master",
+      "decision_kind": "structural",
+      "source_phase": "6.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "advisory_board_and_deliverable",
+      "doc_id": "result_sheet",
+      "state": "completed",
+      "actual_call": true,
+      "call_id": "4c051a9d14fc4168937a912229128294",
+      "outcome": "accepted",
+      "truncated": false,
+      "recovered": false,
+      "elapsed_seconds": 25.969216939000034
+    },
+    {
+      "decision_id": 29,
+      "agent": "EDITOR_HEAD_OF_UNIT",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "no_escalation_trigger",
+      "evidence": {
+        "rounds": 0,
+        "max_rounds": 5
+      },
+      "trigger_source": "EDITOR_CLERK",
+      "decision_kind": "escalation",
+      "source_phase": "6.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "advisory_board",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 30,
+      "agent": "EDITOR_HEAD_OF_SECTION",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "no_escalation_trigger",
+      "evidence": {
+        "rounds": 0,
+        "max_rounds": 5
+      },
+      "trigger_source": "EDITOR_CLERK",
+      "decision_kind": "escalation",
+      "source_phase": "6.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "advisory_board",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 31,
+      "agent": "EDITOR_HEAD_OF_DEPARTMENT",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "no_escalation_trigger",
+      "evidence": {
+        "rounds": 0,
+        "max_rounds": 5
+      },
+      "trigger_source": "EDITOR_CLERK",
+      "decision_kind": "escalation",
+      "source_phase": "6.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "advisory_board",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 32,
+      "agent": "EDITOR_DEPUTY_DG",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "no_escalation_trigger",
+      "evidence": {
+        "rounds": 0,
+        "max_rounds": 5
+      },
+      "trigger_source": "EDITOR_CLERK",
+      "decision_kind": "escalation",
+      "source_phase": "6.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "advisory_board",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 33,
+      "agent": "EDITOR_DG",
+      "eligible": true,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "no_escalation_trigger",
+      "evidence": {
+        "rounds": 0,
+        "max_rounds": 5
+      },
+      "trigger_source": "EDITOR_CLERK",
+      "decision_kind": "escalation",
+      "source_phase": "6.5",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "advisory_board",
+      "doc_id": "result_sheet",
+      "state": "eligible_inactive",
+      "actual_call": false,
+      "call_id": null
+    },
+    {
+      "decision_id": 34,
+      "agent": "REDACTOR",
+      "eligible": false,
+      "activated": false,
+      "activation_mode": "dense",
+      "reason": "sensitivity_layer_inactive",
+      "evidence": {
+        "layer_active": false
+      },
+      "trigger_source": "phase_schedule",
+      "decision_kind": "structural",
+      "source_phase": "9",
+      "refire_count": 0,
+      "refire_limit": 0,
+      "downstream_consumer": "privacy_scrub",
+      "doc_id": "",
+      "state": "ineligible",
+      "actual_call": false,
+      "call_id": null
+    }
+  ],
+  "agent_states": [
+    {
+      "agent": "PROCESSOR",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 4,
+      "decision_ids": [
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "agent": "VERIFIER",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        11
+      ]
+    },
+    {
+      "agent": "FACT_CHECKER",
+      "state": "execution_failure",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        12
+      ]
+    },
+    {
+      "agent": "PRACTICE_AUDITOR",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        14,
+        16,
+        18,
+        20,
+        22,
+        24,
+        26
+      ]
+    },
+    {
+      "agent": "LEGAL_ANALYST",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 2,
+      "decision_ids": [
+        9,
+        10
+      ]
+    },
+    {
+      "agent": "STYLE_GUARDIAN",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        13,
+        15,
+        17,
+        19,
+        21,
+        23,
+        25
+      ]
+    },
+    {
+      "agent": "ARCHIVIST",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        1
+      ]
+    },
+    {
+      "agent": "INST_FINDER",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        2
+      ]
+    },
+    {
+      "agent": "CITATION_RESOLVER",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        3
+      ]
+    },
+    {
+      "agent": "SPEECH_ACT_TAGGER",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        8
+      ]
+    },
+    {
+      "agent": "REDACTOR",
+      "state": "ineligible",
+      "eligible": false,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        34
+      ]
+    },
+    {
+      "agent": "AMENDMENT_DRAFTER",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        27
+      ]
+    },
+    {
+      "agent": "EDITOR_CLERK",
+      "state": "completed",
+      "eligible": true,
+      "activated": true,
+      "actual_calls": 1,
+      "decision_ids": [
+        28
+      ]
+    },
+    {
+      "agent": "EDITOR_HEAD_OF_UNIT",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        29
+      ]
+    },
+    {
+      "agent": "EDITOR_HEAD_OF_SECTION",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        30
+      ]
+    },
+    {
+      "agent": "EDITOR_HEAD_OF_DEPARTMENT",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        31
+      ]
+    },
+    {
+      "agent": "EDITOR_DEPUTY_DG",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        32
+      ]
+    },
+    {
+      "agent": "EDITOR_DG",
+      "state": "eligible_inactive",
+      "eligible": true,
+      "activated": false,
+      "actual_calls": 0,
+      "decision_ids": [
+        33
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "action": "one-ordinary-final-cloud-run",
+  "active_start_epoch": 1789751371.6856077,
+  "authorization": "Explicit operator approval in conversation for this manifest and scope",
+  "automatic_full_run_retry": false,
+  "controller_sha256": "7562dad360b6ca752a2497b769ebc33e744487492ca80a1f12812f0eed60ec51",
+  "execution_manifest_sha256": "8c5de3eaf7f1145d154c352f73ac9343716e63b5e697ae007cfab8f14c6af3d6",
+  "hard_ceiling_usd": 7,
+  "hourly_rate": 1.29,
+  "instance_id": "6c6a17998fbd42ffa80449c0957c6048",
+  "instance_type": "gpu_1x_a10",
+  "maximum_instances": 1,
+  "maximum_runs": 1,
+  "multi_round": false,
+  "operator_authorized": true,
+  "preparation_commit": "a687b5637c7db7f7b7d841a57daab9037911b42a",
+  "protected_data": false,
+  "provider": "Lambda",
+  "region": "us-east-1",
+  "seal_sha256": "5ba3c0b1cffebc581c9bd6a10581caf3613da5a693961402afa3e340790ee8c3",
+  "soft_budget_usd": 5,
+  "source_commit": "a687b5637c7db7f7b7d841a57daab9037911b42a"
+}

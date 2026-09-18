@@ -1,0 +1,201 @@
+{
+  "schema": "oge_graph/v1",
+  "tier": 1,
+  "scope": "default",
+  "sensitive": false,
+  "generated_at": "2026-09-18T18:00:59.619537+00:00",
+  "nodes": [
+    {
+      "type": "Document",
+      "id": "analyte_reference_ranges.md",
+      "date": null,
+      "date_source": "unresolved",
+      "date_confidence": "unresolved",
+      "title": null,
+      "stub": false
+    },
+    {
+      "type": "Document",
+      "id": "result_sheet.md",
+      "date": null,
+      "date_source": "unresolved",
+      "date_confidence": "unresolved",
+      "title": null,
+      "stub": false
+    },
+    {
+      "type": "Convention",
+      "id": "CONV-001",
+      "category": "conv-l01",
+      "rule": "The measured value stated for a result must fall inside the reference range recorded for its test in Section One of the reference corpus. A measured value above the upper bound or below the lower bound of that reference range is an irregularity. State the measured value, its unit, and the bound it falls outside.",
+      "source_file": "lab_conventions.md",
+      "source_location": "line 13",
+      "severity": "required",
+      "action": "flag"
+    },
+    {
+      "type": "Convention",
+      "id": "CONV-002",
+      "category": "conv-l02",
+      "rule": "Every result must state its sample identifier, its test, its measured value and its analysing laboratory. A missing field is an irregularity. State which field is absent from which result.",
+      "source_file": "lab_conventions.md",
+      "source_location": "line 20",
+      "severity": "required",
+      "action": "flag"
+    },
+    {
+      "type": "Convention",
+      "id": "CONV-003",
+      "category": "conv-l03",
+      "rule": "The declared result counts for each laboratory must sum to the declared total result count for the sheet. Where the stated total does not follow from the declared counts, record the discrepancy and state all the figures.",
+      "source_file": "lab_conventions.md",
+      "source_location": "line 25",
+      "severity": "required",
+      "action": "flag"
+    },
+    {
+      "type": "Convention",
+      "id": "CONV-004",
+      "category": "conv-l04",
+      "rule": "Every finding must cite one convention and at least one reference into the context corpus. A finding that identifies an irregularity must state the specific figures that conflict, the result or sheet they belong to, and the reference range or rule they conflict with. Vague findings such as \"the values appear unusual\" are not acceptable.",
+      "source_file": "lab_conventions.md",
+      "source_location": "line 31",
+      "severity": "required",
+      "action": "flag"
+    },
+    {
+      "type": "Convention",
+      "id": "CONV-005",
+      "category": "conv-l05",
+      "rule": "Findings record what is inconsistent with the reference data, never what it means for a patient. Do not write that a result indicates a condition, a severity or a prognosis. A value outside a reference interval is a result to look at, and distinguishing a real abnormality from a sampling or transcription error is the reporting clinician's task, not the reviewer's.",
+      "source_file": "lab_conventions.md",
+      "source_location": "line 38",
+      "severity": "required",
+      "action": "flag"
+    },
+    {
+      "type": "CitationForm",
+      "id": "legal section",
+      "pattern": "\\b(?:Article|Section|Chapter|Clause|Annex|Protocol)\\s+[A-Z0-9]+(?:\\.[A-Z0-9]+)*\\b",
+      "sample_count": 5,
+      "examples": []
+    },
+    {
+      "type": "SpeechAct",
+      "id": "declare",
+      "pattern": "\\b(declares?|proclaims?|announces?)\\b",
+      "evidence_count": 1,
+      "examples": [
+        "declares"
+      ]
+    },
+    {
+      "type": "SpeechAct",
+      "id": "note",
+      "pattern": "\\b(notes?|observes?|takes note of)\\b",
+      "evidence_count": 1,
+      "examples": [
+        "note"
+      ]
+    },
+    {
+      "type": "Provision",
+      "id": "result_sheet::REF-0007",
+      "document_id": "result_sheet",
+      "ref_id": "REF-0007",
+      "finding_type": "factual",
+      "action": "flag",
+      "severity": "required",
+      "convention_ref": "CONV-001",
+      "context_refs": [],
+      "original_text": "## Result RES-ELDER\n\nSample identifier: SPEC-ELDER\nTest: Total bilirubin\nMeasured value: 24 umol/L\nAnalysing laboratory: Eastfield\n\n---",
+      "proposed_text": null,
+      "comment": "The computed value is 24.0 umol/L, above the reference bound of 17.0 umol/L. measured value against the range against Total bilirubin in the reference corpus gives 24.0 umol/L against a stated range of 1.7 to 17.0. Computed in code from the figures in this unit, not judged by a model. Grounded in CONV-001 (CONV-L01) at REF-0007.",
+      "stub": false,
+      "provenance": {
+        "time": "2026-09-18T18:00:59.618294+00:00",
+        "agent": null,
+        "run": "a66496726e454cfab8a6358ecfbce8be",
+        "type": "document"
+      },
+      "revision": 3
+    },
+    {
+      "type": "Provision",
+      "id": "result_sheet::REF-0070",
+      "document_id": "result_sheet",
+      "ref_id": "REF-0070",
+      "finding_type": "factual",
+      "action": "flag",
+      "severity": "required",
+      "convention_ref": "CONV-002",
+      "context_refs": [],
+      "original_text": "## Result RES-FIRTH\n\nTest: Albumin\nMeasured value: 42 g/L\nAnalysing laboratory: Eastfield",
+      "proposed_text": null,
+      "comment": "The computed value is 0 values against a stated 1 required. the rule declares sample identifier required and this unit does not carry it gives 0 values, while the document states 1 required. Computed in code from the figures in this unit, not judged by a model. Grounded in CONV-002 (CONV-L02) at REF-0070.",
+      "stub": false,
+      "provenance": {
+        "time": "2026-09-18T18:00:59.618294+00:00",
+        "agent": null,
+        "run": "a66496726e454cfab8a6358ecfbce8be",
+        "type": "document"
+      },
+      "revision": 1
+    },
+    {
+      "type": "Document",
+      "id": "result_sheet",
+      "stub": true,
+      "incomplete": true,
+      "note": "materialized from provision document_id (no document_dates filename match)"
+    }
+  ],
+  "edges": [
+    {
+      "type": "HAS_PROVISION",
+      "source_type": "Document",
+      "source": "result_sheet",
+      "target_type": "Provision",
+      "target": "result_sheet::REF-0007"
+    },
+    {
+      "type": "HAS_PROVISION",
+      "source_type": "Document",
+      "source": "result_sheet",
+      "target_type": "Provision",
+      "target": "result_sheet::REF-0070"
+    },
+    {
+      "type": "GOVERNED_BY",
+      "source_type": "Provision",
+      "source": "result_sheet::REF-0007",
+      "target_type": "Convention",
+      "target": "CONV-001"
+    },
+    {
+      "type": "GOVERNED_BY",
+      "source_type": "Provision",
+      "source": "result_sheet::REF-0070",
+      "target_type": "Convention",
+      "target": "CONV-002"
+    }
+  ],
+  "stats": {
+    "nodes_total": 13,
+    "nodes_by_type": {
+      "Document": 3,
+      "Convention": 5,
+      "CitationForm": 1,
+      "SpeechAct": 2,
+      "Provision": 2
+    },
+    "edges_total": 4,
+    "edges_by_type": {
+      "HAS_PROVISION": 2,
+      "GOVERNED_BY": 2
+    },
+    "stub_provisions": 0,
+    "stub_documents": 1,
+    "unmatched_convention_refs": 0
+  }
+}

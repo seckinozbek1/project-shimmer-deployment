@@ -1,0 +1,25 @@
+{
+  "undated": [
+    {
+      "filename": "analyte_reference_ranges.md",
+      "date_source": "unresolved"
+    },
+    {
+      "filename": "result_sheet.md",
+      "date_source": "unresolved"
+    }
+  ],
+  "excluded": [
+    {
+      "filename": "analyte_reference_ranges.md",
+      "date_source": "unresolved"
+    }
+  ],
+  "reviewed_anyway": [
+    {
+      "filename": "result_sheet.md",
+      "date_source": "unresolved"
+    }
+  ],
+  "note": "A document with no resolvable date fails the review cutoff and is not reviewed. Name it in input/context/_review_targets.json, or set cutoff_type to 'all' in config/review_scope.json. The date is never guessed from the network."
+}
