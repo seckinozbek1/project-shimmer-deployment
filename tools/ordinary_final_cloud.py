@@ -38,10 +38,18 @@ def save(name,value):write(BASE/name,value)
 # this directory, and completion is polled over fresh short connections until the
 # phase's own deadline. An unreachable poll is recorded and retried; it is never a
 # phase result. Remote liveness and connection health are two separate facts.
-PHASES='phases'
 FIRST_POLL=2
 POLL_INTERVAL=10
 PROGRESS_MARKER='---PROGRESS---'
+
+
+def phases_dir(remote):
+    """The phase bookkeeping directory: a SIBLING of the remote root, never inside it.
+
+    The controller's own fresh_directory phase requires the remote root to be absent.
+    Run v4 (2026-09-18) failed at that phase because the launcher created the root
+    two seconds earlier by keeping the phase files under it."""
+    return remote.rstrip('/')+'-phases'
 
 
 def detached_launch_command(remote,label,command):
@@ -53,7 +61,7 @@ def detached_launch_command(remote,label,command):
     which the child inherits across fork and exec, and the launcher does not return
     until the detached wrapper has written its started marker. A wrapper that never
     starts fails the launch itself, at once, instead of surfacing later as DEAD."""
-    base=remote+'/'+PHASES
+    base=phases_dir(remote)
     script,out,err,rc,pid,started=(base+'/'+label+ext for ext in ('.sh','.out','.err','.rc','.pid','.started'))
     encoded=base64.b64encode(command.encode('utf8')).decode('ascii')
     wrapper=('echo started > '+shlex.quote(started)+'; sh '+shlex.quote(script)+' > '+shlex.quote(out)
@@ -66,11 +74,13 @@ def detached_launch_command(remote,label,command):
 
 def detached_poll_command(remote,label,progress=None):
     """One short remote command reporting RC=<code>, RUNNING or DEAD, then an optional progress tail."""
-    base=remote+'/'+PHASES+'/'+label
+    base=phases_dir(remote)+'/'+label
     line=('if [ -f '+shlex.quote(base+'.rc')+' ]; then printf "RC=%s\\n" "$(cat '+shlex.quote(base+'.rc')+')"; '
           'elif kill -0 "$(cat '+shlex.quote(base+'.pid')+' 2>/dev/null)" 2>/dev/null; then echo RUNNING; else echo DEAD; fi')
     if progress:
-        line+='; echo '+PROGRESS_MARKER+'; tail -n 12 '+shlex.quote(progress)+' 2>/dev/null'
+        # The tail is informational: a progress file not yet written must not turn
+        # a successful status poll into an unreachable one.
+        line+='; echo '+PROGRESS_MARKER+'; tail -n 12 '+shlex.quote(progress)+' 2>/dev/null || true'
     return line
 
 
@@ -190,7 +200,7 @@ def execute():
             if kind=='completed':status['exit_code']=code
             save(label+'_status.json',status);save('phase_status.json',status)
             if kind in ('completed','dead'):break
-        base=REMOTE+'/'+PHASES+'/'+label
+        base=phases_dir(REMOTE)+'/'+label
         r=transport(label+'_collect',ssh+['cat '+shlex.quote(base+'.out')+' '+shlex.quote(base+'.err')],120,False,announce=False)
         (BASE/(label+'.log')).write_bytes(r.stdout+r.stderr)
         code=status['exit_code']

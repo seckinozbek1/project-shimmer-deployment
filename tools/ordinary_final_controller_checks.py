@@ -103,11 +103,22 @@ class FakeTransport:
 
     polls: label -> list of responses, each 'unreachable', 'RUNNING', 'DEAD' or an int exit code.
     A label with no scripted responses completes with exit code 0 at its first poll."""
-    def __init__(self, base, polls=None, outputs=None, progress=None):
+    def __init__(self, base, polls=None, outputs=None, progress=None, existing=()):
         self.base, self.polls = base, {k: list(v) for k, v in (polls or {}).items()}
         self.outputs = dict(outputs or {})
         self.progress = list(progress or [])
         self.started, self.polled, self.calls = [], [], []
+        # The remote filesystem as far as preconditions go: every directory a launch
+        # command creates is recorded, so a phase whose command requires a path to be
+        # absent answers from that record instead of an unconditional 0 (run v4).
+        self.created = set(existing)
+
+    def fresh_directory_result(self):
+        remote = controller.REMOTE
+        if any(p == remote or p.startswith(remote + '/') for p in self.created):
+            return 1
+        self.created.update({remote, remote + '/project'})
+        return 0
 
     def run(self, argv, capture_output=True, timeout=None):
         self.calls.append((list(argv), timeout))
@@ -127,13 +138,20 @@ class FakeTransport:
         if command == 'true':
             return done(0)
         if 'setsid nohup' in command:
-            label = re.search(r'phases/([A-Za-z0-9_]+)\.pid', command).group(1)
+            label = re.search(r'/([A-Za-z0-9_]+)\.pid', command).group(1)
             self.started.append(label)
+            for made in re.findall(r"mkdir -p (\S+)", command):
+                self.created.add(made.strip("'\""))
             return done(0, b'4242\n')
         if 'RUNNING' in command and '.rc' in command:
-            label = re.search(r'phases/([A-Za-z0-9_]+)\.rc', command).group(1)
+            label = re.search(r'/([A-Za-z0-9_]+)\.rc', command).group(1)
             script = self.polls.get(label)
-            response = script.pop(0) if script else 0
+            if script:
+                response = script.pop(0)
+            elif label == 'fresh_directory':
+                response = self.fresh_directory_result()
+            else:
+                response = 0
             self.polled.append((label, response))
             if response == 'unreachable':
                 return done(255)
@@ -141,8 +159,8 @@ class FakeTransport:
             if controller.PROGRESS_MARKER in command:
                 text += '\n' + controller.PROGRESS_MARKER + '\n' + '\n'.join(self.progress)
             return done(0, (text + '\n').encode())
-        if command.startswith('cat ') and '/phases/' in command:
-            label = re.search(r'phases/([A-Za-z0-9_]+)\.out', command).group(1)
+        if command.startswith('cat ') and '.out' in command:
+            label = re.search(r'/([A-Za-z0-9_]+)\.out', command).group(1)
             return done(0, self.outputs.get(label, b''))
         raise AssertionError('unexpected ssh command: ' + command[:80])
 
@@ -170,11 +188,11 @@ class ControllerChecks(unittest.TestCase):
         FakeProvider.state = None
         self.clock = FakeClock(self.base)
 
-    def execute(self, polls=None, outputs=None, progress=None):
+    def execute(self, polls=None, outputs=None, progress=None, existing=()):
         """Run the real controller against the fakes; return (transport, console, failure or None)."""
         outputs = dict(outputs or {})
         outputs.setdefault('evidence_hash', (hashlib.sha256(EVIDENCE).hexdigest() + '  collected_evidence.tar.gz\n').encode())
-        transport = FakeTransport(self.base, polls, outputs, progress)
+        transport = FakeTransport(self.base, polls, outputs, progress, existing)
         fake_subprocess = SimpleNamespace(run=transport.run, Popen=transport.popen, TimeoutExpired=subprocess.TimeoutExpired,
                                           CompletedProcess=subprocess.CompletedProcess, DEVNULL=subprocess.DEVNULL,
                                           DETACHED_PROCESS=8, CREATE_NEW_PROCESS_GROUP=512, CREATE_NO_WINDOW=0)
@@ -219,17 +237,21 @@ class ControllerChecks(unittest.TestCase):
         launch = controller.detached_launch_command('/home/ubuntu/x', 'install', command)
         encoded = re.search(r"printf %s '?([A-Za-z0-9+/=]+)'?", launch).group(1)
         self.assertEqual(base64.b64decode(encoded).decode(), command)  # the script is the exact command
-        for needle in ('setsid nohup sh -c', "trap '' HUP", 'phases/install.sh', 'phases/install.out', 'phases/install.err',
-                       'phases/install.rc', 'phases/install.pid', 'phases/install.started',
-                       'test -f /home/ubuntu/x/phases/install.started && cat /home/ubuntu/x/phases/install.pid'):
+        phases = controller.phases_dir('/home/ubuntu/x')
+        self.assertEqual(phases, '/home/ubuntu/x-phases')  # a sibling, never inside the remote root
+        for needle in ('setsid nohup sh -c', "trap '' HUP", phases + '/install.sh', phases + '/install.out', phases + '/install.err',
+                       phases + '/install.rc', phases + '/install.pid', phases + '/install.started',
+                       'test -f ' + phases + '/install.started && cat ' + phases + '/install.pid'):
             self.assertIn(needle, launch)
+        self.assertNotIn('/home/ubuntu/x/', launch)  # nothing under the remote root is named, so nothing there is created
         poll = controller.detached_poll_command('/home/ubuntu/x', 'install')
-        self.assertIn('phases/install.rc', poll)
+        self.assertIn(phases + '/install.rc', poll)
         self.assertIn('kill -0', poll)
         self.assertNotIn(controller.PROGRESS_MARKER, poll)
         poll = controller.detached_poll_command('/home/ubuntu/x', 'ordinary_workload', '/home/ubuntu/x/workload.stderr.log')
         self.assertIn(controller.PROGRESS_MARKER, poll)
         self.assertIn('tail -n 12', poll)
+        self.assertTrue(poll.endswith('|| true'))  # a missing progress file never fails the status poll
 
     def test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds(self):
         """The v3 failure: the install finishes on the instance while every connection carrying it dies."""
@@ -258,6 +280,29 @@ class ControllerChecks(unittest.TestCase):
         progress = (self.base / 'workload_progress.log').read_text(encoding='utf8').splitlines()
         self.assertEqual(progress, ['[progress] phase=3/9 status=running', '[local-progress] event=memory'])
         self.assertEqual(transport.started.count('ordinary_workload'), 1)
+        self.assert_torn_down()
+
+    def test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root(self):
+        """Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent."""
+        transport, console, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        self.assertEqual(json.loads((self.base / 'fresh_directory_timing.json').read_text())['returncode'], 0)
+        remote = controller.REMOTE
+        launched_under_remote = sorted(p for p in transport.created if (p == remote or p.startswith(remote + '/'))
+                                       and p not in {remote, remote + '/project'})
+        self.assertEqual(launched_under_remote, [], 'the launcher created a path under the remote root')
+        self.assertTrue(any(p == controller.phases_dir(remote) for p in transport.created))
+        self.assertIn('ordinary_workload', transport.started)
+        self.assert_torn_down()
+
+    def test_fresh_directory_refuses_a_present_remote_root_and_tears_down(self):
+        """The other polarity: a leftover remote root must refuse the run before any transfer."""
+        transport, console, failure = self.execute(existing=[controller.REMOTE])
+        self.assertEqual(failure['message'], 'Execution phase failed: fresh_directory')
+        self.assertEqual(json.loads((self.base / 'fresh_directory_timing.json').read_text())['returncode'], 1)
+        # Nothing was transferred: the refusal came before the support files moved.
+        self.assertFalse(any(a[0] == 'scp' and any('project.tar.gz' in x for x in a) for a, _ in transport.calls))
+        self.assertNotIn('ordinary_workload', transport.started)
         self.assert_torn_down()
 
     def test_remote_work_dying_is_a_failure_and_tears_down(self):
@@ -305,8 +350,9 @@ class ControllerChecks(unittest.TestCase):
         if linux is None:
             self.skipTest('no local Linux shell to exercise the remote commands')
         root = '/tmp/shimmer_detached_' + hashlib.sha256(str(self.base).encode()).hexdigest()[:12]
+        phases = controller.phases_dir(root)
         try:
-            linux('rm -rf ' + shlex_quote(root))
+            linux('rm -rf ' + shlex_quote(root) + ' ' + shlex_quote(phases))
             expected = {}
             for i in range(12):
                 label = 'probe%d' % i
@@ -328,17 +374,22 @@ class ControllerChecks(unittest.TestCase):
                         self.assertEqual(code, pending.pop(label), label)
                 time_module.sleep(0.5)
             self.assertEqual(pending, {}, 'phases not completed on the Linux shell')
-            rc, out = linux('cat ' + shlex_quote(root + '/phases/probe5.out') + ' ' + shlex_quote(root + '/phases/probe5.err'))
+            rc, out = linux('cat ' + shlex_quote(phases + '/probe5.out') + ' ' + shlex_quote(phases + '/probe5.err'))
             self.assertEqual(sorted(out.split()), ['err-5', 'out-5'])
-            linux('printf "[progress] one\\n[progress] two\\n" > ' + shlex_quote(root + '/progress.log'))
-            kind, code, progress = controller.poll_outcome(*linux(controller.detached_poll_command(root, 'probe1', root + '/progress.log'), raw=True))
+            # Nothing was created under the root itself: it stays absent for fresh_directory.
+            self.assertEqual(linux('test -e ' + shlex_quote(root) + ' && echo present || echo absent')[1].strip(), 'absent')
+            # A progress file that does not exist yet leaves the poll a successful status poll.
+            kind, code, progress = controller.poll_outcome(*linux(controller.detached_poll_command(root, 'probe1', phases + '/progress.log'), raw=True))
+            self.assertEqual((kind, code, progress), ('completed', 1, []))
+            linux('printf "[progress] one\\n[progress] two\\n" > ' + shlex_quote(phases + '/progress.log'))
+            kind, code, progress = controller.poll_outcome(*linux(controller.detached_poll_command(root, 'probe1', phases + '/progress.log'), raw=True))
             self.assertEqual((kind, code, progress), ('completed', 1, ['[progress] one', '[progress] two']))
-            pid = linux('cat ' + shlex_quote(root + '/phases/long.pid'))[1].strip()
+            pid = linux('cat ' + shlex_quote(phases + '/long.pid'))[1].strip()
             linux('kill -9 ' + pid + '; pkill -9 -f "sleep 300"; true')
             time_module.sleep(1)
             self.assertEqual(controller.poll_outcome(*linux(controller.detached_poll_command(root, 'long'), raw=True))[0], 'dead')
         finally:
-            linux('rm -rf ' + shlex_quote(root))
+            linux('rm -rf ' + shlex_quote(root) + ' ' + shlex_quote(phases))
 
 
 def shlex_quote(value):
@@ -378,10 +429,16 @@ def neutralized_poll_outcome(returncode, stdout):
     return _ORIGINAL_POLL_OUTCOME(returncode, stdout)
 
 
+def v4_phases_dir(remote):
+    """The run v4 layout: phase files under the remote root, which fresh_directory requires absent."""
+    return remote.rstrip('/') + '/phases'
+
+
 # (test, owner, attribute, mutant): the one mechanism each load-bearing test proves.
 NEUTRALIZATIONS = [
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_connection_loss_during_the_workload_keeps_polling_and_records_progress', controller, 'poll_outcome', neutralized_poll_outcome),
+    ('test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root', controller, 'phases_dir', v4_phases_dir),
 ]
 
 
