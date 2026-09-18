@@ -1,0 +1,28 @@
+{
+  "archive_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "default_revision_resolutions": [
+    {
+      "model_id": "BAAI/bge-m3",
+      "model_type": "xlm-roberta",
+      "ref_bytes": 40,
+      "revision": "5617a9f61b028005a4858fdac845db406aefb181"
+    },
+    {
+      "model_id": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "model_type": "llama",
+      "ref_bytes": 40,
+      "revision": "5c20803aa197416f43fb455e55c85178775320cb"
+    },
+    {
+      "model_id": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+      "model_type": "qwen2",
+      "ref_bytes": 40,
+      "revision": "bdd404162d94997f390efbfa660eb3f21cbbc81d"
+    }
+  ],
+  "manifest_sha256": "dbdfe93993dc84da86633257f3cc0f746f59e734ac74a56aa487148dac67bbe6",
+  "model_loads": 0,
+  "network_used": false,
+  "passed": true,
+  "verified_members": 122
+}
