@@ -17,6 +17,14 @@
       "neutralized": "ordinary_final_cloud.poll_outcome",
       "neutralized_fail": true,
       "restored_pass": true
+    },
+    {
+      "baseline_pass": true,
+      "check": "test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root",
+      "mutated_branch_invocations": 18,
+      "neutralized": "ordinary_final_cloud.phases_dir",
+      "neutralized_fail": true,
+      "restored_pass": true
     }
   ],
   "errors": 0,
@@ -26,5 +34,5 @@
   "passed": true,
   "provider_mocked": true,
   "ssh_mocked": true,
-  "tests": 9
+  "tests": 11
 }
