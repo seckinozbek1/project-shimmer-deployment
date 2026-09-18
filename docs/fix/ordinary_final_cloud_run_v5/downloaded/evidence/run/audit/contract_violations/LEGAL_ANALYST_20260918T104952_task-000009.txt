@@ -1,0 +1,8 @@
+# Contract violation raw output
+# agent: LEGAL_ANALYST
+# timestamp: 2026-09-18T10:49:52.069528+00:00
+# missing_fields: ['items[0].confidence']
+# raw_text_bytes: 322
+# sensitive: False
+# ---
+{"agent": "LEGAL_ANALYST", "doc_id": "result_sheet", "items": [{"claim_id": "CONV-002", "confident": "CONFIDENT", "kind": "finding", "ref": "REF-0072", "reasoning": "The result sheet is missing the analysing laboratory for the result RES-ALDER, which violates CONV-002.", "ref_ids": ["REF-0072"], "verdict": "irregular"}]}

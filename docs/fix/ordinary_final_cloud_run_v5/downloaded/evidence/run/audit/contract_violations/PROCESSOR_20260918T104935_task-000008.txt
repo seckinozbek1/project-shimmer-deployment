@@ -1,0 +1,8 @@
+# Contract violation raw output
+# agent: PROCESSOR
+# timestamp: 2026-09-18T10:49:35.875718+00:00
+# missing_fields: ['Ungrounded extraction evidence']
+# raw_text_bytes: 417
+# sensitive: False
+# ---
+{"items":[{"claims":[],"questions":["Test not specified for RES-DAMSON"],"refs":["REF-0032"],"span":"s2d3","status":"extracted","uncertainty":[]},{"claims":[],"questions":["Test not specified for RES-ELDER"],"refs":["REF-0035"],"span":"s35d","status":"extracted","uncertainty":[]},{"claims":[],"questions":["Test not specified for RES-FIRTH"],"refs":["REF-0037"],"span":"s3e6","status":"extracted","uncertainty":[]}]}

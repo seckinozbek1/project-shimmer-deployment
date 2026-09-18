@@ -1,0 +1,8 @@
+# Contract violation raw output
+# agent: EDITOR_CLERK
+# timestamp: 2026-09-18T10:53:08.228652+00:00
+# missing_fields: ['items[0].confidence']
+# raw_text_bytes: 368
+# sensitive: False
+# ---
+{"agent": "EDITOR_CLERK", "doc_id": "result_sheet", "items": [{"confident": true, "kind": "editorial_observation", "rationale": "Each finding should cite one convention and at least one reference into the context corpus. The findings here do not provide references, which violates CONV-004.", "ref": "REF-0007", "ref_ids": ["REF-0007"], "verdict": "serious_concern"}]}

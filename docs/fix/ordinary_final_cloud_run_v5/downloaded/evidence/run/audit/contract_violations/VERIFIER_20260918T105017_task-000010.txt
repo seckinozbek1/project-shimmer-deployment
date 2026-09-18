@@ -1,0 +1,35 @@
+# Contract violation raw output
+# agent: VERIFIER
+# timestamp: 2026-09-18T10:50:17.181245+00:00
+# missing_fields: ['items[0].paragraph', 'items[0].finding', 'items[0].severity', 'items[0].reasoning']
+# raw_text_bytes: 1331
+# sensitive: False
+# ---
+```json
+{
+  "agent": "VERIFIER",
+  "doc_id": "result_sheet.md",
+  "items": [
+    {
+      "ref": "REF-0022",
+      "kind": "finding",
+      "confidence": "CONFIDENT",
+      "relation": "sum_mismatch",
+      "record_verdict": "irregular",
+      "value_a": 99,
+      "unit_a": "mmol/L",
+      "value_b": null,
+      "unit_b": null,
+      "source_refs": ["REF-0022"],
+      "explanation": "The declared total result count for the sheet does not match the sum of individual result counts declared for Northgate and Eastfield laboratories.",
+      "field_label": "Total result count declared",
+      "delta": null,
+      "band_distance_change": null,
+      "provenance": null,
+      "quote": ""
+    }
+  ]
+}
+```
+
+Note: The "value_b" and "unit_b" fields are left as null because the provided information does not specify a figure or unit for comparison in the source document. The "delta" and "band_distance_change" fields are omitted as there is no single band applicable to this comparison. The "provenance" field is left unset as the record does not mention the pipeline minting this record from figures it read itself. The "quote" field is not included because the relation is not an absence claim. The "severity" and "reasoning" fields are not provided in the input and would need to be determined based on the context of the finding.

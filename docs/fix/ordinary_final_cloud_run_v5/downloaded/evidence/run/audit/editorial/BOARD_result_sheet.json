@@ -1,0 +1,12 @@
+{
+  "state": "FAILED",
+  "rounds": 0,
+  "ranks_run": [],
+  "terminal_cap_reached": false,
+  "failed": {
+    "rank": "EDITOR_CLERK",
+    "reason": "contract_violation",
+    "raw_output_path": "/home/ubuntu/shimmer-ordinary-final/evidence/run/audit/editorial/EDITOR_CLERK_result_sheet.json"
+  },
+  "consolidated": []
+}

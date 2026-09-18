@@ -1,0 +1,8 @@
+# Contract violation raw output
+# agent: ARCHIVIST
+# timestamp: 2026-09-18T10:47:20.620113+00:00
+# missing_fields: ['items[0].confidence']
+# raw_text_bytes: 384
+# sensitive: False
+# ---
+{"agent": "ARCHIVIST", "doc_id": "result_sheet.md", "items": [{"confident": "CONFIDENT", "document_count": 2, "document_names": ["analyte_reference_ranges.md", "result_sheet.md"], "element": "reference_interval", "description": "The range within which the central 95 percent of a healthy reference population falls.", "ref": "REF-0005", "ref_ids": ["REF-0005"], "kind": "inventory"}]}

@@ -1,0 +1,8 @@
+# Contract violation raw output
+# agent: PROCESSOR
+# timestamp: 2026-09-18T10:49:18.472834+00:00
+# missing_fields: ['Exact compact extraction fields required']
+# raw_text_bytes: 389
+# sensitive: False
+# ---
+{"items":[{"claims":[],"questions":["Sample identifier missing for RES-DAMSON"],"refs":[],"span":"s0","status":"extracted"},{"claims":[],"questions":[],"refs":[],"span":"s14c","status":"extracted"},{"claims":[],"questions":[],"refs":[],"span":"s1cd","status":"extracted"},{"claims":[],"questions":["Sample identifier missing for RES-DAMSON"],"refs":[],"span":"s251","status":"extracted"}]}

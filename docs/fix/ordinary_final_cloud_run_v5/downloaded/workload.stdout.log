@@ -1,0 +1,1 @@
+[ontology_gnn] self-supervised reconstruction fit, no Tier-2 signal yet (not a trained relevance model): 12/12 node(s) updated this run, reconstruction_loss=0.117711, weight_movement=0.000247, device=cuda -> gnn_state.json
