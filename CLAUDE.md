@@ -423,10 +423,36 @@ processing swarm governed by an append-only constitution.
   key's first token, so the parser holds whether the origin is the adapter or value priming.
   Never widen the alias list from a hunch: an alias is a measured model habit, declared.
 - VERIFIER-A: the typed-record worked example is built from the agent's own `required` list
-  (`_record_example_required`), so it is contract-complete; and a document with no accepted
-  PROCESSOR draft records VERIFIER as `not_called` (`processor_draft_unavailable`) and its
-  advisory pairing as unavailable (`auditor_pairs.record_unavailable`) instead of asking
-  VERIFIER to verify nothing. FACT_CHECKER keeps its call. Check 265 holds both.
+  (`_record_example_required`) with the contract's DECLARED values where it enumerates them
+  (FACT_CHECKER's verdict CONFIRMED, VERIFIER's finding MATCH; `_declared_values`, never a
+  sentence about a value), and the section names the agent's own verdict-bearing field
+  (`_own_verdict_field`: `verdict`, else `finding`; VERIFIER has no `verdict`). A document with
+  no accepted PROCESSOR items records VERIFIER as `not_called` (`processor_draft_unavailable`)
+  and its advisory pairing as unavailable (`auditor_pairs.record_unavailable`); a
+  partition-merged delivery with partitions missing reaches both auditors as a PARTIAL draft
+  (`_accepted_draft`, `processor_draft_partial`, `processor_missing_partitions`, the note).
+  FACT_CHECKER keeps its call. Checks 265 and 268 hold this.
+- PAIRING-A: `auditor_pairs.build` refuses at the DELIVERY level only for a single PROCESSOR
+  call (`delivery_scope` is `single`): its best-effort object is not a draft. A
+  partition-merged delivery already carries only the items of accepted, untruncated
+  partitions, each bound to its span by an ownership receipt, and the fidelity comparison is
+  span-local by construction, so its items pair even when another partition is missing; such
+  pairs require a receipt (`partial_delivery_without_receipt` otherwise) and carry
+  `delivery: partial` on the pair record, the coverage event (`pairs_from_partial_delivery`),
+  the run summary and `FINAL_STATUS.json`. Document-level completeness stays where it belongs:
+  `semantic_incomplete`, `stopped`, `pipeline_not_completed`. Measured, not preferred: the old
+  gate read the whole delivery per item, so one refused partition discarded every accepted one
+  and the advisory classifier had no pairs in v5 or v6 (it never actually fired: VERIFIER was
+  skipped upstream, which the partial draft now prevents). Check 266.
+- EXTRACTION-C: a bounded request carries at most `owned_spans_per_request` owned spans
+  (declared in `config/compact_extraction_prompt.json`, today 2, read by
+  `compact_contracts.request_size`), because every training input and DEV row of checkpoint
+  168 carries one or two; the pipeline used to send four. v6 lost the exact compact shape on
+  its one three-span request and kept it on every validated-layout request (102 of 102 DEV
+  items, four of them all-empty). Under the frozen policy an entry without claim ids or an
+  explicit absence statement is CORRECTLY extracted as `empty` with no refs (20 of 20 training
+  targets and 4 of 4 DEV answers), so partition 1's emptiness was right and the missing key
+  was the whole failure; no tolerance was added. Check 267.
 - `scripts/pipeline.py`: the pipeline driver (the flags above).
 
 ## Key paths

@@ -43,7 +43,7 @@
     "_gather_docs": "6291d3023b4d8ef0132cf02aaced91dfebaaefbba9498d0b575f76fb636462e0",
     "_deepen_legal_analyst_findings_local": "ad57ca75ef8189186e2dbffa6a02545eb0532f4fb81b42a264ddc094a9379aae",
     "phase_3_4_content_production": "6b6624b26c1284f73f9c8879d23b8bd702d4efd066b73868f5fdb5b3d0b0695b",
-    "phase_5_audit": "666447426d314c1c9208257565698595a85647a6b993d71926b3ec8f85e816f0",
+    "phase_5_audit": "e6d2c0680188f7d2732d55253315cfc0aee548bd46e4adf01c764dd4a4ff20c6",
     "_prior_docs_for": "b7301219374e01b85dc3ca336d9534aa11f89fa87ebd7ee46866b848ed1c5354",
     "_forced_roles": "dd7c1cef1c40b6ccdabbed761b080f55a1e9f9bedfaafd46c31385d0792d9a31",
     "_prior_comparison": "e79d78b21b90a8a1275ac4023b8d7a0267b943e6da590701edf31ae29bc2a340",
@@ -88,7 +88,8 @@
     "_cost_projection": "b470a481f0ed1b4875b2b19a0fe985b4529bee827a6ccbc6d1f1e1b6e19db924",
     "_build_arg_parser": "7e3aba77e623e857825eeb6ff1cdb12b61e32db0e9dab9be9ab541d52522833c",
     "main": "d458a0aa12d2705d8a360067543ef2fd1335ee90747cbc8f15cb47c1a2f54211",
-    "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee"
+    "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
+    "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2"
   },
   "reference_amendments": [
     {
@@ -103,6 +104,21 @@
         "_verifier_has_a_draft": {
           "from": null,
           "to": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee"
+        }
+      }
+    },
+    {
+      "date": "2026-09-19",
+      "reason": "Operator-directed correction after ordinary final run v6 (0cbc7f26): the accepted items of a partition-merged PROCESSOR delivery reach the phase-5 auditors as a PARTIAL draft, marked and noted, so the advisory pairing can run on them; a delivery with no accepted items is still recorded as VERIFIER not called. Review semantics change on that one condition; every other pinned function keeps its hash.",
+      "document": "docs/fix/ORDINARY_FINAL_V6_CORRECTIONS.md",
+      "functions": {
+        "phase_5_audit": {
+          "from": "666447426d314c1c9208257565698595a85647a6b993d71926b3ec8f85e816f0",
+          "to": "e6d2c0680188f7d2732d55253315cfc0aee548bd46e4adf01c764dd4a4ff20c6"
+        },
+        "_accepted_draft": {
+          "from": null,
+          "to": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2"
         }
       }
     }

@@ -198,10 +198,12 @@ async def execute_plans(plans):
                        for s in spans], semantic_cache_reused=False,
                 deterministic_ledger_cache_hit=extraction.ledger.cache_info().hits>cache_hits,
                 semantic_reuse_key_complete=False))
-            for owned in extraction.partitions(spans):
+            import compact_contracts
+            # Requests carry the validated number of owned spans (one or two), read
+            # from the declaration; the four-span default is never used on this path.
+            for owned in extraction.partitions(spans, compact_contracts.request_size()):
                 clone = runtime.attach(replace(w))
                 clone._bounded_output_budget = 1536
-                import compact_contracts
                 # The validated prompt shape (config/compact_extraction_prompt.json):
                 # the contract as the system message, one canonical payload as the
                 # user message, indexed passages marked with their own ids. The

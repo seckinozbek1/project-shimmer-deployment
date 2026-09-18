@@ -374,6 +374,8 @@ def summarize(raw, scheduler=()):
     pairing=dict(producer_items=sum(r['producer_items'] for r in coverage),pairs_constructed=len(pair_rows),
         eligible_producer_items=sum(r.get('eligible_producer_items',0) for r in coverage),
         unavailable=sum(r['unavailable_items'] for r in coverage),classifier_calls=len(pair_calls),
+        pairs_from_partial_delivery=sum(r.get('delivery')=='partial' for r in pair_rows),
+        partial_deliveries=sum(r.get('delivery')=='partial' for r in coverage),
         classifier_forwards=sum(r.get('forward_attempted') is True for r in pair_rows),
         forward_count_unknown=sum(r.get('forward_attempted') is None for r in pair_rows),
         classifier_failures=sum(r['classifier_status']=='failed' for r in pair_rows),

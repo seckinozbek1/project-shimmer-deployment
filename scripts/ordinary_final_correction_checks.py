@@ -18,6 +18,7 @@ where the run's own evidence is on disk, on the v5 raw outputs themselves:
 NEUTRALIZATIONS lists, per test, the one mechanism whose removal must make that
 test fail (the integration gate runs neutralize/fail/restore/pass over them).
 """
+import ast
 import asyncio
 import contextlib
 import hashlib
@@ -33,6 +34,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 import agent_wrapper
+import auditor_pairs
 import bounded_extraction as extraction
 import compact_contracts as cc
 from agent_wrapper import AgentWrapper, CallResult
@@ -431,7 +433,9 @@ class CorrectionChecks(unittest.TestCase):
         parsed, missing = w.parse_contract_output(raw)
         self.assertEqual(sorted(missing), sorted(["items[0].paragraph", "items[0].finding", "items[0].severity", "items[0].reasoning"]))
 
-    def _phase_5(self, processor_ok):
+    def _phase_5(self, state):
+        """state: 'complete' (accepted delivery), 'failed' (no accepted items),
+        'partial' (a partition-merged delivery with one partition missing)."""
         import pipeline
         import agent_activation as activation
         from harness.run_agent import build_orchestrator
@@ -450,9 +454,15 @@ class CorrectionChecks(unittest.TestCase):
             draft = {"agent": "PROCESSOR", "doc_id": "probe", "items": [
                 {"section_id": "s", "draft_text": doc["text"], "extraction_method": "source_span", "ref": "document-level",
                  "kind": "extraction", "confidence": "UNCERTAIN", "item_id": "PROCESSOR:probe:s", "revision": 1}]}
-            production = [{"scope": "doc", "doc_id": "probe", "agent": "PROCESSOR", "ok": processor_ok,
-                           "parsed": draft if processor_ok else None, "call_id": "proc-call",
-                           "error": None if processor_ok else "incomplete_extraction", "truncated": False}]
+            if state == "partial":
+                production = [{"scope": "doc", "doc_id": "probe", "agent": "PROCESSOR", "ok": False, "complete": False,
+                               "parsed": draft, "partition_calls": ["c0", "c1"], "missing_partitions": [1],
+                               "source_ownership": [], "error": "incomplete_extraction", "truncated": False}]
+            else:
+                processor_ok = state == "complete"
+                production = [{"scope": "doc", "doc_id": "probe", "agent": "PROCESSOR", "ok": processor_ok,
+                               "parsed": draft if processor_ok else None, "call_id": "proc-call",
+                               "error": None if processor_ok else "incomplete_extraction", "truncated": False}]
             with patch.object(pipeline, "_run_one", fake_run_one):
                 out = asyncio.run(pipeline.phase_5_audit(orch, {"offline_fixture": True}, [doc], production,
                                                          "Fixture objective", {"conventions": []}, ReferenceIndex(ROOT)))
@@ -462,7 +472,7 @@ class CorrectionChecks(unittest.TestCase):
         return calls, out, decisions, events
 
     def test_verifier_not_called_without_a_draft_and_recorded(self):
-        calls, out, decisions, events = self._phase_5(processor_ok=False)
+        calls, out, decisions, events = self._phase_5("failed")
         self.assertEqual([c[0] for c in calls], ["FACT_CHECKER"])
         self.assertEqual([r["agent"] for r in out], ["FACT_CHECKER"])
         self.assertFalse(calls[0][1]["processor_draft_available"])
@@ -477,11 +487,164 @@ class CorrectionChecks(unittest.TestCase):
         self.assertEqual(coverage[-1]["unavailable_items"], 1)
 
     def test_verifier_called_with_a_draft(self):
-        calls, out, decisions, _ = self._phase_5(processor_ok=True)
+        calls, out, decisions, _ = self._phase_5("complete")
         self.assertEqual([c[0] for c in calls], ["VERIFIER", "FACT_CHECKER"])
         self.assertEqual([r["agent"] for r in out], ["VERIFIER", "FACT_CHECKER"])
         self.assertTrue(calls[0][1]["processor_draft_available"])
+        self.assertFalse(calls[0][1]["processor_draft_partial"])
         self.assertEqual([d for d in decisions if d["agent"] == "VERIFIER" and not d["activated"]], [])
+
+    def test_verifier_called_with_a_partial_draft_and_marked(self):
+        calls, out, decisions, _ = self._phase_5("partial")
+        self.assertEqual([c[0] for c in calls], ["VERIFIER", "FACT_CHECKER"])
+        payload = calls[0][1]
+        self.assertTrue(payload["processor_draft_available"])
+        self.assertTrue(payload["processor_draft_partial"])
+        self.assertEqual(payload["processor_missing_partitions"], 1)
+        self.assertIn("missing partitions", payload["processor_draft_note"])
+        self.assertEqual(payload["processor_draft"]["items"][0]["item_id"], "PROCESSOR:probe:s")
+        self.assertEqual([d for d in decisions if d["agent"] == "VERIFIER" and not d["activated"]], [])
+
+    # ---- A5: the pairing gate on partial deliveries -----------------------------------
+
+    def _merged_delivery(self, *, partial, receipt=True, truncated_partition=False):
+        source = "## Entry A\nA declared source passage.\n\n## Entry B\nAnother passage.\n"
+        spans = extraction.ledger(source, "probe")
+        item = dict(item_id="PROCESSOR:probe:" + spans[0].id, revision=1, claims_referenced=[], open_questions=[],
+                    uncertainty=[], extraction_status="empty", ref="REF-0001", ref_ids=["REF-0001"], kind="extraction",
+                    confidence="UNCERTAIN", source_span_id=spans[0].id, provenance="source_span_reconstruction")
+        receipts = [dict(producer_item_id=item["item_id"], producer_revision=1, producer_call_id="call-0",
+                         item_hash=auditor_pairs.item_hash(item), source_span_ids=[spans[0].id])] if receipt else []
+        producer = dict(ok=not partial, truncated=truncated_partition, complete=not partial, call_id=None,
+                        parsed=dict(agent="PROCESSOR", doc_id="probe", items=[item]), source_ownership=receipts,
+                        partition_calls=["call-0", "call-1"], missing_partitions=[1] if partial else [],
+                        error="incomplete_extraction" if partial else None)
+        refs = [dict(ref_id="REF-0001", document_id="probe", input_type="operational", location={},
+                     text_excerpt="A declared source passage.")]
+        return dict(id="probe", text=source), producer, refs
+
+    def test_pairing_partial_delivery_pairs_receipt_bound_items_and_marks_them(self):
+        doc, partial, refs = self._merged_delivery(partial=True)
+        pairs, unavailable, count = auditor_pairs.build("run", doc, partial, refs)
+        self.assertEqual((len(pairs), unavailable, count), (1, [], 1))
+        self.assertEqual(pairs[0]["record"]["delivery"], "partial")
+        self.assertEqual(pairs[0]["record"]["ownership"], "compact_partition")
+        auditor_pairs.validate(pairs[0]["record"])
+        doc, complete, refs = self._merged_delivery(partial=False)
+        self.assertEqual(auditor_pairs.build("run", doc, complete, refs)[0][0]["record"]["delivery"], "complete")
+        # A merged delivery whose other partition was truncated still pairs the items it kept.
+        doc, kept, refs = self._merged_delivery(partial=True, truncated_partition=True)
+        self.assertEqual(len(auditor_pairs.build("run", doc, kept, refs)[0]), 1)
+        # Without a receipt a partial delivery's item is refused, even with an explicit ref.
+        doc, unreceipted, refs = self._merged_delivery(partial=True, receipt=False)
+        pairs, unavailable, _ = auditor_pairs.build("run", doc, unreceipted, refs)
+        self.assertEqual((pairs, [u["reason"] for u in unavailable]), ([], ["partial_delivery_without_receipt"]))
+        # A failed single delivery is refused exactly as before.
+        doc, single, refs = self._merged_delivery(partial=False)
+        del single["missing_partitions"]
+        single.update(ok=False, complete=None)
+        pairs, unavailable, _ = auditor_pairs.build("run", doc, single, refs)
+        self.assertEqual((pairs, [u["reason"] for u in unavailable]), ([], ["incomplete_producer_delivery"]))
+        self.assertTrue(auditor_pairs.contract_self_check())
+
+    def test_pairing_coverage_reports_pairs_from_a_partial_delivery(self):
+        import model_telemetry
+        doc, partial, refs = self._merged_delivery(partial=True)
+        w = SimpleNamespace(name="VERIFIER", backend="local_auditor", run_context=None, _parent_call_ids=[],
+                            _auditor_pair_request=dict(document=doc, producer=partial, references=refs))
+        events = []
+        with patch.dict(os.environ, SHIMMER_MODEL_MODE="final"), \
+                patch.object(auditor_pairs, "predict", return_value=("OMISSION", 10)), \
+                patch.object(model_telemetry, "emit", side_effect=lambda c, event, **k: events.append(dict(event=event, **k))):
+            payload = auditor_pairs.prepare_context(w, dict(task=auditor_pairs.TASK))
+        coverage = [e for e in events if e["event"] == "auditor_pair_coverage"][-1]
+        self.assertEqual((coverage["pairs_constructed"], coverage["classifier_calls"], coverage["delivery"],
+                          coverage["pairs_from_partial_delivery"]), (1, 1, "partial", 1))
+        pair = [e for e in events if e["event"] == "auditor_pair"][0]
+        self.assertEqual((pair["delivery"], pair["auditor_relation"], pair["classifier_status"]),
+                         ("partial", "OMISSION", "classified"))
+        self.assertEqual(payload["auditor_pair_context"]["pairs"][0]["delivery"], "partial")
+        # The run-level summary carries the same figure, computed from real telemetry when it is on disk.
+        telemetry = V5.parent.parent.parent / "ordinary_final_cloud_run_v6/downloaded/evidence/run"
+        if (telemetry / "logs/model_telemetry.jsonl").exists():
+            rows = [json.loads(l) for l in (telemetry / "logs/model_telemetry.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+            scheduler = [json.loads(l) for l in (telemetry / "audit/execution_topology.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+            summary = model_telemetry.summarize(rows, scheduler)
+            self.assertEqual(summary["auditor_pairing"]["pairs_from_partial_delivery"], 0)
+            self.assertEqual(summary["auditor_pairing"]["partial_deliveries"], 0)
+
+    # ---- A6: bounded requests carry the validated layout -------------------------------
+
+    def test_layout_declared_request_size_within_validated_layout_and_used_live(self):
+        import report_recommendations_checks as rr
+        size = cc.request_size()
+        declaration = cc.prompt_declaration()
+        rows = json.loads((ROOT / declaration["validated_dataset"]).read_text(encoding="utf-8"))
+        protocol = json.loads((ROOT / declaration["validated_protocol"]).read_bytes().replace(b"\r\n", b"\n").decode("utf-8"))
+        dev = set(protocol["dev_ids"])
+        validated = max(len(r["input"]["source_spans"]) for r in rows if r["example_id"] in dev)
+        self.assertEqual(validated, max(len(r["input"]["source_spans"]) for r in rows))
+        self.assertEqual(validated, 2)
+        self.assertTrue(1 <= size <= validated, size)
+        # The live partitioning uses the declared size: run the real _run_one with a
+        # fake backend over a long source and count the owned aliases per request.
+        rc = rr.RecommendationChecks("test_ledger_covers_preamble_tables_and_unicode")
+        rc.setUp()
+        try:
+            tree = ast.parse((ROOT / "scripts/pipeline.py").read_text(encoding="utf-8"))
+            fn = next(x for x in tree.body if isinstance(x, ast.AsyncFunctionDef) and x.name == "_run_one")
+            namespace = dict(semantic_waves=rr.waves, asyncio=asyncio, time=rr.time,
+                             _is_local_profile=lambda: False, _emit_progress=lambda **k: None)
+            exec(compile(ast.Module(body=[fn], type_ignores=[]), "live_run_one", "exec"), namespace)
+            pipeline_ns = SimpleNamespace(_run_one=namespace["_run_one"])
+            runtime = rc.runtime(1)
+            groups = []
+
+            def dispatch(instance, stable, dynamic="", **kwargs):
+                payload = json.loads(dynamic)
+                ids = [s["alias"] for s in payload["source_spans"]]
+                groups.append(ids)
+                items = [dict(span=x, claims=[], questions=[], uncertainty=[], status="empty", refs=[]) for x in ids]
+                return rc.fake_result(instance, dict(items=items), False)
+            state = rr.topology.ACTIVE.set(runtime)
+            try:
+                with patch.object(AgentWrapper, "dispatch", dispatch):
+                    w = runtime.attach(rc.wrapper())
+                    result = asyncio.run(rc._one(pipeline_ns, w, rr.SOURCE * 30))
+            finally:
+                rr.topology.ACTIVE.reset(state)
+            spans = extraction.ledger(rr.SOURCE * 30, "fixture")
+            self.assertTrue(result["ok"])
+            self.assertEqual(len(groups), -(-len(spans) // size))
+            self.assertTrue(all(len(g) <= size for g in groups))
+            self.assertEqual(sum(len(g) for g in groups), len(spans))
+        finally:
+            rc.doCleanups()
+
+    # ---- A7: the typed-record example from declared values ------------------------------
+
+    def test_record_example_uses_declared_values_and_the_agents_own_verdict_field(self):
+        cases = {"FACT_CHECKER": ("verdict", "CONFIRMED"), "LEGAL_ANALYST": ("verdict", "GROUNDED"),
+                 "VERIFIER": ("finding", "MATCH")}
+        for agent, (field, value) in cases.items():
+            w = bare_wrapper(agent, backend="local_auditor")
+            text = w._finding_record_text()
+            example = json.loads(text.split("Worked example: ", 1)[1].split("\n", 1)[0])
+            self.assertEqual(example[field], value, agent)
+            self.assertIn(f"Keep your own `{field}` field as your contract defines it", text)
+            self.assertNotIn("<your own contract's verdict value", text)
+            for name in w.contract["required"]:
+                if w._declared_values(name):
+                    self.assertFalse(str(example[name]).startswith("<"), (agent, name))
+        v = bare_wrapper("VERIFIER", backend="local_auditor")
+        example = json.loads(v._finding_record_text().split("Worked example: ", 1)[1].split("\n", 1)[0])
+        self.assertNotIn("verdict", example)  # VERIFIER's contract has no verdict field
+        self.assertEqual((example["paragraph"], example["severity"]), (1, "low"))
+        self.assertEqual(bare_wrapper("ARCHIVIST")._declared_values("title"), [])  # a type description is not an enumeration
+        raw = raw_violation("FACT_CHECKER", "task-000009")
+        if raw is not None:  # the v6 output is still refused: the validator maps nothing
+            self.assertEqual(bare_wrapper("FACT_CHECKER", backend="local_auditor").parse_contract_output(raw)[1],
+                             ["items[0].verdict"])
 
 
 def _grouped(prefix):
@@ -515,7 +678,23 @@ def check_alias():
 
 
 def check_verifier():
-    return _verdict(("test_verifier_",), "typed-record example contract-complete, VERIFIER skipped and recorded without a draft")
+    return _verdict(("test_verifier_",), "typed-record example contract-complete, VERIFIER skipped and recorded without a draft, "
+                                         "called with a partial draft marked and noted")
+
+
+def check_pairing():
+    return _verdict(("test_pairing_",), "a partition-merged delivery pairs its receipt-bound items, a single failed delivery "
+                                        "is refused as before, partial pairs marked in the record, the coverage event and the summary")
+
+
+def check_layout():
+    return _verdict(("test_layout_",), "the declared request size is within the validated one-or-two-span layout and the live "
+                                       "partitioning uses it")
+
+
+def check_record():
+    return _verdict(("test_record_",), "the typed-record example carries the agent's declared values and names its own verdict "
+                                       "field; the v6 FACT_CHECKER output is still refused")
 
 
 # (test, owner, attribute, mutant): each neutralises the one mechanism the test asserts.
@@ -530,6 +709,15 @@ NEUTRALIZATIONS = [
     ("test_alias_application_travels_with_result_bus_and_observation", agent_wrapper, "core_field_aliases", lambda: {}),
     ("test_verifier_record_example_carries_required_fields", AgentWrapper, "_record_example_required", lambda self, required: {}),
     ("test_verifier_not_called_without_a_draft_and_recorded", None, "_verifier_has_a_draft", lambda state: True),
+    ("test_verifier_called_with_a_partial_draft_and_marked", None, "_accepted_draft",
+     lambda proc: (((proc or {}).get("parsed") if proc and proc.get("ok") else None), False)),
+    ("test_pairing_partial_delivery_pairs_receipt_bound_items_and_marks_them", auditor_pairs, "delivery_scope",
+     lambda producer: ("single", False)),
+    ("test_pairing_coverage_reports_pairs_from_a_partial_delivery", auditor_pairs, "delivery_scope",
+     lambda producer: ("single", False)),
+    ("test_layout_declared_request_size_within_validated_layout_and_used_live", cc, "request_size", lambda: 4),
+    ("test_record_example_uses_declared_values_and_the_agents_own_verdict_field", AgentWrapper, "_declared_values",
+     lambda self, field: []),
 ]
 
 

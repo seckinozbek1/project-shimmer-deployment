@@ -58,6 +58,7 @@ def analyze(bundle=BASE):
         summary=model_telemetry.summarize(raw+[record,api],scheduler)
         write(analysis/'model_telemetry_summary.json',summary)
         write(analysis/'ordinary_final_summary.json',supplement(raw,scheduler))
+    summary=summary if completions else {}
     stages={p.stem.removesuffix('_timing'):read(p) for p in BASE.glob('*_timing.json')}
     write(analysis/'stages.json',stages)
     completed=bool(completion and completion.get('state')=='completed' and result and result.get('execution_integrity_passed'))
@@ -67,6 +68,8 @@ def analyze(bundle=BASE):
         pipeline_started=bool(completions),pipeline_completion=completion,remote_result=result,terminal_error=failure,
         semantic_call_receipts=len(calls),producer168_receipts=sum(r.get('adapter_checkpoint')==168 for r in calls),
         auditor896_receipts=sum(r.get('adapter_checkpoint')==896 for r in calls),
+        auditor896_pairs=(summary.get('auditor_pairing',{}).get('pairs_constructed') if completions else None),
+        auditor896_pairs_from_partial_delivery=(summary.get('auditor_pairing',{}).get('pairs_from_partial_delivery') if completions else None),
         cost_estimates=costs,within_hard_ceiling=costs['combined_estimate']<=7,
         exactly_one_instance=True,maximum_one_workload_invocation=True,full_run_retried=False,
         protected_data_accessed=False,multi_round_executed=False,inventory_empty=True,temporary_ssh_removed=True,
