@@ -177,6 +177,18 @@ def run_controller(base, remote_root_present):
     return transport, console.getvalue().splitlines(), (read(failure) if failure.exists() else None)
 
 
+def workload_stderr(base):
+    """The runner's stderr from the collected evidence archive, or '' without one."""
+    evidence = base / 'collected_evidence.tar.gz'
+    if not evidence.exists():
+        return ''
+    with tarfile.open(evidence) as archive:
+        for member in archive.getmembers():
+            if member.name.endswith('workload.stderr.log'):
+                return archive.extractfile(member).read().decode('utf8', 'replace')
+    return ''
+
+
 def phase_receipts(base):
     rows = {}
     for path in sorted(base.glob('*_timing.json')):
@@ -256,6 +268,38 @@ def main(out):
         torn_down=(base2 / 'TERMINATION_VERIFIED.json').exists() and read(base2 / 'CURRENT_PHASE.json')['phase'] == 'terminated_and_cleaned')
     (out / 'present_root_console.log').write_text('\n'.join(console2) + '\n', encoding='utf8')
 
+    # Polarities 3 to 5: the operator-declared provider-side asset copy, against a
+    # directory on the Linux target standing in for the attached filesystem. A
+    # matching copy is used and nothing is uploaded; a corrupt copy is refused, the
+    # upload runs and the copy is left untouched; a missing copy is uploaded and
+    # then seeded under its hash-keyed name only after archive_integrity passed.
+    mount = LINUX_ROOT + '/nfs'
+    copy_path = mount + '/assets-' + assets['sha256'] + '.tar'
+    source_copy = shlex.quote(to_linux(WORK / 'assets.tar'))
+
+    def copy_polarity(name, prepare):
+        base_c = make_bundle(name, assets, models)
+        write(base_c / 'asset_copy_declaration.json', dict(filesystem_name='rehearsal-fs', mount=mount, operator_authorized=True))
+        linux('rm -rf ' + shlex.quote(mount) + ' && mkdir -p ' + shlex.quote(mount) + (' && ' + prepare if prepare else ''))
+        transport_c, console_c, failure_c = run_controller(base_c, remote_root_present=False)
+        phases_c = phase_receipts(base_c)
+        receipt = read(base_c / 'asset_copy_receipt.json') if (base_c / 'asset_copy_receipt.json').exists() else None
+        digest_after = linux('test -f ' + shlex.quote(copy_path) + ' && sha256sum ' + shlex.quote(copy_path)
+                             + " | cut -d' ' -f1 || echo absent").stdout.decode().strip()
+        (out / (name + '_console.log')).write_text('\n'.join(console_c) + '\n', encoding='utf8')
+        return dict(controller_failure=failure_c, receipt=receipt,
+                    phases={n: dict(returncode=r.get('returncode'), seconds=round(r.get('seconds', 0), 1)) for n, r in phases_c.items()},
+                    uploaded_assets=any(a[0] == 'scp' and any(x.endswith('/assets.tar') for x in a) for a, _ in transport_c.calls),
+                    copy_digest_after=digest_after,
+                    runner_reached_hardware_admission='A10 memory admission' in workload_stderr(base_c),
+                    torn_down=(base_c / 'TERMINATION_VERIFIED.json').exists() and read(base_c / 'CURRENT_PHASE.json')['phase'] == 'terminated_and_cleaned')
+
+    report['polarities']['asset_copy_match'] = copy_polarity('asset_copy_match', 'cp ' + source_copy + ' ' + shlex.quote(copy_path))
+    report['polarities']['asset_copy_mismatch'] = copy_polarity(
+        'asset_copy_mismatch', 'cp ' + source_copy + ' ' + shlex.quote(copy_path)
+        + ' && printf x | dd of=' + shlex.quote(copy_path) + ' bs=1 seek=100 conv=notrunc 2>/dev/null')
+    report['polarities']['asset_copy_missing'] = copy_polarity('asset_copy_missing', '')
+
     # Precondition: a present temporary key path refuses before any provider action.
     base3 = make_bundle('key_path_present', assets, models)
     (base3 / 'ssh_identity').write_text('leftover', encoding='utf8')
@@ -280,8 +324,28 @@ def main(out):
         'hardware admission on an A10': 'this GPU is not an A10, so the runner refuses there; that refusal is the rehearsal boundary',
         'the ssh and scp transports themselves': 'replaced by a local shell and file copies; the polling and detached-phase code is the controller\'s own',
         'the real watchdog process': 'replaced by a local heartbeat thread; its own checks are separate',
+        'the provider filesystem attach at launch': 'mocked; a directory on the Linux target stands in for the mounted copy, so the '
+                                                    'copy probe, use and seed commands ran through a real shell but no filesystem was attached',
     }
     a, b = report['polarities']['absent_remote_root'], report['polarities']['present_remote_root']
+    cm, cx, cs = (report['polarities'][k] for k in ('asset_copy_match', 'asset_copy_mismatch', 'asset_copy_missing'))
+    copy_ok = bool(
+        cm['controller_failure'] is None and cm['receipt'] and cm['receipt']['state'] == 'MATCH' and cm['receipt']['used']
+        and not cm['receipt']['seeded'] and not cm['uploaded_assets'] and cm['phases'].get('archive_integrity', {}).get('returncode') == 0
+        and 'asset_copy_seed' not in cm['phases'] and cm['runner_reached_hardware_admission'] and cm['torn_down']
+        and cm['copy_digest_after'] == assets['sha256']
+        and cx['controller_failure'] is None and cx['receipt'] and cx['receipt']['state'] == 'MISMATCH' and cx['receipt']['suspect']
+        and not cx['receipt']['used'] and not cx['receipt']['seeded'] and cx['uploaded_assets'] and 'asset_copy_seed' not in cx['phases']
+        and cx['copy_digest_after'] not in ('absent', assets['sha256']) and cx['runner_reached_hardware_admission'] and cx['torn_down']
+        and cs['controller_failure'] is None and cs['receipt'] and cs['receipt']['state'] == 'MISSING' and cs['receipt']['seeded']
+        and not cs['receipt']['used'] and cs['uploaded_assets'] and cs['phases'].get('asset_copy_seed', {}).get('returncode') == 0
+        and cs['copy_digest_after'] == assets['sha256'] and cs['runner_reached_hardware_admission'] and cs['torn_down'])
+    report['preconditions']['asset_copy'] = dict(
+        match_used_without_upload=bool(cm['receipt'] and cm['receipt']['used'] and not cm['uploaded_assets']),
+        mismatch_refused_uploaded_untouched=bool(cx['receipt'] and cx['receipt']['state'] == 'MISMATCH' and cx['uploaded_assets']
+                                                 and cx['copy_digest_after'] not in ('absent', assets['sha256'])),
+        missing_uploaded_then_seeded=bool(cs['receipt'] and cs['receipt']['seeded'] and cs['copy_digest_after'] == assets['sha256']),
+        passed=copy_ok)
     expected_sequence = ['python_gate', 'fresh_directory', 'archive_integrity', 'extract_payload', 'create_environment',
                          'install_pinned_wheels', 'dependency_closure', 'gpu_metadata', 'ordinary_workload', 'stop_workload',
                          'final_gpu_state', 'pack_evidence', 'evidence_hash']
@@ -296,7 +360,8 @@ def main(out):
         and report['preconditions']['single_workload_claim']['first_invocation_claimed']
         and report['preconditions']['single_workload_claim']['second_invocation_refused']
         and report['preconditions']['temporary_key_path']['present_path_refused'] == 'Temporary key path occupied'
-        and report['preconditions']['temporary_key_path']['launches'] == 0)
+        and report['preconditions']['temporary_key_path']['launches'] == 0
+        and copy_ok)
     report['seconds'] = round(time.time() - started, 1)
     linux('rm -rf ' + shlex.quote(LINUX_ROOT))
     report['linux_target_cleaned'] = linux('test -e ' + shlex.quote(LINUX_ROOT) + ' && echo present || echo absent').stdout.strip() == b'absent'

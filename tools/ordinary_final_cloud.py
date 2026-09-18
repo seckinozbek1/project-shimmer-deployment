@@ -84,6 +84,71 @@ def detached_poll_command(remote,label,progress=None):
     return line
 
 
+# A PROVIDER-SIDE ASSET COPY, declared by the operator and off by default. The
+# asset archive (13 GB, unchanged since v5) is uploaded on every run and is about
+# 70 percent of billed time. With a declaration (asset_copy_declaration.json in
+# the bundle: filesystem_name, mount, operator_authorized), the instance is
+# launched with that filesystem attached, a probe hashes the copy under its
+# hash-keyed name and compares it to the sealed manifest's digest, a MATCH is
+# copied into place and the upload skipped, and every other state (MISSING,
+# MISMATCH, UNREACHABLE, or a copy that fails) falls back to the upload exactly
+# as it runs today. archive_integrity then hashes whatever is on the instance,
+# as it always has. A MISSING copy is seeded only after that integrity phase has
+# passed, under the hash-keyed name, with no-clobber, so a stale or corrupt file
+# is never overwritten; a MISMATCH is recorded as suspect for the operator and
+# never replaced by a run. Without a declaration none of this runs and the launch
+# body and transfer argv are byte-identical to the v9 path.
+ASSET_COPY_STATES=('MATCH','MISSING','MISMATCH','UNREACHABLE')
+
+
+def asset_copy_declaration(base):
+    """The operator's declaration of a provider-side asset copy, or None without one."""
+    path=Path(base)/'asset_copy_declaration.json'
+    if not path.exists():return None
+    d=read(path)
+    require(isinstance(d,dict) and d.get('operator_authorized') is True and isinstance(d.get('filesystem_name'),str)
+            and d['filesystem_name'] and isinstance(d.get('mount'),str) and d['mount'].startswith('/'),
+            'Asset copy declaration incomplete')
+    return dict(filesystem_name=d['filesystem_name'],mount=d['mount'].rstrip('/'))
+
+
+def asset_copy_path(mount,digest):
+    """The copy is keyed by the sealed archive's own digest, so a bundle naming a
+    different archive can never match an earlier copy."""
+    return mount.rstrip('/')+'/assets-'+digest+'.tar'
+
+
+def asset_copy_probe_command(mount,digest):
+    """One remote command printing exactly one of ASSET_COPY_STATES. It computes the
+    copy's digest on the instance and compares it to the sealed manifest's value;
+    the sidecar this machine could write is never the proof."""
+    path=asset_copy_path(mount,digest)
+    return ('if ! [ -d '+shlex.quote(mount)+' ] || ! [ -r '+shlex.quote(mount)+' ]; then echo UNREACHABLE; '
+            'elif ! [ -f '+shlex.quote(path)+' ]; then echo MISSING; '
+            'elif [ "$(sha256sum '+shlex.quote(path)+' | cut -d\' \' -f1)" = '+shlex.quote(digest)+' ]; then echo MATCH; '
+            'else echo MISMATCH; fi')
+
+
+def asset_copy_use_command(mount,digest,remote):
+    return 'cp '+shlex.quote(asset_copy_path(mount,digest))+' '+shlex.quote(remote.rstrip('/')+'/assets.tar')
+
+
+def asset_copy_seed_command(mount,digest,remote):
+    """Seed the copy from the archive the instance has ALREADY verified: write beside
+    the final name, then move into place with no-clobber, so nothing there is
+    ever overwritten by a run."""
+    path=asset_copy_path(mount,digest)
+    return ('cp '+shlex.quote(remote.rstrip('/')+'/assets.tar')+' '+shlex.quote(path+'.partial')
+            +' && mv -n '+shlex.quote(path+'.partial')+' '+shlex.quote(path)+' && test -f '+shlex.quote(path))
+
+
+def asset_copy_state(returncode,stdout):
+    """The probe's word, or UNREACHABLE for a probe that failed or said anything else."""
+    if returncode!=0:return 'UNREACHABLE'
+    words=stdout.decode('utf8',errors='replace').split()
+    return words[0] if words and words[0] in ASSET_COPY_STATES else 'UNREACHABLE'
+
+
 def poll_outcome(returncode,stdout):
     """Classify one completion poll: (kind, exit_code, progress_lines).
 
@@ -114,6 +179,12 @@ def execute():
     assets=read(BASE/'assets_transfer_archive.json')
     require(assets['manifest_sha256']==MANIFEST and sha(ROOT/assets['path'])==assets['sha256'],'Transfer archive changed')
     require(not (BASE/'LAUNCH_INTENT.json').exists(),'Authorization consumed; no launch retry')
+    copy=asset_copy_declaration(BASE)
+    copy_state=None
+    copy_receipt=dict(declared=copy is not None,used=False,seeded=False,suspect=False,state=None,
+                      filesystem_name=copy['filesystem_name'] if copy else None,
+                      path=asset_copy_path(copy['mount'],assets['sha256']) if copy else None)
+    save('asset_copy_receipt.json',copy_receipt)
     provider=LambdaExperiment(CREDENTIAL)
     require(provider.request('instances')['data']==[],'Provider inventory not empty')
     current=next(x for x in provider.request('instance-types')['data'] if x['metadata']['type']=='gpu_1x_a10')
@@ -226,9 +297,11 @@ def execute():
             json.dump(dict(epoch=start,maximum_instances=1,operator_authorized=True,
                 execution_manifest_sha256=MANIFEST,seal_sha256=SEAL,controller_sha256=sha(__file__)),stream)
         phase('launch_one_a10')
-        launch=provider.request('instance-operations/launch',dict(region_name='us-east-1',
+        launch_body=dict(region_name='us-east-1',
             instance_type_name='gpu_1x_a10',ssh_key_names=[registration['name']],quantity=1,
-            name=name,image={'id':m['image']['id']}))['data']
+            name=name,image={'id':m['image']['id']})
+        if copy:launch_body['file_system_names']=[copy['filesystem_name']]
+        launch=provider.request('instance-operations/launch',launch_body)['data']
         iid=launch['instance_ids'][0]
         save('launch.json',dict(instance_id=iid,epoch=start,hourly_rate=rate))
         permit=dict(operator_authorized=True,action='one-ordinary-final-cloud-run',
@@ -237,6 +310,7 @@ def execute():
             soft_budget_usd=5,hard_ceiling_usd=7,provider='Lambda',instance_type='gpu_1x_a10',region='us-east-1',
             instance_id=iid,hourly_rate=rate,active_start_epoch=start,maximum_instances=1,maximum_runs=1,
             protected_data=False,multi_round=False,automatic_full_run_retry=False,
+            asset_copy=copy,
             authorization='Explicit operator approval in conversation for this manifest and scope')
         save('operator_authorization.json',permit)
         flags=getattr(subprocess,'DETACHED_PROCESS',0)|getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)|getattr(subprocess,'CREATE_NO_WINDOW',0)
@@ -269,9 +343,29 @@ def execute():
         remote('fresh_directory','test ! -e '+REMOTE+' && mkdir -p '+REMOTE+'/project',30)
         support=['project.tar.gz','execution_manifest.json','seal.json','operator_authorization.json',*m['support_files']]
         transport('support_transfer',['scp',*options,*[str(BASE/n) for n in support],host+':'+REMOTE+'/'],300)
-        transport('assets_transfer',['scp',*options,str(ROOT/assets['path']),host+':'+REMOTE+'/assets.tar'],10800)
+        if copy:
+            r=remote('asset_copy_probe',asset_copy_probe_command(copy['mount'],assets['sha256']),300,False)
+            copy_state=asset_copy_state(r.returncode,r.stdout)
+            copy_receipt.update(state=copy_state,suspect=copy_state=='MISMATCH')
+            save('asset_copy_receipt.json',copy_receipt)
+            if copy_state=='MATCH':
+                r=remote('asset_copy_use',asset_copy_use_command(copy['mount'],assets['sha256'],REMOTE),1800,False)
+                if r.returncode==0:copy_receipt['used']=True
+                else:copy_state='USE_FAILED';copy_receipt['state']=copy_state
+                save('asset_copy_receipt.json',copy_receipt)
+        if not copy_receipt['used']:
+            # The v9 path, byte for byte: the same scp invocation whether no copy was
+            # declared or the copy was missing, unreachable, corrupt or unusable.
+            transport('assets_transfer',['scp',*options,str(ROOT/assets['path']),host+':'+REMOTE+'/assets.tar'],10800)
         prefix='cd '+REMOTE+' && '
         remote('archive_integrity',prefix+"printf '%s\\n' "+shlex.quote(m['source_archive_sha256']+'  project.tar.gz')+' '+shlex.quote(assets['sha256']+'  assets.tar')+' | sha256sum -c -',300)
+        if copy and copy_state=='MISSING':
+            # Only after the instance has verified the uploaded bytes, only for an
+            # absent copy, never over a stale or corrupt one; a failed seed never
+            # fails the run.
+            r=remote('asset_copy_seed',asset_copy_seed_command(copy['mount'],assets['sha256'],REMOTE),1800,False)
+            copy_receipt['seeded']=r.returncode==0
+            save('asset_copy_receipt.json',copy_receipt)
         remote('extract_payload',prefix+'tar -xzf project.tar.gz -C project && tar -xf assets.tar',900)
         remote('create_environment',prefix+'/usr/bin/python3.12 -m venv venv',180)
         exe=REMOTE+'/venv/bin/python'

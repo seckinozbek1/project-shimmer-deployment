@@ -1,0 +1,46 @@
+{
+  "clock_mocked": true,
+  "dead_connection_after_completion_recognised_as_completed": true,
+  "effect_proofs": [
+    {
+      "baseline_pass": true,
+      "check": "test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds",
+      "mutated_branch_invocations": 10,
+      "neutralized": "ordinary_final_cloud.poll_outcome",
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "baseline_pass": true,
+      "check": "test_connection_loss_during_the_workload_keeps_polling_and_records_progress",
+      "mutated_branch_invocations": 14,
+      "neutralized": "ordinary_final_cloud.poll_outcome",
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "baseline_pass": true,
+      "check": "test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root",
+      "mutated_branch_invocations": 18,
+      "neutralized": "ordinary_final_cloud.phases_dir",
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "baseline_pass": true,
+      "check": "test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten",
+      "mutated_branch_invocations": 1,
+      "neutralized": "ordinary_final_cloud.asset_copy_probe_command",
+      "neutralized_fail": true,
+      "restored_pass": true
+    }
+  ],
+  "errors": 0,
+  "failures": 0,
+  "launches": 0,
+  "network_allowed": false,
+  "passed": true,
+  "provider_mocked": true,
+  "ssh_mocked": true,
+  "tests": 20
+}

@@ -174,6 +174,105 @@ saves nothing; and any provider-side read throughput slower than the local disk,
 lengthen the 20 second hash. The saving is real only for a cadence of several runs a month in
 one region against unchanging assets, which has been the case since v5.
 
-## Part 3
+## The second half of the pass: what the first half turned up
 
-See the gates table below and the sealed bundle in the commit that follows.
+### 1. The label reader and the comma: measured, and left alone
+
+Measured with the comma admitted into the label character class, patched in process over all
+twelve corpus documents (`scratchpad/split_comma.json` diffed against the current tree):
+
+| Document | Lines that become label lines | Vocabulary added | Pairing changes on existing units |
+|---|---|---|---|
+| catalogue_records/metadata_element_reference.md | `Metadata Element Set, published at https://...` | `metadata element set published http` | 0 |
+| clinical_reference/analyte_reference_ranges.md | `A returned result sheet states, for every result: the sample identifier, ...` | `returned result sheet state every result` | 0 |
+| clinical_reference/result_sheet.md | the two per-laboratory count lines | `result count declared eastfield laboratory`, `result count declared northgate laboratory` | 0 |
+| the other nine | none | none | 0 |
+
+Two of the three documents gain a FALSE field from a prose sentence that happens to hold a comma
+before a colon. Pairing on existing units changes nowhere, because no rule names those words.
+
+And the decisive fact: **it does not reach the fifth entry anyway.** With the comma admitted the
+header yields three scalars (6, 4 and 3) and no column, and `compute_checks` still returns
+nothing, because the sum check sums a TABLE COLUMN against a scalar whose label contains the
+column's words and requires the column to carry a unit; there is no scalar-plus-scalar form and
+the counts carry no unit. CONV-003's plan stays `uncomputable`. Reaching the entry would need new
+arithmetic (a sum of like-labelled scalars against a total), which is exactly the adjustment the
+operator ruled out. **Decision: not implemented.** A contained version, if the entry is ever
+worth it: admit a comma only when the line's value parses as a quantity, which excludes both
+prose sentences above and admits both count lines, together with a scalar-sum check as its own
+measured change. Neither was done.
+
+### 2. The asset copy's five local proofs, built
+
+The design's mechanism is now in the controller, off by default, with its proofs in
+`tools/ordinary_final_controller_checks.py` and its polarities in the rehearsal. Nothing
+authorizes its use; a bundle with no `asset_copy_declaration.json` runs the v9 path unchanged.
+
+| Proof | What it executes | What it establishes |
+|---|---|---|
+| 1. attach-and-hash in four states | the real `execute()` against a modelled mount: MATCH, MISSING, MISMATCH, UNREACHABLE | MATCH is copied into place and no upload runs; the other three upload; MISMATCH is recorded suspect and the copy is untouched; UNREACHABLE never seeds |
+| 2. a new digest never matches an old copy | a mount holding `assets-<old digest>.tar` against a manifest naming another digest | the probe reports MISSING, the upload runs, the seed lands beside the old copy, which stays |
+| 3. the fallback is byte-identical | the scp argv with no declaration against the argv with a MISSING copy, bundle paths normalised; the launch body with no declaration | identical argv; no `file_system_names`; no `asset_copy_*` phase; the receipt says `declared: false` |
+| 4. seeding only after verification | phase order MISSING to `archive_integrity` to `asset_copy_seed`; `archive_integrity` scripted to fail | the seed starts only after integrity passed; on failure no seed is attempted and the mount is unchanged |
+| 5. the rehearsal, three polarities | the real controller through a real Linux shell with a directory standing in for the mount: matching, corrupt and missing copies | see the rehearsal receipt for the bundle sealed at the end of this pass |
+
+One neutralization is in the controller gate: a probe that stops hashing (`echo MATCH`) makes the
+corrupt copy get used, and the MISMATCH proof fails. The provider adapter admits exactly one
+`file_system_names` entry, label-validated, and refuses two, or any other new field; that is
+proven too.
+
+**What remains unprovable without a run:** that the provider attaches the named filesystem at
+launch and mounts it where the declaration says; the attach time, which the saving estimate
+does not include; and the throughput of hashing 13 GB from that mount, which the estimate takes
+from the instance's local disk (about 20 seconds in every run). The local proofs cover the
+controller's decisions on every outcome; they cannot cover the provider's part.
+
+### 3. README.md
+
+In the preamble pass the README moved by one sentence, under Optional capabilities: a document's
+title block is its own unit and existing ids never move. Reviewed in full against the system as
+it runs, it was accurate but silent on two things that now shape every run, and both were
+added under Results and evidence: every amendment is rendered from a Python-computed finding and
+a model's finding never becomes one; and an operator may withhold a phase-5 auditor per review
+scope in `config/review_scope.json`. Nothing in it describes the asset copy, correctly, since no
+run uses it.
+
+### 4. What else this pass set aside
+
+- **A new model call.** The preamble unit gives CONV-003 one `uncomputable` plan on the sheet
+  header, so PRACTICE_AUDITOR is asked one question per run where v8 and v9 asked none. This
+  is the designed behaviour for a paired rule nothing computes; the answer stays on the bus and
+  never becomes an amendment. Recorded, not changed.
+- **False fields in two preambles.** The analyte reference's URL line reads as a field `http`
+  and one negotiation offer's lead reads as `two offer`. Pre-existing reader behaviour now
+  exposed by the preamble unit; no rule names either word, so nothing pairs on them. Recorded.
+- **Prior-version comparison.** Measured on both negotiation pairs with and without the
+  preamble unit: 6 and 12 records, nothing added or removed. Closed.
+- **The controller is not among the four files the seal hashes** (`local_control_hashes` covers
+  the watchdogs, the common module and the runner). It IS hashed into the launch receipt and the
+  bound-controller identity at launch, so a run records which controller ran, but the seal does
+  not pin it. Noted for the operator; not changed, since changing what a seal binds is its own
+  decision.
+- **From the discovery pass, still open by design:** the classifier's discrimination (a corpus
+  question), the partial-delivery path (proven locally only), FACT_CHECKER (in the backlog).
+
+## Part 3, both rounds
+
+The preamble pass (round one, `docs/fix/ordinary_final_v11_gates/`): correction checks 33 of 33;
+compact 85 PASS; mutations 15 of 15; controller, startup, decoding green; integration 147 tests
+and 30 proofs; main gate 256 checks with zero new failures against the clean baseline 5479ced;
+sealed as bundle v10 and rehearsed, both polarities.
+
+The second half (round two, `docs/fix/ordinary_final_v12_gates/`): controller gate 20 tests and
+4 neutralize/fail/restore/pass proofs including the asset-copy probe; the transport, transfer
+and cloud-run checks the README names (83 tests, network blocked) green after the adapter
+change; integration 147 tests and 30 proofs; compact 85; mutations 15 of 15; startup and
+decoding green; main gate 256 checks with zero new failures against the clean baseline a867a99.
+
+One thing is recorded rather than smoothed over. The first main-gate run on the round-two tree
+failed check 256 ("sensitive health imported a model probe while inactive"), a check that passed
+on the previous tree, on the baseline, in isolation three times, paired with its predecessor
+255 three times, and on the same tree in a second full run. It failed once in one full-gate
+process and did not reproduce; the first log is kept as `main_gate_first_run.log` beside the
+second. Nothing this round touches startup or preflight. It is a state-dependent failure inside
+the gate process, observed once, and it is not attributed to any change here.

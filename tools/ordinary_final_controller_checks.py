@@ -82,6 +82,7 @@ class FakeProvider:
             return {'data': {}}
         if endpoint == 'instance-operations/launch':
             s['launches'] += 1
+            s['launch_body'] = dict(body)
             s['instances'].append((INSTANCE, body['name']))
             s['status'][INSTANCE] = 'active'
             return {'data': dict(instance_ids=[INSTANCE])}
@@ -103,7 +104,7 @@ class FakeTransport:
 
     polls: label -> list of responses, each 'unreachable', 'RUNNING', 'DEAD' or an int exit code.
     A label with no scripted responses completes with exit code 0 at its first poll."""
-    def __init__(self, base, polls=None, outputs=None, progress=None, existing=()):
+    def __init__(self, base, polls=None, outputs=None, progress=None, existing=(), mount=None):
         self.base, self.polls = base, {k: list(v) for k, v in (polls or {}).items()}
         self.outputs = dict(outputs or {})
         self.progress = list(progress or [])
@@ -112,6 +113,14 @@ class FakeTransport:
         # command creates is recorded, so a phase whose command requires a path to be
         # absent answers from that record instead of an unconditional 0 (run v4).
         self.created = set(existing)
+        # The provider filesystem the asset copy lives on, as a model: present or
+        # not, and {digest the file is NAMED by: digest of its actual bytes}. The
+        # probe, use and seed commands are evaluated against it, the way the
+        # instance would evaluate them against a real mount.
+        self.mount = mount
+        self.assets_uploaded = False
+        self.assets_from_copy = False
+        self.seed_writes = []
 
     def fresh_directory_result(self):
         remote = controller.REMOTE
@@ -132,6 +141,8 @@ class FakeTransport:
             if any('collected_evidence.tar.gz' in a for a in argv):
                 (self.base / 'collected_evidence.tar.gz').write_bytes(EVIDENCE)
                 (self.base / 'remote_collection_manifest.json').write_text('{}', encoding='utf8')
+            if any(a.endswith('/assets.tar') for a in argv):
+                self.assets_uploaded = True
             return done(0)
         assert argv[0] == 'ssh', argv
         command = argv[-1]
@@ -142,6 +153,8 @@ class FakeTransport:
             self.started.append(label)
             for made in re.findall(r"mkdir -p (\S+)", command):
                 self.created.add(made.strip("'\""))
+            if label.startswith('asset_copy_'):
+                self.evaluate_asset_copy(label, command)
             return done(0, b'4242\n')
         if 'RUNNING' in command and '.rc' in command:
             label = re.search(r'/([A-Za-z0-9_]+)\.rc', command).group(1)
@@ -163,6 +176,39 @@ class FakeTransport:
             label = re.search(r'/([A-Za-z0-9_]+)\.out', command).group(1)
             return done(0, self.outputs.get(label, b''))
         raise AssertionError('unexpected ssh command: ' + command[:80])
+
+    def evaluate_asset_copy(self, label, command):
+        """Evaluate the copy probe, use and seed scripts against the modelled mount.
+
+        The script is decoded from the launch command exactly as the instance
+        would receive it. A probe that literally echoes a word (a neutralised
+        probe) is answered with that word, so a probe that no longer hashes the
+        copy is exercised as written rather than replaced by the model."""
+        encoded = re.search(r"printf %s '?([A-Za-z0-9+/=]+)'?", command).group(1)
+        script = base64.b64decode(encoded).decode()
+        digest = re.search(r'/assets-([0-9a-f]{64})\.tar', script)
+        digest = digest.group(1) if digest else None
+        present = bool(self.mount and self.mount.get('present'))
+        files = (self.mount or {}).get('files', {})
+        if label == 'asset_copy_probe':
+            if script.startswith('echo '):
+                word = script.split()[1]
+            elif not present:
+                word = 'UNREACHABLE'
+            elif digest not in files:
+                word = 'MISSING'
+            elif files[digest] == digest:
+                word = 'MATCH'
+            else:
+                word = 'MISMATCH'
+            self.outputs['asset_copy_probe'] = (word + '\n').encode()
+        elif label == 'asset_copy_use':
+            self.assets_from_copy = present and digest in files
+        elif label == 'asset_copy_seed':
+            # cp to .partial then mv -n: an existing file under the name is never replaced.
+            self.seed_writes.append(digest)
+            if present and digest not in files:
+                files[digest] = digest
 
     def popen(self, argv, **kwargs):
         write(self.base / 'WATCHDOG_ARMED.json', dict(instance_id=INSTANCE, pid=777, heartbeat_epoch=controller.time.time(),
@@ -188,11 +234,14 @@ class ControllerChecks(unittest.TestCase):
         FakeProvider.state = None
         self.clock = FakeClock(self.base)
 
-    def execute(self, polls=None, outputs=None, progress=None, existing=()):
+    def declare_copy(self, mount='/lambda/nfs/fixture'):
+        write(self.base / 'asset_copy_declaration.json', dict(filesystem_name='fixture-fs', mount=mount, operator_authorized=True))
+
+    def execute(self, polls=None, outputs=None, progress=None, existing=(), mount=None):
         """Run the real controller against the fakes; return (transport, console, failure or None)."""
         outputs = dict(outputs or {})
         outputs.setdefault('evidence_hash', (hashlib.sha256(EVIDENCE).hexdigest() + '  collected_evidence.tar.gz\n').encode())
-        transport = FakeTransport(self.base, polls, outputs, progress, existing)
+        transport = FakeTransport(self.base, polls, outputs, progress, existing, mount)
         fake_subprocess = SimpleNamespace(run=transport.run, Popen=transport.popen, TimeoutExpired=subprocess.TimeoutExpired,
                                           CompletedProcess=subprocess.CompletedProcess, DEVNULL=subprocess.DEVNULL,
                                           DETACHED_PROCESS=8, CREATE_NEW_PROCESS_GROUP=512, CREATE_NO_WINDOW=0)
@@ -339,6 +388,173 @@ class ControllerChecks(unittest.TestCase):
     def clock_at(self, key):
         return json.loads((self.base / 'workload_return.json').read_text())['epoch']
 
+    # ---- the provider-side asset copy: the five local proofs -----------------------------
+
+    def assets_digest(self):
+        return json.loads((self.base / 'assets_transfer_archive.json').read_text())['sha256']
+
+    def copy_receipt(self):
+        return json.loads((self.base / 'asset_copy_receipt.json').read_text())
+
+    def scp_assets_argv(self, transport):
+        return [a for a, _ in transport.calls if a[0] == 'scp' and any(x.endswith('/assets.tar') for x in a)]
+
+    def test_asset_copy_no_declaration_is_byte_identical_to_the_v9_path(self):
+        """Proof 3, the half that matters most: without a declaration nothing about
+        the launch body or the transfer changes."""
+        transport, console, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        self.assertEqual(self.copy_receipt(), dict(declared=False, used=False, seeded=False, suspect=False,
+                                                   state=None, filesystem_name=None, path=None))
+        self.assertEqual([s for s in transport.started if s.startswith('asset_copy_')], [])
+        self.assertNotIn('file_system_names', FakeProvider.state['launch_body'])
+        self.assertEqual(sorted(FakeProvider.state['launch_body']),
+                         ['image', 'instance_type_name', 'name', 'quantity', 'region_name', 'ssh_key_names'])
+        argv = self.scp_assets_argv(transport)
+        self.assertEqual(len(argv), 1)
+        self.assertEqual(argv[0][0], 'scp')
+        self.assertEqual(argv[0][-2:], [str(self.root / 'assets.tar'), 'ubuntu@10.0.0.2:' + controller.REMOTE + '/assets.tar'])
+        self.assertTrue(transport.assets_uploaded)
+        self.assertIsNone(json.loads((self.base / 'operator_authorization.json').read_text())['asset_copy'])
+        self.assert_torn_down()
+
+    def test_asset_copy_match_is_used_and_the_upload_is_skipped(self):
+        """Proof 1, state MATCH."""
+        digest = self.assets_digest()
+        self.declare_copy()
+        transport, console, failure = self.execute(mount=dict(present=True, files={digest: digest}))
+        self.assertIsNone(failure, failure)
+        receipt = self.copy_receipt()
+        self.assertEqual((receipt['declared'], receipt['state'], receipt['used'], receipt['seeded'], receipt['suspect']),
+                         (True, 'MATCH', True, False, False))
+        self.assertEqual(receipt['path'], '/lambda/nfs/fixture/assets-' + digest + '.tar')
+        self.assertEqual(self.scp_assets_argv(transport), [])
+        self.assertTrue(transport.assets_from_copy)
+        self.assertEqual(FakeProvider.state['launch_body']['file_system_names'], ['fixture-fs'])
+        started = transport.started
+        self.assertIn('asset_copy_probe', started)
+        self.assertIn('asset_copy_use', started)
+        self.assertNotIn('asset_copy_seed', started)
+        # archive_integrity still runs, after the copy is in place, and the run proceeds.
+        self.assertLess(started.index('asset_copy_use'), started.index('archive_integrity'))
+        self.assertIn('ordinary_workload', started)
+        self.assertEqual(json.loads((self.base / 'operator_authorization.json').read_text())['asset_copy'],
+                         dict(filesystem_name='fixture-fs', mount='/lambda/nfs/fixture'))
+        self.assert_torn_down()
+
+    def test_asset_copy_missing_falls_back_to_the_identical_upload_and_seeds_after_integrity(self):
+        """Proofs 1 (MISSING), 3 (the fallback argv is the v9 argv) and 4 (seeding order)."""
+        digest = self.assets_digest()
+        plain, _, _ = self.execute()
+
+        def normalised(argv_list, root):
+            # The two runs live in two tempdirs; every path under the run's own
+            # root is the same path relative to it. Nothing else may differ.
+            return [[a.replace(str(root), '<ROOT>') for a in argv] for argv in argv_list]
+        plain_argv = normalised(self.scp_assets_argv(plain), self.root)
+        self.setUp()
+        self.declare_copy()
+        transport, console, failure = self.execute(mount=dict(present=True, files={}))
+        self.assertIsNone(failure, failure)
+        self.assertEqual(normalised(self.scp_assets_argv(transport), self.root), plain_argv)  # byte-identical fallback
+        receipt = self.copy_receipt()
+        self.assertEqual((receipt['state'], receipt['used'], receipt['seeded'], receipt['suspect']), ('MISSING', False, True, False))
+        started = transport.started
+        self.assertNotIn('asset_copy_use', started)
+        self.assertLess(started.index('archive_integrity'), started.index('asset_copy_seed'))
+        self.assertEqual(transport.seed_writes, [digest])
+        self.assertEqual(transport.mount['files'], {digest: digest})  # seeded under the hash-keyed name
+        self.assertIn('ordinary_workload', started)
+        self.assert_torn_down()
+
+    def test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten(self):
+        """Proof 1, state MISMATCH: a corrupt copy is suspect, the upload runs, the copy is left alone."""
+        digest = self.assets_digest()
+        self.declare_copy()
+        wrong = 'e' * 64
+        transport, console, failure = self.execute(mount=dict(present=True, files={digest: wrong}))
+        self.assertIsNone(failure, failure)
+        receipt = self.copy_receipt()
+        self.assertEqual((receipt['state'], receipt['used'], receipt['seeded'], receipt['suspect']), ('MISMATCH', False, False, True))
+        self.assertTrue(transport.assets_uploaded)
+        self.assertFalse(transport.assets_from_copy)
+        self.assertNotIn('asset_copy_use', transport.started)
+        self.assertNotIn('asset_copy_seed', transport.started)
+        self.assertEqual(transport.mount['files'], {digest: wrong})  # untouched, for the operator
+        self.assertIn('ordinary_workload', transport.started)
+        self.assert_torn_down()
+
+    def test_asset_copy_unreachable_mount_falls_back_and_does_not_seed(self):
+        """Proof 1, state UNREACHABLE."""
+        self.declare_copy()
+        transport, console, failure = self.execute(mount=dict(present=False, files={}))
+        self.assertIsNone(failure, failure)
+        receipt = self.copy_receipt()
+        self.assertEqual((receipt['state'], receipt['used'], receipt['seeded']), ('UNREACHABLE', False, False))
+        self.assertTrue(transport.assets_uploaded)
+        self.assertNotIn('asset_copy_seed', transport.started)
+        self.assertEqual(transport.seed_writes, [])
+        self.assertIn('ordinary_workload', transport.started)
+        self.assert_torn_down()
+
+    def test_asset_copy_under_another_digest_never_matches_a_new_manifest(self):
+        """Proof 2: the copy is keyed by the sealed archive's digest, so a rebuilt
+        archive finds no copy, uploads, and seeds beside the old one, which stays."""
+        digest = self.assets_digest()
+        old = 'a1' * 32
+        self.declare_copy()
+        transport, console, failure = self.execute(mount=dict(present=True, files={old: old}))
+        self.assertIsNone(failure, failure)
+        receipt = self.copy_receipt()
+        self.assertEqual((receipt['state'], receipt['used'], receipt['seeded']), ('MISSING', False, True))
+        self.assertTrue(transport.assets_uploaded)
+        self.assertEqual(transport.mount['files'], {old: old, digest: digest})
+        self.assert_torn_down()
+
+    def test_asset_copy_seed_is_skipped_when_integrity_fails(self):
+        """Proof 4: no seed without the instance's own verification of the uploaded bytes."""
+        self.declare_copy()
+        transport, console, failure = self.execute(polls={'archive_integrity': [1]}, mount=dict(present=True, files={}))
+        self.assertEqual(failure['message'], 'Execution phase failed: archive_integrity')
+        self.assertTrue(transport.assets_uploaded)
+        self.assertNotIn('asset_copy_seed', transport.started)
+        self.assertEqual(transport.mount['files'], {})
+        self.assertEqual(self.copy_receipt()['seeded'], False)
+        self.assert_torn_down()
+
+    def test_asset_copy_declaration_must_be_complete_and_operator_authorized(self):
+        write(self.base / 'asset_copy_declaration.json', dict(filesystem_name='fixture-fs', mount='/lambda/nfs/fixture'))
+        with self.assertRaisesRegex(RuntimeError, 'Asset copy declaration incomplete'):
+            self.execute()
+        self.assertEqual(FakeProvider.state, None)  # refused before any provider action
+
+    def test_asset_copy_commands_hash_on_the_instance_and_never_clobber(self):
+        digest = 'c' * 64
+        probe = controller.asset_copy_probe_command('/lambda/nfs/x', digest)
+        for word in ('UNREACHABLE', 'MISSING', 'MATCH', 'MISMATCH'):
+            self.assertIn('echo ' + word, probe)
+        self.assertIn('sha256sum', probe)
+        self.assertIn('/lambda/nfs/x/assets-' + digest + '.tar', probe)
+        self.assertEqual(controller.asset_copy_state(0, b'MATCH\n'), 'MATCH')
+        self.assertEqual(controller.asset_copy_state(0, b'garbage\n'), 'UNREACHABLE')
+        self.assertEqual(controller.asset_copy_state(1, b'MATCH\n'), 'UNREACHABLE')
+        seed = controller.asset_copy_seed_command('/lambda/nfs/x', digest, '/home/ubuntu/r')
+        self.assertIn('.partial', seed)
+        self.assertIn('mv -n', seed)
+        # The provider adapter admits exactly one filesystem name and nothing else new.
+        import lambda_experiment_provider as adapter
+        body = dict(region_name='us-east-1', instance_type_name='gpu_1x_a10', ssh_key_names=['k'], quantity=1,
+                    name='n', image={'id': 'i'})
+        with patch.object(adapter.shutil, 'which', lambda *_: None):
+            probe_adapter = adapter.LambdaExperiment.__new__(adapter.LambdaExperiment)
+            probe_adapter.credential_file = self.base / 'absent'
+            with self.assertRaisesRegex(Exception, 'exactly one bounded filesystem attach required'):
+                probe_adapter.request('instance-operations/launch', dict(body, file_system_names=['a', 'b']))
+            with self.assertRaisesRegex(Exception, 'exactly one bounded launch required'):
+                probe_adapter.request('instance-operations/launch', dict(body, extra=1))
+            with self.assertRaisesRegex(Exception, 'transport'):
+                probe_adapter.request('instance-operations/launch', dict(body, file_system_names=['fs-1']))
+
     def test_generated_commands_run_detached_on_a_real_linux_shell(self):
         """The exact launch and poll strings, through one shell layer as `ssh host cmd` runs them.
 
@@ -439,6 +655,9 @@ NEUTRALIZATIONS = [
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_connection_loss_during_the_workload_keeps_polling_and_records_progress', controller, 'poll_outcome', neutralized_poll_outcome),
     ('test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root', controller, 'phases_dir', v4_phases_dir),
+    # A probe that no longer hashes the copy: a corrupt copy would be used as the sealed archive.
+    ('test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten', controller, 'asset_copy_probe_command',
+     lambda mount, digest: 'echo MATCH'),
 ]
 
 
