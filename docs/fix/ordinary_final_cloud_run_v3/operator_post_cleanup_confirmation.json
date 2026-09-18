@@ -1,0 +1,8 @@
+{
+  "check": "Fresh post-controller provider inventory, independent client",
+  "epoch": 1789720791.24785,
+  "instances": [],
+  "local_key_material_absent": true,
+  "no_persistent_storage_created": true,
+  "temporary_ssh_registration_absent": true
+}

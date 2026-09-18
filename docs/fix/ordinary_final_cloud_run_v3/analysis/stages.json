@@ -1,0 +1,72 @@
+{
+  "archive_integrity": {
+    "returncode": 0,
+    "seconds": 13.50268268585205,
+    "start_epoch": 1789718824.6848717
+  },
+  "assets_transfer": {
+    "returncode": 0,
+    "seconds": 2240.4163472652435,
+    "start_epoch": 1789716584.2651947
+  },
+  "create_environment": {
+    "returncode": 0,
+    "seconds": 8.040598630905151,
+    "start_epoch": 1789718848.127352
+  },
+  "evidence_download": {
+    "returncode": 0,
+    "seconds": 7.124212026596069,
+    "start_epoch": 1789720663.9279613
+  },
+  "evidence_hash": {
+    "returncode": 0,
+    "seconds": 1.8822579383850098,
+    "start_epoch": 1789720662.0447025
+  },
+  "extract_payload": {
+    "returncode": 0,
+    "seconds": 9.929062843322754,
+    "start_epoch": 1789718838.1952827
+  },
+  "final_gpu_state": {
+    "returncode": 0,
+    "seconds": 1.9069421291351318,
+    "start_epoch": 1789720658.1224115
+  },
+  "fresh_directory": {
+    "returncode": 0,
+    "seconds": 1.8767976760864258,
+    "start_epoch": 1789716548.2509494
+  },
+  "install_pinned_wheels": {
+    "seconds": 1800.032292842865,
+    "start_epoch": 1789718856.168951,
+    "timeout": true
+  },
+  "pack_evidence": {
+    "returncode": 0,
+    "seconds": 2.0123538970947266,
+    "start_epoch": 1789720660.0303533
+  },
+  "python_gate": {
+    "returncode": 0,
+    "seconds": 1.8891351222991943,
+    "start_epoch": 1789716546.3601196
+  },
+  "ssh_ready_0": {
+    "returncode": 0,
+    "seconds": 1.9876055717468262,
+    "start_epoch": 1789716544.3695037
+  },
+  "stop_workload": {
+    "returncode": 0,
+    "seconds": 1.9139373302459717,
+    "start_epoch": 1789720656.2062507
+  },
+  "support_transfer": {
+    "returncode": 0,
+    "seconds": 34.12651872634888,
+    "start_epoch": 1789716550.1376762
+  }
+}
