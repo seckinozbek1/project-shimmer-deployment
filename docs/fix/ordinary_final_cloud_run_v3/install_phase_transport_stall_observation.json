@@ -1,0 +1,43 @@
+{
+  "observed_epoch": 1789720457.6566248,
+  "phase": "install_pinned_wheels",
+  "phase_began_epoch": 1789718856.1679506,
+  "minutes_in_phase": 26.7,
+  "controller_transport_deadline_minutes": 30,
+  "method": "two read-only ssh sessions from the operator machine using the run's temporary identity; no file on the instance was written, no process was signalled",
+  "remote_findings": {
+    "pip_or_python_processes_running": 0,
+    "load_average": "0.00 0.00 0.00",
+    "site_packages_entries": 189,
+    "last_installed_dist_info": [
+      "peft-0.15.2",
+      "sentence_transformers-4.1.0",
+      "accelerate-1.10.1"
+    ],
+    "files_written_under_venv_since_install_lock": 38013,
+    "disk_used": "43G of 1.4T",
+    "memory_used_gib": 2,
+    "controller_ssh_session": {
+      "pid": 2191,
+      "state": "sshd: ubuntu@notty",
+      "elapsed": "25:42",
+      "child_processes": 0,
+      "meaning": "the remote shell and pip exited; the session is only waiting to deliver its final bytes"
+    },
+    "controller_tcp_connection": {
+      "local": "10.19.81.5:22",
+      "peer": "operator machine (address withheld)",
+      "recv_q": 0,
+      "send_q": 1396,
+      "meaning": "1396 bytes unacknowledged toward the operator machine: the path back to the controller's ssh client is dead while new sessions from the same machine connect normally"
+    },
+    "diagnostic_ssh_session": {
+      "pid": 2302,
+      "recv_q": 0,
+      "send_q": 0
+    }
+  },
+  "interpretation": "The pinned wheel install completed on the instance. The controller's local ssh process never received the channel close because its established TCP connection stopped delivering, so the controller will reach its transport deadline and tear down. This is a transport failure between the operator machine and the instance, not a startup, admission, model, decoding or workload failure: the sealed workload was never invoked.",
+  "action_taken": "none on the instance; the controller's designed timeout and teardown were left to run",
+  "authorization_consequence": "the single authorized invocation cannot occur on this instance after teardown, and a second instance is not authorized"
+}
