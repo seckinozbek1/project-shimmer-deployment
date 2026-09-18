@@ -131,6 +131,10 @@ COPY scripts/ ./scripts/
 COPY config/ ./config/
 COPY tools/ ./tools/
 COPY corpus_ingest/ ./corpus_ingest/
+# The frozen evaluation protocols the local generate sites read their decoding
+# policy from at run time (config/decoding_policy.json names them, digest-pinned).
+COPY tuning/producer_v3/evaluation_protocol.json ./tuning/producer_v3/
+COPY tuning/auditor_canonical_execution/evaluation_protocol.json ./tuning/auditor_canonical_execution/
 # Declared synthetic inputs used by checks 236, 238 and 239. Their behavior
 # must be executable in the product image as well as the source checkout.
 COPY benchmark/fixtures/rule_condition_fixture.md benchmark/fixtures/severity_effect_fixture.md benchmark/fixtures/external_rules_fixture.json ./benchmark/fixtures/

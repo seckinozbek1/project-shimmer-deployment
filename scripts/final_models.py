@@ -267,8 +267,13 @@ def classifier_messages(value):
 def admit_ordinary():
     if mode() == 'final':
         import auditor_pairs
+        import decoding_policy
         if not auditor_pairs.contract_self_check():
             raise RuntimeError('Auditor pairing contract not admitted')
         verify('producer')
         verify('auditor')
+        # Every local generate site decodes under the frozen evaluation policy;
+        # a drifted protocol or an unsound declaration refuses the run here,
+        # before verify_runtime turns strict determinism on and before any load.
+        decoding_policy.summary()
         verify_runtime()

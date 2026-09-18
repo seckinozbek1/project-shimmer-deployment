@@ -253,9 +253,14 @@ class RecommendationChecks(unittest.TestCase):
             def __call__(self,prompt,**kw):
                 calls.append(("tokenize",prompt,kw));return Inputs(input_ids=SimpleNamespace(shape=(1,2)))
             def decode(self,ids,**kw):return "{}"
+        # The stop set is the frozen protocol's (decoding_policy), not the model's own
+        # generation config: the fixture ends on the protocol's EOS, on the final
+        # allowed token, while the stand-in model still claims [9] as its EOS.
+        import decoding_policy
+        terminal=decoding_policy.policy("local_producer")["kwargs"]["eos_token_id"][0]
         class Output:
             shape=(1,4)
-            def __getitem__(self,key):return [1,2,3,9]
+            def __getitem__(self,key):return [1,2,3,terminal]
         model=SimpleNamespace(device="cpu",generation_config=SimpleNamespace(eos_token_id=[9]),generate=lambda **kw:Output())
         torch=SimpleNamespace(no_grad=nullcontext,cuda=SimpleNamespace(is_available=lambda:False))
         w=self.wrapper();w._optimized_semantics=True

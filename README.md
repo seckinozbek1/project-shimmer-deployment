@@ -57,7 +57,10 @@ compatibility, exactly 3.12.3 for the sealed cloud reference profile. Launchers
 query candidates and retain an absolute compatible executable. Experiment source
 compilation/import checks precede dependency installation and model acquisition;
 the image-default `python` is not assumed compatible. Local Review also needs the configured Qwen, Phi and bge-m3 model
-assets and a compatible CUDA runtime. Readiness reports missing prerequisites;
+assets and a compatible CUDA runtime. Local generation decodes under the frozen
+evaluation policy declared in [config/decoding_policy.json](config/decoding_policy.json)
+and read from the tuning protocols it names (greedy, single beam), so a checkpoint's own
+sampling defaults never govern a review. Readiness reports missing prerequisites;
 it does not install models or generate a sample review. See
 [requirements.txt](requirements.txt), the
 [runtime prerequisites](docs/RUNTIME_REFERENCE.md#persistence-prerequisites-and-image-boundary)

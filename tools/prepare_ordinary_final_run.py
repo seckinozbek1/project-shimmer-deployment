@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import sys
 import tarfile
@@ -18,11 +19,17 @@ OUT = ROOT/'docs/fix/ordinary_final_cloud_run'
 WHEELS = ROOT/'output/cloud_wheels/ordinary_final_cp312'
 
 
-def runtime_source(source):
+def runtime_source(source, extra=()):
+    """The ordinary runtime files at the bound commit, byte-identical to the working tree.
+
+    `extra` names files outside the runtime prefixes that the runtime reads at
+    execution time (the frozen evaluation protocols the decoding policy is read
+    from); they are bound and hash-checked exactly like the source."""
     names=git(ROOT,'ls-tree','-r','--name-only',source).decode().splitlines()
     names=[n for n in names if (n.startswith(('scripts/','config/','corpus_ingest/')) or
-        n in ('requirements.txt','genesis.md','tools/run_local_demo.py','tools/score_corpus.py')) and
+        n in ('requirements.txt','genesis.md','tools/run_local_demo.py','tools/score_corpus.py') or n in extra) and
         not (n.endswith('_checks.py') or n.startswith('scripts/verify_') or '/fixtures/' in n)]
+    require(all(n in names for n in extra), 'Runtime-read file absent from the bound commit')
     with tarfile.open(fileobj=io.BytesIO(git(ROOT,'archive','--format=tar',source,'--',*names))) as archive:
         files={member.name:archive.extractfile(member).read().replace(b'\r\n',b'\n')
                for member in archive.getmembers() if member.isfile()}
@@ -31,7 +38,47 @@ def runtime_source(source):
     return files
 
 
-def prepare(output):
+def expected_members(models, wheels, wheelhouse):
+    """The asset inventory build_assets would write for these models and wheels."""
+    members = {}
+    for model in models:
+        prefix = 'hf_cache/hub/models--'+model['model_id'].replace('/','--')
+        members[prefix+'/refs/main'] = model['cache_ref']
+        for name, entry in model['files'].items():
+            members[prefix+'/snapshots/'+model['revision']+'/'+name] = entry
+    for entry in wheels.values():
+        members['wheels/'+entry['filename']] = dict(sha256=entry['sha256'],bytes=(Path(wheelhouse)/entry['filename']).stat().st_size)
+    return members
+
+
+def bind_existing_assets(bundle, models, wheels, wheelhouse, target):
+    """Bind a previously sealed asset archive instead of writing a second 13 GB copy.
+
+    Admitted only when its recorded inventory equals, member for member and hash
+    for hash, what build_assets would produce now, and its archive bytes still
+    hash to the recorded value. The archive is hard-linked into the new bundle so
+    every tool that reads assets_archive.filename beside the manifest still does."""
+    bundle = Path(bundle).resolve()
+    previous = read(bundle/'execution_manifest.json')['assets_archive']
+    archive = bundle/previous['filename']
+    require(previous['members'] == expected_members(models, wheels, wheelhouse),
+            'Reused asset archive inventory differs from the current models or wheels')
+    require(archive.stat().st_size == previous['bytes'] and sha(archive) == previous['sha256'],
+            'Reused asset archive hash mismatch')
+    require(not Path(target).exists(), 'Refuse to replace an existing asset archive')
+    # Resolve the provenance label BEFORE creating the link: a bundle outside the
+    # repository would otherwise raise after the link exists, and the leftover
+    # would make every later attempt refuse on an archive nothing wrote.
+    try:
+        origin = bundle.relative_to(ROOT).as_posix()
+    except ValueError:
+        origin = bundle.as_posix()
+    os.link(archive, target)
+    require(Path(target).stat().st_size == previous['bytes'], 'Linked asset archive size mismatch')
+    return dict(previous, filename=Path(target).name, reused_from=origin)
+
+
+def prepare(output, source_commit='HEAD', reuse_assets=None):
     global OUT
     original = OUT
     OUT = Path(output).resolve()
@@ -39,8 +86,22 @@ def prepare(output):
     OUT.mkdir(parents=True,exist_ok=True)
     for name in ('runtime.candidate.lock','provider_inventory.json'):
         (OUT/name).write_bytes((original/name).read_bytes())
-    source = git(ROOT, 'rev-parse', '2f0d0f7').decode().strip()
-    files = runtime_source(source)
+    source = git(ROOT, 'rev-parse', source_commit).decode().strip()
+    sys.path.insert(0, str(ROOT/'scripts'))
+    import decoding_policy
+    # The decoding policy is read at run time from the frozen evaluation protocols,
+    # so they travel with the runtime and are hash-bound like every other file.
+    protocols = sorted(e['protocol'] for e in decoding_policy.declaration(ROOT)[0]['backends'].values()
+                       if e.get('status') == 'restored')
+    files = runtime_source(source, extra=protocols)
+    # The declaration and the module that reads it are runtime source: the remote
+    # exact-tree check would accept an archive without them and the run would then
+    # refuse at admission. Bundling from git means an uncommitted file is silently
+    # absent, so require them present by name rather than trusting the prefixes.
+    for name in (decoding_policy.DECLARATION, 'scripts/decoding_policy.py'):
+        require(name in files, 'Decoding policy source absent from the bound commit: '+name)
+    decoding = {b: dict(status=p['status'],source=p['source'],sha256=p['sha256'],kwargs=p['kwargs'])
+                for b, p in decoding_policy.summary(ROOT).items()}
     # Only the explicitly selected ordinary input files may enter this bundle.
     files = {n:d for n,d in files.items() if not n.startswith('benchmark/')}
     corpus = ROOT/'benchmark/corpora/clinical_reference'
@@ -54,7 +115,6 @@ def prepare(output):
     # Numerical/prompt helpers only; no training controller or datasets.
     for name in ('auditor_linear_core.py', 'auditor_classifier_lora_stable.py'):
         files['tools/'+name] = (ROOT/'tools'/name).read_bytes().replace(b'\r\n',b'\n')
-    sys.path.insert(0, str(ROOT/'scripts'))
     import final_models
     spec = read(ROOT/'config/final_models.json')
     for role in ('producer','auditor'):
@@ -104,11 +164,15 @@ def prepare(output):
     require(provider['instances']==[], 'Provider inventory not empty')
     selected = next(x for x in provider['instance_types'] if x['metadata']['type']=='gpu_1x_a10')
     require('us-east-1' in selected['regions'] and selected['metadata']['hourly_rate']<=1.29, 'A10 unavailable/rate changed')
-    assets = build_assets(OUT/'assets.tar',models,wheels,cache,WHEELS)
+    if reuse_assets:
+        assets = bind_existing_assets(reuse_assets,models,wheels,WHEELS,OUT/'assets.tar')
+    else:
+        assets = build_assets(OUT/'assets.tar',models,wheels,cache,WHEELS)
     manifest = dict(schema_version=1,source_commit=source,source_archive_sha256=sha(OUT/'project.tar.gz'),
         classification='PREPARED_NOT_AUTHORIZED',max_runs=1,model_mode='final',multi_round=False,protected_test=False,
         workload=dict(name='clinical_reference',review_targets=1,grounding_documents=1,conventions=1,
                       files=workload,answer_key_transferred=False),
+        decoding_policy=decoding,
         project_files={n:hashlib.sha256(d).hexdigest() for n,d in sorted(files.items())},
         local_control_hashes={n:sha(ROOT/n) for n in ('tools/ordinary_final_watchdog.py',
             'tools/cloud_run_watchdog.py','tools/cloud_run_common.py','tools/ordinary_final_run.py')},
@@ -146,4 +210,9 @@ def prepare(output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir',type=Path,required=True)
-    prepare(parser.parse_args().output_dir)
+    parser.add_argument('--source-commit',default='HEAD',
+                        help='the commit the runtime source is bound to; the working tree must match it')
+    parser.add_argument('--reuse-assets',type=Path,default=None,
+                        help='a sealed bundle whose verified asset archive is bound again instead of rebuilt')
+    args = parser.parse_args()
+    prepare(args.output_dir, args.source_commit, args.reuse_assets)

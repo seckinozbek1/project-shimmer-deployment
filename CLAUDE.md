@@ -346,7 +346,10 @@ processing swarm governed by an append-only constitution.
   every sample so the peaks survive a kill.
 - `Dockerfile` / `compose.yaml` / `tools/entrypoint.sh`: the container. The image copies
   source (`scripts/`, `config/`, `tools/`, `corpus_ingest/`, the three root markdown
-  files, `requirements.txt`) and the three declared synthetic `benchmark/fixtures/`
+  files, `requirements.txt`), the two frozen evaluation protocols the decoding policy is
+  read from (`tuning/producer_v3/evaluation_protocol.json`,
+  `tuning/auditor_canonical_execution/evaluation_protocol.json`) and the three declared
+  synthetic `benchmark/fixtures/`
   files used by the condition, severity and external-rule checks; the entry point takes `serve`, `run` (through
   `tools/run_local_demo.py`, never naming the pipeline file) or `verify` (the gate with
   `--offline`), `verify` by default. The weight layers (`--build-arg BAKE_WEIGHTS=true`) sit
@@ -366,6 +369,26 @@ processing swarm governed by an append-only constitution.
   existing configured 8192 allowance, formerly clamped to 4096. Phase-5 auditors
   receive draft availability and truncation explicitly; failed-contract
   best-effort objects are withheld.
+- DECODING-A: every local generate site (`agent_wrapper.call_local`, `agent_wrapper.call_qwen`,
+  the chat parser) decodes under the frozen evaluation policy, read at call time by
+  `scripts/decoding_policy.py` from the protocol files `config/decoding_policy.json` names
+  (`tuning/producer_v3/evaluation_protocol.json` for `local_producer`,
+  `tuning/auditor_canonical_execution/evaluation_protocol.json` for `local_auditor`, each
+  digest-pinned with CRLF normalised to LF; a drifted protocol refuses the call before any
+  load, and `final_models.admit_ordinary` refuses the run). No decoding value is ever typed
+  into a wrapper. Only the protocol's `max_new_tokens` is withheld (an evaluation cap; the
+  pipeline's per-agent budget stays in force); everything the protocol does not name
+  (`repetition_penalty`, `temperature`, `top_k`, `top_p`) stays with the checkpoint's own
+  generation config, exactly as during evaluation. REDACTOR (`qwen_local`) has no frozen
+  protocol: its greedy policy is DECLARED NEW in the same file, never called restored. The
+  stop-reason logic reads the stop set generate() actually used (the policy's, else the
+  model's own). Measured, not preferred: `final_models.verify_runtime` sets strict torch
+  determinism for the whole process, and run 88323b86 (2026-09-17), which passed no decoding
+  kwargs, let the Producer checkpoint's own top-p sampling config build a warper whose
+  float32 CUDA cumsum has no deterministic implementation, so every local call raised
+  RuntimeError at its first sampling step. Check 262, the integration gate and
+  `tools/ordinary_final_decoding_gate.py` (every family, instrumented cumsum, strict mode
+  on CUDA) hold this; each has neutralize/fail/restore/pass proofs.
 - `scripts/pipeline.py`: the pipeline driver (the flags above).
 
 ## Key paths

@@ -26,7 +26,7 @@ def main():
     out.mkdir(parents=True,exist_ok=True)
     with patch.object(builtins,'__import__',guarded),patch.object(socket.socket,'connect',denied), \
          patch.dict(sys.modules,ontology_gnn=types.ModuleType('ontology_gnn')):
-        modules=['final_integration_checks','auditor_pair_checks','compact_contract_checks','execution_topology_checks','report_recommendations_checks']
+        modules=['final_integration_checks','auditor_pair_checks','compact_contract_checks','execution_topology_checks','report_recommendations_checks','decoding_policy_checks']
         suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromModule(__import__(name)) for name in modules)
         stream=io.StringIO();result=unittest.TextTestRunner(stream=stream,verbosity=2).run(suite)
         (out/'no_generation_tests.log').write_text(stream.getvalue(),encoding='utf8')
@@ -45,6 +45,25 @@ def main():
             with neutralizer(): broken=run_test(name)
             restored=run_test(name)
             proofs.append(dict(check=name,baseline_pass=before,neutralized_test_failed=not broken,restored_pass=restored))
+        # The frozen decoding policy at both local generate sites: each proof
+        # neutralizes the one mechanism that produces the asserted behaviour and
+        # counts that the neutralized branch actually ran (THIRTEEN-B).
+        import decoding_policy
+        import decoding_policy_checks
+        def run_decoding_test(name):
+            return unittest.TextTestRunner(stream=io.StringIO()).run(decoding_policy_checks.DecodingPolicyChecks(name)).wasSuccessful()
+        for name,owner,attribute,mutant in decoding_policy_checks.NEUTRALIZATIONS:
+            invocations=[]
+            def replacement(*a,_mutant=mutant,**k):
+                invocations.append(1)
+                return _mutant(*a,**k)
+            before=run_decoding_test(name)
+            with patch.object(owner,attribute,replacement): broken=run_decoding_test(name)
+            restored=run_decoding_test(name)
+            proofs.append(dict(check=name,baseline_pass=before,neutralized_test_failed=not broken,
+                               restored_pass=restored,mutated_branch_invocations=len(invocations)))
+            if not invocations:
+                proofs[-1]['neutralized_test_failed']=False
         import activation_checks
         activation_status,activation_detail=activation_checks.check()
         import auditor_pairs

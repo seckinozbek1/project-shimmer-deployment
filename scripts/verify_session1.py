@@ -24542,6 +24542,21 @@ def check_261_multi_round():
     return check()
 
 
+def check_262_local_generate_sites_carry_the_frozen_decoding_policy():
+    """Run 88323b86 (2026-09-17) passed no decoding kwargs at either local
+    generate site, so each checkpoint's own generation config governed the
+    call; the Producer's sampling config met the strict deterministic mode
+    final_models.verify_runtime sets, at the first sampling step, and every
+    local call raised RuntimeError before its first token. The frozen
+    evaluation protocols decode greedily. decoding_policy_checks executes both
+    sites with a recording stand-in model (no weights, no torch) and proves the
+    protocol values, and only those, reach generate(), that the pipeline's
+    budget survives, that a drifted protocol refuses, and that a failed call
+    now records where it was raised."""
+    from decoding_policy_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24868,6 +24883,8 @@ CHECKS = [
     ("259 activation artifact reaches authenticated console API", check_259_routing_ui),
     ("260 current routing documentation and generated harness parity", check_260_routing_docs),
     ("261 explicit multi-round typed evidence and baseline isolation", check_261_multi_round),
+    ("262 local generate sites carry the frozen decoding policy read from the evaluation protocols",
+     check_262_local_generate_sites_carry_the_frozen_decoding_policy),
 ]
 
 
