@@ -1,0 +1,8 @@
+{
+  "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "copy_path": "/home/ubuntu/shimmer-filesystem/assets-8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6.tar",
+  "filesystem_name": "shimmer-filesystem",
+  "mount": "/home/ubuntu/shimmer-filesystem",
+  "note": "The operator created this filesystem by hand; no tool in this repository can create, resize, price or delete a provider filesystem. Its footprint, verification and deletion rule are in docs/DEPLOYMENT_RESOURCES.md.",
+  "operator_authorized": true
+}

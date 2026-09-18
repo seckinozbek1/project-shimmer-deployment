@@ -1,0 +1,25 @@
+{
+  "asset_copy": {
+    "filesystem_name": "shimmer-filesystem",
+    "mount": "/home/ubuntu/shimmer-filesystem",
+    "storage_usd_per_month": 4.0
+  },
+  "assets_rebound_not_rebuilt": true,
+  "assets_reused_from": "docs/fix/ordinary_final_cloud_run_v11",
+  "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "bound_wrapper_sha256": "e3da53b9bbb49fd4ebaadee930d85f684fbd552e9a1fe4723486fe1fa5cb6937",
+  "bundle": "docs/fix/ordinary_final_cloud_run_v12",
+  "classification": "PREPARED_NOT_AUTHORIZED",
+  "controller_sha256": "92f953526074685bfd7cdcb3d7ff704be278cee1b452ddff38992e9a84b6e268",
+  "hard_ceiling_usd": 7,
+  "instance_type": "gpu_1x_a10",
+  "manifest_sha256": "4740e1da8fd66d112d5136f2d07ec8f5b9ef3838530f9fd6bacf70cd783b75c2",
+  "max_hourly_rate": 1.29,
+  "preparation_commit": "88e9ba2c713440c6f20fdb133f5fd0aa7406672f",
+  "project_sha256": "a84822deb1f3b11c781a7d3e3f37101424b0d663a89c36af91906c4dd5108287",
+  "provider_adapter_sha256": "102b897210015bfe3884094ba41ca5fb7d274313785e9f9f8eb01d2df7432c88",
+  "region": "us-east-1",
+  "seal_sha256": "1a71857dc941a531bbfaa472dad0684cfb8dfb639ca743d908ce9817f0842159",
+  "soft_budget_usd": 5,
+  "source_commit": "88e9ba2c713440c6f20fdb133f5fd0aa7406672f"
+}
