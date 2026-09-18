@@ -1,0 +1,91 @@
+{
+  "archive_members": 161,
+  "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "binding": {
+    "assets_rebound_not_rebuilt": true,
+    "assets_reused_from": "docs/fix/ordinary_final_cloud_run_v10",
+    "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+    "bundle": "docs/fix/ordinary_final_cloud_run_v11",
+    "classification": "PREPARED_NOT_AUTHORIZED",
+    "hard_ceiling_usd": 7,
+    "instance_type": "gpu_1x_a10",
+    "manifest_sha256": "036fb0fb15cf37ff3210ca605fdb557346ec462f60adefc57bfc9953b56c152e",
+    "max_hourly_rate": 1.29,
+    "preparation_commit": "00f0cba75ae7aaffe01a0b54f79a3f9ba35015a8",
+    "project_sha256": "a84822deb1f3b11c781a7d3e3f37101424b0d663a89c36af91906c4dd5108287",
+    "region": "us-east-1",
+    "seal_sha256": "4a0ea5ccc422e62c6a467fdf46797f5da4d695070413182f8a94ecf0eb4e0da4",
+    "soft_budget_usd": 5,
+    "source_commit": "00f0cba75ae7aaffe01a0b54f79a3f9ba35015a8"
+  },
+  "decoding_policy_admitted": {
+    "local_auditor": {
+      "kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          32000,
+          32007
+        ],
+        "num_beams": 1,
+        "pad_token_id": 32009,
+        "use_cache": true
+      },
+      "sha256": "49199195d354af5f2e4e40e3b715d927cd093cab5e289d7002a813971568ca3b",
+      "source": "tuning/auditor_canonical_execution/evaluation_protocol.json",
+      "status": "restored"
+    },
+    "local_producer": {
+      "kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          151645
+        ],
+        "num_beams": 1,
+        "pad_token_id": 151654,
+        "use_cache": true
+      },
+      "sha256": "51da77c94497ef74b5f913901c20abbe965101dbbb950cb0d5b62b4c16b3cc1a",
+      "source": "tuning/producer_v3/evaluation_protocol.json",
+      "status": "restored"
+    },
+    "qwen_local": {
+      "kwargs": {
+        "do_sample": false,
+        "num_beams": 1,
+        "use_cache": true
+      },
+      "sha256": "a51a93f054918712177e9178367c9afdd7495da735575504c2475a1294f299c6",
+      "source": "config/decoding_policy.json",
+      "status": "new"
+    }
+  },
+  "generated_members": [
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/classifier_fork/adapter_model.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/head.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/mean.npy",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/std.npy",
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/adapter_model.safetensors",
+    "input/context/_review_targets.json",
+    "input/context/analyte_reference_ranges.md",
+    "input/context/result_sheet.md",
+    "input/conventions/lab_conventions.md"
+  ],
+  "head_commit": "00f0cba75ae7aaffe01a0b54f79a3f9ba35015a8",
+  "head_moved_by_evidence_only": [],
+  "manifest_sha256": "036fb0fb15cf37ff3210ca605fdb557346ec462f60adefc57bfc9953b56c152e",
+  "members_compared_to_sealed_commit": 152,
+  "model_workload": false,
+  "passed": true,
+  "project_sha256": "a84822deb1f3b11c781a7d3e3f37101424b0d663a89c36af91906c4dd5108287",
+  "project_tree_verified": true,
+  "provider_contacted": false,
+  "refs_exact_40_bytes": {
+    "hf_cache/hub/models--BAAI--bge-m3/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Phi-3.5-mini-instruct-bnb-4bit/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Qwen2.5-7B-Instruct-bnb-4bit/refs/main": 40
+  },
+  "seal_sha256": "4a0ea5ccc422e62c6a467fdf46797f5da4d695070413182f8a94ecf0eb4e0da4",
+  "sealed_runtime_is_what_launches": true,
+  "source_commit": "00f0cba75ae7aaffe01a0b54f79a3f9ba35015a8",
+  "source_tests_and_validation_hashes_match": true
+}

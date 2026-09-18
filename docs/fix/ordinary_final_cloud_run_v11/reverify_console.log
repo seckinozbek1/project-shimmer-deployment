@@ -1,0 +1,33 @@
+{
+  "archive_members": 161,
+  "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "generated_members": [
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/classifier_fork/adapter_model.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/head.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/mean.npy",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/std.npy",
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/adapter_model.safetensors",
+    "input/context/_review_targets.json",
+    "input/context/analyte_reference_ranges.md",
+    "input/context/result_sheet.md",
+    "input/conventions/lab_conventions.md"
+  ],
+  "head_commit": "00f0cba75ae7aaffe01a0b54f79a3f9ba35015a8",
+  "head_moved_by_evidence_only": [],
+  "manifest_sha256": "036fb0fb15cf37ff3210ca605fdb557346ec462f60adefc57bfc9953b56c152e",
+  "members_compared_to_sealed_commit": 152,
+  "model_workload": false,
+  "passed": true,
+  "project_sha256": "a84822deb1f3b11c781a7d3e3f37101424b0d663a89c36af91906c4dd5108287",
+  "project_tree_verified": true,
+  "provider_contacted": false,
+  "refs_exact_40_bytes": {
+    "hf_cache/hub/models--BAAI--bge-m3/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Phi-3.5-mini-instruct-bnb-4bit/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Qwen2.5-7B-Instruct-bnb-4bit/refs/main": 40
+  },
+  "seal_sha256": "4a0ea5ccc422e62c6a467fdf46797f5da4d695070413182f8a94ecf0eb4e0da4",
+  "sealed_runtime_is_what_launches": true,
+  "source_commit": "00f0cba75ae7aaffe01a0b54f79a3f9ba35015a8",
+  "source_tests_and_validation_hashes_match": true
+}
