@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "cpu": 30,
+    "gpu_count": 1,
+    "gpu_type": "A10 (24 GB PCIe)",
+    "hourly_rate": 1.29,
+    "instance_id": "e40eb9499fe14cdca028d08f981b38eb",
+    "name": "shimmer-ordinary-final-bd1fc2e",
+    "public_ip": "193.122.210.5",
+    "ram_gib": 200,
+    "region": "us-east-1",
+    "status": "active",
+    "storage_gib": 1400,
+    "type": "gpu_1x_a10"
+  },
+  "seconds": 212.34548211097717
+}
