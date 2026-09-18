@@ -1,0 +1,2 @@
+{"event": "infrastructure_cost", "provider": "Lambda", "instance_type": "gpu_1x_a10", "hourly_rate": 1.29, "active_start_epoch": 1789742389.2075899, "active_end_epoch": 1789745715.4398935, "interpretation": "Conservative launch request through independent empty-inventory confirmation; estimate, not invoice"}
+{"event": "api_cost", "estimated_cost": 0, "interpretation": "Approved all-local model profile; no paid model/API execution authorized or invoked"}

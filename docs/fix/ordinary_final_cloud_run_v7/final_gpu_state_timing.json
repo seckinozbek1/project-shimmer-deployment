@@ -1,0 +1,10 @@
+{
+  "detached": true,
+  "polls": 1,
+  "remote_pid": "4638",
+  "remote_work": "completed",
+  "returncode": 0,
+  "seconds": 8.002401351928711,
+  "start_epoch": 1789745581.2719266,
+  "unreachable_polls": 0
+}

@@ -1,0 +1,18 @@
+{
+  "check": "Fresh post-controller provider inventory, independent client",
+  "epoch": 1789745734.993847,
+  "instances": [],
+  "local_key_material_absent": true,
+  "no_persistent_storage_created": true,
+  "remaining_registered_keys": [
+    {
+      "id": "443de3435d3849f4ae9285a9b54afb18",
+      "name": "shimmer-lambda"
+    }
+  ],
+  "temporary_registration_checked": {
+    "id": "d2827f35fbdb4a35a8551e3f83da0c43",
+    "name": "shimmer-ordinary-final-205bbb3"
+  },
+  "temporary_ssh_registration_absent": true
+}

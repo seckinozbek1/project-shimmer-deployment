@@ -1,0 +1,59 @@
+{
+  "by_rule": {
+    "CONV-001": {
+      "subjects": [],
+      "agents": [],
+      "consumer_agents": [],
+      "status": "untagged",
+      "source_rule_id": "CONV-L01"
+    },
+    "CONV-002": {
+      "subjects": [],
+      "agents": [],
+      "consumer_agents": [],
+      "status": "untagged",
+      "source_rule_id": "CONV-L02"
+    },
+    "CONV-003": {
+      "subjects": [],
+      "agents": [],
+      "consumer_agents": [],
+      "status": "untagged",
+      "source_rule_id": "CONV-L03"
+    },
+    "CONV-004": {
+      "subjects": [],
+      "agents": [],
+      "consumer_agents": [],
+      "status": "untagged",
+      "source_rule_id": "CONV-L04"
+    },
+    "CONV-005": {
+      "subjects": [],
+      "agents": [],
+      "consumer_agents": [],
+      "status": "untagged",
+      "source_rule_id": "CONV-L05"
+    }
+  },
+  "by_agent": {
+    "PROCESSOR": [],
+    "VERIFIER": [],
+    "FACT_CHECKER": [],
+    "PRACTICE_AUDITOR": [],
+    "LEGAL_ANALYST": [],
+    "STYLE_GUARDIAN": [],
+    "ARCHIVIST": [],
+    "INST_FINDER": [],
+    "CITATION_RESOLVER": [],
+    "SPEECH_ACT_TAGGER": [],
+    "REDACTOR": [],
+    "AMENDMENT_DRAFTER": [],
+    "EDITOR_CLERK": [],
+    "EDITOR_HEAD_OF_UNIT": [],
+    "EDITOR_HEAD_OF_SECTION": [],
+    "EDITOR_HEAD_OF_DEPARTMENT": [],
+    "EDITOR_DEPUTY_DG": [],
+    "EDITOR_DG": []
+  }
+}

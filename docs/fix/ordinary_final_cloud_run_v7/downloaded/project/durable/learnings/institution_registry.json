@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-09-18T15:24:21.557057+00:00",
+  "source": "adaptive_spawn",
+  "institutions": {
+    "ALDER": {
+      "mentions": 2,
+      "official_url": null,
+      "role": null,
+      "first_seen": "2026-09-18T15:24:21.557039+00:00",
+      "evidence_in_corpus": true
+    },
+    "BIRCH": {
+      "mentions": 2,
+      "official_url": null,
+      "role": null,
+      "first_seen": "2026-09-18T15:24:21.557045+00:00",
+      "evidence_in_corpus": true
+    },
+    "CEDAR": {
+      "mentions": 2,
+      "official_url": null,
+      "role": null,
+      "first_seen": "2026-09-18T15:24:21.557047+00:00",
+      "evidence_in_corpus": true
+    },
+    "DAMSON": {
+      "mentions": 2,
+      "official_url": null,
+      "role": null,
+      "first_seen": "2026-09-18T15:24:21.557050+00:00",
+      "evidence_in_corpus": true
+    },
+    "ELDER": {
+      "mentions": 2,
+      "official_url": null,
+      "role": null,
+      "first_seen": "2026-09-18T15:24:21.557052+00:00",
+      "evidence_in_corpus": true
+    },
+    "FIRTH": {
+      "mentions": 1,
+      "official_url": null,
+      "role": null,
+      "first_seen": "2026-09-18T15:24:21.557054+00:00",
+      "evidence_in_corpus": true
+    }
+  }
+}

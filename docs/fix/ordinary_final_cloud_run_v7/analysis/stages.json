@@ -1,0 +1,287 @@
+{
+  "archive_integrity": {
+    "detached": true,
+    "polls": 2,
+    "remote_pid": "2216",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 19.841764450073242,
+    "start_epoch": 1789744896.0729113,
+    "unreachable_polls": 0
+  },
+  "archive_integrity_collect": {
+    "returncode": 0,
+    "seconds": 1.905993938446045,
+    "start_epoch": 1789744913.9991868
+  },
+  "archive_integrity_start": {
+    "returncode": 0,
+    "seconds": 2.006683588027954,
+    "start_epoch": 1789744896.0749304
+  },
+  "assets_transfer": {
+    "returncode": 0,
+    "seconds": 2261.1983258724213,
+    "start_epoch": 1789742634.8696
+  },
+  "create_environment": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "2392",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 7.907230615615845,
+    "start_epoch": 1789744935.6686664,
+    "unreachable_polls": 0
+  },
+  "create_environment_collect": {
+    "returncode": 0,
+    "seconds": 1.9801666736602783,
+    "start_epoch": 1789744941.5874574
+  },
+  "create_environment_start": {
+    "returncode": 0,
+    "seconds": 2.000788450241089,
+    "start_epoch": 1789744935.6686664
+  },
+  "dependency_closure": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "2680",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 7.798203229904175,
+    "start_epoch": 1789745022.8504205,
+    "unreachable_polls": 0
+  },
+  "dependency_closure_collect": {
+    "returncode": 0,
+    "seconds": 1.8903157711029053,
+    "start_epoch": 1789745028.7513099
+  },
+  "dependency_closure_start": {
+    "returncode": 0,
+    "seconds": 2.0172245502471924,
+    "start_epoch": 1789745022.8504205
+  },
+  "evidence_download": {
+    "returncode": 0,
+    "seconds": 7.232843399047852,
+    "start_epoch": 1789745605.0787394
+  },
+  "evidence_hash": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "4769",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 7.893721342086792,
+    "start_epoch": 1789745597.1830041,
+    "unreachable_polls": 0
+  },
+  "evidence_hash_collect": {
+    "returncode": 0,
+    "seconds": 1.8818774223327637,
+    "start_epoch": 1789745603.1926677
+  },
+  "evidence_hash_start": {
+    "returncode": 0,
+    "seconds": 1.9952189922332764,
+    "start_epoch": 1789745597.1840074
+  },
+  "extract_payload": {
+    "detached": true,
+    "polls": 2,
+    "remote_pid": "2303",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 19.74761199951172,
+    "start_epoch": 1789744915.9178426,
+    "unreachable_polls": 0
+  },
+  "extract_payload_collect": {
+    "returncode": 0,
+    "seconds": 1.8882100582122803,
+    "start_epoch": 1789744933.7753446
+  },
+  "extract_payload_start": {
+    "returncode": 0,
+    "seconds": 2.008543014526367,
+    "start_epoch": 1789744915.9178426
+  },
+  "final_gpu_state": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "4638",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 8.002401351928711,
+    "start_epoch": 1789745581.2719266,
+    "unreachable_polls": 0
+  },
+  "final_gpu_state_collect": {
+    "returncode": 0,
+    "seconds": 1.9900977611541748,
+    "start_epoch": 1789745587.2762518
+  },
+  "final_gpu_state_start": {
+    "returncode": 0,
+    "seconds": 2.092418909072876,
+    "start_epoch": 1789745581.2719266
+  },
+  "fresh_directory": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "2046",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 7.887762546539307,
+    "start_epoch": 1789742593.603435,
+    "unreachable_polls": 0
+  },
+  "fresh_directory_collect": {
+    "returncode": 0,
+    "seconds": 1.997373342514038,
+    "start_epoch": 1789742599.486775
+  },
+  "fresh_directory_start": {
+    "returncode": 0,
+    "seconds": 1.9911315441131592,
+    "start_epoch": 1789742593.603435
+  },
+  "gpu_metadata": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "2744",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 7.798964738845825,
+    "start_epoch": 1789745030.6506438,
+    "unreachable_polls": 0
+  },
+  "gpu_metadata_collect": {
+    "returncode": 0,
+    "seconds": 1.8756606578826904,
+    "start_epoch": 1789745036.5719593
+  },
+  "gpu_metadata_start": {
+    "returncode": 0,
+    "seconds": 2.002075672149658,
+    "start_epoch": 1789745030.6506438
+  },
+  "install_pinned_wheels": {
+    "detached": true,
+    "polls": 7,
+    "remote_pid": "2476",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 79.26829123497009,
+    "start_epoch": 1789744943.5791273,
+    "unreachable_polls": 0
+  },
+  "install_pinned_wheels_collect": {
+    "returncode": 0,
+    "seconds": 1.8903183937072754,
+    "start_epoch": 1789745020.9549825
+  },
+  "install_pinned_wheels_start": {
+    "returncode": 0,
+    "seconds": 1.994692325592041,
+    "start_epoch": 1789744943.5791273
+  },
+  "ordinary_workload": {
+    "detached": true,
+    "polls": 45,
+    "remote_pid": "2828",
+    "remote_work": "completed",
+    "returncode": 2,
+    "seconds": 531.9038910865784,
+    "start_epoch": 1789745041.4689944,
+    "unreachable_polls": 0
+  },
+  "ordinary_workload_collect": {
+    "returncode": 0,
+    "seconds": 1.871325969696045,
+    "start_epoch": 1789745571.4939635
+  },
+  "ordinary_workload_start": {
+    "returncode": 0,
+    "seconds": 1.9922442436218262,
+    "start_epoch": 1789745041.4689944
+  },
+  "pack_evidence": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "4705",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 7.9066362380981445,
+    "start_epoch": 1789745589.2753687,
+    "unreachable_polls": 0
+  },
+  "pack_evidence_collect": {
+    "returncode": 0,
+    "seconds": 1.8745813369750977,
+    "start_epoch": 1789745595.2990668
+  },
+  "pack_evidence_start": {
+    "returncode": 0,
+    "seconds": 2.0851964950561523,
+    "start_epoch": 1789745589.2753687
+  },
+  "python_gate": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "1982",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 7.839038133621216,
+    "start_epoch": 1789742585.764397,
+    "unreachable_polls": 0
+  },
+  "python_gate_collect": {
+    "returncode": 0,
+    "seconds": 1.9725565910339355,
+    "start_epoch": 1789742591.6295617
+  },
+  "python_gate_start": {
+    "returncode": 0,
+    "seconds": 1.9782040119171143,
+    "start_epoch": 1789742585.7654169
+  },
+  "ssh_ready_0": {
+    "returncode": 0,
+    "seconds": 1.9242730140686035,
+    "start_epoch": 1789742583.839133
+  },
+  "stop_workload": {
+    "detached": true,
+    "polls": 1,
+    "remote_pid": "4574",
+    "remote_work": "completed",
+    "returncode": 0,
+    "seconds": 7.894843816757202,
+    "start_epoch": 1789745573.3758326,
+    "unreachable_polls": 0
+  },
+  "stop_workload_collect": {
+    "returncode": 0,
+    "seconds": 1.8827424049377441,
+    "start_epoch": 1789745579.3796887
+  },
+  "stop_workload_start": {
+    "returncode": 0,
+    "seconds": 2.1141233444213867,
+    "start_epoch": 1789745573.3769238
+  },
+  "support_transfer": {
+    "returncode": 0,
+    "seconds": 33.37489056587219,
+    "start_epoch": 1789742601.4932027
+  },
+  "watchdog_receipt_transfer": {
+    "returncode": 0,
+    "seconds": 2.9906628131866455,
+    "start_epoch": 1789745038.4690135
+  }
+}

@@ -1,0 +1,86 @@
+# Contract violation raw output
+# agent: FACT_CHECKER
+# timestamp: 2026-09-18T15:31:19.240240+00:00
+# missing_fields: ['items[0].verdict', 'items[1].verdict', 'items[2].verdict', 'items[3].verdict', 'items[4].verdict']
+# raw_text_bytes: 2362
+# sensitive: False
+# ---
+{"agent": "FACT_CHECKER", "doc_id": "result_sheet", "items": [
+  {
+    "ref": "REF-0016",
+    "kind": "finding",
+    "confidence": "CONFIDENT",
+    "claim_id": "CONV-001",
+    "search_method": "source_span",
+    "relation": "sum_mismatch",
+    "value_a": 6,
+    "unit_a": "total_result_count",
+    "value_b": 6,
+    "unit_b": "total_result_count",
+    "record_verdict": "irregular",
+    "source_refs": ["REF-0016"],
+    "explanation": "The total result count declared matches the declared total, but the distribution among laboratories does not.",
+    "field_label": "Total result count declared"
+  },
+  {
+    "ref": "REF-0022",
+    "kind": "finding",
+    "confidence": "CONFIDENT",
+    "claim_id": "CONV-002",
+    "search_method": "source_span",
+    "relation": "missing_field",
+    "value_a": "148 mmol/L",
+    "unit_a": "measured_value",
+    "value_b": "",
+    "unit_b": "",
+    "record_verdict": "irregular",
+    "source_refs": ["REF-0022"],
+    "quote": "Test: Sodium\nMeasured value: 148 mmol/L\nAnalysing laboratory: Northgate"
+  },
+  {
+    "ref": "REF-0023",
+    "kind": "finding",
+    "confidence": "CONFIDENT",
+    "claim_id": "CONV-003",
+    "search_method": "source_span",
+    "relation": "missing_field",
+    "value_a": "99 mmol/L",
+    "unit_a": "measured_value",
+    "value_b": "",
+    "unit_b": "",
+    "record_verdict": "irregular",
+    "source_refs": ["REF-0023"],
+    "quote": "Test: Chloride\nMeasured value: 99 mmol/L\nAnalysing laboratory: Eastfield"
+  },
+  {
+    "ref": "REF-0032",
+    "kind": "finding",
+    "confidence": "CONFIDENT",
+    "claim_id": "CONV-005",
+    "search_method": "source_span",
+    "relation": "product_mismatch",
+    "value_a": "2.3 mmol/L",
+    "unit_a": "measured_value",
+    "value_b": "",
+    "unit_b": "",
+    "record_verdict": "irregular",
+    "source_refs": ["REF-0032"],
+    "quote": "Test: Total calcium\nMeasured value: 2.3 mmol/L\nAnalysing laboratory: Northgate"
+  },
+  {
+    "ref": "REF-0035",
+    "kind": "finding",
+    "confidence": "CONFIDENT",
+    "claim_id": "CONV-005",
+    "search_method": "source_span",
+    "relation": "product_mismatch",
+    "value_a": "42 g/L",
+    "unit_a": "measured_value",
+    "value_b": "",
+    "unit_b": "",
+    "record_verdict": "irregular",
+    "source_refs": ["REF-0035"],
+    "quote": "Test: Albumin\nMeasured value: 42 g/L\nAnalysing laboratory: Eastfield"
+  }
+]
+}
