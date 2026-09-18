@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/home/seckinozbek/shimmer-rehearsal/shimmer-ordinary-final/ordinary_final_run.py", line 275, in <module>
+    raise SystemExit(execute(args.bundle))
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/home/seckinozbek/shimmer-rehearsal/shimmer-ordinary-final/ordinary_final_run.py", line 236, in execute
+    write(base/'hardware_admission.json',hardware_admission(base,sys.modules['torch'],psutil))
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/seckinozbek/shimmer-rehearsal/shimmer-ordinary-final/ordinary_final_run.py", line 186, in hardware_admission
+    require('A10' in props.name and total>=23_000_000_000 and free>=20*2**30,'A10 memory admission')
+  File "/home/seckinozbek/shimmer-rehearsal/shimmer-ordinary-final/ordinary_final_run.py", line 32, in require
+    raise RuntimeError(message)
+RuntimeError: A10 memory admission
