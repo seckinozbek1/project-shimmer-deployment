@@ -30,6 +30,7 @@ import agent_activation
 import agent_briefs
 import run_options
 import generation_observation
+import decoding_policy
 import final_models
 import model_telemetry
 from bus_reader import (_estimate_tokens, assemble_context,
@@ -825,6 +826,11 @@ class AgentWrapper:
             r = CallResult("qwen_local", "?", "", ok=False,
                            error=f"no model configured for agent {self.name!r} in agent_registry.json")
             _record_cost(r); return r
+        # The decoding policy is read from its declaration before the model loads
+        # (scripts/decoding_policy.py): a drifted protocol refuses the call with no
+        # weights touched. REDACTOR has no frozen protocol; its policy is declared
+        # new in config/decoding_policy.json and reported as such on every call.
+        decoding = decoding_policy.policy("qwen_local")
         try:
             # Shared resident instance (loaded once per model_id) — the single
             # REDACTOR (qwen_local) reuses ONE 7B; any other qwen_local agent on
@@ -842,14 +848,16 @@ class AgentWrapper:
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
         with torch.no_grad():
-            out = mdl.generate(**inputs, max_new_tokens=max_new_tokens)
+            out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
         generation_ended = time.perf_counter()
         generation_seconds = generation_ended - generation_started
         model_telemetry.emit(self.run_context, "generation_interval", call_id=getattr(self, "_cost_call_id", None),
             start_monotonic_s=generation_started, end_monotonic_s=generation_ended)
         generated_count = int(out.shape[-1]) - int(inputs["input_ids"].shape[1])
         last_token = int(out[0][-1]) if generated_count else None
-        eos_ids = getattr(getattr(mdl, "generation_config", None), "eos_token_id", None)
+        # The stop set generate() actually used: the policy's when it names one
+        # (the frozen protocols do), otherwise the model's own generation config.
+        eos_ids = decoding_policy.effective_eos(decoding, mdl)
         stop_reason, truncated = generation_observation.local_stop(last_token, eos_ids, generated_count, max_new_tokens)
         text = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
         out_tokens = out.shape[-1] - int(inputs["input_ids"].shape[1])
@@ -866,6 +874,7 @@ class AgentWrapper:
             "rendered_prompt_sha256": generation_observation.prompt_identity(prompt),
             "cap_hit": out_tokens >= max_new_tokens,
             "terminal_token_id": last_token, "configured_eos_token_ids": eos_ids,
+            **decoding_policy.usage_fields(decoding),
         })
         _record_cost(r); return r
 
@@ -888,6 +897,13 @@ class AgentWrapper:
             r = CallResult(self.backend, "?", "", ok=False,
                            error=f"no model configured for agent {self.name!r} in agent_registry.json")
             _record_cost(r); return r
+        # The frozen decoding policy of this backend (the evaluation protocol's
+        # generate() kwargs, read from the protocol file itself, never typed here)
+        # is resolved before the model loads: a drifted protocol refuses the call
+        # outright. Run 88323b86 (2026-09-17) passed no decoding kwargs, so the
+        # Producer checkpoint's own sampling config met strict deterministic mode
+        # at its first sampling step and every local call raised there.
+        decoding = decoding_policy.policy(self.backend)
         try:
             if final_models.mode() == 'final' and self.backend == 'local_producer':
                 final_models.require(model_id == final_models.specification('producer')['model_id'], 'Tuned Producer base selection mismatch')
@@ -910,14 +926,16 @@ class AgentWrapper:
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
         with torch.no_grad():
-            out = mdl.generate(**inputs, max_new_tokens=max_new_tokens)
+            out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
         generation_ended = time.perf_counter()
         generation_seconds = generation_ended - generation_started
         model_telemetry.emit(self.run_context, "generation_interval", call_id=getattr(self, "_cost_call_id", None),
             start_monotonic_s=generation_started, end_monotonic_s=generation_ended)
         generated_count = int(out.shape[-1]) - int(inputs["input_ids"].shape[1])
         last_token = int(out[0][-1]) if generated_count else None
-        eos_ids = getattr(getattr(mdl, "generation_config", None), "eos_token_id", None)
+        # The stop set generate() actually used: the policy's when it names one
+        # (the frozen protocols do), otherwise the model's own generation config.
+        eos_ids = decoding_policy.effective_eos(decoding, mdl)
         stop_reason, truncated = generation_observation.local_stop(last_token, eos_ids, generated_count, max_new_tokens)
         text = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
         in_tokens = int(inputs["input_ids"].shape[1])
@@ -948,6 +966,7 @@ class AgentWrapper:
             "rendered_prompt_sha256": generation_observation.prompt_identity(prompt),
             "cap_hit": out_tokens >= max_new_tokens,
             "terminal_token_id": last_token, "configured_eos_token_ids": eos_ids,
+            **decoding_policy.usage_fields(decoding),
         })
         _record_cost(r); return r
 

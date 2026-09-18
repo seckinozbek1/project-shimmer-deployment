@@ -9,10 +9,54 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
 import uuid
 from functools import wraps
 
 LOCK = threading.RLock()
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def label(frame):
+    return Path(frame.filename).name + ':' + str(frame.lineno) + ':' + frame.name
+
+
+def project_frame(filename, root=None):
+    """True only for a real source file of this project, not a library or a pseudo-frame.
+
+    A bare containment test is not enough on either count. A pseudo-filename
+    (`<frozen importlib._bootstrap>`, `<string>`) resolves against the working
+    directory, which IS the project during a run, so it would pass; and the
+    launchers create `.venv` inside the repository root, so every installed
+    library frame would pass too. Both would report a foreign frame as the
+    project origin, which is the one thing this field exists to identify."""
+    name = str(filename)
+    if name.startswith('<') or not name.endswith('.py'):
+        return False
+    try:
+        path = Path(name).resolve()
+        relative = path.relative_to(Path(root or ROOT))
+    except (OSError, ValueError):
+        return False
+    return path.is_file() and relative.parts[0] not in {'.venv', 'venv', 'site-packages', '.tmp'}
+
+
+def failure_location(exc):
+    """Payload-free identity of a raised failure, beside its type name.
+
+    The class module, the frame that raised (file basename, line, function) and
+    the innermost frame inside this project: identifiers only, never message
+    text, so a failure inside a library call reads in one step from the receipt.
+    Run 88323b86 recorded 'RuntimeError' six times and nothing else, and the
+    raising frame (a top-p warper's cumsum under strict determinism) had to be
+    re-derived from source and a local probe."""
+    if exc is None or exc.__traceback__ is None:
+        return {}
+    frames = traceback.extract_tb(exc.__traceback__)
+    origin = next((f for f in reversed(frames) if project_frame(f.filename)), None)
+    return dict(failure_module=type(exc).__module__,
+                failure_frame=label(frames[-1]) if frames else None,
+                failure_origin=label(origin) if origin else None)
 
 
 def observe_dispatch(function):
@@ -23,12 +67,13 @@ def observe_dispatch(function):
         with LOCK:
             if context is not None:
                 context._active_model_calls = getattr(context, '_active_model_calls', 0) + 1
-        result, failure = None, None
+        result, failure, location = None, None, {}
         try:
             result = function(self, *args, **kwargs)
             return result
         except BaseException as exc:
             failure = type(exc).__name__
+            location = failure_location(exc)
             raise
         finally:
             with LOCK:
@@ -41,7 +86,7 @@ def observe_dispatch(function):
                 agent=self.name, backend=self.backend, model_id=self.model,
                 start_monotonic_s=started, end_monotonic_s=end,
                 backend_success=getattr(result, 'ok', False), failure_category=failure,
-                usage=getattr(result, 'usage', None))
+                usage=getattr(result, 'usage', None), **location)
     return dispatch
 
 

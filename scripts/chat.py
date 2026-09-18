@@ -517,13 +517,17 @@ class ChatApp:
         cmd = None
         try:
             from agent_wrapper import _load_qwen
+            import decoding_policy
             import torch
             mid = redactor_model_id()
+            # Same model and the same declared decoding policy as REDACTOR's own
+            # call site (config/decoding_policy.json): greedy, single beam.
+            decoding = decoding_policy.policy("qwen_local")
             tok, mdl = _load_qwen(mid)
             prompt = QWEN_SYSTEM_PROMPT + "\n\nUser: " + text + "\n\nJSON:"
             inputs = tok(prompt, return_tensors="pt").to(mdl.device)
             with torch.no_grad():
-                out = mdl.generate(**inputs, max_new_tokens=256)
+                out = mdl.generate(**inputs, max_new_tokens=256, **decoding["kwargs"])
             raw = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
             cmd = extract_json(raw)
         except Exception:

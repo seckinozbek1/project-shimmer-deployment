@@ -45,6 +45,7 @@ def observe(function):
         self._requested_output_budget = None
         result = None
         error_type = None
+        location = {}
         try:
             result = function(self, *args, **kwargs)
             import auditor_pairs
@@ -56,6 +57,10 @@ def observe(function):
             return result
         except BaseException as exc:
             error_type = type(exc).__name__
+            # Same payload-free identity the backend receipt carries: class
+            # module, raising frame, innermost project frame. No message text.
+            location = {"error_" + k.split("_", 1)[1]: v
+                        for k, v in model_telemetry.failure_location(exc).items()}
             raise
         finally:
             u = self._generation_usage
@@ -83,7 +88,7 @@ def observe(function):
                            {"local_producer","local_auditor","qwen_local"} else u.get("backend_retry_count"),
                        retry_reason=getattr(self, "_partition_retry_reason", None),
                        error_type=error_type, resource_sample_link="audit/execution_topology.jsonl:task_id",
-                       )
+                       **location)
             row.update(u)
             append(getattr(self, "run_context", None), row)
             model_telemetry.call_record(self, result, started, started_at, error_type)

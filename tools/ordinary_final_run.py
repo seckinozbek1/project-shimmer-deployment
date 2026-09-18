@@ -133,6 +133,36 @@ def assess(completion, raw):
             'collection_and_teardown_pending': True, 'quality_claim': None}
 
 
+def failure_identity(exc, project):
+    """Exception type, class module, raising frame and innermost project frame.
+
+    File basenames, line numbers and function names only, never message text:
+    the type-only receipt of run 88323b86 could not say where its RuntimeError
+    was raised, and the cause had to be re-derived from source."""
+    import traceback
+    frames = traceback.extract_tb(exc.__traceback__) if exc.__traceback__ is not None else []
+    def label(frame):
+        return Path(frame.filename).name+':'+str(frame.lineno)+':'+frame.name
+    def inside(frame):
+        # Same rule as scripts/model_telemetry.project_frame: a pseudo-filename
+        # resolves against the working directory, which IS the project during a
+        # run, and an in-tree virtual environment holds library code; either
+        # would report a foreign frame as the project origin.
+        name = str(frame.filename)
+        if name.startswith('<') or not name.endswith('.py'):
+            return False
+        try:
+            path = Path(name).resolve()
+            relative = path.relative_to(Path(project).resolve())
+        except (OSError, ValueError):
+            return False
+        return path.is_file() and relative.parts[0] not in {'.venv', 'venv', 'site-packages', '.tmp'}
+    origin = next((f for f in reversed(frames) if inside(f)), None)
+    return {'error_type': type(exc).__name__, 'error_module': type(exc).__module__,
+            'error_frame': label(frames[-1]) if frames else None,
+            'error_origin': label(origin) if origin else None}
+
+
 def installed_runtime(manifest, distribution=None):
     if distribution is None:
         import importlib.metadata
@@ -218,7 +248,7 @@ def execute(base):
         import pipeline
         code = pipeline.main(argv)
     except BaseException as exc:
-        write(evidence/'terminal_error.json', {'error_type': type(exc).__name__})
+        write(evidence/'terminal_error.json', failure_identity(exc, project))
     finally:
         rec.close()
         import model_telemetry, run_completion

@@ -1,0 +1,83 @@
+{
+  "passed": true,
+  "tests": 112,
+  "failures": 0,
+  "errors": 0,
+  "activation_status": "PASS",
+  "activation_detail": "actual dispatch/audit joins, conservative fallback, dense parity, bounded legal/editorial work, masking/refusal, privacy, NFR and no-op refusal",
+  "neutralize_fail_restore_pass": [
+    {
+      "check": "test_wrong_producer_checkpoint_refuses",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_overlap_and_handoff",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_ordinary_final_admission_requires_valid_pair_contract",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_call_local_passes_restored_kwargs_and_pipeline_budget",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_call_qwen_passes_the_new_redactor_policy_and_the_model_stop_set",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_protocol_drift_refuses_before_any_model_load",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 24
+    },
+    {
+      "check": "test_failed_local_call_records_module_and_raising_frame",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_ownership_excludes_invalid_span_and_foreign_ref",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_stale_revision_excluded",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_no_guess_from_paragraph_or_prose",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_multiple_findings_not_relabelled_and_join_only_explicit",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true
+    }
+  ],
+  "model_loads": 0,
+  "network_allowed": false,
+  "multi_round_executed": false
+}

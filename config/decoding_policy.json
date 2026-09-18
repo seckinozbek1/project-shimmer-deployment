@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "description": "Decoding policy for every local generate site (agent_wrapper.call_local, agent_wrapper.call_qwen, chat.py's parser). A restored backend reads its generate() kwargs from the frozen evaluation protocol named here, through scripts/decoding_policy.py; protocol_sha256 is the digest of that file with CRLF normalised to LF, and a protocol whose digest differs refuses the call before any model loads. Only evaluation_only_keys are withheld: max_new_tokens is an evaluation cap, the pipeline's per-agent budget stays in force. Everything a protocol does not name (repetition_penalty, temperature, top_k, top_p) stays with the checkpoint's own generation config, exactly as during evaluation, and is inert once do_sample is false.",
+  "evaluation_only_keys": ["max_new_tokens"],
+  "backends": {
+    "local_producer": {
+      "status": "restored",
+      "role": "producer",
+      "protocol": "tuning/producer_v3/evaluation_protocol.json",
+      "field": "generation_kwargs",
+      "protocol_sha256": "51da77c94497ef74b5f913901c20abbe965101dbbb950cb0d5b62b4c16b3cc1a",
+      "keys": ["do_sample", "eos_token_id", "num_beams", "pad_token_id", "use_cache"]
+    },
+    "local_auditor": {
+      "status": "restored",
+      "role": "auditor",
+      "protocol": "tuning/auditor_canonical_execution/evaluation_protocol.json",
+      "field": "generation_kwargs",
+      "protocol_sha256": "49199195d354af5f2e4e40e3b715d927cd093cab5e289d7002a813971568ca3b",
+      "keys": ["do_sample", "eos_token_id", "num_beams", "pad_token_id", "use_cache"]
+    },
+    "qwen_local": {
+      "status": "new",
+      "role": "redactor",
+      "policy": {"do_sample": false, "num_beams": 1, "use_cache": true},
+      "reason": "No frozen evaluation protocol exists for REDACTOR, so this is a new policy, not a restored one: the same greedy, single-beam, cached decoding the two frozen protocols use. eos_token_id and pad_token_id are left to the model's own generation config because no evaluation fixed them for this role."
+    }
+  }
+}
