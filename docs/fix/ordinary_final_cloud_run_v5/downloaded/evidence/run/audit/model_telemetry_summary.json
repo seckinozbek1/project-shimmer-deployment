@@ -1,0 +1,673 @@
+{
+  "auditor_pairing": {
+    "agreements": 0,
+    "auditor_to_verifier": [],
+    "classifier_calls": 0,
+    "classifier_failures": 0,
+    "classifier_forwards": 0,
+    "classifier_service_seconds": 0,
+    "disagreements": 0,
+    "eligible_producer_items": 0,
+    "forward_count_unknown": 0,
+    "interpretation": "Advisory pair and independent finding layers; disagreement is not an error label",
+    "joined_findings": 0,
+    "pairs_constructed": 0,
+    "producer_items": 0,
+    "producer_to_auditor": [],
+    "relation_distribution": {
+      "ADDITION": 0,
+      "DIVERGENCE": 0,
+      "MATCH": 0,
+      "OMISSION": 0
+    },
+    "unavailable": 1,
+    "unjoined_findings": 1
+  },
+  "call_wall_union_seconds": 387.93957296800136,
+  "caveats": [
+    "Service sums include overlap; wall union does not.",
+    "EOS establishes transport completion, not semantic correctness.",
+    "Resource peaks are sampled peaks at recorded intervals; CPU time includes inference and telemetry."
+  ],
+  "consumer_barriers": [
+    {
+      "after_latest_auditor_seconds": null,
+      "auditor_task_ids": [],
+      "consumer_enter_monotonic_s": 2609.307917445,
+      "consumer_phase": "phase_3_4_content_production",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": []
+    },
+    {
+      "after_latest_auditor_seconds": null,
+      "auditor_task_ids": [],
+      "consumer_enter_monotonic_s": 2789.579869563,
+      "consumer_phase": "phase_5_audit",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": [
+        "task-000000",
+        "task-000001",
+        "task-000002",
+        "task-000003",
+        "task-000004",
+        "task-000005",
+        "task-000006",
+        "task-000007",
+        "task-000008",
+        "task-000009"
+      ]
+    },
+    {
+      "after_latest_auditor_seconds": 0.0022201830001904455,
+      "auditor_task_ids": [
+        "task-000010",
+        "task-000011"
+      ],
+      "consumer_enter_monotonic_s": 2881.480383824,
+      "consumer_phase": "phase_5_5_convention_review",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": [
+        "task-000000",
+        "task-000001",
+        "task-000002",
+        "task-000003",
+        "task-000004",
+        "task-000005",
+        "task-000006",
+        "task-000007",
+        "task-000008",
+        "task-000009",
+        "task-000010",
+        "task-000011"
+      ]
+    },
+    {
+      "after_latest_auditor_seconds": 0.003931487000045308,
+      "auditor_task_ids": [
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014",
+        "task-000015",
+        "task-000016"
+      ],
+      "consumer_enter_monotonic_s": 2959.25381161,
+      "consumer_phase": "phase_6_synthesis",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": [
+        "task-000000",
+        "task-000001",
+        "task-000002",
+        "task-000003",
+        "task-000004",
+        "task-000005",
+        "task-000006",
+        "task-000007",
+        "task-000008",
+        "task-000009",
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014",
+        "task-000015",
+        "task-000016"
+      ]
+    },
+    {
+      "after_latest_auditor_seconds": 0.30260140700011107,
+      "auditor_task_ids": [
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014",
+        "task-000015",
+        "task-000016"
+      ],
+      "consumer_enter_monotonic_s": 2959.55248153,
+      "consumer_phase": "phase_6_5_editorial_review",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": [
+        "task-000000",
+        "task-000001",
+        "task-000002",
+        "task-000003",
+        "task-000004",
+        "task-000005",
+        "task-000006",
+        "task-000007",
+        "task-000008",
+        "task-000009",
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014",
+        "task-000015",
+        "task-000016"
+      ]
+    }
+  ],
+  "costs": {
+    "combined_estimate": null,
+    "infrastructure_estimate": null,
+    "invoice": false,
+    "model_api_estimate": 0.0,
+    "unavailable": "Missing cost categories remain unknown; record explicit zero when applicable"
+  },
+  "counts": {
+    "cap_hit": 0,
+    "contract_valid": 10,
+    "empty_output": 1,
+    "refused": 0,
+    "truncated": 0
+  },
+  "critical_path_model_service": {
+    "auditor": 168.63803027599943,
+    "producer": 205.41227849700044
+  },
+  "critical_path_unavailable": null,
+  "emitted": {
+    "measured_calls": 18,
+    "total_calls": 48,
+    "value": 32
+  },
+  "failed_calls": 8,
+  "generation_wall_union_seconds": 347.22439586999917,
+  "handoffs": [
+    {
+      "child": "80733973148a4a4087a092a03ebf783b",
+      "child_role": "auditor",
+      "parent": "9a8ffd817e1041bca638d2c18b0d3f22",
+      "parent_role": "producer",
+      "seconds": 33.604596524000044
+    },
+    {
+      "child": "80733973148a4a4087a092a03ebf783b",
+      "child_role": "auditor",
+      "parent": "7bea3f4290af47c29ee65149f6fc4946",
+      "parent_role": "producer",
+      "seconds": 16.20172725800012
+    },
+    {
+      "child": "28267dd0c6e8480dbf8d51139c3b488c",
+      "child_role": "auditor",
+      "parent": "9a8ffd817e1041bca638d2c18b0d3f22",
+      "parent_role": "producer",
+      "seconds": 58.71339259500019
+    },
+    {
+      "child": "28267dd0c6e8480dbf8d51139c3b488c",
+      "child_role": "auditor",
+      "parent": "7bea3f4290af47c29ee65149f6fc4946",
+      "parent_role": "producer",
+      "seconds": 41.31052332900026
+    }
+  ],
+  "input_tokens": {
+    "measured_calls": 18,
+    "total_calls": 48,
+    "value": 95063
+  },
+  "maximum_concurrency": 1,
+  "model_lifecycle": [
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_start",
+      "event_index": 11,
+      "model": "final-producer",
+      "monotonic_s": 2609.312463765,
+      "task": "task-000000",
+      "utc": "2026-09-18T10:46:51.805313+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_end",
+      "event_index": 12,
+      "model": "final-producer",
+      "monotonic_s": 2620.535973318,
+      "task": "task-000000",
+      "utc": "2026-09-18T10:47:03.028824+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 20,
+      "model": "final-producer",
+      "monotonic_s": 2638.130994668,
+      "task": "task-000001",
+      "utc": "2026-09-18T10:47:20.623844+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 28,
+      "model": "final-producer",
+      "monotonic_s": 2644.861138294,
+      "task": "task-000002",
+      "utc": "2026-09-18T10:47:27.353988+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 44,
+      "model": "final-producer",
+      "monotonic_s": 2665.208734557,
+      "task": "task-000003",
+      "utc": "2026-09-18T10:47:47.701584+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 52,
+      "model": "final-producer",
+      "monotonic_s": 2697.769968679,
+      "task": "task-000004",
+      "utc": "2026-09-18T10:48:20.262818+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 60,
+      "model": "final-producer",
+      "monotonic_s": 2712.880661773,
+      "task": "task-000005",
+      "utc": "2026-09-18T10:48:35.373511+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 68,
+      "model": "final-producer",
+      "monotonic_s": 2723.985595517,
+      "task": "task-000006",
+      "utc": "2026-09-18T10:48:46.478445+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 78,
+      "model": "final-producer",
+      "monotonic_s": 2740.964904682,
+      "task": "task-000007",
+      "utc": "2026-09-18T10:49:03.457754+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 88,
+      "model": "final-producer",
+      "monotonic_s": 2755.985823893,
+      "task": "task-000008",
+      "utc": "2026-09-18T10:49:18.478673+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 98,
+      "model": "final-producer",
+      "monotonic_s": 2773.484434233,
+      "task": "task-000009",
+      "utc": "2026-09-18T10:49:35.977284+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_load_start",
+      "event_index": 112,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2789.584604177,
+      "reload": false,
+      "task": "task-000010",
+      "utc": "2026-09-18T10:49:52.077454+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_evicted",
+      "event_index": 114,
+      "model": "final-producer",
+      "monotonic_s": 2789.976957023,
+      "task": "task-000010",
+      "utc": "2026-09-18T10:49:52.469810+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_load_end",
+      "event_index": 115,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2792.420344883,
+      "resident_models": [
+        "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+      ],
+      "task": "task-000010",
+      "utc": "2026-09-18T10:49:54.913197+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 125,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2814.693397058,
+      "task": "task-000011",
+      "utc": "2026-09-18T10:50:17.186246+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 147,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2882.475464291,
+      "task": "task-000012",
+      "utc": "2026-09-18T10:51:24.968313+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 157,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2902.375646969,
+      "task": "task-000013",
+      "utc": "2026-09-18T10:51:44.868496+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 167,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2914.471236594,
+      "task": "task-000014",
+      "utc": "2026-09-18T10:51:56.964086+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 177,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2929.353923208,
+      "task": "task-000015",
+      "utc": "2026-09-18T10:52:11.846772+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 187,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2944.314324165,
+      "task": "task-000016",
+      "utc": "2026-09-18T10:52:26.807173+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_start",
+      "event_index": 203,
+      "model": "final-producer",
+      "monotonic_s": 2959.55690543,
+      "task": "task-000017",
+      "utc": "2026-09-18T10:52:42.049755+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_evicted",
+      "event_index": 204,
+      "evicted_model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "model": "final-producer",
+      "monotonic_s": 2959.561842226,
+      "task": "task-000017",
+      "utc": "2026-09-18T10:52:42.054692+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_end",
+      "event_index": 205,
+      "model": "final-producer",
+      "monotonic_s": 2969.620800404,
+      "task": "task-000017",
+      "utc": "2026-09-18T10:52:52.113652+00:00",
+      "worker": "primary"
+    }
+  ],
+  "output_tokens": {
+    "measured_calls": 18,
+    "total_calls": 48,
+    "value": 4142
+  },
+  "per_agent_service": {
+    "ARCHIVIST": 28.81509152300032,
+    "CITATION_RESOLVER": 19.447095366999747,
+    "EDITOR_CLERK": 26.17906974499965,
+    "EMBEDDING": 13.889264195001488,
+    "FACT_CHECKER": 66.78387927599988,
+    "INST_FINDER": 6.726757569000256,
+    "LEGAL_ANALYST": 33.06637689700028,
+    "PRACTICE_AUDITOR": 76.75047536699958,
+    "PROCESSOR": 80.07668447800006,
+    "SPEECH_ACT_TAGGER": 11.101202918000126,
+    "VERIFIER": 25.103675632999966
+  },
+  "phase_latencies": [
+    {
+      "phase": "phase_3_4_content_production",
+      "seconds": 180.27050545400016
+    },
+    {
+      "phase": "phase_5_audit",
+      "seconds": 91.8994004010001
+    },
+    {
+      "phase": "phase_5_5_convention_review",
+      "seconds": 77.77238173100022
+    },
+    {
+      "phase": "phase_6_synthesis",
+      "seconds": 0.29788330500014126
+    },
+    {
+      "phase": "phase_6_5_editorial_review",
+      "seconds": 26.191313590999926
+    }
+  ],
+  "pipeline_wall_seconds": 392.1735943179997,
+  "process_cpu_seconds": 823.278571077,
+  "resources": {
+    "cuda_allocated_bytes": {
+      "median": 5139624448,
+      "peak": 11831418880,
+      "samples": 193
+    },
+    "cuda_reserved_bytes": {
+      "median": 5848956928,
+      "peak": 16169041920,
+      "samples": 193
+    },
+    "gpu_power_watts": {
+      "median": 139.55,
+      "peak": 158.01,
+      "samples": 193
+    },
+    "gpu_utilization": {
+      "median": 61.0,
+      "peak": 100.0,
+      "samples": 193
+    },
+    "process_cpu_percent": {
+      "median": 100.2,
+      "peak": 2977.1,
+      "samples": 193
+    },
+    "process_rss_bytes": {
+      "median": 3237277696,
+      "peak": 3513274368,
+      "samples": 193
+    },
+    "swap_used_bytes": {
+      "median": 0,
+      "peak": 0,
+      "samples": 193
+    },
+    "system_cpu_percent": {
+      "median": 3.4,
+      "peak": 99.3,
+      "samples": 193
+    },
+    "system_ram_free_bytes": {
+      "median": 232971587584,
+      "peak": 234734026752,
+      "samples": 193
+    },
+    "system_ram_used_bytes": {
+      "median": 3443449856,
+      "peak": 3682107392,
+      "samples": 193
+    },
+    "vram_used_bytes": {
+      "median": 6187646976.0,
+      "peak": 16499343360.0,
+      "samples": 193
+    }
+  },
+  "retained": {
+    "measured_calls": 2,
+    "total_calls": 48,
+    "value": 6
+  },
+  "scheduler_lane_idle_seconds": 17.866203729999597,
+  "scheduler_timing_available": true,
+  "scheduler_wait_seconds": 389.1016400099993,
+  "schema_version": 1,
+  "semantic_critical_path": {
+    "elapsed_seconds": 376.42767690799974,
+    "gap_seconds": 2.2977660289993764,
+    "interpretation": "Observed dependency and lane order; gaps separate; not counterfactual marginal latency",
+    "members": [
+      "task-000000",
+      "task-000001",
+      "task-000002",
+      "task-000003",
+      "task-000004",
+      "task-000005",
+      "task-000006",
+      "task-000007",
+      "task-000008",
+      "task-000009",
+      "task-000010",
+      "task-000011",
+      "task-000012",
+      "task-000013",
+      "task-000014",
+      "task-000015",
+      "task-000016",
+      "task-000017"
+    ],
+    "service_seconds": 374.12991087900036
+  },
+  "service_totals": {
+    "auditor": 168.63803027599943,
+    "other": 13.889264195001488,
+    "producer": 205.41227849700044
+  },
+  "wave_count": 8,
+  "wave_intervals": {
+    "serial-task-000009": {
+      "call_ids": [
+        "0bbd8c21e6904a1abefad8564517acf5"
+      ],
+      "end": 2789.576435182,
+      "start": 2773.48397979
+    },
+    "serial-task-000017": {
+      "call_ids": [
+        "2595552584424d4ea781c7a8017c2c99"
+      ],
+      "end": 2985.735547421,
+      "start": 2959.556477676
+    },
+    "wave-000000": {
+      "call_ids": [
+        "b190791674f0432babb9cc09918a0272",
+        "219555020fb04e49b6a618171506bb64",
+        "255148ef27de4adca3f4d9472b1f4a58"
+      ],
+      "end": 2664.307780789,
+      "start": 2609.311940754
+    },
+    "wave-000003": {
+      "call_ids": [
+        "e8c77304a2e14b198b8ee0221e9e10b7",
+        "cf18654930fd437a99141789831b6dff",
+        "6c64add253d54bcda6df9fa292b6304d",
+        "2c19ab92feb94992bfb5ea73e5b5bd42"
+      ],
+      "end": 2740.95908124,
+      "start": 2665.208289325
+    },
+    "wave-000007": {
+      "call_ids": [
+        "9a8ffd817e1041bca638d2c18b0d3f22"
+      ],
+      "end": 2755.979756665,
+      "start": 2740.964466268
+    },
+    "wave-000008": {
+      "call_ids": [
+        "7bea3f4290af47c29ee65149f6fc4946"
+      ],
+      "end": 2773.382625931,
+      "start": 2755.985384053
+    },
+    "wave-000010": {
+      "call_ids": [
+        "80733973148a4a4087a092a03ebf783b",
+        "28267dd0c6e8480dbf8d51139c3b488c"
+      ],
+      "end": 2881.477028536,
+      "start": 2789.584353189
+    },
+    "wave-000012": {
+      "call_ids": [
+        "57b6b1df0b4c4f08a0d708440f825c00",
+        "492d4500704342d2b308898eb56eac60",
+        "5643255a41e04dc38706b6d4878b774d",
+        "f90c1197f8754e8f8e13c2b30e24512d",
+        "6b186065f8484908a58e9fd8573da2d1"
+      ],
+      "end": 2959.248472797,
+      "start": 2882.475233387
+    }
+  }
+}

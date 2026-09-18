@@ -1,0 +1,8 @@
+# Contract violation raw output
+# agent: PROCESSOR
+# timestamp: 2026-09-18T10:48:20.258954+00:00
+# missing_fields: ['Ungrounded extraction evidence']
+# raw_text_bytes: 899
+# sensitive: False
+# ---
+{"items":[{"claims":[],"questions":["What is the total result count declared?"],"refs":["REF-0039"],"span":"s0","status":"extracted","uncertainty":[]},{"claims":[],"questions":["What is the test for Result RES-ALDER?","What is the measured value for Result RES-ALDER?","What is the analysing laboratory for Result RES-ALDER?"],"refs":["REF-0041"],"span":"s14c","status":"extracted","uncertainty":[]},{"claims":[],"questions":["What is the test for Result RES-BIRCH?","What is the measured value for Result RES-BIRCH?","What is the analysing laboratory for Result RES-BIRCH?"],"refs":["REF-0045"],"span":"s1cd","status":"extracted","uncertainty":[]},{"claims":[],"questions":["What is the test for Result RES-CEDAR?","What is the measured value for Result RES-CEDAR?","What is the analysing laboratory for Result RES-CEDAR?"],"refs":["REF-0027"],"span":"s251","status":"extracted","uncertainty":[]}]}

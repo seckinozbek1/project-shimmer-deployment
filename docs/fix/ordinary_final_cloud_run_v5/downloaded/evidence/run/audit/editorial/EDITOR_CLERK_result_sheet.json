@@ -1,0 +1,26 @@
+{
+  "state": "RAW",
+  "rank": "EDITOR_CLERK",
+  "ok": false,
+  "error": "contract_violation",
+  "parsed": {
+    "agent": "EDITOR_CLERK",
+    "doc_id": "result_sheet",
+    "items": [
+      {
+        "confident": true,
+        "kind": "editorial_observation",
+        "rationale": "Each finding should cite one convention and at least one reference into the context corpus. The findings here do not provide references, which violates CONV-004.",
+        "ref": "REF-0007",
+        "ref_ids": [
+          "REF-0007"
+        ],
+        "verdict": "serious_concern",
+        "ts": "2026-09-18T10:53:08.228569+00:00",
+        "revision": 1,
+        "item_id": "EDITOR_CLERK:editorial_observation:REF-0007:0"
+      }
+    ]
+  },
+  "raw_text": "{\"agent\": \"EDITOR_CLERK\", \"doc_id\": \"result_sheet\", \"items\": [{\"confident\": true, \"kind\": \"editorial_observation\", \"rationale\": \"Each finding should cite one convention and at least one reference into the context corpus. The findings here do not provide references, which violates CONV-004.\", \"ref\": \"REF-0007\", \"ref_ids\": [\"REF-0007\"], \"verdict\": \"serious_concern\"}]}"
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-09-18T10:46:36.548593Z",
+  "documents": [
+    {
+      "filename": "analyte_reference_ranges.md",
+      "date": null,
+      "date_source": "unresolved",
+      "date_confidence": "unresolved"
+    },
+    {
+      "filename": "result_sheet.md",
+      "date": null,
+      "date_source": "unresolved",
+      "date_confidence": "unresolved",
+      "content_validated": false
+    }
+  ]
+}
