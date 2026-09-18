@@ -158,10 +158,17 @@ stays bound to the consumed identity and cannot be used for this bundle.
 
 | Item | SHA-256 |
 |---|---|
-| Execution manifest | (recorded in the bundle) |
-| Seal | (recorded in the bundle) |
-| Project archive | (recorded in the bundle) |
-| Assets archive | (unchanged, rebound from the verified v2 archive) |
+| Execution manifest | `a2a8be14f3d9822fcf5dd2b5beb50bfd6e6586f78d5c1dc0aa219534a3d88bd7` |
+| Seal | `7638c3503f82607747cc744af27f8dc245f950a181d31afc42ef558409aeb8fc` |
+| Project archive | `b70cbded794a9ad97dbc50f84db996fec4f50706df43ae69c7d5389f2b28879d` |
+| Assets archive (rebound, unchanged) | `8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6` |
+
+Bound source commit `e4b52e6`. The manifest records the resolved decoding policy per backend,
+with each source path, digest and kwargs. The archive carries `config/decoding_policy.json`,
+`scripts/decoding_policy.py` and both protocol files, and excludes the checks module, which the
+runtime never imports. Asset verification passed independently against the new manifest: 122
+members, all three refs resolving to their pinned snapshots at exactly 40 bytes, no model loads
+and no network.
 
 The asset archive is bound again rather than rebuilt: its recorded inventory is compared member
 by member and hash by hash against what the builder would produce now, its bytes are re-hashed,
