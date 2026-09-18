@@ -117,6 +117,10 @@ test_unsound_or_unknown_policy_refuses (decoding_policy_checks.DecodingPolicyChe
 test_alias_application_travels_with_result_bus_and_observation (ordinary_final_correction_checks.CorrectionChecks.test_alias_application_travels_with_result_bus_and_observation) ... ok
 test_alias_declared_in_config_maps_only_unambiguous_values (ordinary_final_correction_checks.CorrectionChecks.test_alias_declared_in_config_maps_only_unambiguous_values) ... ok
 test_alias_v5_outputs_parse_and_the_mapping_is_recorded (ordinary_final_correction_checks.CorrectionChecks.test_alias_v5_outputs_parse_and_the_mapping_is_recorded) ... ok
+test_conventions_every_rule_is_classified_by_what_the_planner_does (ordinary_final_correction_checks.CorrectionChecks.test_conventions_every_rule_is_classified_by_what_the_planner_does)
+Item 1 of the post-v8 pass, and the answer is: declare nothing more. ... ok
+test_conventions_the_real_run_made_no_phase_5_5_model_call (ordinary_final_correction_checks.CorrectionChecks.test_conventions_the_real_run_made_no_phase_5_5_model_call)
+The saving the prompt proposed to repeat has already been fully taken: ... ok
 test_declared_absence_is_parsed_from_the_operator_heading (ordinary_final_correction_checks.CorrectionChecks.test_declared_absence_is_parsed_from_the_operator_heading) ... ok
 test_declared_absence_reaches_the_computed_path_on_res_firth (ordinary_final_correction_checks.CorrectionChecks.test_declared_absence_reaches_the_computed_path_on_res_firth)
 v5, v6 and v7 all missed RES-FIRTH's missing sample identifier because the ... ok
@@ -140,8 +144,12 @@ test_verifier_called_with_a_partial_draft_and_marked (ordinary_final_correction_
 test_verifier_not_called_without_a_draft_and_recorded (ordinary_final_correction_checks.CorrectionChecks.test_verifier_not_called_without_a_draft_and_recorded) ... ok
 test_verifier_record_example_carries_required_fields (ordinary_final_correction_checks.CorrectionChecks.test_verifier_record_example_carries_required_fields) ... ok
 test_verifier_v5_raw_output_still_fails_the_contract (ordinary_final_correction_checks.CorrectionChecks.test_verifier_v5_raw_output_still_fails_the_contract) ... ok
+test_withheld_agent_declaration_reads_the_operator_file (ordinary_final_correction_checks.CorrectionChecks.test_withheld_agent_declaration_reads_the_operator_file) ... ok
+test_withheld_agent_is_not_dispatched_and_is_recorded (ordinary_final_correction_checks.CorrectionChecks.test_withheld_agent_is_not_dispatched_and_is_recorded) ... ok
+test_withheld_agent_removes_both_v8_integrity_reasons (ordinary_final_correction_checks.CorrectionChecks.test_withheld_agent_removes_both_v8_integrity_reasons)
+v8 (run a6649672) failed integrity on exactly two reasons, and the ... ok
 
 ----------------------------------------------------------------------
-Ran 138 tests in 4.188s
+Ran 143 tests in 4.713s
 
 OK

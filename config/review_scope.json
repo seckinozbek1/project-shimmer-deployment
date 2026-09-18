@@ -4,5 +4,9 @@
   "cutoff_type": "date",
   "cutoff_date": "2025-06-01",
   "cutoff_document_number": null,
-  "scope_note": "Documents dated 2025-06-01 or later become operational and receive the full convention review. Earlier documents stay context."
+  "scope_note": "Documents dated 2025-06-01 or later become operational and receive the full convention review. Earlier documents stay context.",
+  "withheld_audit_agents": [
+    "FACT_CHECKER"
+  ],
+  "withheld_audit_agents_note": "Operator-declared, per corpus: phase-5 audit agents NOT dispatched for this review scope. An agent named here is recorded as not_called with reason operator_withheld_for_corpus and its contract cannot fail, because it is never asked. It stays in agent_registry.json and in AUDIT_AGENTS_PER_DOC, so LAW-III enforcement (check 148) is unchanged and another corpus that clears the declaration gets the agent back with no code change. FACT_CHECKER was withheld for clinical_reference on 2026-09-19 after runs 110990c1 (v5), 6f896263 (v7) and a6649672 (v8): five items in v7 and v8 byte-identical to each other and every item substantively wrong in all three runs (identical values under sum_mismatch, missing_field on complete entries, product_mismatch on in-range clean distractors), with a complete PROCESSOR draft present in v8. Recorded in the tuning backlog, docs/fix/TUNING_BACKLOG.md."
 }

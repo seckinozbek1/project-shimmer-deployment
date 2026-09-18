@@ -43,7 +43,7 @@
     "_gather_docs": "6291d3023b4d8ef0132cf02aaced91dfebaaefbba9498d0b575f76fb636462e0",
     "_deepen_legal_analyst_findings_local": "ad57ca75ef8189186e2dbffa6a02545eb0532f4fb81b42a264ddc094a9379aae",
     "phase_3_4_content_production": "6b6624b26c1284f73f9c8879d23b8bd702d4efd066b73868f5fdb5b3d0b0695b",
-    "phase_5_audit": "e6d2c0680188f7d2732d55253315cfc0aee548bd46e4adf01c764dd4a4ff20c6",
+    "phase_5_audit": "6d994ae0dabfbe3bc390142c7c7773b2e2dc4a3259c8807fb8b5cf74069d2f79",
     "_prior_docs_for": "b7301219374e01b85dc3ca336d9534aa11f89fa87ebd7ee46866b848ed1c5354",
     "_forced_roles": "dd7c1cef1c40b6ccdabbed761b080f55a1e9f9bedfaafd46c31385d0792d9a31",
     "_prior_comparison": "e79d78b21b90a8a1275ac4023b8d7a0267b943e6da590701edf31ae29bc2a340",
@@ -89,7 +89,8 @@
     "_build_arg_parser": "7e3aba77e623e857825eeb6ff1cdb12b61e32db0e9dab9be9ab541d52522833c",
     "main": "d458a0aa12d2705d8a360067543ef2fd1335ee90747cbc8f15cb47c1a2f54211",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
-    "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2"
+    "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
+    "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3"
   },
   "reference_amendments": [
     {
@@ -130,6 +131,21 @@
         "phase_6_synthesis": {
           "from": "91fb7a7e46f06a86218d9d7106c13f09584ee0d1f999a75a564119c03e64adc2",
           "to": "4db46a4aae4d8e9e466957270986d34f78eceff38d0e8068337878b31266f701"
+        }
+      }
+    },
+    {
+      "date": "2026-09-19",
+      "reason": "Operator-directed correction after ordinary final run v8 (a6649672): an operator may WITHHOLD a phase-5 auditor for a review scope (config/review_scope.json, withheld_audit_agents). The agent stays in agent_registry.json and in AUDIT_AGENTS_PER_DOC, so LAW-III enforcement is unchanged and another corpus restores it by clearing one declaration; it is simply not dispatched, and is recorded as not_called with reason operator_withheld_for_corpus. FACT_CHECKER was withheld for clinical_reference after three runs with no substantively correct item, v8's output byte-identical to v7's with a complete PROCESSOR draft present. Measured on v8's own telemetry: removing that call's rows makes the runner's own assess() return no reasons.",
+      "document": "docs/fix/ORDINARY_FINAL_V8_CORRECTIONS.md",
+      "functions": {
+        "_withheld_audit_agents": {
+          "from": null,
+          "to": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3"
+        },
+        "phase_5_audit": {
+          "from": "e6d2c0680188f7d2732d55253315cfc0aee548bd46e4adf01c764dd4a4ff20c6",
+          "to": "6d994ae0dabfbe3bc390142c7c7773b2e2dc4a3259c8807fb8b5cf74069d2f79"
         }
       }
     }
