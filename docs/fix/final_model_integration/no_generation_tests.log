@@ -156,6 +156,6 @@ test_withheld_agent_removes_both_v8_integrity_reasons (ordinary_final_correction
 v8 (run a6649672) failed integrity on exactly two reasons, and the ... ok
 
 ----------------------------------------------------------------------
-Ran 147 tests in 4.614s
+Ran 147 tests in 5.763s
 
 OK

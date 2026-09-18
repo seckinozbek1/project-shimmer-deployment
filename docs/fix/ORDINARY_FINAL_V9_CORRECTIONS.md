@@ -276,3 +276,25 @@ on the previous tree, on the baseline, in isolation three times, paired with its
 process and did not reproduce; the first log is kept as `main_gate_first_run.log` beside the
 second. Nothing this round touches startup or preflight. It is a state-dependent failure inside
 the gate process, observed once, and it is not attributed to any change here.
+
+## Follow-up pass (2026-09-19): the controller is sealed, the filesystem exists
+
+**Item 1, the controller binding.** The sealer now pins `tools/ordinary_final_cloud.py`, the
+bound wrapper and the provider adapter in `local_control_hashes`; `execute()` already verified
+that map before its first provider call, so the refusal precedes any instance. Proven both
+ways in `tools/ordinary_final_controller_checks.py`: the sealed controller launches the full
+sequence; each bound file changed after sealing refuses with `Controller source changed` and
+no provider call, key, launch intent or preflight receipt exists afterwards. The neutralization
+removes the controller names from the binding the controller reads, and the refusal proof
+fails under it. A first attempt neutralised the hash function instead, and the manifest sealed
+with the same stand-in still matched; that mutant proved nothing and was replaced.
+
+**Item 2, executed as far as this machine can.** The provider adapter refuses every filesystem
+endpoint, executed and refused rather than assumed, and no allowlisted endpoint returns
+storage pricing, so nothing was created from here; the operator created `shimmer-filesystem`
+(us-east-1, 20 GB, $0.20 per GB-month, $4.00 a month) by hand. `tools/declare_asset_copy.py`
+writes the declaration into a bundle from the bundle's own digest and touches no provider
+endpoint (proven by source). The launch allowlist admits exactly one `file_system_names`
+entry, label-validated: two names, an empty list, a non-list, a non-string, any other new
+field, and a name that fails the label rule are all refused before the transport, and no
+filesystem endpoint exists at all (proven). The lifecycle record is `docs/DEPLOYMENT_RESOURCES.md`.

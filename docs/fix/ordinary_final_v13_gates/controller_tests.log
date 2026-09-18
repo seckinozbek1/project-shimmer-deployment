@@ -1,0 +1,287 @@
+test_asset_copy_commands_hash_on_the_instance_and_never_clobber (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_commands_hash_on_the_instance_and_never_clobber) ... ok
+test_asset_copy_declaration_is_written_from_the_bundle_it_will_launch (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_declaration_is_written_from_the_bundle_it_will_launch) ... ok
+test_asset_copy_declaration_must_be_complete_and_operator_authorized (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_declaration_must_be_complete_and_operator_authorized) ... ok
+test_asset_copy_match_is_used_and_the_upload_is_skipped (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_match_is_used_and_the_upload_is_skipped)
+Proof 1, state MATCH. ... ok
+test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten)
+Proof 1, state MISMATCH: a corrupt copy is suspect, the upload runs, the copy is left alone. ... ok
+test_asset_copy_missing_falls_back_to_the_identical_upload_and_seeds_after_integrity (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_missing_falls_back_to_the_identical_upload_and_seeds_after_integrity)
+Proofs 1 (MISSING), 3 (the fallback argv is the v9 argv) and 4 (seeding order). ... ok
+test_asset_copy_no_declaration_is_byte_identical_to_the_v9_path (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_no_declaration_is_byte_identical_to_the_v9_path)
+Proof 3, the half that matters most: without a declaration nothing about ... ok
+test_asset_copy_seed_is_skipped_when_integrity_fails (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_seed_is_skipped_when_integrity_fails)
+Proof 4: no seed without the instance's own verification of the uploaded bytes. ... ok
+test_asset_copy_under_another_digest_never_matches_a_new_manifest (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_under_another_digest_never_matches_a_new_manifest)
+Proof 2: the copy is keyed by the sealed archive's digest, so a rebuilt ... ok
+test_asset_copy_unreachable_mount_falls_back_and_does_not_seed (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_unreachable_mount_falls_back_and_does_not_seed)
+Proof 1, state UNREACHABLE. ... ok
+test_connection_loss_during_the_workload_keeps_polling_and_records_progress (ordinary_final_controller_checks.ControllerChecks.test_connection_loss_during_the_workload_keeps_polling_and_records_progress) ... ok
+test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance)
+Polarity two, the property the operator asked for: a launch under a ... ok
+test_controller_binding_covers_the_controller_wrapper_and_adapter (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_covers_the_controller_wrapper_and_adapter)
+The sealer binds the controller, the bound wrapper and the provider adapter, ... ok
+test_controller_binding_the_sealed_controller_launches (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_the_sealed_controller_launches)
+Polarity one: the controller the bundle was sealed with runs the full sequence. ... ok
+test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds (ordinary_final_controller_checks.ControllerChecks.test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds)
+The v3 failure: the install finishes on the instance while every connection carrying it dies. ... ok
+test_detached_commands_round_trip_the_phase_command_and_report_liveness (ordinary_final_controller_checks.ControllerChecks.test_detached_commands_round_trip_the_phase_command_and_report_liveness) ... ok
+test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root (ordinary_final_controller_checks.ControllerChecks.test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root)
+Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent. ... ok
+test_fresh_directory_refuses_a_present_remote_root_and_tears_down (ordinary_final_controller_checks.ControllerChecks.test_fresh_directory_refuses_a_present_remote_root_and_tears_down)
+The other polarity: a leftover remote root must refuse the run before any transfer. ... ok
+test_generated_commands_run_detached_on_a_real_linux_shell (ordinary_final_controller_checks.ControllerChecks.test_generated_commands_run_detached_on_a_real_linux_shell)
+The exact launch and poll strings, through one shell layer as `ssh host cmd` runs them. ... ok
+test_launch_allowlist_admits_one_filesystem_and_refuses_every_other_field (ordinary_final_controller_checks.ControllerChecks.test_launch_allowlist_admits_one_filesystem_and_refuses_every_other_field) ... ok
+test_nonzero_workload_exit_is_evidence_not_a_retry (ordinary_final_controller_checks.ControllerChecks.test_nonzero_workload_exit_is_evidence_not_a_retry) ... ok
+test_poll_outcome_classifies_connection_failure_as_unreachable_not_a_result (ordinary_final_controller_checks.ControllerChecks.test_poll_outcome_classifies_connection_failure_as_unreachable_not_a_result) ... ok
+test_real_remote_failure_before_the_workload_tears_down_and_refuses_a_second_launch (ordinary_final_controller_checks.ControllerChecks.test_real_remote_failure_before_the_workload_tears_down_and_refuses_a_second_launch) ... ok
+test_remote_work_dying_is_a_failure_and_tears_down (ordinary_final_controller_checks.ControllerChecks.test_remote_work_dying_is_a_failure_and_tears_down) ... ok
+test_remote_work_outliving_the_phase_deadline_is_a_failure_and_tears_down (ordinary_final_controller_checks.ControllerChecks.test_remote_work_outliving_the_phase_deadline_is_a_failure_and_tears_down) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 19.545s
+
+OK
+test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds (ordinary_final_controller_checks.ControllerChecks.test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds)
+The v3 failure: the install finishes on the instance while every connection carrying it dies. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.267s
+
+OK
+test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds (ordinary_final_controller_checks.ControllerChecks.test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds)
+The v3 failure: the install finishes on the instance while every connection carrying it dies. ... FAIL
+
+======================================================================
+FAIL: test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds (ordinary_final_controller_checks.ControllerChecks.test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds)
+The v3 failure: the install finishes on the instance while every connection carrying it dies.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 309, in test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds
+    self.assertIsNone(failure, failure)
+AssertionError: {'error_type': 'RuntimeError', 'message': 'Execution phase failed: install_pinned_wheels'} is not None : {'error_type': 'RuntimeError', 'message': 'Execution phase failed: install_pinned_wheels'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.233s
+
+FAILED (failures=1)
+test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds (ordinary_final_controller_checks.ControllerChecks.test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds)
+The v3 failure: the install finishes on the instance while every connection carrying it dies. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.248s
+
+OK
+test_connection_loss_during_the_workload_keeps_polling_and_records_progress (ordinary_final_controller_checks.ControllerChecks.test_connection_loss_during_the_workload_keeps_polling_and_records_progress) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.242s
+
+OK
+test_connection_loss_during_the_workload_keeps_polling_and_records_progress (ordinary_final_controller_checks.ControllerChecks.test_connection_loss_during_the_workload_keeps_polling_and_records_progress) ... FAIL
+
+======================================================================
+FAIL: test_connection_loss_during_the_workload_keeps_polling_and_records_progress (ordinary_final_controller_checks.ControllerChecks.test_connection_loss_during_the_workload_keeps_polling_and_records_progress)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 328, in test_connection_loss_during_the_workload_keeps_polling_and_records_progress
+    self.assertEqual((timing['returncode'], timing['unreachable_polls'], timing['polls']), (0, 5, 8))
+AssertionError: Tuples differ: (None, 0, 2) != (0, 5, 8)
+
+First differing element 0:
+None
+0
+
+- (None, 0, 2)
++ (0, 5, 8)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.276s
+
+FAILED (failures=1)
+test_connection_loss_during_the_workload_keeps_polling_and_records_progress (ordinary_final_controller_checks.ControllerChecks.test_connection_loss_during_the_workload_keeps_polling_and_records_progress) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.409s
+
+OK
+test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root (ordinary_final_controller_checks.ControllerChecks.test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root)
+Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.356s
+
+OK
+test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root (ordinary_final_controller_checks.ControllerChecks.test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root)
+Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent. ... FAIL
+
+======================================================================
+FAIL: test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root (ordinary_final_controller_checks.ControllerChecks.test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root)
+Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 338, in test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root
+    self.assertIsNone(failure, failure)
+AssertionError: {'error_type': 'RuntimeError', 'message': 'Execution phase failed: fresh_directory'} is not None : {'error_type': 'RuntimeError', 'message': 'Execution phase failed: fresh_directory'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.241s
+
+FAILED (failures=1)
+test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root (ordinary_final_controller_checks.ControllerChecks.test_fresh_directory_passes_because_the_launcher_creates_nothing_under_the_remote_root)
+Run v4: the launcher's mkdir created the remote root that fresh_directory requires absent. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.363s
+
+OK
+test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten)
+Proof 1, state MISMATCH: a corrupt copy is suspect, the upload runs, the copy is left alone. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.344s
+
+OK
+test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten)
+Proof 1, state MISMATCH: a corrupt copy is suspect, the upload runs, the copy is left alone. ... FAIL
+
+======================================================================
+FAIL: test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten)
+Proof 1, state MISMATCH: a corrupt copy is suspect, the upload runs, the copy is left alone.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 615, in test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten
+    self.assertEqual((receipt['state'], receipt['used'], receipt['seeded'], receipt['suspect']), ('MISMATCH', False, False, True))
+AssertionError: Tuples differ: ('MATCH', True, False, False) != ('MISMATCH', False, False, True)
+
+First differing element 0:
+'MATCH'
+'MISMATCH'
+
+- ('MATCH', True, False, False)
+?           ------
+
++ ('MISMATCH', False, False, True)
+?   +++                    ++++++
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.335s
+
+FAILED (failures=1)
+test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten (ordinary_final_controller_checks.ControllerChecks.test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten)
+Proof 1, state MISMATCH: a corrupt copy is suspect, the upload runs, the copy is left alone. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.289s
+
+OK
+test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance)
+Polarity two, the property the operator asked for: a launch under a ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.727s
+
+OK
+test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance)
+Polarity two, the property the operator asked for: a launch under a ... 
+  test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance) (control='tools/ordinary_final_cloud.py')
+Polarity two, the property the operator asked for: a launch under a ... ERROR
+  test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance) (control='tools/ordinary_final_bound_cloud.py')
+Polarity two, the property the operator asked for: a launch under a ... ERROR
+  test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance) (control='tools/lambda_experiment_provider.py')
+Polarity two, the property the operator asked for: a launch under a ... ERROR
+  test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance) (control='tools/ordinary_final_run.py')
+Polarity two, the property the operator asked for: a launch under a ... ERROR
+
+======================================================================
+ERROR: test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance) (control='tools/ordinary_final_cloud.py')
+Polarity two, the property the operator asked for: a launch under a
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 502, in test_controller_binding_a_changed_controller_refuses_before_any_instance
+    self.execute()
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 257, in execute
+    controller.execute()
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_cloud.py", line 174, in execute
+    m=read(BASE/'execution_manifest.json')
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_gate.py", line 34, in replacement
+    return _mutant(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 802, in read_without_the_controller_binding
+    value = read(path)
+            ^^^^
+NameError: name 'read' is not defined
+
+======================================================================
+ERROR: test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance) (control='tools/ordinary_final_bound_cloud.py')
+Polarity two, the property the operator asked for: a launch under a
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 502, in test_controller_binding_a_changed_controller_refuses_before_any_instance
+    self.execute()
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 257, in execute
+    controller.execute()
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_cloud.py", line 174, in execute
+    m=read(BASE/'execution_manifest.json')
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_gate.py", line 34, in replacement
+    return _mutant(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 802, in read_without_the_controller_binding
+    value = read(path)
+            ^^^^
+NameError: name 'read' is not defined
+
+======================================================================
+ERROR: test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance) (control='tools/lambda_experiment_provider.py')
+Polarity two, the property the operator asked for: a launch under a
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 502, in test_controller_binding_a_changed_controller_refuses_before_any_instance
+    self.execute()
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 257, in execute
+    controller.execute()
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_cloud.py", line 174, in execute
+    m=read(BASE/'execution_manifest.json')
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_gate.py", line 34, in replacement
+    return _mutant(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 802, in read_without_the_controller_binding
+    value = read(path)
+            ^^^^
+NameError: name 'read' is not defined
+
+======================================================================
+ERROR: test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance) (control='tools/ordinary_final_run.py')
+Polarity two, the property the operator asked for: a launch under a
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 502, in test_controller_binding_a_changed_controller_refuses_before_any_instance
+    self.execute()
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 257, in execute
+    controller.execute()
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_cloud.py", line 174, in execute
+    m=read(BASE/'execution_manifest.json')
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_gate.py", line 34, in replacement
+    return _mutant(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_controller_checks.py", line 802, in read_without_the_controller_binding
+    value = read(path)
+            ^^^^
+NameError: name 'read' is not defined
+
+----------------------------------------------------------------------
+Ran 1 test in 0.660s
+
+FAILED (errors=4)
+test_controller_binding_a_changed_controller_refuses_before_any_instance (ordinary_final_controller_checks.ControllerChecks.test_controller_binding_a_changed_controller_refuses_before_any_instance)
+Polarity two, the property the operator asked for: a launch under a ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.723s
+
+OK

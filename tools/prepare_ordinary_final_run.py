@@ -179,8 +179,17 @@ def prepare(output, source_commit='HEAD', reuse_assets=None):
                       files=workload,answer_key_transferred=False),
         decoding_policy=decoding,
         project_files={n:hashlib.sha256(d).hexdigest() for n,d in sorted(files.items())},
+        # The CONTROLLER itself is bound here, with the wrapper that launches it and
+        # the provider adapter it launches through. Before this the seal pinned the
+        # runtime the controller carries but not the controller, so a bundle sealed
+        # with one controller could be launched by another and only the launch
+        # receipt would say so, after the instance existed. execute() verifies every
+        # name in this map before its first provider call, so a changed controller
+        # now refuses before anything is created.
         local_control_hashes={n:sha(ROOT/n) for n in ('tools/ordinary_final_watchdog.py',
-            'tools/cloud_run_watchdog.py','tools/cloud_run_common.py','tools/ordinary_final_run.py')},
+            'tools/cloud_run_watchdog.py','tools/cloud_run_common.py','tools/ordinary_final_run.py',
+            'tools/ordinary_final_cloud.py','tools/ordinary_final_bound_cloud.py',
+            'tools/lambda_experiment_provider.py')},
         support_files=support,models=models,assets_archive=assets,
         preparation_source_hashes={n:sha(ROOT/n) for n in
             ('tools/prepare_ordinary_final_run.py','tools/prepare_ordinary_final_assets.py')},
