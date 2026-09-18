@@ -1,0 +1,529 @@
+{
+  "linux_target_cleaned": false,
+  "passed": true,
+  "polarities": {
+    "absent_remote_root": {
+      "console": [
+        "temporary_ssh_identity",
+        "launch_one_a10",
+        "activation",
+        "ssh_ready_0",
+        "python_gate",
+        "fresh_directory",
+        "support_transfer",
+        "assets_transfer",
+        "archive_integrity",
+        "extract_payload",
+        "create_environment",
+        "install_pinned_wheels",
+        "dependency_closure",
+        "gpu_metadata",
+        "watchdog_receipt_transfer",
+        "ordinary_workload",
+        "stop_workload",
+        "final_gpu_state",
+        "pack_evidence",
+        "evidence_hash",
+        "evidence_download",
+        "terminate_instance",
+        "terminated_and_cleaned"
+      ],
+      "controller_failure": null,
+      "evidence_archive_verified": true,
+      "phases": {
+        "archive_integrity": {
+          "detached": true,
+          "polls": 2,
+          "returncode": 0,
+          "seconds": 12.6,
+          "unreachable_polls": 0
+        },
+        "assets_transfer": {
+          "detached": false,
+          "polls": null,
+          "returncode": 0,
+          "seconds": 47.6,
+          "unreachable_polls": null
+        },
+        "create_environment": {
+          "detached": true,
+          "polls": 2,
+          "returncode": 0,
+          "seconds": 12.7,
+          "unreachable_polls": 0
+        },
+        "dependency_closure": {
+          "detached": true,
+          "polls": 1,
+          "returncode": 0,
+          "seconds": 2.5,
+          "unreachable_polls": 0
+        },
+        "evidence_download": {
+          "detached": false,
+          "polls": null,
+          "returncode": 0,
+          "seconds": 0.1,
+          "unreachable_polls": null
+        },
+        "evidence_hash": {
+          "detached": true,
+          "polls": 1,
+          "returncode": 0,
+          "seconds": 2.5,
+          "unreachable_polls": 0
+        },
+        "extract_payload": {
+          "detached": true,
+          "polls": 3,
+          "returncode": 0,
+          "seconds": 23.0,
+          "unreachable_polls": 0
+        },
+        "final_gpu_state": {
+          "detached": true,
+          "polls": 1,
+          "returncode": 0,
+          "seconds": 2.4,
+          "unreachable_polls": 0
+        },
+        "fresh_directory": {
+          "detached": true,
+          "polls": 1,
+          "returncode": 0,
+          "seconds": 2.5,
+          "unreachable_polls": 0
+        },
+        "gpu_metadata": {
+          "detached": true,
+          "polls": 1,
+          "returncode": 0,
+          "seconds": 2.5,
+          "unreachable_polls": 0
+        },
+        "install_pinned_wheels": {
+          "detached": true,
+          "polls": 15,
+          "returncode": 0,
+          "seconds": 144.6,
+          "unreachable_polls": 0
+        },
+        "ordinary_workload": {
+          "detached": true,
+          "polls": 4,
+          "returncode": 1,
+          "seconds": 32.9,
+          "unreachable_polls": 0
+        },
+        "pack_evidence": {
+          "detached": true,
+          "polls": 1,
+          "returncode": 0,
+          "seconds": 2.5,
+          "unreachable_polls": 0
+        },
+        "python_gate": {
+          "detached": true,
+          "polls": 1,
+          "returncode": 0,
+          "seconds": 2.5,
+          "unreachable_polls": 0
+        },
+        "ssh_ready_0": {
+          "detached": false,
+          "polls": null,
+          "returncode": 0,
+          "seconds": 0.2,
+          "unreachable_polls": null
+        },
+        "stop_workload": {
+          "detached": true,
+          "polls": 1,
+          "returncode": 0,
+          "seconds": 2.5,
+          "unreachable_polls": 0
+        },
+        "support_transfer": {
+          "detached": false,
+          "polls": null,
+          "returncode": 0,
+          "seconds": 1.5,
+          "unreachable_polls": null
+        },
+        "watchdog_receipt_transfer": {
+          "detached": false,
+          "polls": null,
+          "returncode": 0,
+          "seconds": 0.2,
+          "unreachable_polls": null
+        }
+      },
+      "runner_reached_hardware_admission": true,
+      "torn_down": true,
+      "workload_refusal_line": "raise RuntimeError(message)",
+      "workload_return": {
+        "epoch": 1789770880.6358602,
+        "exit_code": 1,
+        "full_run_retried": false
+      }
+    },
+    "asset_copy_match": {
+      "controller_failure": null,
+      "copy_digest_after": "01aba6b894f5f155265da090cad2d86faf24e96a9c6df37a15676e80ccf47b03",
+      "phases": {
+        "archive_integrity": {
+          "returncode": 0,
+          "seconds": 12.6
+        },
+        "asset_copy_probe": {
+          "returncode": 0,
+          "seconds": 12.7
+        },
+        "asset_copy_use": {
+          "returncode": 0,
+          "seconds": 12.7
+        },
+        "create_environment": {
+          "returncode": 0,
+          "seconds": 12.7
+        },
+        "dependency_closure": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "evidence_download": {
+          "returncode": 0,
+          "seconds": 0.1
+        },
+        "evidence_hash": {
+          "returncode": 0,
+          "seconds": 2.4
+        },
+        "extract_payload": {
+          "returncode": 0,
+          "seconds": 33.1
+        },
+        "final_gpu_state": {
+          "returncode": 0,
+          "seconds": 2.4
+        },
+        "fresh_directory": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "gpu_metadata": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "install_pinned_wheels": {
+          "returncode": 0,
+          "seconds": 154.9
+        },
+        "ordinary_workload": {
+          "returncode": 1,
+          "seconds": 32.9
+        },
+        "pack_evidence": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "python_gate": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "ssh_ready_0": {
+          "returncode": 0,
+          "seconds": 0.1
+        },
+        "stop_workload": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "support_transfer": {
+          "returncode": 0,
+          "seconds": 2.1
+        },
+        "watchdog_receipt_transfer": {
+          "returncode": 0,
+          "seconds": 0.2
+        }
+      },
+      "receipt": {
+        "declared": true,
+        "filesystem_name": "rehearsal-fs",
+        "path": "/home/seckinozbek/shimmer-rehearsal/nfs/assets-01aba6b894f5f155265da090cad2d86faf24e96a9c6df37a15676e80ccf47b03.tar",
+        "seeded": false,
+        "state": "MATCH",
+        "suspect": false,
+        "used": true
+      },
+      "runner_reached_hardware_admission": true,
+      "torn_down": true,
+      "uploaded_assets": false
+    },
+    "asset_copy_mismatch": {
+      "controller_failure": null,
+      "copy_digest_after": "f509a63d24735dd47242ae75d95414159a38bfdcad9d559a581103ce0f324c07",
+      "phases": {
+        "archive_integrity": {
+          "returncode": 0,
+          "seconds": 12.8
+        },
+        "asset_copy_probe": {
+          "returncode": 0,
+          "seconds": 12.6
+        },
+        "assets_transfer": {
+          "returncode": 0,
+          "seconds": 72.6
+        },
+        "create_environment": {
+          "returncode": 0,
+          "seconds": 12.7
+        },
+        "dependency_closure": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "evidence_download": {
+          "returncode": 0,
+          "seconds": 0.1
+        },
+        "evidence_hash": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "extract_payload": {
+          "returncode": 0,
+          "seconds": 43.3
+        },
+        "final_gpu_state": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "fresh_directory": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "gpu_metadata": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "install_pinned_wheels": {
+          "returncode": 0,
+          "seconds": 155.1
+        },
+        "ordinary_workload": {
+          "returncode": 1,
+          "seconds": 53.3
+        },
+        "pack_evidence": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "python_gate": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "ssh_ready_0": {
+          "returncode": 0,
+          "seconds": 0.2
+        },
+        "stop_workload": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "support_transfer": {
+          "returncode": 0,
+          "seconds": 5.9
+        },
+        "watchdog_receipt_transfer": {
+          "returncode": 0,
+          "seconds": 0.1
+        }
+      },
+      "receipt": {
+        "declared": true,
+        "filesystem_name": "rehearsal-fs",
+        "path": "/home/seckinozbek/shimmer-rehearsal/nfs/assets-01aba6b894f5f155265da090cad2d86faf24e96a9c6df37a15676e80ccf47b03.tar",
+        "seeded": false,
+        "state": "MISMATCH",
+        "suspect": true,
+        "used": false
+      },
+      "runner_reached_hardware_admission": true,
+      "torn_down": true,
+      "uploaded_assets": true
+    },
+    "asset_copy_missing": {
+      "controller_failure": null,
+      "copy_digest_after": "01aba6b894f5f155265da090cad2d86faf24e96a9c6df37a15676e80ccf47b03",
+      "phases": {
+        "archive_integrity": {
+          "returncode": 0,
+          "seconds": 12.6
+        },
+        "asset_copy_probe": {
+          "returncode": 0,
+          "seconds": 2.6
+        },
+        "asset_copy_seed": {
+          "returncode": 0,
+          "seconds": 12.7
+        },
+        "assets_transfer": {
+          "returncode": 0,
+          "seconds": 53.8
+        },
+        "create_environment": {
+          "returncode": 0,
+          "seconds": 12.6
+        },
+        "dependency_closure": {
+          "returncode": 0,
+          "seconds": 2.6
+        },
+        "evidence_download": {
+          "returncode": 0,
+          "seconds": 0.1
+        },
+        "evidence_hash": {
+          "returncode": 0,
+          "seconds": 2.4
+        },
+        "extract_payload": {
+          "returncode": 0,
+          "seconds": 22.7
+        },
+        "final_gpu_state": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "fresh_directory": {
+          "returncode": 0,
+          "seconds": 2.4
+        },
+        "gpu_metadata": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "install_pinned_wheels": {
+          "returncode": 0,
+          "seconds": 124.3
+        },
+        "ordinary_workload": {
+          "returncode": 1,
+          "seconds": 52.7
+        },
+        "pack_evidence": {
+          "returncode": 0,
+          "seconds": 2.4
+        },
+        "python_gate": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "ssh_ready_0": {
+          "returncode": 0,
+          "seconds": 0.2
+        },
+        "stop_workload": {
+          "returncode": 0,
+          "seconds": 2.5
+        },
+        "support_transfer": {
+          "returncode": 0,
+          "seconds": 2.4
+        },
+        "watchdog_receipt_transfer": {
+          "returncode": 0,
+          "seconds": 0.2
+        }
+      },
+      "receipt": {
+        "declared": true,
+        "filesystem_name": "rehearsal-fs",
+        "path": "/home/seckinozbek/shimmer-rehearsal/nfs/assets-01aba6b894f5f155265da090cad2d86faf24e96a9c6df37a15676e80ccf47b03.tar",
+        "seeded": true,
+        "state": "MISSING",
+        "suspect": false,
+        "used": false
+      },
+      "runner_reached_hardware_admission": true,
+      "torn_down": true,
+      "uploaded_assets": true
+    },
+    "present_remote_root": {
+      "console": [
+        "temporary_ssh_identity",
+        "launch_one_a10",
+        "activation",
+        "ssh_ready_0",
+        "python_gate",
+        "fresh_directory",
+        "Controller stopped: RuntimeError",
+        "stop_workload",
+        "final_gpu_state",
+        "pack_evidence",
+        "evidence_hash",
+        "evidence_download",
+        "terminate_instance",
+        "terminated_and_cleaned"
+      ],
+      "controller_failure": {
+        "error_type": "RuntimeError",
+        "message": "Execution phase failed: fresh_directory"
+      },
+      "fresh_directory_exit": 1,
+      "torn_down": true,
+      "transferred_anything": false
+    }
+  },
+  "preconditions": {
+    "archive_integrity": {
+      "controller_phase_exit": 0,
+      "corrupted_exit": 1,
+      "intact_exit": 0
+    },
+    "asset_copy": {
+      "match_used_without_upload": true,
+      "mismatch_refused_uploaded_untouched": true,
+      "missing_uploaded_then_seeded": true,
+      "passed": true
+    },
+    "fresh_directory": {
+      "absent_root_exit": 0,
+      "present_root_exit": 1
+    },
+    "single_workload_claim": {
+      "first_invocation_claimed": true,
+      "second_invocation_exit": 1,
+      "second_invocation_refused": true
+    },
+    "temporary_key_path": {
+      "launches": 0,
+      "present_path_refused": "Temporary key path occupied"
+    }
+  },
+  "rehearsal_assets": {
+    "bytes": 3067351040,
+    "members": 119,
+    "model_weights_included": false
+  },
+  "seconds": 1581.0,
+  "source_bundle": "docs/fix/ordinary_final_cloud_run_v12",
+  "target": {
+    "distro": "Ubuntu 24.04.1 LTS",
+    "gpu": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+    "python": "3.12.3"
+  },
+  "unrehearsed": {
+    "asset upload over scp": "replaced by a local copy of the rehearsal archive; the real 13 GB upload needs the provider",
+    "hardware admission on an A10": "this GPU is not an A10, so the runner refuses there; that refusal is the rehearsal boundary",
+    "model weights in the asset archive, their remote hashing and model loading": "left out by design; the runner refused at hardware admission before any load",
+    "provider actions (launch, instance state, terminate, ssh-key registration)": "mocked; they need the provider",
+    "the provider filesystem attach at launch": "mocked; a directory on the Linux target stands in for the mounted copy, so the copy probe, use and seed commands ran through a real shell but no filesystem was attached",
+    "the real watchdog process": "replaced by a local heartbeat thread; its own checks are separate",
+    "the ssh and scp transports themselves": "replaced by a local shell and file copies; the polling and detached-phase code is the controller's own"
+  }
+}

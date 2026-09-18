@@ -1,0 +1,183 @@
+{
+  "absent_root_failure": null,
+  "absent_root_phases": {
+    "archive_integrity": {
+      "detached": true,
+      "polls": 2,
+      "returncode": 0,
+      "seconds": 12.6,
+      "unreachable_polls": 0
+    },
+    "assets_transfer": {
+      "detached": false,
+      "polls": null,
+      "returncode": 0,
+      "seconds": 47.6,
+      "unreachable_polls": null
+    },
+    "create_environment": {
+      "detached": true,
+      "polls": 2,
+      "returncode": 0,
+      "seconds": 12.7,
+      "unreachable_polls": 0
+    },
+    "dependency_closure": {
+      "detached": true,
+      "polls": 1,
+      "returncode": 0,
+      "seconds": 2.5,
+      "unreachable_polls": 0
+    },
+    "evidence_download": {
+      "detached": false,
+      "polls": null,
+      "returncode": 0,
+      "seconds": 0.1,
+      "unreachable_polls": null
+    },
+    "evidence_hash": {
+      "detached": true,
+      "polls": 1,
+      "returncode": 0,
+      "seconds": 2.5,
+      "unreachable_polls": 0
+    },
+    "extract_payload": {
+      "detached": true,
+      "polls": 3,
+      "returncode": 0,
+      "seconds": 23.0,
+      "unreachable_polls": 0
+    },
+    "final_gpu_state": {
+      "detached": true,
+      "polls": 1,
+      "returncode": 0,
+      "seconds": 2.4,
+      "unreachable_polls": 0
+    },
+    "fresh_directory": {
+      "detached": true,
+      "polls": 1,
+      "returncode": 0,
+      "seconds": 2.5,
+      "unreachable_polls": 0
+    },
+    "gpu_metadata": {
+      "detached": true,
+      "polls": 1,
+      "returncode": 0,
+      "seconds": 2.5,
+      "unreachable_polls": 0
+    },
+    "install_pinned_wheels": {
+      "detached": true,
+      "polls": 15,
+      "returncode": 0,
+      "seconds": 144.6,
+      "unreachable_polls": 0
+    },
+    "ordinary_workload": {
+      "detached": true,
+      "polls": 4,
+      "returncode": 1,
+      "seconds": 32.9,
+      "unreachable_polls": 0
+    },
+    "pack_evidence": {
+      "detached": true,
+      "polls": 1,
+      "returncode": 0,
+      "seconds": 2.5,
+      "unreachable_polls": 0
+    },
+    "python_gate": {
+      "detached": true,
+      "polls": 1,
+      "returncode": 0,
+      "seconds": 2.5,
+      "unreachable_polls": 0
+    },
+    "ssh_ready_0": {
+      "detached": false,
+      "polls": null,
+      "returncode": 0,
+      "seconds": 0.2,
+      "unreachable_polls": null
+    },
+    "stop_workload": {
+      "detached": true,
+      "polls": 1,
+      "returncode": 0,
+      "seconds": 2.5,
+      "unreachable_polls": 0
+    },
+    "support_transfer": {
+      "detached": false,
+      "polls": null,
+      "returncode": 0,
+      "seconds": 1.5,
+      "unreachable_polls": null
+    },
+    "watchdog_receipt_transfer": {
+      "detached": false,
+      "polls": null,
+      "returncode": 0,
+      "seconds": 0.2,
+      "unreachable_polls": null
+    }
+  },
+  "passed": true,
+  "preconditions": {
+    "archive_integrity": {
+      "controller_phase_exit": 0,
+      "corrupted_exit": 1,
+      "intact_exit": 0
+    },
+    "asset_copy": {
+      "match_used_without_upload": true,
+      "mismatch_refused_uploaded_untouched": true,
+      "missing_uploaded_then_seeded": true,
+      "passed": true
+    },
+    "fresh_directory": {
+      "absent_root_exit": 0,
+      "present_root_exit": 1
+    },
+    "single_workload_claim": {
+      "first_invocation_claimed": true,
+      "second_invocation_exit": 1,
+      "second_invocation_refused": true
+    },
+    "temporary_key_path": {
+      "launches": 0,
+      "present_path_refused": "Temporary key path occupied"
+    }
+  },
+  "present_root": {
+    "controller_failure": {
+      "error_type": "RuntimeError",
+      "message": "Execution phase failed: fresh_directory"
+    },
+    "fresh_directory_exit": 1,
+    "torn_down": true,
+    "transferred_anything": false
+  },
+  "seconds": 1581.0,
+  "target": {
+    "distro": "Ubuntu 24.04.1 LTS",
+    "gpu": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+    "python": "3.12.3"
+  },
+  "unrehearsed": {
+    "asset upload over scp": "replaced by a local copy of the rehearsal archive; the real 13 GB upload needs the provider",
+    "hardware admission on an A10": "this GPU is not an A10, so the runner refuses there; that refusal is the rehearsal boundary",
+    "model weights in the asset archive, their remote hashing and model loading": "left out by design; the runner refused at hardware admission before any load",
+    "provider actions (launch, instance state, terminate, ssh-key registration)": "mocked; they need the provider",
+    "the provider filesystem attach at launch": "mocked; a directory on the Linux target stands in for the mounted copy, so the copy probe, use and seed commands ran through a real shell but no filesystem was attached",
+    "the real watchdog process": "replaced by a local heartbeat thread; its own checks are separate",
+    "the ssh and scp transports themselves": "replaced by a local shell and file copies; the polling and detached-phase code is the controller's own"
+  },
+  "workload_refusal_line": "raise RuntimeError(message)"
+}

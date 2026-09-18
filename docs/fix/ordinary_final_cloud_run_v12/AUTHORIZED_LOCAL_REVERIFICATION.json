@@ -1,0 +1,99 @@
+{
+  "archive_members": 161,
+  "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "binding": {
+    "asset_copy": {
+      "filesystem_name": "shimmer-filesystem",
+      "mount": "/home/ubuntu/shimmer-filesystem",
+      "storage_usd_per_month": 4.0
+    },
+    "assets_rebound_not_rebuilt": true,
+    "assets_reused_from": "docs/fix/ordinary_final_cloud_run_v11",
+    "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+    "bound_wrapper_sha256": "e3da53b9bbb49fd4ebaadee930d85f684fbd552e9a1fe4723486fe1fa5cb6937",
+    "bundle": "docs/fix/ordinary_final_cloud_run_v12",
+    "classification": "PREPARED_NOT_AUTHORIZED",
+    "controller_sha256": "92f953526074685bfd7cdcb3d7ff704be278cee1b452ddff38992e9a84b6e268",
+    "hard_ceiling_usd": 7,
+    "instance_type": "gpu_1x_a10",
+    "manifest_sha256": "4740e1da8fd66d112d5136f2d07ec8f5b9ef3838530f9fd6bacf70cd783b75c2",
+    "max_hourly_rate": 1.29,
+    "preparation_commit": "88e9ba2c713440c6f20fdb133f5fd0aa7406672f",
+    "project_sha256": "a84822deb1f3b11c781a7d3e3f37101424b0d663a89c36af91906c4dd5108287",
+    "provider_adapter_sha256": "102b897210015bfe3884094ba41ca5fb7d274313785e9f9f8eb01d2df7432c88",
+    "region": "us-east-1",
+    "seal_sha256": "1a71857dc941a531bbfaa472dad0684cfb8dfb639ca743d908ce9817f0842159",
+    "soft_budget_usd": 5,
+    "source_commit": "88e9ba2c713440c6f20fdb133f5fd0aa7406672f"
+  },
+  "decoding_policy_admitted": {
+    "local_auditor": {
+      "kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          32000,
+          32007
+        ],
+        "num_beams": 1,
+        "pad_token_id": 32009,
+        "use_cache": true
+      },
+      "sha256": "49199195d354af5f2e4e40e3b715d927cd093cab5e289d7002a813971568ca3b",
+      "source": "tuning/auditor_canonical_execution/evaluation_protocol.json",
+      "status": "restored"
+    },
+    "local_producer": {
+      "kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          151645
+        ],
+        "num_beams": 1,
+        "pad_token_id": 151654,
+        "use_cache": true
+      },
+      "sha256": "51da77c94497ef74b5f913901c20abbe965101dbbb950cb0d5b62b4c16b3cc1a",
+      "source": "tuning/producer_v3/evaluation_protocol.json",
+      "status": "restored"
+    },
+    "qwen_local": {
+      "kwargs": {
+        "do_sample": false,
+        "num_beams": 1,
+        "use_cache": true
+      },
+      "sha256": "a51a93f054918712177e9178367c9afdd7495da735575504c2475a1294f299c6",
+      "source": "config/decoding_policy.json",
+      "status": "new"
+    }
+  },
+  "generated_members": [
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/classifier_fork/adapter_model.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/head.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/mean.npy",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/std.npy",
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/adapter_model.safetensors",
+    "input/context/_review_targets.json",
+    "input/context/analyte_reference_ranges.md",
+    "input/context/result_sheet.md",
+    "input/conventions/lab_conventions.md"
+  ],
+  "head_commit": "88e9ba2c713440c6f20fdb133f5fd0aa7406672f",
+  "head_moved_by_evidence_only": [],
+  "manifest_sha256": "4740e1da8fd66d112d5136f2d07ec8f5b9ef3838530f9fd6bacf70cd783b75c2",
+  "members_compared_to_sealed_commit": 152,
+  "model_workload": false,
+  "passed": true,
+  "project_sha256": "a84822deb1f3b11c781a7d3e3f37101424b0d663a89c36af91906c4dd5108287",
+  "project_tree_verified": true,
+  "provider_contacted": false,
+  "refs_exact_40_bytes": {
+    "hf_cache/hub/models--BAAI--bge-m3/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Phi-3.5-mini-instruct-bnb-4bit/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Qwen2.5-7B-Instruct-bnb-4bit/refs/main": 40
+  },
+  "seal_sha256": "1a71857dc941a531bbfaa472dad0684cfb8dfb639ca743d908ce9817f0842159",
+  "sealed_runtime_is_what_launches": true,
+  "source_commit": "88e9ba2c713440c6f20fdb133f5fd0aa7406672f",
+  "source_tests_and_validation_hashes_match": true
+}
