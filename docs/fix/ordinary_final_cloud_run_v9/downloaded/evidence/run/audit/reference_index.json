@@ -1,0 +1,1175 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-09-18T19:53:52.412978+00:00",
+  "entries": [
+    {
+      "ref_id": "REF-0001",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 1,
+        "sentence": 1,
+        "char_start": 0,
+        "char_end": 47
+      },
+      "text_excerpt": "# Analyte Reference Ranges, Laboratory Handbook",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688574+00:00"
+    },
+    {
+      "ref_id": "REF-0002",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 2,
+        "sentence": 1,
+        "char_start": 49,
+        "char_end": 308
+      },
+      "text_excerpt": "Reference intervals used when reviewing returned result sheets. Source: the published\nreference ranges for blood tests compiled at\nhttps://en.wikipedia.org/wiki/Reference_ranges_for_blood_tests (publi",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688602+00:00"
+    },
+    {
+      "ref_id": "REF-0003",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 3,
+        "sentence": 1,
+        "char_start": 310,
+        "char_end": 550
+      },
+      "text_excerpt": "A reference interval is the range within which the central 95 percent of a healthy reference\npopulation falls. It is a review aid, not a diagnosis: a value outside the interval is a\nresult to look at,",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688619+00:00"
+    },
+    {
+      "ref_id": "REF-0004",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 4,
+        "sentence": 1,
+        "char_start": 552,
+        "char_end": 555
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688627+00:00"
+    },
+    {
+      "ref_id": "REF-0005",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 5,
+        "sentence": 1,
+        "char_start": 557,
+        "char_end": 601
+      },
+      "text_excerpt": "## Section One , Reference intervals by test",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688634+00:00"
+    },
+    {
+      "ref_id": "REF-0006",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 6,
+        "sentence": 1,
+        "char_start": 603,
+        "char_end": 721
+      },
+      "text_excerpt": "Note that the interval and its unit are recorded in separate columns, which is how the\npublished source presents them.",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688642+00:00"
+    },
+    {
+      "ref_id": "REF-0007",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 7,
+        "sentence": 1,
+        "char_start": 723,
+        "char_end": 965
+      },
+      "text_excerpt": "| Test | Reference range | Unit |\n|---|---|---|\n| Sodium | 135–145 | mmol/L |\n| Potassium | 3.5–5.0 | mmol/L |\n| Chloride | 95–105 | mmol/L |\n| Total calcium | 2.1–2.5 | mmol/L |\n| Albumin | 35–55 | g/L |\n| Total bilirubin | 1.7–17 | umol/L |",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688677+00:00"
+    },
+    {
+      "ref_id": "REF-0008",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 8,
+        "sentence": 1,
+        "char_start": 967,
+        "char_end": 1002
+      },
+      "text_excerpt": "## Section Two , Panel completeness",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688684+00:00"
+    },
+    {
+      "ref_id": "REF-0009",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 9,
+        "sentence": 1,
+        "char_start": 1004,
+        "char_end": 1219
+      },
+      "text_excerpt": "A returned result sheet states, for every result: the sample identifier, the test, the\nmeasured value and the analysing laboratory. A result missing any of these cannot be\nreconciled against the sheet",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688695+00:00"
+    },
+    {
+      "ref_id": "REF-0010",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 10,
+        "sentence": 1,
+        "char_start": 1221,
+        "char_end": 1256
+      },
+      "text_excerpt": "## Section Three , Sheet arithmetic",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688702+00:00"
+    },
+    {
+      "ref_id": "REF-0011",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 11,
+        "sentence": 1,
+        "char_start": 1258,
+        "char_end": 1484
+      },
+      "text_excerpt": "Where a sheet declares a batch, the sum of the declared result counts for each laboratory\nequals the declared total result count for the sheet. A total that does not follow from its\nparts cannot be re",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688713+00:00"
+    },
+    {
+      "ref_id": "REF-0012",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 12,
+        "sentence": 1,
+        "char_start": 1486,
+        "char_end": 1528
+      },
+      "text_excerpt": "## Section Four , Consistency requirements",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688719+00:00"
+    },
+    {
+      "ref_id": "REF-0013",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 13,
+        "sentence": 1,
+        "char_start": 1530,
+        "char_end": 1601
+      },
+      "text_excerpt": "A result sheet is internally consistent when all of the following hold:",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688726+00:00"
+    },
+    {
+      "ref_id": "REF-0014",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 14,
+        "sentence": 1,
+        "char_start": 1603,
+        "char_end": 1875
+      },
+      "text_excerpt": "1. Every measured value falls inside the reference range recorded for its test in Section One.\n2. Every result states its sample identifier, its test, its measured value and its\n   analysing laborator",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688740+00:00"
+    },
+    {
+      "ref_id": "REF-0015",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 15,
+        "sentence": 1,
+        "char_start": 1877,
+        "char_end": 2076
+      },
+      "text_excerpt": "A value outside its reference interval is recorded with the figure and the interval it falls\noutside. The assessment records what is inconsistent and leaves interpretation to the\nreporting clinician.",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688752+00:00"
+    },
+    {
+      "ref_id": "REF-0016",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 1,
+        "sentence": 1,
+        "char_start": 0,
+        "char_end": 37
+      },
+      "text_excerpt": "# Returned Result Sheet, Batch Review",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688784+00:00"
+    },
+    {
+      "ref_id": "REF-0017",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 2,
+        "sentence": 1,
+        "char_start": 39,
+        "char_end": 199
+      },
+      "text_excerpt": "Batch: BATCH-ROWAN. Six results returned for review. No personal identifiers are recorded on\nthis sheet; results are keyed to anonymous sample identifiers only.",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688794+00:00"
+    },
+    {
+      "ref_id": "REF-0018",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 3,
+        "sentence": 1,
+        "char_start": 201,
+        "char_end": 325
+      },
+      "text_excerpt": "Total result count declared: 6\nResult count declared, Northgate laboratory: 4\nResult count declared, Eastfield laboratory: 3",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688804+00:00"
+    },
+    {
+      "ref_id": "REF-0019",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 4,
+        "sentence": 1,
+        "char_start": 327,
+        "char_end": 330
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688811+00:00"
+    },
+    {
+      "ref_id": "REF-0020",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 5,
+        "sentence": 1,
+        "char_start": 332,
+        "char_end": 351
+      },
+      "text_excerpt": "## Result RES-ALDER",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688817+00:00"
+    },
+    {
+      "ref_id": "REF-0021",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 6,
+        "sentence": 1,
+        "char_start": 353,
+        "char_end": 454
+      },
+      "text_excerpt": "Sample identifier: SPEC-ALDER\nTest: Sodium\nMeasured value: 148 mmol/L\nAnalysing laboratory: Northgate",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688827+00:00"
+    },
+    {
+      "ref_id": "REF-0022",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 7,
+        "sentence": 1,
+        "char_start": 456,
+        "char_end": 459
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688833+00:00"
+    },
+    {
+      "ref_id": "REF-0023",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 8,
+        "sentence": 1,
+        "char_start": 461,
+        "char_end": 480
+      },
+      "text_excerpt": "## Result RES-BIRCH",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688840+00:00"
+    },
+    {
+      "ref_id": "REF-0024",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 9,
+        "sentence": 1,
+        "char_start": 482,
+        "char_end": 586
+      },
+      "text_excerpt": "Sample identifier: SPEC-BIRCH\nTest: Potassium\nMeasured value: 3.1 mmol/L\nAnalysing laboratory: Northgate",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688849+00:00"
+    },
+    {
+      "ref_id": "REF-0025",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 10,
+        "sentence": 1,
+        "char_start": 588,
+        "char_end": 591
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688855+00:00"
+    },
+    {
+      "ref_id": "REF-0026",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 11,
+        "sentence": 1,
+        "char_start": 593,
+        "char_end": 612
+      },
+      "text_excerpt": "## Result RES-CEDAR",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688861+00:00"
+    },
+    {
+      "ref_id": "REF-0027",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 12,
+        "sentence": 1,
+        "char_start": 614,
+        "char_end": 716
+      },
+      "text_excerpt": "Sample identifier: SPEC-CEDAR\nTest: Chloride\nMeasured value: 99 mmol/L\nAnalysing laboratory: Eastfield",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688870+00:00"
+    },
+    {
+      "ref_id": "REF-0028",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 13,
+        "sentence": 1,
+        "char_start": 718,
+        "char_end": 721
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688876+00:00"
+    },
+    {
+      "ref_id": "REF-0029",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 14,
+        "sentence": 1,
+        "char_start": 723,
+        "char_end": 743
+      },
+      "text_excerpt": "## Result RES-DAMSON",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688882+00:00"
+    },
+    {
+      "ref_id": "REF-0030",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 15,
+        "sentence": 1,
+        "char_start": 745,
+        "char_end": 854
+      },
+      "text_excerpt": "Sample identifier: SPEC-DAMSON\nTest: Total calcium\nMeasured value: 2.3 mmol/L\nAnalysing laboratory: Northgate",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688891+00:00"
+    },
+    {
+      "ref_id": "REF-0031",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 16,
+        "sentence": 1,
+        "char_start": 856,
+        "char_end": 859
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688897+00:00"
+    },
+    {
+      "ref_id": "REF-0032",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 17,
+        "sentence": 1,
+        "char_start": 861,
+        "char_end": 880
+      },
+      "text_excerpt": "## Result RES-ELDER",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688903+00:00"
+    },
+    {
+      "ref_id": "REF-0033",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 18,
+        "sentence": 1,
+        "char_start": 882,
+        "char_end": 991
+      },
+      "text_excerpt": "Sample identifier: SPEC-ELDER\nTest: Total bilirubin\nMeasured value: 24 umol/L\nAnalysing laboratory: Eastfield",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688912+00:00"
+    },
+    {
+      "ref_id": "REF-0034",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 19,
+        "sentence": 1,
+        "char_start": 993,
+        "char_end": 996
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688917+00:00"
+    },
+    {
+      "ref_id": "REF-0035",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 20,
+        "sentence": 1,
+        "char_start": 998,
+        "char_end": 1017
+      },
+      "text_excerpt": "## Result RES-FIRTH",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688923+00:00"
+    },
+    {
+      "ref_id": "REF-0036",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 21,
+        "sentence": 1,
+        "char_start": 1019,
+        "char_end": 1087
+      },
+      "text_excerpt": "Test: Albumin\nMeasured value: 42 g/L\nAnalysing laboratory: Eastfield",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688931+00:00"
+    },
+    {
+      "ref_id": "REF-0037",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 1,
+        "sentence": 1,
+        "char_start": 0,
+        "char_end": 37
+      },
+      "text_excerpt": "# Returned Result Sheet, Batch Review",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688959+00:00"
+    },
+    {
+      "ref_id": "REF-0038",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 2,
+        "sentence": 1,
+        "char_start": 39,
+        "char_end": 199
+      },
+      "text_excerpt": "Batch: BATCH-ROWAN. Six results returned for review. No personal identifiers are recorded on\nthis sheet; results are keyed to anonymous sample identifiers only.",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688968+00:00"
+    },
+    {
+      "ref_id": "REF-0039",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 3,
+        "sentence": 1,
+        "char_start": 201,
+        "char_end": 325
+      },
+      "text_excerpt": "Total result count declared: 6\nResult count declared, Northgate laboratory: 4\nResult count declared, Eastfield laboratory: 3",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688978+00:00"
+    },
+    {
+      "ref_id": "REF-0040",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 4,
+        "sentence": 1,
+        "char_start": 327,
+        "char_end": 330
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688984+00:00"
+    },
+    {
+      "ref_id": "REF-0041",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 5,
+        "sentence": 1,
+        "char_start": 332,
+        "char_end": 351
+      },
+      "text_excerpt": "## Result RES-ALDER",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688990+00:00"
+    },
+    {
+      "ref_id": "REF-0042",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 6,
+        "sentence": 1,
+        "char_start": 353,
+        "char_end": 454
+      },
+      "text_excerpt": "Sample identifier: SPEC-ALDER\nTest: Sodium\nMeasured value: 148 mmol/L\nAnalysing laboratory: Northgate",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.688999+00:00"
+    },
+    {
+      "ref_id": "REF-0043",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 7,
+        "sentence": 1,
+        "char_start": 456,
+        "char_end": 459
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689005+00:00"
+    },
+    {
+      "ref_id": "REF-0044",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 8,
+        "sentence": 1,
+        "char_start": 461,
+        "char_end": 480
+      },
+      "text_excerpt": "## Result RES-BIRCH",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689012+00:00"
+    },
+    {
+      "ref_id": "REF-0045",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 9,
+        "sentence": 1,
+        "char_start": 482,
+        "char_end": 586
+      },
+      "text_excerpt": "Sample identifier: SPEC-BIRCH\nTest: Potassium\nMeasured value: 3.1 mmol/L\nAnalysing laboratory: Northgate",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689021+00:00"
+    },
+    {
+      "ref_id": "REF-0046",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 10,
+        "sentence": 1,
+        "char_start": 588,
+        "char_end": 591
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689027+00:00"
+    },
+    {
+      "ref_id": "REF-0047",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 11,
+        "sentence": 1,
+        "char_start": 593,
+        "char_end": 612
+      },
+      "text_excerpt": "## Result RES-CEDAR",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689033+00:00"
+    },
+    {
+      "ref_id": "REF-0048",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 12,
+        "sentence": 1,
+        "char_start": 614,
+        "char_end": 716
+      },
+      "text_excerpt": "Sample identifier: SPEC-CEDAR\nTest: Chloride\nMeasured value: 99 mmol/L\nAnalysing laboratory: Eastfield",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689042+00:00"
+    },
+    {
+      "ref_id": "REF-0049",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 13,
+        "sentence": 1,
+        "char_start": 718,
+        "char_end": 721
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689047+00:00"
+    },
+    {
+      "ref_id": "REF-0050",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 14,
+        "sentence": 1,
+        "char_start": 723,
+        "char_end": 743
+      },
+      "text_excerpt": "## Result RES-DAMSON",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689053+00:00"
+    },
+    {
+      "ref_id": "REF-0051",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 15,
+        "sentence": 1,
+        "char_start": 745,
+        "char_end": 854
+      },
+      "text_excerpt": "Sample identifier: SPEC-DAMSON\nTest: Total calcium\nMeasured value: 2.3 mmol/L\nAnalysing laboratory: Northgate",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689063+00:00"
+    },
+    {
+      "ref_id": "REF-0052",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 16,
+        "sentence": 1,
+        "char_start": 856,
+        "char_end": 859
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689069+00:00"
+    },
+    {
+      "ref_id": "REF-0053",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 17,
+        "sentence": 1,
+        "char_start": 861,
+        "char_end": 880
+      },
+      "text_excerpt": "## Result RES-ELDER",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689074+00:00"
+    },
+    {
+      "ref_id": "REF-0054",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 18,
+        "sentence": 1,
+        "char_start": 882,
+        "char_end": 991
+      },
+      "text_excerpt": "Sample identifier: SPEC-ELDER\nTest: Total bilirubin\nMeasured value: 24 umol/L\nAnalysing laboratory: Eastfield",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689084+00:00"
+    },
+    {
+      "ref_id": "REF-0055",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 19,
+        "sentence": 1,
+        "char_start": 993,
+        "char_end": 996
+      },
+      "text_excerpt": "---",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689090+00:00"
+    },
+    {
+      "ref_id": "REF-0056",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 20,
+        "sentence": 1,
+        "char_start": 998,
+        "char_end": 1017
+      },
+      "text_excerpt": "## Result RES-FIRTH",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689096+00:00"
+    },
+    {
+      "ref_id": "REF-0057",
+      "input_type": "operational",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 21,
+        "sentence": 1,
+        "char_start": 1019,
+        "char_end": 1087
+      },
+      "text_excerpt": "Test: Albumin\nMeasured value: 42 g/L\nAnalysing laboratory: Eastfield",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689104+00:00"
+    },
+    {
+      "ref_id": "REF-0058",
+      "input_type": "convention",
+      "document_id": "lab_conventions.md",
+      "document_name": "lab_conventions.md",
+      "location": {
+        "page": 1,
+        "paragraph": "CONV-001",
+        "sentence": 1,
+        "char_start": 0,
+        "char_end": 0
+      },
+      "text_excerpt": "The measured value stated for a result must fall inside the reference range recorded for its test in Section One of the reference corpus. A measured value above the upper bound or below the lower boun",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689111+00:00"
+    },
+    {
+      "ref_id": "REF-0059",
+      "input_type": "convention",
+      "document_id": "lab_conventions.md",
+      "document_name": "lab_conventions.md",
+      "location": {
+        "page": 1,
+        "paragraph": "CONV-002",
+        "sentence": 1,
+        "char_start": 0,
+        "char_end": 0
+      },
+      "text_excerpt": "Every result must state its sample identifier, its test, its measured value and its analysing laboratory. A missing field is an irregularity. State which field is absent from which result.",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689117+00:00"
+    },
+    {
+      "ref_id": "REF-0060",
+      "input_type": "convention",
+      "document_id": "lab_conventions.md",
+      "document_name": "lab_conventions.md",
+      "location": {
+        "page": 1,
+        "paragraph": "CONV-003",
+        "sentence": 1,
+        "char_start": 0,
+        "char_end": 0
+      },
+      "text_excerpt": "The declared result counts for each laboratory must sum to the declared total result count for the sheet. Where the stated total does not follow from the declared counts, record the discrepancy and st",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689123+00:00"
+    },
+    {
+      "ref_id": "REF-0061",
+      "input_type": "convention",
+      "document_id": "lab_conventions.md",
+      "document_name": "lab_conventions.md",
+      "location": {
+        "page": 1,
+        "paragraph": "CONV-004",
+        "sentence": 1,
+        "char_start": 0,
+        "char_end": 0
+      },
+      "text_excerpt": "Every finding must cite one convention and at least one reference into the context corpus. A finding that identifies an irregularity must state the specific figures that conflict, the result or sheet ",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689128+00:00"
+    },
+    {
+      "ref_id": "REF-0062",
+      "input_type": "convention",
+      "document_id": "lab_conventions.md",
+      "document_name": "lab_conventions.md",
+      "location": {
+        "page": 1,
+        "paragraph": "CONV-005",
+        "sentence": 1,
+        "char_start": 0,
+        "char_end": 0
+      },
+      "text_excerpt": "Findings record what is inconsistent with the reference data, never what it means for a patient. Do not write that a result indicates a condition, a severity or a prognosis. A value outside a referenc",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.689133+00:00"
+    },
+    {
+      "ref_id": "REF-0063",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 418
+      },
+      "text_excerpt": "# Analyte Reference Ranges, Laboratory Handbook Reference intervals used when reviewing returned result sheets. Source: the published reference ranges for blood tests compiled at https://en.wikipedia.",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.966800+00:00"
+    },
+    {
+      "ref_id": "REF-0064",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 377
+      },
+      "text_excerpt": "ge within which the central 95 percent of a healthy reference population falls. It is a review aid, not a diagnosis: a value outside the interval is a result to look at, not in itself a finding about ",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.966824+00:00"
+    },
+    {
+      "ref_id": "REF-0065",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 242
+      },
+      "text_excerpt": "| Test | Reference range | Unit |\n|---|---|---|\n| Sodium | 135–145 | mmol/L |\n| Potassium | 3.5–5.0 | mmol/L |\n| Chloride | 95–105 | mmol/L |\n| Total calcium | 2.1–2.5 | mmol/L |\n| Albumin | 35–55 | g/L |\n| Total bilirubin | 1.7–17 | umol/L |",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.966851+00:00"
+    },
+    {
+      "ref_id": "REF-0066",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 431
+      },
+      "text_excerpt": "## Section Two , Panel completeness A returned result sheet states, for every result: the sample identifier, the test, the measured value and the analysing laboratory. A result missing any of these ca",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.966860+00:00"
+    },
+    {
+      "ref_id": "REF-0067",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 372
+      },
+      "text_excerpt": "ounts for each laboratory equals the declared total result count for the sheet. A total that does not follow from its parts cannot be relied on for either figure. ## Section Four , Consistency require",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.966867+00:00"
+    },
+    {
+      "ref_id": "REF-0068",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 356
+      },
+      "text_excerpt": "ed value falls inside the reference range recorded for its test in Section One. 2. Every result states its sample identifier, its test, its measured value and its analysing laboratory. 3. The declared",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.966874+00:00"
+    },
+    {
+      "ref_id": "REF-0069",
+      "input_type": "context",
+      "document_id": "analyte_reference_ranges",
+      "document_name": "analyte_reference_ranges.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 177
+      },
+      "text_excerpt": "ference interval is recorded with the figure and the interval it falls outside. The assessment records what is inconsistent and leaves interpretation to the reporting clinician.",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.966881+00:00"
+    },
+    {
+      "ref_id": "REF-0070",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 399
+      },
+      "text_excerpt": "# Returned Result Sheet, Batch Review Batch: BATCH-ROWAN. Six results returned for review. No personal identifiers are recorded on this sheet; results are keyed to anonymous sample identifiers only. T",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.970373+00:00"
+    },
+    {
+      "ref_id": "REF-0071",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 393
+      },
+      "text_excerpt": "y: 3 --- ## Result RES-ALDER Sample identifier: SPEC-ALDER Test: Sodium Measured value: 148 mmol/L Analysing laboratory: Northgate --- ## Result RES-BIRCH Sample identifier: SPEC-BIRCH Test: Potassium",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.970387+00:00"
+    },
+    {
+      "ref_id": "REF-0072",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 398
+      },
+      "text_excerpt": "Test: Chloride Measured value: 99 mmol/L Analysing laboratory: Eastfield --- ## Result RES-DAMSON Sample identifier: SPEC-DAMSON Test: Total calcium Measured value: 2.3 mmol/L Analysing laboratory: No",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.970395+00:00"
+    },
+    {
+      "ref_id": "REF-0073",
+      "input_type": "context",
+      "document_id": "result_sheet",
+      "document_name": "result_sheet.md",
+      "location": {
+        "page": 1,
+        "paragraph": 0,
+        "sentence": 0,
+        "char_start": 0,
+        "char_end": 116
+      },
+      "text_excerpt": "g laboratory: Eastfield --- ## Result RES-FIRTH Test: Albumin Measured value: 42 g/L Analysing laboratory: Eastfield",
+      "cited_by": [],
+      "first_indexed": "2026-09-18T19:53:51.970401+00:00"
+    }
+  ],
+  "web_references": []
+}

@@ -1,0 +1,379 @@
+{
+  "dependency_wait_task_seconds": 0.0005084549993625842,
+  "deterministic_cpu_unavailable": "Process CPU includes model kernels, embeddings and telemetry; no isolated measurement",
+  "deterministic_nonmodel_cpu_seconds": null,
+  "interpretation": "Task wait sums are not pipeline wall-clock; use the scheduler DAG and interval unions.",
+  "per_agent": {
+    "ARCHIVIST": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 1,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": 6.327400320967327,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 1,
+          "value": 1
+        },
+        "generation_seconds": {
+          "measured_calls": 1,
+          "value": 17.384706896999887
+        },
+        "input_tokens": {
+          "measured_calls": 1,
+          "value": 5210
+        },
+        "output_tokens": {
+          "measured_calls": 1,
+          "value": 110
+        },
+        "retained_count": {
+          "measured_calls": 1,
+          "value": 1
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 28.876697179000075
+        }
+      }
+    },
+    "AUDITOR896": {
+      "calls": 7,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 7,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": null,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 7,
+          "value": 0
+        },
+        "generation_seconds": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "input_tokens": {
+          "measured_calls": 7,
+          "value": 3962
+        },
+        "output_tokens": {
+          "measured_calls": 7,
+          "value": 0
+        },
+        "retained_count": {
+          "measured_calls": 7,
+          "value": 0
+        },
+        "total_service_seconds": {
+          "measured_calls": 7,
+          "value": 10.368888331000107
+        }
+      }
+    },
+    "CITATION_RESOLVER": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 1,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": 6.759011913728628,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 1,
+          "value": 2
+        },
+        "generation_seconds": {
+          "measured_calls": 1,
+          "value": 19.233580537999842
+        },
+        "input_tokens": {
+          "measured_calls": 1,
+          "value": 5007
+        },
+        "output_tokens": {
+          "measured_calls": 1,
+          "value": 130
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 19.42393932899995
+        }
+      }
+    },
+    "EDITOR_CLERK": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 1,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": 6.508186061151381,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 1,
+          "value": 1
+        },
+        "generation_seconds": {
+          "measured_calls": 1,
+          "value": 16.748138263999863
+        },
+        "input_tokens": {
+          "measured_calls": 1,
+          "value": 4738
+        },
+        "output_tokens": {
+          "measured_calls": 1,
+          "value": 109
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 26.824133285000244
+        }
+      }
+    },
+    "EMBEDDING": {
+      "calls": 30,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 0,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": null,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "generation_seconds": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "input_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "output_tokens": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 30,
+          "value": 13.80688965599984
+        }
+      }
+    },
+    "INST_FINDER": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 1,
+        "empty_output": 1,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": 3.481928456289729,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 1,
+          "value": 0
+        },
+        "generation_seconds": {
+          "measured_calls": 1,
+          "value": 6.605534918000103
+        },
+        "input_tokens": {
+          "measured_calls": 1,
+          "value": 4981
+        },
+        "output_tokens": {
+          "measured_calls": 1,
+          "value": 23
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 6.793925768999998
+        }
+      }
+    },
+    "LEGAL_ANALYST": {
+      "calls": 2,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 2,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": 6.597616615656792,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 2,
+          "value": 2
+        },
+        "generation_seconds": {
+          "measured_calls": 2,
+          "value": 34.25479429400002
+        },
+        "input_tokens": {
+          "measured_calls": 2,
+          "value": 9712
+        },
+        "output_tokens": {
+          "measured_calls": 2,
+          "value": 226
+        },
+        "retained_count": {
+          "measured_calls": 2,
+          "value": 1
+        },
+        "total_service_seconds": {
+          "measured_calls": 2,
+          "value": 34.6289921270004
+        }
+      }
+    },
+    "PROCESSOR": {
+      "calls": 4,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 4,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": 8.13861096950549,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 4,
+          "value": 7
+        },
+        "generation_seconds": {
+          "measured_calls": 4,
+          "value": 23.099764899000093
+        },
+        "input_tokens": {
+          "measured_calls": 4,
+          "value": 3194
+        },
+        "output_tokens": {
+          "measured_calls": 4,
+          "value": 188
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 4,
+          "value": 23.17449980399988
+        }
+      }
+    },
+    "SPEECH_ACT_TAGGER": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 1,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": 8.315103833006392,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 1,
+          "value": 21
+        },
+        "generation_seconds": {
+          "measured_calls": 1,
+          "value": 116.53492481399962
+        },
+        "input_tokens": {
+          "measured_calls": 1,
+          "value": 4315
+        },
+        "output_tokens": {
+          "measured_calls": 1,
+          "value": 969
+        },
+        "retained_count": {
+          "measured_calls": 0,
+          "value": null
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 116.68717544399988
+        }
+      }
+    },
+    "VERIFIER": {
+      "calls": 1,
+      "counts": {
+        "cap_hit": 0,
+        "contract_valid": 1,
+        "empty_output": 0,
+        "refused": 0,
+        "truncated": 0
+      },
+      "decode_tokens_per_second": 13.743417339233753,
+      "metrics": {
+        "emitted_count": {
+          "measured_calls": 1,
+          "value": 5
+        },
+        "generation_seconds": {
+          "measured_calls": 1,
+          "value": 92.18958929400014
+        },
+        "input_tokens": {
+          "measured_calls": 1,
+          "value": 17220
+        },
+        "output_tokens": {
+          "measured_calls": 1,
+          "value": 1267
+        },
+        "retained_count": {
+          "measured_calls": 1,
+          "value": 5
+        },
+        "total_service_seconds": {
+          "measured_calls": 1,
+          "value": 95.07443436099993
+        }
+      }
+    }
+  },
+  "resource_wait_task_seconds": 266.4358769780001
+}

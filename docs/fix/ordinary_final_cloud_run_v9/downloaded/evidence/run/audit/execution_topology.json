@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "execution_topology": "report_optimized",
+  "run_id": "1543757447c24ebeb65a31a517950065",
+  "critical_path": [
+    "task-000000",
+    "task-000007",
+    "task-000009",
+    "task-000010",
+    "task-000011"
+  ],
+  "critical_path_service_s": 294.05134333699925,
+  "task_count": 12,
+  "states": {
+    "task-000000": "completed",
+    "task-000001": "completed",
+    "task-000002": "completed",
+    "task-000003": "completed",
+    "task-000004": "completed",
+    "task-000005": "completed",
+    "task-000006": "completed",
+    "task-000007": "completed",
+    "task-000008": "completed",
+    "task-000009": "completed",
+    "task-000010": "completed",
+    "task-000011": "completed"
+  },
+  "interpretation": "Observed task-service weighted dependency path, excludes queue gaps; not a speedup claim"
+}

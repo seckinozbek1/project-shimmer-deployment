@@ -1,0 +1,26 @@
+{
+  "state": "RAW",
+  "rank": "EDITOR_CLERK",
+  "ok": true,
+  "error": null,
+  "parsed": {
+    "agent": "EDITOR_CLERK",
+    "doc_id": "result_sheet",
+    "items": [
+      {
+        "kind": "editorial_observation",
+        "rationale": "The amendments correctly identify irregularities based on the conventions and reference corpus. The findings are consistent with the reference data and the conventions, and the amendments are necessary to correct the irregularities.",
+        "ref": "REF-0007",
+        "ref_ids": [
+          "REF-0007"
+        ],
+        "verdict": "sound",
+        "confidence": "CONFIDENT",
+        "ts": "2026-09-18T19:59:56.779425+00:00",
+        "revision": 1,
+        "item_id": "EDITOR_CLERK:editorial_observation:REF-0007:0"
+      }
+    ]
+  },
+  "raw_text": "{\"agent\": \"EDITOR_CLERK\", \"doc_id\": \"result_sheet\", \"items\": [{\"confident\": true, \"kind\": \"editorial_observation\", \"rationale\": \"The amendments correctly identify irregularities based on the conventions and reference corpus. The findings are consistent with the reference data and the conventions, and the amendments are necessary to correct the irregularities.\", \"ref\": \"REF-0007\", \"ref_ids\": [\"REF-0007\"], \"verdict\": \"sound\"}]}"
+}

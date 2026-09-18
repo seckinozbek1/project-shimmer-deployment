@@ -1,0 +1,11 @@
+{"ts": "2026-09-18T19:59:56.790141+00:00", "level": "INFO", "run_id": "1543757447c24ebeb65a31a517950065", "phase": "8", "agent": "", "doc_id": "", "event": "phase_start phase=8 step=persist_run_summary"}
+=== final cost ===
+  Claude:   $0.0000
+  GPT-4o:   $0.0000
+  TOTAL:    $0.0000
+  calls: 12  failures: 0
+  bus messages: 34
+{"ts": "2026-09-18T19:59:56.794208+00:00", "level": "INFO", "run_id": "1543757447c24ebeb65a31a517950065", "phase": "8", "agent": "", "doc_id": "", "event": "oge_capture scope=default provisions_appended=4 provisions_superseded=2 stubs_skipped=0 accumulator_size=0 sensitive=False"}
+{"ts": "2026-09-18T19:59:56.795237+00:00", "level": "INFO", "run_id": "1543757447c24ebeb65a31a517950065", "phase": "8", "agent": "", "doc_id": "", "event": "oge_graph_rebuilt scope=default nodes=13 edges=4"}
+{"ts": "2026-09-18T19:59:56.812916+00:00", "level": "INFO", "run_id": "1543757447c24ebeb65a31a517950065", "phase": "8", "agent": "", "doc_id": "", "event": "oge_gnn_updated delta=13 nodes=13 loss=0.122127 device=cuda"}
+[progress] event=complete docs=1 amendments=4 cost=0.00 blocked=0 status=done
