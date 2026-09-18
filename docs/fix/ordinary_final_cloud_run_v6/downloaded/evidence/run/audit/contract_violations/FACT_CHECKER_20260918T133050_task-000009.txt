@@ -1,0 +1,26 @@
+# Contract violation raw output
+# agent: FACT_CHECKER
+# timestamp: 2026-09-18T13:30:50.720098+00:00
+# missing_fields: ['items[0].verdict']
+# raw_text_bytes: 569
+# sensitive: False
+# ---
+{"agent": "FACT_CHECKER", "doc_id": "result_sheet.md", "items": [
+  {
+    "ref": "REF-0022",
+    "kind": "finding",
+    "confidence": "CONFIDENT",
+    "claim_id": "CONV-004",
+    "search_method": "direct_comparison",
+    "relation": "sum_mismatch",
+    "record_verdict": "irregular",
+    "value_a": 148,
+    "unit_a": "mmol/L",
+    "value_b": 6,
+    "unit_b": "count",
+    "source_refs": ["REF-0022"],
+    "explanation": "The measured value of Sodium (148 mmol/L) does not match the total result count (6) declared for the sample.",
+    "field_label": "Sodium"
+  }
+]
+}

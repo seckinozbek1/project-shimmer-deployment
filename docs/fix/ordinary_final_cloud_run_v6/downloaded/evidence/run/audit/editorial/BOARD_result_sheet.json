@@ -1,0 +1,31 @@
+{
+  "state": "REVIEWED",
+  "rounds": 0,
+  "ranks_run": [
+    "EDITOR_CLERK"
+  ],
+  "terminal_cap_reached": false,
+  "failed": null,
+  "consolidated": [
+    {
+      "ref": "REF-0007",
+      "governing": {
+        "rank": "EDITOR_CLERK",
+        "verdict": "serious_concern",
+        "verdict_l": "serious_concern",
+        "rationale": "Each result must include a sample identifier, test, measured value, and analysing laboratory. The original texts are missing the sample identifier and analysing laboratory for all three findings.",
+        "confidence": "CONFIDENT"
+      },
+      "superseded": [],
+      "chain": [
+        {
+          "rank": "EDITOR_CLERK",
+          "verdict": "serious_concern",
+          "verdict_l": "serious_concern",
+          "rationale": "Each result must include a sample identifier, test, measured value, and analysing laboratory. The original texts are missing the sample identifier and analysing laboratory for all three findings.",
+          "confidence": "CONFIDENT"
+        }
+      ]
+    }
+  ]
+}

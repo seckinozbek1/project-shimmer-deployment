@@ -1,0 +1,563 @@
+{
+  "result_sheet": {
+    "document_id": "result_sheet",
+    "unit_count": 6,
+    "rule_count": 5,
+    "field_vocabulary": [
+      "analysing laboratory",
+      "measured value",
+      "sample identifier",
+      "test"
+    ],
+    "pair_count": 11,
+    "rejected_count": 1,
+    "undecided_count": 18,
+    "semantic_pairing": {
+      "status": "REFUSES",
+      "rule_unit_count": 18,
+      "reason": "Shimmer cannot establish where these rules apply. Name the fields they govern or declare their scope.",
+      "required_voters": [
+        "sbert",
+        "keybert",
+        "tfidf",
+        "bow",
+        "word_overlap"
+      ],
+      "votes": [],
+      "measured_thresholds": null,
+      "measured_margin": null,
+      "reference_set": null,
+      "detail": "Automatic similarity promotion is retired: no calibrated five-voter applicability decision exists."
+    },
+    "unmatched_units": [],
+    "units": [
+      {
+        "unit_id": "u01-result-res-alder",
+        "title": "Result RES-ALDER",
+        "kind": "section",
+        "index": 0,
+        "fields_present": [
+          "analysing laboratory",
+          "measured value",
+          "sample identifier",
+          "test"
+        ],
+        "paired": [
+          {
+            "rule_id": "CONV-001",
+            "reason": "unit carries every field the rule names: measured value, test"
+          },
+          {
+            "rule_id": "CONV-002",
+            "reason": "unit carries every field the rule names: analysing laboratory, measured value, sample identifier, test"
+          }
+        ],
+        "rejected": [],
+        "undecided": [
+          "CONV-003",
+          "CONV-004",
+          "CONV-005"
+        ],
+        "band_conditions": [
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0007",
+            "row_label": "Sodium",
+            "column_label": "reference range",
+            "low": 135.0,
+            "high": 145.0,
+            "unit": "mmol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0065",
+            "row_label": "Sodium",
+            "column_label": "reference range",
+            "low": 135.0,
+            "high": 145.0,
+            "unit": "mmol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0007",
+            "row_label": "Sodium",
+            "column_label": "reference range",
+            "low": 135.0,
+            "high": 145.0,
+            "unit": "mmol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0065",
+            "row_label": "Sodium",
+            "column_label": "reference range",
+            "low": 135.0,
+            "high": 145.0,
+            "unit": "mmol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          }
+        ]
+      },
+      {
+        "unit_id": "u02-result-res-birch",
+        "title": "Result RES-BIRCH",
+        "kind": "section",
+        "index": 1,
+        "fields_present": [
+          "analysing laboratory",
+          "measured value",
+          "sample identifier",
+          "test"
+        ],
+        "paired": [
+          {
+            "rule_id": "CONV-001",
+            "reason": "unit carries every field the rule names: measured value, test"
+          },
+          {
+            "rule_id": "CONV-002",
+            "reason": "unit carries every field the rule names: analysing laboratory, measured value, sample identifier, test"
+          }
+        ],
+        "rejected": [],
+        "undecided": [
+          "CONV-003",
+          "CONV-004",
+          "CONV-005"
+        ],
+        "band_conditions": [
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0007",
+            "row_label": "Potassium",
+            "column_label": "reference range",
+            "low": 3.5,
+            "high": 5.0,
+            "unit": "mmol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0065",
+            "row_label": "Potassium",
+            "column_label": "reference range",
+            "low": 3.5,
+            "high": 5.0,
+            "unit": "mmol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0007",
+            "row_label": "Potassium",
+            "column_label": "reference range",
+            "low": 3.5,
+            "high": 5.0,
+            "unit": "mmol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0065",
+            "row_label": "Potassium",
+            "column_label": "reference range",
+            "low": 3.5,
+            "high": 5.0,
+            "unit": "mmol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          }
+        ]
+      },
+      {
+        "unit_id": "u03-result-res-cedar",
+        "title": "Result RES-CEDAR",
+        "kind": "section",
+        "index": 2,
+        "fields_present": [
+          "analysing laboratory",
+          "measured value",
+          "sample identifier",
+          "test"
+        ],
+        "paired": [
+          {
+            "rule_id": "CONV-001",
+            "reason": "unit carries every field the rule names: measured value, test"
+          },
+          {
+            "rule_id": "CONV-002",
+            "reason": "unit carries every field the rule names: analysing laboratory, measured value, sample identifier, test"
+          }
+        ],
+        "rejected": [],
+        "undecided": [
+          "CONV-003",
+          "CONV-004",
+          "CONV-005"
+        ],
+        "band_conditions": [
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0007",
+            "row_label": "Chloride",
+            "column_label": "reference range",
+            "low": 95.0,
+            "high": 105.0,
+            "unit": "mmol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0065",
+            "row_label": "Chloride",
+            "column_label": "reference range",
+            "low": 95.0,
+            "high": 105.0,
+            "unit": "mmol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0007",
+            "row_label": "Chloride",
+            "column_label": "reference range",
+            "low": 95.0,
+            "high": 105.0,
+            "unit": "mmol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0065",
+            "row_label": "Chloride",
+            "column_label": "reference range",
+            "low": 95.0,
+            "high": 105.0,
+            "unit": "mmol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          }
+        ]
+      },
+      {
+        "unit_id": "u04-result-res-damson",
+        "title": "Result RES-DAMSON",
+        "kind": "section",
+        "index": 3,
+        "fields_present": [
+          "analysing laboratory",
+          "measured value",
+          "sample identifier",
+          "test"
+        ],
+        "paired": [
+          {
+            "rule_id": "CONV-001",
+            "reason": "unit carries every field the rule names: measured value, test"
+          },
+          {
+            "rule_id": "CONV-002",
+            "reason": "unit carries every field the rule names: analysing laboratory, measured value, sample identifier, test"
+          }
+        ],
+        "rejected": [],
+        "undecided": [
+          "CONV-003",
+          "CONV-004",
+          "CONV-005"
+        ],
+        "band_conditions": [
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0007",
+            "row_label": "Total calcium",
+            "column_label": "reference range",
+            "low": 2.1,
+            "high": 2.5,
+            "unit": "mmol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0065",
+            "row_label": "Total calcium",
+            "column_label": "reference range",
+            "low": 2.1,
+            "high": 2.5,
+            "unit": "mmol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0007",
+            "row_label": "Total calcium",
+            "column_label": "reference range",
+            "low": 2.1,
+            "high": 2.5,
+            "unit": "mmol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0065",
+            "row_label": "Total calcium",
+            "column_label": "reference range",
+            "low": 2.1,
+            "high": 2.5,
+            "unit": "mmol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          }
+        ]
+      },
+      {
+        "unit_id": "u05-result-res-elder",
+        "title": "Result RES-ELDER",
+        "kind": "section",
+        "index": 4,
+        "fields_present": [
+          "analysing laboratory",
+          "measured value",
+          "sample identifier",
+          "test"
+        ],
+        "paired": [
+          {
+            "rule_id": "CONV-001",
+            "reason": "unit carries every field the rule names: measured value, test"
+          },
+          {
+            "rule_id": "CONV-002",
+            "reason": "unit carries every field the rule names: analysing laboratory, measured value, sample identifier, test"
+          }
+        ],
+        "rejected": [],
+        "undecided": [
+          "CONV-003",
+          "CONV-004",
+          "CONV-005"
+        ],
+        "band_conditions": [
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0007",
+            "row_label": "Total bilirubin",
+            "column_label": "reference range",
+            "low": 1.7,
+            "high": 17.0,
+            "unit": "umol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0065",
+            "row_label": "Total bilirubin",
+            "column_label": "reference range",
+            "low": 1.7,
+            "high": 17.0,
+            "unit": "umol/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0007",
+            "row_label": "Total bilirubin",
+            "column_label": "reference range",
+            "low": 1.7,
+            "high": 17.0,
+            "unit": "umol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0065",
+            "row_label": "Total bilirubin",
+            "column_label": "reference range",
+            "low": 1.7,
+            "high": 17.0,
+            "unit": "umol/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          }
+        ]
+      },
+      {
+        "unit_id": "u06-result-res-firth",
+        "title": "Result RES-FIRTH",
+        "kind": "section",
+        "index": 5,
+        "fields_present": [
+          "analysing laboratory",
+          "measured value",
+          "test"
+        ],
+        "paired": [
+          {
+            "rule_id": "CONV-001",
+            "reason": "unit carries every field the rule names: measured value, test"
+          }
+        ],
+        "rejected": [
+          {
+            "rule_id": "CONV-002",
+            "reason": "unit lacks sample identifier",
+            "missing_count": 1
+          }
+        ],
+        "undecided": [
+          "CONV-003",
+          "CONV-004",
+          "CONV-005"
+        ],
+        "band_conditions": [
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0007",
+            "row_label": "Albumin",
+            "column_label": "reference range",
+            "low": 35.0,
+            "high": 55.0,
+            "unit": "g/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-001",
+            "ref_id": "REF-0065",
+            "row_label": "Albumin",
+            "column_label": "reference range",
+            "low": 35.0,
+            "high": 55.0,
+            "unit": "g/L",
+            "condition_fields": [
+              "measured value"
+            ],
+            "condition_fields_present": [
+              "measured value"
+            ],
+            "low_side_verdict": "model"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0007",
+            "row_label": "Albumin",
+            "column_label": "reference range",
+            "low": 35.0,
+            "high": 55.0,
+            "unit": "g/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          },
+          {
+            "rule_id": "CONV-004",
+            "ref_id": "REF-0065",
+            "row_label": "Albumin",
+            "column_label": "reference range",
+            "low": 35.0,
+            "high": 55.0,
+            "unit": "g/L",
+            "condition_fields": [],
+            "condition_fields_present": [],
+            "low_side_verdict": "fire"
+          }
+        ]
+      }
+    ],
+    "missing_field_findings": [],
+    "not_judged": [],
+    "not_judged_count": 0,
+    "reattributed": [],
+    "absence": [],
+    "absence_computed_count": 0,
+    "absence_judged_count": 0,
+    "absence_refused": [],
+    "absence_refused_count": 0,
+    "calls_made": 5
+  }
+}

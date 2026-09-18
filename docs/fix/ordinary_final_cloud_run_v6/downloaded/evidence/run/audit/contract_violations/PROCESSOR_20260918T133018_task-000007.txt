@@ -1,0 +1,8 @@
+# Contract violation raw output
+# agent: PROCESSOR
+# timestamp: 2026-09-18T13:30:18.001839+00:00
+# missing_fields: ['Exact compact extraction fields required']
+# raw_text_bytes: 221
+# sensitive: False
+# ---
+{"items":[{"claims":[],"questions":[],"refs":[],"span":"s2d3","status":"empty"},{"claims":[],"questions":[],"refs":[],"span":"s35d","status":"empty"},{"claims":[],"questions":[],"refs":[],"span":"s3e6","status":"empty"}]}

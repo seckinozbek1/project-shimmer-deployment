@@ -1,0 +1,617 @@
+{
+  "auditor_pairing": {
+    "agreements": 0,
+    "auditor_to_verifier": [],
+    "classifier_calls": 0,
+    "classifier_failures": 0,
+    "classifier_forwards": 0,
+    "classifier_service_seconds": 0,
+    "disagreements": 0,
+    "eligible_producer_items": 0,
+    "forward_count_unknown": 0,
+    "interpretation": "Advisory pair and independent finding layers; disagreement is not an error label",
+    "joined_findings": 0,
+    "pairs_constructed": 0,
+    "producer_items": 0,
+    "producer_to_auditor": [],
+    "relation_distribution": {
+      "ADDITION": 0,
+      "DIVERGENCE": 0,
+      "MATCH": 0,
+      "OMISSION": 0
+    },
+    "unavailable": 1,
+    "unjoined_findings": 0
+  },
+  "call_wall_union_seconds": 342.1914577140001,
+  "caveats": [
+    "Service sums include overlap; wall union does not.",
+    "EOS establishes transport completion, not semantic correctness.",
+    "Resource peaks are sampled peaks at recorded intervals; CPU time includes inference and telemetry."
+  ],
+  "consumer_barriers": [
+    {
+      "after_latest_auditor_seconds": null,
+      "auditor_task_ids": [],
+      "consumer_enter_monotonic_s": 2558.084045442,
+      "consumer_phase": "phase_3_4_content_production",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": []
+    },
+    {
+      "after_latest_auditor_seconds": null,
+      "auditor_task_ids": [],
+      "consumer_enter_monotonic_s": 2785.936713099,
+      "consumer_phase": "phase_5_audit",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": [
+        "task-000000",
+        "task-000001",
+        "task-000002",
+        "task-000003",
+        "task-000004",
+        "task-000005",
+        "task-000006",
+        "task-000007",
+        "task-000008"
+      ]
+    },
+    {
+      "after_latest_auditor_seconds": 0.0018682169998101017,
+      "auditor_task_ids": [
+        "task-000009"
+      ],
+      "consumer_enter_monotonic_s": 2802.559329359,
+      "consumer_phase": "phase_5_5_convention_review",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": [
+        "task-000000",
+        "task-000001",
+        "task-000002",
+        "task-000003",
+        "task-000004",
+        "task-000005",
+        "task-000006",
+        "task-000007",
+        "task-000008",
+        "task-000009"
+      ]
+    },
+    {
+      "after_latest_auditor_seconds": 0.003795180999986769,
+      "auditor_task_ids": [
+        "task-000009",
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014"
+      ],
+      "consumer_enter_monotonic_s": 2862.367457811,
+      "consumer_phase": "phase_6_synthesis",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": [
+        "task-000000",
+        "task-000001",
+        "task-000002",
+        "task-000003",
+        "task-000004",
+        "task-000005",
+        "task-000006",
+        "task-000007",
+        "task-000008",
+        "task-000009",
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014"
+      ]
+    },
+    {
+      "after_latest_auditor_seconds": 0.2981673070003126,
+      "auditor_task_ids": [
+        "task-000009",
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014"
+      ],
+      "consumer_enter_monotonic_s": 2862.661829937,
+      "consumer_phase": "phase_6_5_editorial_review",
+      "interpretation": "Observed completion-to-consumer interval, not counterfactual avoidable wait",
+      "required_task_ids": [
+        "task-000000",
+        "task-000001",
+        "task-000002",
+        "task-000003",
+        "task-000004",
+        "task-000005",
+        "task-000006",
+        "task-000007",
+        "task-000008",
+        "task-000009",
+        "task-000010",
+        "task-000011",
+        "task-000012",
+        "task-000013",
+        "task-000014"
+      ]
+    }
+  ],
+  "costs": {
+    "combined_estimate": 1.1367527081211408,
+    "infrastructure_estimate": 1.1367527081211408,
+    "invoice": false,
+    "model_api_estimate": 0,
+    "unavailable": "Missing cost categories remain unknown; record explicit zero when applicable"
+  },
+  "counts": {
+    "cap_hit": 0,
+    "contract_valid": 13,
+    "empty_output": 1,
+    "refused": 0,
+    "truncated": 0
+  },
+  "critical_path_model_service": {
+    "auditor": 75.37265316399953,
+    "producer": 252.8448624460002
+  },
+  "critical_path_unavailable": null,
+  "emitted": {
+    "measured_calls": 16,
+    "total_calls": 46,
+    "value": 42
+  },
+  "failed_calls": 3,
+  "generation_wall_union_seconds": 302.09866483299993,
+  "handoffs": [
+    {
+      "child": "cf40503484c747a8aa5be0d5e6e0fde7",
+      "child_role": "auditor",
+      "parent": "6aa8beac22e94b19b49c496161b04f5a",
+      "parent_role": "producer",
+      "seconds": 159.66109332999986
+    },
+    {
+      "child": "cf40503484c747a8aa5be0d5e6e0fde7",
+      "child_role": "auditor",
+      "parent": "a4400cee23a7470f9817df1cab085825",
+      "parent_role": "producer",
+      "seconds": 16.104356273999656
+    }
+  ],
+  "input_tokens": {
+    "measured_calls": 16,
+    "total_calls": 46,
+    "value": 77144
+  },
+  "maximum_concurrency": 1,
+  "model_lifecycle": [
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_start",
+      "event_index": 11,
+      "model": "final-producer",
+      "monotonic_s": 2558.089353893,
+      "task": "task-000000",
+      "utc": "2026-09-18T13:26:46.252889+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_end",
+      "event_index": 12,
+      "model": "final-producer",
+      "monotonic_s": 2569.322495254,
+      "task": "task-000000",
+      "utc": "2026-09-18T13:26:57.486031+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 20,
+      "model": "final-producer",
+      "monotonic_s": 2586.871320929,
+      "task": "task-000001",
+      "utc": "2026-09-18T13:27:15.034856+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 28,
+      "model": "final-producer",
+      "monotonic_s": 2593.650650137,
+      "task": "task-000002",
+      "utc": "2026-09-18T13:27:21.814185+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 44,
+      "model": "final-producer",
+      "monotonic_s": 2614.083455051,
+      "task": "task-000003",
+      "utc": "2026-09-18T13:27:42.246990+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 52,
+      "model": "final-producer",
+      "monotonic_s": 2626.285731224,
+      "task": "task-000004",
+      "utc": "2026-09-18T13:27:54.449266+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 60,
+      "model": "final-producer",
+      "monotonic_s": 2634.104161691,
+      "task": "task-000005",
+      "utc": "2026-09-18T13:28:02.267697+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 68,
+      "model": "final-producer",
+      "monotonic_s": 2743.805033491,
+      "task": "task-000006",
+      "utc": "2026-09-18T13:29:51.968568+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 78,
+      "model": "final-producer",
+      "monotonic_s": 2761.977770747,
+      "task": "task-000007",
+      "utc": "2026-09-18T13:30:10.141306+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": false,
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 88,
+      "model": "final-producer",
+      "monotonic_s": 2769.963642047,
+      "task": "task-000008",
+      "utc": "2026-09-18T13:30:18.127177+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_load_start",
+      "event_index": 100,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2785.942660066,
+      "reload": false,
+      "task": "task-000009",
+      "utc": "2026-09-18T13:30:34.106195+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_evicted",
+      "event_index": 102,
+      "model": "final-producer",
+      "monotonic_s": 2786.335646014,
+      "task": "task-000009",
+      "utc": "2026-09-18T13:30:34.499184+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_load_end",
+      "event_index": 103,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2788.718263284,
+      "resident_models": [
+        "unsloth/Phi-3.5-mini-instruct-bnb-4bit"
+      ],
+      "task": "task-000009",
+      "utc": "2026-09-18T13:30:36.881800+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 125,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2803.580201306,
+      "task": "task-000010",
+      "utc": "2026-09-18T13:30:51.743736+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 135,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2814.691226768,
+      "task": "task-000011",
+      "utc": "2026-09-18T13:31:02.854761+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 145,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2827.154954811,
+      "task": "task-000012",
+      "utc": "2026-09-18T13:31:15.318489+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 155,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2839.99184023,
+      "task": "task-000013",
+      "utc": "2026-09-18T13:31:28.155375+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_resident",
+      "event_index": 165,
+      "model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "monotonic_s": 2850.331987679,
+      "task": "task-000014",
+      "utc": "2026-09-18T13:31:38.495522+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_start",
+      "event_index": 181,
+      "model": "final-producer",
+      "monotonic_s": 2862.666492442,
+      "task": "task-000015",
+      "utc": "2026-09-18T13:31:50.830027+00:00",
+      "worker": "primary"
+    },
+    {
+      "device": "cuda:0",
+      "event": "model_evicted",
+      "event_index": 182,
+      "evicted_model": "unsloth/Phi-3.5-mini-instruct-bnb-4bit",
+      "model": "final-producer",
+      "monotonic_s": 2862.671399746,
+      "task": "task-000015",
+      "utc": "2026-09-18T13:31:50.834935+00:00",
+      "worker": "primary"
+    },
+    {
+      "cold": true,
+      "device": "cuda:0",
+      "event": "model_load_end",
+      "event_index": 183,
+      "model": "final-producer",
+      "monotonic_s": 2872.725056829,
+      "task": "task-000015",
+      "utc": "2026-09-18T13:32:00.888593+00:00",
+      "worker": "primary"
+    }
+  ],
+  "output_tokens": {
+    "measured_calls": 16,
+    "total_calls": 46,
+    "value": 2974
+  },
+  "per_agent_service": {
+    "ARCHIVIST": 28.778253438999855,
+    "CITATION_RESOLVER": 19.430816849000166,
+    "EDITOR_CLERK": 26.15257510399988,
+    "EMBEDDING": 13.973942104000344,
+    "FACT_CHECKER": 16.613899760000095,
+    "INST_FINDER": 6.775987802000145,
+    "LEGAL_ANALYST": 34.136783667000145,
+    "PRACTICE_AUDITOR": 58.758753403999435,
+    "PROCESSOR": 27.873624230999667,
+    "SPEECH_ACT_TAGGER": 109.69682135400035
+  },
+  "phase_latencies": [
+    {
+      "phase": "phase_3_4_content_production",
+      "seconds": 227.85128884799997
+    },
+    {
+      "phase": "phase_5_audit",
+      "seconds": 16.621564443999887
+    },
+    {
+      "phase": "phase_5_5_convention_review",
+      "seconds": 59.807111303000056
+    },
+    {
+      "phase": "phase_6_synthesis",
+      "seconds": 0.29360521200032963
+    },
+    {
+      "phase": "phase_6_5_editorial_review",
+      "seconds": 26.164899920999687
+    }
+  ],
+  "pipeline_wall_seconds": 346.42605686199977,
+  "process_cpu_seconds": 776.1698538759999,
+  "resources": {
+    "cuda_allocated_bytes": {
+      "median": 8348022016.0,
+      "peak": 15283224576,
+      "samples": 170
+    },
+    "cuda_reserved_bytes": {
+      "median": 13115588608.0,
+      "peak": 16169041920,
+      "samples": 170
+    },
+    "gpu_power_watts": {
+      "median": 132.595,
+      "peak": 155.89,
+      "samples": 170
+    },
+    "gpu_utilization": {
+      "median": 52.0,
+      "peak": 100.0,
+      "samples": 170
+    },
+    "process_cpu_percent": {
+      "median": 100.2,
+      "peak": 2982.4,
+      "samples": 170
+    },
+    "process_rss_bytes": {
+      "median": 3200538624.0,
+      "peak": 4105375744,
+      "samples": 170
+    },
+    "swap_used_bytes": {
+      "median": 0.0,
+      "peak": 0,
+      "samples": 170
+    },
+    "system_cpu_percent": {
+      "median": 3.4,
+      "peak": 99.4,
+      "samples": 170
+    },
+    "system_ram_free_bytes": {
+      "median": 232928645120.0,
+      "peak": 234621919232,
+      "samples": 170
+    },
+    "system_ram_used_bytes": {
+      "median": 3486396416.0,
+      "peak": 3801821184,
+      "samples": 170
+    },
+    "vram_used_bytes": {
+      "median": 13445890048.0,
+      "peak": 16499343360.0,
+      "samples": 170
+    }
+  },
+  "retained": {
+    "measured_calls": 3,
+    "total_calls": 46,
+    "value": 2
+  },
+  "scheduler_lane_idle_seconds": 17.95418969899947,
+  "scheduler_timing_available": true,
+  "scheduler_wait_seconds": 344.1381521779981,
+  "schema_version": 1,
+  "semantic_critical_path": {
+    "elapsed_seconds": 330.73387635499967,
+    "gap_seconds": 2.4433381479984746,
+    "interpretation": "Observed dependency and lane order; gaps separate; not counterfactual marginal latency",
+    "members": [
+      "task-000000",
+      "task-000001",
+      "task-000002",
+      "task-000003",
+      "task-000004",
+      "task-000005",
+      "task-000006",
+      "task-000007",
+      "task-000008",
+      "task-000009",
+      "task-000010",
+      "task-000011",
+      "task-000012",
+      "task-000013",
+      "task-000014",
+      "task-000015"
+    ],
+    "service_seconds": 328.2905382070012
+  },
+  "service_totals": {
+    "auditor": 75.37265316399953,
+    "other": 13.973942104000344,
+    "producer": 252.8448624460002
+  },
+  "wave_count": 7,
+  "wave_intervals": {
+    "serial-task-000008": {
+      "call_ids": [
+        "c6adcb609dce49179efc5fe2fbbaa968"
+      ],
+      "end": 2785.933476768,
+      "start": 2769.963194986
+    },
+    "serial-task-000015": {
+      "call_ids": [
+        "9de57323d18041a697cdedbe7e552546"
+      ],
+      "end": 2888.818640862,
+      "start": 2862.666065758
+    },
+    "wave-000000": {
+      "call_ids": [
+        "0b32bf039dbb40ffb3bac4d35cfdd0f2",
+        "95082b8528c843caa6b719440a02feea",
+        "3a7a5a1a345540c68891273e04728c75"
+      ],
+      "end": 2613.081026445,
+      "start": 2558.08882962
+    },
+    "wave-000003": {
+      "call_ids": [
+        "6aa8beac22e94b19b49c496161b04f5a",
+        "3fb144b2c45944a1968246fefd9396f5",
+        "1051413c41fa42c5b1821524c755d7e7",
+        "6f84295cec39432a8a7b3cfa3494bea5"
+      ],
+      "end": 2761.97107925,
+      "start": 2614.082991886
+    },
+    "wave-000007": {
+      "call_ids": [
+        "a4400cee23a7470f9817df1cab085825"
+      ],
+      "end": 2769.83805423,
+      "start": 2761.977345261
+    },
+    "wave-000009": {
+      "call_ids": [
+        "cf40503484c747a8aa5be0d5e6e0fde7"
+      ],
+      "end": 2802.556310264,
+      "start": 2785.942410504
+    },
+    "wave-000010": {
+      "call_ids": [
+        "efcd8657174341b5b58611cde900518b",
+        "8262d0a3e763499d8f1e675bf065f29e",
+        "113147a3d3534127b81878566c406f38",
+        "6c3a2d5917954b88ba10f363bdb9a07a",
+        "99fec28e9a284418be1eaa2cb3fe6f25"
+      ],
+      "end": 2862.362242589,
+      "start": 2803.579945173
+    }
+  }
+}
