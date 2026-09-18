@@ -123,6 +123,10 @@ test_grounding_v5_raw_outputs_correct_citation_passes_mismatched_refused (ordina
 test_layout_declared_request_size_within_validated_layout_and_used_live (ordinary_final_correction_checks.CorrectionChecks.test_layout_declared_request_size_within_validated_layout_and_used_live) ... ok
 test_pairing_coverage_reports_pairs_from_a_partial_delivery (ordinary_final_correction_checks.CorrectionChecks.test_pairing_coverage_reports_pairs_from_a_partial_delivery) ... ok
 test_pairing_partial_delivery_pairs_receipt_bound_items_and_marks_them (ordinary_final_correction_checks.CorrectionChecks.test_pairing_partial_delivery_pairs_receipt_bound_items_and_marks_them) ... ok
+test_promotion_only_computed_findings_reach_the_promoter (ordinary_final_correction_checks.CorrectionChecks.test_promotion_only_computed_findings_reach_the_promoter) ... ok
+test_promotion_provenance_stamp_and_sentence_follow_the_source (ordinary_final_correction_checks.CorrectionChecks.test_promotion_provenance_stamp_and_sentence_follow_the_source) ... ok
+test_promotion_v7_deliverable_amendments_are_reproduced_and_narrowed (ordinary_final_correction_checks.CorrectionChecks.test_promotion_v7_deliverable_amendments_are_reproduced_and_narrowed)
+The two wrong v7 amendments exist in the shipped deliverable, carry the ... ok
 test_prompt_build_returns_the_two_turns_and_no_context (ordinary_final_correction_checks.CorrectionChecks.test_prompt_build_returns_the_two_turns_and_no_context) ... ok
 test_prompt_dev_row_reproduces_the_protocol_hash (ordinary_final_correction_checks.CorrectionChecks.test_prompt_dev_row_reproduces_the_protocol_hash) ... ok
 test_prompt_dispatch_sends_system_and_user_turns (ordinary_final_correction_checks.CorrectionChecks.test_prompt_dispatch_sends_system_and_user_turns) ... ok
@@ -135,6 +139,6 @@ test_verifier_record_example_carries_required_fields (ordinary_final_correction_
 test_verifier_v5_raw_output_still_fails_the_contract (ordinary_final_correction_checks.CorrectionChecks.test_verifier_v5_raw_output_still_fails_the_contract) ... ok
 
 ----------------------------------------------------------------------
-Ran 133 tests in 4.470s
+Ran 136 tests in 4.222s
 
 OK

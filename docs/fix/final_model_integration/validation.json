@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "tests": 133,
+  "tests": 136,
   "failures": 0,
   "errors": 0,
   "activation_status": "PASS",
@@ -117,6 +117,20 @@
     },
     {
       "check": "test_verifier_not_called_without_a_draft_and_recorded",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 2
+    },
+    {
+      "check": "test_promotion_only_computed_findings_reach_the_promoter",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
+      "check": "test_promotion_provenance_stamp_and_sentence_follow_the_source",
       "baseline_pass": true,
       "neutralized_test_failed": true,
       "restored_pass": true,

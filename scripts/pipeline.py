@@ -3097,6 +3097,20 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             # builds every one of them from the typed Findings below, so an
             # amendment the arithmetic did not produce cannot exist by
             # construction, which is stronger than validating one away afterwards.
+            #
+            # v7 (run 6f896263): that invariant was held by the ACCIDENT that no
+            # model-authored record had ever carried record_verdict "irregular".
+            # VERIFIER ran with a draft for the first time, wrote five such
+            # records (value_a equal to value_b in four of them), and two became
+            # amendments: one on a clean distractor, one on the right unit for a
+            # fabricated reason. The promoter now receives only the findings
+            # PYTHON COMPUTED, identified structurally by the backend and model
+            # of the result they were posted under (paired/python), never by
+            # agent name. Model-authored findings stay on the bus, stay in the
+            # deliverable's finding list, and reach the operator through every
+            # channel they already did; they simply no longer become amendments.
+            computed_findings = paired_review_mod.computed_finding_items(
+                conv_review, doc_id=doc["id"])
             raw_amendments = []
             # console fresh-eyes fix: computed once here (was computed twice in
             # this same function, once for the polish pass and again below for
@@ -3149,8 +3163,23 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
             _rules_by_id = {str(r.get("id")): r
                             for r in (convention_registry or {}).get("conventions", [])
                             if isinstance(r, dict) and r.get("id")}
+            # Only the computed findings are promotable (see computed_findings
+            # above). all_upstream still carries every agent's items for
+            # apply_typed_fields, the bus, the summary and the ontology; it is
+            # the PROMOTER's input that narrows, which is what makes "no
+            # amendment is ever taken from the model" true by construction.
+            _promotable = [f for f in computed_findings if finding_record.is_finding(f)]
+            _withheld = [f for f in all_upstream
+                         if finding_record.is_finding(f)
+                         and str(f.get("record_verdict") or "").lower() == "irregular"
+                         and not any(f is c for c in computed_findings)]
+            if _withheld:
+                log_event(_LOG,
+                          f"model_findings_not_promoted count={len(_withheld)} "
+                          f"agents={sorted({str(f.get('agent') or '?') for f in _withheld})}",
+                          run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
-                raw_amendments, all_upstream, unit_texts=_unit_texts,
+                raw_amendments, _promotable, unit_texts=_unit_texts,
                 refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id)
             # Never silently drop a finding this function could not turn into
             # an amendment: a real, irregular finding a model wrote under a

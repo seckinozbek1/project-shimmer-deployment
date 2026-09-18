@@ -64,7 +64,7 @@
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
     "write_deliverables_run_summary": "5e2c58f726f084150828312cea3063dca145f1d24dbbc8a6a9072a0cdfdc119b",
-    "phase_6_synthesis": "91fb7a7e46f06a86218d9d7106c13f09584ee0d1f999a75a564119c03e64adc2",
+    "phase_6_synthesis": "4db46a4aae4d8e9e466957270986d34f78eceff38d0e8068337878b31266f701",
     "_prior_refusals_for": "d00896ef31424933cdd2e0bf28c19149ba893068e73eaedb4a6a34ae68596b4d",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
     "_category_for_conv": "0b36fc194a24a4028716d0f25c0e84af97ade28a9b7d564cf30ca1592ab21617",
@@ -119,6 +119,17 @@
         "_accepted_draft": {
           "from": null,
           "to": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2"
+        }
+      }
+    },
+    {
+      "date": "2026-09-19",
+      "reason": "Operator-directed correction after ordinary final run v7 (6f896263): the amendment promoter receives only the findings Python computed (identified by the paired/python backend the computed records are posted under), so pipeline.py's stated invariant \"NO amendment is ever taken from the model\" holds by construction rather than by a downstream check. v7 promoted two fabricated VERIFIER records into the operator-facing deliverable. Model-authored findings remain on the bus and in every other channel; only promotion narrows.",
+      "document": "docs/fix/ORDINARY_FINAL_V7_CORRECTIONS.md",
+      "functions": {
+        "phase_6_synthesis": {
+          "from": "91fb7a7e46f06a86218d9d7106c13f09584ee0d1f999a75a564119c03e64adc2",
+          "to": "4db46a4aae4d8e9e466957270986d34f78eceff38d0e8068337878b31266f701"
         }
       }
     }
