@@ -24603,6 +24603,36 @@ def check_265_typed_record_example_complete_and_verifier_skipped_without_draft()
     return check_verifier()
 
 
+def check_266_pairing_gate_is_item_scoped_and_partial_pairs_are_marked():
+    """Run 0cbc7f26 (v6): one refused PROCESSOR partition left four accepted items
+    unseen by every auditor, and the advisory classifier had no pairs, as in every
+    run before it. The delivery-level refusal in auditor_pairs.build applies to a
+    single call's best-effort object; a partition-merged delivery pairs its
+    accepted, receipt-bound items and marks each pair and the coverage figures
+    partial. Phase 5 hands such a partial draft to its auditors, noted."""
+    from ordinary_final_correction_checks import check_pairing
+    return check_pairing()
+
+
+def check_267_bounded_requests_carry_the_validated_layout():
+    """Every training input and DEV row of checkpoint 168 carries one or two owned
+    spans; the pipeline used to send up to four. v6 lost the exact compact shape on
+    its one three-span request and kept it on every validated-layout request. The
+    request size is declared, bounded by the validated layout, and used by the
+    live partitioning."""
+    from ordinary_final_correction_checks import check_layout
+    return check_layout()
+
+
+def check_268_record_example_carries_declared_values():
+    """v6: FACT_CHECKER filled the named placeholders of the typed-record example
+    and dropped the one field shown as a sentence about a value; VERIFIER was told
+    to keep a `verdict` field its contract does not have. The example now carries
+    the agent's own declared values and names the agent's own verdict field."""
+    from ordinary_final_correction_checks import check_record
+    return check_record()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -24937,6 +24967,12 @@ CHECKS = [
      check_264_core_field_alias_is_read_and_recorded),
     ("265 the typed-record example carries the required fields and VERIFIER is not called without a draft",
      check_265_typed_record_example_complete_and_verifier_skipped_without_draft),
+    ("266 the pairing gate is item-scoped and pairs from a partial delivery are marked",
+     check_266_pairing_gate_is_item_scoped_and_partial_pairs_are_marked),
+    ("267 bounded extraction requests carry the validated one-or-two-span layout",
+     check_267_bounded_requests_carry_the_validated_layout),
+    ("268 the typed-record example carries the agent's declared values and names its own verdict field",
+     check_268_record_example_carries_declared_values),
 ]
 
 

@@ -1346,8 +1346,17 @@ class AgentWrapper:
             "explanation": "<one or two sentences for the person reading the review>",
             "ref_ids": ["REF-0001"],
         })
-        example_item.setdefault("verdict", "<your own contract's verdict value, unchanged>")
+        # v6 (run 0cbc7f26): the example used to show `verdict` as a sentence about
+        # a value ("<your own contract's verdict value, unchanged>") and told every
+        # record agent to keep a `verdict` field, which VERIFIER's contract does not
+        # even have (its verdict slot is `finding`). FACT_CHECKER filled the two
+        # named placeholders it was shown and dropped that one field. The example
+        # now carries the agent's own declared values, and the sentence names the
+        # agent's own verdict-bearing field.
+        own_field, own_values = self._own_verdict_field()
         example = json.dumps(example_item, ensure_ascii=False)
+        keep = (f"Keep your own `{own_field}` field as your contract defines it "
+                f"({' | '.join(own_values)}); " if own_field else "")
         return (
             "## The typed finding record\n"
             "When a finding is a comparison of two figures, state it in FIELDS, not in "
@@ -1357,23 +1366,53 @@ class AgentWrapper:
             "item keeps: the record adds fields, it never replaces them.\n"
             + "\n".join(lines) + "\n"
             f"relation is one of {list(sch['relations'])}; record_verdict is one of "
-            f"{list(sch['verdicts'])}. Keep your own `verdict` field as your "
-            f"contract defines it: record_verdict is an additional field, not a "
-            f"replacement.\n"
+            f"{list(sch['verdicts'])}. {keep}record_verdict is an additional field, "
+            f"not a replacement.\n"
             f"Worked example: {example}\n"
             "A finding that is not a comparison of figures does not need these fields, "
             f"but it still carries {required}.\n\n"
         )
 
+    _TYPE_WORDS = {"string", "null", "int", "integer", "float", "number", "bool", "boolean", "array", "list", "object"}
+
+    def _declared_values(self, field):
+        """The values the contract enumerates for `field` as 'A | B | C', else [].
+        A type description ('string | null') is not an enumeration."""
+        spec = (self.contract.get("fields") or {}).get(field)
+        if not isinstance(spec, str) or "|" not in spec:
+            return []
+        values = [v.strip() for v in spec.split("|")]
+        values = [v for v in values if v and " " not in v]
+        if not values or any(v.lower() in self._TYPE_WORDS for v in values):
+            return []
+        return values
+
+    def _own_verdict_field(self):
+        """The agent's own verdict-bearing field (`verdict` when the contract declares
+        one, else `finding`) with its declared values; (None, []) with neither."""
+        for field in ("verdict", "finding"):
+            values = self._declared_values(field)
+            if values:
+                return field, values
+        return None, []
+
     def _record_example_required(self, required):
-        """The agent's own required fields, as placeholders, for the typed-record
-        worked example; `verdict` keeps the sentence the record section already
-        used for it."""
-        placeholders = {}
+        """The agent's own required fields for the typed-record worked example: the
+        first declared value where the contract enumerates them (FACT_CHECKER's
+        verdict CONFIRMED, VERIFIER's finding MATCH), 1 for an int, else a named
+        placeholder. Filled, not described: H2b measured that a filled example is
+        what a small model follows."""
+        filled = {}
         for name in required:
-            placeholders[name] = ("<your own contract's verdict value, unchanged>" if name == "verdict"
-                                  else f"<{name}>")
-        return placeholders
+            values = self._declared_values(name)
+            spec = (self.contract.get("fields") or {}).get(name)
+            if values:
+                filled[name] = values[0]
+            elif isinstance(spec, str) and spec.strip().lower().startswith("int"):
+                filled[name] = 1
+            else:
+                filled[name] = f"<{name}>"
+        return filled
 
     def _field_forms_text(self) -> str:
         """structure H2b: state the contract's declared field forms IN THE PROMPT.

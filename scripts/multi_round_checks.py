@@ -230,11 +230,17 @@ class MultiRoundChecks(unittest.TestCase):
         # A deliberate change to the pre-multi-round contract is recorded as an amendment
         # (from the baseline hash to the pinned one, with reason and document); the pin
         # must agree with the record.
+        chains = {}
         for amendment in baseline.get("reference_amendments", []):
             self.assertTrue(amendment.get("reason") and amendment.get("document"))
             for name, hashes in amendment["functions"].items():
-                self.assertEqual(hashes["to"], baseline["function_ast_sha256"][name], name)
                 self.assertNotEqual(hashes["from"], hashes["to"], name)
+                # Amendments chain: each starts where the previous one ended, and the
+                # last one for a function is the pin.
+                self.assertEqual(hashes["from"], chains.get(name, hashes["from"]), name)
+                chains[name] = hashes["to"]
+        for name, final in chains.items():
+            self.assertEqual(final, baseline["function_ast_sha256"][name], name)
 
     def test_saved_api_auth_identity_and_safe_projection(self):
         import importlib.util

@@ -8,5 +8,7 @@
   "validated_prepared_dev": "tuning/producer_v3/prepared_dev.json",
   "validated_dataset": "tuning/producer_v3/dataset.json",
   "system_sha256": "d874b6aaa3138c7c51d12a3a0807a3f892c1f0c58c2e2700e56586a170d20ba2",
-  "inline_reference_markers": "Every indexed passage inside a source span is shown as ' (REF-NNNN)' at the passage's end, the way the training spans carried their references; Python decides which passages lie in which span from the reference index (bounded_extraction.grounding) and the same decision is the validator's citable set."
+  "inline_reference_markers": "Every indexed passage inside a source span is shown as ' (REF-NNNN)' at the passage's end, the way the training spans carried their references; Python decides which passages lie in which span from the reference index (bounded_extraction.grounding) and the same decision is the validator's citable set.",
+  "owned_spans_per_request": 2,
+  "validated_layout": "Every training input (420) and DEV row (84) of checkpoint 168 carries ONE or TWO owned source spans (292 and 128 in training, 57 and 27 in DEV; owned spans 49 to 507 characters, median 171) and one context-only span. The pipeline used to send up to four owned spans per request; run 0cbc7f26 (v6) dropped the uncertainty key on its one three-span request and kept the exact shape on every DEV request of the validated layout (102 of 102 items, four of them all-empty). Bounded requests therefore carry at most two owned spans, the validated maximum; boundary context keeps both neighbours, clipped, because the ledger's partition semantics need them."
 }

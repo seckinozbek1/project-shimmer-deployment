@@ -82,6 +82,15 @@ def owned_sources(item, producer, spans, references, document_id):
     return result
 
 
+def delivery_scope(producer):
+    """('single', False) for one PROCESSOR call; ('merged', partial) for a
+    partition-merged delivery (bounded_extraction.merge carries missing_partitions),
+    partial when a partition is missing."""
+    if isinstance(producer, dict) and 'missing_partitions' in producer:
+        return 'merged', producer.get('complete') is False
+    return 'single', False
+
+
 def build(run_id, document, producer, references):
     """Return private pair inputs and payload-free unavailability receipts."""
     producer = producer or {}
@@ -94,9 +103,21 @@ def build(run_id, document, producer, references):
         # reference-index units remain independently usable; never guess offsets.
         spans = {}
     pairs, unavailable, seen = [], [], set()
+    scope, partial = delivery_scope(producer)
     for item in items:
         reason = None
-        if not producer.get('ok') or producer.get('truncated') is not False or producer.get('complete') is False:
+        # The delivery-level refusal (ok, truncated, complete) applies to a SINGLE
+        # PROCESSOR call, whose best-effort object is not a draft. A partition-merged
+        # delivery already contains only the items of accepted, untruncated partitions
+        # (bounded_extraction.merge), each bound to its span by an ownership receipt,
+        # and the fidelity comparison is span-local by construction; a missing
+        # partition is a document-level fact that run completion and the integrity
+        # assessment already refuse (semantic_incomplete, pipeline_not_completed). The
+        # gate used to read the whole delivery per item, so one refused partition
+        # discarded every accepted one, and the advisory classifier had no pairs.
+        # Pairs from a partial delivery are marked, and require a receipt.
+        if scope == 'single' and (not producer.get('ok') or producer.get('truncated') is not False
+                                  or producer.get('complete') is False):
             reason = 'incomplete_producer_delivery'
         elif not item.get('item_id') or not current_revision(item, items):
             reason = 'stale_or_invalid_producer_revision'
@@ -104,6 +125,8 @@ def build(run_id, document, producer, references):
             sources = owned_sources(item, producer, spans, refs, document['id'])
             if not sources:
                 reason = 'no_explicit_current_source_pair'
+            elif partial and any(s.get('ownership') != 'compact_partition' for s in sources):
+                reason = 'partial_delivery_without_receipt'
         if reason:
             unavailable.append(dict(status='AUDITOR_PAIR_UNAVAILABLE', producer_item_id=item.get('item_id'),
                 producer_revision=item.get('revision'), reason=reason))
@@ -121,7 +144,8 @@ def build(run_id, document, producer, references):
                 producer_call_id=source['producer_call_id'], ownership=source['ownership'],
                 producer_checkpoint=168, producer_adapter_sha256=final_models.PINS['producer']['adapter'],
                 auditor_checkpoint=896, auditor_adapter_sha256=final_models.PINS['auditor']['adapter'],
-                auditor_relation=None, classifier_status='pending')
+                auditor_relation=None, classifier_status='pending',
+                delivery='partial' if partial else 'complete')
             pairs.append(dict(record=record, source_text=source['text'], producer_item=semantic_item(item)))
     if not items:
         unavailable.append(dict(status='AUDITOR_PAIR_UNAVAILABLE', producer_item_id=None,
@@ -214,10 +238,13 @@ def prepare_context(wrapper, payload):
                          'first_token_at':'Non-generative invocation'})
     for record in unavailable:
         telemetry.emit(context, 'auditor_pair_unavailable', document_id=request['document']['id'], **record)
+    scope, partial = delivery_scope(request['producer'] or {})
     telemetry.emit(context, 'auditor_pair_coverage', document_id=request['document']['id'],
         producer_items=items, pairs_constructed=len(records), unavailable_items=len(unavailable),
         eligible_producer_items=len({(r['producer_item_id'],r['producer_revision']) for r in records}),
-        classifier_calls=len(calls), failed_pairs=sum(r['classifier_status']=='failed' for r in records))
+        classifier_calls=len(calls), failed_pairs=sum(r['classifier_status']=='failed' for r in records),
+        delivery='partial' if partial else 'complete',
+        pairs_from_partial_delivery=sum(r.get('delivery')=='partial' for r in records))
     wrapper._auditor_pair_state = records
     producer=request['producer'] or {}
     parents=([producer['call_id']] if producer.get('call_id') else list(producer.get('partition_calls',[])))
@@ -305,4 +332,5 @@ def record_unavailable(context, document_id, reason):
     telemetry.emit(context, 'auditor_pair_unavailable', document_id=document_id,
         status='AUDITOR_PAIR_UNAVAILABLE', producer_item_id=None, producer_revision=None, reason=reason)
     telemetry.emit(context, 'auditor_pair_coverage', document_id=document_id, producer_items=0,
-        pairs_constructed=0, unavailable_items=1, eligible_producer_items=0, classifier_calls=0, failed_pairs=0)
+        pairs_constructed=0, unavailable_items=1, eligible_producer_items=0, classifier_calls=0, failed_pairs=0,
+        delivery='none', pairs_from_partial_delivery=0)

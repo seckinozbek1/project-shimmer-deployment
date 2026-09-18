@@ -119,9 +119,12 @@ earlier DAG adapter retains rolling-bus semantic ordering. The explicit local
 `report_optimized` topology adds bounded source-span extraction, sibling semantic
 waves, exact-comparison reason rendering and completion-aware telemetry. Its
 PROCESSOR call is sent in the exact two-turn shape the tuned checkpoint was
-evaluated on (`config/compact_extraction_prompt.json`), with every indexed
+evaluated on (`config/compact_extraction_prompt.json`), at most two owned spans
+per request as in every validated input, with every indexed
 passage marked by its own reference id, and a cited reference is grounded by
-Python's placement of that passage in the span. It is
+Python's placement of that passage in the span. Accepted items of a partition
+whose sibling failed still reach the auditors and the advisory classifier,
+marked partial. It is
 experimental, with real-model quality and performance still unverified. See the
 [Report Recommendations implementation](docs/fix/REPORT_RECOMMENDATIONS_IMPLEMENTATION.md). Dense activation is
 the default; sparse activation retains the conservative policy. Neither option

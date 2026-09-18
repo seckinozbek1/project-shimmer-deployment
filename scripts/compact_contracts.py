@@ -138,6 +138,16 @@ def validated_system():
     return PRODUCER + prompt_declaration()['system_suffix']
 
 
+def request_size():
+    """Owned spans per bounded request, from the declaration: the validated layout is one
+    or two owned spans (every training input and DEV row), never the four the pipeline
+    used to send; v6's one three-span request is where the exact shape was lost."""
+    size = prompt_declaration().get('owned_spans_per_request')
+    if not isinstance(size, int) or isinstance(size, bool) or size < 1:
+        raise RuntimeError('Compact extraction request size must be a positive integer declaration')
+    return size
+
+
 def canonical(value):
     """The evaluation runtime's serialisation of a user payload: sorted keys, compact separators."""
     return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False)

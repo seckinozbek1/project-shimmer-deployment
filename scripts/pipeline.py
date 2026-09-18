@@ -1430,6 +1430,27 @@ def _verifier_has_a_draft(draft_state):
     return bool(draft_state.get("processor_draft_available"))
 
 
+def _accepted_draft(proc):
+    """(draft, partial): the PROCESSOR items phase 5 may hand its auditors.
+
+    A complete delivery is the draft. A partition-merged delivery with partitions
+    missing is a PARTIAL draft: bounded_extraction.merge keeps only the items of
+    accepted, untruncated partitions, each bound to its span by an ownership
+    receipt, so those items are verifiable on their own and the advisory pairing
+    can run on them, marked partial. A failed single delivery's best-effort object
+    is not a draft (run 110990c1, v5). Run 0cbc7f26 (v6): one refused partition
+    left four accepted items unseen by every auditor."""
+    if not proc:
+        return None, False
+    parsed = proc.get("parsed")
+    items = parsed.get("items") if isinstance(parsed, dict) else None
+    if proc.get("ok"):
+        return parsed, False
+    if proc.get("complete") is False and "missing_partitions" in proc and items:
+        return parsed, True
+    return None, False
+
+
 @execution_topology.phase_boundary
 async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
                         convention_registry, reference_index, max_concurrent_docs=4):
@@ -1441,11 +1462,14 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
 
     async def _process_doc(doc):
         proc = by_doc_agent.get((doc["id"], "PROCESSOR"))
-        # A parser's best-effort object from a failed contract is not a draft.
-        draft = proc.get("parsed") if proc and proc.get("ok") else None
+        # A parser's best-effort object from a failed contract is not a draft; the
+        # accepted items of a partition-merged delivery are, marked partial.
+        draft, partial = _accepted_draft(proc)
         draft_state = {
             "processor_draft_available": draft is not None,
             "processor_draft_truncated": bool(proc and proc.get("truncated")),
+            "processor_draft_partial": partial,
+            "processor_missing_partitions": len((proc or {}).get("missing_partitions") or []),
         }
         # structure H3: what one agent hands another is typed. PROCESSOR's draft
         # reaches VERIFIER and FACT_CHECKER with every prose field removed, so the
@@ -1463,10 +1487,11 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
                       "source_excerpt": _truncate_doc(doc["text"], 3500)}
         for payload in (verifier_payload, fc_payload):
             payload.update(draft_state)
-            if not draft_state["processor_draft_available"] or draft_state["processor_draft_truncated"]:
+            if (not draft_state["processor_draft_available"] or draft_state["processor_draft_truncated"]
+                    or draft_state["processor_draft_partial"]):
                 payload["processor_draft_note"] = (
-                    "The extraction is unavailable or was cut short. Its missing "
-                    "content is not evidence that the source lacks that content; "
+                    "The extraction is unavailable, was cut short or is missing partitions. "
+                    "Its missing content is not evidence that the source lacks that content; "
                     "use the supplied source when checking it.")
         tasks, names = [], []
         if not _verifier_has_a_draft(draft_state):

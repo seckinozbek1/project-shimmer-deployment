@@ -1,0 +1,112 @@
+test_asset_builder_ref_bytes_reconcile_with_real_resolver (ordinary_final_startup_checks.StartupChecks.test_asset_builder_ref_bytes_reconcile_with_real_resolver) ... ok
+test_exact_failed_configuration_and_causal_correction (ordinary_final_startup_checks.StartupChecks.test_exact_failed_configuration_and_causal_correction) ... ok
+test_exact_ref_admission_rejects_whitespace (ordinary_final_startup_checks.StartupChecks.test_exact_ref_admission_rejects_whitespace) ... ok
+test_same_family_still_refuses (ordinary_final_startup_checks.StartupChecks.test_same_family_still_refuses) ... ok
+test_actual_parser_ordinary_flags (ordinary_final_preparation_checks.PreparationChecks.test_actual_parser_ordinary_flags) ... ok
+test_authorization_not_inherited (ordinary_final_preparation_checks.PreparationChecks.test_authorization_not_inherited) ... ok
+test_changed_manifest (ordinary_final_preparation_checks.PreparationChecks.test_changed_manifest) ... ok
+test_changed_workload (ordinary_final_preparation_checks.PreparationChecks.test_changed_workload) ... ok
+test_component_summary_unknowns_and_retention (ordinary_final_preparation_checks.PreparationChecks.test_component_summary_unknowns_and_retention) ... ok
+test_cost_and_reserves (ordinary_final_preparation_checks.PreparationChecks.test_cost_and_reserves) ... ok
+test_existing_partition_recovery_is_preserved (ordinary_final_preparation_checks.PreparationChecks.test_existing_partition_recovery_is_preserved) ... ok
+test_hardware_admission (ordinary_final_preparation_checks.PreparationChecks.test_hardware_admission) ... ok
+test_multiround_and_flags_rejected_even_if_resealed (ordinary_final_preparation_checks.PreparationChecks.test_multiround_and_flags_rejected_even_if_resealed) ... ok
+test_numerical_contract_transport_fail_closed (ordinary_final_preparation_checks.PreparationChecks.test_numerical_contract_transport_fail_closed) ... ok
+test_quality_targets_not_execution_errors (ordinary_final_preparation_checks.PreparationChecks.test_quality_targets_not_execution_errors) ... ok
+test_runtime_bytes_and_final_environment_admitted (ordinary_final_preparation_checks.PreparationChecks.test_runtime_bytes_and_final_environment_admitted) ... ok
+test_seal_and_exact_tree (ordinary_final_preparation_checks.PreparationChecks.test_seal_and_exact_tree) ... ok
+test_watchdog_terminates_only_named_instance (ordinary_final_preparation_checks.PreparationChecks.test_watchdog_terminates_only_named_instance) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 12.279s
+
+OK
+test_exact_ref_admission_rejects_whitespace (ordinary_final_startup_checks.StartupChecks.test_exact_ref_admission_rejects_whitespace) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.583s
+
+OK
+test_exact_ref_admission_rejects_whitespace (ordinary_final_startup_checks.StartupChecks.test_exact_ref_admission_rejects_whitespace) ... FAIL
+
+======================================================================
+FAIL: test_exact_ref_admission_rejects_whitespace (ordinary_final_startup_checks.StartupChecks.test_exact_ref_admission_rejects_whitespace)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_startup_checks.py", line 121, in test_exact_ref_admission_rejects_whitespace
+    with self.assertRaisesRegex(RuntimeError,'exact pinned revision'):
+AssertionError: RuntimeError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 2.425s
+
+FAILED (failures=1)
+test_exact_ref_admission_rejects_whitespace (ordinary_final_startup_checks.StartupChecks.test_exact_ref_admission_rejects_whitespace) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.484s
+
+OK
+test_asset_builder_ref_bytes_reconcile_with_real_resolver (ordinary_final_startup_checks.StartupChecks.test_asset_builder_ref_bytes_reconcile_with_real_resolver) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.533s
+
+OK
+test_asset_builder_ref_bytes_reconcile_with_real_resolver (ordinary_final_startup_checks.StartupChecks.test_asset_builder_ref_bytes_reconcile_with_real_resolver) ... ERROR
+
+======================================================================
+ERROR: test_asset_builder_ref_bytes_reconcile_with_real_resolver (ordinary_final_startup_checks.StartupChecks.test_asset_builder_ref_bytes_reconcile_with_real_resolver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_startup_checks.py", line 129, in test_asset_builder_ref_bytes_reconcile_with_real_resolver
+    receipt=build_assets(self.base/'assets.tar',models,{},self.cache,self.base)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_startup_gate.py", line 61, in build
+    return original(path,models,wheels,cache,wheelhouse)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\secki\local\shimmer-deployment\tools\prepare_ordinary_final_assets.py", line 31, in build_assets
+    add(prefix+'/refs/main', content=cache_ref_bytes(model), expected=model['cache_ref'])
+  File "C:\Users\secki\local\shimmer-deployment\tools\prepare_ordinary_final_assets.py", line 23, in add
+    require(dict(bytes=len(content),sha256=hashlib.sha256(content).hexdigest()) == expected,
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_run.py", line 32, in require
+    raise RuntimeError(message)
+RuntimeError: Generated ref differs from manifest
+
+----------------------------------------------------------------------
+Ran 1 test in 2.557s
+
+FAILED (errors=1)
+test_asset_builder_ref_bytes_reconcile_with_real_resolver (ordinary_final_startup_checks.StartupChecks.test_asset_builder_ref_bytes_reconcile_with_real_resolver) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.632s
+
+OK
+test_same_family_still_refuses (ordinary_final_startup_checks.StartupChecks.test_same_family_still_refuses) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.522s
+
+OK
+test_same_family_still_refuses (ordinary_final_startup_checks.StartupChecks.test_same_family_still_refuses) ... FAIL
+
+======================================================================
+FAIL: test_same_family_still_refuses (ordinary_final_startup_checks.StartupChecks.test_same_family_still_refuses)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_startup_checks.py", line 114, in test_same_family_still_refuses
+    self.assertEqual(code,2);self.assertIn('Cannot establish independent cached local model families',error)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2
+
+----------------------------------------------------------------------
+Ran 1 test in 2.634s
+
+FAILED (failures=1)
+test_same_family_still_refuses (ordinary_final_startup_checks.StartupChecks.test_same_family_still_refuses) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.624s
+
+OK
