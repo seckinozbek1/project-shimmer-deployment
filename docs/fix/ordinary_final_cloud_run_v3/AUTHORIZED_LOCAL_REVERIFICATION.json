@@ -1,0 +1,91 @@
+{
+  "archive_members": 160,
+  "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "decoding_policy_admitted": {
+    "local_auditor": {
+      "kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          32000,
+          32007
+        ],
+        "num_beams": 1,
+        "pad_token_id": 32009,
+        "use_cache": true
+      },
+      "sha256": "49199195d354af5f2e4e40e3b715d927cd093cab5e289d7002a813971568ca3b",
+      "source": "tuning/auditor_canonical_execution/evaluation_protocol.json",
+      "status": "restored"
+    },
+    "local_producer": {
+      "kwargs": {
+        "do_sample": false,
+        "eos_token_id": [
+          151645
+        ],
+        "num_beams": 1,
+        "pad_token_id": 151654,
+        "use_cache": true
+      },
+      "sha256": "51da77c94497ef74b5f913901c20abbe965101dbbb950cb0d5b62b4c16b3cc1a",
+      "source": "tuning/producer_v3/evaluation_protocol.json",
+      "status": "restored"
+    },
+    "qwen_local": {
+      "kwargs": {
+        "do_sample": false,
+        "num_beams": 1,
+        "use_cache": true
+      },
+      "sha256": "a51a93f054918712177e9178367c9afdd7495da735575504c2475a1294f299c6",
+      "source": "config/decoding_policy.json",
+      "status": "new"
+    }
+  },
+  "generated_members": [
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/classifier_fork/adapter_model.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/checkpoint-896/head.safetensors",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/mean.npy",
+    "docs/fix/auditor_final_retry_run/downloaded/evidence/std.npy",
+    "docs/fix/producer_tuning_v3_run/downloaded/evidence/checkpoint-168/adapter_model.safetensors",
+    "input/context/_review_targets.json",
+    "input/context/analyte_reference_ranges.md",
+    "input/context/result_sheet.md",
+    "input/conventions/lab_conventions.md"
+  ],
+  "head_commit": "57fc0b26d9f6be5ec7aea31f5a456ac5c784e3b2",
+  "head_moved_by_evidence_only": [
+    "docs/fix/ORDINARY_FINAL_DECODING_RESTORATION.md",
+    "docs/fix/ordinary_final_cloud_run_v3/asset_verification.json",
+    "docs/fix/ordinary_final_cloud_run_v3/execution_manifest.json",
+    "docs/fix/ordinary_final_cloud_run_v3/install.lock",
+    "docs/fix/ordinary_final_cloud_run_v3/provider_inventory.json",
+    "docs/fix/ordinary_final_cloud_run_v3/runtime.candidate.lock",
+    "docs/fix/ordinary_final_cloud_run_v3/seal.json",
+    "docs/fix/ordinary_final_cloud_run_v3/topology.json",
+    "docs/fix/ordinary_final_cloud_run_v3/transfer_plan.json",
+    "docs/fix/ordinary_final_decoding_fix/baseline_gate_at_HEAD.log",
+    "docs/fix/ordinary_final_decoding_fix/decoding_tests.log",
+    "docs/fix/ordinary_final_decoding_fix/integration_no_generation_tests.log",
+    "docs/fix/ordinary_final_decoding_fix/main_gate.log",
+    "docs/fix/ordinary_final_decoding_fix/main_gate_comparison.json",
+    "docs/fix/ordinary_final_decoding_fix/main_gate_rerun.log",
+    "docs/fix/ordinary_final_decoding_fix/startup_tests.log"
+  ],
+  "manifest_sha256": "a2a8be14f3d9822fcf5dd2b5beb50bfd6e6586f78d5c1dc0aa219534a3d88bd7",
+  "members_compared_to_sealed_commit": 151,
+  "model_workload": false,
+  "passed": true,
+  "project_sha256": "b70cbded794a9ad97dbc50f84db996fec4f50706df43ae69c7d5389f2b28879d",
+  "project_tree_verified": true,
+  "provider_contacted": false,
+  "refs_exact_40_bytes": {
+    "hf_cache/hub/models--BAAI--bge-m3/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Phi-3.5-mini-instruct-bnb-4bit/refs/main": 40,
+    "hf_cache/hub/models--unsloth--Qwen2.5-7B-Instruct-bnb-4bit/refs/main": 40
+  },
+  "seal_sha256": "7638c3503f82607747cc744af27f8dc245f950a181d31afc42ef558409aeb8fc",
+  "sealed_runtime_is_what_launches": true,
+  "source_commit": "e4b52e6d352575c00eeeb2aabfd245ac4ee53505",
+  "source_tests_and_validation_hashes_match": true
+}
