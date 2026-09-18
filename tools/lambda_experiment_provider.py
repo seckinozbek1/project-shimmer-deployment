@@ -54,8 +54,17 @@ class LambdaExperiment(LambdaTermination):
         require(deleting or (endpoint in ('instance-types','images','ssh-keys') and method is None)
                 or (endpoint=='instance-operations/launch' and method is None), 'provider operation not allowed')
         if endpoint=='instance-operations/launch':
-            require(isinstance(body,dict) and set(body)=={'region_name','instance_type_name','ssh_key_names','quantity','name','image'}
+            # The one optional field beyond the bounded launch: exactly one provider
+            # filesystem to attach, for the operator-declared asset copy. Its name
+            # passes the same label rule as every other provider label; nothing else
+            # about the body may change.
+            bounded={'region_name','instance_type_name','ssh_key_names','quantity','name','image'}
+            require(isinstance(body,dict) and (set(body)==bounded or set(body)==bounded|{'file_system_names'})
                     and body['quantity']==1 and len(body['ssh_key_names'])==1, 'exactly one bounded launch required')
+            if 'file_system_names' in body:
+                require(isinstance(body['file_system_names'],list) and len(body['file_system_names'])==1
+                        and isinstance(body['file_system_names'][0],str), 'exactly one bounded filesystem attach required')
+                label(body['file_system_names'][0])
         stage='transport'
         try:
             executable=shutil.which('curl.exe') or shutil.which('curl')

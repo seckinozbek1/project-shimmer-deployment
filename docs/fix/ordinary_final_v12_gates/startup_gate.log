@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "tests": 18,
+  "failures": 0,
+  "errors": 0,
+  "effect_proofs": [
+    {
+      "check": "test_exact_ref_admission_rejects_whitespace",
+      "baseline_pass": true,
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_asset_builder_ref_bytes_reconcile_with_real_resolver",
+      "baseline_pass": true,
+      "neutralized_fail": true,
+      "restored_pass": true
+    },
+    {
+      "check": "test_same_family_still_refuses",
+      "baseline_pass": true,
+      "neutralized_fail": true,
+      "restored_pass": true
+    }
+  ],
+  "model_loads": 0,
+  "network_allowed": false,
+  "multi_round_executed": false
+}

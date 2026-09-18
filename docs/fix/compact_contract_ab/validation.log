@@ -42,7 +42,7 @@ test_mutation_dependency_removal_fails_then_restores (execution_topology_checks.
 test_running_cancel_and_family_affinity (execution_topology_checks.SchedulerChecks.test_running_cancel_and_family_affinity) ... ok
 
 ----------------------------------------------------------------------
-Ran 40 tests in 1.974s
+Ran 40 tests in 2.054s
 
 OK
 00 PASS ast.parse() ok on 126 modules
@@ -88,6 +88,6 @@ test_separate_spans_and_reverse_wire_order (compact_contract_checks.ProducerChec
 test_unknown_claim_and_evidence (compact_contract_checks.ProducerChecks.test_unknown_claim_and_evidence) ... ok
 
 ----------------------------------------------------------------------
-Ran 29 tests in 0.011s
+Ran 29 tests in 0.012s
 
 OK

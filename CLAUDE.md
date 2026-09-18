@@ -82,6 +82,24 @@ processing swarm governed by an append-only constitution.
   are reachable now, and STILL not computable, because the per-laboratory labels carry a comma
   the structural label reader does not admit. Widening that reader is a separate decision on
   every corpus, not a way to reach a catch.
+- ASSET-COPY-A: the ordinary final controller (`tools/ordinary_final_cloud.py`) can use a
+  PROVIDER-SIDE COPY of the sealed asset archive, and it is OFF unless the bundle carries an
+  operator-written `asset_copy_declaration.json` (`filesystem_name`, `mount`,
+  `operator_authorized: true`). With one, the instance is launched with that filesystem
+  attached (the provider adapter admits exactly one `file_system_names` entry and nothing else
+  new), a probe hashes the copy under its hash-keyed name `assets-<sha256>.tar` ON THE INSTANCE
+  and compares it to the sealed manifest's digest (the sidecar this machine could write is
+  never the proof), a MATCH is copied into place and the upload skipped, and MISSING,
+  MISMATCH, UNREACHABLE or a failed copy fall back to the upload byte for byte as v9 ran it.
+  `archive_integrity` hashes whatever is on the instance, as always. A MISSING copy is seeded
+  only after that phase passed, with `mv -n`, so a stale or corrupt file is never overwritten;
+  a MISMATCH is recorded suspect for the operator and never replaced by a run. Every outcome
+  is in `asset_copy_receipt.json`. The five local proofs are in
+  `tools/ordinary_final_controller_checks.py` (states MATCH, MISSING, MISMATCH, UNREACHABLE;
+  a copy under another digest never matches; the fallback argv equals the v9 argv; no seed
+  without integrity; a neutralised probe that stops hashing is caught) and the rehearsal runs
+  three copy polarities through a real shell. No run has used it; it is unauthorized until the
+  operator says otherwise, and it changes nothing when undeclared.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
   claiming domain agnosticism; the first unseen corpus found five parser defects in ten minutes.

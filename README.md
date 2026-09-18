@@ -87,10 +87,15 @@ Each run has its own folder under `output/runs/`. Per-document deliverables incl
 grounding and document summaries, `review_data.json`, `review_findings.md`,
 `tracked_changes.docx` and `reviewed_document.md`. The JSON amendment master is the
 source for the Markdown and DOCX renders. A run summary indexes the deliverables.
+Every amendment is rendered from a finding Python computed from the document's own
+figures; a finding a model wrote stays on the bus and in the console but never
+becomes an amendment, and each amendment states which of the two it came from.
 
 The console exposes findings, source excerpts, amendment refusals, contract
-violations, agent activity and completion evidence. Logs and audit artifacts
-preserve additional detail. A finished process or downloadable ZIP does not
+violations, agent activity and completion evidence. An operator may withhold a
+phase-5 auditor for a review scope in `config/review_scope.json`; the agent stays
+registered and is recorded as not called, with the declaring file named. Logs and
+audit artifacts preserve additional detail. A finished process or downloadable ZIP does not
 establish complete coverage: inspect missing evidence, capped replies, failed
 contracts and unjudged rules before accepting a result.
 
