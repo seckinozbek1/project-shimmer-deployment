@@ -6942,7 +6942,12 @@ def check_133_phase_5_audit_wires_local_doc_clip():
                 reg[a]["backend"] = "local_auditor"
             orch = TopOrchestrator(root=Path("."), constitution=c, bus=bus, registry=reg, contracts=contracts)
             ref_index = ReferenceIndex(project_root=Path(td))
-
+            # This check is about the LOCAL DOCUMENT CEILING reaching both auditors,
+            # not about which auditors a corpus dispatches. The operator's own review
+            # scope may withhold one (config/review_scope.json, withheld_audit_agents,
+            # check 271); this orchestrator has no run_context, and a run with no run
+            # root withholds nothing, so both agents are reached here whatever the
+            # shipped corpus declares.
             token = "DOCBODYX"
             doc = {"id": "synthetic_d1", "name": "synthetic.md", "text": token * 2500}  # 20000 chars
             production = [{"scope": "doc", "doc_id": "synthetic_d1", "agent": "PROCESSOR",
@@ -24621,6 +24626,38 @@ def check_269_only_computed_findings_become_amendments():
     return check_promotion()
 
 
+def check_272_every_convention_is_classified_by_the_planner():
+    """Post-v8 item 1, measured rather than asserted. Scoping CONV-L02 moved recall
+    3/5 to 4/5, and the proposal was to repeat that for the other rules. The live
+    pairing map and planner say there is nothing left to take: CONV-001 and
+    CONV-002 govern units and already pair on all six (CONV-001's arithmetic is
+    settled by the reference-table path with no scope declaration); CONV-003,
+    CONV-004 and CONV-005 name NO field the document uses, so no scope could pair
+    them to a unit, and an undecided rule is never dispatched. v8's own activation
+    ledger records every phase-5.5 plan as not-called and its call evidence carries
+    no phase-5.5 call, so phase 5.5 already costs zero model calls on this corpus.
+    Declaring a scope on a rule that is not a unit-scoped question would change what
+    the rule means, not what it costs."""
+    from ordinary_final_correction_checks import check_convention_classification
+    return check_convention_classification()
+
+
+def check_271_operator_may_withhold_a_phase_5_auditor():
+    """Runs 110990c1 (v5), 6f896263 (v7) and a6649672 (v8) produced no
+    substantively correct FACT_CHECKER item on clinical_reference, and v8's output
+    was byte-identical to v7's with a complete PROCESSOR draft present. The
+    operator withholds an auditor per review scope in their own file
+    (config/review_scope.json, `withheld_audit_agents`): the agent stays in
+    agent_registry.json and in AUDIT_AGENTS_PER_DOC, so LAW-III enforcement
+    (check 148) is unchanged and another corpus gets it back by clearing the
+    declaration. A withheld agent is recorded as not_called with reason
+    operator_withheld_for_corpus and makes no call, so it can fail no contract.
+    Measured on v8's own telemetry: with that call's rows removed the runner's
+    own assess() returns no reasons and integrity passes."""
+    from ordinary_final_correction_checks import check_withheld_agent
+    return check_withheld_agent()
+
+
 def check_270_declared_absence_on_conv_l02_reaches_the_computed_path():
     """Runs v5, v6 and v7 all missed RES-FIRTH's missing sample identifier: the
     pairing map rejected the completeness rule on the one unit that lacked the
@@ -25009,6 +25046,10 @@ CHECKS = [
      check_269_only_computed_findings_become_amendments),
     ("270 CONV-L02's declared scope and required fields route RES-FIRTH's absence to the computed path",
      check_270_declared_absence_on_conv_l02_reaches_the_computed_path),
+    ("271 an operator-declared withheld phase-5 auditor is not dispatched and is recorded",
+     check_271_operator_may_withhold_a_phase_5_auditor),
+    ("272 every convention is classified by what the live planner does with it",
+     check_272_every_convention_is_classified_by_the_planner),
 ]
 
 

@@ -1430,6 +1430,30 @@ def _verifier_has_a_draft(draft_state):
     return bool(draft_state.get("processor_draft_available"))
 
 
+def _withheld_audit_agents(orch):
+    """The phase-5 auditors the OPERATOR withheld for this review scope
+    (config/review_scope.json, `withheld_audit_agents`), as a set.
+
+    Read from the operator's own file, never from a list in code, and never a
+    judgement about an agent: the declaration is data the operator edits per
+    corpus. A withheld agent stays in agent_registry.json and in
+    AUDIT_AGENTS_PER_DOC, so LAW-III enforcement (check 148) sees exactly what it
+    saw before, and clearing the declaration restores the agent with no code
+    change. It is simply not dispatched, and a call that is never made cannot
+    fail a contract or mark the run semantically incomplete.
+
+    Empty for a scope that declares nothing, which is every corpus but the one
+    where the operator has ruled an agent out on evidence. Empty too for a caller
+    with no run context at all (a gate fixture, a harness): a run with no run root
+    has no operator declaration to read, and withholding an agent is something the
+    operator does deliberately, never a default this function invents."""
+    root = getattr(getattr(orch, "run_context", None), "project_root", None)
+    if root is None:
+        return set()
+    declared = _resolve_review_scope(Path(root)).get("withheld_audit_agents") or []
+    return {str(name) for name in declared if str(name) in AUDIT_AGENTS_PER_DOC}
+
+
 def _accepted_draft(proc):
     """(draft, partial): the PROCESSOR items phase 5 may hand its auditors.
 
@@ -1493,6 +1517,15 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
                     "The extraction is unavailable, was cut short or is missing partitions. "
                     "Its missing content is not evidence that the source lacks that content; "
                     "use the supplied source when checking it.")
+        # An operator may WITHHOLD a phase-5 auditor for a review scope
+        # (config/review_scope.json, withheld_audit_agents). The agent stays in the
+        # registry and in AUDIT_AGENTS_PER_DOC, so LAW-III enforcement is unchanged
+        # and another corpus gets it back by clearing the declaration; it is simply
+        # not dispatched here, and a call that is never made cannot fail a contract.
+        # Measured, not preferred: FACT_CHECKER produced five substantively wrong
+        # items on clinical_reference in v7 and v8, byte-identical to each other,
+        # with a complete PROCESSOR draft present in v8, and none correct in v5.
+        withheld = _withheld_audit_agents(orch)
         tasks, names = [], []
         if not _verifier_has_a_draft(draft_state):
             # v5 (run 110990c1, 2026-09-18): every PROCESSOR partition had failed its
@@ -1512,6 +1545,15 @@ async def phase_5_audit(orch, keys, op_docs, production, run_objectives,
             auditor_pairs.record_unavailable(orch.run_context, doc["id"], "processor_draft_unavailable")
         for name, payload in (("VERIFIER", verifier_payload), ("FACT_CHECKER", fc_payload)):
             if name == "VERIFIER" and not _verifier_has_a_draft(draft_state):
+                continue
+            if name in withheld:
+                agent_activation.not_called(orch.run_context, name,
+                    reason="operator_withheld_for_corpus", source_phase="5", doc_id=doc["id"],
+                    trigger_source="review_scope",
+                    evidence={"declared_in": "config/review_scope.json",
+                              "field": "withheld_audit_agents"})
+                log_event(_LOG, f"audit_agent_withheld agent={name} source=review_scope",
+                          run_id=_run_id_of(orch), phase="5", agent=name, doc_id=doc["id"])
                 continue
             wrapper = _build_wrapper(name, orch, keys)
             wrapper._parent_call_ids = ([proc['call_id']] if proc and proc.get('call_id') else

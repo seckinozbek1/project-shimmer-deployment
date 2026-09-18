@@ -439,9 +439,12 @@ class CorrectionChecks(unittest.TestCase):
         parsed, missing = w.parse_contract_output(raw)
         self.assertEqual(sorted(missing), sorted(["items[0].paragraph", "items[0].finding", "items[0].severity", "items[0].reasoning"]))
 
-    def _phase_5(self, state):
+    def _phase_5(self, state, withhold=None):
         """state: 'complete' (accepted delivery), 'failed' (no accepted items),
-        'partial' (a partition-merged delivery with one partition missing)."""
+        'partial' (a partition-merged delivery with one partition missing).
+
+        withhold: audit agent names to declare in the run root's own
+        config/review_scope.json, the way an operator declares them per corpus."""
         import pipeline
         import agent_activation as activation
         from harness.run_agent import build_orchestrator
@@ -453,6 +456,12 @@ class CorrectionChecks(unittest.TestCase):
                     "call_id": "call-" + wrapper.name, "contract_missing": [], "error": None, "truncated": False}
         with tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, {"SHIMMER_BACKEND_PROFILE": "local"}):
             orch = build_orchestrator(ROOT, Path(folder))
+            if withhold:
+                scope_dir = Path(orch.run_context.project_root) / "config"
+                scope_dir.mkdir(parents=True, exist_ok=True)
+                (scope_dir / "review_scope.json").write_text(
+                    json.dumps({"cutoff_type": "all", "withheld_audit_agents": list(withhold)}),
+                    encoding="utf-8")
             for name, (backend, model) in pipeline._LOCAL_PROFILE.items():
                 orch.registry[name].update(backend=backend, model=model)
             audit = activation.initialize(orch.run_context, orch.registry, "sparse")
@@ -510,6 +519,165 @@ class CorrectionChecks(unittest.TestCase):
         self.assertIn("missing partitions", payload["processor_draft_note"])
         self.assertEqual(payload["processor_draft"]["items"][0]["item_id"], "PROCESSOR:probe:s")
         self.assertEqual([d for d in decisions if d["agent"] == "VERIFIER" and not d["activated"]], [])
+
+    # ---- A11: the convention classification, measured not asserted ----------------------
+
+    def test_conventions_every_rule_is_classified_by_what_the_planner_does(self):
+        """Item 1 of the post-v8 pass, and the answer is: declare nothing more.
+
+        The premise was that scoping the remaining rules would remove model calls
+        the way CONV-L02 did. Measured on the live pairing map and planner: phase
+        5.5 already makes ZERO model calls on this corpus, so there is no call
+        left to remove, and three of the five rules are not unit-scoped questions
+        at all. A scope declaration on any of them would change what the rule
+        means, not what it costs."""
+        import convention_parser
+        import pairing_map
+        import shutil
+        corpus = ROOT / "benchmark/corpora/clinical_reference"
+        if not (corpus / "conventions/lab_conventions.md").exists():
+            self.skipTest("clinical corpus not on disk")
+        with tempfile.TemporaryDirectory() as folder:
+            tree = Path(folder)
+            (tree / "input" / "conventions").mkdir(parents=True)
+            shutil.copy(corpus / "conventions/lab_conventions.md",
+                        tree / "input/conventions/review_conventions.md")
+            rules = convention_parser.parse_conventions(tree).as_dict()["conventions"]
+        text = (corpus / "context/result_sheet.md").read_text(encoding="utf-8")
+        units = pairing_map.split_units(text, document_id="result_sheet")
+        vocabulary = pairing_map.field_vocabulary(units)
+        entries = pairing_map.pair_units(units, rules, vocabulary=vocabulary)
+        by_id = {r["id"]: r for r in rules}
+        paired = {rid: sum(1 for e in entries for p in e["paired"] if p["rule_id"] == rid)
+                  for rid in by_id}
+        undecided = {rid: sum(1 for e in entries if rid in (e.get("undecided") or []))
+                     for rid in by_id}
+
+        # CONV-001 and CONV-002 govern units and already pair on all six.
+        self.assertEqual((paired["CONV-001"], paired["CONV-002"]), (6, 6))
+        self.assertEqual((undecided["CONV-001"], undecided["CONV-002"]), (0, 0))
+        # CONV-002 is the one the operator scoped; CONV-001 is arithmetic that the
+        # reference-table path already settles, with no scope declaration.
+        self.assertTrue(by_id["CONV-002"]["scope"] and by_id["CONV-002"]["requires"])
+        self.assertEqual((by_id["CONV-001"]["scope"], by_id["CONV-001"]["requires"]), ([], []))
+
+        # The other three name NO field the document uses, so no scope could pair
+        # them to a unit: CONV-L03 is about the sheet header (which is in no unit),
+        # CONV-L04 constrains how a finding is written, CONV-L05 forbids inference.
+        for rid in ("CONV-003", "CONV-004", "CONV-005"):
+            self.assertEqual(pairing_map.needed_fields(by_id[rid].get("rule", ""), vocabulary),
+                             set(), rid)
+            self.assertEqual((paired[rid], undecided[rid]), (0, 6), rid)
+            self.assertEqual((by_id[rid]["scope"], by_id[rid]["requires"]), ([], []), rid)
+        # An undecided rule is never dispatched, so none of the three costs a call.
+        self.assertEqual(sorted(set(by_id) - {"CONV-001", "CONV-002"}),
+                         ["CONV-003", "CONV-004", "CONV-005"])
+
+    def test_conventions_the_real_run_made_no_phase_5_5_model_call(self):
+        """The saving the prompt proposed to repeat has already been fully taken:
+        v8's own activation ledger records every phase-5.5 plan as not-called."""
+        path = ROOT / "docs/fix/ordinary_final_cloud_run_v8/downloaded/evidence/run/audit/agent_activation.json"
+        evidence = ROOT / "docs/fix/ordinary_final_cloud_run_v8/downloaded/evidence/run/logs/call_evidence.jsonl"
+        if not path.exists() or not evidence.exists():
+            self.skipTest("v8 evidence not on disk")
+        decisions = json.loads(path.read_text(encoding="utf-8"))["decisions"]
+        phase55 = [d for d in decisions if str(d.get("source_phase")) == "5.5"]
+        self.assertTrue(phase55)
+        self.assertEqual([d for d in phase55 if d["activated"]], [])
+        reasons = {d["reason"] for d in phase55 if d["agent"] == "PRACTICE_AUDITOR"}
+        self.assertEqual(reasons, {"exact_comparison_reason_rendered", "declared_absence_computed"})
+        calls = [json.loads(l) for l in evidence.read_text(encoding="utf-8").splitlines() if l.strip()]
+        self.assertEqual([c for c in calls if str(c.get("phase")) == "5.5"], [])
+
+    # ---- A10: an operator may withhold a phase-5 auditor for a review scope -------------
+
+    def test_withheld_agent_declaration_reads_the_operator_file(self):
+        import pipeline
+        scope = json.loads((ROOT / "config/review_scope.json").read_text(encoding="utf-8"))
+        # The shipped clinical scope withholds FACT_CHECKER and says why.
+        self.assertEqual(scope.get("withheld_audit_agents"), ["FACT_CHECKER"])
+        self.assertIn("substantively wrong", scope.get("withheld_audit_agents_note", ""))
+        orch = SimpleNamespace(run_context=SimpleNamespace(project_root=ROOT))
+        self.assertEqual(pipeline._withheld_audit_agents(orch), {"FACT_CHECKER"})
+        # Only a real audit agent can be withheld: a stray name is ignored, never
+        # silently treated as a new agent.
+        with tempfile.TemporaryDirectory() as folder:
+            tree = Path(folder)
+            (tree / "config").mkdir()
+            (tree / "config/review_scope.json").write_text(
+                json.dumps({"cutoff_type": "all", "withheld_audit_agents": ["NOT_AN_AGENT", "VERIFIER"]}),
+                encoding="utf-8")
+            other = SimpleNamespace(run_context=SimpleNamespace(project_root=tree))
+            self.assertEqual(pipeline._withheld_audit_agents(other), {"VERIFIER"})
+            (tree / "config/review_scope.json").write_text(json.dumps({"cutoff_type": "all"}), encoding="utf-8")
+            self.assertEqual(pipeline._withheld_audit_agents(other), set())
+        # The agent is NOT removed from the registry or the audit list, so LAW-III
+        # enforcement sees exactly what it saw before and another corpus gets it back.
+        self.assertIn("FACT_CHECKER", pipeline.AUDIT_AGENTS_PER_DOC)
+        registry = json.loads((ROOT / "config/agent_registry.json").read_text(encoding="utf-8"))["agents"]
+        self.assertIn("FACT_CHECKER", registry)
+
+    def test_withheld_agent_is_not_dispatched_and_is_recorded(self):
+        # The fixture's run_context.project_root is its own tempdir, so the scope
+        # file is staged there: the live path reads the operator's declaration
+        # from the run's own project root, which is what a real run does.
+        calls, out, decisions, _ = self._phase_5("complete", withhold=["FACT_CHECKER"])
+        # VERIFIER still runs; FACT_CHECKER is not called at all.
+        self.assertEqual([c[0] for c in calls], ["VERIFIER"])
+        self.assertEqual([r["agent"] for r in out], ["VERIFIER"])
+        withheld = [d for d in decisions if d["agent"] == "FACT_CHECKER" and not d["activated"]]
+        self.assertEqual(len(withheld), 1)
+        self.assertEqual(withheld[0]["reason"], "operator_withheld_for_corpus")
+        self.assertEqual(withheld[0]["evidence"]["declared_in"], "config/review_scope.json")
+        # A withheld agent makes no call, so it can produce neither a contract
+        # failure nor a semantically incomplete run: both v8 integrity reasons
+        # traced to this one call.
+        self.assertEqual([c for c in calls if c[0] == "FACT_CHECKER"], [])
+        # With nothing declared the same path dispatches both auditors, so the
+        # declaration is what withholds the agent, not a change to the lane.
+        plain_calls, plain_out, plain_decisions, _ = self._phase_5("complete")
+        self.assertEqual([c[0] for c in plain_calls], ["VERIFIER", "FACT_CHECKER"])
+        self.assertEqual([r["agent"] for r in plain_out], ["VERIFIER", "FACT_CHECKER"])
+        self.assertEqual([d for d in plain_decisions
+                          if d["agent"] == "FACT_CHECKER" and not d["activated"]], [])
+
+    def test_withheld_agent_removes_both_v8_integrity_reasons(self):
+        """v8 (run a6649672) failed integrity on exactly two reasons, and the
+        runner derives both from the same FACT_CHECKER call. Replayed over v8's
+        own telemetry with that call's rows removed, the assessment passes."""
+        import importlib.util
+        runner = ROOT / "docs/fix/ordinary_final_cloud_run_v8/ordinary_final_run.py"
+        telemetry = ROOT / "docs/fix/ordinary_final_cloud_run_v8/downloaded/evidence/run/logs/model_telemetry.jsonl"
+        if not runner.exists() or not telemetry.exists():
+            self.skipTest("v8 evidence not on disk")
+        spec = importlib.util.spec_from_file_location("v8_runner", runner)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        completion_path = ROOT / "docs/fix/ordinary_final_cloud_run_v8/downloaded/evidence/run/audit/run_completion.json"
+        rows = [json.loads(l) for l in telemetry.read_text(encoding="utf-8").splitlines() if l.strip()]
+        completion = json.loads(completion_path.read_text(encoding="utf-8"))
+        # As shipped: both reasons, exactly as v8's result.json recorded them.
+        shipped = module.assess(completion, rows)
+        self.assertEqual(sorted(shipped["reasons"]),
+                         ["pipeline_not_completed", "required_contract_failure"])
+        self.assertFalse(shipped["execution_integrity_passed"])
+        # The one failing call is FACT_CHECKER's, and it is what made the run
+        # semantically incomplete, which is what `stopped` records.
+        failing = [r for r in rows if r.get("event") == "model_call" and r.get("contract_valid") is False]
+        self.assertEqual({r.get("agent") for r in failing}, {"FACT_CHECKER"})
+        self.assertEqual((completion["state"], completion["semantic_complete"],
+                          completion["reached_end"], completion["exit_code"]),
+                         ("stopped", False, True, 0))
+        # Withheld: the call does not happen, so neither reason can arise. The
+        # completion record is the one the same run would have written with
+        # nothing marking it semantically incomplete.
+        without_rows = [r for r in rows if r.get("agent") != "FACT_CHECKER"]
+        self.assertEqual([r for r in without_rows
+                          if r.get("event") == "model_call" and r.get("contract_valid") is False], [])
+        without_completion = dict(completion, state="completed", semantic_complete=True)
+        without = module.assess(without_completion, without_rows)
+        self.assertEqual(without["reasons"], [])
+        self.assertTrue(without["execution_integrity_passed"])
 
     # ---- A9: the declared absence on CONV-L02 reaches the computed path ----------------
 
@@ -894,6 +1062,18 @@ def check_layout():
 def check_record():
     return _verdict(("test_record_",), "the typed-record example carries the agent's declared values and names its own verdict "
                                        "field; the v6 FACT_CHECKER output is still refused")
+
+
+def check_convention_classification():
+    return _verdict(("test_conventions_",), "every convention is classified by what the live planner does with it: two govern "
+                                            "units and already pair on all six, three name no field the document uses and are "
+                                            "never dispatched, and v8's own ledger shows phase 5.5 made no model call at all")
+
+
+def check_withheld_agent():
+    return _verdict(("test_withheld_",), "an operator-declared withheld audit agent is read from review_scope.json, is not "
+                                         "dispatched, is recorded as not_called with the reason, still runs when nothing is "
+                                         "declared, and removes both of v8's integrity reasons when replayed over its telemetry")
 
 
 def check_declared_absence():
