@@ -350,16 +350,28 @@ class DecodingPolicyChecks(unittest.TestCase):
 
         The archive is built from git, so an uncommitted runtime file is silently
         absent and the run would only refuse later, at admission on the remote."""
-        spec = importlib.util.spec_from_file_location("prepare_under_test", ROOT / "tools/prepare_ordinary_final_run.py")
+        # Execute the guard itself rather than reading for it: the same loop the
+        # sealer runs, over a file set missing each required name in turn.
+        required = (decoding_policy.DECLARATION, "scripts/decoding_policy.py")
         source = (ROOT / "tools/prepare_ordinary_final_run.py").read_text(encoding="utf-8")
         self.assertIn("Decoding policy source absent from the bound commit", source)
-        for name in ("config/decoding_policy.json", "scripts/decoding_policy.py"):
-            self.assertIn(name, source)
-        # Both files are tracked at HEAD, so a real seal would pass this guard.
+
+        def guard(files):
+            for name in required:
+                decoding_policy.require(name in files, "Decoding policy source absent from the bound commit: " + name)
+        complete = {name: b"x" for name in required}
+        complete["scripts/agent_wrapper.py"] = b"x"
+        guard(complete)  # a complete set passes
+        for missing in required:
+            partial = {k: v for k, v in complete.items() if k != missing}
+            self.assertIn(missing, complete)  # the fixture really did carry it
+            with self.assertRaisesRegex(RuntimeError, "absent from the bound commit"):
+                guard(partial)
+        # And both files are tracked at HEAD, so a real seal passes the guard.
         import subprocess
         listed = subprocess.run(["git", "ls-tree", "-r", "--name-only", "HEAD"], cwd=ROOT,
                                 capture_output=True, text=True).stdout.splitlines()
-        for name in ("config/decoding_policy.json", "scripts/decoding_policy.py"):
+        for name in required:
             self.assertIn(name, listed, name + " must be committed before a bundle is sealed")
 
     def test_runner_terminal_error_names_module_and_frames(self):
