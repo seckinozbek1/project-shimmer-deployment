@@ -1,0 +1,17 @@
+{
+  "assets_rebound_not_rebuilt": true,
+  "assets_reused_from": "docs/fix/ordinary_final_cloud_run_v3",
+  "assets_sha256": "8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6",
+  "bundle": "docs/fix/ordinary_final_cloud_run_v4",
+  "classification": "PREPARED_NOT_AUTHORIZED",
+  "hard_ceiling_usd": 7,
+  "instance_type": "gpu_1x_a10",
+  "manifest_sha256": "dedaf7031dad7f6fd650c6d6ec593174d198e4761023c759dd386338cbc216a7",
+  "max_hourly_rate": 1.29,
+  "preparation_commit": "a7bdd96d84dcaf21a18ce6898a7497022a3d592c",
+  "project_sha256": "b70cbded794a9ad97dbc50f84db996fec4f50706df43ae69c7d5389f2b28879d",
+  "region": "us-east-1",
+  "seal_sha256": "e1dc6bd8c0b890e6d90e38488668aedfdd4aeb86a858f43a0c08274053752f4f",
+  "soft_budget_usd": 5,
+  "source_commit": "a7bdd96d84dcaf21a18ce6898a7497022a3d592c"
+}

@@ -1,0 +1,36 @@
+{
+  "epoch": 1789722620.681953,
+  "image": {
+    "architecture": "x86_64",
+    "family": "gpu-base-24-04",
+    "id": "9211995d-2377-4ea8-94d2-18eea01ec3f6",
+    "region": "us-east-1",
+    "version": "24.4.4-2141"
+  },
+  "instance": {
+    "architecture": "x86_64",
+    "metadata": {
+      "cpu": 30,
+      "gpu_count": 1,
+      "gpu_type": "A10 (24 GB PCIe)",
+      "hourly_rate": 1.29,
+      "ram_gib": 200,
+      "storage_gib": 1400,
+      "type": "gpu_1x_a10"
+    },
+    "regions": [
+      "us-east-1",
+      "us-west-1"
+    ]
+  },
+  "instances": [],
+  "launched": false,
+  "manifest_sha256": "dedaf7031dad7f6fd650c6d6ec593174d198e4761023c759dd386338cbc216a7",
+  "passed": true,
+  "provider_calls": [
+    "instances",
+    "instance-types",
+    "images"
+  ],
+  "rate_authorized_ceiling": 1.29
+}
