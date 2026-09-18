@@ -226,7 +226,8 @@ class ControllerChecks(unittest.TestCase):
         (self.base / 'project.tar.gz').write_bytes(b'project fixture')
         (self.root / 'assets.tar').write_bytes(b'assets fixture')
         write(self.base / 'execution_manifest.json', dict(source_commit='f' * 40, image=IMAGE, support_files={},
-              local_control_hashes={}, source_archive_sha256=sha(self.base / 'project.tar.gz')))
+              local_control_hashes={}, source_archive_sha256=sha(self.base / 'project.tar.gz'),
+              assets_archive=dict(filename='assets.tar', sha256=sha(self.root / 'assets.tar'), bytes=14)))
         write(self.base / 'seal.json', dict(execution_manifest_sha256=sha(self.base / 'execution_manifest.json')))
         write(self.base / 'AUTHORIZED_LOCAL_REVERIFICATION.json', dict(passed=True))
         write(self.base / 'assets_transfer_archive.json', dict(path='assets.tar', sha256=sha(self.root / 'assets.tar'),
@@ -387,6 +388,142 @@ class ControllerChecks(unittest.TestCase):
 
     def clock_at(self, key):
         return json.loads((self.base / 'workload_return.json').read_text())['epoch']
+
+    # ---- the launch allowlist admits one new field and no other --------------------------
+
+    def launch_adapter(self):
+        """The real adapter, with the transport removed: every refusal below is the
+        allowlist's own, raised before any request could be made."""
+        import lambda_experiment_provider as adapter
+        instance = adapter.LambdaExperiment.__new__(adapter.LambdaExperiment)
+        instance.credential_file = self.base / 'absent-credential'
+        return adapter, instance
+
+    def test_launch_allowlist_admits_one_filesystem_and_refuses_every_other_field(self):
+        adapter, provider = self.launch_adapter()
+        bounded = dict(region_name='us-east-1', instance_type_name='gpu_1x_a10', ssh_key_names=['k'],
+                       quantity=1, name='n', image={'id': 'i'})
+        with patch.object(adapter.shutil, 'which', lambda *_: None):
+            # The bounded body and the bounded body plus exactly one filesystem both
+            # pass the allowlist and fail later, at the transport, which is removed.
+            for body in (bounded, dict(bounded, file_system_names=['fs-1'])):
+                with self.assertRaises(Exception) as caught:
+                    provider.request('instance-operations/launch', body)
+                self.assertIn('transport', str(caught.exception))
+            # Every other shape is refused by the allowlist itself.
+            refused = [
+                dict(bounded, file_system_names=['a', 'b']),          # two filesystems
+                dict(bounded, file_system_names=[]),                  # none, but the key present
+                dict(bounded, file_system_names='fs-1'),              # not a list
+                dict(bounded, file_system_names=[{'name': 'fs-1'}]),  # not a name
+                dict(bounded, user_data='#!/bin/sh'),                 # a new field entirely
+                dict(bounded, file_system_names=['fs-1'], user_data='x'),
+                dict(bounded, quantity=2),
+                dict(bounded, ssh_key_names=['k1', 'k2']),
+            ]
+            for body in refused:
+                with self.assertRaises(Exception) as caught:
+                    provider.request('instance-operations/launch', body)
+                self.assertNotIn('transport', str(caught.exception), body)
+            # A filesystem name is label-validated exactly as every other provider label.
+            for bad in ('fs 1/../etc', 'a' * 129, 'fs;rm -rf /', ''):
+                with self.assertRaises(Exception) as caught:
+                    provider.request('instance-operations/launch', dict(bounded, file_system_names=[bad]))
+                self.assertNotIn('transport', str(caught.exception), bad)
+        # No endpoint exists that could create, resize, price or delete a filesystem.
+        for endpoint in ('file-systems', 'filesystems', 'file-system-operations/create'):
+            with self.assertRaisesRegex(Exception, 'provider operation not allowed'):
+                provider.request(endpoint)
+
+    def test_asset_copy_declaration_is_written_from_the_bundle_it_will_launch(self):
+        import declare_asset_copy
+        digest = self.assets_digest()
+        declaration = declare_asset_copy.declare(self.base, 'shimmer-assets', '/lambda/nfs/shimmer-assets')
+        self.assertEqual(declaration['assets_sha256'], digest)
+        self.assertEqual(declaration['copy_path'], '/lambda/nfs/shimmer-assets/assets-' + digest + '.tar')
+        self.assertTrue(declaration['operator_authorized'])
+        # The controller reads exactly this file and keys the copy by the same digest.
+        self.assertEqual(controller.asset_copy_declaration(self.base),
+                         dict(filesystem_name='shimmer-assets', mount='/lambda/nfs/shimmer-assets'))
+        self.assertEqual(controller.asset_copy_path('/lambda/nfs/shimmer-assets', digest), declaration['copy_path'])
+        # Nothing in the writer creates a provider resource: it only writes this file.
+        source = Path(declare_asset_copy.__file__).read_text(encoding='utf-8')
+        for forbidden in ('request(', 'LambdaExperiment', 'curl', 'subprocess'):
+            self.assertNotIn(forbidden, source)
+
+    # ---- the bundle is bound to the controller it was sealed with -------------------------
+
+    def seal_controls(self, names):
+        """Seal the named repository files into the bundle's manifest, as the sealer does.
+
+        The names are stored relative to the run root the controller resolves them
+        against, which the fixture patches to its tempdir; the real repository files
+        are copied there, so execute() hashes actual bytes on disk and a change to
+        the repository copy is what the polarity test perturbs."""
+        for name in names:
+            target = self.root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((ROOT / name).read_bytes())
+        manifest = json.loads((self.base / 'execution_manifest.json').read_text())
+        manifest['local_control_hashes'] = {n: sha(self.root / n) for n in names}
+        write(self.base / 'execution_manifest.json', manifest)
+        write(self.base / 'seal.json', dict(execution_manifest_sha256=sha(self.base / 'execution_manifest.json')))
+        write(self.base / 'assets_transfer_archive.json', dict(path='assets.tar', sha256=sha(self.root / 'assets.tar'),
+              manifest_sha256=sha(self.base / 'execution_manifest.json'), bytes=14))
+
+    CONTROLS = ('tools/ordinary_final_cloud.py', 'tools/ordinary_final_bound_cloud.py',
+                'tools/lambda_experiment_provider.py', 'tools/ordinary_final_run.py')
+
+    def test_controller_binding_the_sealed_controller_launches(self):
+        """Polarity one: the controller the bundle was sealed with runs the full sequence."""
+        self.seal_controls(self.CONTROLS)
+        transport, console, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        self.assertIn('ordinary_workload', transport.started)
+        self.assertEqual(FakeProvider.state['launches'], 1)
+        self.assert_torn_down()
+
+    def test_controller_binding_a_changed_controller_refuses_before_any_instance(self):
+        """Polarity two, the property the operator asked for: a launch under a
+        controller other than the sealed one is REFUSED, and refused before the
+        provider is touched, not merely recorded in the launch receipt.
+
+        Each bound file is changed in turn (a byte appended to a copy on disk, the
+        repository file restored afterwards), so the binding is proven for every
+        name it covers rather than for one of them."""
+        for name in self.CONTROLS:
+            with self.subTest(control=name):
+                self.setUp()
+                self.seal_controls(self.CONTROLS)
+                # The file the controller will hash at launch, changed after sealing.
+                path = self.root / name
+                path.write_bytes(path.read_bytes() + b'\n# changed after sealing\n')
+                with self.assertRaisesRegex(RuntimeError, 'Controller source changed'):
+                    self.execute()
+                # Refused before anything was created: no provider call, no instance,
+                # no key, no launch intent, and no phase started.
+                self.assertIsNone(FakeProvider.state)
+                self.assertFalse((self.base / 'LAUNCH_INTENT.json').exists())
+                self.assertFalse((self.base / 'launch.json').exists())
+                self.assertFalse((self.base / 'ssh_registration.json').exists())
+                self.assertFalse((self.base / 'launch_preflight.json').exists())
+
+    def test_controller_binding_covers_the_controller_wrapper_and_adapter(self):
+        """The sealer binds the controller, the bound wrapper and the provider adapter,
+        beside the runtime files it already bound."""
+        import prepare_ordinary_final_run as sealer
+        source = Path(sealer.__file__).read_text(encoding='utf-8')
+        block = source.split('local_control_hashes={n:sha(ROOT/n) for n in (', 1)[1].split(')}', 1)[0]
+        for name in ('tools/ordinary_final_cloud.py', 'tools/ordinary_final_bound_cloud.py',
+                     'tools/lambda_experiment_provider.py', 'tools/ordinary_final_watchdog.py',
+                     'tools/cloud_run_watchdog.py', 'tools/cloud_run_common.py', 'tools/ordinary_final_run.py'):
+            self.assertIn(name, block)
+        # The verification runs before the first provider call in execute().
+        body = Path(controller.__file__).read_text(encoding='utf-8')
+        start = body.index('def execute():')
+        checked = body.index("'Controller source changed'", start)
+        provider_call = body.index('provider=LambdaExperiment(CREDENTIAL)', start)
+        self.assertLess(checked, provider_call)
 
     # ---- the provider-side asset copy: the five local proofs -----------------------------
 
@@ -650,6 +787,25 @@ def v4_phases_dir(remote):
     return remote.rstrip('/') + '/phases'
 
 
+_CONTROLLER_FILES = {'ordinary_final_cloud.py', 'ordinary_final_bound_cloud.py',
+                     'lambda_experiment_provider.py', 'ordinary_final_run.py'}
+
+
+def read_without_the_controller_binding(path):
+    """The pre-binding reading of the manifest: the controller, its wrapper, the
+    adapter and the runner are not among the files a bundle is bound to, so a
+    launch under a changed controller proceeds.
+
+    Neutralises the BINDING (what the manifest claims to pin) rather than the
+    hash function, which a sealed-with-the-same-stand-in manifest would still
+    match. Only execute()'s own read is affected; every other read is untouched."""
+    value = read(path)
+    if isinstance(value, dict) and 'local_control_hashes' in value:
+        value = dict(value, local_control_hashes={n: d for n, d in value['local_control_hashes'].items()
+                                                  if Path(n).name not in _CONTROLLER_FILES})
+    return value
+
+
 # (test, owner, attribute, mutant): the one mechanism each load-bearing test proves.
 NEUTRALIZATIONS = [
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
@@ -658,6 +814,9 @@ NEUTRALIZATIONS = [
     # A probe that no longer hashes the copy: a corrupt copy would be used as the sealed archive.
     ('test_asset_copy_mismatch_is_refused_uploaded_and_never_overwritten', controller, 'asset_copy_probe_command',
      lambda mount, digest: 'echo MATCH'),
+    # A seal that does not bind the controller: a changed controller launches.
+    ('test_controller_binding_a_changed_controller_refuses_before_any_instance', controller, 'read',
+     read_without_the_controller_binding),
 ]
 
 

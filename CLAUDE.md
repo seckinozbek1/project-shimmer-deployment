@@ -82,10 +82,21 @@ processing swarm governed by an append-only constitution.
   are reachable now, and STILL not computable, because the per-laboratory labels carry a comma
   the structural label reader does not admit. Widening that reader is a separate decision on
   every corpus, not a way to reach a catch.
+- CONTROLLER-BINDING: a sealed bundle is bound to the CONTROLLER it was sealed with. The
+  sealer's `local_control_hashes` pin `tools/ordinary_final_cloud.py`, the bound wrapper and the
+  provider adapter beside the runtime files, and `execute()` verifies every name in that map
+  before its first provider call, so a launch under a changed controller refuses
+  (`Controller source changed`) with no instance, key or launch intent created. Before this the
+  seal pinned the runtime the controller carries but not the controller; only the launch
+  receipt recorded its hash, after the instance existed. Proven both ways with a neutralization
+  that drops the controller from the binding (controller gate).
 - ASSET-COPY-A: the ordinary final controller (`tools/ordinary_final_cloud.py`) can use a
   PROVIDER-SIDE COPY of the sealed asset archive, and it is OFF unless the bundle carries an
   operator-written `asset_copy_declaration.json` (`filesystem_name`, `mount`,
-  `operator_authorized: true`). With one, the instance is launched with that filesystem
+  `operator_authorized: true`), written by `tools/declare_asset_copy.py` from the bundle's own
+  digest. The one such resource, `shimmer-filesystem` (us-east-1, 20 GB, $4.00 a month, created
+  by the operator by hand because the adapter has no create endpoint and never will), is
+  recorded with its verification and deletion rule in `docs/DEPLOYMENT_RESOURCES.md`. With one, the instance is launched with that filesystem
   attached (the provider adapter admits exactly one `file_system_names` entry and nothing else
   new), a probe hashes the copy under its hash-keyed name `assets-<sha256>.tar` ON THE INSTANCE
   and compares it to the sealed manifest's digest (the sidecar this machine could write is
