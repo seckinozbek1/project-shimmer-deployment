@@ -58,6 +58,32 @@ def _slug(text, limit=40):
     return s[:limit] or "unit"
 
 
+_RULE_LINE = re.compile(r"^[\s\-*_=]+$")
+
+
+def _preamble_unit(lead):
+    """The unit for a document's preamble, or None when there is nothing in it.
+
+    `lead` is the text before the first body heading. It becomes a unit only
+    when it carries content beyond heading lines and horizontal rules; the unit
+    keeps the whole lead as its text (title line included, so the ledger can
+    anchor it at offset 0), takes the document's own H1 title as its title (the
+    way a section takes its heading), and is named u00 plus that title's slug.
+    kind is "preamble", a kind of its own, so a consumer that reasons about
+    sections, rows or tables is not handed one by surprise."""
+    stripped = (lead or "").strip()
+    if not stripped:
+        return None
+    content = [line for line in stripped.splitlines()
+               if line.strip() and not _HEADING.match(line) and not _RULE_LINE.match(line)]
+    if not content:
+        return None
+    h1 = next((m.group(2).strip() for m in _HEADING.finditer(stripped) if len(m.group(1)) == 1), None)
+    title = h1 or "preamble"
+    return {"unit_id": "u00-" + _slug(title), "title": title, "kind": "preamble",
+            "text": stripped, "index": 0}
+
+
 def header_label(raw_header):
     """A table header's label with its UNIT parenthetical removed first.
 
@@ -178,9 +204,11 @@ def split_units(text, *, document_id=""):
     document always yields the same ids.
 
     Every unit also carries "index": its 0-based position in the list this
-    function returns, the SAME position the unit_id's own numeric prefix
-    already encodes (u01, u02, ...), now as a field a caller can read without
-    parsing a string. This is the single source: every caller that re-keys a
+    function returns, as a field a caller can read without parsing a string.
+    A section unit's numeric prefix (u01, u02, ...) is its HEADING ordinal,
+    which equals index + 1 only when the document has no preamble unit; with
+    one, the preamble is index 0 under id u00 and every section's index is its
+    ordinal. Nothing parses the prefix; index is what order is read from. This is the single source: every caller that re-keys a
     unit list to a dict on unit_id (paired_review.unit_texts_for,
     pipeline.py's phase 5.5 and phase 6 unit maps) copies the whole dict by
     reference, so index survives every one of those re-keyings with no change
@@ -198,6 +226,21 @@ def split_units(text, *, document_id=""):
     body_headings = [m for m in headings if len(m.group(1)) >= 2]
     units = []
     if body_headings:
+        # The PREAMBLE: everything before the first body heading, the title line
+        # and whatever sits under it. It used to be in no unit at all, so a rule
+        # about a document-level figure could never pair with the passage that
+        # carries it (clinical_reference: the sheet's declared result counts sit
+        # above the first "## Result" heading and were unreachable in five runs).
+        # Its id is u00 plus the title's slug, NOT a heading ordinal, so every
+        # existing u01..uNN id stays exactly where it was; measured on all twelve
+        # corpus documents. A lead that carries nothing but heading lines and
+        # rules makes no unit, so a fixture such as "# Register
+
+## Entry one"
+        # still splits into its headings alone.
+        lead_unit = _preamble_unit(text[:body_headings[0].start()])
+        if lead_unit is not None:
+            units.append(lead_unit)
         for i, m in enumerate(body_headings):
             start = m.start()
             end = body_headings[i + 1].start() if i + 1 < len(body_headings) else len(text)
@@ -463,6 +506,15 @@ def unmatched_findings(entries, rules, *, convention_registry=None):
         # An unresolved rule may apply. Refusing its semantic pairing cannot be
         # turned into a new assertion that no rule applies to this unit.
         if entry["paired"] or entry.get("undecided"):
+            continue
+        # A PREAMBLE is the one unit for which "no rule applies" is the normal
+        # state, not a missing field: it is a title block, not an entry. Measured
+        # when the preamble unit was added: on the two negotiation offers dated
+        # 2024-10-19 every rule is rejected on it and none undecided, so this net
+        # would have minted a missing_field finding, and so an amendment, against
+        # a document's title. A rule that DOES name a preamble's field pairs with
+        # it in the ordinary way (the clinical sheet's declared counts).
+        if entry.get("kind") == "preamble":
             continue
         candidates = sorted(entry["rejected"], key=lambda r: r.get("missing_count", 99))
         if not candidates:

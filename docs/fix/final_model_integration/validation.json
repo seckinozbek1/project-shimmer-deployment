@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "tests": 143,
+  "tests": 147,
   "failures": 0,
   "errors": 0,
   "activation_status": "PASS",
@@ -123,11 +123,18 @@
       "mutated_branch_invocations": 2
     },
     {
+      "check": "test_preamble_conv_l03_pairs_on_the_sheet_header_and_the_count_is_not_computable",
+      "baseline_pass": true,
+      "neutralized_test_failed": true,
+      "restored_pass": true,
+      "mutated_branch_invocations": 1
+    },
+    {
       "check": "test_declared_absence_reaches_the_computed_path_on_res_firth",
       "baseline_pass": true,
       "neutralized_test_failed": true,
       "restored_pass": true,
-      "mutated_branch_invocations": 41
+      "mutated_branch_invocations": 47
     },
     {
       "check": "test_promotion_only_computed_findings_reach_the_promoter",

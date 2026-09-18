@@ -1,0 +1,54 @@
+{
+  "baseline_commit": "5479ced",
+  "checks_current": 256,
+  "checks_baseline": 255,
+  "baseline_failing": [
+    "112",
+    "117",
+    "118",
+    "121",
+    "146",
+    "193",
+    "246",
+    "248",
+    "252",
+    "255",
+    "257",
+    "28",
+    "31"
+  ],
+  "stage_b_failing": [
+    "112",
+    "117",
+    "118",
+    "121",
+    "146",
+    "193",
+    "246",
+    "248",
+    "252",
+    "255",
+    "257"
+  ],
+  "new_failures_introduced": [],
+  "failing_only_at_baseline": [
+    "28",
+    "31"
+  ],
+  "identical_pre_existing_failures": 11,
+  "new_checks": {
+    "263": "PASS",
+    "264": "PASS",
+    "265": "PASS",
+    "266": "PASS",
+    "267": "PASS",
+    "268": "PASS",
+    "269": "PASS",
+    "270": "PASS",
+    "271": "PASS",
+    "272": "PASS",
+    "273": "PASS"
+  },
+  "check_262": "PASS",
+  "interpretation": "Same interpreter and host; pre-existing failures trace to fastapi and pypdf absent from this interpreter and to gitignored runtime state in a fresh worktree; the new checks 263 to 273 are listed separately."
+}

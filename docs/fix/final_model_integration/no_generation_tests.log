@@ -130,6 +130,12 @@ test_grounding_v5_raw_outputs_correct_citation_passes_mismatched_refused (ordina
 test_layout_declared_request_size_within_validated_layout_and_used_live (ordinary_final_correction_checks.CorrectionChecks.test_layout_declared_request_size_within_validated_layout_and_used_live) ... ok
 test_pairing_coverage_reports_pairs_from_a_partial_delivery (ordinary_final_correction_checks.CorrectionChecks.test_pairing_coverage_reports_pairs_from_a_partial_delivery) ... ok
 test_pairing_partial_delivery_pairs_receipt_bound_items_and_marks_them (ordinary_final_correction_checks.CorrectionChecks.test_pairing_partial_delivery_pairs_receipt_bound_items_and_marks_them) ... ok
+test_preamble_conv_l03_pairs_on_the_sheet_header_and_the_count_is_not_computable (ordinary_final_correction_checks.CorrectionChecks.test_preamble_conv_l03_pairs_on_the_sheet_header_and_the_count_is_not_computable)
+The honest outcome. CONV-L03 now reaches the passage that carries the ... ok
+test_preamble_is_excluded_from_the_unmatched_net_everywhere (ordinary_final_correction_checks.CorrectionChecks.test_preamble_is_excluded_from_the_unmatched_net_everywhere) ... ok
+test_preamble_no_existing_id_moves_and_every_span_keeps_its_identity (ordinary_final_correction_checks.CorrectionChecks.test_preamble_no_existing_id_moves_and_every_span_keeps_its_identity)
+The constraint the operator set: no existing u01..uNN id may move on any ... ok
+test_preamble_unit_is_made_only_from_content (ordinary_final_correction_checks.CorrectionChecks.test_preamble_unit_is_made_only_from_content) ... ok
 test_promotion_only_computed_findings_reach_the_promoter (ordinary_final_correction_checks.CorrectionChecks.test_promotion_only_computed_findings_reach_the_promoter) ... ok
 test_promotion_provenance_stamp_and_sentence_follow_the_source (ordinary_final_correction_checks.CorrectionChecks.test_promotion_provenance_stamp_and_sentence_follow_the_source) ... ok
 test_promotion_v7_deliverable_amendments_are_reproduced_and_narrowed (ordinary_final_correction_checks.CorrectionChecks.test_promotion_v7_deliverable_amendments_are_reproduced_and_narrowed)
@@ -150,6 +156,6 @@ test_withheld_agent_removes_both_v8_integrity_reasons (ordinary_final_correction
 v8 (run a6649672) failed integrity on exactly two reasons, and the ... ok
 
 ----------------------------------------------------------------------
-Ran 143 tests in 4.713s
+Ran 147 tests in 3.874s
 
 OK

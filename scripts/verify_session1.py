@@ -24626,6 +24626,26 @@ def check_269_only_computed_findings_become_amendments():
     return check_promotion()
 
 
+def check_273_preamble_unit_moves_nothing_and_reaches_the_sheet_header():
+    """The passage above a document's first body heading used to be in no unit, so
+    a rule about a document-level figure could never pair with it: the clinical
+    sheet's declared result counts were unreachable in five runs. split_units now
+    makes a PREAMBLE unit of a lead that carries content, named u00 plus the
+    title's slug, never a heading ordinal. Pinned against the identities measured
+    before the change on all twelve corpus documents: no u01..uNN id moves, no
+    extraction span changes identity or offset (the PROCESSOR wire is unchanged),
+    the unit is made only from content (the H4 fixtures still split into headings
+    alone), and it is never handed to the unmatched-findings net, which would
+    otherwise have minted a missing_field amendment against two negotiation
+    offers' title blocks. On the clinical sheet CONV-L03 pairs on the header, and
+    the honest outcome is recorded: the per-laboratory counts are written with a
+    comma inside the label, which the structural label reader does not admit, so
+    the sum has no addends and the plan is a model question, never a computed
+    amendment. No reader was widened to force the catch."""
+    from ordinary_final_correction_checks import check_preamble
+    return check_preamble()
+
+
 def check_272_every_convention_is_classified_by_the_planner():
     """Post-v8 item 1, measured rather than asserted. Scoping CONV-L02 moved recall
     3/5 to 4/5, and the proposal was to repeat that for the other rules. The live
@@ -25050,6 +25070,8 @@ CHECKS = [
      check_271_operator_may_withhold_a_phase_5_auditor),
     ("272 every convention is classified by what the live planner does with it",
      check_272_every_convention_is_classified_by_the_planner),
+    ("273 the preamble unit moves no existing id or span and reaches the sheet header",
+     check_273_preamble_unit_moves_nothing_and_reaches_the_sheet_header),
 ]
 
 

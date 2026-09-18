@@ -520,6 +520,147 @@ class CorrectionChecks(unittest.TestCase):
         self.assertEqual(payload["processor_draft"]["items"][0]["item_id"], "PROCESSOR:probe:s")
         self.assertEqual([d for d in decisions if d["agent"] == "VERIFIER" and not d["activated"]], [])
 
+    # ---- A12: the preamble unit ----------------------------------------------------------
+
+    def _corpus_documents(self):
+        import glob
+        docs = sorted(glob.glob(str(ROOT / "benchmark/corpora/*/context/*.md")))
+        if not docs:
+            self.skipTest("no corpus documents on disk")
+        return docs
+
+    def test_preamble_no_existing_id_moves_and_every_span_keeps_its_identity(self):
+        """The constraint the operator set: no existing u01..uNN id may move on any
+        corpus, and the extraction ledger (which derives span ownership from the
+        splitter) must keep every span identity and offset, so the bytes the
+        PROCESSOR is sent are unchanged. Measured against the identities pinned
+        BEFORE the change, on all twelve documents."""
+        import bounded_extraction
+        pinned = json.loads((ROOT / "benchmark/fixtures/unit_identity_before_preamble.json").read_text(encoding="utf-8"))["documents"]
+        seen = 0
+        for path in self._corpus_documents():
+            path = Path(path)
+            name = f"{path.parent.parent.name}/{path.name}"
+            if name not in pinned:
+                continue
+            seen += 1
+            text = path.read_text(encoding="utf-8")
+            units = pairing_map.split_units(text, document_id=path.stem)
+            ids = [u["unit_id"] for u in units]
+            before_ids = pinned[name]["section_unit_ids"]
+            # Every pre-existing id survives, in the same order, with index equal
+            # to list position; the only addition is the preamble at index 0.
+            self.assertEqual([i for i in ids if i in before_ids], before_ids, name)
+            self.assertEqual([u["index"] for u in units], list(range(len(units))), name)
+            added = [u for u in units if u["unit_id"] not in before_ids]
+            self.assertEqual([(u["kind"], u["index"], u["unit_id"][:4]) for u in added],
+                             [("preamble", 0, "u00-")], name)
+            spans = bounded_extraction.ledger(text, path.stem)
+            self.assertEqual([s.id[:8] for s in spans], pinned[name]["span_ids"], name)
+            self.assertEqual([[s.start, s.end] for s in spans], pinned[name]["span_offsets"], name)
+            # The preamble span is now owned; every other span keeps its owner id.
+            self.assertEqual(spans[0].unit_id, added[0]["unit_id"], name)
+        self.assertEqual(seen, 12)
+
+    def test_preamble_unit_is_made_only_from_content(self):
+        split = pairing_map.split_units
+        # A lead of nothing but the title line makes no unit: the shared H4
+        # fixtures keep splitting into their headings alone.
+        self.assertEqual([u["unit_id"] for u in split("# Register\n\n## Entry one\n- a: 1\n")],
+                         ["u01-entry-one"])
+        # A rule line is not content either.
+        self.assertEqual([u["unit_id"] for u in split("# T\n\n---\n\n## S\ntext\n")], ["u01-s"])
+        # Content under the title is a unit, named after the title, first in order.
+        units = split("# Sheet Title\n\nBatch: X\nTotal declared: 6\n\n## S\ntext\n")
+        self.assertEqual([(u["unit_id"], u["kind"], u["index"]) for u in units],
+                         [("u00-sheet-title", "preamble", 0), ("u01-s", "section", 1)])
+        self.assertTrue(units[0]["text"].startswith("# Sheet Title"))
+        self.assertEqual(sorted(" ".join(f) for f in pairing_map.unit_fields(units[0]["text"])),
+                         ["batch", "total declared"])
+        # No title at all: the unit is still made, under the plain name.
+        self.assertEqual(split("Intro text here.\n\n## S\ntext\n")[0]["unit_id"], "u00-preamble")
+        # Table-only and heading-less documents are untouched by the preamble branch.
+        self.assertEqual([u["kind"] for u in split("| a | b |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n")],
+                         ["row", "row"])
+
+    def test_preamble_conv_l03_pairs_on_the_sheet_header_and_the_count_is_not_computable(self):
+        """The honest outcome. CONV-L03 now reaches the passage that carries the
+        defect and pairs with it, but the two per-laboratory counts are written
+        with a comma inside the label, which the structural label reader does not
+        admit, so the sum has no addends: the plan is a model question, not a
+        computed check, and no computed amendment can arise from it."""
+        import convention_parser
+        import shutil
+        corpus = ROOT / "benchmark/corpora/clinical_reference"
+        if not (corpus / "conventions/lab_conventions.md").exists():
+            self.skipTest("clinical corpus not on disk")
+        with tempfile.TemporaryDirectory() as folder:
+            tree = Path(folder)
+            (tree / "input" / "conventions").mkdir(parents=True)
+            shutil.copy(corpus / "conventions/lab_conventions.md", tree / "input/conventions/review_conventions.md")
+            rules = convention_parser.parse_conventions(tree).as_dict()["conventions"]
+        rules_by_id = {r["id"]: r for r in rules}
+        text = (corpus / "context/result_sheet.md").read_text(encoding="utf-8")
+        units = pairing_map.split_units(text, document_id="result_sheet")
+        units_by_id = {u["unit_id"]: u for u in units}
+        preamble = units[0]
+        self.assertEqual((preamble["unit_id"], preamble["kind"]), ("u00-returned-result-sheet-batch-review", "preamble"))
+        self.assertIn("Total result count declared: 6", preamble["text"])
+        vocabulary = pairing_map.field_vocabulary(units)
+        self.assertIn(("total", "result", "count", "declared"), vocabulary)
+        self.assertEqual(pairing_map.needed_fields(rules_by_id["CONV-003"]["rule"], vocabulary),
+                         {("total", "result", "count", "declared")})
+        entries = pairing_map.pair_units(units, rules, vocabulary=vocabulary)
+        by_unit = {e["unit_id"]: e for e in entries}
+        self.assertIn("CONV-003", [p["rule_id"] for p in by_unit[preamble["unit_id"]]["paired"]])
+        for uid in units_by_id:
+            if uid != preamble["unit_id"]:
+                self.assertIn("CONV-003", [r["rule_id"] for r in by_unit[uid]["rejected"]], uid)
+        # The per-laboratory lines are not label lines: a comma sits inside the label.
+        for line in preamble["text"].splitlines():
+            if line.startswith("Result count declared,"):
+                self.assertIsNone(pairing_map._LABEL_LINE.match(line), line)
+        scalars, columns, _ = paired_review.extract_fields(preamble["text"])
+        self.assertEqual(set(scalars), {("total", "result", "count", "declared")})
+        self.assertEqual(dict(columns), {})
+        # So the planner can compute nothing for the pair: the plan is a model question.
+        pairs = [(e["unit_id"], p["rule_id"]) for e in entries for p in e["paired"]]
+        plans = paired_review.plan_calls(units_by_id, pairs, rules_by_id, vocabulary,
+                                         needed_fields_for=lambda t: pairing_map.needed_fields(t, vocabulary))
+        conv3 = [p for p in plans if p["rule"].get("id") == "CONV-003"]
+        self.assertEqual([(p["unit"]["unit_id"], p["kind"]) for p in conv3],
+                         [(preamble["unit_id"], "uncomputable")])
+        # Nothing computed exists for it, so the computed-amendment path has no input.
+        self.assertEqual([p for p in plans if p["rule"].get("id") == "CONV-003" and p["kind"] != "uncomputable"], [])
+        # The preamble is never handed to the unmatched net, on this or any corpus.
+        self.assertEqual(pairing_map.unmatched_findings(entries, rules), [])
+
+    def test_preamble_is_excluded_from_the_unmatched_net_everywhere(self):
+        import convention_parser
+        import glob
+        import shutil
+        for corpus in sorted(ROOT.glob("benchmark/corpora/*")):
+            conv = sorted(glob.glob(str(corpus / "conventions/*.md")))
+            if not conv:
+                continue
+            with tempfile.TemporaryDirectory() as folder:
+                tree = Path(folder)
+                (tree / "input" / "conventions").mkdir(parents=True)
+                for i, path in enumerate(conv):
+                    shutil.copy(path, tree / "input/conventions" / ("review_conventions.md" if i == 0 else Path(path).name))
+                rules = convention_parser.parse_conventions(tree).as_dict()["conventions"]
+            for doc in sorted(corpus.glob("context/*.md")):
+                units = pairing_map.split_units(doc.read_text(encoding="utf-8"), document_id=doc.stem)
+                entries = pairing_map.pair_units(units, rules)
+                kinds = {u["unit_id"]: u["kind"] for u in units}
+                unmatched = pairing_map.unmatched_findings(entries, rules)
+                self.assertEqual([f for f in unmatched if kinds.get(f["unit_id"]) == "preamble"], [], doc.name)
+                # The pre-existing net is untouched: the negotiation offer's summary
+                # table still raises exactly what it raised before.
+                if doc.name == "company_a_union_b_offer_2024_10_19.md":
+                    self.assertEqual([(f["unit_id"], f["rule_id"]) for f in unmatched],
+                                     [("u06-summary-table", "CONV-001")])
+
     # ---- A11: the convention classification, measured not asserted ----------------------
 
     def test_conventions_every_rule_is_classified_by_what_the_planner_does(self):
@@ -553,7 +694,10 @@ class CorrectionChecks(unittest.TestCase):
         undecided = {rid: sum(1 for e in entries if rid in (e.get("undecided") or []))
                      for rid in by_id}
 
-        # CONV-001 and CONV-002 govern units and already pair on all six.
+        # Seven units since the preamble unit (A12): six results and the sheet header.
+        self.assertEqual(len(units), 7)
+        # CONV-001 and CONV-002 govern results and pair on all six of them; neither
+        # names anything the header carries, so both are rejected there.
         self.assertEqual((paired["CONV-001"], paired["CONV-002"]), (6, 6))
         self.assertEqual((undecided["CONV-001"], undecided["CONV-002"]), (0, 0))
         # CONV-002 is the one the operator scoped; CONV-001 is arithmetic that the
@@ -561,15 +705,22 @@ class CorrectionChecks(unittest.TestCase):
         self.assertTrue(by_id["CONV-002"]["scope"] and by_id["CONV-002"]["requires"])
         self.assertEqual((by_id["CONV-001"]["scope"], by_id["CONV-001"]["requires"]), ([], []))
 
-        # The other three name NO field the document uses, so no scope could pair
-        # them to a unit: CONV-L03 is about the sheet header (which is in no unit),
-        # CONV-L04 constrains how a finding is written, CONV-L05 forbids inference.
-        for rid in ("CONV-003", "CONV-004", "CONV-005"):
+        # CONV-L03 names the header's declared total, so it pairs on the preamble
+        # unit alone and is rejected on every result; its arithmetic is still not
+        # computable there (test_preamble_conv_l03_...), which is a reader question,
+        # not a scope question. CONV-L04 constrains how a finding is written and
+        # CONV-L05 forbids inference: neither names a field, so neither pairs.
+        self.assertEqual(pairing_map.needed_fields(by_id["CONV-003"].get("rule", ""), vocabulary),
+                         {("total", "result", "count", "declared")})
+        self.assertEqual((paired["CONV-003"], undecided["CONV-003"]), (1, 0))
+        for rid in ("CONV-004", "CONV-005"):
             self.assertEqual(pairing_map.needed_fields(by_id[rid].get("rule", ""), vocabulary),
                              set(), rid)
-            self.assertEqual((paired[rid], undecided[rid]), (0, 6), rid)
+            self.assertEqual((paired[rid], undecided[rid]), (0, 7), rid)
+        for rid in ("CONV-003", "CONV-004", "CONV-005"):
             self.assertEqual((by_id[rid]["scope"], by_id[rid]["requires"]), ([], []), rid)
-        # An undecided rule is never dispatched, so none of the three costs a call.
+        # An undecided rule is never dispatched; the one CONV-003 pair is a model
+        # question the planner records as uncomputable, never a computed amendment.
         self.assertEqual(sorted(set(by_id) - {"CONV-001", "CONV-002"}),
                          ["CONV-003", "CONV-004", "CONV-005"])
 
@@ -758,8 +909,13 @@ class CorrectionChecks(unittest.TestCase):
         self.assertTrue(ok, why)
         # CONV-001's pairing is undisturbed on every result (its bands are read from the
         # reference table by reference_bands_for, which this planner call does not wire;
-        # three runs and the gate's own band checks hold that path).
+        # three runs and the gate's own band checks hold that path). The preamble unit
+        # (A12) is not a result: neither rule names anything it carries.
+        kinds = {u["unit_id"]: u["kind"] for u in units_by_id.values()}
         for entry in entries:
+            if kinds.get(entry["unit_id"]) == "preamble":
+                self.assertEqual([p["rule_id"] for p in entry["paired"]], ["CONV-003"])
+                continue
             self.assertIn("CONV-001", [p["rule_id"] for p in entry["paired"]], entry["unit_id"])
             self.assertIn("CONV-002", [p["rule_id"] for p in entry["paired"]], entry["unit_id"])
 
@@ -1064,6 +1220,12 @@ def check_record():
                                        "field; the v6 FACT_CHECKER output is still refused")
 
 
+def check_preamble():
+    return _verdict(("test_preamble_",), "the preamble unit moves no existing id and no extraction span on any of the twelve "
+                                         "corpus documents, is made only from content, is never handed to the unmatched "
+                                         "net, and CONV-L03 pairs on the sheet header while its count stays uncomputable")
+
+
 def check_convention_classification():
     return _verdict(("test_conventions_",), "every convention is classified by what the live planner does with it: two govern "
                                             "units and already pair on all six, three name no field the document uses and are "
@@ -1105,6 +1267,10 @@ NEUTRALIZATIONS = [
     # result's items, whoever authored them, which is what v7 passed to the promoter.
     # Neutralise the declaration's effect: a pairing map that reads no scope is the
     # pre-declaration behaviour, under which CONV-002 was rejected on RES-FIRTH.
+    # Neutralise the preamble unit: a splitter that makes none is the pre-change
+    # behaviour, under which CONV-L03 could reach no unit at all.
+    ("test_preamble_conv_l03_pairs_on_the_sheet_header_and_the_count_is_not_computable", pairing_map,
+     "_preamble_unit", lambda lead: None),
     ("test_declared_absence_reaches_the_computed_path_on_res_firth", pairing_map, "scope_declaration",
      lambda rule: []),
     ("test_promotion_only_computed_findings_reach_the_promoter", paired_review, "computed_finding_items",
