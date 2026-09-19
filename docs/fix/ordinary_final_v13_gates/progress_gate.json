@@ -1,0 +1,23 @@
+{
+  "errors": [],
+  "failures": [],
+  "passed": true,
+  "proofs": [
+    {
+      "check": "test_upload_reading_reproduces_the_partial_file_on_the_instance",
+      "neutralized": "size_reading",
+      "neutralized_fail": true,
+      "passes_after_restore": true,
+      "passes_before": true
+    },
+    {
+      "check": "test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero",
+      "neutralized": "unreadable",
+      "neutralized_fail": true,
+      "passes_after_restore": true,
+      "passes_before": true
+    }
+  ],
+  "proofs_all_neutralized": true,
+  "tests_run": 14
+}

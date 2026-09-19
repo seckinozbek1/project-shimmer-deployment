@@ -148,6 +148,13 @@ processing swarm governed by an append-only constitution.
 - Prompts are self-contained: a job spec carries the context needed to execute it. The
   changelog and any external ledger are maintained outside Claude Code unless the spec
   says otherwise.
+- OPEN-ITEMS: `docs/fix/OPEN_ITEMS.md` is the standing record of everything FOUND AND
+  CONSCIOUSLY NOT FIXED, each entry carrying what it is, the evidence, why it was left, and
+  what would settle it. It is WRITTEN AT THE END OF EVERY PASS and READ AND REPORTED AT THE
+  START OF EVERY PASS, before any work is proposed. It is not a plan and nothing in it is
+  authorized or scheduled. What the operator deliberately deferred belongs to the roadmap,
+  and tuning work to `docs/fix/TUNING_BACKLOG.md`, not here: an item earns its place by
+  having been seen and passed over.
 - PROGRESS-A: any phase that takes more than a couple of minutes reports MEASURED PROGRESS in
   every sitrep, not just its name. Four values, every time: how much of the work is done
   against the total, how long it has been running, the current rate, and the remaining time
@@ -159,7 +166,14 @@ processing swarm governed by an append-only constitution.
   upload, the seed copy, model acquisition, wheel installation, the workload's own
   generation progress, and any local phase of similar length, including the rehearsal's
   polarities and long gate runs. Set the sitrep up this way before the phase starts; it
-  should not need asking (it was asked for during the v12 upload, 2026-09-19).
+  should not need asking (it was asked for during the v12 upload, 2026-09-19). The reader is
+  the TRACKED tool `tools/ordinary_final_progress.py`, one reading per phase, never a
+  scratchpad script: the scratchpad version broke on a quoting fault mid-run and printed an
+  empty rate into a live sitrep. Its proofs (`tools/ordinary_final_progress_checks.py`,
+  replayed from run v12's own saved observations, no network) are held by gate check 274 and
+  `tools/ordinary_final_progress_gate.py` with neutralize/fail/restore/pass. A controller
+  phase that is neither given a reader nor listed as completion-only FAILS that check, so a
+  new long phase cannot quietly go unmeasured.
 
 ## The verify gate
 

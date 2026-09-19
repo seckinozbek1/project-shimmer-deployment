@@ -24626,6 +24626,40 @@ def check_269_only_computed_findings_become_amendments():
     return check_promotion()
 
 
+def check_274_every_long_phase_reports_a_measured_reading_or_refuses():
+    """PROGRESS-A, held by a tracked tool rather than a scratchpad script. Any phase
+    over a couple of minutes must report four values (done of total, elapsed, rate,
+    remaining at that rate) MEASURED from the work itself, and must refuse in words
+    where nothing can be read. The controller captures its transfers and detached
+    phases with no incremental output, so each reader takes one read-only observation
+    on the instance (a stat of the partial file, a count of the records the run has
+    written). Every reading here is replayed from a saved observation map, so the
+    check reaches no network, provider or instance, and the figures it must reproduce
+    are the ones run v12 actually measured: the upload 13.15 GB at 5.9 MB/s over 37.4
+    minutes, the seed 13.15 GB in 31.9 s, the workload 12 of 12 agents with 7 auditor
+    pairs in 6.3 minutes. The refusals are proven too: an unanswered observation reads
+    as not measurable rather than as zero, a completion-only phase says so instead of
+    inventing a percentage, and a controller phase that is neither classified nor given
+    a reader fails this check. Measured, not preferred: the scratchpad version this
+    replaced broke on a quoting fault mid-run and printed an empty rate into a live
+    sitrep, which is the fault the syntactic-wholeness proof now catches."""
+    import io
+    import unittest
+    tools = str(Path(__file__).resolve().parents[1] / 'tools')
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from ordinary_final_progress_checks import ProgressReadings
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(ProgressReadings)
+    result = unittest.TextTestRunner(verbosity=0, stream=io.StringIO()).run(suite)
+    if not result.wasSuccessful():
+        problems = [str(case) for case, _ in list(result.failures) + list(result.errors)]
+        return "FAIL", 'progress reader proofs failed: ' + '; '.join(problems[:3])
+    return "PASS", ('%d proofs: each long phase replays the measured reading run v12 produced (upload 13.15 GB at '
+                    '5.9 MB/s, seed 31.9 s, workload 12 of 12 agents and 7 auditor pairs), an unanswered '
+                    'observation refuses rather than reporting zero, a completion-only phase says so, and an '
+                    'unclassified controller phase fails' % result.testsRun)
+
+
 def check_273_preamble_unit_moves_nothing_and_reaches_the_sheet_header():
     """The passage above a document's first body heading used to be in no unit, so
     a rule about a document-level figure could never pair with it: the clinical
@@ -25072,6 +25106,8 @@ CHECKS = [
      check_272_every_convention_is_classified_by_the_planner),
     ("273 the preamble unit moves no existing id or span and reaches the sheet header",
      check_273_preamble_unit_moves_nothing_and_reaches_the_sheet_header),
+    ("274 every long phase reports a measured progress reading or refuses in words",
+     check_274_every_long_phase_reports_a_measured_reading_or_refuses),
 ]
 
 
