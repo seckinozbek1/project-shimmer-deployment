@@ -1,0 +1,74 @@
+test_a_completion_only_phase_says_so_instead_of_inventing_a_percentage (ordinary_final_progress_checks.ProgressReadings.test_a_completion_only_phase_says_so_instead_of_inventing_a_percentage) ... ok
+test_a_missing_current_phase_file_is_a_refusal_not_a_crash (ordinary_final_progress_checks.ProgressReadings.test_a_missing_current_phase_file_is_a_refusal_not_a_crash) ... ok
+test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero (ordinary_final_progress_checks.ProgressReadings.test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero) ... ok
+test_every_long_phase_of_the_controller_has_a_reader_or_is_named_completion_only (ordinary_final_progress_checks.ProgressReadings.test_every_long_phase_of_the_controller_has_a_reader_or_is_named_completion_only)
+A new long phase must not silently fall through to 'nothing to measure'. ... ok
+test_every_reader_is_syntactically_whole (ordinary_final_progress_checks.ProgressReadings.test_every_reader_is_syntactically_whole)
+The scratchpad version once emitted an empty rate from a broken format string. ... ok
+test_seed_reading_refuses_when_the_bundle_declares_no_copy (ordinary_final_progress_checks.ProgressReadings.test_seed_reading_refuses_when_the_bundle_declares_no_copy) ... ok
+test_seed_reading_watches_the_partial_copy_on_the_declared_mount (ordinary_final_progress_checks.ProgressReadings.test_seed_reading_watches_the_partial_copy_on_the_declared_mount) ... ok
+test_the_reader_never_touches_the_provider_or_writes_to_the_instance (ordinary_final_progress_checks.ProgressReadings.test_the_reader_never_touches_the_provider_or_writes_to_the_instance)
+Read the CODE, not the prose: a docstring may name what the tool refuses to do. ... ok
+test_upload_reading_at_completion_reports_the_whole_archive_and_no_remaining_time (ordinary_final_progress_checks.ProgressReadings.test_upload_reading_at_completion_reports_the_whole_archive_and_no_remaining_time) ... ok
+test_upload_reading_reproduces_the_partial_file_on_the_instance (ordinary_final_progress_checks.ProgressReadings.test_upload_reading_reproduces_the_partial_file_on_the_instance) ... ok
+test_wheel_reading_counts_installed_entries_and_names_what_the_total_is (ordinary_final_progress_checks.ProgressReadings.test_wheel_reading_counts_installed_entries_and_names_what_the_total_is) ... ok
+test_workload_reading_falls_back_to_calls_before_the_counter_exists (ordinary_final_progress_checks.ProgressReadings.test_workload_reading_falls_back_to_calls_before_the_counter_exists) ... ok
+test_workload_reading_uses_the_runs_own_agent_counter_when_it_has_written_one (ordinary_final_progress_checks.ProgressReadings.test_workload_reading_uses_the_runs_own_agent_counter_when_it_has_written_one) ... ok
+test_workload_says_nothing_is_measurable_before_the_first_record (ordinary_final_progress_checks.ProgressReadings.test_workload_says_nothing_is_measurable_before_the_first_record) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.100s
+
+OK
+test_upload_reading_reproduces_the_partial_file_on_the_instance (ordinary_final_progress_checks.ProgressReadings.test_upload_reading_reproduces_the_partial_file_on_the_instance) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+OK
+test_upload_reading_reproduces_the_partial_file_on_the_instance (ordinary_final_progress_checks.ProgressReadings.test_upload_reading_reproduces_the_partial_file_on_the_instance) ... FAIL
+
+======================================================================
+FAIL: test_upload_reading_reproduces_the_partial_file_on_the_instance (ordinary_final_progress_checks.ProgressReadings.test_upload_reading_reproduces_the_partial_file_on_the_instance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_progress_checks.py", line 64, in test_upload_reading_reproduces_the_partial_file_on_the_instance
+    self.assertIn('MB/s', line)
+AssertionError: 'MB/s' not found in 'assets_transfer progress: 6.29 of 13.15 GB (47.8%) measured, 17.8 min elapsed, , ~0.0 min remaining'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+FAILED (failures=1)
+test_upload_reading_reproduces_the_partial_file_on_the_instance (ordinary_final_progress_checks.ProgressReadings.test_upload_reading_reproduces_the_partial_file_on_the_instance) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+OK
+test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero (ordinary_final_progress_checks.ProgressReadings.test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+OK
+test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero (ordinary_final_progress_checks.ProgressReadings.test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero) ... FAIL
+
+======================================================================
+FAIL: test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero (ordinary_final_progress_checks.ProgressReadings.test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\secki\local\shimmer-deployment\tools\ordinary_final_progress_checks.py", line 122, in test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero
+    self.assertIn('not measurable', line, phase)
+AssertionError: 'not measurable' not found in 'assets_transfer progress: 0.00 of 13.15 GB (0.0%) measured, 0.0 min elapsed, 0.0 MB/s' : assets_transfer
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=1)
+test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero (ordinary_final_progress_checks.ProgressReadings.test_an_unanswered_observation_is_reported_as_unreadable_not_as_zero) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+OK

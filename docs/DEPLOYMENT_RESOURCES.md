@@ -8,7 +8,14 @@ the receipts prove the inventory is empty afterwards.
 This project owns exactly one standing billable resource, recorded below. It was created by the
 operator by hand, because no tool here can create one (see "How it was created").
 
-## The ordinary final asset copy: `shimmer-filesystem` (EXISTS)
+## The ordinary final asset copy: `shimmer-filesystem` (EXISTS, SEEDED)
+
+**Seeded 2026-09-19 by run v12.** The probe found it mounted and empty (`MISSING`, not
+`UNREACHABLE`), the run took the upload fallback as designed, archive integrity passed, and
+the copy was written in 31.9 s at about 412 MB/s and verified with `mv -n` and `test -f`.
+The filesystem now holds `assets-8f0cbd8155874fab9f2183c590b0d942973a4267b7dba35c04f01fce05a91df6.tar`.
+The next run in `us-east-1` that declares it is the first that can find `MATCH` and skip the
+37-minute upload; this machine cannot read the filesystem's state, so that run is the check.
 
 **What it is.** One persistent filesystem in `us-east-1` holding the sealed ordinary final asset
 archive, so a run attaches and hashes it instead of uploading 13.15 GB. The upload is 36.9 to

@@ -130,6 +130,9 @@ prompts/*
 docs/fix/*
 docs/audit/*
 docs/DELTA_*.md
+# The standing open-items record is read at the start of every pass, so it is tracked
+# by name rather than by a force-add that a later session might not repeat.
+!docs/fix/OPEN_ITEMS.md
 !docs/fix/PRODUCTIZATION_FIX_REPORT.md
 !docs/fix/STEP_1_REPORT.md
 !docs/fix/STEP_2_REPORT.md
