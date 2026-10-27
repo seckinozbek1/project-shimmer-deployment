@@ -10,7 +10,10 @@ Steps, each checked:
 3. The reaper, run before the deadline, leaves the instance alone.
 4. The reaper, run after the deadline, terminates it and appends exactly one ledger line.
 5. An instance without the loop prefix is never touched.
-6. Once spend reaches the hard stop, a loop instance inside its deadline is terminated.
+6. The hard stop is the ledger's own (D-S9): a spend past an earlier 49 USD stop but below
+   the latest line's 69 USD leaves the instance alone; once spend reaches 69 it is
+   terminated.
+8. With no budget line at all, every loop instance is terminated.
 7. A provider error that carries a key-shaped string never reaches the reaper's output.
 """
 import json
@@ -29,6 +32,12 @@ FAKE_KEY = 'PROOFONLY0a1b2c3d4e5f6a7b8c9d0e1f'
 
 def iso(moment):
     return moment.isoformat()
+
+
+def budget_line(event, budget, moment):
+    """A budget line of the private ledger's shape; the reaper reads its stop from it."""
+    return {'event': event, 'time_utc': iso(moment), 'loop_start_utc': iso(moment), 'budget_usd': budget,
+            'storage_usd_per_day': 0.0}
 
 
 def fake_controller(work):
@@ -82,7 +91,8 @@ def main(work):
     (work / 'mock_state.json').write_text(json.dumps({'instances': [
         {'instance_id': 'b' * 32, 'name': 'someone-else-instance', 'status': 'active',
          'type': 'gpu_1x_a10', 'region': 'us-east-1'}]}, indent=1), encoding='utf-8')
-    (work / 'ledger.jsonl').write_text('', encoding='utf-8')
+    (work / 'ledger.jsonl').write_text(json.dumps(budget_line('budget_open', 70.0, datetime.now(timezone.utc)))
+                                       + '\n', encoding='utf-8')
 
     flags = 0x00000008 | 0x00000200 if os.name == 'nt' else 0  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
     proc = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--fake-controller', str(work)],
@@ -96,7 +106,7 @@ def main(work):
     results['1_detached_controller_started'] = controller['pid'] == proc.pid
     results['1_keep_awake_held'] = controller['keep_awake_held']
     ledger_rows = [json.loads(l) for l in (work / 'ledger.jsonl').read_text(encoding='utf-8').splitlines() if l]
-    results['1_intent_written_before_launch'] = ledger_rows[0]['event'] == 'launch_intent'
+    results['1_intent_written_before_launch'] = ledger_rows[1]['event'] == 'launch_intent'
 
     os.kill(proc.pid, signal.SIGTERM)
     time.sleep(1.5)
@@ -126,6 +136,8 @@ def main(work):
     (hard / 'mock_state.json').write_text(json.dumps({'instances': [
         {'instance_id': 'c' * 32, 'name': 'shimmer-loop-proof-0002', 'status': 'active'}]}), encoding='utf-8')
     (hard / 'ledger.jsonl').write_text('\n'.join(json.dumps(r) for r in [
+        budget_line('budget_open', 50.0, now - timedelta(hours=50)),
+        dict(budget_line('budget_change', 70.0, now - timedelta(hours=45)), hard_stop_usd=69.0),
         {'event': 'launch', 'instance_id': 'd' * 32, 'instance_name': 'shimmer-loop-old',
          'price_usd_per_hour': 1.29, 'launch_requested_utc': iso(now - timedelta(hours=40))},
         {'event': 'termination', 'instance_id': 'd' * 32, 'instance_name': 'shimmer-loop-old', 'actual_cost': 49.5},
@@ -134,7 +146,28 @@ def main(work):
     ]) + '\n', encoding='utf-8')
     code, out = run_reaper(hard, now)
     state = json.loads((hard / 'mock_state.json').read_text(encoding='utf-8'))
+    results['6_old_49_stop_no_longer_applies'] = (code == 0 and state['instances'][0]['status'] == 'active'
+                                                  and '"hard_stop_usd": 69.0' in out)
+    with open(hard / 'ledger.jsonl', 'a', encoding='utf-8') as handle:
+        for row in ({'event': 'launch', 'instance_id': 'e' * 32, 'instance_name': 'shimmer-loop-old2',
+                     'price_usd_per_hour': 1.29, 'launch_requested_utc': iso(now - timedelta(hours=30))},
+                    {'event': 'termination', 'instance_id': 'e' * 32, 'instance_name': 'shimmer-loop-old2',
+                     'actual_cost': 19.6}):
+            handle.write(json.dumps(row) + '\n')
+    code, out = run_reaper(hard, now)
+    state = json.loads((hard / 'mock_state.json').read_text(encoding='utf-8'))
     results['6_hard_stop_terminates'] = state['instances'][0]['status'] == 'terminated' and 'hard_stop_spend_reached' in out
+
+    bare = work / 'bare'
+    bare.mkdir()
+    (bare / 'mock_state.json').write_text(json.dumps({'instances': [
+        {'instance_id': 'f' * 32, 'name': 'shimmer-loop-proof-0003', 'status': 'active'}]}), encoding='utf-8')
+    (bare / 'ledger.jsonl').write_text(json.dumps(
+        {'event': 'launch', 'instance_id': 'f' * 32, 'instance_name': 'shimmer-loop-proof-0003', 'price_usd_per_hour': 1.29,
+         'launch_requested_utc': iso(now), 'deadline_utc': iso(now + timedelta(hours=1))}) + '\n', encoding='utf-8')
+    code, out = run_reaper(bare, now)
+    state = json.loads((bare / 'mock_state.json').read_text(encoding='utf-8'))
+    results['8_no_budget_line_terminates'] = state['instances'][0]['status'] == 'terminated' and 'no_budget_recorded' in out
 
     leak = work / 'leak'
     leak.mkdir()

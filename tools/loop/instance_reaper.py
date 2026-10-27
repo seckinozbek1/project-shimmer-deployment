@@ -9,7 +9,11 @@ What it does on every run:
    never launch anything).
 3. Terminates every instance whose name starts with ``shimmer-loop-`` that is past its
    recorded deadline, or that has no recorded deadline, and every loop instance once
-   total loop spend reaches the hard stop (49 USD).
+   total loop spend reaches the hard stop. The budget and the hard stop are read from the
+   ledger's latest ``budget_open`` or ``budget_change`` line (``budget_figures``), never
+   from a number in this file: the hard stop is that line's ``hard_stop_usd``, else its
+   ``budget_usd`` less the one-dollar margin. With no budget line at all, no loop launch
+   is allowed (the budget guard refuses one), so every loop instance found is terminated.
 4. Appends one ledger line per termination and writes ``reaper_status.json``. A line it
    writes carries only declared ledger fields (``tools/loop_budget_guard.LEDGER_FIELDS``,
    which declares its ``by`` and ``reason``).
@@ -28,7 +32,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PREFIX = 'shimmer-loop-'
-HARD_STOP_USD = 49.0
+# The margin between the budget and the hard stop when a budget line names no hard stop
+# (IV.3's one dollar). The budget itself is never a code constant.
+MARGIN_USD = 1.0
+BUDGET_EVENTS = ('budget_open', 'budget_change')
 PRIVATE_LEDGER = ROOT / 'docs' / 'loop' / 'private' / 'budget_ledger.jsonl'
 R_LEDGER = Path.home() / 'local' / 'shimmer-roles' / '_handoff' / 'R_ledger.jsonl'
 STATUS = ROOT / 'docs' / 'loop' / 'private' / 'reaper_status.json'
@@ -128,6 +135,30 @@ def ledger_view(rows, now):
     return by_name, closed, spend
 
 
+def budget_figures(rows):
+    """(budget_usd, hard_stop_usd) from the latest budget line, or (None, None).
+
+    Lines are ordered by their own ``time_utc`` (read order breaks a tie). A line with no
+    readable time, or whose figures are not finite positive numbers with the stop at or
+    below the budget, is skipped."""
+    timed = []
+    for index, row in enumerate(rows):
+        if row.get('event') not in BUDGET_EVENTS:
+            continue
+        try:
+            budget = float(row['budget_usd'])
+            stop = float(row['hard_stop_usd']) if row.get('hard_stop_usd') is not None else budget - MARGIN_USD
+            moment = parse_time(row['time_utc'])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if math.isfinite(budget) and math.isfinite(stop) and 0 < stop <= budget:
+            timed.append((moment, index, budget, stop))
+    if timed:
+        latest = max(timed, key=lambda item: (item[0], item[1]))
+        return latest[2], latest[3]
+    return None, None
+
+
 def accrued(rec, until):
     start = rec.get('launch_requested_utc') or rec.get('time_utc')
     price = rec.get('price_usd_per_hour')
@@ -137,13 +168,14 @@ def accrued(rec, until):
     return float(price) * minutes / 60
 
 
-def reap(provider, ledger_paths, append_path, now=None, hard_stop=HARD_STOP_USD):
+def reap(provider, ledger_paths, append_path, now=None):
     """One reaper pass. Returns a status dict with no key material."""
     now = now or utc_now()
     rows = []
     for path in ledger_paths:
         rows.extend(read_ledger(path))
     by_name, closed, spend = ledger_view(rows, now)
+    budget, hard_stop = budget_figures(rows)
     listed = provider.request('instances')['data']
     running = [item for item in listed
                if str(item.get('name') or '').startswith(PREFIX)
@@ -152,7 +184,9 @@ def reap(provider, ledger_paths, append_path, now=None, hard_stop=HARD_STOP_USD)
     for item in running:
         name = item['name']
         rec = by_name.get(name)
-        if spend >= hard_stop:
+        if hard_stop is None:
+            reason = 'no_budget_recorded'
+        elif spend >= hard_stop:
             reason = 'hard_stop_spend_reached'
         elif rec is None or not rec.get('deadline_utc'):
             reason = 'no_recorded_deadline'
@@ -175,7 +209,7 @@ def reap(provider, ledger_paths, append_path, now=None, hard_stop=HARD_STOP_USD)
         terminated.append({'instance_name': name, 'reason': reason})
     return {'last_run_utc': now.isoformat(), 'listed': len(listed),
             'loop_running': len(running), 'terminated': terminated,
-            'total_spend_usd': round(spend, 4), 'hard_stop_usd': hard_stop, 'error': None}
+            'total_spend_usd': round(spend, 4), 'budget_usd': budget, 'hard_stop_usd': hard_stop, 'error': None}
 
 
 class MockProvider:

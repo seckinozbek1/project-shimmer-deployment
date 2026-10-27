@@ -56,6 +56,8 @@ DISTRO = 'Ubuntu'
 # of its own beside each rehearsal bundle (never the loop's ledger).
 REHEARSAL_FORECAST_MINUTES = 60
 REHEARSAL_PURPOSE = 'rehearsal'
+# The budget the rehearsal's own ledger opens with; the guard reads it from that ledger.
+REHEARSAL_BUDGET_USD = 70.0
 
 
 def rehearsal_name():
@@ -69,7 +71,7 @@ def rehearsal_budget():
     reference = A10_TYPE['metadata']['hourly_rate']
     candidates = guard.instance_candidates([A10_TYPE], reference)
     forecast = guard.forecast_usd(REHEARSAL_FORECAST_MINUTES, candidates[0]['max_hourly_rate'])
-    cap = guard.per_run_cap(forecast, 0.0, 0.0, 0.0)
+    cap = guard.per_run_cap(forecast, 0.0, 0.0, 0.0, REHEARSAL_BUDGET_USD)
     return dict(instance_candidates=candidates, a10_reference_rate=reference, region=guard.PREFERRED_REGION,
                 max_hourly_rate=candidates[0]['max_hourly_rate'], forecast_minutes=REHEARSAL_FORECAST_MINUTES,
                 forecast_usd=forecast, soft_budget_usd=forecast, hard_ceiling_usd=cap, per_run_cap_usd=cap,
@@ -81,7 +83,7 @@ def rehearsal_plan(base):
     ledger = Path(base) / 'rehearsal_ledger.jsonl'
     ledger.unlink(missing_ok=True)
     start = guard.utc(time.time())
-    ledger.write_text(json.dumps(dict(event='budget_open', time_utc=start, loop_start_utc=start, budget_usd=guard.BUDGET_USD,
+    ledger.write_text(json.dumps(dict(event='budget_open', time_utc=start, loop_start_utc=start, budget_usd=REHEARSAL_BUDGET_USD,
                                       storage_usd_per_day=0.0,
                                       a10_reference_price_usd_per_hour=A10_TYPE['metadata']['hourly_rate']),
                                  sort_keys=True) + '\n', encoding='utf8')
