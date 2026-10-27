@@ -14,7 +14,7 @@ rather than found. A thing earns a place here by having been SEEN and PASSED OVE
 
 ---
 
-## 1. The preamble unit adds two fields read from prose that no rule names
+## 1. The preamble unit adds two fields read from prose that no rule names (issue #1)
 
 **What it is.** `pairing_map.split_units` makes a preamble unit of the text above a
 document's first body heading. On the clinical sheet that unit carries the fields `http` and
@@ -38,7 +38,7 @@ fixture-only measurement; it needs no run.
 
 ---
 
-## 2. Every run makes one uncomputable PRACTICE_AUDITOR call on the sheet header
+## 2. Every run makes one uncomputable PRACTICE_AUDITOR call on the sheet header (issue #2)
 
 **What it is.** The sheet header pairs with CONV-L03, whose `absence_path` is `judged`, so
 every run spends exactly one model call asking a narrow question about a unit where Python
@@ -60,7 +60,7 @@ on a preamble unit produces anything usable across corpora. Neither is started.
 
 ---
 
-## 3. Check 256 failed once and has never reproduced
+## 3. Check 256 failed once and has never reproduced (issue #3)
 
 **What it is.** Gate check 256 failed in one session and passed on every run before and since.
 The cause was never found. Nothing watches for its return: if it fails again in six months, it
@@ -79,7 +79,7 @@ records its inputs on every run, so the next failure arrives with its own eviden
 
 ---
 
-## 4. The filesystem must be deleted by hand, and the procedure is recorded but untested
+## 4. The filesystem must be deleted by hand, and the procedure is recorded but untested (issue #4)
 
 **What it is.** `shimmer-filesystem` bills $4.00 a month for as long as it exists. The
 provider adapter admits no filesystem endpoint, so nothing in this repository can delete it,
@@ -102,7 +102,7 @@ with its own confirmation. Neither is proposed here.
 
 ---
 
-## 5. Rehearsal per-polarity directories survive between runs and read as complete
+## 5. Rehearsal per-polarity directories survive between runs and read as complete (issue #5)
 
 **What it is.** `tools/ordinary_final_rehearsal.py` writes each polarity into its own
 directory under `.tmp/rehearsal`. Those directories are not cleared at the start of a run, so
@@ -123,7 +123,7 @@ because the change touches the rehearsal while the rehearsal was the thing being
 
 ---
 
-## 6. The label reader and the comma: measured, refused, and contained
+## 6. The label reader and the comma: measured, refused, and contained (issue #6)
 
 **What it is.** The clinical sheet's per-laboratory result counts are written with a comma
 inside the label. The structural label reader does not admit a comma there, so the labels do
@@ -152,7 +152,7 @@ file, and a rule-shaped bullet in an operating contract does not read as an open
 
 ---
 
-## 7. Gate check 252 fails on the Dockerfile's own text (found at loop S0, 2026-10-27)
+## 7. Gate check 252 fails on the Dockerfile's own text (found at loop S0, 2026-10-27) (issue #7)
 
 **What it is.** Check 252 requires the exact Dockerfile line `RUN python scripts/ship_gate.py`.
 `Dockerfile:153` reads `RUN /opt/shimmer-runtime/bin/python scripts/ship_gate.py`, so the check
@@ -179,7 +179,7 @@ item numbers do not shift.
 
 ---
 
-## 9. The final-integration side gate rewrites a tracked file (found at loop S0)
+## 9. The final-integration side gate rewrites a tracked file (found at loop S0) (issue #8)
 
 **What it is.** `scripts/final_integration_no_generation_gate.py:32` writes
 `docs/fix/final_model_integration/no_generation_tests.log`, which is tracked. Running the side
@@ -196,7 +196,7 @@ tracked log kept as the historical record it is.
 
 ---
 
-## 10. A docstring cites the wrong gate check for LAW-III (found at loop S1)
+## 10. A docstring cites the wrong gate check for LAW-III (found at loop S1) (issue #9)
 
 **What it is.** The docstring of `_withheld_audit_agents` in `scripts/pipeline.py` (around line
 1440 at the loop's start) says LAW-III enforcement is held by check 148. Check 148 is "tolerant
@@ -212,7 +212,7 @@ open-item sweep (S6).
 
 ---
 
-## 11. Exit 9 (an unratified INST_FINDER switch) shows as "failed" in the server (found at loop S1)
+## 11. Exit 9 (an unratified INST_FINDER switch) shows as "failed" in the server (found at loop S1) (issue #10)
 
 **What it is.** The pipeline refuses a run with `SHIMMER_INST_FINDER=off` and no ratified
 amendment with exit code 9. The server's exit-status map in `scripts/server.py` has no entry for
@@ -245,7 +245,7 @@ report template, both in S2c.
 
 ---
 
-## 13. Two narrow gaps in the staged-archive guard (found at loop S1)
+## 13. Two narrow gaps in the staged-archive guard (found at loop S1) (issue #11)
 
 **What it is.** `scripts/guard_secrets.py --staged` reads staged tar and zip archives and refuses
 one with a seal manifest or saved model reply inside. Two cases are not covered: bytes after a
@@ -267,14 +267,14 @@ open-item sweep.
 
 - **Closed.** Both halves landed in S2c (plan revision R11): `tools/prepare_ordinary_final_run.py` refuses to seal an unratified `SHIMMER_INST_FINDER=off`, using the pipeline's own ratification test, and the run report written by `tools/analyze_ordinary_final_run.py` states the setting. Proofs in `tools/ordinary_final_controller_checks.py` (`test_unratified_inst_finder_off_refuses_to_seal`, `test_report_states_every_11_12_field`). The entry above is kept as written.
 
-## 18. Em and en dashes remain in 32 files under scripts/, tools/ and config/ (found at loop S2)
+## 18. Em and en dashes remain in 32 files under scripts/, tools/ and config/ (found at loop S2) (issue #12)
 
 - **What it is.** The repository's hard rule is no em dashes anywhere. S2 removed them from every file it changed that reaches a reader (`amendment_render.py`, `summary_generators.py`, `audit_synthesizer.py`, two catalog keys). 32 files under `scripts/`, `tools/` and `config/` still hold em or en dashes (for example `scripts/preflight.py`, `scripts/snapshot_manager.py`, `scripts/agent_wrapper.py`, `scripts/sensitivity_layer/rules.py`), and `config/constitution.json` holds 16.
 - **Evidence.** `git grep -c` for U+2014 and U+2013 over `scripts tools config` at `loop/s02`.
 - **Why it was left.** None of these files is changed by S2 (P16). `config/constitution.json` is append-only and its existing entries are never edited (H9), so its dashes stay. One catalog key in `scripts/ui/localization_catalog.js` keeps a dash because it must match an agent description in `config/agent_registry.json` word for word.
 - **What would settle it.** An S6 sweep over the other files (each reader-facing string checked against its catalog row), and a registry edit with its catalog key together.
 
-## 19. Three reader-check items left after S2's last round (found at loop S2)
+## 19. Three reader-check items left after S2's last round (found at loop S2) (issue #13)
 
 - **What it is.** (1) The run summary's absence-quote prediction section is developer telemetry in reader-facing text ("**PASS**", "the forecast of fourteen claims", untranslated in Turkish runs). (2) The deliverable `reviewed_document.md` is a per-agent technical record, not the reviewed document; only its heading was retitled. (3) The document summary prints Python's stored figures ("61.0") rather than the figures as the source writes them.
 - **Evidence.** `docs/loop/private` reader checks rounds 1 and 2 (RC17, RD10, RD18); `scripts/absence_prediction.py`; check 253 asserts "**PASS**" and "14 judged and 7 computed"; `run_context.DELIVERABLE_FILENAMES`.
@@ -292,14 +292,14 @@ open-item sweep.
 - **Item 18.** `scripts/docx_builder.py` was changed in S2 too; its two em dashes (a docstring and a comment) were removed in S2 checker round 2, so it no longer holds one.
 - **Item 19 (1) and (3) closed.** The absence-quote section of the run summary now reads as plain sentences in both languages, with check 253's two phrases kept; the document summary prints figures as the unit writes them, through the one formatter `finding_record.figure_text`. Part (2), renaming `reviewed_document.md`, stays open for S7.
 
-## 20. Frozen tuning launchers do not pass the loop budget guard (found at loop S2)
+## 20. Frozen tuning launchers do not pass the loop budget guard (found at loop S2) (issue #25)
 
 - **What it is.** Sixteen frozen tuning and evaluation launchers in `tools/` (`auditor_blocker_closure_cloud`, `auditor_canonical_cloud`, the three `auditor_classifier_lora*_cloud`, `auditor_feature_cloud`, `auditor_final_cloud`, `auditor_final_retry_cloud`, `auditor_linear_cloud`, `auditor_optuna_hpo_cloud`, `auditor_v2_cloud`, `checkpoint120_cloud`, `checkpoint120_v21_cloud`, `producer_v3_cloud`, `run_first_real_tuning`, `second_tuning_pilot`) can send a launch request through the provider adapter without the loop budget guard or the general path's refusals, and their instance names do not start with `shimmer-loop-`, so the reaper would not end one.
 - **Evidence.** S2 checker round 2 (adversarial item 15) and the controller fix lane's read-only inventory: every launch request goes through `LambdaExperiment.request` (`tools/lambda_experiment_provider.py`); the only common barrier is each launcher's refusal when its `docs/fix/<run>/LAUNCH_INTENT.json` exists (all exist and are tracked); most also require HEAD to equal an old commit (for example `tools/auditor_final_cloud.py` around lines 40 to 42); `auditor_blocker_closure_cloud`, `auditor_final_retry_cloud` and `run_first_real_tuning` have no HEAD check (the last checks only its marker and two hashes; its frozen source commit is only written into its manifest).
 - **Why it was left.** They are frozen tools, bound to past runs; S2c item 16 keeps frozen tools as they are, and changing what a frozen record would do is not the loop's to decide (P9 reason a: needs an operator decision). The loop never runs them.
 - **What would settle it.** An operator decision either to retire them (an archive folder outside `tools/`, keeping the records), or to route every remaining launcher through the loop guard.
 
-## 21. An in-range value under a range the rule states costs a model call (found at loop S2)
+## 21. An in-range value under a range the rule states costs a model call (found at loop S2) (issue #26)
 
 - **What it is.** For a range stated in the rule itself, a value inside the range yields no agreeing check (`scripts/paired_review.py`, around lines 791 to 792, `continue`), so the planner marks the pair uncomputable and spends a judging call on a value Python already found in range. A range read from a reference table does give an agreeing check (the comment around lines 620 to 627 covers only that case).
 - **Evidence.** S2 reader tie-break on the mocked run from `45aaaea`: a unit reading 12 units under a rule stating 10 to 60 units was sent to the model, and the deliverables said Python could compute nothing (that sentence was reworded in S2, D-037). Check 278's proofs expect two judging calls on the clean mocked sheet, where every value is in range.
