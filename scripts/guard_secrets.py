@@ -5,8 +5,14 @@ Exits 0 if clean, 1 if any potential secret is detected.
 Run from project root:
 
     py -3.9 scripts/guard_secrets.py
+
+With ``--staged`` it instead checks the paths staged for the next commit
+(``git diff --cached --name-only``, which also lists force-added paths) and
+refuses any path that must never be committed: a seal manifest under
+``seals/`` (Annex B.3 of the 2026-10-27 loop). It acts only when it is run.
 """
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -162,7 +168,49 @@ def scan_line(line: str):
     return findings
 
 
+# Staged paths that are never committed, as plain path prefixes (no regex: a
+# module-level alternation of lowercase words would need gate check 242's list).
+# A prefix matches at the repository root only.
+REFUSED_STAGED_PREFIXES = ("seals/",)
+
+
+def refused_staged_paths(names):
+    """Return the staged names that must never be committed.
+
+    A pure function over git's own name list, so it can be tested without git.
+    Names are compared with forward slashes, case as git reports them.
+    """
+    refused = []
+    for name in names:
+        normal = name.replace("\\", "/")
+        if any(normal.startswith(prefix) for prefix in REFUSED_STAGED_PREFIXES):
+            refused.append(name)
+    return refused
+
+
+def staged_names(root=None):
+    """The paths staged for the next commit, force-added ones included."""
+    result = subprocess.run(["git", "diff", "--cached", "--name-only", "-z"],
+                            cwd=str(root or ROOT), capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError("git diff --cached failed")
+    return [name for name in result.stdout.split("\0") if name]
+
+
+def main_staged(root=None):
+    refused = refused_staged_paths(staged_names(root))
+    for name in refused:
+        print(f"BLOCKED {name}: this path must never be committed")
+    if refused:
+        print(f"\nguard_secrets --staged: {len(refused)} refused path(s) staged.")
+        return 1
+    print("guard_secrets --staged: no refused path staged")
+    return 0
+
+
 def main():
+    if "--staged" in sys.argv[1:]:
+        sys.exit(main_staged())
     blocked = 0
     scanned = 0
     for path in ROOT.rglob("*"):
