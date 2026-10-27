@@ -74,6 +74,20 @@ FREIGHT_SHARES = [2, 3, 4, 5, 6]
 RATE_RESULT_LABEL = "Duty due"     # the line a rate error is planted on (read by the gate check)
 
 
+def _every_line_banded(units, _m, label, reference):
+    """The declaration lines (the units that state a goods class) whose goods class has no
+    row in the reference file's price band table."""
+    keys = {r[0] for r in tr.plain_table(reference)[1] if r}
+    return {u["id"] for u in units
+            if label("Goods class") in u["lines"] and u["lines"][label("Goods class")] not in keys}
+
+
+# How each sentence of the reference file is read (bundle.check_reference_texts).
+REFERENCE_READINGS = (
+    (r"These price bands apply to every declaration line of the shipment\.", _every_line_banded),
+)
+
+
 def _price(rng, lo, hi):
     span = hi - lo
     return round(rng.uniform(lo + 0.25 * span, hi - 0.25 * span) * 4) / 4.0

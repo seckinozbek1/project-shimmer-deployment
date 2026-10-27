@@ -58,6 +58,37 @@ RULE_STATEMENTS = {
 }
 
 
+def _lists_both_periods(units, _m, label, _reference):
+    """The sections whose table has no current-period or no prior-period column."""
+    return {u["id"] for u in units
+            if label("Current period") not in u["header"] or label("Prior period") not in u["header"]}
+
+
+def _period_change(units, _m, label, _reference):
+    """The sections whose stated period change is not the movement of their stated current
+    total against their stated prior total, in percent, to one decimal as written."""
+    out = set()
+    for u in units:
+        stated = u["lines"].get(label("Period change"))
+        if stated is None:
+            continue
+        tc = tr.leading_figure(u["lines"].get(label("Total current period")))
+        tp = tr.leading_figure(u["lines"].get(label("Total prior period")))
+        z = tr.leading_figure(stated)
+        if None in (tc, tp, z) or not tp or abs(round((tc - tp) * 100.0 / tp, 1) - z) > 0.051:
+            out.add(u["id"])
+    return out
+
+
+# How each sentence of the reference file is read (bundle.check_reference_texts).
+REFERENCE_READINGS = (
+    (r"Each section of the statement lists its line items for the current and the prior period\.",
+     _lists_both_periods),
+    (r"The period change is the movement of the current total against the prior total, in percent\.",
+     _period_change),
+)
+
+
 def _section(rng, items, zone):
     """Rows and totals whose period change falls in the zone; tries until it does."""
     for _ in range(2000):
