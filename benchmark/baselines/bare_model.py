@@ -15,7 +15,10 @@ line ``None.`` when it has none. It writes:
                                run stops if a record cannot be written
   <out>/labels/<item_id>.json  one typed label per item; a reply that does not parse,
                                or whose label is not in the list, is ABSTAIN
-  <out>/b1_summary.json        counts and the parse rate per benchmark
+  <out>/b1_summary.json        counts and the parse rate per benchmark, the number of
+                               replies whose length reached the output allowance
+                               (possibly truncated), and whether the parse rate is
+                               below the development floor of 95 percent
 
 Before the first item the model is loaded and verified ONCE: its model id, checkpoint
 digest and decoding are compared with the values passed in (from VERSIONS.md; section 4),
@@ -70,6 +73,9 @@ PIPELINE_SOURCE = SCRIPTS / "pipeline.py"
 _FENCE = re.compile(r"^\s*```[^`\s]*\s*$")
 _ESCAPE = re.compile(r'\\(["\\/bfnrtu])|\\')
 UNCERTAIN_LABEL = "uncertain"
+# Section 5.4 (D-039 item 11): a benchmark whose development parse rate is below this floor
+# has its prompt and parser revised before the freeze.
+PARSE_RATE_FLOOR = 0.95
 
 
 class SetupError(Exception):
@@ -101,6 +107,10 @@ def label_names(bench):
 def render_user(spec, bench_key, *, document, conventions, item, reference=""):
     return b1_prompt.render_user(spec, bench_key, document=document, conventions=conventions,
                                  item=item, reference=reference)
+
+
+def render_system(spec, bench_key):
+    return b1_prompt.render_system(spec, bench_key)
 
 
 # ---------------------------------------------------------------------------
@@ -279,11 +289,13 @@ class LocalBackend:
             out = mdl.generate(**inputs, max_new_tokens=max_new_tokens,
                                **self.reader["decoding"]["kwargs"])
         start = int(inputs["input_ids"].shape[1])
+        generated = int(out[0].shape[0]) - start
         text = tok.decode(out[0][start:], skip_special_tokens=True)
         del inputs, out
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        return {"text": text, "payload": prompt, "form": "rendered_prompt"}
+        return {"text": text, "payload": prompt, "form": "rendered_prompt",
+                "output_tokens": generated}
 
 
 # ---------------------------------------------------------------------------
@@ -322,11 +334,20 @@ def verify_identity(loaded, expected):
         raise SetupError("loaded model differs from the recorded values on: " + ", ".join(wrong))
 
 
+def length_reached(result, allowance):
+    """True when the reply's length reached the output allowance (it may be cut short),
+    False when it did not, None when the backend does not report its output length."""
+    tokens = result.get("output_tokens") if isinstance(result, dict) else None
+    if type(tokens) is not int:
+        return None
+    return tokens >= int(allowance)
+
+
 def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMPT_PATH,
         run_id=None, expected=None, development=False, sensitive=False):
     """Run B1 on one bundle. `backend` needs prepare() -> {model_id, digest, decoding},
     count_prompt(system, user), max_context() and generate(system, user, max_new_tokens)
-    -> {text, payload, form}; None builds the LocalBackend (a real model load).
+    -> {text, payload, form, output_tokens}; None builds the LocalBackend (a real model load).
     `expected` holds the recorded model_id, digest and decoding; it may be omitted only
     with development=True, which is recorded."""
     out = Path(out)
@@ -355,9 +376,10 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
     users = {i["item_id"]: render_user(spec, str(i["benchmark"]).lower(), document=doc["text"],
                                        conventions=conventions, item=i, reference=reference)
              for i in items}
+    systems = {i["item_id"]: render_system(spec, str(i["benchmark"]).lower()) for i in items}
     limit = backend.max_context()
     over = [i for i, user in users.items()
-            if backend.count_prompt(spec["system"], user) + reader["max_new_tokens"] > limit]
+            if backend.count_prompt(systems[i], user) + reader["max_new_tokens"] > limit]
     if over:
         raise SetupError("prompt plus output allowance exceeds the model's context for %d item(s): %s"
                          % (len(over), ", ".join(over[:5])))
@@ -369,7 +391,8 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
         bench = spec["benchmarks"][bench_key]
         error, result = "", {}
         try:
-            result = backend.generate(spec["system"], users[item["item_id"]], reader["max_new_tokens"]) or {}
+            result = backend.generate(systems[item["item_id"]], users[item["item_id"]],
+                                      reader["max_new_tokens"]) or {}
         except SetupError:
             raise
         except Exception as exc:  # a generation error is a failed call, and still a record
@@ -386,6 +409,7 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
         parsed = parse_reply(reply, bench, item["item_id"]) if not error else dict(
             parse_reply(None, bench), failure="backend_failure")
         undecided = bool(parsed["parsed"]) and _norm_label(parsed["label"]) == _norm_label(bench["undecided"])
+        reached = None if error else length_reached(result, reader["max_new_tokens"])
         texts = ({"evidence": parsed["evidence"], "reason": parsed["reason"]} if not sensitive else
                  {"evidence": None, "reason": None, "evidence_hashed": _hashed(parsed["evidence"]),
                   "reason_hashed": _hashed(parsed["reason"])})
@@ -394,13 +418,19 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
             "item_id": item["item_id"], "document_id": doc["id"], "rule_id": item["rule_id"],
             "benchmark": bench_key, "label": parsed["label"], "abstain": not parsed["parsed"],
             "undecided": undecided, "parse_failure": parsed["failure"],
-            "parse_repaired": parsed["repaired"]}, **texts, **{
+            "parse_repaired": parsed["repaired"], "output_tokens": result.get("output_tokens")
+            if type(result.get("output_tokens")) is int else None,
+            "length_reached_allowance": reached}, **texts, **{
             "reply_item_id": parsed["reply_item_id"], "item_id_matches": parsed["item_id_matches"],
             "call_id": call_id, "backend_ok": not error, "reading_agent": reader["agent"],
             "model_id": reader["model_id"], "model_mode": reader["model_mode"]}))
         row = summary.setdefault(bench_key, {"items": 0, "parsed": 0, "undecided": 0,
-                                             "abstain": 0, "backend_failures": 0, "repaired": 0})
+                                             "abstain": 0, "backend_failures": 0, "repaired": 0,
+                                             "length_reached_allowance": 0,
+                                             "length_not_reported": 0})
         row["items"] += 1
+        row["length_reached_allowance"] += int(reached is True)
+        row["length_not_reported"] += int(reached is None)
         row["parsed"] += int(parsed["parsed"])
         row["undecided"] += int(undecided)
         row["abstain"] += int(not parsed["parsed"])
@@ -410,6 +440,8 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
         raise SetupError("reply records (%d) do not match items (%d)" % (len(set(written)), len(items)))
     for row in summary.values():
         row["parse_rate"] = row["parsed"] / row["items"]
+        row["parse_rate_floor"] = PARSE_RATE_FLOOR
+        row["below_parse_rate_floor"] = row["parse_rate"] < PARSE_RATE_FLOOR
     result = {"baseline": BASELINE_TEXT, "arm": ARM, "finished_at": _now(), "run_id": context.run_id,
               "bundle": Path(bundle).name, "document_id": doc["id"],
               "prompt": {"source": spec.get("source"), "status": spec.get("status")},

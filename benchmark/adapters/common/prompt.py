@@ -8,6 +8,8 @@ these functions. Standard library only.
                            without its leading `#`s, and its text on one line
   reference_from_bundle    the bundle's grounding files (the earlier version included),
                            each as its file name and its text; empty when there are none
+  render_system            the system turn of one benchmark (the undecided invitation only
+                           where its rule template asks for UNCERTAIN)
   render_user              the user turn, each slot filled once
 """
 from __future__ import annotations
@@ -26,9 +28,11 @@ _RULE_ID = re.compile(r"CONV-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*", re.IGNORECASE)
 
 def load_prompt(path=None) -> dict:
     spec = json.loads(Path(path or DEFAULT_PROMPT).read_text(encoding="utf-8"))
-    for key in ("system", "user_template", "convention_line", "benchmarks"):
+    for key in ("system", "undecided_invitation", "user_template", "convention_line", "benchmarks"):
         if key not in spec:
             raise ValueError("b1_prompt.json lacks " + key)
+    if INVITATION_SLOT not in spec["system"]:
+        raise ValueError("the system turn has no %s slot" % INVITATION_SLOT)
     return spec
 
 
@@ -81,6 +85,18 @@ def conventions_block(spec, conventions) -> str:
                      for heading, text in conventions)
 
 
+INVITATION_SLOT = "{undecided_invitation}"
+
+
+def render_system(spec, bench_key) -> str:
+    """The system turn for one benchmark (revision 3): the undecided invitation is a
+    sentence of its own only where the benchmark's rule template asks for UNCERTAIN
+    (`invite_undecided`); elsewhere the slot is empty and the label stays listed."""
+    bench = spec["benchmarks"][bench_key]
+    sentence = (" " + spec["undecided_invitation"]) if bench.get("invite_undecided") else ""
+    return spec["system"].replace(INVITATION_SLOT, sentence)
+
+
 def render_user(spec, bench_key, *, document, conventions, item, reference="") -> str:
     bench = spec["benchmarks"][bench_key]
     values = {
@@ -100,6 +116,6 @@ def render_user(spec, bench_key, *, document, conventions, item, reference="") -
 def overhead(spec, items, conventions, count_prompt, reference="") -> int:
     """The token count of the prompt with an empty document, the largest over `items`;
     count_prompt(system, user) counts the whole prompt as the model sees it."""
-    return max(count_prompt(spec["system"], render_user(
+    return max(count_prompt(render_system(spec, str(i["benchmark"]).lower()), render_user(
         spec, str(i["benchmark"]).lower(), document="", conventions=conventions, item=i,
         reference=reference)) for i in items)

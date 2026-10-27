@@ -1,9 +1,9 @@
 {
-  "note": "Canned replies for the mocked B1 backend (scripts/baseline_checks.py). One per item of items_q4.json for document dq4; item b1 belongs to another document and must never be asked.",
+  "note": "Canned replies for the mocked B1 backend (scripts/baseline_checks.py). One per item of items_q4.json for document dq4; item b1 belongs to another document and must never be asked. output_tokens, where given, is the reply length the mocked backend reports (a2 reaches the 64-token allowance); otherwise one token per word.",
   "replies": {
     "a1": {"reply": "The quantity is 4 box at 12 credit/box, so the line total should be 48 credit.\nThe filing states 52 credit.\n```json\n{\"item_id\": \"a1\", \"evidence\": \"Line total: 52 credit\", \"reason\": \"The stated total is not the product {quantity x price}.\", \"label\": \"Refuted\"}\n```",
            "expect": {"label": "refuted", "abstain": false, "undecided": false}},
-    "a2": {"reply": "I could not settle this item from the passages.",
+    "a2": {"reply": "I could not settle this item from the passages.", "output_tokens": 64,
            "expect": {"label": null, "abstain": true, "undecided": false}},
     "a3": {"reply": "{\"draft\": true}\nThe caption is silent on totals.\n{\"item_id\": \"zz\", \"evidence\": \"\", \"reason\": \"Nothing settles it.\", \"label\": \"not_enough_info (undecided)\"}",
            "expect": {"label": "not enough info", "abstain": false, "undecided": true}},
