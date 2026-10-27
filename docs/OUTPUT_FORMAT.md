@@ -387,7 +387,7 @@ One JSON object per document:
 | `no_rule` | No paired rule can be cited for the comparison. |
 | `orphan` | In `prior_orphans` only: the earlier heading has no counterpart. |
 
-An answer key's `expected_refusals` (input format, section 9) names the kind it expects. A run older than the S3 fix lane has no `reason_kind`.
+An answer key's `expected_refusals` (input format, section 9) names the kind it expects: one of the first three kinds above, or `null` where Python is expected to refuse nothing. A run older than the S3 fix lane has no `reason_kind`. The refusal kind `unit_mismatch` is not the planted relation `unit_mismatch` of the input format's section 9: one is a `reason_kind` here, the other a key's `claim.relation`, and they are never compared.
 
 ### 7.2 Amendments
 

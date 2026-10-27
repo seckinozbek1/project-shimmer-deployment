@@ -56,6 +56,7 @@ def _listing(built):
                "long_range": bool(opts.get("long_range"))}
         if family == "f4":
             row["rounds"] = opts.get("rounds", 2)
+        row["attempt"] = json.loads(test[roles["base"]][bundle.KEY_FILE])["generator"].get("attempt", 0)
         row["bundles"] = {role: roles[role] for role in sorted(roles)}
         rows.append(row)
     return {"format": gen.bundle.tr.FORMAT_VERSION, "input_format_sha256": input_format_sha256(),

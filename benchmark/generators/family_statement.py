@@ -47,6 +47,15 @@ RULES = [
     md.Rule("CONV-FD", "Preparer", "Every statement section must state who prepared it.",
             scope=["line item"], requires=["prepared by"]),
 ]
+# What each keyed kind's rule text must state (bundle.check_rule_statements reads the
+# rendered conventions): the clause a unit of that kind breaks as written.
+RULE_STATEMENTS = {
+    "current_total_mismatch": ("must equal the sum of the current period column",),
+    "prior_total_mismatch": ("must equal the sum of the prior period column",),
+    "change_above": ("must lie between -8% and 8%",),
+    "change_below": ("must lie between -8% and 8%",),
+    "missing_required_field": ("must state who prepared it",),
+}
 
 
 def _section(rng, items, zone):
@@ -83,8 +92,8 @@ def _unit(name, items, cur, prior, tc, tp, z, preparer, grouped=False):
                           ("lines", lines)])
 
 
-def build(seed):
-    rng = wl.make_rng(FAMILY, seed)
+def build(seed, attempt=0):
+    rng = wl.make_rng(FAMILY, seed, attempt)
     names = rng.sample(sorted(SECTIONS), rng.randint(14, 16))
     n = len(names)
     slots = list(range(n))
