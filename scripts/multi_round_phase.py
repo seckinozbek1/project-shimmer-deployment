@@ -42,7 +42,10 @@ The case path returns before ordinary ontology/end-work capture.
 S2b item 3: before any model call, Python reviews the declared rounds in order
 (multi_round_rounds.review_rounds); a later round re-runs only the units that
 changed, and the reuse is recorded in audit/round_reuse.json. The registry is the
-operator's conventions, compiled from input/conventions when not passed.
+operator's conventions, compiled from input/conventions when not passed. The round
+findings are posted on the run bus (backend paired, model python) under
+multi_round_rounds.FINDINGS_AGENT, one envelope per round document; nothing in the
+case phase reads them, and the model calls below do not depend on them.
 """
     mr.require(record["run_id"] == ctx.run_id, "run_identity")
     try:
@@ -58,6 +61,14 @@ operator's conventions, compiled from input/conventions when not passed.
                                                       convention_registry=convention_registry)
             record["round_review"] = {"record": "audit/" + multi_round_rounds.RECORD_NAME,
                                       "availability": review.get("availability")}
+            # S2 checker H4: the computed round findings reach the run bus. A bus
+            # that refuses is recorded and does not mark the review itself failed.
+            try:
+                record["round_review"]["bus_envelopes"] = multi_round_rounds.post_findings(
+                    review, wrapper_factory(multi_round_rounds.FINDINGS_AGENT))
+            except Exception as exc:
+                record["round_review"]["bus"] = {"availability": "failed",
+                                                 "error_type": type(exc).__name__}
         except Exception as exc:  # the computed review never takes the case phase down
             record["round_review"] = {"availability": "failed", "error_type": type(exc).__name__}
         mr.write_record(ctx, record)

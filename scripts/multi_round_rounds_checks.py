@@ -8,7 +8,11 @@ and the reply-record writer all execute. The case material is a declared two-rou
 fixture written here; its replies are authored, labelled as such, and measure
 nothing about model quality.
 
-Each item is proven by neutralise, fail, restore, pass (effect_proof).
+Each item is proven by neutralise, fail, restore, pass (effect_proof). The S2
+checker round 1 items add: each signature input (a rule, a vocabulary label, a
+known unit) proven to matter by removing it from SIGNATURE_INPUTS; reused model
+asks rebased; the production convention-parse path run once on a temporary
+project root; the round findings on the bus; a renamed figure with no unit.
 """
 from __future__ import annotations
 
@@ -105,13 +109,35 @@ def mocked_multi_round_run(out_root, *, beta_r2=70, plan_spy=None):
 
 # ---------- observations ------------------------------------------------------------------
 
+def _round_posts(run_dir):
+    """S2 checker H4: the round findings as the run bus carries them."""
+    import finding_record
+    bus = Path(run_dir) / "logs" / "agent_bus.jsonl"
+    out = []
+    lines = bus.read_text(encoding="utf-8").splitlines() if bus.is_file() else []
+    for line in lines:
+        msg = json.loads(line)
+        body = msg.get("body") or {}
+        if msg.get("channel") != "multi_round" or body.get("event") != "AGENT_OUTPUT":
+            continue
+        payload = body.get("payload") or {}
+        if payload.get("agent") != rounds.FINDINGS_AGENT:
+            continue  # the case phase's own PROCESSOR and VERIFIER outputs
+        items = payload.get("items") or []
+        out.append((payload.get("doc_id"), finding_record.written_by(body.get("backend"), body.get("model")),
+                    sorted((i.get("unit_id"), i.get("relation")) for i in items),
+                    len({i.get("item_id") for i in items}) == len(items)))
+    return out
+
+
 def observe_reuse():
     spy = []
     with tempfile.TemporaryDirectory(prefix="shimmer_rounds_reuse_") as td:
         run = mocked_multi_round_run(td, plan_spy=spy)
         saved = rounds.read(run["run_dir"]) or {}
         out = {"code": run["code"], "outcome": run["record"].get("outcome"),
-               "round_review": run["record"].get("round_review"), "plan_units": spy, "rounds": []}
+               "round_review": run["record"].get("round_review"), "plan_units": spy, "rounds": [],
+               "bus": _round_posts(run["run_dir"])}
         for rnd in saved.get("rounds", []):
             doc = rnd["documents"][0]
             out["rounds"].append({
@@ -136,8 +162,113 @@ def check_reuse():
           and r2["findings"] == [("u01-entry-alpha", "above_band", 61.0), ("u02-entry-beta", "above_band", 70.0),
                                  ("u03-entry-gamma", "below_band", 5.0)]
           and r1["findings"] == [("u01-entry-alpha", "above_band", 61.0), ("u03-entry-gamma", "below_band", 5.0)]
-          and o["round_review"] == {"record": "audit/round_reuse.json", "availability": "recorded"})
-    return ("PASS" if ok else "FAIL", "only the changed unit's pairs recomputed in round 2")
+          and o["round_review"] == {"record": "audit/round_reuse.json", "availability": "recorded",
+                                    "bus_envelopes": 2}
+          # H4: every round document's findings are on the bus, written by Python,
+          # each with its own item id so no round supersedes another.
+          and o["bus"] == [("case_r1", "python", [("u01-entry-alpha", "above_band"),
+                                                  ("u03-entry-gamma", "below_band")], True),
+                           ("case_r2", "python", [("u01-entry-alpha", "above_band"),
+                                                  ("u02-entry-beta", "above_band"),
+                                                  ("u03-entry-gamma", "below_band")], True)])
+    return ("PASS" if ok else "FAIL", "only the changed unit's pairs recomputed in round 2; findings on the bus")
+
+
+# ---------- S2 checker A10: what the signature covers, the parse path, needs_model --------
+
+RULE_CHANGED = dict(RULES[0], rule="A reading must lie between 10 units and 65 units.")
+SCOPED_RULE = {"id": "CONV-002", "category": "conv-m02", "severity": "required",
+               "rule": "[scope: reading] Each entry must say how the reading was taken."}
+
+
+def signature_text(*, extra="", gamma_unit="units", lead=""):
+    return (lead + "## Entry Alpha\n\nReading: 61 units\n\n"
+            "## Entry Beta\n\nReading: 40 units\n%s\n"
+            "## Entry Gamma\n\nReading: 5 %s\n" % (extra, gamma_unit))
+
+
+def _second_round(text_r2, *, rules_r1=None, rules_r2=None):
+    """Round 1 on the base text, round 2 on `text_r2`, one shared reuse table."""
+    earlier = {}
+    rules_r1 = rules_r1 or RULES
+    rounds.review_document({"id": "d1", "text": signature_text()}, rules_r1, earlier, round_id="r1")
+    rows, _, _ = rounds.review_document({"id": "d2", "text": text_r2}, rules_r2 or rules_r1, earlier,
+                                        round_id="r2")
+    return rows
+
+
+def observe_signature():
+    """Round 2 status of Entry Alpha, whose own text never changes."""
+    def alpha(rows):
+        return next(r["status"] for r in rows if r["unit_id"].endswith("entry-alpha"))
+    return {"unchanged": alpha(_second_round(signature_text())),
+            "rule": alpha(_second_round(signature_text(), rules_r2=[RULE_CHANGED])),
+            "vocabulary": alpha(_second_round(signature_text(extra="Batch note: 3 units\n"))),
+            "known_units": alpha(_second_round(signature_text(gamma_unit="kg")))}
+
+
+def check_signature():
+    o = observe_signature()
+    ok = o == {"unchanged": "reused", "rule": "computed", "vocabulary": "computed", "known_units": "computed"}
+    return ("PASS" if ok else "FAIL", "a changed rule, vocabulary label or known unit recomputes an unchanged unit")
+
+
+def observe_moved_asks():
+    """A unit inserted before the others moves every id; the reused rows' model asks follow."""
+    rows = _second_round(signature_text(lead="## Entry Zero\n\nReading: 30 units\n\n"),
+                         rules_r1=RULES + [SCOPED_RULE])
+    return [(r["unit_id"], r["status"], sorted({n["unit_id"] for n in r.get("needs_model") or []}))
+            for r in rows]
+
+
+def check_moved_asks():
+    o = observe_moved_asks()
+    reused = [r for r in o if r[1] == "reused"]
+    ok = len(reused) == 3 and all(ids == [unit_id] for unit_id, _, ids in reused)
+    return ("PASS" if ok else "FAIL", "a reused unit's model asks name this round's unit id")
+
+
+class _Ctx:
+    """The two things review_rounds reads from a run context."""
+
+    def __init__(self, root):
+        self.project_root = root
+
+    def audit_dir(self):
+        return Path(self.project_root) / "audit"
+
+
+CONVENTIONS_MD = ("# Review conventions\n\n## CONV-M01 Reading range [required]\n\n"
+                  "A reading must lie between 10 units and 60 units.\n")
+
+
+def observe_parse():
+    """The production path: no registry passed, so the round review compiles the
+    operator's conventions from input/conventions under the run's project root."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_rounds_parse_") as td:
+        conv = Path(td) / "input" / "conventions"
+        conv.mkdir(parents=True)
+        (conv / "review_conventions.md").write_text(CONVENTIONS_MD, encoding="utf-8")
+        docs = documents()
+        rec = rounds.review_rounds(_Ctx(td), manifest(docs), docs)
+        return {"availability": rec.get("availability"),
+                "rounds": [([u["status"] for u in r["documents"][0]["units"]],
+                            sorted((f["unit_id"], f["relation"]) for f in r["documents"][0]["findings"]))
+                           for r in rec.get("rounds", [])]}
+
+
+def check_parse():
+    o = observe_parse()
+    ok = (o["availability"] == "recorded"
+          and o["rounds"] == [(["computed"] * 3, [("u01-entry-alpha", "above_band"), ("u03-entry-gamma", "below_band")]),
+                              (["reused", "computed", "reused"],
+                               [("u01-entry-alpha", "above_band"), ("u02-entry-beta", "above_band"),
+                                ("u03-entry-gamma", "below_band")])])
+    return ("PASS" if ok else "FAIL", "with no registry passed, the operator's conventions are compiled and used")
+
+
+def _without(name):
+    return patch.object(rounds, "SIGNATURE_INPUTS", tuple(n for n in rounds.SIGNATURE_INPUTS if n != name))
 
 
 def observe_replies():
@@ -171,9 +302,13 @@ def check_replies():
 V1 = "## Section One\n\nAlpha count: 42 units\nBeta level: 17 units\nGamma total: 9 units\n"
 
 
-def _absent(v2_lines):
+# S2 checker A9: the same section with figures that carry no unit of measure.
+V1_NO_UNIT = "## Section One\n\nAlpha count: 42\nBeta level: 17\nGamma total: 9\n"
+
+
+def _absent(v2_lines, v1=V1):
     v2 = "## Section One\n\n" + "".join(line + "\n" for line in v2_lines)
-    index = pr.prior_index(V1, lambda i: "REF-0001", known_units=set())
+    index = pr.prior_index(v1, lambda i: "REF-0001", known_units=set())
     units = pm.split_units(v2, document_id="v2")
     present = set()
     for unit in units:
@@ -194,6 +329,8 @@ def observe_rename():
         "renamed_moved": _absent(["Alpha count: 42 units", "Beta score: %s units" % moved, "Gamma total: 9 units"]),
         "withdrawn": _absent(["Alpha count: 42 units", "Beta level: 17 units"]),
         "withdrawn_other_measure": _absent(["Alpha count: 42 units", "Beta level: 17 units", "Delta share: 3 kg"]),
+        "no_unit_renamed_moved": _absent(["Alpha count: 42", "Beta score: %s" % moved, "Gamma total: 9"], V1_NO_UNIT),
+        "no_unit_withdrawn": _absent(["Alpha count: 42", "Beta level: 17"], V1_NO_UNIT),
     }
 
 
@@ -203,12 +340,19 @@ def check_rename():
     moved_minted, moved_refused = o["renamed_moved"]
     gone_minted, gone_refused = o["withdrawn"]
     other_minted, other_refused = o["withdrawn_other_measure"]
+    bare_minted, bare_refused = o["no_unit_renamed_moved"]
+    bare_gone_minted, bare_gone_refused = o["no_unit_withdrawn"]
     ok = ("beta level" not in kept_minted and kept_refused.get("beta level") == "possible rename, not a confirmed withdrawal"
           and "beta level" not in moved_minted
           and moved_refused.get("beta level") == "possible rename with a moved value, not a confirmed withdrawal"
           and gone_minted == {"gamma total": "absent_since_prior"} and not gone_refused
-          and other_minted == {"gamma total": "absent_since_prior"} and not other_refused)
-    return ("PASS" if ok else "FAIL", "renamed-and-moved refused; true withdrawal minted")
+          and other_minted == {"gamma total": "absent_since_prior"} and not other_refused
+          # A9: with no unit on either figure, the unit cannot tell them apart, so
+          # the possible rename is refused under its own reason, never minted.
+          and "beta level" not in bare_minted
+          and bare_refused.get("beta level") == "possible rename of a figure with no unit, not a confirmed withdrawal"
+          and bare_gone_minted == {"gamma total": "absent_since_prior"} and not bare_gone_refused)
+    return ("PASS" if ok else "FAIL", "renamed-and-moved refused, with or without a unit; true withdrawal minted")
 
 
 # Check 261 strips exactly these five statements of main and these two parser flags,
@@ -283,6 +427,29 @@ class MultiRoundRoundsChecks(unittest.TestCase):
         self.prove("s2b3_reuse", observe_reuse, check_reuse,
                    lambda: patch.object(rounds, "unit_signature", lambda *a, **k: uuid.uuid4().hex))
 
+    def test_h4_round_findings_reach_the_bus(self):
+        self.prove("h4_round_bus", observe_reuse, check_reuse,
+                   lambda: patch.object(rounds, "post_findings", lambda *a, **k: 2))
+
+    def test_a10_a_changed_rule_recomputes(self):
+        self.prove("a10_rule", observe_signature, check_signature, lambda: _without("rules"))
+
+    def test_a10_a_changed_vocabulary_recomputes(self):
+        self.prove("a10_vocabulary", observe_signature, check_signature, lambda: _without("vocabulary"))
+
+    def test_a10_a_changed_known_unit_recomputes(self):
+        self.prove("a10_known_units", observe_signature, check_signature, lambda: _without("known_units"))
+
+    def test_a10_reused_model_asks_are_rebased(self):
+        self.prove("a10_asks", observe_moved_asks, check_moved_asks,
+                   lambda: patch.object(rounds, "_rebase_asks", lambda asks, unit_id: asks))
+
+    def test_a10_the_convention_parse_path_runs(self):
+        import convention_parser
+        self.prove("a10_parse", observe_parse, check_parse,
+                   lambda: patch.object(convention_parser, "parse_conventions",
+                                        lambda root: convention_parser.ConventionRegistry()))
+
     def test_s2b4_every_multi_round_reply_saved_once(self):
         self.prove("s2b4_replies", observe_replies, check_replies,
                    lambda: patch.object(reply_records, "write", lambda *a, **k: None))
@@ -290,6 +457,13 @@ class MultiRoundRoundsChecks(unittest.TestCase):
     def test_s2b5_renamed_and_moved_is_not_withdrawn(self):
         self.prove("s2b5_rename", observe_rename, check_rename,
                    lambda: patch.object(pr, "possible_successor", lambda *a, **k: None))
+
+    def test_a9_renamed_figure_with_no_unit_is_not_withdrawn(self):
+        # Neutralised: the successor test requires a unit, as the value test does.
+        real = pr.possible_successor
+        self.prove("a9_no_unit_rename", observe_rename, check_rename,
+                   lambda: patch.object(pr, "possible_successor",
+                                        lambda unit, *a, **k: real(unit, *a, **k) if unit else None))
 
     def test_s2b6_check_261_statements_left_as_they_are(self):
         self.prove("s2b6_check261", observe_check261_structure, check_check261_structure, _EditedMain)
@@ -304,9 +478,12 @@ def check():
                     for case, err in list(result.failures) + list(result.errors)]
         return "FAIL", "; ".join(problems[:4])
     return "PASS", ("%d S2b proofs, each neutralise, fail, restore, pass: a later round recomputes only the "
-                    "changed unit's pairs and records the reuse; every multi-round reply saved once as "
-                    "advisory_not_record; a renamed term whose value moved is refused, not withdrawn; "
-                    "check 261's stripped statements unchanged" % result.testsRun)
+                    "changed unit's pairs and records the reuse; a changed rule, vocabulary label or known "
+                    "unit recomputes an unchanged unit; reused model asks carry the new unit id; the "
+                    "convention-parse path runs; the round findings reach the bus; every multi-round reply "
+                    "saved once as advisory_not_record; a renamed term whose value moved, or that has no "
+                    "unit, is refused, not withdrawn; check 261's stripped statements unchanged"
+                    % result.testsRun)
 
 
 if __name__ == "__main__":

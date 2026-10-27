@@ -21,18 +21,19 @@ def _now(): return datetime.now(timezone.utc).isoformat()
 # S2a, item 2: the sentences that name who produced a document's findings are
 # generated from the findings themselves (each stamped `written_by` from the
 # envelope it was posted under), never from a fixed list of agent names. Both
-# sentences have a Turkish rendering in scripts/ui/localization_catalog.js.
+# sentences have a rendering in the second output language (tr) in
+# scripts/ui/localization_catalog.js.
 NO_MODEL_AGENT = "no model agent"
 # Reader check RD1/RD4: a model's note beside Python's figures names the model the
-# record says wrote it; with none recorded, it says so.
-NOTE_MODEL_NOT_RECORDED = "not recorded"
+# record says wrote it; with none recorded, it says so
+# (finding_record.NOTE_MODEL_NOT_RECORDED).
 NO_NOTE_MODEL = "none"
 RULES_APPLIED_HEADING = "## Rules applied"
 RULE_TEXT_LABEL = "rule text: "
 
 
 def model_note_line(text, model=None) -> str:
-    return (localization.text("A model's note (model: ") + str(model or localization.text(NOTE_MODEL_NOT_RECORDED))
+    return (localization.text("A model's note (model: ") + str(model or localization.text(finding_record.NOTE_MODEL_NOT_RECORDED))
             + localization.text("), not checked by Python: ") + '"' + str(text) + '"')
 
 
@@ -48,7 +49,7 @@ def findings_provenance(findings) -> dict:
             "model": len(model),
             "model_agents": sorted({str(f.get("agent") or "?") for f in model}),
             "notes": len(notes),
-            "note_models": sorted({str(f.get("explanation_model") or NOTE_MODEL_NOT_RECORDED) for f in notes})}
+            "note_models": sorted({str(f.get("explanation_model") or finding_record.NOTE_MODEL_NOT_RECORDED) for f in notes})}
 
 
 def _agents_text(provenance):
@@ -315,11 +316,15 @@ def render_operative_summary(
     # when there is a comparison to show, so every existing caller is byte-stable.
     has_prior = (prior_refusals or prior_orphans or any(
         f.get("relation") in finding_record.PRIOR_RELATIONS and f.get("provenance") == "computed"
+        and f.get("written_by") != finding_record.WRITTEN_BY_MODEL
         for f in findings))
     if has_prior:
+        # S2 checker A5: a model's band claim is listed (marked) under the model
+        # items, never here, where every line is Python's.
         outside = [f for f in findings
                    if f.get("relation") in finding_record.OUTSIDE_BAND_RELATIONS
-                   and str(f.get("record_verdict") or "").lower() == "irregular"]
+                   and str(f.get("record_verdict") or "").lower() == "irregular"
+                   and f.get("written_by") != finding_record.WRITTEN_BY_MODEL]
         lines.extend(finding_record.render_prior_comparison(
             findings, refusals=prior_refusals, orphans=prior_orphans, outside=outside,
             heading=localization.text('## Compared with the earlier version')))

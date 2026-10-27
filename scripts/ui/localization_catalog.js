@@ -1100,7 +1100,8 @@ var SHIMMER_TR = {
     "References": "Kaynaklar",
     "required": "Zorunlu",
     "recommended": "Önerilen",
-    "factual": "Olgusal"
+    "factual": "Olgusal",
+    "unspecified": "Belirtilmemiş"
   },
   "server has no token configured": "Sunucuda erişim belirteci yapılandırılmamış",
   "missing or malformed Authorization header": "Authorization başlığı eksik veya hatalı",
@@ -1166,6 +1167,10 @@ var SHIMMER_TR = {
       "translation": "{0!m} İşlem hattı {1} biriminin geçtiği bölümü kaynak dizininde bulamadı; bu nedenle değişiklik belge düzeyinde konumlandırıldı."
     },
     {
+      "pattern": "^([\\s\\S]+?)\\ Rule\\ ([\\s\\S]*?);\\ no\\ passage\\ of\\ this\\ unit\\ could\\ be\\ cited\\.$",
+      "translation": "{0!m} Kural {1!m}; bu birimin hiçbir bölümüne atıf yapılamadı."
+    },
+    {
       "pattern": "^([\\s\\S]+?)\\ Rule\\ ([\\s\\S]*?);\\ cited\\ passage\\ ([\\s\\S]*?)\\.$",
       "translation": "{0!m} Kural {1!m}; atıf yapılan bölüm {2}."
     },
@@ -1184,10 +1189,6 @@ var SHIMMER_TR = {
     {
       "pattern": "^([\\s\\S]+?)\\ Reported\\ by\\ the\\ agent\\ named\\ above,\\ not\\ computed\\ in\\ code\\ from\\ this\\ unit's\\ figures\\.$",
       "translation": "{0!m} Yukarıda adı geçen ajan tarafından bildirildi; bu birimin sayılarından kodla hesaplanmadı."
-    },
-    {
-      "pattern": "^([\\s\\S]+?) A\\ model's\\ note,\\ not\\ checked\\ by\\ Python:\\ ([\\s\\S]*)$",
-      "translation": "{0!m} Bir modelin notu (Python tarafından denetlenmedi): {1}"
     },
     {
       "pattern": "^([\\s\\S]+?)\\ Checked\\ in\\ code:\\ the\\ field\\ is\\ absent\\ from\\ this\\ unit's\\ text;\\ not\\ judged\\ by\\ a\\ model\\.\\ Grounded\\ in\\ ([\\s\\S]*?)\\ at\\ ([\\s\\S]*?)\\.$",
@@ -1901,7 +1902,6 @@ var SHIMMER_TR = {
   "## Written by a model: not checked by Python, not promoted": "## Bir model tarafından yazıldı: Python tarafından denetlenmedi, değişikliğe dönüştürülmedi",
   "The model wrote: ": "Modelin özgün ifadesi: ",
   "The unit it names does not state these figures.": "Adı geçen birim bu sayıları içermiyor.",
-  "A model's note, not checked by Python: ": "Bir modelin notu (Python tarafından denetlenmedi): ",
   "- findings computed by Python: ": "- Python tarafından hesaplanan bulgular: ",
   "- items written by a model (not checked by Python): ": "- bir model tarafından yazılan öğeler (Python tarafından denetlenmedi): ",
   "**Findings computed by Python:**": "**Python tarafından hesaplanan bulgular:**",
