@@ -114,7 +114,12 @@ generated from what actually ran, and Python findings and model items are counte
 separately. An amendment opens with one plain sentence naming the unit, the rule,
 both figures with their units and the relation, quotes the rule, and sits at the
 unit's own passage in the reference index; when Python cannot place the unit, the
-amendment says so and sits at document level.
+amendment says so and sits at document level. A sentence a judging model added to a
+Python finding is quoted as that model's note and names the model the call recorded
+("not recorded" when none is), and such notes are counted apart from both kinds of
+finding. A model's own item also says, in words, when it cites another unit's passage,
+when Python's pairing map found its rule does not apply to its unit, and when its unit
+does not state its figures.
 
 The console exposes findings, source excerpts, amendment refusals, contract
 violations, agent activity and completion evidence. An operator may withhold a

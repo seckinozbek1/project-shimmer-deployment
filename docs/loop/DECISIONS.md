@@ -168,3 +168,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Reader check RC11.** The lane kept "Hesaplanan değer" because a check asserts it; that check covers the "computed value" sentences, where the phrase is right. The two rows that render a stated figure ("the X is Y") now read "{X} değeri {Y}"; no check changed.
 - **Rules.** P1, P13, H9, H11, IV.7.
 - **Reverse.** Each can be revisited by a later entry; the pins can be re-amended.
+
+## D-023. S2 reader check round 3, and a correction to D-022
+
+- **When, stage.** 2026-10-27 11:22 +0300 (system clock), S2, merging the pipeline lane's round-3 fixes.
+- **Correction to D-022.** D-022 says the two Turkish rows for stated figures changed "no check". That was wrong: `scripts/localization_checks.py` (test `test_computed_amendment_comment_is_localized_without_master_change`) asserted the old phrase "Hesaplanan değer 3.5 t/ha" for exactly that row; the lead misread its own search. The assertion now requires the corrected rendering "'value' değeri 3.5 t/ha" (still the number and measure, now with the quoted field name). Not a weakening: the same four facts are asserted, and the old wording was the defect reader check RC11 named.
+- **Round 3 (the last, IV.4).** 18 items: 15 fixed with proofs in `honest_output_checks.py` (26 cases), RD3 a real defect (identical escalation copies counted as a recurring pattern and turned into a high-priority rule-book proposal). Not changed, with reasons: RD5 (`review_data.json` is the language-neutral master, byte-identical across languages by an existing test; the Turkish text is in `review_findings.md` and the docx comments); RD10 (the absence-prediction section's wording belongs to `absence_prediction.py` and is asserted by check 253; open item 19); the `reviewed_document.md` file name (renaming it changes `run_context.DELIVERABLE_FILENAMES`, routes and docs; open item 19). Residues: unit words in Turkish runs stay as the source writes them; the document summary prints stored figures ("61.0").
+- **Pins.** Four functions re-amended in both contracts (`_paired_convention_review`, `_render_per_agent_md`, `phase_6_synthesis`, `write_deliverables_run_summary`).
+- **Rules.** P1, P9, P10, H9, IV.4.
+- **Reverse.** Open item 19 can be taken up in S6 or S7.

@@ -262,11 +262,22 @@ those stamps (log event `findings_provenance`), Python findings and model items
 are counted separately, and relations only a model reported are listed apart from
 the relations Python computed. `audit_synthesis.md` counts audit-trail patterns
 and says they are not findings about the document under review; a DELTA proposal
-gives its reason as "N escalation messages on this topic". Deliverable headings
-use colons, not em dashes. The per-agent `reviewed_document.md` is titled as a
-technical record of raw agent output, not the reviewed document. The Turkish
-JSON-block renderer `run_options.review_markdown` was removed: the Turkish
-`review_findings.md` has the English layout.
+gives its reason as "N escalation messages on this topic". An escalation counts
+once per distinct topic and payload; one with no topic or no payload is reported
+apart ("not counted as a pattern") and never yields a pattern or a proposal.
+Deliverable headings use colons, not em dashes. The per-agent `reviewed_document.md`
+is titled as each agent's raw reply for the document (a technical record; the file
+name itself is unchanged) and ends with every registered agent and its recorded
+state and model calls; for Python's records it states the backend and model the
+bus post records and the models that wrote notes. The run summary adds INST_FINDER's
+recorded model calls. The Turkish JSON-block renderer `run_options.review_markdown`
+was removed: the Turkish `review_findings.md` has the English layout, titled
+"Flagged passages" when every entry is a flag with no proposed text, with an
+evidence line in words. The paired review's computed bus post and result carry
+`model: python` and `note_models` (the models whose sentences sit in the records as
+notes); each such record carries `explanation_model`, `explanation_backend` and
+`explanation_call_id`. The reference index's `cited_by` records the amendments and
+the grounding summary that cite each passage.
 
 **Amendment comments.** Each comment opens with one plain sentence naming the unit
 (with its heading), the rule, both figures with their units and the relation; a
