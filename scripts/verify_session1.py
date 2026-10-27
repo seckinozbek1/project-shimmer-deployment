@@ -24780,6 +24780,19 @@ def check_276_every_model_reply_is_saved_once_with_its_outcome():
     return check()
 
 
+def check_277_inst_finder_switch_needs_a_ratified_amendment():
+    """Loop of 2026-10-27, S1 Part 7: an operator setting SHIMMER_INST_FINDER (default
+    on) can switch the corpus-level agent INST_FINDER off. Switching an agent off
+    changes governed inter-agent structure, so the setting is honoured only under an
+    operator-approved constitution amendment naming INST_FINDER and SHIMMER_INST_FINDER;
+    without one the run refuses at start, never ignoring the setting silently. When off,
+    the agent stays in the corpus list and the registry, is recorded not_called, and
+    every corpus result carries the name of the agent actually called, with semantic
+    waves on and off."""
+    from inst_finder_switch_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25136,6 +25149,8 @@ CHECKS = [
      check_275_staged_seal_paths_are_refused),
     ("276 every model reply is saved once per call with its outcome",
      check_276_every_model_reply_is_saved_once_with_its_outcome),
+    ("277 the INST_FINDER switch is honoured only under a ratified amendment",
+     check_277_inst_finder_switch_needs_a_ratified_amendment),
 ]
 
 

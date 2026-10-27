@@ -136,8 +136,10 @@ retry. Draft's initial free-text call bypasses this envelope path.
 `audit/agent_activation.json` records eligibility, requested activation, actual
 dispatch attempt, reason, phase, trigger, repeat bound and outcome. A dispatch is
 not necessarily successful generation. `phase_not_reached` has unknown eligibility;
-`ineligible`, `eligible_inactive`, `activated_not_dispatched`, preparation failure,
-execution failure, completion, recovery and truncation must not be collapsed.
+`ineligible`, `eligible_inactive`, `activated_not_dispatched`, `switched_off` (an
+agent the operator switched off under a ratified amendment, for example INST_FINDER),
+preparation failure, execution failure, completion, recovery and truncation must not
+be collapsed.
 
 ## Outputs and operator surfaces
 
@@ -323,6 +325,7 @@ outside source; this table contains no credentials.
 | `SHIMMER_LOCAL_RUN_TIMEOUT_S` | `7200` | overrides `RUN_TIMEOUT_S` when `SHIMMER_BACKEND_PROFILE=local`. Local inference is far slower than cloud API calls; 2 hours is the default. `0` means unbounded |
 | `SHIMMER_BACKEND_PROFILE` | (unset) | `local` selects the local-only backend profile (Review uses local models with no provider API calls; Draft memo generation remains unsupported in Local). Unset defaults to Cloud; use the supported local/cloud profile values |
 | `SHIMMER_PROVIDER_TIMEOUT_S` | `600` | per-request wall-clock timeout (seconds) passed to the Anthropic and OpenAI clients; read by the pipeline subprocess, not the server process itself |
+| `SHIMMER_INST_FINDER` | (unset: on) | read by the pipeline subprocess, not the server process itself. `off` switches the corpus-level agent INST_FINDER off for the run, honoured only when `config/constitution.json` holds an operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER (draft: `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`); without one the run refuses to start (exit 9). Any other value, or none, keeps it on. Saved in `audit/agent_switches.json` and stated in `_run_summary.md`; applies to every test the same way |
 | `SHIMMER_MAX_UPLOAD_MB` | `25` | per-file upload size cap in megabytes for `/submit` |
 | `SHIMMER_MAX_UPLOAD_TOTAL_MB` | `200` | whole-submission upload size cap in megabytes |
 | `SHIMMER_MAX_UPLOAD_FILES` | `50` | max number of files accepted in one `/submit` |

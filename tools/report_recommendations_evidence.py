@@ -12,7 +12,11 @@ from run_projection import project, schedule, topology, costs
 
 CONSUMERS={
     "ARCHIVIST":("semantic","typed inventory","LEGAL_ANALYST and PRACTICE_AUDITOR"),
-    "INST_FINDER":("semantic audit obligation","typed institution records","audit bus only"),
+    # A run with the ratified SHIMMER_INST_FINDER=off setting queues no INST_FINDER
+    # task: switched off is a declared state (audit/agent_activation.json), so the
+    # replay simply has no row for it, never a missing or failed one.
+    "INST_FINDER":("semantic audit obligation","typed institution records",
+                   "audit bus only; not dispatched when switched off by the ratified SHIMMER_INST_FINDER setting"),
     "CITATION_RESOLVER":("semantic audit obligation","typed citation records","audit bus only"),
     "PROCESSOR":("bounded semantic extraction plus deterministic reconstruction","source spans and semantic fields","VERIFIER and FACT_CHECKER"),
     "SPEECH_ACT_TAGGER":("semantic","typed tags","audit bus and per-agent report"),
