@@ -39,7 +39,13 @@ COMPLETION_ONLY = ('archive_integrity', 'extract_payload', 'create_environment',
                    'watchdog_receipt_transfer', 'stop_workload', 'terminate_instance',
                    # The copy phases: the probe is one hash of a file already in place and the
                    # use is a local copy on the instance, both over in seconds with one answer.
-                   'asset_copy_probe', 'asset_copy_use')
+                   'asset_copy_probe', 'asset_copy_use',
+                   # A batch session's per-bundle steps (S2c item 11): moving the finished
+                   # bundle aside, sending the next bundle's sealed files, checking and
+                   # unpacking them, and collecting each bundle's evidence. Each is one
+                   # command with one answer; the long step is batch_workload, read below.
+                   'batch_park', 'batch_transfer', 'batch_integrity', 'batch_extract',
+                   'batch_pack_evidence', 'batch_evidence_hash', 'batch_evidence_download')
 SSH_OPTIONS = ['-o', 'IdentitiesOnly=yes', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=accept-new',
                '-o', 'ConnectTimeout=15']
 
@@ -151,8 +157,15 @@ def ordinary_workload(context):
             'nothing before its first model call, so there is nothing to measure yet' % (max(elapsed, 0) / 60))
 
 
+def batch_workload(context):
+    """A batch bundle's run: the same records in the same place (the finished bundle was moved
+    aside before this one started), so the same reading under this phase's name."""
+    return ordinary_workload(context).replace('ordinary_workload', 'batch_workload', 1)
+
+
 READERS = dict(assets_transfer=assets_transfer, asset_copy_seed=asset_copy_seed,
-               install_pinned_wheels=install_pinned_wheels, ordinary_workload=ordinary_workload)
+               install_pinned_wheels=install_pinned_wheels, ordinary_workload=ordinary_workload,
+               batch_workload=batch_workload)
 
 
 def digits(text):
