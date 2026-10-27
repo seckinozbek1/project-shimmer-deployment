@@ -22,8 +22,9 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              agreement's own span list, or merged parts under the cost fallback; the
              bands command gives every document's words, band and side with no build,
              and band totals for the holdout pool alone and the development side apart,
-             a FinDVer test filing testmini also holds removed (a mixed-side input);
-             listed demonstration documents are excluded
+             a FinDVer test filing testmini also holds removed (a mixed-side input),
+             ContraDoc's sides read from the frozen assignment alone (refused without
+             it, as a holdout build is); listed demonstration documents are excluded
   cli        the command line in a fresh `-I` interpreter from a copied tree (no
              repository on the path): a FinDVer build with every budget option, its own
              --reports option wired through, a table that already has a separator row
@@ -57,7 +58,8 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              figure-audit record is a figure-audit relation stamped python on every
              benchmark (band records decide their rule's item, a model-written record
              always decides, a computed blank-cell record on a CUAD-shaped bundle does
-             not); S-5 puts a refusal before an ok record; B3 is refused while the
+             not); S-5 puts a refusal before an ok record, and a failed run decides no
+             item by ok over refusal; B3 is refused while the
              typed-record key is unsettled; the catch layer is read from the
              WRITTEN-BY-A stamp alone, compared exactly
   metrics    each benchmark's metric on a tiny confusion example equals the hand
@@ -639,8 +641,14 @@ class BuildChecks(_Case):
         # holdout pool's alone, the development side's apart (S4 round 3, decision C).
         c = _common()
         contractnli = _adapter("contractnli")
+        assignment = self.root / "contradoc_split.json"
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(c["cli"].main(_adapter("contradoc"), [
+                "split", "--input", str(_source("contradoc")), "--out", str(assignment)]), 0)
         for name in NAMES:
             options = {"reports": _fixture("findver", "financial_reports")} if name == "findver" else {}
+            if name == "contradoc":
+                options = {"assignment": assignment}
             with mock.patch.object(contractnli, "FROZEN_DEV_SHA256",
                                    hashlib.sha256(_source("contractnli").read_bytes()).hexdigest()):
                 result = c["cli"].bands(_adapter(name), _source(name), **options)
@@ -660,7 +668,7 @@ class BuildChecks(_Case):
                 self.assertEqual(sum(b["items"] for b in result[key].values()),
                                  sum(1 for i in items if i["document_id"] in mine), name + key)
             self.assertEqual(result["input_sha256"], hashlib.sha256(_source(name).read_bytes()).hexdigest())
-        result = c["cli"].bands(_adapter("contradoc"), _source("contradoc"))
+        result = c["cli"].bands(_adapter("contradoc"), _source("contradoc"), assignment=assignment)
         self.assertEqual(result["documents_by_side"], {"development": 1, "holdout": 3})
         words = sorted(r["words"] for r in result["documents"]
                        if r["length_band"] == "A" and r["side"] == "holdout")
@@ -673,6 +681,41 @@ class BuildChecks(_Case):
         self.assertEqual(result["documents_by_side"], {"holdout": 2})
         with self.assertRaisesRegex(ValueError, "options this adapter does not take: testmini"):
             c["cli"].bands(_adapter("scitab"), _source("scitab"), testmini=_source("findver"))
+
+    def test_contradoc_bands_need_the_frozen_assignment(self):
+        # S4 tie-break item a (section 1 and 5.6): `bands` records each ContraDoc document's
+        # side as a build records it, from the frozen --assignment, and a ContraDoc input
+        # without it is refused, as a holdout build refuses it; the input is never regrouped.
+        # A sample holding only 102 keeps 102 in group 101 (its near-duplicate 101 is not
+        # in the sample), where regrouping the sample would make 102 its own group.
+        c = _common()
+        adapter = _adapter("contradoc")
+        records = _json(_source("contradoc"))
+        assignment = self.root / "assignment.json"
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(c["cli"].main(adapter, ["split", "--input", str(_source("contradoc")),
+                                                     "--out", str(assignment)]), 0)
+        sample = self.root / "sample.json"
+        sample.write_text(json.dumps({"neg": {"102": records["neg"]["102"]}}), encoding="utf-8")
+        budget = dict(max_context=5000, output_allowance=10, token_counter=WordCounter())
+        for source in (_source("contradoc"), sample):
+            with self.assertRaisesRegex(ValueError, "needs --assignment"):
+                _build("contradoc", self.root / "h", source, development=False, side="holdout", **budget)
+            with self.assertRaisesRegex(ValueError, "needs --assignment"):
+                c["cli"].bands(adapter, source)
+        result = c["cli"].bands(adapter, sample, assignment=assignment)
+        _build("contradoc", self.root / "b", sample, development=False, side="holdout",
+               assignment=assignment, **budget)
+        built = _json(self.root / "b" / "parts.json")["documents"]
+        self.assertEqual([(r["document_id"], r["side"]) for r in result["documents"]],
+                         [(d["document_id"], d["side"]) for d in built])
+        self.assertEqual(result["assignment_sha256"], hashlib.sha256(assignment.read_bytes()).hexdigest())
+        # through the command line: refused with exit code 4 and nothing written
+        out = self.root / "bands.json"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+            code = c["cli"].main(adapter, ["bands", "--input", str(sample), "--out", str(out)])
+        self.assertEqual((code, out.exists()), (4, False), err.getvalue())
+        self.assertIn("needs --assignment", err.getvalue())
 
     def test_bands_on_a_mixed_side_findver_input(self):
         # Decision C: one input holding a development filing, a holdout filing and a holdout
@@ -1225,6 +1268,24 @@ class MappingChecks(_Case):
             row = m.classify(spec, "CONV-X-1", {"failure": False, "records": [refusal, ok],
                                                  "pairing_refusals": []})
             self.assertTrue(row["ok_over_refusal"], name)
+            # S4 tie-break item b: a failed run decides nothing, so an ok record against a
+            # refusal in it is no item decided by ok over refusal; the item abstains
+            row = m.classify(spec, "CONV-X-1", {"failure": True, "records": [refusal, ok],
+                                                 "pairing_refusals": []})
+            self.assertEqual((row["class"], row["basis"], row["ok_over_refusal"]),
+                             ("ABSTAIN", "run_failure", False), name)
+        # through the label command: a failed run holding a refusal and an ok record for its
+        # item adds nothing to items_decided_by_ok_over_refusal
+        c = _common()
+        cases = _json(_fixture("contractnli", "mapping_cases.json"))
+        cases["runs"]["c-fail"]["review_data"]["findings"] = [
+            dict(refusal, source_rule_id="CONV-CNLI-NDA-1"), dict(ok, source_rule_id="CONV-CNLI-NDA-1")]
+        items, runs, _ = _materialise(cases, self.root / "failed")
+        primary = c["cli"].label(_adapter("contractnli"), items, "B2", runs)["primary"]
+        failed = next(r for r in primary["labels"] if r["item_id"] == "n-e")
+        self.assertEqual((failed["class"], failed["basis"]), ("ABSTAIN", "run_failure"))
+        self.assertEqual(primary["counts"]["items_decided_by_ok_over_refusal"], 1,
+                         "only n-c, in the completed run")
         # through the label command: an S-5 analysis beside the others; B0 and B1 unchanged
         c = _common()
         cases = _json(_fixture("contractnli", "mapping_cases.json"))
@@ -1543,18 +1604,24 @@ class CliChecks(_Case):
 
     def test_bands_and_split_from_a_copied_tree(self):
         fixtures = self.tree / "adapters" / "contradoc" / "fixtures"
+        code, _stdout, stderr = self._cli("contradoc", "split", "--input", fixtures / "synthetic_items.json",
+                                          "--out", self.root / "split.json")
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(len(_json(self.root / "split.json")["documents"]), 4)
+        self.assertNotIn(str(ROOT / "scripts"), stderr)
+        # ContraDoc's bands read the frozen split file alone; without it they are refused
+        code, _stdout, stderr = self._cli("contradoc", "bands", "--input", fixtures / "synthetic_items.json",
+                                          "--out", self.root / "refused.json")
+        self.assertEqual((code, "needs --assignment" in stderr), (4, True), stderr)
+        self.assertFalse((self.root / "refused.json").exists())
         code, stdout, stderr = self._cli("contradoc", "bands", "--input", fixtures / "synthetic_items.json",
+                                         "--assignment", self.root / "split.json",
                                          "--out", self.root / "bands.json")
         self.assertEqual(code, 0, stderr)
         printed = json.loads(stdout)
         self.assertEqual(sum(b["documents"] for key in ("holdout_pool_bands", "development_bands")
                              for b in printed[key].values()), 4)
         self.assertEqual(len(_json(self.root / "bands.json")["documents"]), 4)
-        code, _stdout, stderr = self._cli("contradoc", "split", "--input", fixtures / "synthetic_items.json",
-                                          "--out", self.root / "split.json")
-        self.assertEqual(code, 0, stderr)
-        self.assertEqual(len(_json(self.root / "split.json")["documents"]), 4)
-        self.assertNotIn(str(ROOT / "scripts"), stderr)
 
     def _budget(self):
         return ["--max-context", 5000, "--output-allowance", 10, "--token-counter", self.counter]
@@ -1771,7 +1838,8 @@ GROUPS = {
                            "span of its own span list or merged parts under the cost fallback; the "
                            "bands command matches a build, records sides and totals the holdout "
                            "pool apart from development (a mixed-side FinDVer input with its "
-                           "testmini overlap); demonstration documents are excluded"),
+                           "testmini overlap; ContraDoc refused without its frozen assignment); "
+                           "demonstration documents are excluded"),
     "cli": (CliChecks, "an isolated interpreter builds FinDVer from a copied tree with every budget "
                        "option and its own --reports, keeps a table's own separator row, records "
                        "the token counter's SHA-256, refuses another adapter's option, builds SciTab "
@@ -1793,7 +1861,7 @@ GROUPS = {
                                "label for every run-output case (completion record, supersession, "
                                "refusal, CUAD missing_field), for B2, B1 and B0 with S-1, S-2, "
                                "S-3 and S-5; a settled answer on any unit beats a refusal (S-5 "
-                               "the other way); one figure-audit definition for every benchmark "
+                               "the other way), never counted in a failed run; one figure-audit definition for every benchmark "
                                "(relation and python stamp; bands decide their rule, blank-cell, "
                                "sum and product records only in a one-rule bundle, model records "
                                "always); B3 and B4 refused while "

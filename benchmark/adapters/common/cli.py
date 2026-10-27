@@ -181,10 +181,11 @@ def bands(adapter, input_path, *, exclude=None, testmini=None, assignment=None,
     """Every document's words, length band and side by the one word rule (section 5.6,
     Words), over a whole input with no build: what role B stratifies the holdout sample by
     and writes S8's B_SIZES.json from (D-039 item 7). Each document carries its side as a
-    build would record it (the hash rule, ContraDoc's `--assignment` when given, FinDVer's
+    build would record it (the hash rule, ContraDoc's frozen `--assignment`, FinDVer's
     official split, ContractNLI's frozen file, checked as a build checks it); a FinDVer
-    holdout filing that `--testmini` also holds is `removed_overlap`, and a holdout input
-    of FinDVer needs `--testmini`. Per band, the documents, decisions (items) and median
+    holdout filing that `--testmini` also holds is `removed_overlap`, a holdout input of
+    FinDVer needs `--testmini`, and a ContraDoc input needs `--assignment`, as a holdout
+    build does (it is never regrouped from the input it is given). Per band, the documents, decisions (items) and median
     words are totalled for the holdout pool alone (`holdout_pool_bands`, what B_SIZES.json
     is written from) and for the development side apart (`development_bands`); a document
     on neither (an overlap, or a side no build could declare) is in neither total. No
@@ -193,7 +194,9 @@ def bands(adapter, input_path, *, exclude=None, testmini=None, assignment=None,
     overlap_of = getattr(adapter, "overlapping_documents", None)
     if testmini and overlap_of is None:
         raise ValueError("options this adapter does not take: testmini")
-    options = {"side": None, "development": True, "input_path": str(input_path),
+    # not a development build: ContraDoc reads its groups from the frozen --assignment
+    # alone and refuses without it, exactly as a holdout build does (section 1)
+    options = {"side": None, "development": False, "input_path": str(input_path),
                "assignment": assignment}
     options.update({k: v for k, v in adapter_options.items() if v is not None})
     extra = {}
@@ -312,7 +315,8 @@ def main(adapter, argv=None) -> int:
     bd.add_argument("--exclude", help="as for build: a listed document is left out")
     bd.add_argument("--testmini", help="FinDVer: the testmini file; a holdout report it also "
                                        "holds is removed_overlap and in no total")
-    bd.add_argument("--assignment", help="ContraDoc: the frozen split file, as for build")
+    bd.add_argument("--assignment", help="ContraDoc: the frozen split file, as for a holdout "
+                                         "build; required, the input is never regrouped")
     for name, help_text in getattr(adapter, "BUILD_OPTIONS", ()):
         bd.add_argument(name, help=help_text)
     lab = sub.add_parser("label")
