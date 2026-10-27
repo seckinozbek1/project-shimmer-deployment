@@ -4298,8 +4298,12 @@ def main(argv=None):
 
     import final_models
     if final_models.mode() == 'final':
-        if args.multi_round or args.multi_round_manifest or args.task != 'review':
-            parser.error('Frozen final models are limited to ordinary Review')
+        # D-011 choice 1: the frozen adapters also serve a DECLARED multi-round
+        # Review (the flag and its case manifest together; the manifest is then
+        # validated below exactly as in base mode). Anything else stays refused:
+        # Draft, a flag without a manifest, a manifest without the flag.
+        if args.task != 'review' or bool(args.multi_round) != bool(args.multi_round_manifest):
+            parser.error('Frozen final models are limited to Review: ordinary, or multi-round with a declared case manifest')
         if args.backend_profile != 'local':
             parser.error('Frozen final models require explicit --backend-profile local')
         for role in ('producer', 'auditor'):
