@@ -227,30 +227,42 @@ def split_rows(records, _args=None) -> list:
 
 def headline(pairs, rows, answers, unit_text) -> dict:
     """Judgement accuracy (headline), precision, recall and F1 for contradictory, and the
-    replacement for Evidence Hit Rate (not the official measure)."""
+    replacement for Evidence Hit Rate (not the official measure), on all documents and on
+    the documents of more than one unit alone, where citing any unit is not enough."""
     flag = SPEC.labels[mapping.FLAG]
-    hits, marked = 0, 0
+    counts = {"all": [0, 0], "multi_unit": [0, 0]}
     for row in rows:
         answer = answers[row["item_id"]]
         needle = answer.get("evidence_sentence") or ""
         if answer["gold"] != flag or not needle:
             continue
-        marked += 1
+        scopes = ["all"] + (["multi_unit"] if (answer.get("document_units") or 0) > 1 else [])
         if row["class"] != mapping.FLAG:
-            continue
-        if row["arm"] == "B1":
-            hits += needle in bundle.normalise_space(row.get("evidence") or "")
+            hit = False
+        elif row["arm"] == "B1":
+            hit = needle in bundle.normalise_space(row.get("evidence") or "")
         else:
-            hits += any(needle in bundle.normalise_space(unit_text(row["document_id"], u))
-                        for u in row["cited_unit_ids"])
-    zero = [0]
-    return {"accuracy": metrics.accuracy(pairs),
-            "contradictory": metrics.class_scores(pairs, flag),
-            "evidence_containment": {
-                "measure": "exact containment of the marked evidence sentence, whitespace-"
-                           "normalised (not the official Evidence Hit Rate)",
+            hit = any(needle in bundle.normalise_space(unit_text(row["document_id"], u))
+                      for u in row["cited_unit_ids"])
+        for scope in scopes:
+            counts[scope][0] += int(hit)
+            counts[scope][1] += 1
+
+    def containment(scope, what):
+        zero = [0]
+        hits, marked = counts[scope]
+        return {"measure": "exact containment of the marked evidence sentence, whitespace-"
+                           "normalised (not the official Evidence Hit Rate)" + what,
                 "value": metrics._ratio(hits, marked, zero), "marked": marked,
-                "zero_denominators": zero[0]}}
+                "zero_denominators": zero[0]}
+    accuracy = metrics.accuracy(pairs)
+    return {"headline_measure": "judgement accuracy, ABSTAIN counted wrong",
+            "headline_value": accuracy["accuracy"],
+            "accuracy": accuracy,
+            "contradictory": metrics.class_scores(pairs, flag),
+            "evidence_containment": containment("all", ""),
+            "evidence_containment_multi_unit": containment(
+                "multi_unit", ", on documents of more than one unit")}
 
 
 if __name__ == "__main__":

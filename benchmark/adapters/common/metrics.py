@@ -89,6 +89,28 @@ def read_gold(bundles_dir) -> tuple:
     return answers, documents
 
 
+def unit_position(uid: str) -> int:
+    """The position k of a unit id `u<k>-...`, for reading units in document order."""
+    head = str(uid).split("-", 1)[0].lstrip("uU")
+    return int(head) if head.isdigit() else 0
+
+
+def beyond_cut(documents) -> set:
+    """The items whose marked evidence lies, in whole or in part, beyond the cut, read
+    from parts.json (section 5.3; the cut sensitivity S-4 leaves them out)."""
+    return {i for record in documents.values() for i in record.get("items_evidence_beyond_cut") or ()}
+
+
+def without_evidence_beyond_cut(labels: dict, bundles_dir) -> dict:
+    """S-4: the labels of the items whose marked evidence lies wholly in the kept text (an
+    item with no marked evidence included), every arm alike."""
+    _answers, documents = read_gold(bundles_dir)
+    out = beyond_cut(documents)
+    kept = [r for r in labels["labels"] if r["item_id"] not in out]
+    return dict(labels, analysis="S-4", labels=kept,
+                left_out_items=sorted(r["item_id"] for r in labels["labels"] if r["item_id"] in out))
+
+
 def _units(bundles_dir, document_id):
     path = Path(bundles_dir) / document_id / bundle.CONTEXT_DIR / (document_id + ".md")
     return {uid: text for uid, _h, _l, text in bundle.read_units(path.read_text(encoding="utf-8"))}
@@ -105,8 +127,10 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
         raise ValueError("labels for items with no gold: " + ", ".join(missing[:5]))
     labelled_docs = {r["document_id"] for r in rows}
     labelled = {r["item_id"] for r in rows}
+    left_out = set(labels.get("left_out_items") or ())
     unlabelled = sorted(i for i, a in answers.items()
-                        if a["document_id"] in labelled_docs and i not in labelled)
+                        if a["document_id"] in labelled_docs and i not in labelled
+                        and i not in left_out)
     if unlabelled:
         raise ValueError("gold items of a labelled document have no label: " + ", ".join(unlabelled[:5]))
     pairs = [(r["label"], answers[r["item_id"]]["gold"]) for r in rows]
@@ -119,16 +143,24 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
     def located(row):
         """B2, B3, B4: a deciding record cites a unit holding the evidence (unit ids
         compared without regard to case). B1: any one sentence of its `evidence` string
-        (split by the section 1 sentence rule) lies, whitespace-normalised, in a unit
-        holding the evidence."""
+        (split by the section 1 sentence rule), whitespace-normalised, lies in a unit
+        holding the evidence; on a benchmark that marks evidence as parts (FinDVer,
+        ContractNLI), it may also contain an evidence unit's text, or lie in the evidence
+        units' texts joined in order (D-039 item 10)."""
         evidence = {u.casefold() for u in answers[row["item_id"]]["evidence_unit_ids"]}
         if row["class"] != mapping.FLAG or not evidence:
             return False
         if row["arm"] != "B1":
             return bool(evidence & {u.casefold() for u in row["cited_unit_ids"]})
         quoted = bundle.sentences(row.get("evidence") or "")
-        return any(s in bundle.normalise_space(unit_text(row["document_id"], u))
-                   for s in quoted for u in evidence)
+        texts = [bundle.normalise_space(unit_text(row["document_id"], u))
+                 for u in sorted(evidence, key=unit_position)]
+        if any(s in t for s in quoted for t in texts):
+            return True
+        if not spec.unit_evidence:
+            return False
+        joined = " ".join(t for t in texts if t)
+        return any((t and t in s) or s in joined for s in quoted for t in texts)
 
     def unit_text(document_id, uid):
         units = unit_cache.setdefault(document_id, {
@@ -140,10 +172,14 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
         location = {"measure": "location recall over FLAG items whose evidence is marked",
                     "value": _ratio(
             sum(1 for r in measurable if located(r)), len(measurable), zero),
-            "flag_items_measurable": len(measurable)}
+            "flag_items_measurable": len(measurable),
+            "flag_items_measurable_in_one_unit_documents": sum(
+                1 for r in measurable if answers[r["item_id"]].get("document_units") == 1)}
     else:
         location = {"measure": "recall on FLAG (location not measurable)", "value": _ratio(
-            len(catches), len(gold_flag), zero), "flag_items_measurable": 0}
+            len(catches), len(gold_flag), zero), "flag_items_measurable": 0,
+            "flag_items_measurable_in_one_unit_documents": 0}
+    location["flag_items_not_measurable"] = len(gold_flag) - len(measurable)
     location["zero_denominators"] = zero[0]
     used_docs = sorted({r["document_id"] for r in rows})
     unattached = [d["unattached"] for d in labels.get("documents", []) if d.get("unattached")]
@@ -163,6 +199,7 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
         "false_positives": {"item_level": sum(
             1 for r in rows if r["class"] == mapping.FLAG and answers[r["item_id"]]["gold"] == clear),
             "unattached_findings": sum(u["count"] for u in unattached),
+            "unattached_figure_audit": sum(u.get("figure_audit", 0) for u in unattached),
             "unattached_per_deliverable": dict(sorted(per_deliverable.items()))},
         "refusals": {"items_from_refusal": labels["counts"]["refusals"],
                      "run_failure_documents": labels["counts"]["run_failure_documents"]},
@@ -170,4 +207,6 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
                         for k in ("computed", "judged", "both")},
         "counts": labels["counts"],
         "cut_documents": sum(1 for d in used_docs if documents.get(d, {}).get("cut", {}).get("cut")),
+        "items_evidence_beyond_cut": sum(
+            1 for r in rows if r["item_id"] in beyond_cut(documents)),
     }

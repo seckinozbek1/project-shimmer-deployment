@@ -29,8 +29,9 @@ The earlier-version comparison (a manifest ``prior``) is not run and is reported
 
 It writes the pipeline's completion record, audit/run_completion.json (schema 1, state
 completed, reached_end true, exit_code 0), so the adapters read B2 and B3 by one rule.
-Every file written says on its first line (Markdown) or in its first key (JSON)
-that it is an ablation, not a review. Nothing is written under the repository's
+Every file written says on its first line that it is an ablation, not a review: a
+Markdown file's first line is the statement, and a JSON file's first key is written on
+the line of its opening brace. Nothing is written under the repository's
 output/ unless --out names it.
 
 Usage:
@@ -415,9 +416,21 @@ def _category_for(registry):
 # the run
 
 
+def json_text(data) -> str:
+    """The JSON as written: indented, with the first key on the line of the opening brace,
+    so the file's first line holds the ablation statement (D-039 item 17)."""
+    text = json.dumps(data, indent=2, ensure_ascii=False)
+    if text.startswith("{\n  "):
+        text = "{" + text[len("{\n  "):]
+    return text + "\n"
+
+
 def _write_json(path, data):
+    if not (isinstance(data, dict) and next(iter(data), None) == "ablation"):
+        raise ValueError("every file B2 writes starts with its ablation statement")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(json_text(data))
 
 
 def write_completion(out, run_id, started_at, *, document_count, amendment_count):

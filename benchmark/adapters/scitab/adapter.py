@@ -46,11 +46,9 @@ CAPTION_FIELD = "table_caption"         # confirmed: one line in every record
 HEADER_FIELD = "table_column_names"     # confirmed: the header row, a list of strings
 ROWS_FIELD = "table_content_values"     # confirmed: the body rows, lists of strings as wide
                                         # as the header
-# The 25 demonstration claims (5 tables) are excluded from both sets when they can be
-# identified (section 1). B-dev matched four of the five tables by caption (all four in the
-# holdout pool) but could not identify the fifth table or the 25 claims, so, as section 1
-# says, no item is excluded: empty.
-DEMONSTRATION_TABLE_IDS = ()
+# The tables the SciTab paper prints as in-context examples are excluded from the holdout
+# pool (section 1, D-039 item 15): role B identifies them by caption and passes their
+# `table_id`s with --exclude (common/cli.py); no table id is written here.
 # ---------------------------------------------------------------------------------------
 
 SPEC = mapping.Spec(
@@ -67,7 +65,7 @@ def read_source(path) -> list:
     records = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(records, list) or not all(isinstance(r, dict) for r in records):
         raise ValueError("expected a list of claim records")
-    return [r for r in records if r[TABLE_ID_FIELD] not in DEMONSTRATION_TABLE_IDS]
+    return records
 
 
 def caption_line(caption) -> str:
@@ -158,7 +156,9 @@ def headline(pairs, rows=None, answers=None, unit_text=None) -> dict:
     """Macro-F1 over supports, refutes, not enough info, and the 3 by 3 confusion matrix
     (with ABSTAIN as a predicted column)."""
     result = metrics.macro_f1(pairs, CLASSES)
-    return {"measure": "macro-F1 over supports, refutes, not enough info",
+    return {"headline_measure": "macro-F1 over supports, refutes, not enough info",
+            "headline_value": result["macro_f1"],
+            "measure": "macro-F1 over supports, refutes, not enough info",
             "macro_f1": result["macro_f1"], "per_class": result["per_class"],
             "zero_denominators": result["zero_denominators"],
             "confusion": metrics.confusion(pairs, CLASSES)}
