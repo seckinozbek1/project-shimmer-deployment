@@ -84,10 +84,21 @@ class AuditSynthesizer:
                                                              "reason": "repeated PRACTICE_AUDITOR verdict"}))
 
         escalations = [m for m in bus_messages if m.get("type") == "ESCALATE"]
-        topic_counts = {}
+        # Reader check RD3: a recurrence is a DISTINCT escalation (topic and its
+        # payload), never a repeated copy of one message; an escalation with no
+        # topic or no payload says nothing to recur on, so it is counted apart and
+        # never becomes a pattern or a proposal. What a pattern or a proposal IS
+        # stays exactly as it was; nothing here is ever applied.
+        topic_counts, content_free, seen = {}, 0, set()
         for m in escalations:
-            topic = (m.get("body") or {}).get("topic", "unknown")
-            topic_counts[topic] = topic_counts.get(topic, 0) + 1
+            key = escalation_key(m.get("body"))
+            if key is None:
+                content_free += 1
+                continue
+            if key in seen:
+                continue
+            seen.add(key)
+            topic_counts[key[0]] = topic_counts.get(key[0], 0) + 1
         for topic, count in topic_counts.items():
             if count >= 3:
                 findings.append(AuditFinding("governance", "high",
@@ -136,6 +147,7 @@ class AuditSynthesizer:
         summary = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "bus_messages": len(bus_messages),
+            "content_free_escalations": content_free,
             "findings": [f.__dict__ for f in findings],
             "delta_proposals": [d.as_dict() for d in deltas],
             "stats": {
@@ -167,6 +179,17 @@ class AuditSynthesizer:
         deltas_path.write_text(
             json.dumps({"generated_at": summary["generated_at"], "proposals": summary["delta_proposals"]},
                        indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def escalation_key(body):
+    """(topic, payload) of one escalation, or None when it carries no topic or no
+    payload (reader check RD3: nothing to recur on). Repeated copies of one
+    escalation share a key, so they are counted once."""
+    body = body if isinstance(body, dict) else {}
+    topic, payload = body.get("topic"), body.get("payload")
+    if not topic or payload in (None, "", {}, []):
+        return None
+    return (str(topic), json.dumps(payload, sort_keys=True, default=str))
 
 
 def _count_disputed_by_source(findings):
@@ -211,13 +234,15 @@ def _render_md(summary):
     lines = [localization.text('# Audit synthesis'), "", f'{localization.text('- generated: ')}{summary['generated_at']}',
              f'{localization.text('- bus messages: ')}{summary['bus_messages']}',
              f'{localization.text('- audit-trail patterns: ')}{len(summary['findings'])}{localization.text(AUDIT_COUNT_NOTE)}',
-             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}', "",
+             f'{localization.text('- DELTA proposals: ')}{len(summary['delta_proposals'])}',
+             *([f"{localization.text('- escalation messages with no topic or no content (not counted as a pattern): ')}"
+                f"{summary['content_free_escalations']}"] if summary.get('content_free_escalations') else []), "",
              localization.text('## Audit-trail patterns (not document findings)')]
     if not summary["findings"]: lines.append(localization.text('_no audit-trail patterns this run_'))
     else:
         for f in summary["findings"]:
-            lines.append(f"- {localization.text('pattern priority: ')}{localization.label(str(f['severity']))}; "
-                         f"{localization.text('area: ')}{localization.label(str(f['category']))}; "
+            lines.append(f"- {localization.text('pattern priority: ')}{localization.label(str(f['severity'])).lower()}; "
+                         f"{localization.text('area: ')}{localization.label(str(f['category'])).lower()}; "
                          f"{localization.message(f['summary'])}")
     lines.append(localization.text('\n## DELTA proposals'))
     if not summary["delta_proposals"]: lines.append(localization.text('_no DELTAs proposed this run_'))
