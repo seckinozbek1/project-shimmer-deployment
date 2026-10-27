@@ -2515,10 +2515,12 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             return
         explanation = _first_explanation(r)
         for check in paired_review_mod.disagreements(checks):
-            computed_items_by_agent.setdefault(agent, []).append(
-                paired_review_mod.finding_from_check(
-                    unit_id=unit["unit_id"], rule=rule, check=check,
-                    source_rule_id=source_rule_id, refs=refs, explanation=explanation))
+            item = paired_review_mod.finding_from_check(
+                unit_id=unit["unit_id"], rule=rule, check=check,
+                source_rule_id=source_rule_id, refs=refs, explanation=explanation)
+            # Reader check RD1: the record names the model call that wrote its note.
+            paired_review_mod.stamp_note_writer(item, r)
+            computed_items_by_agent.setdefault(agent, []).append(item)
         results.append(r)
 
     for plan_index, plan in enumerate(plans):
@@ -2784,7 +2786,10 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 _build_wrapper(agent, orch, keys).post_to_bus(
                     recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
                     body={"event": "AGENT_OUTPUT", "backend": "paired", "model": "python",
-                          "item_count": len(items), "parse_trace": {}, "payload": envelope},
+                          "item_count": len(items), "parse_trace": {}, "payload": envelope,
+                          # Reader check RD1: the models whose sentences sit in
+                          # these records as notes, recorded where the records are.
+                          "note_models": paired_review_mod.note_models(items)},
                     constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
                                         "resolution": "computed in code from the unit's own "
                                                       "figures; no model judged these values"})
@@ -2795,7 +2800,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": agent, "ok": True,
                             "parsed": envelope, "raw_text": "", "contract_missing": [],
                             "error": None, "item_count": len(items),
-                            "backend": "paired", "model": "python+model"})
+                            "backend": "paired", "model": "python",
+                            "note_models": paired_review_mod.note_models(items)})
 
     # D, option 2: the model's judged absence findings, stamped with the unit and
     # rule Python knows by construction and with absence_path=judged, posted under
@@ -2846,7 +2852,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
         out_results.append({"scope": "doc", "doc_id": doc["id"], "agent": default_agent,
                             "ok": True, "parsed": envelope, "raw_text": "",
                             "contract_missing": [], "error": None, "item_count": 0,
-                            "backend": "paired", "model": "python+model"})
+                            "backend": "paired", "model": "python", "note_models": []})
     return out_results
 
 
@@ -3073,6 +3079,15 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         lines.append(localization.text('- INST_FINDER: SHIMMER_INST_FINDER=off without a ratified amendment; the run refused to start'))
     else:
         lines.append(localization.text('- INST_FINDER: on (SHIMMER_INST_FINDER is not off)'))
+        try:
+            _states = json.loads((deliv_dir.parent / "audit" / "agent_activation.json")
+                                 .read_text(encoding="utf-8")).get("agent_states") or []
+        except (OSError, ValueError):
+            _states = None
+        _inst = next((r for r in (_states or []) if r.get("agent") == "INST_FINDER"), None)
+        if _inst is not None:
+            lines.append(f"{localization.text('- INST_FINDER model calls in this run: ')}{_inst.get('actual_calls', 0)}"
+                         + (localization.text(' (it produced no output)') if not _inst.get('actual_calls') else ""))
     lines += [
         "",
         localization.text('## Documents'),
@@ -3209,9 +3224,12 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         # the fields that would make it read as checked, and says whether the unit
         # it names states its figures at all.
         _doc_units = paired_review_mod.unit_texts_for(doc["text"], doc["id"])
+        _doc_unit_refs = paired_review_mod.unit_passage_refs(_doc_units, reference_index.entries, doc["id"])
         model_findings = [finding_record.model_finding_for_reader(dict(
                               f, agent=f.get("agent") or name,
-                              figures_in_unit=paired_review_mod.figures_in_unit(f, _doc_units)))
+                              figures_in_unit=paired_review_mod.figures_in_unit(f, _doc_units),
+                              reader_notes=paired_review_mod.model_item_notes(
+                                  f, _doc_units, _doc_unit_refs, doc.get("_pairing"))))
                           for name, group in upstream_findings.items() for f in group
                           if finding_record.is_finding(f) and finding_record.is_model_written(f)]
         findings = []
@@ -3225,6 +3243,8 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                 normalized["agent"] = agent
                 if finding_record.is_model_written(normalized):
                     normalized["figures_in_unit"] = paired_review_mod.figures_in_unit(f, _doc_units)
+                    normalized["reader_notes"] = paired_review_mod.model_item_notes(
+                        f, _doc_units, _doc_unit_refs, doc.get("_pairing"))
                 findings.append(normalized)
                 categories_with_findings.add(cat)
 
@@ -3499,7 +3519,13 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
 
         # Per-agent deliverable (the reviewed document record)
         per_agent_path = doc_dir / names["per_agent_deliverable"]
-        per_agent_path.write_text(_render_per_agent_md(doc, production, audit, conv_review),
+        try:
+            _activation = json.loads((orch.run_context.audit_dir() / "agent_activation.json")
+                                     .read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            _activation = None
+        per_agent_path.write_text(_render_per_agent_md(doc, production, audit, conv_review,
+                                                       activation=_activation),
                                   encoding="utf-8")
 
         # The dict KEYS below are internal identifiers consumed by the redaction stage and
@@ -3519,6 +3545,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                 if f.get("relation") == "absent_since_prior"),
             # S2a, items 1 and 7: what the run summary reports, from the stamps.
             "model_findings_not_promoted": len(model_findings),
+            "context_refs_cited": [str(r.get("ref_id")) for r in ctx_refs if r.get("ref_id")],
             "relations_computed": summary_generators.relation_counts(
                 [f for g in upstream_findings.values() for f in g
                  if finding_record.is_finding(f) and not finding_record.is_model_written(f)]),
@@ -3527,6 +3554,20 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
 
     for doc_id, info in await _gather_docs(op_docs, _process_doc, max_concurrent_docs):
         deliverables[doc_id] = info
+    # Reader check RD11: the reference index records which deliverable cites each
+    # passage, so it agrees with the files a reader follows.
+    try:
+        for doc_id, info in deliverables.items():
+            master = json.loads(Path(info["amendments_json"]).read_text(encoding="utf-8"))
+            for amendment in master.get("amendments") or []:
+                for ref in amendment.get("ref_ids") or []:
+                    reference_index.cite(ref, "amendment")
+            for ref in info.get("context_refs_cited") or []:
+                reference_index.cite(ref, "grounding_summary")
+        reference_index.save()
+    except Exception as e:  # a citation record must not take synthesis down (type only)
+        log_event(_LOG, f"reference_cited_by_error error_type={type(e).__name__}",
+                  run_id=_run_id_of(orch), phase="6")
     return deliverables
 
 
@@ -3945,10 +3986,11 @@ def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
 
 
 @localization.presentation
-def _render_per_agent_md(doc, production, audit, conv_review):
-    # Reader check RC17: the title says what the file is (each agent's raw reply,
-    # a technical record), so it is never taken for the reviewed document.
-    lines = [f'# {doc['name']}{localization.text(': per-agent deliverable (raw agent output, a technical record; not the reviewed document)')}', "",
+def _render_per_agent_md(doc, production, audit, conv_review, activation=None):
+    # Reader check RC17/RD18: the title says what the file holds (each agent's raw
+    # reply for this document). The file name stays as it is (renaming it changes
+    # run_context.DELIVERABLE_FILENAMES, routes and docs; deferred).
+    lines = [f'# {doc['name']}{localization.text(': per-agent deliverable (each agent\'s raw reply for this document, a technical record)')}', "",
              f'{localization.text('- generated: ')}{datetime.now(timezone.utc).isoformat()}']
     all_results = (production + audit + conv_review)
     by_agent = {}
@@ -3971,10 +4013,17 @@ def _render_per_agent_md(doc, production, audit, conv_review):
                 # Reader check RC5: the backend and model as recorded, and what the
                 # label means: the figures are Python's; a model asked to explain a
                 # disagreement wrote only the sentence marked as a model's note.
+                # Reader check RD1: exactly what the run log records for these
+                # records (backend and model of the post), and the models the
+                # records name as writers of their notes, or that none is recorded.
+                writers = sorted({str(i.get("explanation_model") or localization.text("not recorded"))
+                                  for i in decode_items(r.get("parsed"))
+                                  if i.get("explanation_by") == finding_record.WRITTEN_BY_MODEL})
                 lines.append(f'_{localization.text(finding_record.COMPUTED_FINDING_MARK)}'
                              f'{localization.text(' Backend ')}`{r.get('backend') or '?'}`'
-                             f'{localization.text(', model ')}`{r.get('model') or '?'}`'
-                             f'{localization.text(': the figures and verdicts are computed in code; where a model was asked to explain a disagreement, its sentence is marked as a model note.')}_')
+                             f'{localization.text(', model ')}`{r.get('model') or '?'}`.'
+                             + (f'{localization.text(' Notes written by a model, not checked by Python: ')}'
+                                + ", ".join(f"`{w}`" for w in writers) + "." if writers else "") + "_")
             else:
                 lines.append(f'{localization.text('_Written by a model: backend ')}`{r.get('backend') or '?'}`'
                              f'{localization.text(', model ')}`{r.get('model') or '?'}`._')
@@ -3985,6 +4034,15 @@ def _render_per_agent_md(doc, production, audit, conv_review):
             lines.append("```json")
             lines.append(json.dumps(r.get("parsed"), indent=2, ensure_ascii=False))
             lines.append("```")
+    # Reader check RD13: every registered agent, with the state the run recorded
+    # for it, so the list above (the agents that review one document) is never
+    # read as the whole run.
+    states = (activation or {}).get("agent_states") or []
+    if states:
+        lines += ["", localization.text("## Every registered agent in this run"), ""]
+        for row in states:
+            lines.append(f"- {row.get('agent')}: {localization.label(str(row.get('state') or '?'))}"
+                         f"{localization.text('; model calls: ')}{row.get('actual_calls', 0)}")
     return "\n".join(lines)
 
 

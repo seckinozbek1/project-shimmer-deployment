@@ -273,3 +273,10 @@ open-item sweep.
 - **Evidence.** `git grep -c` for U+2014 and U+2013 over `scripts tools config` at `loop/s02`.
 - **Why it was left.** None of these files is changed by S2 (P16). `config/constitution.json` is append-only and its existing entries are never edited (H9), so its dashes stay. One catalog key in `scripts/ui/localization_catalog.js` keeps a dash because it must match an agent description in `config/agent_registry.json` word for word.
 - **What would settle it.** An S6 sweep over the other files (each reader-facing string checked against its catalog row), and a registry edit with its catalog key together.
+
+## 19. Three reader-check items left after S2's last round (found at loop S2)
+
+- **What it is.** (1) The run summary's absence-quote prediction section is developer telemetry in reader-facing text ("**PASS**", "the forecast of fourteen claims", untranslated in Turkish runs). (2) The deliverable `reviewed_document.md` is a per-agent technical record, not the reviewed document; only its heading was retitled. (3) The document summary prints Python's stored figures ("61.0") rather than the figures as the source writes them.
+- **Evidence.** `docs/loop/private` reader checks rounds 1 and 2 (RC17, RD10, RD18); `scripts/absence_prediction.py`; check 253 asserts "**PASS**" and "14 judged and 7 computed"; `run_context.DELIVERABLE_FILENAMES`.
+- **Why it was left.** Three reader-check rounds are the limit (IV.4); (1) needs check 253 changed with its owner file; (2) changes a deliverable name used by routes, docs and readers; (3) the summary writer has no unit text at hand.
+- **What would settle it.** (1) rewording with check 253 updated in the same commit; (2) a rename with the route table, docs and console updated (S7 console work is the natural place); (3) passing the unit text to the summary writer.

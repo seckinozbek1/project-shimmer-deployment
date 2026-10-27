@@ -143,7 +143,11 @@ marked "Written by a model. Not promoted to an amendment. Not checked by Python.
 `review_data.json` lists such findings apart under `model_findings_not_promoted`
 with the model's verdict kept as `model_claimed_verdict`, and the findings route
 says who wrote each record (`written_by`). Read a model's item as a lead to check
-by hand, never as a verified finding. Each amendment comment names the unit, the
+by hand, never as a verified finding; its notes say when it cites another unit's
+passage, when Python found its rule does not apply to its unit, and when its unit
+does not state its figures. A quoted "model's note" inside an amendment is a judging
+model's sentence (the model is named, or "not recorded"); the figures before it are
+Python's. Each amendment comment names the unit, the
 rule, both figures with their units and the relation in one sentence, quotes the
 rule, and points to the unit's own passage; when it says it is placed at document
 level, Python could not find that unit's passage, so locate it yourself. A

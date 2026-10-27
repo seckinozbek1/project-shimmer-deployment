@@ -30,6 +30,7 @@ amendments appear):
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -73,7 +74,10 @@ def render_model_findings(findings) -> list:
         prose = str(f.get("explanation") or f.get("reasoning") or "").strip()
         if prose:
             lines.append(f'  - {localization.text("The model wrote: ")}"{prose[:240]}"')
-        if f.get("figures_in_unit") is False:
+        # Reader check RD2: what Python can say about the item, in words.
+        for note in f.get("reader_notes") or []:
+            lines.append(f"  - {localization.message(note)}")
+        if f.get("figures_in_unit") is False and not f.get("reader_notes"):
             lines.append(f'  - {localization.text("The unit it names does not state these figures.")}')
     return lines
 
@@ -90,10 +94,40 @@ def render_amendments_md(payload: dict, *, document_name: str = "",
     return _render_md(payload, document_name, category_for_conv, output_language=output_language)
 
 
-# The amendment fields the layout shows under their own labels; every other field
-# is listed after them, so the rendered file still carries the whole master.
+# The amendment fields the layout shows under their own labels, and (RD8) the
+# fields of the typed record the evidence sentence says in words. Any OTHER field
+# is listed after it, so the rendered file still carries the whole master.
 _SHOWN_FIELDS = ("convention_ref", "location", "action", "original_text", "proposed_text",
                  "comment", "context_refs", "severity", "finding_type", "uncertain")
+_EVIDENCE_FIELDS = ("ref", "kind", "confidence", "ref_ids", "derived_from", "finding_unit_id",
+                    "finding_rule_id", "finding_relation", "finding_field_label", "finding_value_a",
+                    "finding_unit_a", "finding_value_b", "finding_unit_b", "agent",
+                    "source_convention_ref", "unit_id_repaired_to")
+
+
+@localization.presentation
+def evidence_sentence(amendment) -> str:
+    """Reader check RD8: the typed record behind an amendment, in words."""
+    if not amendment.get("finding_relation"):
+        return ""
+    record = {"rule_id": amendment.get("finding_rule_id") or amendment.get("convention_ref"),
+              "source_rule_id": amendment.get("source_convention_ref"),
+              "unit_id": amendment.get("finding_unit_id"),
+              "relation": amendment.get("finding_relation"), "record_verdict": "irregular",
+              "field_label": amendment.get("finding_field_label"),
+              "value_a": amendment.get("finding_value_a"), "unit_a": amendment.get("finding_unit_a"),
+              "value_b": amendment.get("finding_value_b"), "unit_b": amendment.get("finding_unit_b"),
+              "source_refs": amendment.get("ref_ids") or [],
+              # RD18: figures as the passage and the comment (which quotes the rule) write them
+              "_written_tokens": re.findall(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])",
+                                            str(amendment.get("original_text") or "") + " "
+                                            + str(amendment.get("comment") or "")),
+              "written_by": (finding_record.WRITTEN_BY_PYTHON
+                             if amendment.get("derived_from") == "computed_finding"
+                             else finding_record.WRITTEN_BY_MODEL)}
+    who = (localization.text("Python's record: ") if record["written_by"] == finding_record.WRITTEN_BY_PYTHON
+           else localization.text("A model's record: "))
+    return who + finding_record.reader_line(record) + localization.text(" (the full record is in review_data.json)")
 
 
 @localization.presentation
@@ -106,7 +140,11 @@ def _render_md(payload, document_name, category_for_conv):
     validator_errors = payload.get("_validator_errors", [])
     n_uncertain = sum(1 for a in amendments if a.get("uncertain"))
     title_name = document_name or payload.get("document_id", "document")
-    lines = [f"# {title_name}: {t('Proposed amendments')}", "",
+    # Reader check RD18: a file whose every entry is a flag with no proposed text
+    # says it holds flagged passages, not proposed edits.
+    only_flags = all(str(a.get("action") or "flag") == "flag" and not a.get("proposed_text")
+                     for a in amendments)
+    lines = [f"# {title_name}: {t('Flagged passages') if only_flags else t('Proposed amendments')}", "",
              f"{t('- generated: ')}{datetime.now(timezone.utc).isoformat()}",
              f"{t('- amendments: ')}{len(amendments)}",
              f"{t('- uncertain: ')}{n_uncertain}",
@@ -148,9 +186,13 @@ def _render_md(payload, document_name, category_for_conv):
             lines.append(f"{t('**Context references:**')} {', '.join(a['context_refs'])}")
         # Every other field of the master stays visible, as plain "name: value"
         # pairs (the master is canonical; nothing is hidden by the layout).
-        rest = [f"{k}: {v}" for k, v in a.items() if k not in _SHOWN_FIELDS and v not in (None, "", [])]
-        if rest:
-            lines.append(f"{t('**Evidence and references:**')} " + "; ".join(rest))
+        said = evidence_sentence(a)
+        rest = [f"{k}: {v}" for k, v in a.items()
+                if k not in _SHOWN_FIELDS and v not in (None, "", [])
+                and not (said and k in _EVIDENCE_FIELDS)]
+        if said or rest:
+            lines.append(f"{t('**Evidence and references:**')} " + "; ".join(
+                ([said] if said else []) + ([t("other recorded fields: ") + "; ".join(rest)] if rest else [])))
         lines.append("")
     # R6: the comparison with the earlier version, from the master, through the one
     # renderer document_summary.md also uses. Its headings never carry the token

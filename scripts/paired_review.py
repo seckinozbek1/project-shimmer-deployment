@@ -2225,8 +2225,7 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     # comparing the review against their own rulebook needs CONV-A02, not the
     # registry's renumbered CONV-007, and a field nobody renders is a field
     # nobody reads. Measured: attribution scored 0 of 5 with the id in a field.
-    own = item.get("source_rule_id")
-    rule_text = ("%s (%s)" % (rule_id, own)) if own and own != rule_id else rule_id
+    rule_text = _rule_text(item)
     unit_record = (unit_texts or {}).get(unit_id) if unit_id else None
     repaired_unit_id = None
     if unit_record is None and unit_id:
@@ -2244,7 +2243,8 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         location = passage
     elif placed:
         location = document_level
-    citation = "%s at %s" % (rule_text, refs[0] if refs else document_level)
+    citation = (GROUND_AT_PASSAGE % (rule_text, location) if placed and passage else
+                GROUND_CITED % (rule_text, refs[0] if refs else document_level))
     # refine R2: the COMPUTED FIGURES lead, always. They used to be a fallback,
     # used only when no model sentence existed, and the model's sentence usually
     # existed and usually named no figure. Measured on one run's own output: with
@@ -2255,7 +2255,11 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     # CONV-A10-style rules ask for the specific figures in so many words. So the
     # computed sentence is always present and the model's sentence, when there is
     # one and it says something different, follows it rather than replacing it.
-    computed = computed_sentence(dict(item, unit_title=_unit_title(unit_record)))
+    computed = computed_sentence(dict(
+        item, unit_title=_unit_title(unit_record),
+        _written_tokens=_number_tokens(
+            (unit_record.get("text") if isinstance(unit_record, dict) else "") + " "
+            + str((rule_texts or {}).get(rule_id) or ""))))
     parts = [computed]
     # v7: this sentence used to be unconditional, so the two amendments built
     # from VERIFIER's fabricated records told the operator they were computed in
@@ -2269,7 +2273,7 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         parts.append(ABSENCE_PROVENANCE)
     else:
         parts.append("Computed in code from the figures in this unit, not judged by a model.")
-    parts.append("Grounded in %s." % citation)
+    parts.append(citation)
     compared = [str(r) for r in (item.get("compared_with_refs") or []) if r and str(r) != location]
     if placed and compared:
         parts.append("The figure it is compared with is taken from %s." % ", ".join(compared))
@@ -2290,7 +2294,7 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
         or explanation.startswith("Unit %s (" % (unit_id or document_level))
     if explanation and explanation != computed:
         if item.get("explanation_by") == finding_record.WRITTEN_BY_MODEL or not computed_provenance:
-            parts.append(MODEL_NOTE_PREFIX + explanation)
+            parts.append(model_note(explanation, item.get("explanation_model")))
         elif not own_sentence:
             # Python's own extra sentence (the pairing map's nearest-miss note);
             # its computed sentence, minted before a later stamp, is not repeated.
@@ -2398,29 +2402,78 @@ def apply_polish(item, polished):
 # gate and honest_output_checks hold. The provenance sentence and the citation
 # follow in amendment_from_finding; nothing here says who computed what.
 MODEL_NOTE_PREFIX = "A model's note, not checked by Python: "
+# Reader check RD1/RD6: a model's sentence is quoted and names the model that wrote
+# it, as the call that returned it recorded; with no record, it says so.
+NOTE_MODEL_NOT_RECORDED = "not recorded"
+# Reader check RD7: the rule and the passage are named apart, so the passage is
+# never read as where the rule is written.
+GROUND_AT_PASSAGE = "Rule %s; passage %s."
+GROUND_CITED = "Rule %s; cited passage %s."
+
+
+def model_note(text, model=None):
+    """The labelled, quoted form of a model's sentence inside a comment."""
+    return 'A model\'s note (model: %s), not checked by Python: "%s"' % (
+        model or NOTE_MODEL_NOT_RECORDED, " ".join(str(text).split()).replace('"', "'"))
+
+
+def stamp_note_writer(item, reply):
+    """Record on a computed Finding which model call wrote its note (RD1). Only
+    when the record carries a model's sentence; nothing is invented when the
+    reply does not say which model it came from."""
+    if not isinstance(item, dict) or item.get("explanation_by") != finding_record.WRITTEN_BY_MODEL:
+        return item
+    if isinstance(reply, dict):
+        for field, key in (("explanation_model", "model"), ("explanation_backend", "backend"),
+                           ("explanation_call_id", "call_id")):
+            if reply.get(key):
+                item[field] = str(reply[key])
+    return item
+
+
+def note_models(items):
+    """The models whose sentences sit in these records as notes (flat, sorted)."""
+    return sorted({str(i.get("explanation_model")) for i in items or []
+                   if isinstance(i, dict) and i.get("explanation_by") == finding_record.WRITTEN_BY_MODEL
+                   and i.get("explanation_model")})
 ABSENCE_RELATIONS = ("missing_field", "licence_missing")
 # Reader check RC12: the provenance of a computed ABSENCE, which involves no figure.
 ABSENCE_PROVENANCE = ("Checked in code: the field is absent from this unit's text; "
                       "not judged by a model.")
 
 
-def _figure(value, unit):
-    """A figure exactly as the typed record holds it, its unit after it (a bare
-    ratio's unit "1" is not written)."""
+def _number_tokens(text):
+    return re.findall(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])", str(text or ""))
+
+
+def _written(value, tokens):
+    """Reader check RD18: a figure as the unit's own text (or its rule) writes it
+    ("61", not "61.0") when that number is written there; otherwise None."""
+    return finding_record.written_form(value, tokens)
+
+
+def _figure(value, unit, tokens=None):
+    """A figure, its unit after it (a bare ratio's unit "1" is not written). With
+    the unit's own number tokens, a figure the text writes is shown as written;
+    without them (or for a figure the text does not write) exactly as the typed
+    record holds it."""
     unit = str(unit or "").strip()
-    return ("%s %s" % (value, unit)) if unit and unit != "1" else "%s" % (value,)
+    shown = _written(value, tokens) or "%s" % (value,)
+    return ("%s %s" % (shown, unit)) if unit and unit != "1" else shown
 
 
 def _rule_text(item):
+    """The registry id, and the operator's own id beside it, named as such (RD18)."""
     rule_id = finding_record.resolved_rule_id(item) or "?"
     own = item.get("source_rule_id")
-    return ("%s (%s)" % (rule_id, own)) if own and own != rule_id else str(rule_id)
+    return ("%s (operator's id %s)" % (rule_id, own)) if own and own != rule_id else str(rule_id)
 
 
 def relation_clause(item):
     """The relation in plain words, from the typed fields alone (no unit, no rule)."""
     a, b = item.get("value_a"), item.get("value_b")
-    fa, fb = _figure(a, item.get("unit_a")), _figure(b, item.get("unit_b"))
+    tokens = item.get("_written_tokens")
+    fa, fb = _figure(a, item.get("unit_a"), tokens), _figure(b, item.get("unit_b"), tokens)
     relation = str(item.get("relation") or "")
     field = str(item.get("field_label") or "").strip()
     irregular = str(item.get("record_verdict") or "").lower() == "irregular"
@@ -2449,8 +2502,14 @@ def relation_clause(item):
         # Reader check RC1: the addends are named, with their values, so the
         # reader can find them in the unit's passage.
         addends = item.get("addends")
+        shown = [_written(v, tokens) for v in addends] if isinstance(addends, list) else []
+        if shown and all(shown) and all("." not in t for t in shown) \
+                and isinstance(a, float) and a.is_integer() and not _written(a, tokens):
+            # The sum of figures written as whole numbers, written the same way.
+            fa = _figure(int(a), item.get("unit_a"))
         what = ("the values under '%s' (%s)" % (
-            item.get("addend_field") or "?", _figure(" + ".join(str(v) for v in addends), item.get("unit_a")))
+            item.get("addend_field") or "?",
+            _figure(" + ".join(w or str(v) for w, v in zip(shown, addends)), item.get("unit_a")))
             if isinstance(addends, list) and addends else "the values listed")
         clause = ("%s add up to %s, but the stated %s is %s" % (what, fa, name, fb)
                   if irregular else
@@ -2488,14 +2547,52 @@ def computed_sentence(item):
 
 
 def _unit_title(unit_record):
-    """The unit's own heading, as written (without the markdown hashes)."""
+    """The unit's own heading, as written (without the markdown hashes). Only a
+    heading names a unit: a unit whose text opens with ordinary content has no
+    title, and its first line is never presented as one."""
     if not isinstance(unit_record, dict):
         return ""
     title = str(unit_record.get("title") or "").strip()
     if not title:
         lines = [ln for ln in str(unit_record.get("text") or "").splitlines() if ln.strip()]
-        title = lines[0] if lines else ""
+        title = lines[0] if lines and lines[0].lstrip().startswith("#") else ""
     return title.lstrip("#").strip()[:80]
+
+
+def model_item_notes(item, unit_texts, unit_refs, pairing=None):
+    """Reader check RD2: plain-words notes on a MODEL-written item, decided by
+    Python from what it already knows: whether the passage it cites is its unit's
+    own, whether the pairing map found its rule applies to its unit, whether a
+    sum it claims names any addends, and whether its unit states its figures."""
+    notes = []
+    unit_id = item.get("unit_id")
+    own = (unit_refs or {}).get(unit_id)
+    owner = {ref: uid for uid, ref in (unit_refs or {}).items()}
+    for ref in [str(r) for r in (item.get("source_refs") or []) if r][:3]:
+        if own and ref == own:
+            continue
+        other = owner.get(ref)
+        if other and other != unit_id:
+            title = _unit_title((unit_texts or {}).get(other)) or other
+            notes.append("It cites %s, which is the passage of %s, not this unit's own passage%s." % (
+                ref, title, (" (%s)" % own) if own else ""))
+        else:
+            notes.append("It cites %s, which is not this unit's own passage%s." % (
+                ref, (" (%s)" % own) if own else ""))
+    rule_id = finding_record.resolved_rule_id(item)
+    for entry in (pairing or {}).get("units") or []:
+        if entry.get("unit_id") != unit_id:
+            continue
+        for rejected in entry.get("rejected") or []:
+            rid = rejected.get("rule_id") if isinstance(rejected, dict) else None
+            if rid and rid == rule_id:
+                notes.append("Python's pairing map found that rule %s does not apply to this unit: %s." % (
+                    rule_id, str(rejected.get("reason") or "no reason recorded").rstrip(".")))
+    if item.get("relation") == "sum_mismatch" and not item.get("addends"):
+        notes.append("The model names no addends for this sum.")
+    if figures_in_unit(item, unit_texts) is False:
+        notes.append("The unit it names does not state these figures.")
+    return notes
 
 
 # TWO-F. The operator's ruling on what a declared severity DOES.

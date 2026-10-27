@@ -225,7 +225,7 @@ class LocalizationChecks(unittest.TestCase):
         amendment=amendment_from_finding(item,unit_texts={'U-1':{'text':SOURCE}})
         before=deepcopy(amendment)
         shown=loc.message(amendment['comment'],'tr')
-        self.assertIn('Hesaplanan değer 3.5 t/ha',shown)
+        self.assertIn("'value' değeri 3.5 t/ha",shown)
         self.assertIn('üst sınırı 2 t/ha',shown)
         self.assertIn('model tarafından değerlendirilmedi',shown)
         self.assertIn('CONV-001',shown);self.assertIn('REF-0001',shown)
