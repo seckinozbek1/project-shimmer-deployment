@@ -118,10 +118,15 @@ processing swarm governed by an append-only constitution.
   `tools/loop_budget_guard.py` decides, holding an exclusive lock beside the ledger from its
   decision through the intent line and reading the provider inventory again just before it:
   it refuses when another loop instance runs (an open ledger launch or a `shimmer-loop-` name
-  in the inventory), when the per-run cap `min(1.5 x forecast, 50 - spend - running caps -
+  in the inventory), when the per-run cap `min(1.5 x forecast, budget - spend - running caps -
   storage forecast - 1)` is below the forecast (measured minutes x live price x 1.3), or when
   the capped run time does not cover the forecast time plus the run's stop reserve (the cap
-  rule alone keeps spend + forecast + storage at or below 49). Spend is counted once per
+  rule alone keeps spend + forecast + storage at or below the budget less one dollar, the
+  reaper's hard stop). The budget is never a code constant (D-S9): the guard and the reaper
+  read it from the ledgers' latest `budget_open` or `budget_change` line
+  (`instance_reaper.budget_figures`; the hard stop is that line's `hard_stop_usd`, else the
+  budget less the margin), a launch with no readable budget line is refused, and the reaper
+  terminates every loop instance while no budget line can be read. Spend is counted once per
   launch across ledgers, a termination closing a launch by its instance id or its name (a
   `copied_from` line is not counted twice). The instance name always starts `shimmer-loop-`
   and the `launch_intent` line, with its `deadline_utc`, is written before the request;
@@ -134,7 +139,7 @@ processing swarm governed by an append-only constitution.
   by the sealer from the provider inventory it is given and the guard's formula; the type rule
   polls for the A10 in us-east-1 for up to 30 minutes before a fallback, and the runner's
   hardware check reads the selected candidate. Which figures are CODE CONSTANTS, stated
-  exactly: the loop's budget rule (`BUDGET_USD` 50, the 1-dollar margin, the 1.5 cap factor,
+  exactly: the loop's budget rule (the 1-dollar margin, the 1.5 cap factor,
   the 1.3 forecast factor, the type rule's factor 2) in `tools/loop_budget_guard.py`, the two
   reserves (`WORKLOAD_STOP_RESERVE_SECONDS` 900, `TERMINATION_RESERVE_SECONDS` 180) in the
   sealer, and the run's own hardware floors. No per-run cap is a code default:
@@ -197,7 +202,11 @@ processing swarm governed by an append-only constitution.
   operator-written `asset_copy_declaration.json` (`filesystem_name`, `mount`,
   `operator_authorized: true`, `assets_sha256`), written by `tools/declare_asset_copy.py` from
   the bundle's own digest; a declaration whose `assets_sha256` is not this bundle's archive is
-  refused (`Asset copy declaration is for another bundle`), the controller never writes one, a
+  refused (`Asset copy declaration is for another bundle`), the controller never writes one (for
+  the autonomous loop of 27 October 2026 only, the operator authorised the loop to write the
+  declaration with `tools/declare_asset_copy.py` for the bundles it runs and to replace the
+  filesystem's archive after recording the old digest, `docs/loop/DECISIONS.md` D-028; the
+  filesystem is never deleted), a
   sealed run never reads one, a launch outside us-east-1 drops it, and without one the launch
   plan must state `--forecast-includes-upload`. The one such resource, `shimmer-filesystem` (us-east-1, 20 GB, $4.00 a month, created
   by the operator by hand because the adapter has no create endpoint and never will), is

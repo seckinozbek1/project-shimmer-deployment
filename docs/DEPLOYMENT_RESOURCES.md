@@ -59,7 +59,10 @@ py -3.12 tools/declare_asset_copy.py --bundle docs/fix/ordinary_final_cloud_run_
 ```
 
 That writes `asset_copy_declaration.json` into the bundle, keyed by the bundle's own archive
-digest. Without that file the controller runs the upload path exactly as run v9 did, proven
+digest. The declaration is the operator's; for the autonomous loop of 27 October 2026 only, the
+operator authorised the loop to write it for the bundles it runs and to replace the archive on
+the filesystem after recording the old digest (`docs/loop/DECISIONS.md` D-028). The filesystem
+itself is never deleted by a run or by the loop. Without that file the controller runs the upload path exactly as run v9 did, proven
 byte-identical.
 
 **How a run verifies it.** The instance, not this machine, hashes the copy at

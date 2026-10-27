@@ -11,12 +11,14 @@ refuses a launch, in one line, when:
   * another loop instance runs (an open launch in a ledger, or a `shimmer-loop-` name
     in the provider inventory the caller listed);
   * the per-run cap formula leaves less than the forecast:
-        cap = min(1.5 x forecast, 50 - spend - caps of running loop instances
-                  - storage forecast - 1);
+        cap = min(1.5 x forecast, budget - spend - caps of running loop instances
+                  - storage forecast - 1),
+    where the budget is read from the ledgers' latest `budget_open` or `budget_change`
+    line (`instance_reaper.budget_figures`), never from a number in this file;
   * the capped run time (cap / live price) does not cover the forecast time plus the
     run's stop reserve (the runner stops its workload that long before the ceiling).
-"Spend + forecast + storage passes 50" needs no refusal of its own: the cap rule already
-keeps it at or below 49. Spend is counted once per launch by instance id or name across
+"Spend + forecast + storage passes the budget" needs no refusal of its own: the cap rule
+already keeps it at or below the budget less one dollar, the reaper's hard stop. Spend is counted once per launch by instance id or name across
 every ledger read (the reaper's own reading, so a line copied from R's ledger with
 `copied_from` is not counted twice). The forecast is the measured basis in minutes times
 the live price times 1.3.
@@ -43,10 +45,10 @@ if _LOOP not in sys.path:
 import instance_reaper  # noqa: E402  (the reaper's ledger reading is the one reading)
 
 PREFIX = instance_reaper.PREFIX
-# Constants of the loop's budget rule (IV.3), not run settings: the total budget, the
-# one-dollar margin, the cap and forecast factors and the type-rule factor.
-BUDGET_USD = 50.0
-RESERVE_USD = 1.0
+# Constants of the loop's budget rule (IV.3), not run settings: the one-dollar margin
+# (the reaper's own), the cap and forecast factors and the type-rule factor. The total
+# budget is not one of them: it is read from the ledger (D-S9).
+RESERVE_USD = instance_reaper.MARGIN_USD
 CAP_FACTOR = 1.5
 FORECAST_FACTOR = 1.3
 TYPE_RULE_FACTOR = 2.0
@@ -99,7 +101,7 @@ def forecast_usd(minutes, hourly_rate):
     return number(minutes, 'forecast minutes') / 60 * number(hourly_rate, 'hourly rate') * FORECAST_FACTOR
 
 
-def per_run_cap(forecast, spend, running_caps, storage_forecast, budget=BUDGET_USD):
+def per_run_cap(forecast, spend, running_caps, storage_forecast, budget):
     """IV.3: min(1.5 x forecast, budget - spend - running caps - storage forecast - 1)."""
     return min(CAP_FACTOR * forecast, budget - spend - running_caps - storage_forecast - RESERVE_USD)
 
@@ -160,7 +162,7 @@ def read_r_inputs(path):
 
 
 def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_epoch, reserve_minutes,
-          provider_names=(), instance_type=None, r_inputs=None, reaped=None, budget=BUDGET_USD):
+          provider_names=(), instance_type=None, r_inputs=None, reaped=None):
     """Decide one loop launch. Returns the cap and the figures it rests on, or refuses.
 
     `reaped` replaces the reaper's ledgers only for a mocked launch (the rehearsal and the
@@ -171,6 +173,8 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
     reserve = number(reserve_minutes, 'reserve minutes', positive=False)
     spend, running, running_caps, rows = ledger_state(ledgers, now_epoch)
     refuse(any(r.get('event') == 'budget_open' for r in rows), 'No budget_open line in the loop ledgers')
+    budget, _ = instance_reaper.budget_figures(rows)
+    refuse(budget is not None, 'No readable budget line in the loop ledgers')
     if r_inputs is not None:
         r = read_r_inputs(r_inputs)
         spend = max(spend, number(r['spend_usd'], 'R spend', positive=False))
@@ -189,7 +193,8 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
            'Capped run time %.1f min does not cover the forecast %.1f min and the %.1f min stop reserve'
            % (capped_minutes, forecast_minutes, reserve))
     return dict(forecast_usd=round(forecast, 4), cap_usd=round(cap, 4), capped_minutes=round(capped_minutes, 2),
-                spend_usd=round(spend, 4), running_caps_usd=round(running_caps, 4), storage_forecast_usd=storage)
+                spend_usd=round(spend, 4), running_caps_usd=round(running_caps, 4), storage_forecast_usd=storage,
+                budget_usd=budget)
 
 
 def undeclared(fields):
