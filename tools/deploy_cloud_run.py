@@ -112,21 +112,22 @@ def resolve_instance_name(provider, instance_id, attempts=3, pause=2):
 
 def execute(args, runner=subprocess.run, provider=None):
     from cloud_run_watchdog import LambdaTermination, operator_preflight
-    bundle = args.bundle.resolve()
-    timestamp = datetime.fromisoformat(args.running_since.replace('Z', '+00:00'))
-    require(timestamp.tzinfo is not None, 'running-since must include UTC offset')
-    epoch = timestamp.timestamp()
-    config = plan(bundle, args.host, epoch)
     if args.execute:
-        # First, before any other step that can fail (A7): who is this instance? The name is
-        # resolved with retries; a loop instance is refused, and only an instance whose name
-        # is known and is not a loop name is ever terminated by this tool on a failure.
+        # First, before any other step that can fail (A7), the timestamp parse and plan()
+        # included: who is this instance? The name is resolved with retries; a loop instance
+        # is refused, and only an instance whose name is known and is not a loop name is
+        # ever terminated by this tool on a failure.
         require(re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id), 'invalid instance ID')
         provider = provider or LambdaTermination(getattr(args, 'credential_file', None))
         args.resolved_name = resolve_instance_name(provider, args.instance_id)
         refuse_general_path(names=[args.resolved_name])
         # Not a loop launch path, and it spends outside the loop's ledger (A11).
         refuse_while_loop_open()
+    bundle = args.bundle.resolve()
+    timestamp = datetime.fromisoformat(args.running_since.replace('Z', '+00:00'))
+    require(timestamp.tzinfo is not None, 'running-since must include UTC offset')
+    epoch = timestamp.timestamp()
+    config = plan(bundle, args.host, epoch)
     requested_upload_timeout = getattr(args, 'upload_timeout_seconds', 1200)
     require(isinstance(requested_upload_timeout, (int, float)) and not isinstance(requested_upload_timeout, bool)
             and math.isfinite(requested_upload_timeout) and requested_upload_timeout > 0,
@@ -258,7 +259,13 @@ def main(argv=None):
             emergency = args.collection.resolve() / ('emergency_' + str(time.time_ns()))
             emergency.mkdir(parents=True)
             try:
-                epoch = datetime.fromisoformat(args.running_since.replace('Z', '+00:00')).timestamp()
+                # The epoch only dates the cost estimate on the termination record; a timestamp
+                # that does not parse (the failure being handled may be exactly that) must not
+                # stop the termination, so the estimate then starts now.
+                try:
+                    epoch = datetime.fromisoformat(args.running_since.replace('Z', '+00:00')).timestamp()
+                except (AttributeError, TypeError, ValueError):
+                    epoch = time.time()
                 # Termination is requested at once, so no budget cap is read or assumed.
                 terminate_now(LambdaTermination(args.credential_file), args.instance_id, args.hourly_rate, epoch, emergency)
                 report['termination_verified'] = True

@@ -14,6 +14,8 @@ Steps, each checked:
    the latest line's 69 USD leaves the instance alone; once spend reaches 69 it is
    terminated.
 8. With no budget line at all, every loop instance is terminated.
+9. An intent whose launch created no instance is left open before its deadline and closed
+   once after it (reason ``intent_without_instance``), charged to the deadline.
 7. A provider error that carries a key-shaped string never reaches the reaper's output.
 """
 import json
@@ -168,6 +170,29 @@ def main(work):
     code, out = run_reaper(bare, now)
     state = json.loads((bare / 'mock_state.json').read_text(encoding='utf-8'))
     results['8_no_budget_line_terminates'] = state['instances'][0]['status'] == 'terminated' and 'no_budget_recorded' in out
+
+    # 9. An intent whose launch created no instance (the controller died between the intent
+    # line and the launch reply): left open before its deadline, closed after it with one
+    # line charged to the deadline, and never touched again.
+    lost = work / 'lost'
+    lost.mkdir()
+    (lost / 'mock_state.json').write_text(json.dumps({'instances': []}), encoding='utf-8')
+    deadline = now + timedelta(minutes=30)
+    (lost / 'ledger.jsonl').write_text('\n'.join(json.dumps(r) for r in [
+        budget_line('budget_open', 70.0, now - timedelta(hours=1)),
+        {'event': 'launch_intent', 'time_utc': iso(now), 'instance_name': 'shimmer-loop-proof-0004',
+         'launch_requested_utc': iso(now), 'deadline_utc': iso(deadline), 'price_usd_per_hour': 1.29},
+    ]) + '\n', encoding='utf-8')
+    code, out = run_reaper(lost, deadline - timedelta(seconds=30))
+    results['9_intent_before_deadline_left_open'] = (
+        code == 0 and len((lost / 'ledger.jsonl').read_text(encoding='utf-8').splitlines()) == 2)
+    code, out = run_reaper(lost, deadline + timedelta(seconds=1))
+    lines = [json.loads(l) for l in (lost / 'ledger.jsonl').read_text(encoding='utf-8').splitlines() if l]
+    results['9_intent_without_instance_closed'] = (
+        code == 0 and len(lines) == 3 and lines[-1]['event'] == 'termination'
+        and lines[-1]['reason'] == 'intent_without_instance' and lines[-1]['actual_minutes'] == 30)
+    code, out = run_reaper(lost, deadline + timedelta(minutes=10))
+    results['9_closed_once'] = code == 0 and len((lost / 'ledger.jsonl').read_text(encoding='utf-8').splitlines()) == 3
 
     leak = work / 'leak'
     leak.mkdir()

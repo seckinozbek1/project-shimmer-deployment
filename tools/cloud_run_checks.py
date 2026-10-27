@@ -348,10 +348,13 @@ class Checks(unittest.TestCase):
         self.assertFalse(json.loads(output.getvalue())['network_contacted'])
 
     def test_unready_deploy_never_calls_ssh(self):
+        # The instance's name is resolved first (round 2 item 9), then the unready bundle refuses.
         args = SimpleNamespace(bundle=self.root, host='ubuntu@203.0.113.1',
-                               running_since='2026-09-14T00:00:00Z', execute=True)
+                               running_since='2026-09-14T00:00:00Z', execute=True, instance_id='a' * 32)
+        provider = SimpleNamespace(instance=lambda identity: {'instance_id': identity, 'name': 'operator-manual'})
         with self.assertRaises(FileNotFoundError):
-            execute(args, runner=lambda *a, **k: self.fail('transport for unready bundle'))
+            execute(args, runner=lambda *a, **k: self.fail('transport for unready bundle'), provider=provider)
+        self.assertEqual(args.resolved_name, 'operator-manual')
 
     def test_failed_transport_propagates(self):
         import subprocess
@@ -420,16 +423,22 @@ class Checks(unittest.TestCase):
                                     identity_file=self.root / 'fixture_identity', interactive_ssh=False, upload_timeout_seconds=10)
             value.__dict__.update(changes)
             return value
-        def run(name=None, fail=False):
+        def run(name=None, fail=False, plan_fails=False, **changes):
             def instance(identity):
                 if fail:
                     raise RuntimeError('transport')
                 return {'instance_id': identity, 'name': name, 'status': 'active'}
             provider = SimpleNamespace(instance=instance, terminate=lambda i: terminated.append(i))
-            parsed = args()
+            parsed = args(**changes)
+            real_plan = deploy_cloud_run.plan
+            def planned(*a, **k):
+                if plan_fails:
+                    raise RuntimeError('plan fixture failure')
+                return real_plan(*a, **k)
             with patch.object(cloud_run_watchdog, 'LambdaTermination', lambda *a, **k: provider), \
                     patch.object(cloud_run_watchdog, 'operator_preflight', return_value={'ssh_public_key_sha256': 'fixture'}), \
                     patch.object(cloud_run_watchdog, 'terminate_now', lambda p, i, *a, **k: terminated.append(i)), \
+                    patch.object(deploy_cloud_run, 'plan', planned), \
                     patch.object(deploy_cloud_run.time, 'sleep', lambda s: None), \
                     patch.object(deploy_cloud_run.argparse.ArgumentParser, 'parse_args', lambda self, argv=None: parsed), \
                     contextlib.redirect_stdout(io.StringIO()) as out:
@@ -441,6 +450,16 @@ class Checks(unittest.TestCase):
         self.assertEqual((code, terminated, report['terminated_by_this_tool']), (2, [], False))
         code, report = run(name='operator-manual')
         self.assertEqual((code, terminated), (2, ['a' * 32]))  # the stale timestamp fails after the name is known
+        # Round 2 item 9: the name is resolved before the timestamp parse and plan(), so a
+        # failure in either still ends the known non-loop instance, and never a loop one.
+        for case in (dict(plan_fails=True), dict(running_since='not a timestamp')):
+            with self.subTest(case=case):
+                terminated.clear()
+                code, report = run(name='operator-manual', **case)
+                self.assertEqual((code, terminated, report.get('termination_verified')), (2, ['a' * 32], True))
+                terminated.clear()
+                code, report = run(name='shimmer-loop-running', **case)
+                self.assertEqual((code, terminated, report['terminated_by_this_tool']), (2, [], False))
 
     def test_general_path_refuses_while_the_loop_budget_is_open(self):
         """A11: a loop ledger opened and not closed stops the general path from launching."""
