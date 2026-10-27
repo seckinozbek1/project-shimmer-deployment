@@ -182,13 +182,16 @@ fixed allowlist; provider error strings are scrubbed before they reach a
 (`**/config.py`, `**/*key*`, `**/*secret*`, `**/*credential*`, `**/.env*`,
 `api_keys*/`); `scripts/guard_secrets.py` scans the contents of the files in the
 working tree for key patterns (ignored folders included, except `.git`, `__pycache__`,
-`node_modules`, `.venv` and `venv`, and binary or archive files by suffix), and with
+`node_modules`, `.venv` and `venv`, binary and archive files by suffix, and the guard's
+own source file), and with
 `--staged` refuses a staged path with the segment `seals/` (seal manifests) or
 `audit/model_replies/` (saved model replies) at any depth, compared case-insensitively,
-force-added or not; it also opens every staged `.tar.gz`, `.tgz`, `.tar` or `.zip` from
-the index in memory and refuses it if any member path carries either segment (an
-archive it cannot open is refused); archives nested inside archives are not opened, and
-staged deletions are allowed (gate check 275); structured log
+force-added or not; it also reads every staged archive from the index, never from the
+working tree or disk (a tar, `.tar.gz`, `.tgz`, `.tar.xz`, `.txz`, `.tar.bz2` or `.tbz2`
+streamed member by member; a `.zip` read whole only up to 512 MiB, and refused above
+that), chooses the reader by the file's suffix, and refuses the archive if any member
+path carries either segment or if it cannot be read; archives nested inside archives are
+not opened, and staged deletions are allowed (gate check 275); structured log
 events are bounded by construction to a snake_case name plus whitespace-free
 `key=value` pairs, and gate check 112 asserts that over every call site, so
 document or prompt text cannot be smuggled into a log line; a contract-violation

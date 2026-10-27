@@ -7,10 +7,13 @@ with the segment ``audit/model_replies/`` (a run folder's saved model replies,
 scripts/reply_records.py). Both segments are refused at any depth and
 case-insensitively (Windows .gitignore matches case-insensitively). A staged
 deletion is allowed, so a file committed by mistake can be removed. A staged
-.tar.gz, .tgz, .tar or .zip is read from the index in memory and refused when a
-member name carries a refused segment, or when it cannot be opened at all (fail
-closed): the controller packs project/output into collected_evidence.tar.gz,
-which has been force-committed under docs/fix/ before.
+archive is read from the index with the reader its SUFFIX names (never by
+sniffing): a tar (.tar, .tar.gz, .tgz, .tar.xz, .txz, .tar.bz2, .tbz2) is
+streamed from git with constant memory, a .zip above ZIP_SIZE_CAP is refused
+unread. It is refused when a member name carries a refused segment, or when it
+cannot be opened at all, a MemoryError included (fail closed): the controller
+packs project/output into collected_evidence.tar.gz, which has been
+force-committed under docs/fix/ before.
 
 The path test is a pure function, proven on name lists; the archive test is a
 pure function over bytes; the git-backed cases run only where git is installed
@@ -25,6 +28,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 import guard_secrets as gs
 
@@ -38,9 +42,9 @@ def _commit(root, message):
          "-c", "commit.gpgsign=false", "commit", "-q", "-m", message)
 
 
-def _tar_gz(members):
+def _tar_gz(members, mode="w:gz"):
     buffer = io.BytesIO()
-    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+    with tarfile.open(fileobj=buffer, mode=mode) as archive:
         for name, payload in members.items():
             info = tarfile.TarInfo(name)
             info.size = len(payload)
@@ -91,15 +95,58 @@ class StagedPathChecks(unittest.TestCase):
         self.assertTrue(gs.is_archive_name("docs/fix/collected_evidence.tar.gz"))
         self.assertTrue(gs.is_archive_name("x/Y.ZIP"))
         self.assertTrue(gs.is_archive_name("a.tgz") and gs.is_archive_name("a.tar"))
+        for name in ("a.tar.xz", "a.txz", "a.tar.bz2", "a.TBZ2"):
+            self.assertTrue(gs.is_archive_name(name), name)
         self.assertFalse(gs.is_archive_name("docs/fix/notes.gz.md"))
-        self.assertIsNotNone(gs.archive_refusal(_tar_gz({"run/audit/model_replies/r.json": b"{}"})))
-        self.assertIsNotNone(gs.archive_refusal(_tar_gz({"./project/output/Seals/m.json": b"{}"})))
-        self.assertIsNotNone(gs.archive_refusal(_zip({"seals/m.json": b"{}"})))
-        self.assertIsNone(gs.archive_refusal(_tar_gz({"run/audit/pairing_map.json": b"{}",
+        self.assertIsNotNone(gs.archive_refusal("e.tar.gz",
+                                                _tar_gz({"run/audit/model_replies/r.json": b"{}"})))
+        self.assertIsNotNone(gs.archive_refusal("e.tgz",
+                                                _tar_gz({"./project/output/Seals/m.json": b"{}"})))
+        self.assertIsNotNone(gs.archive_refusal("b.zip", _zip({"seals/m.json": b"{}"})))
+        self.assertIsNone(gs.archive_refusal("e.tar.gz",
+                                             _tar_gz({"run/audit/pairing_map.json": b"{}",
                                                       "benchmark/seals_note.md": b"x"})))
-        self.assertIsNone(gs.archive_refusal(_zip({"docs/readme.md": b"x"})))
-        self.assertEqual(gs.archive_refusal(b"this is not an archive"), "unreadable archive")
-        self.assertEqual(gs.archive_refusal(_tar_gz({"a.txt": b"x"})[:40]), "unreadable archive")
+        self.assertIsNone(gs.archive_refusal("b.zip", _zip({"docs/readme.md": b"x"})))
+        self.assertEqual(gs.archive_refusal("x.tar.gz", b"this is not an archive"), "unreadable archive")
+        self.assertEqual(gs.archive_refusal("x.zip", b"this is not an archive"), "unreadable archive")
+        self.assertEqual(gs.archive_refusal("x.tar.gz", _tar_gz({"a.txt": b"x"})[:40]),
+                         "unreadable archive")
+
+    def test_xz_and_bz2_tars_are_inspected(self):
+        refused = {"ok.txt": b"x", "run/audit/model_replies/r.json": b"{}"}
+        for name, mode in (("e.tar.xz", "w:xz"), ("e.txz", "w:xz"),
+                           ("e.tar.bz2", "w:bz2"), ("e.tbz2", "w:bz2"), ("e.tar", "w")):
+            reason = gs.archive_refusal(name, _tar_gz(refused, mode))
+            self.assertIsNotNone(reason, name)
+            self.assertIn("run/audit/model_replies/r.json", reason, name)
+            self.assertIsNone(gs.archive_refusal(name, _tar_gz({"ok.txt": b"x"}, mode)), name)
+
+    def test_reader_is_chosen_by_suffix_never_by_sniffing(self):
+        # A plain tar whose LAST member is a small zip: the zip's end record sits
+        # in the tar's tail, so sniffing calls the whole tar a clean zip.
+        tail_zip = _zip({"docs/readme.md": b"x"})
+        data = _tar_gz({"seals/m.json": b"{}", "z.zip": tail_zip}, "w")
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(data)), "the trap must be real")
+        reason = gs.archive_refusal("bundle.tar", data)
+        self.assertIsNotNone(reason)
+        self.assertIn("seals/m.json", reason)
+        # The wrong reader for the suffix is not tried: it is refused unread.
+        self.assertEqual(gs.archive_refusal("named.zip", _tar_gz({"ok.txt": b"x"})),
+                         "unreadable archive")
+        self.assertEqual(gs.archive_refusal("named.tar.gz", _zip({"ok.txt": b"x"})),
+                         "unreadable archive")
+
+    def test_size_cap_and_memory_error_are_one_line_refusals(self):
+        data = _zip({"docs/readme.md": b"x" * 64})
+        with mock.patch.object(gs, "ZIP_SIZE_CAP", 16):
+            reason = gs.archive_refusal("big.zip", data)
+        self.assertEqual(reason, "archive too large to inspect")
+        self.assertNotIn("\n", reason)
+        with mock.patch.object(gs, "tar_refusal", side_effect=MemoryError):
+            self.assertEqual(gs.archive_refusal("e.tar.gz", _tar_gz({"a": b"x"})),
+                             "unreadable archive")
+        with mock.patch.object(gs, "zip_refusal", side_effect=MemoryError):
+            self.assertEqual(gs.archive_refusal("b.zip", data), "unreadable archive")
 
     def test_git_staged_and_force_added_seals_are_refused(self):
         _need_git(self)
@@ -173,6 +220,47 @@ class StagedPathChecks(unittest.TestCase):
             self.assertEqual(gs.staged_refusals(root),
                              [("docs/fix/broken.tar.gz", "unreadable archive")])
 
+    def test_git_staged_tars_stream_and_zips_respect_the_size_cap(self):
+        _need_git(self)
+        with tempfile.TemporaryDirectory(prefix="shimmer_staged_stream_") as td:
+            root = Path(td)
+            _git(root, "init", "-q")
+            fix = root / "docs" / "fix"
+            fix.mkdir(parents=True)
+            # A tar is never read whole: the whole-blob reader is made to fail,
+            # and the refused member is still named (so it was streamed).
+            whole = mock.patch.object(gs, "staged_blob",
+                                      side_effect=AssertionError("a tar was read whole"))
+            tail_zip = _zip({"docs/readme.md": b"x"})
+            (fix / "plain.tar").write_bytes(_tar_gz({"seals/m.json": b"{}", "z.zip": tail_zip}, "w"))
+            (fix / "e.tar.xz").write_bytes(_tar_gz({"run/audit/model_replies/r.json": b"{}"}, "w:xz"))
+            (fix / "ok.tar.bz2").write_bytes(_tar_gz({"ok.txt": b"x" * 4096}, "w:bz2"))
+            for name in ("plain.tar", "e.tar.xz", "ok.tar.bz2"):
+                _git(root, "add", "docs/fix/" + name)
+            with whole:
+                refusals = dict(gs.staged_refusals(root))
+            self.assertEqual(sorted(refusals), ["docs/fix/e.tar.xz", "docs/fix/plain.tar"])
+            self.assertIn("seals/m.json", refusals["docs/fix/plain.tar"])
+            self.assertIn("run/audit/model_replies/r.json", refusals["docs/fix/e.tar.xz"])
+            for name in ("plain.tar", "e.tar.xz", "ok.tar.bz2"):
+                _git(root, "rm", "-q", "--cached", "docs/fix/" + name)
+            # A zip above the cap is refused unread, with one line.
+            (fix / "bundle.zip").write_bytes(_zip({"docs/readme.md": b"x" * 64}))
+            _git(root, "add", "docs/fix/bundle.zip")
+            self.assertEqual(gs.staged_refusals(root), [])
+            with mock.patch.object(gs, "ZIP_SIZE_CAP", 16), \
+                    mock.patch.object(gs, "staged_blob",
+                                      side_effect=AssertionError("a large zip was read")):
+                self.assertEqual(gs.staged_refusals(root),
+                                 [("docs/fix/bundle.zip", "archive too large to inspect")])
+            _git(root, "rm", "-q", "--cached", "docs/fix/bundle.zip")
+            # A MemoryError from the tar reader becomes "unreadable archive".
+            _git(root, "add", "docs/fix/ok.tar.bz2")
+            with mock.patch.object(gs, "tar_refusal", side_effect=MemoryError):
+                self.assertEqual(gs.staged_refusals(root),
+                                 [("docs/fix/ok.tar.bz2", "unreadable archive")])
+            self.assertEqual(gs.staged_refusals(root), [])
+
     def test_git_staged_deletion_of_a_refused_path_is_allowed(self):
         _need_git(self)
         with tempfile.TemporaryDirectory(prefix="shimmer_staged_deletion_") as td:
@@ -199,7 +287,8 @@ def check():
                         f"{result.skipped[0][1]}")
     return ("PASS", f"{ran} cases: name lists and a real git index refuse staged and force-added "
                     f"seals/ and audit/model_replies/ paths at any depth and in any case, and "
-                    f"staged archives holding them or unreadable; deletions and ordinary paths pass")
+                    f"staged archives holding them, unreadable or too large; tars streamed and "
+                    f"readers chosen by suffix; deletions and ordinary paths pass")
 
 
 if __name__ == "__main__":
