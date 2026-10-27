@@ -80,7 +80,8 @@ Shimmer splits each document into **units**, the pieces a rule is applied to.
    - State each label once per unit. If a label repeats, scope values (section 4) are read from its first line and figures from its last.
 2. **A table**: a header row, a separator row (`|---|---|`), then at least one body row.
    - Each header cell is a field label of the unit.
-   - A **measure** in brackets at the end of a header, as in `Line total (EUR)`, is the column's unit of measurement. It is not part of the label.
+   - A **measure** in brackets at the end of a header, as in `Line total (EUR)`, is the column's unit of measurement. It is not part of the label. The bracket holds 1 to 16 characters: a letter, `%` or a currency symbol first, then only letters, digits, `/`, `%`, `*` and `-`. A bracket in words, such as `(cubic metres)`, gives no measure, and is still left out of the label.
+   - In the document under review, a cell's own measure replaces the header's for that cell: under `Volume (mL)`, the cell `7 L` is 7 `L`. Only a cell with no measure of its own takes the header's. Write table cells as plain numbers. A reference table is read the other way round (section 7).
    - Put each table in its own paragraph, with a blank line before and after it. Never put `|` inside a cell.
 
 **Normalised labels.** Labels are compared after **normalisation**:
@@ -126,6 +127,7 @@ The normalised words, joined by single spaces, are what the answer key's `field_
   - `EUR 12` and `12 EUR` agree. `12 EUR/box` and `12 EUR / box` agree.
   - `EUR` and `eur` do not. `box` and `boxes` do not. `$12` and `12 USD` do not.
   - `m2` and `m` agree, because the digit is dropped. Never put digits in a measure.
+- **Disagreeing measures are never compared.** A sum is not computed when the cells of its column do not all agree, or when the total's measure differs from theirs. A product is not computed when no third figure has the measure the two multiply to. A figure is not compared with a band in another measure. Nothing is written in any of these cases: no finding and no refusal, so there is nothing to key. Only a change record (section 6) is refused visibly when the two versions' measures differ.
 - **Multiplying and dividing measures.** Multiplying adds powers and dividing subtracts them: `box` times `EUR/box` is `EUR`, and `EUR` divided by `box` is `EUR/box`. A figure with no measure leaves the other measure unchanged: 4 times `12 EUR` is in `EUR`, and `12 EUR/box` divided by 2026 is in `EUR/box`.
 - In a label line, write the measure after the figure, never in brackets in the label.
 
@@ -221,8 +223,8 @@ A **directive** is a bracket on a rule heading whose first word is `scope`, `req
 |---|---|
 | `[scope: label, label=value]` | Names the units the rule governs. A unit is **in scope** when it carries every listed label, as a label line or a table header. For a pinned entry (`label=value`), the unit's first label line with that label must also have a whole value equal to `value`, ignoring case and runs of spaces. Pinned values are read from label lines only and cannot contain a comma. A scoped rule pairs on its scope alone: the labels its text mentions are not requirements. |
 | `[requires: label, label]` | Lists fields every unit in scope must carry, as a label line with a value or as a table header. Each one missing becomes a `missing_field` finding that Python decides with no model call (**computed absence**). It works only together with `[scope: ...]`; alone, it does nothing. |
-| `[unless: label]` | Suspends the rule on any unit that carries that label, as a label line or a table header. |
-| `[unless: CONV-X]` | Names another rule that qualifies this one. Python never suspends on it; the other rule's text goes to the reviewer together with this rule. A name that matches no rule is read as a label if the unit carries it. Otherwise it is ignored. |
+| `[unless: label]` | Suspends the rule on any unit that carries that label, as a label line with a value or a table header, whatever the value says. On that unit the rule is not applied at all: no band, date-window or absence finding comes from it, and no sum, product or blank-cell finding is attributed to it. |
+| `[unless: CONV-X]` | Names another rule that qualifies this one. Python never suspends on it; the other rule's text goes to the reviewer together with this rule. A name that matches no rule is read as a label if the unit carries it. Otherwise it is ignored. A rule with any `[unless: ...]` never receives a moved finding (section 3). |
 
 **Judged absence.** A scoped rule without `[requires: ...]` puts one narrow question to the model for every unit in scope. The only exception is a unit on which Python already settled that rule with a band or date-window comparison. Section 5 forbids this form.
 
@@ -247,6 +249,9 @@ There is one rule, the same for every test. Apply it from each rule's own text, 
 4. **Every rule names at least one document label, or declares a scope.**
 5. **Coverage.** Every unit except the preamble is in scope of, or pairs with, at least one rule. The preamble needs no scope to exclude it: a rule pairs with the preamble only if the preamble carries every label the rule names. Keep the labels your rules name out of the preamble, unless a rule is meant for it.
 6. **Scope values must sit in label lines.** If the units in scope differ from the others only by a value, give every unit a label line that states that value, and pin the scope to it. A value that appears only in a table cell cannot be used.
+7. **No `[unless: ...]`.** No rule declares one. A field condition switches the whole rule off on every unit that carries the label, and a rule condition is never checked by Python, so either would make a catch depend on a directive written for one test. State a condition in the rule's text instead:
+   - A condition on a field. If the rule is a completeness rule, the units it governs are named by its scope (rule 1), pinned to a value where needed. If the rule's band comes from a reference table or a labelled sentence, naming the field in its text makes the low side conditional on units that carry it (section 7). Otherwise Python does nothing with it.
+   - A condition on another rule. Name that rule in the text ("Read with CONV-P02."). Python does nothing with it; only a reviewer reads it.
 
 **Why.**
 
@@ -316,7 +321,7 @@ There is one rule, the same for every test. Apply it from each rule's own text, 
 
 - the earlier version states the label with a figure, under a heading whose slug a unit of the target still has;
 - no unit of the target carries that label at all, as a label line with any value or as a table header;
-- no label that is new in that unit of the target has a figure within 2% of the earlier figure, in the same non-empty measure (that case is refused as a possible rename).
+- no label that is new in that unit of the target has a figure, in the same non-empty measure, that differs from the earlier figure by at most 2% of the larger of the two in absolute value, 2% included (that case is refused as a possible rename). From an earlier 100, a new figure of 102.04 is refused (the difference is 1.9992% of 102.04), and 97.96 is not (2.04% of 100). A label is new unless the earlier version states it somewhere, under any heading, with one figure and a REF id; a label whose earlier statements were refused (a tie, or no REF id) counts as new. Only label-line figures of the target unit are tested.
 
 The record sits on the target unit with that slug. A label with a text value never gets one. A figure with no measure (from an identifier such as `SR-101`) can still get one. A label stated earlier under a heading the target no longer has is refused as an **orphan**.
 
@@ -347,6 +352,7 @@ The **reference corpus** is every grounding file, the earlier version included. 
   - A currency symbol or a letter outside ASCII in that bracket is not read. Use letter codes (`EUR`, `USD`) for measures in reference tables.
   - A bracket in words (`(EUR per box)`, at most 32 characters, two to four words) works only when its first and last words are measures the document under review writes, and they combine, in exactly one order, into a measure the document also writes. Avoid it.
   - With no header measure, the measure after the second number counts (`8 to 15 EUR/box`). A range with no measure is ignored.
+  - With a header measure, a measure written in a cell is ignored: under `Price band (EUR/box)`, the cell `8 USD to 15 USD` is read as 8 to 15 `EUR/box`. Write range cells as two plain numbers.
   - The band's measure must agree with the document's figure (section 2).
 - **Unit column.** A text column whose every cell is a measure the document under review writes gives the measure of its row.
 - **Key column.** A text column with at least two non-empty cells, all different. If the rule's text names every word of some key column's header, only those named key columns are used. Otherwise every key column is used.
@@ -366,14 +372,17 @@ The **reference corpus** is every grounding file, the earlier version included. 
 
 Example: "The unit price must lie within the price band for the item class", with the key header `Item class`, gives a firm `below_band` on `unit price`. The ratio of line total to quantity is conditional, because the rule also names `unit price`, which that ratio does not use.
 
+A band the rule states itself (below) never has a conditional low side: its `below_band` is always firm, whatever other labels the rule names and the unit carries. "The shrinkage must lie between 1% and 4% unless a recount note is filed." gives a firm `below_band` on a unit with `Shrinkage: 0.5 %` and `Recount note: none filed`. The low-side test applies only to bands from reference tables and labelled sentences.
+
 **Other ways to state a bound.**
 
 - **A rule may state its own band**: two or more figures with the same measure in its text. The lowest and the highest are the bounds. The band applies to the fields the rule names that the unit holds as figures; if the unit holds none of them as figures, it applies to every figure with that measure. Ratios of every pair of label-line figures are compared as for a table band. Never write two figures with the same measure in a rule unless they are its band.
 - **A labelled sentence** in a grounding file, of the shape `Label: words 8 to 15 EUR/box.` (label at most 48 characters, exactly two numbers after the colon, a measure the document writes), is read as one row of a band table. The label is the key cell and the words before the first number are the column header the rule must name. Do not write this shape anywhere in grounding files, the earlier version included, unless you mean a band.
 - **A date window** needs all of these:
   - a unit with two dates the rule names: either two label lines each holding exactly one ISO date (`2026-03-01` or `2026-03-01 09:30`), or one label line holding exactly two. The rule must name each line's label. If the rule names both shapes, or three or more such lines, there is no window;
-  - a **bound sentence**: a sentence with exactly one number, measured in `hours` or `days` (written exactly so), whose other words, normalised, all appear in the rule: "The standard reply window is 48 hours." It may sit in a grounding file, within the first 200 characters of its paragraph, or in the document under review;
-  - among all sentences with exactly one measured number whose other words the rule all uses, in the grounding files and in the document, the bound sentence must have the most words. A tie means no window. Write no other such sentence.
+  - a **bound sentence**: a sentence (defined below) holding exactly one number in all, measured in `hours` or `days` (written exactly so), whose other words, normalised, all appear in the rule: "The standard reply window is 48 hours." It may sit in a grounding file, within the first 200 characters of its paragraph, or in the document under review;
+  - among all sentences holding exactly one number in all, with a measure of any kind, whose other words the rule all uses, in the grounding files and in the document, the bound sentence must have the most words. A tie means no window, whatever the figures say. Two copies of the same sentence tie, whether they sit in two grounding files, twice in one file, or in a grounding file and the document. An earlier version is a grounding file, so a sentence it shares with the document always ties. If the winning sentence's measure is not `hours` or `days`, there is no window either. Write the bound sentence once, in one reference file, and write no other such sentence anywhere.
+  - **What a sentence is.** The document under review is read whole; a grounding file only as its stored passages (so a prose paragraph's first 200 characters). Each paragraph (a run of non-blank lines) is read like this: lines that start, after any spaces, with `|` or `#` are dropped; the other lines are joined with single spaces; the result is split after every `.`, `?` or `!` that is followed by a space. A label line is therefore not a sentence of its own: the lines of one paragraph join into one sentence until one of them ends with `.`, `?` or `!`. `Window note: standard` above `Window length: 48 hours` in one paragraph is the one sentence `Window note: standard Window length: 48 hours`, with one number and the words `window note standard window length`. A label line alone in its paragraph, such as `Fee: 45 EUR`, is a sentence too. An ISO date counts as three numbers (`2026-03-01` gives 2026, -3 and -1).
 
   The gap between the two dates, ignoring direction and measured in the bound's measure, is compared with the bound. A larger gap is a `date_window` finding. Give the first date's label exactly one word after normalisation (for example `Logged:`): a label of two or more words comes out in an unpredictable word order in the finding. Dates are figures too (section 2), so keep other figures out of a date-window unit.
 
@@ -447,6 +456,9 @@ Changing one of these for one test is a code change.
   - `relation`;
   - `field_label`, the normalised label exactly as section 2 and the table below produce it;
   - `value_a` and `value_b`, the two figures as numbers, as the table below defines them.
+- Any other field in a planted entry, and any other top-level field of the key, is ignored by the scorer.
+
+**Flaws that depend on a neighbouring unit.** Python computes every relation inside one unit; no relation compares two units. A reviewer asked about a unit is also shown the units just before and after it, as context, but it is asked only where Python found a disagreement on that unit, or computed nothing there, and what it writes is not one of Python's typed reasons. So key a flaw that depends on a neighbour only when it also shows inside its own unit as one of the relations below (for example, a carried figure that makes the unit's own column disagree with its stated total). You may name the neighbour in an extra field of the planted entry.
 
 **How the scorer counts a single-version test.**
 
@@ -455,14 +467,19 @@ Changing one of these for one test is a code change.
 - **Attribution**: whether the amendment for a located flaw carries the rule `rule`. The rule is not used to locate a finding or to confirm its reason.
 - **False positives**: every amendment on a unit that is not a planted unit. Only one amendment is built per unit and rule. Findings that make no amendment never count: `ok` records (section 6), findings under advisory rules, and conditional `below_band` findings.
 - **Distractor hits**: amendments on units listed in `clean`. An amendment on an unlisted unflawed unit is a false positive all the same; `clean` only adds this second count. List the units you built to look flawed.
-- **An earlier version in a single-version test.** Change records are ignored by this format, so a single-version test that declares a prior still uses `planted` and `clean`, with no `prior_records`. A key that contains `prior_records` is scored as a negotiation-style test, and its `planted` and `clean` are ignored.
+- **An earlier version in a single-version test.** Change records are ignored by this format, so a single-version test that declares a prior still uses `planted` and `clean`, with no `prior_records`. A key that contains `prior_records`, even an empty list, is scored as a negotiation-style test, and its `planted` and `clean` are ignored.
+- **Where it lives.** A single-version test may declare an earlier version or not; its twin declares the same file (section 10). Probe 3 (section 11) adds one to a test that has none, and then only the probe has one. Its change records never become amendments, but it is a grounding file and so part of the reference corpus (section 7): its tables and labelled sentences can become bands, and its sentences compete in the date-window bound search. An earlier version made from the document repeats the document's text, so audit it as a reference file.
 
 **Which rule a finding is attributed to.**
 
 - A band, date-window or computed-absence finding: the rule that produced it.
-- A sum, product or blank-cell finding: Python computes it once per unit, on any unit paired with at least one rule. It is attributed to the paired rule whose named labels share the most words with the finding's field label (each counted twice) and with the labels it was computed from (each counted once). A tie goes to the rule that comes first in reading order. If that rule reaches no reviewer, the finding moves (section 3).
+- A sum, product or blank-cell finding: Python computes it once per unit, on any unit paired with at least one rule. It is attributed among the rules paired with that unit, in reading order, leaving out any rule suspended there by `[unless: ...]`:
+  - For each rule, take the **set** of words of all the labels its text names (section 4, longest match only). A scoped rule counts the labels its text names, not its scope. A word that two named labels share counts once.
+  - The rule scores 2 for each of those words that is in the finding's field label, plus 1 for each that is in the finding's **basis**, a fixed sentence split at spaces: `sum of N values under <column label>` for a sum, `<first label> times <second label>` for a product, and `<column label> is filled in N of M rows` for blank cells, where N and M are counts. So for blank cells each word of the column label scores 3, and the words `sum` and `filled`, and a count of three or more digits, score too when a named label holds them.
+  - The highest score wins. A tie goes to the rule that comes first in reading order. If every score is 0, the first rule in reading order takes the finding.
+  - If the winner reaches no reviewer, the finding moves (section 3) to the first other paired rule, in reading order, that reaches a reviewer, has no `[unless: ...]`, and whose text, lowercased and split at spaces only, contains every word of the field label. With none, it moves to the first rule that reaches a reviewer and has no `[unless: ...]`. This test does not normalise: `totals` or `total.` in a rule's text does not contain `total`.
 
-So the rule you name in `rule` must name the result's label and the labels it is computed from, and no other rule paired with that unit may name more of them.
+So the rule you name in `rule` must name the result's label and the labels it is computed from, and every other rule paired with that unit must score strictly lower. Do not rely on reading order to break a tie, and make sure the named rule reaches a reviewer.
 
 **What each relation's figures mean:**
 
@@ -477,6 +494,8 @@ So the rule you name in `rule` must name the result's label and the labels it is
 
 A sum, product or date window agrees with the stated figure when they are the same within the tolerance of section 6; a band has no tolerance. A computed product, sum or ratio is rounded to 6 decimal places: write it so in the key. A planted band breach often also produces a ratio finding with the same figures on the same unit. Plant no separate entry for it.
 
+**A blank cell in a summed column.** Only cells that hold a number are summed: a blank cell, or a cell with no number in it, adds nothing, and a sum needs at least two cells that hold a number. The blank-cell finding is computed separately. So a blank cell in a column with a stated total always gives the blank-cell `missing_field` finding, and also gives a `sum_mismatch` (with `value_a` the sum of the filled cells) whenever the total differs from that sum. If you plant a blank cell there, either write the total as the sum of the filled cells, or key both findings.
+
 **Negotiation-style test.** Instead of `planted` and `clean`, give `task` (one line, printed only) and two lists:
 
 - `prior_records`: one row per record Python will write (section 6): one per label-line figure per unit that both versions state, unchanged ones included, and one per `absent_since_prior`. Each row has:
@@ -485,14 +504,15 @@ A sum, product or date window agrees with the stated figure when they are the sa
   - `value_a`, the figure now (`null` for `absent_since_prior`);
   - `value_b`, the earlier figure;
   - `unit`, the measure of the earlier figure (not a unit id; `""` when there is none).
-- `band_irregularities`: one row per irregular `above_band` or `below_band` finding, with `field_label`, `relation`, `value_a` (the figure), and `rule` (the operator's own id).
+- `band_irregularities`: one row per irregular `above_band` or `below_band` finding, with `field_label`, `relation`, `value_a` (the figure), and `rule` (the operator's own id). These rows are the planted flaws of a negotiation-style test.
+- Every row of both lists must have `field_label` and `relation`, or the scorer stops with an error. Any other field in a row (a unit id, the bound crossed, your own kind) is ignored. Recall is not reported per kind in a negotiation-style test.
 
 **How the scorer counts a negotiation-style test.**
 
 - A `prior_records` row is found when a record has the same normalised label, the same relation, both figures the same (within the tolerance of section 6) and the same measure. The unit id is not compared, so one record can satisfy several identical rows. Two units with the same label, relation, figures and measure cannot be told apart: give them different figures.
 - **False positives**: every change record whose normalised label is not in `prior_records`, or appears there only with other relations.
 - **Stray refusals**: refusals and orphans for labels the key does not list. They are counted apart, not as false positives.
-- A `band_irregularities` row is found when an irregular band finding has the same relation, the same normalised label and the same `value_a`. Its attribution is correct when that finding's operator id equals `rule`.
+- A `band_irregularities` row is found when an irregular band finding has the same relation, the same normalised label and the same `value_a` within the tolerance of section 6. The unit and `value_b` are not compared, so one finding satisfies every row with the same label, relation and figure: give such rows different figures. A conditional `below_band` (section 7) is found like any other. Its attribution is correct when that finding's operator id equals `rule`.
 - **Band false positives**: every irregular band finding whose label is not listed, conditional ones included. A ratio finding has no label and always counts here. So in a negotiation-style test, never put two figures whose measures divide to a band's measure in one unit.
 
 ## 10. The clean twin
@@ -509,7 +529,7 @@ The **clean twin** is a second bundle identical to the first, except that every 
 
 ## 11. Perturbation probes
 
-A **perturbation probe** is a copy of a bundle with one controlled change, shipped as its own bundle with its own key. No code reads a probe declaration: this is a convention of this format. Record which probe it is in a top-level `probe` field of the key, which the scorer ignores.
+A **perturbation probe** is a copy of a bundle with one controlled change, shipped as its own bundle with its own key. No code reads a probe declaration: this is a convention of this format. Record which probe it is in a top-level `probe` field of the key, which the scorer ignores. A probe's key has no `twin_of`: a probe has no twin of its own, and a `twin_of` naming the test would make the twin check (section 10) compare two flawed runs.
 
 1. **Reworded labels.** Rewrite one label in other words with the same meaning, everywhere it appears in the document files (the target and the earlier version). Leave conventions, directives and reference files unchanged. Update `field_label` in the key to the new label's normalised form. Rules match labels by their words, so expect this: a rule that named the old words no longer pairs through that field, and a `[requires: ...]` naming the old label reports `missing_field` on every unit in scope. The probe measures exactly this dependence.
 2. **Reordered sections.** Move sections. Unit ids carry position, so update every moved unit's id in the key. The earlier version is matched by slug, so its records are unaffected. Keep any flaw that depends on a neighbouring unit next to that neighbour.
@@ -528,7 +548,7 @@ A **multi-round case** is a test that spans more than two versions of one docume
 - **Clean distractor**: a correct unit built to look like a flaw.
 - **Clean twin**: the same bundle with every flaw repaired.
 - **Computed absence**: a missing required field, decided by Python.
-- **Conditional finding**: a `below_band` finding that the rule qualifies; recorded, never an amendment.
+- **Conditional finding**: a `below_band` finding from a reference-table or labelled-sentence band that the rule qualifies (section 7); recorded, never an amendment. A band the rule states itself never gives one.
 - **Conventions**: the rules in `conventions/`.
 - **Date cutoff**: the repository-wide date that decides the role of a file the manifest does not name.
 - **Directive**: a heading bracket whose first word is `scope`, `requires` or `unless`, followed by a colon.

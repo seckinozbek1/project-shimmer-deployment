@@ -293,3 +293,10 @@ open-item sweep.
 - **Evidence.** `tools/score_corpus.py` line 75 (`CORPORA = ROOT / "benchmark" / "corpora"`); `--corpus` takes a name, not a path.
 - **Why it was left.** S3 does not score; the first scoring of generated bundles is S5, and the sealed scorer is role C's own. Recorded in `docs/INPUT_FORMAT.md` section 1.
 - **What would settle it.** A `--corpora-root` option (with a gate check) before S5 scores the development suite.
+
+## 20. The pairing map reports a firm low side as conditional (found at loop S3)
+
+- **What it is.** `reference_tables.band_conditions_for_unit` leaves the compared field out of the fields it treats as used, so a unit's `band_conditions` record in `audit/pairing_map.json` says the low side goes to the model (conditional) for a comparison the finding itself treats as firm. Findings, amendments and scores are unaffected; only the audit record misreports.
+- **Evidence.** A probe on the input format's own unit-price example (S3 answers to the generators' questions, kept privately); the finding path never sets `conditional_on` there.
+- **Why it was left.** The file is not changed by S3 (P16); the misreport affects an audit record, not a result.
+- **What would settle it.** Count the compared field as used, with a gate check on the format's example; S6 sweep.
