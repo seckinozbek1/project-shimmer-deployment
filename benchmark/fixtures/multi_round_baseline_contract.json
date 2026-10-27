@@ -24,7 +24,7 @@
     "_prewarm_qwen": "ed82178f194ef037479e87b958df19b1598af0f4f1e3ae252ce909c599393294",
     "_truncate": "e65efb4682baed8fcc48cfca80ea58d02220556f4c7c6cca7cedd173788f4037",
     "_resolve_review_scope": "f021ad0349008fd15ba7b44bb38c60a66cb3c1077eaca2f501195710996c034e",
-    "_draft_generate_with_evidence": "26581a7f8730f78fb705c2679b286e165d01d52a88c110e1a25b98c408d8f19e",
+    "_draft_generate_with_evidence": "0f424f48b9e9ab223d260a75a8cc2d679f2f9ad4449e7afac72991a7ec7c7a0a",
     "build_draft_prompt": "d7acf8d46e562ba3f27d9837e273d614c70bdf7fe9c3740d307ee1c3daeec4b1",
     "_slug_from_question": "f2da3211bc443af5b8869af72a9dee0bf6a90ab06f2b32563aed9778d52d1f26",
     "_question_suffix": "713aec0dd974463218a7f4c0b1ffb474bc4c010e5ecb77e707d2a35e156d9893",
@@ -64,7 +64,7 @@
     "_harvest_amendment_payloads_from_bus": "aa964a309d4f8d8e98ea77bd637f1044ad134fec4075ce961582919fc4099698",
     "_mint_web_references": "572e316d2a596dc1bfc3abe918c8ea128a2be829e2f8ff856c1aa927e0576e16",
     "write_deliverables_run_summary": "5e2c58f726f084150828312cea3063dca145f1d24dbbc8a6a9072a0cdfdc119b",
-    "phase_6_synthesis": "4db46a4aae4d8e9e466957270986d34f78eceff38d0e8068337878b31266f701",
+    "phase_6_synthesis": "0367572277f7e1cc2e75de0ffd2c75884c234e806c5d46629edb9e5cb1915329",
     "_prior_refusals_for": "d00896ef31424933cdd2e0bf28c19149ba893068e73eaedb4a6a34ae68596b4d",
     "_prior_orphans_for": "2a776677fad0e983676d241090179564ac379110f3e4c20394be0595cd89e6a3",
     "_category_for_conv": "0b36fc194a24a4028716d0f25c0e84af97ade28a9b7d564cf30ca1592ab21617",
@@ -146,6 +146,21 @@
         "phase_5_audit": {
           "from": "e6d2c0680188f7d2732d55253315cfc0aee548bd46e4adf01c764dd4a4ff20c6",
           "to": "6d994ae0dabfbe3bc390142c7c7773b2e2dc4a3259c8807fb8b5cf74069d2f79"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S01: every model reply is saved (Annex A 11.6.4). _draft_generate_with_evidence appends the draft memo's outcome (free_text, or backend_failure) to the run's audit/model_replies/outcomes.jsonl after the reply record is written inside the backend function; phase_6_synthesis appends not_promoted for each model finding left out of amendments (the _withheld list). Nothing is promoted to an amendment by either change (gate check 269 unchanged).",
+      "document": "docs/loop/stages/S01_REPORT.md",
+      "functions": {
+        "_draft_generate_with_evidence": {
+          "from": "26581a7f8730f78fb705c2679b286e165d01d52a88c110e1a25b98c408d8f19e",
+          "to": "0f424f48b9e9ab223d260a75a8cc2d679f2f9ad4449e7afac72991a7ec7c7a0a"
+        },
+        "phase_6_synthesis": {
+          "from": "4db46a4aae4d8e9e466957270986d34f78eceff38d0e8068337878b31266f701",
+          "to": "0367572277f7e1cc2e75de0ffd2c75884c234e806c5d46629edb9e5cb1915329"
         }
       }
     }

@@ -244,6 +244,16 @@ processing swarm governed by an append-only constitution.
   rather than carrying a second copy. `explanation` is for the human reader and is stripped
   from any payload travelling to another agent (`strip_reasoning`).
 
+- REPLIES-A (loop S1, 2026-10-27; Annex A 11.6.4): every model call writes exactly one record
+  through `reply_records.write`, inside the backend function that holds the raw text
+  (`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and in Auditor896's `predict`, never in
+  `dispatch` or `run_task` (the draft memo calls `call_claude` directly). Records go to
+  `<run_dir>/audit/model_replies/`; outcomes are appended separately by call id to
+  `outcomes.jsonl`; a redaction-enabled run keeps `sha256:` and `length_bytes:` only; a call with
+  no run context writes nothing (never a fallback to `output/`). Saving a reply never promotes
+  it: check 269 still holds that only Python-computed findings become amendments.
+  `guard_secrets.py --staged` refuses `audit/model_replies/` at any depth. Checks 275 and 276.
+
 ## Review modes
 
 - Phase 5.5 runs `wide` (each agent sees the whole document and the whole registry) or
