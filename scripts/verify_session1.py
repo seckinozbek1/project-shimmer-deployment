@@ -24756,6 +24756,17 @@ def check_268_record_example_carries_declared_values():
     return check_record()
 
 
+def check_275_staged_seal_paths_are_refused():
+    """Annex B.3 (loop of 2026-10-27): seal manifests live in the gitignored
+    `seals/` folder and are never committed, even force-added. Before this,
+    guard_secrets.py scanned file contents across the whole tree and had no
+    git, index or path logic at all, while the threat model said it scanned the
+    staged diff. `guard_secrets.py --staged` now reads git's staged-name list
+    (force-added paths included) and refuses any path under `seals/`."""
+    from staged_path_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25108,6 +25119,8 @@ CHECKS = [
      check_273_preamble_unit_moves_nothing_and_reaches_the_sheet_header),
     ("274 every long phase reports a measured progress reading or refuses in words",
      check_274_every_long_phase_reports_a_measured_reading_or_refuses),
+    ("275 a staged or force-added seal manifest path is refused before commit",
+     check_275_staged_seal_paths_are_refused),
 ]
 
 

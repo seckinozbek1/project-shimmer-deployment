@@ -185,3 +185,7 @@ benchmark/keys/
 
 # Autonomous loop private records (never committed)
 docs/loop/private/
+
+# Seal manifests of sealed tests (Annex B.3). Never committed, even force-added:
+# `scripts/guard_secrets.py --staged` refuses a staged path under seals/.
+seals/

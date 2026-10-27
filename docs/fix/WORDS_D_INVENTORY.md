@@ -1,7 +1,7 @@
 # WORDS-D: every place in this repository where meaning is decided from words
 
 The complete list, swept across `scripts/`, `tools/`, `config/`,
-`corpus_ingest/`, `maat_ingest/`, the sensitivity layer, the harness, the
+`corpus_ingest/`, `an ingestion folder for an external system (not in this repository)`, the sensitivity layer, the harness, the
 server and the gate checks themselves.
 
 **Wider than the earlier inventory.** That one looked for FIELDS inferred from

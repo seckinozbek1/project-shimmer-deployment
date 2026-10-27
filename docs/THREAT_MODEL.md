@@ -180,7 +180,10 @@ fixed allowlist; provider error strings are scrubbed before they reach a
 `CallResult` or the cost log (gate check 95 embeds a synthetic key and asserts
 `[REDACTED_KEY]`); `.gitignore` carries belt-and-braces patterns
 (`**/config.py`, `**/*key*`, `**/*secret*`, `**/*credential*`, `**/.env*`,
-`api_keys*/`); `scripts/guard_secrets.py` scans the staged diff; structured log
+`api_keys*/`); `scripts/guard_secrets.py` scans the contents of every file in the
+working tree for key patterns (ignored folders included), and with `--staged` refuses a
+staged path under `seals/` (seal manifests, never committed, force-added or not; gate
+check 275); structured log
 events are bounded by construction to a snake_case name plus whitespace-free
 `key=value` pairs, and gate check 112 asserts that over every call site, so
 document or prompt text cannot be smuggled into a log line; a contract-violation
@@ -188,11 +191,14 @@ dump under a sensitive run persists a SHA-256 and a length, never the raw text
 (gate check 100); `GET /health` is proven to leak no `SHIMMER_` value, path or
 hash (gate check 105).
 
-Not mitigated: the pre-commit hook that runs the secret guard is **NOT
-installed** in this clone (`core.hooksPath` unset, `.git/hooks/pre-commit`
-absent, verified in STEP 10). Until `git config core.hooksPath .githooks` is
-run, the guard only runs when someone remembers. Also: full prompts are not
-logged, but a provider retains what it receives under its own policy.
+Not mitigated: no hook runs the secret guard. It acts only when someone runs it.
+(Corrected 2026-10-27: this paragraph used to say the hook could be installed with
+`git config core.hooksPath .githooks`, but this repository has no `.githooks` folder.
+The guard does not read the staged diff's contents; its `--staged` mode checks staged
+paths only.) During the 2026-10-27 loop, the loop runs the guard and a staged-diff key
+scan before every commit, and a local pre-push hook outside version control refuses
+pushes that add a path under `seals/`. Also: full prompts are not logged, but a
+provider retains what it receives under its own policy.
 
 ### T7. Path traversal or upload abuse through the dock
 **Residual risk: LOW.**
