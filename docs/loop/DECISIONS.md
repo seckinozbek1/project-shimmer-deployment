@@ -177,3 +177,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Pins.** Four functions re-amended in both contracts (`_paired_convention_review`, `_render_per_agent_md`, `phase_6_synthesis`, `write_deliverables_run_summary`).
 - **Rules.** P1, P9, P10, H9, IV.4.
 - **Reverse.** Open item 19 can be taken up in S6 or S7.
+
+## D-024. A side-gate test's scope gains the renamed branch input
+
+- **When, stage.** 2026-10-27 11:33 +0300 (system clock), S2 gates at `7027a29`.
+- **What failed.** The report-recommendations side gate (and the final-integration gate that runs the same suite) errored in `test_exact_comparison_live_branch_emits_record_without_dispatch`: `NameError: name 'finding_refs' is not defined`. The test runs the live exact-comparison branch of `scripts/pipeline.py` on its own, handing it its inputs in a scope dictionary. S2a's reader-check fix RC2 made phase 5.5 compute `finding_refs` (the unit's own passage, else `refs`) just before the branch, and the branch now cites it. The lanes ran neither side gate.
+- **Options.** (1) Move the `finding_refs` computation inside the branch (a pinned-function change, duplicated for the model path); (2) give the test's scope the renamed input. Chosen: (2), a test-infrastructure change (IV.6): the branch's real input is supplied, every assertion is unchanged (including `source_refs == ["REF-1234"]`), so it is not a weakening (H9).
+- **Evidence.** Before: 41 tests, 1 error, ORDINARY_SAFE_GATE FAIL 1. After: 41 tests OK, PASS 50, FAIL 0; final-integration exit 0.
+- **Rule learned.** Every lane that changes `scripts/pipeline.py` runs all six side gates before reporting, not only its own modules.
+- **Rules.** P1, IV.6, H9.
