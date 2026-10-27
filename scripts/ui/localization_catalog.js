@@ -944,9 +944,9 @@ var SHIMMER_TR = {
   "- documents reviewed: ": "- incelenen belgeler: ",
   "- total amendments: ": "- toplam değişiklik: ",
   "- total cost: $": "- toplam maliyet: $",
-  "- INST_FINDER: switched off by the ratified SHIMMER_INST_FINDER setting, amendment ": "- INST_FINDER: onaylanmış SHIMMER_INST_FINDER ayarıyla kapatıldı, değişiklik ",
-  "- INST_FINDER: SHIMMER_INST_FINDER=off without a ratified amendment; the run refused to start": "- INST_FINDER: onaylanmış bir değişiklik olmadan SHIMMER_INST_FINDER=off; çalışma başlamayı reddetti",
-  "- INST_FINDER: on (SHIMMER_INST_FINDER is not off)": "- INST_FINDER: açık (SHIMMER_INST_FINDER kapalı değil)",
+  "- INST_FINDER: switched off for this run by the operator, as ratified in amendment ": "- INST_FINDER: bu çalışma için operatör tarafından kapatıldı; onaylayan değişiklik ",
+  "- INST_FINDER: switched off without a ratified amendment, so the run refused to start": "- INST_FINDER: onaylanmış bir değişiklik olmadan kapatıldı; bu nedenle çalışma başlamayı reddetti",
+  "- INST_FINDER: switched on for this run": "- INST_FINDER: bu çalışma için açık",
   "- INST_FINDER: setting not recorded for this summary": "- INST_FINDER: bu özet için ayar kaydedilmemiş",
   "(no documents under review)": "(incelenen belge yok)",
   "## Rule conflicts put to you": "## Kararınıza sunulan kural çelişkileri",
@@ -1183,6 +1183,14 @@ var SHIMMER_TR = {
       "translation": "{0!m} Bu birimin sayılarından kodla hesaplandı, model tarafından değerlendirilmedi."
     },
     {
+      "pattern": "^([\\s\\S]+?)\\ The\\ figures\\ were\\ computed\\ in\\ code\\ from\\ this\\ unit;\\ only\\ the\\ note\\ quoted\\ at\\ the\\ end\\ was\\ written\\ by\\ a\\ model\\.$",
+      "translation": "{0!m} Sayılar bu birimden kodla hesaplandı; yalnızca sondaki alıntılanan not bir model tarafından yazıldı."
+    },
+    {
+      "pattern": "^([\\s\\S]+?)\\ Checked\\ in\\ code:\\ the\\ field\\ is\\ absent\\ from\\ this\\ unit's\\ text;\\ only\\ the\\ note\\ quoted\\ at\\ the\\ end\\ was\\ written\\ by\\ a\\ model\\.$",
+      "translation": "{0!m} Kodla denetlendi: alan bu birimin metninde yok; yalnızca sondaki alıntılanan not bir model tarafından yazıldı."
+    },
+    {
       "pattern": "^([\\s\\S]+?)\\ Checked\\ in\\ code:\\ the\\ field\\ is\\ absent\\ from\\ this\\ unit's\\ text;\\ not\\ judged\\ by\\ a\\ model\\.$",
       "translation": "{0!m} Kodla denetlendi: alan bu birimin metninde yok; model tarafından değerlendirilmedi."
     },
@@ -1235,12 +1243,12 @@ var SHIMMER_TR = {
       "translation": "birimde şu alan yok: '{0}'"
     },
     {
-      "pattern": "^This\\ document\\ was\\ reviewed\\ against\\ ([\\s\\S]*?)\\ conventions\\.\\ Findings\\ computed\\ by\\ Python\\ from\\ the\\ document's\\ figures:\\ ([\\s\\S]*?)\\.\\ Items\\ written\\ by\\ a\\ model\\ \\(([\\s\\S]*?)\\),\\ not\\ checked\\ by\\ Python\\ and\\ not\\ promoted:\\ ([\\s\\S]*?)\\.\\ Model\\-written\\ notes\\ attached\\ to\\ Python's\\ findings\\ \\(model:\\ ([\\s\\S]*?)\\),\\ not\\ checked\\ by\\ Python:\\ ([\\s\\S]*?)\\.\\ The\\ context\\ references\\ below\\ are\\ filtered\\ for\\ topical\\ relevance\\ to\\ ([\\s\\S]*?)\\.$",
-      "translation": "Bu belge {0} kurala göre incelendi. Python tarafından belgenin sayılarından hesaplanan bulgular: {1}. Bir model tarafından yazılan ({2!m}), Python tarafından denetlenmeyen ve değişikliğe dönüştürülmeyen öğeler: {3}. Python bulgularına eklenen, bir model tarafından yazılmış notlar (model: {4!m}), Python tarafından denetlenmedi: {5}. Aşağıdaki bağlam kaynakları {6} ile konu ilgisine göre süzüldü."
+      "pattern": "^This\\ document\\ was\\ reviewed\\ against\\ ([\\s\\S]*?)\\ conventions\\.\\ Findings\\ computed\\ by\\ Python\\ from\\ the\\ document's\\ figures:\\ ([\\s\\S]*?)\\.\\ Required\\ fields\\ Python\\ checked\\ in\\ code\\ and\\ found\\ absent:\\ ([\\s\\S]*?)\\.\\ Items\\ written\\ by\\ a\\ model\\ \\(([\\s\\S]*?)\\),\\ not\\ checked\\ by\\ Python\\ and\\ not\\ promoted:\\ ([\\s\\S]*?)\\.\\ Model\\-written\\ notes\\ attached\\ to\\ Python's\\ findings\\ \\(model:\\ ([\\s\\S]*?)\\),\\ not\\ checked\\ by\\ Python:\\ ([\\s\\S]*?)\\ kept\\ from\\ ([\\s\\S]*?)\\ judging\\ call\\(s\\)\\.\\ The\\ context\\ references\\ below\\ are\\ filtered\\ for\\ topical\\ relevance\\ to\\ ([\\s\\S]*?)\\.$",
+      "translation": "Bu belge {0} kurala göre incelendi. Python tarafından belgenin sayılarından hesaplanan bulgular: {1}. Python'un kodla denetleyip eksik bulduğu zorunlu alanlar: {2}. Bir model tarafından yazılan ({3!m}), Python tarafından denetlenmeyen ve değişikliğe dönüştürülmeyen öğeler: {4}. Python bulgularına eklenen, bir model tarafından yazılmış notlar (model: {5!m}), Python tarafından denetlenmedi: {7} değerlendirme çağrısından {6} not tutuldu. Aşağıdaki bağlam kaynakları {8} ile konu ilgisine göre süzüldü."
     },
     {
-      "pattern": "^Findings\\ below\\ come\\ from\\ the\\ convention\\ review\\.\\ Computed\\ by\\ Python\\ from\\ the\\ document's\\ figures:\\ ([\\s\\S]*?)\\.\\ Written\\ by\\ a\\ model\\ \\(([\\s\\S]*?)\\),\\ not\\ checked\\ by\\ Python\\ and\\ not\\ promoted,\\ listed\\ apart\\ under\\ each\\ category:\\ ([\\s\\S]*?)\\.\\ Model\\-written\\ notes\\ attached\\ to\\ Python's\\ findings\\ \\(model:\\ ([\\s\\S]*?)\\),\\ not\\ checked\\ by\\ Python:\\ ([\\s\\S]*?)\\.\\ Each\\ finding\\ cites\\ the\\ convention\\ ID\\ and\\ the\\ reference\\ ID\\(s\\)\\ and\\ says\\ who\\ wrote\\ it\\.$",
-      "translation": "Aşağıdaki bulgular kural incelemesinden gelir. Python tarafından belgenin sayılarından hesaplananlar: {0}. Bir model tarafından yazılan ({1!m}), Python tarafından denetlenmeyen ve değişikliğe dönüştürülmeyen, her kategoride ayrıca listelenenler: {2}. Python bulgularına eklenen, bir model tarafından yazılmış notlar (model: {3!m}), Python tarafından denetlenmedi: {4}. Her bulgu kural kimliğini ve kaynak kimliklerini belirtir ve kimin yazdığını söyler."
+      "pattern": "^Findings\\ below\\ come\\ from\\ the\\ convention\\ review\\.\\ Computed\\ by\\ Python\\ from\\ the\\ document's\\ figures:\\ ([\\s\\S]*?)\\.\\ Required\\ fields\\ Python\\ checked\\ in\\ code\\ and\\ found\\ absent:\\ ([\\s\\S]*?)\\.\\ Written\\ by\\ a\\ model\\ \\(([\\s\\S]*?)\\),\\ not\\ checked\\ by\\ Python\\ and\\ not\\ promoted,\\ listed\\ apart\\ under\\ each\\ category:\\ ([\\s\\S]*?)\\.\\ Model\\-written\\ notes\\ attached\\ to\\ Python's\\ findings\\ \\(model:\\ ([\\s\\S]*?)\\),\\ not\\ checked\\ by\\ Python:\\ ([\\s\\S]*?)\\ kept\\ from\\ ([\\s\\S]*?)\\ judging\\ call\\(s\\)\\.\\ Each\\ finding\\ cites\\ the\\ convention\\ ID\\ and\\ the\\ reference\\ ID\\(s\\)\\ and\\ says\\ who\\ wrote\\ it\\.$",
+      "translation": "Aşağıdaki bulgular kural incelemesinden gelir. Python tarafından belgenin sayılarından hesaplananlar: {0}. Python'un kodla denetleyip eksik bulduğu zorunlu alanlar: {1}. Bir model tarafından yazılan ({2!m}), Python tarafından denetlenmeyen ve değişikliğe dönüştürülmeyen, her kategoride ayrıca listelenenler: {3}. Python bulgularına eklenen, bir model tarafından yazılmış notlar (model: {4!m}), Python tarafından denetlenmedi: {6} değerlendirme çağrısından {5} not tutuldu. Her bulgu kural kimliğini ve kaynak kimliklerini belirtir ve kimin yazdığını söyler."
     },
     {
       "pattern": "^([\\s\\S]*?)\\ escalation\\ messages\\ carry\\ no\\ topic\\ or\\ no\\ content;\\ not\\ counted\\ as\\ a\\ pattern$",
@@ -1268,27 +1276,27 @@ var SHIMMER_TR = {
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ product\\ of\\ the\\ factors\\ comes\\ to\\ ([\\s\\S]*?),\\ matching\\ the\\ stated\\ ([\\s\\S]*?)\\ of\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: Çarpanların çarpımı {2}; belirtilen {3} değeri {4} ile uyumlu."
+      "translation": "{0} birimi, {1!m} kuralı: Çarpanların çarpımı {2}; belirtilen '{3}' değeri {4} ile uyumlu."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ product\\ of\\ the\\ factors\\ comes\\ to\\ ([\\s\\S]*?),\\ but\\ the\\ stated\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: Çarpanların çarpımı {2}; ancak belirtilen {3} değeri {4}."
+      "translation": "{0} birimi, {1!m} kuralı: Çarpanların çarpımı {2}; ancak belirtilen '{3}' değeri {4}."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ times\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ comes\\ to\\ ([\\s\\S]*?),\\ matching\\ the\\ stated\\ ([\\s\\S]*?)\\ of\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: '{2}' ({3}) ile '{4}' ({5}) çarpımı {6}; belirtilen {7} değeri {8} ile uyumlu."
+      "translation": "{0} birimi, {1!m} kuralı: '{2}' ({3}) ile '{4}' ({5}) çarpımı {6}; belirtilen '{7}' değeri {8} ile uyumlu."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ times\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ comes\\ to\\ ([\\s\\S]*?),\\ but\\ the\\ stated\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: '{2}' ({3}) ile '{4}' ({5}) çarpımı {6}; ancak belirtilen {7} değeri {8}."
+      "translation": "{0} birimi, {1!m} kuralı: '{2}' ({3}) ile '{4}' ({5}) çarpımı {6}; ancak belirtilen '{7}' değeri {8}."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ values\\ under\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ add\\ up\\ to\\ ([\\s\\S]*?),\\ matching\\ the\\ stated\\ ([\\s\\S]*?)\\ of\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: '{2}' altındaki değerlerin ({3}) toplamı {4}; belirtilen {5} değeri {6} ile uyumlu."
+      "translation": "{0} birimi, {1!m} kuralı: '{2}' altındaki değerlerin ({3}) toplamı {4}; belirtilen '{5}' değeri {6} ile uyumlu."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ values\\ under\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ add\\ up\\ to\\ ([\\s\\S]*?),\\ but\\ the\\ stated\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: '{2}' altındaki değerlerin ({3}) toplamı {4}; ancak belirtilen {5} değeri {6}."
+      "translation": "{0} birimi, {1!m} kuralı: '{2}' altındaki değerlerin ({3}) toplamı {4}; ancak belirtilen '{5}' değeri {6}."
     },
     {
       "pattern": "^possible\\ rename,\\ not\\ a\\ confirmed\\ withdrawal:\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ vanished\\ but\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ is\\ newly\\ stated\\ in\\ the\\ same\\ section\\ within\\ ([\\s\\S]*?)%\\ of\\ the\\ same\\ value$",
@@ -1316,19 +1324,19 @@ var SHIMMER_TR = {
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ values\\ listed\\ add\\ up\\ to\\ ([\\s\\S]*?),\\ but\\ the\\ stated\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: Listelenen değerlerin toplamı {2}; ancak belirtilen {3} değeri {4}."
+      "translation": "{0} birimi, {1!m} kuralı: Listelenen değerlerin toplamı {2}; ancak belirtilen '{3}' değeri {4}."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ values\\ listed\\ add\\ up\\ to\\ ([\\s\\S]*?),\\ matching\\ the\\ stated\\ ([\\s\\S]*?)\\ of\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: Listelenen değerlerin toplamı {2}; belirtilen {3} değeri {4} ile uyumlu."
+      "translation": "{0} birimi, {1!m} kuralı: Listelenen değerlerin toplamı {2}; belirtilen '{3}' değeri {4} ile uyumlu."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ factors\\ multiply\\ to\\ ([\\s\\S]*?),\\ but\\ the\\ stated\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: Çarpanların çarpımı {2}; ancak belirtilen {3} değeri {4}."
+      "translation": "{0} birimi, {1!m} kuralı: Çarpanların çarpımı {2}; ancak belirtilen '{3}' değeri {4}."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ factors\\ multiply\\ to\\ ([\\s\\S]*?),\\ matching\\ the\\ stated\\ ([\\s\\S]*?)\\ of\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1!m} kuralı: Çarpanların çarpımı {2}; belirtilen {3} değeri {4} ile uyumlu."
+      "translation": "{0} birimi, {1!m} kuralı: Çarpanların çarpımı {2}; belirtilen '{3}' değeri {4} ile uyumlu."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ required\\ field\\ '([\\s\\S]*?)'\\ is\\ not\\ stated\\ in\\ this\\ unit\\.$",
@@ -1950,7 +1958,7 @@ var SHIMMER_TR = {
   "below the allowed range": "izin verilen aralığın altında",
   "ratio outside the allowed range": "oran izin verilen aralığın dışında",
   "ratio inside the allowed range": "oran izin verilen aralığın içinde",
-  "total does not match its parts": "toplam uyuşmazlığı: toplam, parçalarıyla uyuşmuyor",
+  "total does not match its parts": "toplam, parçalarının toplamıyla uyuşmuyor",
   "total matches its parts": "toplam, parçalarıyla uyuşuyor",
   "product does not match the stated figure": "çarpım belirtilen değerle uyuşmuyor",
   "product matches the stated figure": "çarpım belirtilen değerle uyuşuyor",
@@ -1965,5 +1973,44 @@ var SHIMMER_TR = {
   "moved toward the allowed range": "izin verilen aralığa yaklaştı",
   "moved away from the allowed range": "izin verilen aralıktan uzaklaştı",
   "absent since the earlier version": "önceki sürümden bu yana yok",
-  "- escalation messages with no topic or no content (not counted as a pattern): ": "- konusu ya da içeriği olmayan üst makama iletme mesajları (örüntü olarak sayılmadı): "
+  "- escalation messages with no topic or no content (not counted as a pattern): ": "- konusu ya da içeriği olmayan üst makama iletme mesajları (örüntü olarak sayılmadı): ",
+  "(the sum of '{field}': {values})": "('{field}' toplamı: {values})",
+  "its note is attached to Python's finding": "notu Python'un bulgusuna eklendi",
+  "it returned no note": "not döndürmedi",
+  "Python found no disagreement on this unit and rule, so its note was not kept": "Python bu birim ve kuralda uyuşmazlık bulmadı; bu nedenle notu tutulmadı",
+  "the call failed, so no note was kept": "çağrı başarısız oldu; not tutulmadı",
+  "its answer is a judged absence, listed as a model's item": "yanıtı bir modelin değerlendirdiği yokluk iddiasıdır; model öğesi olarak listelendi",
+  "Judging call {call} on unit {unit} under rule {rule} (model: {model}): {outcome}.": "{unit} birimi, {rule} kuralı için {call} değerlendirme çağrısı (model: {model}): {outcome}.",
+  "Written by Python: {figures} computed from the document's own figures, {checked} required field(s) checked in code and found absent.": "Python tarafından yazıldı: {figures} bulgu belgenin kendi sayılarından hesaplandı, {checked} zorunlu alan kodla denetlendi ve eksik bulundu.",
+  "Judging calls this agent made on this document: {calls}; notes kept on Python's findings: {kept}.": "Bu ajanın bu belge için yaptığı değerlendirme çağrıları: {calls}; Python bulgularına eklenen notlar: {kept}.",
+  "; judging calls with a note kept: {kept} of {calls}": "; notu tutulan değerlendirme çağrıları: {calls} çağrıdan {kept}",
+  "not run (its phase was not reached)": "çalışmadı (aşamasına ulaşılmadı)",
+  "eligible, not called": "uygun, çağrılmadı",
+  "not eligible": "uygun değil",
+  "selected, never called": "seçildi, hiç çağrılmadı",
+  "called, no outcome recorded": "çağrıldı, sonuç kaydedilmedi",
+  "called and completed": "çağrıldı ve tamamlandı",
+  "called, and the call failed": "çağrıldı, çağrı başarısız oldu",
+  "failed before its call": "çağrısından önce başarısız oldu",
+  "not called (nothing in this run could call it)": "çağrılmadı (bu çalışmada onu çağırabilecek bir yol yoktu)",
+  "switched off by the operator": "operatör tarafından kapatıldı",
+  "## Absence quote check": "## Yokluk iddiaları için alıntı denetimi",
+  "Result: **PASS**. Every absence a model claimed quoted the unit's own words or was refused.": "Sonuç: **GEÇTİ**. Bir modelin ileri sürdüğü her yokluk iddiası birimin kendi sözlerinden alıntı yaptı ya da reddedildi.",
+  "Result: **FAIL**. At least one absence a model claimed was kept without a quote from the unit.": "Sonuç: **BAŞARISIZ**. Bir modelin ileri sürdüğü en az bir yokluk iddiası birimden alıntı olmadan tutuldu.",
+  "Result: **not exercised**. No model claimed a field absent, so there was no quote to check.": "Sonuç: **sınanmadı**. Hiçbir model bir alanın eksik olduğunu ileri sürmedi; denetlenecek alıntı yoktu.",
+  "Result: **incomplete**. Not every question about an absent field was answered, so the check is not settled.": "Sonuç: **tamamlanmadı**. Eksik alanlarla ilgili soruların hepsi yanıtlanmadı; denetim sonuçlanmadı.",
+  "Result: **not applicable**. This run did not use the paired review, where these questions are asked.": "Sonuç: **uygulanmaz**. Bu çalışma, bu soruların sorulduğu eşleştirilmiş incelemeyi kullanmadı.",
+  "so the counts match": "bu nedenle sayılar eşleşiyor",
+  "so the counts differ": "bu nedenle sayılar farklı",
+  "and the counts are not final yet": "ve sayılar henüz kesinleşmedi",
+  "Absence claims a model made: {claims}; {quoted} quoted the unit, {refused} were refused, {violations} were kept without a quote.": "Bir modelin ileri sürdüğü yokluk iddiaları: {claims}; {quoted} tanesi birimden alıntı yaptı, {refused} tanesi reddedildi, {violations} tanesi alıntısız tutuldu.",
+  "Questions a model was asked about an absent field: {planned} planned, {returned} answered, {successful} answered successfully, {no_consumer} with no agent to ask, {empty} answered with nothing.": "Bir modele eksik bir alan hakkında sorulan sorular: {planned} planlandı, {returned} yanıtlandı, {successful} başarıyla yanıtlandı, {no_consumer} için sorulacak ajan yoktu, {empty} boş yanıtlandı.",
+  "Absences Python checked itself: {planned} planned, {completed} completed (these need no quote).": "Python'un kendisinin denetlediği yokluklar: {planned} planlandı, {completed} tamamlandı (bunlar alıntı gerektirmez).",
+  "The earlier runs this check was set up from planned {judged} judged and {computed} computed absence questions; this run planned {now_judged} and {now_computed}, {comparison}. These are counts of questions, not of claims, and a matching count does not show the same questions were asked.": "Bu denetimin dayandığı önceki çalışmalarda {judged} değerlendirilen ve {computed} hesaplanan yokluk sorusu planlanmıştı; bu çalışmada {now_judged} ve {now_computed} planlandı, {comparison}. Bunlar iddia değil soru sayılarıdır; sayıların eşleşmesi aynı soruların sorulduğunu göstermez.",
+  "A quote shows the words are in the unit; it does not show the absence conclusion is right. Per-question outcomes are in [the run audit](../audit/absence_quote_prediction.json).": "Alıntı, sözcüklerin birimde bulunduğunu gösterir; yokluk sonucunun doğru olduğunu göstermez. Soru bazındaki sonuçlar [çalışma denetimindedir](../audit/absence_quote_prediction.json).",
+  "- escalation messages naming an agent this run did not register (not counted as a pattern): {n} ({agents})": "- bu çalışmanın kaydetmediği bir ajanı adlandıran üst makama iletme mesajları (örüntü olarak sayılmadı): {n} ({agents})",
+  "Shimmer / computed by Python": "Shimmer / Python tarafından hesaplandı",
+  "- findings computed by Python from the document's figures: ": "- Python tarafından belgenin sayılarından hesaplanan bulgular: ",
+  "- required fields Python checked in code and found absent: ": "- Python'un kodla denetleyip eksik bulduğu zorunlu alanlar: ",
+  "Python could compute nothing for this unit and rule, so the reply was advisory and was kept neither as a finding nor as a note": "Python bu birim ve kural için hiçbir şey hesaplayamadı; bu nedenle yanıt yalnızca danışma niteliğindeydi, ne bulgu ne not olarak tutuldu"
 };

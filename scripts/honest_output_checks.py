@@ -1,6 +1,8 @@
 """Gate checks for S2a (honest deliverables): points 1 to 7, the reader-check
-rounds 1 and 2 items (RC1 to RC18, RD1 to RD18), and the S2 checker round 1 items
-(A4, A5, A8, C3/H5). Check 278 runs every proof here.
+rounds 1, 2 and 3 items (RC1 to RC18, RD1 to RD18, round 3 items 1 to 11), the S2
+checker round 1 items (A4, A5, A8, C3/H5), adversarial round 2 (a, b) and
+completeness round 2 (the docx holds amendments only). Check 278 runs every proof
+here.
 
 Every proof runs the REAL writers on a mocked run: the real phase-6 synthesis,
 the real run-summary writer, the real audit synthesizer, the server's own
@@ -142,7 +144,8 @@ def prior_case_items(doc_id="batch_sheet"):
     return python_prior, [model_prior, model_band]
 
 
-def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, language="en", prior_case=False):
+def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, language="en", prior_case=False,
+               text=None):
     """One mocked run, faithful to a real one where it matters: the computed
     findings come from the REAL phase 5.5 paired review (pairing map, planner,
     arithmetic, mint, bus post under paired/python); only the judging model's
@@ -154,7 +157,8 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     import run_options
     import uuid
     from harness.run_agent import build_orchestrator
-    doc = {"id": "batch_sheet", "name": "batch_sheet.md", "text": DOC_TEXT}
+    text = text or DOC_TEXT
+    doc = {"id": "batch_sheet", "name": "batch_sheet.md", "text": text}
     registry = {"conventions": RULES}
     out_root = Path(out_root)
     orch = build_orchestrator(root=ROOT, out_root=out_root)
@@ -168,10 +172,10 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     index.add(input_type="context", document_id="reference", document_name="reference.md",
               location={"page": 1, "paragraph": 1}, text_excerpt="Readings for batch B-7 lie between 10 and 60 units.")
     index.add(input_type="operational", document_id=doc["id"], document_name=doc["name"],
-              location={"page": 1, "paragraph": 1}, text_excerpt="# Returned batch sheet Batch: B-7. Readings for review.")
+              location={"page": 1, "paragraph": 1}, text_excerpt="# Returned batch sheet\n\nBatch: B-7. Readings for review.")
     if index_unit_passages:
         for n, heading in enumerate(("## Entry Alpha", "## Entry Beta", "## Entry Gamma"), start=2):
-            body = DOC_TEXT.split(heading, 1)[1].split("\n## ", 1)[0]
+            body = text.split(heading, 1)[1].split("\n## ", 1)[0]
             index.add(input_type="operational", document_id=doc["id"], document_name=doc["name"],
                       location={"page": 1, "paragraph": n}, text_excerpt=heading + body)
     index.save()
@@ -383,7 +387,8 @@ def check_producer():
     o = observe_producer()
     a, b = o["computed_only"], o["mixed"]
     ok = (not a["names_style_guardian"] and not a["names_practice_auditor"]
-          and "computed by Python from the document's figures: 3." in a["sentence"]
+          and ("computed by Python from the document's figures: 2. Required fields Python checked "
+               "in code and found absent: 1.") in a["sentence"]
           and "Items written by a model (no model agent), not checked by Python and not promoted: 0." in a["sentence"]
           and "in total" not in a["sentence"] + b["sentence"]
           and a["log"] == "findings_provenance computed=3 model=0 model_agents=none"
@@ -415,10 +420,25 @@ def _localized_samples():
              "Proposed amendments", "**Justification:**", "**Location:**",
              audit_synthesizer.KIND_WORDS["propose_amendment"], audit_synthesizer.ACTION_WORDS["add_amendment"]]
     sums = computed_findings()
+    units = pr.unit_texts_for(DOC_TEXT, "batch_sheet")
+    noted = lambda f: dict(f, explanation=AUTHORED_JUDGMENT, explanation_by="model", explanation_model="fixture-auditor")
+    # Reader check round 3: the comment that ends with a model's note (item 3), the
+    # state words (item 9), the judging-call outcomes (item 2), the quote-check
+    # results (item 8), the comment author (item 1) and the one relation label (10).
+    import absence_prediction
+    import agent_activation
+    import docx_builder
+    round3 = ([pr.amendment_from_finding(noted(f), unit_texts=units, unit_refs={f["unit_id"]: "REF-0004"},
+                                         rule_texts={r["id"]: r["rule"] for r in RULES})["comment"]
+               for f in (sums[1], sums[2])]
+              + list(agent_activation.STATE_WORDS.values()) + list(pr.JUDGING_OUTCOMES.values())
+              + list(absence_prediction.STATUS_SENTENCES.values())
+              + list(absence_prediction.COMPARISON_WORDS.values())
+              + ["## Absence quote check", docx_builder.COMPUTED_AUTHOR, "total does not match its parts"])
     return texts + [a["comment"] for a in template_amendments()] + [
-        pr.amendment_from_finding(sums[1], unit_texts=pr.unit_texts_for(DOC_TEXT, "batch_sheet"),
+        pr.amendment_from_finding(sums[1], unit_texts=units,
                                   unit_refs={sums[1]["unit_id"]: "REF-0004"},
-                                  rule_texts={"CONV-003": RULES[2]["rule"]})["comment"]]
+                                  rule_texts={"CONV-003": RULES[2]["rule"]})["comment"]] + round3
 
 
 def observe_catalog():
@@ -430,7 +450,9 @@ def check_catalog():
     english = ("computed by Python", "written by a model", "Computed in code", "Grounded in",
                "under rule", "Not promoted", "Relations found", "audit-trail", "Model findings",
                "Checked in code", "compared with", "reads:", "add up to", "The model wrote",
-               "Proposed amendments", "Justification", "change proposal", "the operator decides")
+               "Proposed amendments", "Justification", "change proposal", "the operator decides",
+               "The figures were", "the note quoted", "Result:", "the counts", "called", "eligible",
+               "its note", "does not match")
     ok = all(r["tr"] != r["en"] and not any(w in r["tr"] for w in english) for r in rows)
     return ("PASS" if ok else "FAIL", "%d tr renderings" % len(rows))
 
@@ -471,7 +493,8 @@ def template_amendments():
 def observe_templates():
     out = []
     for item, amendment in zip(template_cases(), template_amendments()):
-        lead = re.split(r"\. (?:Computed in code|Checked in code|Reported by the agent)", amendment["comment"])[0]
+        lead = re.split(r"\. (?:Computed in code|Checked in code|Reported by the agent|The figures were computed)",
+                        amendment["comment"])[0]
         out.append({"relation": item["relation"], "lead": lead, "explanation": item["explanation"],
                     "comment": amendment["comment"], "tr": loc.message(amendment["comment"], "tr")})
     return out
@@ -608,24 +631,40 @@ def observe_heading_match():
                                            "text_excerpt": "## Lot 12\n\nReading: 4 units"}], "lots")
     inside = pr.unit_passage_refs(units, [{"document_id": "lots", "ref_id": "REF-0050",
                                            "text_excerpt": "An introduction naming ## Lot 1 in passing."}], "lots")
-    return {"units": sorted(units), "prefix": prefix, "inside": inside}
+    # Adversarial round 2 (b): "## Lot 1" and "## Lot 1 - annex", each passage with
+    # its line breaks as the index stores them.
+    annex_units = pr.unit_texts_for(LOT_ANNEX, "annex")
+    annex = pr.unit_passage_refs(annex_units, [
+        {"document_id": "annex", "ref_id": "REF-0060", "text_excerpt": "## Lot 1 - annex\n\nReading: 4 units"},
+        {"document_id": "annex", "ref_id": "REF-0061", "text_excerpt": "## Lot 1\n\nReading: 3 units"}], "annex")
+    return {"units": sorted(units), "prefix": prefix, "inside": inside,
+            "annex_units": sorted(annex_units), "annex": annex}
+
+
+LOT_ANNEX = "## Lot 1\n\nReading: 3 units\n\n## Lot 1 - annex\n\nReading: 4 units\n"
 
 
 def check_heading_match():
     o = observe_heading_match()
     lot12 = next(u for u in o["units"] if u.endswith("lot-12"))
-    ok = o["prefix"] == {lot12: "REF-0012"} and o["inside"] == {}
-    return ("PASS" if ok else "FAIL", "'## Lot 1' is not placed at '## Lot 12' or inside another passage")
+    lot1 = next((u for u in o["annex_units"] if u.endswith("lot-1")), None)
+    annex = next((u for u in o["annex_units"] if u.endswith("annex")), None)
+    ok = (o["prefix"] == {lot12: "REF-0012"} and o["inside"] == {}
+          and lot1 and annex and o["annex"] == {lot1: "REF-0061", annex: "REF-0060"})
+    return ("PASS" if ok else "FAIL", "'## Lot 1' is placed only at a passage whose first line it is: not at "
+                                      "'## Lot 12', not at '## Lot 1 - annex', not inside another passage")
 
 
-def post_escalations(bus, *, distinct, copies):
+def post_escalations(bus, *, distinct, copies, agents=None):
     """Escalations shaped as orchestrator.escalate posts them ({topic, payload}):
-    `distinct` different payloads on one topic, and `copies` identical messages
-    with no topic and no content (the shape RD3 found counted as a recurrence)."""
+    `distinct` different payloads on one topic (naming `agents`, else AGENT_0,
+    AGENT_1, ..., names no run registers), and `copies` identical messages with no
+    topic and no content (the shape RD3 found counted as a recurrence)."""
     for n in range(distinct):
+        name = agents[n] if agents else "AGENT_%d" % n
         bus.post({"sender": "ORCHESTRATOR", "sender_role": "orchestrator", "recipient": "OPERATOR",
                   "channel": "escalation", "type": "ESCALATE",
-                  "body": {"topic": "model_approval", "payload": {"agent": "AGENT_%d" % n, "reason": "deprecated"}},
+                  "body": {"topic": "model_approval", "payload": {"agent": name, "reason": "deprecated"}},
                   "constitution_check": {"laws_consulted": ["LAW-0"], "result": "UNRESOLVED"}})
     for _ in range(copies):
         bus.post({"sender": "ORCHESTRATOR", "sender_role": "orchestrator", "recipient": "OPERATOR",
@@ -756,7 +795,7 @@ def observe_reader_check():
             "note_named": ('A model\'s note (model: fixture-auditor), not checked by Python: "%s"' % AUTHORED_JUDGMENT
                            in alpha.get("comment", "")),
             "note_counts": ("Model-written notes attached to Python's findings (model: fixture-auditor), not checked "
-                            "by Python: 2." in files["grounding_summary.md"]
+                            "by Python: 2 kept from 3 judging call(s)." in files["grounding_summary.md"]
                             and "Items written by a model (STYLE_GUARDIAN), not checked by Python and not promoted: 1."
                             in files["grounding_summary.md"]),
             # RD2: the model item's citation, applicability and missing addends, in words
@@ -774,7 +813,7 @@ def observe_reader_check():
             # RD9: relation words
             "relation_words": ("above the allowed range" in files["document_summary.md"]
                                and "above_band" not in files["document_summary.md"] + _read(en["run_summary"])
-                               and "toplam uyuşmazlığı" in _read(tr["run_summary"])),
+                               and "toplam, parçalarının toplamıyla uyuşmuyor" in _read(tr["run_summary"])),
             # RD11: the reference index records who cites what
             "cited_by": all(cited.get(a["location"]) for a in master["amendments"]),
             # RD12/RD16: the rule book is called that, its words labelled
@@ -846,6 +885,248 @@ def check_reader_check():
     ok = ok and all(o[k] for k in rd) and o["placeholder_left"] == []
     return ("PASS" if ok else "FAIL", "reader check rounds 1 and 2 items closed: %s" % (
         [k for k in rd if not o[k]] or "all"))
+
+
+# ---------- reader check round 3, adversarial round 2, completeness round 2 ------------
+
+# Agents the registry carries, named by escalations that ARE evidence about this run.
+REGISTERED_ESCALATED = ["PRACTICE_AUDITOR", "STYLE_GUARDIAN", "VERIFIER"]
+
+
+def _docx_parts(path):
+    from zipfile import ZipFile
+    if not Path(path).exists():
+        return {}
+    with ZipFile(path) as archive:
+        return {n: archive.read(n).decode("utf-8") for n in ("word/document.xml", "word/comments.xml")
+                if n in archive.namelist()}
+
+
+def _xml_texts(xml):
+    import html
+    return [html.unescape(t) for t in re.findall(r"<w:(?:t|delText)\b[^>]*>([^<]*)</w:(?:t|delText)>", xml or "")]
+
+
+def _section_lines(text, heading):
+    body = _section(text, heading)
+    return [] if body is None else body.splitlines()
+
+
+def observe_round3():
+    """Reader check round 3 (items 1 to 11) and completeness round 2 (the docx),
+    read off one English and one tr mocked run and their audit synthesis."""
+    import html
+    from message_bus import MessageBus
+    with tempfile.TemporaryDirectory(prefix="shimmer_honest_round3_") as td:
+        en = mocked_run(Path(td) / "en")
+        tr = mocked_run(Path(td) / "tr", language="tr")
+        files = {k: _read(v) for k, v in en["files"].items()}
+        tr_files = {k: _read(v) for k, v in tr["files"].items()}
+        summary, tr_summary = _read(en["run_summary"]), _read(tr["run_summary"])
+        master = json.loads(files["review_data.json"])
+        activation = json.loads(_read(en["run_dir"] / "audit" / "agent_activation.json"))
+        calls_by_agent = {r["agent"]: r.get("actual_calls", 0) for r in activation["agent_states"]}
+        pa_call_ids = sorted(d["call_id"] for d in activation["decisions"]
+                             if d["agent"] == "PRACTICE_AUDITOR" and d.get("actual_call"))
+        bus = [json.loads(ln) for ln in _read(en["run_dir"] / "logs" / "agent_bus.jsonl").splitlines() if ln.strip()]
+        bus_calls = [c for m in bus for c in ((m.get("body") or {}).get("judging_calls") or [])]
+        docx = _docx_parts(en["run_dir"] / "deliverables" / "batch_sheet" / "tracked_changes.docx")
+        tr_docx = _docx_parts(tr["run_dir"] / "deliverables" / "batch_sheet" / "tracked_changes.docx")
+        authors = sorted({html.unescape(a) for a in re.findall(r'w:author="([^"]*)"', docx.get("word/comments.xml", ""))})
+        tr_authors = sorted({html.unescape(a) for a in re.findall(r'w:author="([^"]*)"', tr_docx.get("word/comments.xml", ""))})
+        comment_texts = _xml_texts(docx.get("word/comments.xml"))
+        body_texts = _xml_texts(docx.get("word/document.xml"))
+        model_explanations = [f.get("explanation") for f in master.get("model_findings_not_promoted") or []]
+        comments = [a["comment"] for a in master["amendments"]]
+        # Item 11: this run's own bus (it carries the BOOT record of registered
+        # agents), with escalations about registered and unregistered agents.
+        bus_obj = MessageBus.open(en["ctx"].bus_path())
+        post_escalations(bus_obj, distinct=3, copies=0, agents=REGISTERED_ESCALATED)
+        post_escalations(bus_obj, distinct=3, copies=0)
+        synth = audit_synthesizer.AuditSynthesizer(project_root=Path(td) / "en", bus=bus_obj,
+                                                   run_context=en["ctx"]).synthesize()
+        audit_md = _read(en["ctx"].audit_synthesis_path())
+        sg = _section(files["reviewed_document.md"], "## STYLE_GUARDIAN") or ""
+        tr_sg = _section(tr_files["reviewed_document.md"], "## STYLE_GUARDIAN") or ""
+        notes = (master.get("model_findings_not_promoted") or [{}])[0].get("reader_notes") or []
+        return {
+            # 1: the comment author is what wrote the amendment, never an agent with 0 calls
+            "authors": authors, "tr_authors": tr_authors,
+            "zero_call_agents_named": sorted(a for a, n in calls_by_agent.items()
+                                             if not n and any(a in au for au in authors + tr_authors)),
+            # 2: every judging call is on the bus with its outcome, and the files say N calls, M notes kept
+            # (call ids are random per run, so the observation keeps only whether
+            # the bus and the activation record name the same calls, and how many)
+            "bus_calls_match_activation": sorted(c.get("call_id") for c in bus_calls) == pa_call_ids,
+            "judging_call_count": len(pa_call_ids),
+            "bus_outcomes": sorted(c.get("outcome") for c in bus_calls),
+            "calls_stated": ("Judging calls this agent made on this document: 3; notes kept on Python's findings: 2."
+                             in files["reviewed_document.md"]
+                             and ("Python could compute nothing for this unit and rule, so the reply was advisory "
+                                  "and was kept neither as a finding nor as a note") in files["reviewed_document.md"]
+                             and "2 kept from 3 judging call(s)" in files["document_summary.md"]
+                             and "2 kept from 3 judging call(s)" in files["grounding_summary.md"]
+                             and "; judging calls with a note kept: 2 of 3" in files["reviewed_document.md"]),
+            # 3: no "not judged by a model" beside a model's note
+            "note_beside_not_judged": [c[:60] for c in comments if "A model's note" in c and "not judged by a model" in c],
+            "note_sentence": sum(pr.COMPUTED_PROVENANCE_WITH_NOTE in c for c in comments),
+            # 4: every amendment anchored on its passage in the body
+            "unanchored_heading": "Additional amendments (no anchor found in source body)" in body_texts,
+            "comment_count": len(re.findall(r"<w:comment\b", docx.get("word/comments.xml", ""))),
+            "anchored_ranges": len(re.findall(r"<w:commentRangeStart\b", docx.get("word/document.xml", ""))),
+            "amendment_count": len(master["amendments"]),
+            # completeness round 2: the docx carries amendments only, no model item
+            "docx_model_text": [t for t in model_explanations if t and any(t in x for x in comment_texts + body_texts)],
+            # 5: reviewed_document.md shows the same reader notes as the other files
+            "per_agent_notes": bool(notes) and all(n in sg for n in notes),
+            "tr_per_agent_notes": bool(notes) and all(loc.message(n, "tr") in tr_sg for n in notes),
+            # 6: computed from figures and checked in code, counted apart
+            "counted_apart": all(("Findings computed by Python from the document's figures: 2. Required fields "
+                                  "Python checked in code and found absent: 1.") in files[n]
+                                 for n in ("grounding_summary.md",))
+                             and ("Computed by Python from the document's figures: 2. Required fields Python checked "
+                                  "in code and found absent: 1.") in files["document_summary.md"]
+                             and ("Written by Python: 2 computed from the document's own figures, 1 required "
+                                  "field(s) checked in code and found absent.") in files["reviewed_document.md"],
+            # 7: one formatter, with addends
+            "figures_as_written": ("figure: 61 units" in files["document_summary.md"]
+                                   and "figure: 8 kg (the sum of 'weight': 3 + 5 kg)" in files["document_summary.md"]
+                                   and not any(w in files["document_summary.md"] for w in ("61.0 units", "8.0 kg", "9.0 kg"))),
+            # 8: the absence-quote section in plain sentences, en and tr
+            "quote_section": ("## Absence quote check" in summary and "Result: **not exercised**." in summary
+                              and not any(w in summary for w in ("**not_exercised**", "observed counts",
+                                                                  "PASS checks emitted", "forecast of fourteen"))
+                              and "Sonuç: **sınanmadı**." in tr_summary
+                              and not any(w in tr_summary for w in ("not_exercised", "differs", "PASS"))),
+            # 9: no internal names in reader text; the state in words, tr included
+            "internal_names": [w for w in ("SHIMMER_INST_FINDER", "eligible_inactive", "phase_not_reached")
+                               if w in summary + tr_summary + files["reviewed_document.md"]
+                               + tr_files["reviewed_document.md"]],
+            "states_in_words": ("- AMENDMENT_DRAFTER: eligible, not called; model calls: 0" in files["reviewed_document.md"]
+                                and "- AMENDMENT_DRAFTER: uygun, çağrılmadı; model çağrıları: 0" in tr_files["reviewed_document.md"]
+                                and "- INST_FINDER: switched on for this run" in summary),
+            # 10: tr text in Turkish, one relation label, the field quoted (the
+            # rendered files and the docx; review_data.json is the canonical master,
+            # kept exact in every language by design, localization.py)
+            "tr_english_left": [w for w in ("toplam uyuşmazlığı: toplam", "belirtilen total weight", "the stated",
+                                            "Judging call", "this agent made", "Written by Python", "Result:",
+                                            "switched on", "eligible, not called", "The figures were")
+                                if w in "\n".join(v for k, v in tr_files.items() if k.endswith(".md"))
+                                + tr_summary + "\n".join(_xml_texts(tr_docx.get("word/comments.xml")))],
+            "tr_field_quoted": "belirtilen 'total weight' değeri 9 kg" in tr_files["review_findings.md"],
+            # 11: escalations about unregistered agents are set apart and say so
+            "audit_patterns": len(synth["findings"]), "audit_deltas": len(synth["delta_proposals"]),
+            "audit_unregistered_line": ("- escalation messages naming an agent this run did not register (not counted "
+                                        "as a pattern): 3 (AGENT_0, AGENT_1, AGENT_2)") in audit_md,
+        }
+
+
+def check_round3():
+    o = observe_round3()
+    bad = []
+    expect = {
+        "authors": ["Shimmer / computed by Python"], "tr_authors": ["Shimmer / Python tarafından hesaplandı"],
+        "zero_call_agents_named": [], "bus_outcomes": ["advisory_not_kept", "note_kept", "note_kept"],
+        "calls_stated": True, "note_beside_not_judged": [], "note_sentence": 2, "unanchored_heading": False,
+        "docx_model_text": [], "per_agent_notes": True, "tr_per_agent_notes": True, "counted_apart": True,
+        "figures_as_written": True, "quote_section": True, "internal_names": [], "states_in_words": True,
+        "tr_english_left": [], "tr_field_quoted": True, "audit_patterns": 1, "audit_deltas": 1,
+        "audit_unregistered_line": True}
+    bad = [k for k, v in expect.items() if o[k] != v]
+    if not (o["bus_calls_match_activation"] and o["judging_call_count"] == 3):
+        bad.append("bus_calls")
+    if not (o["comment_count"] == o["anchored_ranges"] == o["amendment_count"] == 3):
+        bad.append("comment_count")
+    return ("FAIL" if bad else "PASS", "reader check round 3 items closed: %s" % (bad or "all"))
+
+
+def observe_unstamped():
+    """Adversarial round 2 (a): a record that carries `provenance: computed` but no
+    `written_by` stamp (provenance that cannot be shown) never enters the
+    earlier-version section or its band list, in either renderer."""
+    prior = {"kind": "finding", "rule_id": "CONV-001", "unit_id": "u03-entry-gamma", "relation": "changed_from_prior",
+             "record_verdict": "ok", "value_a": 12, "unit_a": "units", "value_b": 11, "unit_b": "units",
+             "field_label": "reading", "provenance": "computed", "source_refs": ["REF-0001"], "category": "conv-h01"}
+    band = {"kind": "finding", "rule_id": "CONV-001", "unit_id": "u02-entry-beta", "relation": "above_band",
+            "record_verdict": "irregular", "value_a": 77, "unit_a": "units", "value_b": 60, "unit_b": "units",
+            "source_refs": ["REF-0002"], "category": "conv-h01"}
+    stamped = lambda f: dict(f, written_by=finding_record.WRITTEN_BY_PYTHON)
+    render = lambda findings: summary_generators.render_operative_summary(
+        document_id="x", document_name="x.md", conventions_by_category={"conv-h01": RULES[:1]}, findings=findings)
+    unstamped_text = render([prior, stamped(dict(band, value_a=61))])
+    mixed_text = render([stamped(prior), band])
+    section = _section(mixed_text, "## Compared with the earlier version") or ""
+    return {"renderer_unstamped": finding_record.render_prior_comparison([prior]),
+            "renderer_stamped": bool(finding_record.render_prior_comparison([stamped(prior)])),
+            "summary_unstamped_section": "## Compared with the earlier version" in unstamped_text,
+            "summary_stamped_section": bool(section),
+            "summary_unstamped_band_in_section": "77" in section}
+
+
+# The same sheet with nothing wrong in it: every figure inside its band, the total
+# matching its parts, every entry stating its sample identifier.
+CLEAN_TEXT = (DOC_TEXT.replace("Reading: 61 units", "Reading: 50 units")
+              .replace("Total weight: 9 kg", "Total weight: 8 kg")
+              .replace("## Entry Gamma\n\n", "## Entry Gamma\n\nSample identifier: S-GAMMA\n"))
+
+
+def observe_calls_without_findings():
+    """Reader check round 3 (item 2), the other path: judging calls that produced
+    no computed finding have no computed post to ride on, and are posted on their
+    own; the per-agent file lists them instead of saying the agent did not run."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_honest_calls_") as td:
+        run = mocked_run(td, style_guardian=False, text=CLEAN_TEXT)
+        activation = json.loads(_read(run["run_dir"] / "audit" / "agent_activation.json"))
+        bus = [json.loads(ln) for ln in _read(run["run_dir"] / "logs" / "agent_bus.jsonl").splitlines() if ln.strip()]
+        posted = [c for m in bus if (m.get("body") or {}).get("event") == "PAIRED_JUDGING_CALLS"
+                  for c in m["body"].get("judging_calls") or []]
+        per_agent = _section(_read(run["files"]["reviewed_document.md"]), "## PRACTICE_AUDITOR") or ""
+        made = sorted(d["call_id"] for d in activation["decisions"]
+                      if d["agent"] == "PRACTICE_AUDITOR" and d.get("actual_call"))
+        # (call ids are random per run; only their agreement and count are kept)
+        return {"calls_made": len(made),
+                "posted_match_made": sorted(c.get("call_id") for c in posted) == made,
+                "findings_on_bus": sum(len(((m.get("body") or {}).get("payload") or {}).get("items") or [])
+                                       for m in bus if m.get("sender") == "PRACTICE_AUDITOR"),
+                "stated": "Judging calls this agent made on this document: 2; notes kept on Python's findings: 0." in per_agent,
+                "said_did_not_run": "agent did not run" in per_agent}
+
+
+def check_calls_without_findings():
+    o = observe_calls_without_findings()
+    ok = (o["calls_made"] == 2 and o["posted_match_made"]
+          and o["findings_on_bus"] == 0 and o["stated"] and not o["said_did_not_run"])
+    return ("PASS" if ok else "FAIL", "judging calls with no computed finding are on the bus and in the file")
+
+
+def check_unstamped():
+    o = observe_unstamped()
+    ok = (o["renderer_unstamped"] == [] and o["renderer_stamped"] and not o["summary_unstamped_section"]
+          and o["summary_stamped_section"] and not o["summary_unstamped_band_in_section"])
+    return ("PASS" if ok else "FAIL", "an unstamped record never reads as Python's, whatever provenance it carries")
+
+
+def _old_opens_with(passage, head):
+    """The removed test (adversarial round 2 (b)): the whole passage folded, so its
+    line breaks were gone and a longer heading started with a shorter one."""
+    folded = pr._folded(passage)
+    return folded == head or folded.startswith(head + " ")
+
+
+def _old_anchor_span(paragraphs, index, amendment):
+    """The removed docx anchoring: a passage was anchored only inside ONE paragraph."""
+    ot = (amendment.get("original_text") or "").strip()
+    return 1 if ot and index < len(paragraphs) and ot in paragraphs[index] else 0
+
+
+def _docx_with_model_items(real):
+    """A neutralisation: the docx built from the amendments AND the model findings."""
+    def render(payload, output_path, **kwargs):
+        extra = [{"convention_ref": f.get("rule_id"), "location": f.get("ref") or "REF-0000", "action": "flag",
+                  "comment": f.get("explanation") or "", "original_text": ""}
+                 for f in payload.get(amendment_render.MODEL_FINDINGS_KEY) or []]
+        return real(dict(payload, amendments=list(payload.get("amendments") or []) + extra), output_path, **kwargs)
+    return render
 
 
 def _json_block_renderer(payload, document_name, category_for_conv, **kwargs):
@@ -1004,8 +1285,10 @@ class HonestOutputChecks(unittest.TestCase):
                    lambda: patch.object(finding_record, "CHECKED_ABSENCE_MARK", finding_record.COMPUTED_FINDING_MARK))
 
     def test_rd18_figures_as_written_and_flagged_title(self):
+        # The one formatter reads written forms through finding_record.written_form
+        # (reader check round 3, item 7), so that is what is neutralised.
         self.prove("rd18_written", observe_reader_check, check_reader_check,
-                   lambda: patch.object(pr, "_written", lambda value, tokens: None))
+                   lambda: patch.object(finding_record, "written_form", lambda value, tokens: None))
 
     # S2 checker round 1: each mechanism, neutralised alone, must fail the check.
     def test_a4_a5_model_items_kept_out_of_the_prior_and_band_sections(self):
@@ -1026,6 +1309,87 @@ class HonestOutputChecks(unittest.TestCase):
         self.prove("s2a7_relations", observe_relations, check_relations,
                    lambda: patch.object(finding_record, "is_model_written", lambda item: False))
 
+    # Reader check round 3: each mechanism, neutralised alone, must fail the check.
+    def test_r3_1_docx_author_from_what_ran(self):
+        import docx_builder
+        self.prove("r3_1_author", observe_round3, check_round3,
+                   lambda: patch.object(docx_builder, "comment_author", lambda a: ("Shimmer / AMENDMENT_DRAFTER", "AD")))
+
+    def test_r3_2_every_judging_call_on_the_bus(self):
+        real = pr.judging_call_record
+        self.prove("r3_2_calls_on_bus", observe_round3, check_round3,
+                   lambda: patch.object(pr, "judging_call_record",
+                                        lambda reply, **kw: dict(real(reply, **kw), call_id="")))
+
+    def test_r3_2_calls_without_findings_posted_on_their_own(self):
+        real = pr.judging_call_record
+        self.prove("r3_2_calls_alone", observe_calls_without_findings, check_calls_without_findings,
+                   lambda: patch.object(pr, "judging_call_record",
+                                        lambda reply, **kw: dict(real(reply, **kw), call_id="")))
+
+    def test_r3_2_judging_call_outcome_recorded(self):
+        real = pr.judging_call_record
+        self.prove("r3_2_outcomes", observe_round3, check_round3,
+                   lambda: patch.object(pr, "judging_call_record",
+                                        lambda reply, **kw: real(reply, **dict(kw, notes_kept=1))))
+
+    def test_r3_3_no_not_judged_beside_a_model_note(self):
+        self.prove("r3_3_note_sentence", observe_round3, check_round3,
+                   lambda: patch.object(pr, "COMPUTED_PROVENANCE_WITH_NOTE",
+                                        "Computed in code from the figures in this unit, not judged by a model."))
+
+    def test_r3_4_docx_anchors_multi_paragraph_passages(self):
+        import docx_builder
+        self.prove("r3_4_anchor", observe_round3, check_round3,
+                   lambda: patch.object(docx_builder, "anchor_span", _old_anchor_span))
+
+    def test_c2_docx_holds_amendments_only(self):
+        self.prove("c2_docx_amendments_only", observe_round3, check_round3,
+                   lambda: patch.object(amendment_render, "render_amendments_docx",
+                                        _docx_with_model_items(amendment_render.render_amendments_docx)))
+
+    def test_r3_5_reader_notes_in_reviewed_document(self):
+        self.prove("r3_5_per_agent_notes", observe_round3, check_round3,
+                   lambda: patch.object(pr, "model_item_notes", lambda *a, **k: []))
+
+    def test_r3_6_absence_counted_apart(self):
+        self.prove("r3_6_counted_apart", observe_round3, check_round3,
+                   lambda: patch.object(summary_generators, "_python_counts", lambda p: (p["computed"], 0)))
+
+    def test_r3_7_one_figure_formatter(self):
+        self.prove("r3_7_formatter", observe_round3, check_round3,
+                   lambda: patch.object(pr, "written_tokens", lambda *a, **k: []))
+
+    def test_r3_8_absence_quote_section_in_plain_sentences(self):
+        import absence_prediction
+        self.prove("r3_8_quote_section", observe_round3, check_round3,
+                   lambda: patch.object(absence_prediction, "STATUS_SENTENCES", {}))
+
+    def test_r3_9_states_in_words(self):
+        import agent_activation
+        self.prove("r3_9_states", observe_round3, check_round3,
+                   lambda: patch.object(agent_activation, "STATE_WORDS", {}))
+
+    def test_r3_10_one_turkish_relation_label(self):
+        saved = loc.catalog()
+        doubled = dict(saved, **{"total does not match its parts": "toplam uyuşmazlığı: toplam, parçalarıyla uyuşmuyor"})
+        self.prove("r3_10_tr_label", observe_round3, check_round3,
+                   lambda: patch.object(loc, "catalog", lambda: doubled))
+
+    def test_r3_11_unregistered_agents_set_apart(self):
+        self.prove("r3_11_unregistered", observe_round3, check_round3,
+                   lambda: patch.object(audit_synthesizer, "registered_agents", lambda messages: None))
+
+    # Adversarial round 2: each mechanism, neutralised alone, must fail the check.
+    def test_adv_a_unstamped_is_never_pythons(self):
+        self.prove("adv_a_unstamped", observe_unstamped, check_unstamped,
+                   lambda: patch.object(finding_record, "is_model_written",
+                                        lambda item: isinstance(item, dict) and item.get("written_by") == "model"))
+
+    def test_adv_b_heading_is_the_passages_first_line(self):
+        self.prove("adv_b_first_line", observe_heading_match, check_heading_match,
+                   lambda: patch.object(pr, "opens_with", _old_opens_with))
+
 
 def check():
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(HonestOutputChecks)
@@ -1043,7 +1407,9 @@ def check():
                     "producer sentence from the run, tr catalog, plain templates, absence location, "
                     "audit-synthesis count, model-only relations apart, model items kept out of the "
                     "prior-comparison and band sections, unplaced units cite nothing of another's, "
-                    "and the reader-check rounds 1 and 2 items" % (ran, console))
+                    "the reader-check rounds 1, 2 and 3 items, an unstamped record never Python's, a "
+                    "heading placed only at its passage's first line, and a docx of amendments only"
+                    % (ran, console))
 
 
 def write_mocked_deliverables(target):
@@ -1054,9 +1420,11 @@ def write_mocked_deliverables(target):
         run = mocked_run(target / language, language=language)
         ctx = run["ctx"]
         bus = MessageBus.open(ctx.bus_path())
-        # Three distinct escalations on one topic (a real pattern) and two
-        # content-free copies (counted apart, never a pattern).
-        post_escalations(bus, distinct=3, copies=2)
+        # Three distinct escalations on one topic about registered agents (a real
+        # pattern), two about agents this run did not register and two
+        # content-free copies (both counted apart, never a pattern).
+        post_escalations(bus, distinct=3, copies=2, agents=REGISTERED_ESCALATED)
+        post_escalations(bus, distinct=2, copies=0)
         audit_synthesizer.AuditSynthesizer(project_root=target / language, bus=bus,
                                            run_context=ctx).synthesize()
         print(language, run["run_dir"])

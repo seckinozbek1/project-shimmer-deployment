@@ -2458,8 +2458,16 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                           "undecided_count": pairing.get("undecided_count", 0),
                           "rejected_count": pairing.get("rejected_count", 0)})
     pending_judgments = []
+    # Reader check round 3 (item 2): every judging call, with what became of its
+    # reply (a note kept, no note returned, nothing to attach it to, a failed
+    # call), by agent; carried on the computed bus post and in the pairing map so
+    # a call the run counts is never missing from the record.
+    judging_calls_by_agent: dict = {}
     def consume_judgment(plan_index, plan, unit, rule, checks, agent, source_rule_id, refs, r):
         if plan.get("kind") == "absence_judged":
+            judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+                r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"],
+                plan_kind=plan.get("kind"), notes_kept=0, has_note=False))
             judged = _stamped_judged_items(r, agent, unit["unit_id"], rule["id"], source_rule_id)
             # A judged answer claiming a field is MISSING from a unit whose own
             # parsed fields carry it is refused, not posted. The unit is in
@@ -2514,6 +2522,7 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
             results.append(r)
             return
         explanation = _first_explanation(r)
+        notes_kept = 0
         for check in paired_review_mod.disagreements(checks):
             item = paired_review_mod.finding_from_check(
                 unit_id=unit["unit_id"], rule=rule, check=check,
@@ -2521,7 +2530,11 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                 unit_ref=paired_review_mod.unit_ref_for(doc, unit["unit_id"]))
             # Reader check RD1: the record names the model call that wrote its note.
             paired_review_mod.stamp_note_writer(item, r)
+            notes_kept += item.get("explanation_by") == finding_record.WRITTEN_BY_MODEL
             computed_items_by_agent.setdefault(agent, []).append(item)
+        judging_calls_by_agent.setdefault(agent, []).append(paired_review_mod.judging_call_record(
+            r, agent=agent, unit_id=unit["unit_id"], rule_id=rule["id"], plan_kind=plan.get("kind"),
+            notes_kept=notes_kept, has_note=bool(explanation)))
         results.append(r)
 
     for plan_index, plan in enumerate(plans):
@@ -2745,6 +2758,8 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
     # neighbour rule's 13 dropped plans looked like a model failure rather than
     # a question never asked. planned = made + not_judged + absence_computed.
     pairing["calls_made"] = len(results)
+    # Reader check round 3 (item 2): what became of every call, beside the count.
+    pairing["judging_calls"] = [c for calls in judging_calls_by_agent.values() for c in calls]
     # SEVEN-A: the suspension evidence lands in the pairing map, which is the
     # artifact that already carries per-unit evidence (band_conditions,
     # prior_comparisons) and which a scorer already reads. A third fact beside
@@ -2792,7 +2807,10 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                           "item_count": len(items), "parse_trace": {}, "payload": envelope,
                           # Reader check RD1: the models whose sentences sit in
                           # these records as notes, recorded where the records are.
-                          "note_models": paired_review_mod.note_models(items)},
+                          "note_models": paired_review_mod.note_models(items),
+                          # Reader check round 3 (item 2): every judging call this
+                          # agent made, kept note or not.
+                          "judging_calls": judging_calls_by_agent.get(agent, [])},
                     constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
                                         "resolution": "computed in code from the unit's own "
                                                       "figures; no model judged these values"})
@@ -2805,6 +2823,25 @@ async def _paired_convention_review(orch, keys, doc, pairing, convention_registr
                             "error": None, "item_count": len(items),
                             "backend": "paired", "model": "python",
                             "note_models": paired_review_mod.note_models(items)})
+
+    # Reader check round 3 (item 2): an agent whose judging calls produced no
+    # computed finding has no computed post to carry them, so they are posted on
+    # their own (no finding, no envelope: a record of calls and their outcomes).
+    for agent, calls in judging_calls_by_agent.items():
+        if computed_items_by_agent.get(agent) or not calls:
+            continue
+        try:
+            _build_wrapper(agent, orch, keys).post_to_bus(
+                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                body={"event": "PAIRED_JUDGING_CALLS", "backend": "paired", "model": "python",
+                      "doc_id": str(doc["id"]), "judging_calls": calls},
+                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                    "resolution": "judging calls recorded with their outcomes; "
+                                                  "no computed finding on these pairs"})
+        except Exception as e:  # a bus that refuses must not take the review down
+            log_event(_LOG, f"paired_review_bus_post_error agent={agent} "
+                            f"error_type={type(e).__name__}",
+                      run_id=_run_id_of(orch), phase="5.5", doc_id=doc["id"])
 
     # D, option 2: the model's judged absence findings, stamped with the unit and
     # rule Python knows by construction and with absence_path=judged, posted under
@@ -3076,12 +3113,14 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         switch = None
     if not isinstance(switch, dict):
         lines.append(localization.text('- INST_FINDER: setting not recorded for this summary'))
+    # Reader check round 3 (item 9): the setting in plain words; the setting's
+    # internal name stays in audit/agent_switches.json.
     elif switch.get("switched_off"):
-        lines.append(f'{localization.text('- INST_FINDER: switched off by the ratified SHIMMER_INST_FINDER setting, amendment ')}{switch.get('ratified_by')}')
+        lines.append(f'{localization.text('- INST_FINDER: switched off for this run by the operator, as ratified in amendment ')}{switch.get('ratified_by')}')
     elif switch.get("setting") == "off":
-        lines.append(localization.text('- INST_FINDER: SHIMMER_INST_FINDER=off without a ratified amendment; the run refused to start'))
+        lines.append(localization.text('- INST_FINDER: switched off without a ratified amendment, so the run refused to start'))
     else:
-        lines.append(localization.text('- INST_FINDER: on (SHIMMER_INST_FINDER is not off)'))
+        lines.append(localization.text('- INST_FINDER: switched on for this run'))
         try:
             _states = json.loads((deliv_dir.parent / "audit" / "agent_activation.json")
                                  .read_text(encoding="utf-8")).get("agent_states") or []
@@ -3237,6 +3276,7 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                           if finding_record.is_finding(f) and finding_record.is_model_written(f)]
         findings = []
         categories_with_findings = set()
+        _rule_words = {c.get("id"): c.get("rule") for c in convention_registry.get("conventions", [])}
         for agent, raw_findings in (("PRACTICE_AUDITOR", pa_findings),
                                      ("STYLE_GUARDIAN", sg_findings)):
             for f in raw_findings:
@@ -3244,6 +3284,9 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                 normalized = _normalize_finding(f)
                 normalized["category"] = cat
                 normalized["agent"] = agent
+                # Reader check round 3 (item 7): the summaries format a figure with
+                # the same formatter and the same written numbers as the comment.
+                normalized["_written_tokens"] = paired_review_mod.written_tokens(f, _doc_units, _rule_words)
                 if finding_record.is_model_written(normalized):
                     normalized["figures_in_unit"] = paired_review_mod.figures_in_unit(f, _doc_units)
                     normalized["reader_notes"] = paired_review_mod.model_item_notes(
@@ -3269,7 +3312,8 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         # replies carried one. It used to name PRACTICE_AUDITOR and STYLE_GUARDIAN
         # as producers whatever ran, including when STYLE_GUARDIAN never ran and
         # Python computed every finding. The same counts go to the run log.
-        provenance = summary_generators.findings_provenance(findings)
+        _judging_calls = (doc.get("_pairing") or {}).get("judging_calls") or []
+        provenance = summary_generators.findings_provenance(findings, judging_calls=_judging_calls)
         log_event(_LOG, f"findings_provenance computed={provenance['computed']} "
                         f"model={provenance['model']} "
                         f"model_agents={','.join(provenance['model_agents']) or 'none'}",
@@ -3531,7 +3575,8 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
         except (OSError, ValueError):
             _activation = None
         per_agent_path.write_text(_render_per_agent_md(doc, production, audit, conv_review,
-                                                       activation=_activation),
+                                                       activation=_activation, unit_refs=_doc_unit_refs,
+                                                       judging_calls=_judging_calls),
                                   encoding="utf-8")
 
         # The dict KEYS below are internal identifiers consumed by the redaction stage and
@@ -3992,10 +4037,12 @@ def phase_6_5_editorial_review(orch, keys, op_docs, deliverables, run_ctx,
 
 
 @localization.presentation
-def _render_per_agent_md(doc, production, audit, conv_review, activation=None):
+def _render_per_agent_md(doc, production, audit, conv_review, activation=None, unit_refs=None,
+                         judging_calls=None):
     # Reader check RC17/RD18: the title says what the file holds (each agent's raw
     # reply for this document). The file name stays as it is (renaming it changes
     # run_context.DELIVERABLE_FILENAMES, routes and docs; deferred).
+    import agent_activation
     lines = [f'# {doc['name']}{localization.text(': per-agent deliverable (each agent\'s raw reply for this document, a technical record)')}', "",
              f'{localization.text('- generated: ')}{datetime.now(timezone.utc).isoformat()}']
     all_results = (production + audit + conv_review)
@@ -4003,13 +4050,19 @@ def _render_per_agent_md(doc, production, audit, conv_review, activation=None):
     for r in all_results:
         if r.get("doc_id") == doc["id"]:
             by_agent.setdefault(r["agent"], []).append(r)
+    # Reader check round 3 (item 2): every judging call an agent made, by agent.
+    calls_by_agent = {}
+    for call in judging_calls or []:
+        if isinstance(call, dict):
+            calls_by_agent.setdefault(call.get("agent"), []).append(call)
+    units = None
     for agent in ("PROCESSOR", "SPEECH_ACT_TAGGER", "LEGAL_ANALYST",
                   "VERIFIER", "FACT_CHECKER",
                   "PRACTICE_AUDITOR", "STYLE_GUARDIAN"):
         lines.append(f"\n## {agent}")
-        if agent not in by_agent:
+        if agent not in by_agent and not calls_by_agent.get(agent):
             lines.append(localization.text('_(agent did not run)_')); continue
-        for r in by_agent[agent]:
+        for r in by_agent.get(agent, []):
             if not r.get("ok"):
                 lines.append(f'{localization.text('_(failed: ')}{r.get('error')})_'); continue
             # S2a, item 1: each reply says who wrote it, and every model finding in
@@ -4022,33 +4075,58 @@ def _render_per_agent_md(doc, production, audit, conv_review, activation=None):
                 # Reader check RD1: exactly what the run log records for these
                 # records (backend and model of the post), and the models the
                 # records name as writers of their notes, or that none is recorded.
+                # Reader check round 3 (item 6): the absences Python checked in code
+                # are counted apart from the findings computed from figures.
+                records = [i for i in decode_items(r.get("parsed")) if isinstance(i, dict)]
                 writers = sorted({str(i.get("explanation_model") or localization.text("not recorded"))
-                                  for i in decode_items(r.get("parsed"))
+                                  for i in records
                                   if i.get("explanation_by") == finding_record.WRITTEN_BY_MODEL})
-                lines.append(f'_{localization.text(finding_record.COMPUTED_FINDING_MARK)}'
-                             f'{localization.text(' Backend ')}`{r.get('backend') or '?'}`'
+                checked = sum(1 for i in records if i.get("relation") in finding_record.ABSENCE_RELATIONS)
+                lines.append('_' + localization.text(
+                                 "Written by Python: {figures} computed from the document's own figures, "
+                                 "{checked} required field(s) checked in code and found absent.",
+                                 figures=len(records) - checked, checked=checked)
+                             + f'{localization.text(' Backend ')}`{r.get('backend') or '?'}`'
                              f'{localization.text(', model ')}`{r.get('model') or '?'}`.'
                              + (f'{localization.text(' Notes written by a model, not checked by Python: ')}'
                                 + ", ".join(f"`{w}`" for w in writers) + "." if writers else "") + "_")
             else:
+                import paired_review as _pr
+                if units is None:
+                    units = _pr.unit_texts_for(doc.get("text") or "", doc["id"])
                 lines.append(f'{localization.text('_Written by a model: backend ')}`{r.get('backend') or '?'}`'
                              f'{localization.text(', model ')}`{r.get('model') or '?'}`._')
                 for item in decode_items(r.get("parsed")):
                     if finding_record.is_finding(item):
                         lines.append(f'- {finding_record.reader_line(dict(item, written_by=finding_record.WRITTEN_BY_MODEL))} '
                                      f'({localization.text(finding_record.MODEL_FINDING_MARK)})')
+                        # Reader check round 3 (item 5): what Python can say about
+                        # the item, the same notes every other file shows.
+                        for note in _pr.model_item_notes(item, units, unit_refs or {}, doc.get("_pairing")):
+                            lines.append(f"  - {localization.message(note)}")
             lines.append("```json")
             lines.append(json.dumps(r.get("parsed"), indent=2, ensure_ascii=False))
             lines.append("```")
+        calls = calls_by_agent.get(agent) or []
+        if calls:
+            import paired_review as _pr
+            lines += ["", localization.text(
+                "Judging calls this agent made on this document: {calls}; notes kept on Python's findings: {kept}.",
+                calls=len(calls), kept=sum(int(c.get("notes_kept") or 0) > 0 for c in calls))]
+            lines += [f"- {_pr.judging_call_line(c)}" for c in calls]
     # Reader check RD13: every registered agent, with the state the run recorded
     # for it, so the list above (the agents that review one document) is never
-    # read as the whole run.
+    # read as the whole run. Round 3 (item 9): the state in words, never the code.
     states = (activation or {}).get("agent_states") or []
     if states:
         lines += ["", localization.text("## Every registered agent in this run"), ""]
         for row in states:
-            lines.append(f"- {row.get('agent')}: {localization.label(str(row.get('state') or '?'))}"
-                         f"{localization.text('; model calls: ')}{row.get('actual_calls', 0)}")
+            calls = calls_by_agent.get(row.get("agent")) or []
+            kept = (localization.text("; judging calls with a note kept: {kept} of {calls}",
+                                      kept=sum(int(c.get("notes_kept") or 0) > 0 for c in calls),
+                                      calls=len(calls)) if calls else "")
+            lines.append(f"- {row.get('agent')}: {agent_activation.state_words(row.get('state'))}"
+                         f"{localization.text('; model calls: ')}{row.get('actual_calls', 0)}{kept}")
     return "\n".join(lines)
 
 
