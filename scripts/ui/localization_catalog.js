@@ -1144,6 +1144,98 @@ var SHIMMER_TR = {
   "invalid_run_options_schema": "Geçersiz çalışma seçenekleri şeması",
   "_messages": [
     {
+      "pattern": "^([\\s\\S]+?) A\\ model's\\ note,\\ not\\ checked\\ by\\ Python:\\ ([\\s\\S]*)$",
+      "translation": "{0!m} Bir modelin notu (Python tarafından denetlenmedi): {1}"
+    },
+    {
+      "pattern": "^([\\s\\S]+?)\\ The\\ location\\ is\\ the\\ passage\\ of\\ unit\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0!m} Konum, {1} biriminin geçtiği bölümdür."
+    },
+    {
+      "pattern": "^([\\s\\S]+?)\\ The\\ pipeline\\ could\\ not\\ find\\ the\\ passage\\ of\\ unit\\ ([\\s\\S]*?)\\ in\\ the\\ reference\\ index,\\ so\\ this\\ amendment\\ is\\ placed\\ at\\ the\\ document\\ level\\.$",
+      "translation": "{0!m} İşlem hattı {1} biriminin geçtiği bölümü kaynak dizininde bulamadı; bu nedenle değişiklik belge düzeyinde konumlandırıldı."
+    },
+    {
+      "pattern": "^([\\s\\S]+?)\\ Computed\\ in\\ code\\ from\\ the\\ figures\\ in\\ this\\ unit,\\ not\\ judged\\ by\\ a\\ model\\.\\ Grounded\\ in\\ ([\\s\\S]*?)\\ at\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0!m} Bu birimin sayılarından kodla hesaplandı, model tarafından değerlendirilmedi. Dayanak: {1}; konum: {2}."
+    },
+    {
+      "pattern": "^([\\s\\S]+?)\\ Reported\\ by\\ the\\ agent\\ named\\ above,\\ not\\ computed\\ in\\ code\\ from\\ this\\ unit's\\ figures\\.\\ Grounded\\ in\\ ([\\s\\S]*?)\\ at\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0!m} Yukarıda adı geçen ajan tarafından bildirildi; bu birimin sayılarından kodla hesaplanmadı. Dayanak: {1}; konum: {2}."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?),\\ above\\ the\\ upper\\ bound\\ of\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: Hesaplanan değer {3} ({2}); üst sınırı {4} değerinin üzerinde."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?),\\ below\\ the\\ lower\\ bound\\ of\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: Hesaplanan değer {3} ({2}); alt sınırı {4} değerinin altında."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ ratio\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?),\\ outside\\ the\\ permitted\\ bound\\ of\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: {2} oranı {3}; izin verilen {4} sınırının dışında."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ ratio\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?),\\ within\\ the\\ permitted\\ bound\\ of\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: {2} oranı {3}; izin verilen {4} sınırı içinde."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ values\\ listed\\ add\\ up\\ to\\ ([\\s\\S]*?),\\ but\\ the\\ stated\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: Listelenen değerlerin toplamı {2}; ancak belirtilen {3} değeri {4}."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ values\\ listed\\ add\\ up\\ to\\ ([\\s\\S]*?),\\ matching\\ the\\ stated\\ ([\\s\\S]*?)\\ of\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: Listelenen değerlerin toplamı {2}; belirtilen {3} değeri {4} ile uyumlu."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ factors\\ multiply\\ to\\ ([\\s\\S]*?),\\ but\\ the\\ stated\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: Çarpanların çarpımı {2}; ancak belirtilen {3} değeri {4}."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ factors\\ multiply\\ to\\ ([\\s\\S]*?),\\ matching\\ the\\ stated\\ ([\\s\\S]*?)\\ of\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: Çarpanların çarpımı {2}; belirtilen {3} değeri {4} ile uyumlu."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ required\\ field\\ '([\\s\\S]*?)'\\ is\\ not\\ stated\\ in\\ this\\ unit\\.$",
+      "translation": "{0} birimi, {1} kuralı: Zorunlu '{2}' alanı bu birimde belirtilmemiş."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ field\\ '([\\s\\S]*?)'\\ is\\ filled\\ in\\ ([\\s\\S]*?)\\ of\\ ([\\s\\S]*?)\\ rows\\.$",
+      "translation": "{0} birimi, {1} kuralı: '{2}' alanı {4} satırın yalnızca {3} tanesinde dolu."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ gap\\ between\\ the\\ two\\ dates\\ is\\ ([\\s\\S]*?),\\ longer\\ than\\ the\\ allowed\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: İki tarih arasındaki süre {2}; izin verilen {3} süresinden uzun."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ gap\\ between\\ the\\ two\\ dates\\ is\\ ([\\s\\S]*?),\\ within\\ the\\ allowed\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: İki tarih arasındaki süre {2}; izin verilen {3} süresi içinde."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ a\\ reference\\ the\\ rule\\ requires\\ is\\ not\\ present\\.$",
+      "translation": "{0} birimi, {1} kuralı: Kuralın gerektirdiği bir kaynak mevcut değil."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ a\\ required\\ value\\ is\\ absent\\.$",
+      "translation": "{0} birimi, {1} kuralı: Zorunlu bir değer eksik."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ computed\\ figure\\ is\\ ([\\s\\S]*?),\\ compared\\ with\\ ([\\s\\S]*?)\\ \\(relation\\ ([\\s\\S]*?)\\)\\.$",
+      "translation": "{0} birimi, {1} kuralı: Hesaplanan değer {2}; karşılaştırılan değer {3} (ilişki: {4})."
+    },
+    {
+      "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ computed\\ figure\\ is\\ ([\\s\\S]*?)\\.$",
+      "translation": "{0} birimi, {1} kuralı: Hesaplanan değer {2}."
+    },
+    {
+      "pattern": "^This\\ document\\ was\\ reviewed\\ against\\ ([\\s\\S]*?)\\ conventions\\.\\ Findings:\\ ([\\s\\S]*?)\\ in\\ total,\\ ([\\s\\S]*?)\\ computed\\ by\\ Python\\ from\\ the\\ document's\\ figures,\\ ([\\s\\S]*?)\\ written\\ by\\ a\\ model\\ \\(([\\s\\S]*?)\\)\\ and\\ not\\ promoted\\.\\ The\\ context\\ references\\ below\\ are\\ filtered\\ for\\ topical\\ relevance\\ to\\ ([\\s\\S]*?)\\.$",
+      "translation": "Bu belge {0} kurala göre incelendi. Bulgular: toplam {1}; {2} tanesi Python tarafından belgenin sayılarından hesaplandı, {3} tanesi bir model tarafından yazıldı ({4!m}) ve değişikliğe dönüştürülmedi. Aşağıdaki bağlam kaynakları {5} ile konu ilgisine göre süzüldü."
+    },
+    {
+      "pattern": "^Findings\\ below\\ come\\ from\\ the\\ convention\\ review:\\ ([\\s\\S]*?)\\ computed\\ by\\ Python\\ from\\ the\\ document's\\ figures,\\ ([\\s\\S]*?)\\ written\\ by\\ a\\ model\\ \\(([\\s\\S]*?)\\)\\ and\\ not\\ promoted\\.\\ Each\\ finding\\ cites\\ the\\ convention\\ ID\\ and\\ the\\ reference\\ ID\\(s\\)\\ and\\ says\\ who\\ wrote\\ it\\.$",
+      "translation": "Aşağıdaki bulgular kural incelemesinden gelir: {0} tanesi Python tarafından belgenin sayılarından hesaplandı, {1} tanesi bir model tarafından yazıldı ({2!m}) ve değişikliğe dönüştürülmedi. Her bulgu kural kimliğini ve kaynak kimliklerini belirtir ve kimin yazdığını söyler."
+    },
+    {
       "pattern": "^\\[redaction\\-rules\\]\\ STOP:\\ no\\ operator\\ redaction\\ rule\\ in\\ force;\\ the\\ engine\\ does\\ NOT\\ apply\\ default\\ categories\\ on\\ its\\ own\\ \\(operator\\-sovereignty\\)\\.\\ Supply\\ a\\ compiling\\ redaction\\ convention\\ \\(a\\ confidentiality/redaction\\ category\\ or\\ 'must\\ not\\ contain\\ …'\\ phrasing\\ with\\ rule\\ text\\),\\ or\\ re\\-run\\ with\\ \\-\\-no\\-redaction\\-override\\ to\\ consciously\\ declare\\ redact\\-nothing\\ for\\ THIS\\ run\\ \\(logged\\ to\\ the\\ governance\\ ledger\\)\\.\\ Redaction\\-intent\\ that\\ failed\\ to\\ compile:\\ ([\\s\\S]*?)\\.$",
       "translation": "[redaction-rules] DUR: yürürlükte operatör gizleme kuralı yok; motor kendiliğinden varsayılan kategoriler uygulamaz. Derlenebilir gizleme kuralı sağlayın veya BU çalışma için bilinçli olarak gizleme yapılmayacağını --no-redaction-override ile beyan edin (yönetişim günlüğüne kaydedilir). Derlenemeyen gizleme isteği: {0}."
     },
@@ -1646,5 +1738,19 @@ var SHIMMER_TR = {
   "Invalid multi-round request. Supply --multi-round and a valid case manifest for Review.": "Geçersiz çok turlu analiz isteği. İnceleme için --multi-round ve geçerli vaka bildirimi sağlayın.",
   "at single-operator volume this rate is not statistically meaningful and must not be read as a quality measure; it is a trend an operator can watch, nothing more": "Tek operatör hacminde bu oran istatistiksel anlam taşımaz ve kalite ölçüsü olarak okunmamalıdır; yalnızca operatörün izleyebileceği bir eğilimdir.",
   "A required value is absent.": "Zorunlu bir değer eksik.",
-  "no severity declared; amends, as before this rule existed": "Önem derecesi belirtilmemiş; bu kuraldan önceki gibi değişiklik önerilir"
+  "no severity declared; amends, as before this rule existed": "Önem derecesi belirtilmemiş; bu kuraldan önceki gibi değişiklik önerilir",
+  "no model agent": "model ajanı yok",
+  "Written by a model. Not promoted to an amendment. Not checked by Python.": "Bir model tarafından yazıldı. Değişikliğe dönüştürülmedi. Python tarafından denetlenmedi.",
+  "Computed by Python from the document's own figures.": "Python tarafından belgenin kendi sayılarından hesaplandı.",
+  "## Model findings not promoted": "## Değişikliğe dönüştürülmeyen model bulguları",
+  "## Relations found (computed by Python)": "## Bulunan ilişkiler (Python tarafından hesaplandı)",
+  "## Relations a model reported (not confirmed by Python or the scorer)": "## Bir modelin bildirdiği ilişkiler (Python veya puanlayıcı tarafından doğrulanmadı)",
+  " model finding(s) not promoted": " model bulgusu değişikliğe dönüştürülmedi",
+  "_Written by a model: backend ": "_Bir model tarafından yazıldı: ortam ",
+  ", model ": ", model kimliği ",
+  "- audit-trail patterns: ": "- denetim izi örüntüleri: ",
+  " (patterns in this run's audit trail, such as repeated escalations; not findings about the document under review, which are in deliverables/\u003cdocument>/document_summary.md)": " (bu çalışmanın denetim izindeki örüntüler, örneğin yinelenen yükseltmeler; incelenen belge hakkındaki bulgular değildir, bunlar deliverables/\u003cdocument>/document_summary.md içindedir)",
+  "## Audit-trail patterns (not document findings)": "## Denetim izi örüntüleri (belge bulguları değildir)",
+  "_no audit-trail patterns this run_": "_bu çalışmada denetim izi örüntüsü yok_",
+  "Frozen final models are limited to Review: ordinary, or multi-round with a declared case manifest": "Dondurulmuş son modeller yalnızca incelemeyle sınırlıdır: normal inceleme veya beyan edilmiş vaka bildirimiyle çok turlu inceleme"
 };

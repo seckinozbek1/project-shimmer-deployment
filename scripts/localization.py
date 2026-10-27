@@ -133,7 +133,12 @@ def message(original, language=None):
     for row in catalog().get("_messages", []):
         match = re.fullmatch(row["pattern"], original, re.DOTALL)
         if match:
-            return re.sub(r"\{(\d+)\}", lambda m: match[int(m[1]) + 1], row["translation"])
+            # "{n}" keeps group n exactly (source content, identifiers); "{n!m}"
+            # renders group n through the catalog too, so a sentence built from
+            # catalogued sentences (an amendment comment) is rendered whole.
+            return re.sub(r"\{(\d+)(!m)?\}",
+                          lambda m: message(match[int(m[1]) + 1], language) if m[2]
+                          else match[int(m[1]) + 1], row["translation"])
     return original
 
 

@@ -176,6 +176,70 @@ def validate_finding(item, *, registry_ids=None) -> tuple[bool, list]:
     return (not errors, errors)
 
 
+# ---------------------------------------------------------------------------
+# S2a (honest deliverables): who wrote a finding, said the same way everywhere.
+#
+# The discriminator is the one paired_review.computed_finding_items already
+# uses, read off the result envelope a finding was posted under: Python's own
+# records go out under backend "paired" (paired review) or "computed" (the
+# comparison with an earlier version) with a model id starting "python". Every
+# other backend is a model's reply, whatever agent name it carries. Nothing
+# here reads an agent name, and an unknown provenance is never called computed.
+COMPUTED_BACKENDS = ("paired", "computed")
+WRITTEN_BY_PYTHON = "python"
+WRITTEN_BY_MODEL = "model"
+# The mark a reader sees beside every model finding that did not become an
+# amendment. A model finding never becomes one (check 269), so the mark is
+# true of every model finding. Plain words, one sentence per fact.
+MODEL_FINDING_MARK = ("Written by a model. Not promoted to an amendment. "
+                      "Not checked by Python.")
+COMPUTED_FINDING_MARK = "Computed by Python from the document's own figures."
+
+
+def written_by(backend, model) -> str:
+    """"python" when the envelope is Python's own record, else "model"."""
+    if str(backend or "") in COMPUTED_BACKENDS and str(model or "").startswith("python"):
+        return WRITTEN_BY_PYTHON
+    return WRITTEN_BY_MODEL
+
+
+def stamp_written_by(results, items):
+    """Copies of `items`, each stamped with `written_by`, decided from the
+    result envelope the item object was posted under (by object identity, so a
+    copy made later cannot change the answer). An item no envelope claims is
+    stamped "model": provenance that cannot be shown is never called computed."""
+    owner = {}
+    for result in results or []:
+        if not isinstance(result, dict):
+            continue
+        parsed = result.get("parsed")
+        found = parsed.get("items") if isinstance(parsed, dict) else None
+        who = written_by(result.get("backend"), result.get("model"))
+        for item in found or []:
+            if isinstance(item, dict):
+                owner[id(item)] = who
+    out = []
+    for item in items or []:
+        if isinstance(item, dict):
+            out.append(dict(item, written_by=owner.get(id(item), WRITTEN_BY_MODEL)))
+        else:
+            out.append(item)
+    return out
+
+
+def is_model_written(item) -> bool:
+    """True unless the item was stamped as Python's own record."""
+    return not (isinstance(item, dict) and item.get("written_by") == WRITTEN_BY_PYTHON)
+
+
+@localization.presentation
+def provenance_mark(item) -> str:
+    """The reader-facing mark for one finding, in the run's output language."""
+    if is_model_written(item):
+        return localization.text(MODEL_FINDING_MARK)
+    return localization.text(COMPUTED_FINDING_MARK)
+
+
 def strip_reasoning(items):
     """Project items for an INTER-AGENT payload: every prose field removed.
 

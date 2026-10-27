@@ -1177,6 +1177,14 @@ def finding_from_check(*, unit_id, rule, check, source_rule_id="", refs=None,
         item["delta"] = check["delta"]
     if check.get("band_distance_change") is not None:
         item["band_distance_change"] = check["band_distance_change"]
+    # S2a: the explanation says who wrote it. A sentence a judging model supplied
+    # is marked as the model's; with none, Python writes the plain sentence from
+    # the figures it computed (the same sentence an amendment leads with), so the
+    # reader never meets the internal comparison basis as prose.
+    if explanation:
+        item["explanation_by"] = finding_record.WRITTEN_BY_MODEL
+    elif str(check.get("relation") or "") not in finding_record.PRIOR_RELATIONS:
+        item["explanation"] = computed_sentence(item)
     return item
 
 
@@ -1200,13 +1208,12 @@ def _default_explanation(check):
                 direction, check.get("band_low"), check.get("band_high"),
                 check["band_distance_change"], check["computed_unit"])
         return sentence
-    if check.get("stated") is not None:
-        return ("%s gives %s %s, while the document states %s %s."
-                % (check["basis"], check["computed"], check["computed_unit"],
-                   check["stated"], check["stated_unit"]))
-    return ("%s gives %s %s against a stated range of %s to %s."
-            % (check["basis"], check["computed"], check["computed_unit"],
-               check.get("band_low"), check.get("band_high")))
+    # S2a: every other relation is explained by computed_sentence, written from
+    # the typed record once it exists (finding_from_check). The comparison
+    # `basis` is an internal label for the arithmetic, never reader prose: read
+    # as prose it produced "measured value against the range against Sodium in
+    # the reference corpus gives ..." and "0 values against a stated 1 required".
+    return ""
 
 
 def dedupe(items):
@@ -2054,8 +2061,13 @@ def computed_finding_items(results, agent=None, *, doc_id=None):
 
 
 def amendment_from_finding(item, *, document_level="document-level", unit_texts=None,
-                           computed_provenance=True):
+                           computed_provenance=True, unit_refs=None):
     """Build an amendment from a typed Finding record, with no model involved.
+
+    unit_refs (S2a, item 5): {unit_id: REF-*} for the units whose own passage
+    Python placed in the reference index (unit_passage_refs). Given, an absence
+    finding is located at its unit's passage, or at the document level with a
+    sentence saying the unit's passage is not known. None keeps the old location.
 
     unit_texts: the {unit_id: {"text": ..., ...}} map unit_texts_for(doc["text"],
     doc["id"]) already builds in pipeline.py, from the SAME document split that
@@ -2139,6 +2151,19 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     # nobody reads. Measured: attribution scored 0 of 5 with the id in a field.
     own = item.get("source_rule_id")
     rule_text = ("%s (%s)" % (rule_id, own)) if own and own != rule_id else rule_id
+    # S2a, item 5: an absence finding points to the unit that lacks the field.
+    # Its citations are the document-level excerpt (a header passage, as in v9's
+    # RES-FIRTH amendment), so the location is moved to the passage Python finds
+    # holding this unit's own heading, when exactly one indexed passage does;
+    # otherwise the amendment says the unit's passage is not known and sits at
+    # the document level, never at a header passage that is not the unit.
+    absence = str(item.get("relation") or "") in ABSENCE_RELATIONS and unit_refs is not None
+    relocated = (unit_refs.get(unit_id) if unit_id else None) if absence else None
+    if relocated:
+        refs = [relocated] + [r for r in refs if r != relocated]
+        location = relocated
+    elif absence:
+        location = document_level
     citation = "%s at %s" % (rule_text, refs[0] if refs else document_level)
     # refine R2: the COMPUTED FIGURES lead, always. They used to be a fallback,
     # used only when no model sentence existed, and the model's sentence usually
@@ -2150,10 +2175,8 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
     # CONV-A10-style rules ask for the specific figures in so many words. So the
     # computed sentence is always present and the model's sentence, when there is
     # one and it says something different, follows it rather than replacing it.
-    computed = _computed_sentence(item)
+    computed = computed_sentence(item)
     parts = [computed]
-    if explanation and explanation.strip() and explanation.strip() != computed:
-        parts.append(explanation.strip())
     # v7: this sentence used to be unconditional, so the two amendments built
     # from VERIFIER's fabricated records told the operator they were computed in
     # code and not judged by a model, which was false of both. The provenance a
@@ -2163,6 +2186,23 @@ def amendment_from_finding(item, *, document_level="document-level", unit_texts=
                  if computed_provenance else
                  "Reported by the agent named above, not computed in code from this unit's figures.")
     parts.append("Grounded in %s." % citation)
+    if relocated:
+        parts.append("The location is the passage of unit %s." % unit_id)
+    elif absence:
+        parts.append("The pipeline could not find the passage of unit %s in the "
+                     "reference index, so this amendment is placed at the document "
+                     "level." % (unit_id or document_level))
+    # A sentence a model supplied (the judging call's materiality note, or an
+    # optional polish pass) follows last and says it is the model's. Python's own
+    # sentence is the computed one above and is not repeated.
+    own_sentence = explanation.startswith("Unit %s under rule " % (unit_id or document_level))
+    if explanation and explanation != computed:
+        if item.get("explanation_by") == finding_record.WRITTEN_BY_MODEL or not computed_provenance:
+            parts.append(MODEL_NOTE_PREFIX + explanation)
+        elif not own_sentence:
+            # Python's own extra sentence (the pairing map's nearest-miss note);
+            # its computed sentence, minted before a later stamp, is not repeated.
+            parts.insert(1, explanation)
     comment = " ".join(parts)
     unit_record = (unit_texts or {}).get(unit_id) if unit_id else None
     repaired_unit_id = None
@@ -2257,31 +2297,88 @@ def apply_polish(item, polished):
         value = polished.get(field)
         if isinstance(value, str) and value.strip():
             out[field] = value.strip()
+            if field == "explanation":
+                # S2a: a polished sentence is the model's, and is marked so.
+                out["explanation_by"] = finding_record.WRITTEN_BY_MODEL
     return out
 
 
-def _computed_sentence(item):
-    """The one sentence that must carry the figures, whatever any model wrote.
+# S2a, item 4: the sentences a reader meets, one template per relation, each
+# naming the unit, the rule, both figures with their units and the relation in
+# plain words. Every template here has a Turkish rendering in
+# scripts/ui/localization_catalog.js (`_messages`), which the localization side
+# gate and honest_output_checks hold. The provenance sentence and the citation
+# follow in amendment_from_finding; nothing here says who computed what.
+MODEL_NOTE_PREFIX = "A model's note, not checked by Python: "
+ABSENCE_RELATIONS = ("missing_field", "licence_missing")
 
-    refine R2: relation-aware, because "against a stated 3.4" is the wrong phrase
-    for a band bound and the right phrase for a stated total, and the reader
-    checking the review against their own rulebook needs the figures either way."""
+
+def _figure(value, unit):
+    """A figure exactly as the typed record holds it, its unit after it (a bare
+    ratio's unit "1" is not written)."""
+    unit = str(unit or "").strip()
+    return ("%s %s" % (value, unit)) if unit and unit != "1" else "%s" % (value,)
+
+
+def _rule_text(item):
+    rule_id = finding_record.resolved_rule_id(item) or "?"
+    own = item.get("source_rule_id")
+    return ("%s (%s)" % (rule_id, own)) if own and own != rule_id else str(rule_id)
+
+
+def relation_clause(item):
+    """The relation in plain words, from the typed fields alone (no unit, no rule)."""
     a, b = item.get("value_a"), item.get("value_b")
-    unit_a = item.get("unit_a") or ""
-    unit_b = item.get("unit_b") or ""
+    fa, fb = _figure(a, item.get("unit_a")), _figure(b, item.get("unit_b"))
     relation = str(item.get("relation") or "")
+    field = str(item.get("field_label") or "").strip()
+    irregular = str(item.get("record_verdict") or "").lower() == "irregular"
+    if relation == "licence_missing":
+        return "a reference the rule requires is not present"
+    if relation == "missing_field":
+        if str(item.get("unit_b") or "") == "rows" and a is not None and b is not None:
+            return "the field '%s' is filled in %s of %s rows" % (
+                field or "named by the rule", a, b)
+        if field:
+            return "the required field '%s' is not stated in this unit" % field
+        return "a required value is absent"
     if a is None:
-        return "A required value is absent."
+        return "a required value is absent"
     if b is None:
-        return "The computed value is %s %s." % (a, unit_a)
+        return "the computed figure is %s" % fa
+    name = field or "value"
     if relation == "above_band":
-        return ("The computed value is %s %s, above the reference bound of %s %s."
-                % (a, unit_a, b, unit_b))
-    if relation == "below_band":
-        return ("The computed value is %s %s, below the reference bound of %s %s."
-                % (a, unit_a, b, unit_b))
-    return ("The computed value is %s %s against a stated %s %s."
-            % (a, unit_a, b, unit_b))
+        clause = "the %s is %s, above the upper bound of %s" % (name, fa, fb)
+    elif relation == "below_band":
+        clause = "the %s is %s, below the lower bound of %s" % (name, fa, fb)
+    elif relation == "ratio_out_of_range":
+        clause = "the ratio %s is %s, %s the permitted bound of %s" % (
+            name, fa, "outside" if irregular else "within", fb)
+    elif relation == "sum_mismatch":
+        clause = ("the values listed add up to %s, but the stated %s is %s" % (fa, name, fb)
+                  if irregular else
+                  "the values listed add up to %s, matching the stated %s of %s" % (fa, name, fb))
+    elif relation == "product_mismatch":
+        clause = ("the factors multiply to %s, but the stated %s is %s" % (fa, name, fb)
+                  if irregular else
+                  "the factors multiply to %s, matching the stated %s of %s" % (fa, name, fb))
+    elif relation == "date_window":
+        clause = "the gap between the two dates is %s, %s the allowed %s" % (
+            fa, "longer than" if irregular else "within", fb)
+    else:
+        clause = "the computed figure is %s, compared with %s (relation %s)" % (
+            fa, fb, relation or "unnamed")
+    return clause
+
+
+def computed_sentence(item):
+    """One sentence: the unit, the rule, both figures with units, the relation.
+
+    refine R2's rule stands: the figures lead every comment, whatever a model
+    wrote, and the lead names only the bound that was crossed. S2a: the sentence
+    is built from the typed fields and nothing else."""
+    unit = item.get("unit_id") or "document-level"
+    return "Unit %s under rule %s: %s." % (unit, _rule_text(item), relation_clause(item))
 
 
 # TWO-F. The operator's ruling on what a declared severity DOES.
@@ -2337,7 +2434,8 @@ def severity_of_rule(rule_id, rules_by_id):
 
 def ensure_amendments_for_findings(amendments, findings, *, document_level="document-level",
                                    unit_texts=None, refusal_sink=None,
-                                   rules_by_id=None, computed_provenance=True):
+                                   rules_by_id=None, computed_provenance=True,
+                                   unit_refs=None):
     """Add an amendment for every irregular Finding not already represented.
 
     unit_texts: passed straight through to amendment_from_finding (see its own
@@ -2404,7 +2502,8 @@ def ensure_amendments_for_findings(amendments, findings, *, document_level="docu
                                          "finding_stands": True})
                 continue
         built = amendment_from_finding(item, document_level=document_level, unit_texts=unit_texts,
-                                       computed_provenance=computed_provenance)
+                                       computed_provenance=computed_provenance,
+                                       unit_refs=unit_refs)
         if built is None:
             if refusal_sink is not None:
                 reason = ("no rule id under any known field name "
@@ -2482,3 +2581,32 @@ def unit_texts_for(document_text, document_id=""):
     """The unit map suppress_contradicted_amendments needs, keyed by unit id."""
     return {u["unit_id"]: u for u in pairing_map.split_units(document_text,
                                                              document_id=document_id)}
+
+
+def _folded(text):
+    return " ".join(str(text or "").split())
+
+
+def unit_passage_refs(unit_texts, entries, document_id):
+    """{unit_id: REF-*} for every unit whose own passage Python can place (S2a 5).
+
+    Structural only: the unit's first non-empty line (its heading, or the first
+    line of a preamble) is looked for, whitespace-folded, in this document's own
+    indexed passages. Exactly one passage holding it places the unit there; none
+    or several leave the unit unplaced, and an absence amendment on it then says
+    so rather than borrowing a header passage that is not the unit."""
+    passages = []
+    for e in entries or []:
+        row = e.as_dict() if hasattr(e, "as_dict") else e
+        if isinstance(row, dict) and row.get("document_id") == document_id and row.get("ref_id"):
+            passages.append((str(row["ref_id"]), _folded(row.get("text_excerpt"))))
+    out = {}
+    for unit_id, unit in (unit_texts or {}).items():
+        lines = [ln for ln in str((unit or {}).get("text") or "").splitlines() if ln.strip()]
+        if not lines:
+            continue
+        head = _folded(lines[0])
+        hits = sorted({ref for ref, text in passages if head and head in text})
+        if len(hits) == 1:
+            out[unit_id] = hits[0]
+    return out

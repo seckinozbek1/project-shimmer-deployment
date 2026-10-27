@@ -47,7 +47,32 @@ import localization
 # orphans) is part of the master too, rendered in its own section of the .md and
 # never counted as an amendment; the .docx tracked changes read amendments only.
 CANONICAL_CONTENT_KEYS = ("document_id", "amendments", "_validator_errors",
-                          "prior_comparisons", "prior_refusals", "prior_orphans")
+                          "prior_comparisons", "prior_refusals", "prior_orphans",
+                          "model_findings_not_promoted")
+# S2a: the master's list of findings a MODEL wrote for this document. None of them
+# became an amendment (only Python's computed findings are promoted, check 269);
+# they are kept in the master and rendered, labelled, never removed from view.
+MODEL_FINDINGS_KEY = "model_findings_not_promoted"
+MODEL_FINDINGS_HEADING = "## Model findings not promoted"
+
+
+@localization.presentation
+def render_model_findings(findings) -> list:
+    """The labelled section for the master's model findings, as lines. [] when
+    there are none, so a run with no model finding renders exactly as before."""
+    findings = [f for f in findings or [] if isinstance(f, dict)]
+    if not findings:
+        return []
+    lines = ["", localization.text(MODEL_FINDINGS_HEADING), "",
+             localization.text(finding_record.MODEL_FINDING_MARK), ""]
+    for f in findings:
+        typed = finding_record.typed_line(f) if finding_record.is_finding(f) else str(f.get("summary") or "")
+        agent = f.get("agent") or "?"
+        lines.append(f"- [{agent}] {typed} ({localization.text(finding_record.MODEL_FINDING_MARK)})")
+        prose = str(f.get("explanation") or f.get("reasoning") or "").strip()
+        if prose:
+            lines.append(f"  - {prose[:240]}")
+    return lines
 
 
 def render_amendments_md(payload: dict, *, document_name: str = "",
@@ -70,6 +95,8 @@ def render_amendments_md(payload: dict, *, document_name: str = "",
              f"- amendments: {len(amendments)}",
              f"- uncertain: {n_uncertain}",
              f"- validator errors: {len(validator_errors)}"]
+    if MODEL_FINDINGS_KEY in payload:
+        lines.append(f"- model findings not promoted: {len(payload.get(MODEL_FINDINGS_KEY) or [])}")
     if validator_errors:
         lines.append("\n## Validator errors\n")
         for e in validator_errors:
@@ -112,6 +139,8 @@ def render_amendments_md(payload: dict, *, document_name: str = "",
         refusals=payload.get("prior_refusals") or [],
         orphans=payload.get("prior_orphans") or [],
         heading="## Compared with the earlier version"))
+    lines.extend(render_model_findings(payload.get(MODEL_FINDINGS_KEY) or [],
+                                       output_language="en"))
     return "\n".join(lines)
 
 
