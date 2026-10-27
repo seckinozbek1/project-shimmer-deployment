@@ -567,15 +567,16 @@ def _local_progress_reset(expected: int) -> None:
     _LOCAL_PROGRESS_STOP.clear()
 
 
-def _local_progress_baseline(num_op_docs: int) -> int:
+def _local_progress_baseline(num_op_docs: int, run_ctx=None) -> int:
     """The known-minimum agent-call count for the calls _run_one covers (see the scope
     note above): corpus-level (3, less any agent the operator switched off by a
     ratified SHIMMER_INST_FINDER setting, a declared state and never counted as a
     missing call), per-doc production/audit/convention-review
     (always run once per op doc), AMENDMENT_DRAFTER (usually once per doc; the rare
     bus-reuse skip is not subtracted, an accepted small overcount for a progress display,
-    not a correctness-critical count)."""
-    switched_off = set(_inst_finder_switch(ROOT)["switched_off"])
+    not a correctness-critical count). The switch is the decision main() saved in
+    `run_ctx` at start-up (_inst_finder_decision)."""
+    switched_off = set(_inst_finder_decision(run_ctx, ROOT)["switched_off"])
     return (len([name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off])
             + len(PRODUCTION_AGENTS_PER_DOC) * num_op_docs
             + len(AUDIT_AGENTS_PER_DOC) * num_op_docs
@@ -1371,6 +1372,29 @@ def _inst_finder_startup_guard(run_ctx, root):
     return switch["refusal"]
 
 
+def _inst_finder_decision(run_ctx, root):
+    """The INST_FINDER decision for this run, made ONCE. main() makes it at start
+    and saves it (audit/agent_switches.json, through _inst_finder_startup_guard);
+    phase 3-4, the progress baseline and the cost projection read that saved
+    record, so a constitution or environment changed after start-up cannot change
+    what is dispatched or counted. Only where no record was saved (a fixture, or a
+    helper called with no run context) is the decision computed here from `root`.
+    A saved record that cannot be read refuses rather than being recomputed."""
+    audit_dir = getattr(run_ctx, "audit_dir", None)
+    path = audit_dir() / "agent_switches.json" if callable(audit_dir) else None
+    if path is None or not path.exists():
+        return _inst_finder_switch(root)
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        record = None
+    if not (isinstance(record, dict) and isinstance(record.get("switched_off"), list)
+            and all(key in record for key in ("variable", "value", "ratified_by", "refusal"))):
+        raise RuntimeError("[inst-finder-switch] STOP: the decision saved at start-up "
+                           "(audit/agent_switches.json) cannot be read; the run does not guess it.")
+    return record
+
+
 # ---------- pipeline phases ----------------------------------------------------------------
 
 @execution_topology.phase_boundary
@@ -1389,7 +1413,9 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     # SHIMMER_INST_FINDER: an agent the operator switched off (ratified DELTA only)
     # stays in PRODUCTION_AGENTS_CORPUS_LEVEL and is skipped here, recorded as not
     # called. `dispatched` labels the gathered results, so each carries its own name.
-    switch = _inst_finder_switch(getattr(getattr(orch, "run_context", None), "project_root", None) or ROOT)
+    # The decision is the one main() saved at start-up (_inst_finder_decision).
+    switch = _inst_finder_decision(getattr(orch, "run_context", None),
+                                   getattr(getattr(orch, "run_context", None), "project_root", None) or ROOT)
     if switch["refusal"]:
         raise RuntimeError(switch["refusal"])
     switched_off = set(switch["switched_off"])
@@ -4064,7 +4090,7 @@ def _resolve_operator_handler(args, run_ctx):
 
 # ---------- main ----------------------------------------------------------------------------
 
-def _cost_projection(num_op_docs, num_ctx_docs):
+def _cost_projection(num_op_docs, num_ctx_docs, run_ctx=None):
     # Editorial review board (INFRA-040): WORST-CASE ceiling = all six ranks fire on every
     # operational deliverable, split by family 3 Claude (EDITOR_CLERK / EDITOR_HEAD_OF_UNIT /
     # EDITOR_HEAD_OF_SECTION) + 3 GPT (EDITOR_HEAD_OF_DEPARTMENT / EDITOR_DEPUTY_DG /
@@ -4075,8 +4101,9 @@ def _cost_projection(num_op_docs, num_ctx_docs):
     board_claude_calls = 3 * num_op_docs   # WORST CASE: CLERK + HEAD_OF_UNIT + HEAD_OF_SECTION
     board_gpt_calls = 3 * num_op_docs      # WORST CASE: HEAD_OF_DEPARTMENT + DEPUTY_DG + DG
     # A corpus-level agent switched off by the ratified SHIMMER_INST_FINDER setting
-    # is not called, so it is not projected (a declared state, not a failure).
-    switched_off = set(_inst_finder_switch(ROOT)["switched_off"])
+    # is not called, so it is not projected (a declared state, not a failure). The
+    # switch is the decision main() saved in `run_ctx` at start-up.
+    switched_off = set(_inst_finder_decision(run_ctx, ROOT)["switched_off"])
     claude_calls = (len(PRODUCTION_AGENTS_PER_DOC) * num_op_docs
                     + len([name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off])
                     + len(CONVENTION_REVIEW_AGENTS) * num_op_docs  # style_guardian via Claude
@@ -4612,7 +4639,7 @@ def main(argv=None):
     log_event(_LOG, f"corpus_loaded context_docs={len(ctx_docs)} operational_docs={len(op_docs)}",
               run_id=run_ctx.run_id, phase="0")
 
-    projection = _cost_projection(len(op_docs), len(ctx_docs))
+    projection = _cost_projection(len(op_docs), len(ctx_docs), run_ctx=run_ctx)
     print("\n=== PROJECT SHIMMER: pre-run estimate ===", file=sys.stderr)
     print(f"  Operational documents: {len(op_docs)}", file=sys.stderr)
     print(f"  Context documents:     {len(ctx_docs)}", file=sys.stderr)
@@ -4815,7 +4842,7 @@ def main(argv=None):
     # run (stopped at the "complete" emission below); daemon=True so it can never keep
     # the process alive on its own.
     if _is_local_profile():
-        _local_progress_reset(_local_progress_baseline(len(op_docs)))
+        _local_progress_reset(_local_progress_baseline(len(op_docs), run_ctx=run_ctx))
         threading.Thread(target=_local_progress_memory_sampler,
                          args=(_LOCAL_PROGRESS_STOP,), daemon=True).start()
 
