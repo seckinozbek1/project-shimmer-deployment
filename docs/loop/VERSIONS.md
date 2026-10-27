@@ -27,3 +27,5 @@ One row per tag (IV.1): tag, commit, stage, product version, gate result against
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S3 round 2) | `895237fee1a75ba54042b66b2bc76f96045cdea57e57fd39d65914034147b10d` | 2026-10-27 17:51 +0300, loop/s03 (D-049) |
 | `docs/INPUT_FORMAT.md` | `input-format-v1-draft` (S3 round 3) | `e20eebf032c3b885d18fbf5239b7edd40f96548e256c1f3d50911ea381afe8dd` | 2026-10-27 18:34 +0300, loop/s03 (D-050) |
 | `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S3 round 3) | `bdd31b284caa17c127a28b69223579ad41868e4a44ed351888af29ad0c4c0167` | 2026-10-27 18:34 +0300, loop/s03 (D-050) |
+| `docs/INPUT_FORMAT.md` | `input-format-v1-draft` (S3 tie-break) | `47904fae96b9e692d5860467e64e553fb6a35ab140cea6f54bdafcdff76e4e36` | 2026-10-27 18:56 +0300, loop/s03 (D-051) |
+| `docs/OUTPUT_FORMAT.md` | `output-format-v1-draft` (S3 tie-break) | `2e65a790d105a43da04ab4b2decc9488131184e2f08489cd729a5e00295c0448` | 2026-10-27 18:56 +0300, loop/s03 (D-051) |

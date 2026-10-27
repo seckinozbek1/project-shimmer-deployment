@@ -21,6 +21,11 @@ is generated from a fixed seed into a temporary folder and read back from disk, 
 - family 2's rate and ratio rules and family 6's carry rule as written, read a second
   time from the rendered text by independent string handling, break exactly where the
   key says (and on no clean unit), and a broken rate result on a clean unit is caught;
+- every prose sentence of every reference file is read as its family declares (each
+  family's REFERENCE_READINGS) and no unit the key plants no flaw in, clean distractors
+  included, breaks one, in every bundle of the fixed tests and of the development suite's
+  and long-range corpus's seeds (S3 tie-break item 1: family 6's count procedure used to
+  say each count opens with the closing quantity of the count before it);
 - every keyed rule's text, read from the written conventions, still states what its
   keyed kinds break (each family's RULE_STATEMENTS), and each validator message in
   VALIDATOR_MUTATIONS fires on its mutation (`--mutations` prints them);
@@ -394,6 +399,27 @@ class GeneratorChecks(unittest.TestCase):
                                  folder)
                 self.assertFalse(got & {heads[c] for c in key["clean"]}, folder)
 
+    def test_reference_texts_agree_with_every_unkeyed_unit(self):
+        """S3 tie-break item 1: every prose sentence of every bundle's reference files is
+        read as its family declares (bundle.check_reference_texts, plain string handling
+        of the rendered document), and no unit the key plants no flaw in, clean
+        distractors included, breaks a sentence that is read; every family that writes a
+        reference file has a sentence read in every bundle. Fixed tests from disk, and the
+        development suite's and the long-range corpus's seeds. The old family 6 sentence
+        ("Each count opens with the closing quantity of the count before it") is caught by
+        NEUTRALISATIONS and by VALIDATOR_MUTATIONS."""
+        seeds = json.loads((ROOT / "benchmark" / "dev_suite" / "SEEDS.json").read_text(encoding="utf-8"))
+        tests = [self._read(fam, **opts) for fam, _, opts in FIXED]
+        tests += [self.g.generate(e["family"], int(e["seed"])) for e in seeds["tests"] if e["family"] != "f4"]
+        tests += long_range_corpus(self.g)
+        for test in tests:
+            for folder, files in sorted(test.items()):
+                errs = []
+                read = self.g.bundle.check_reference_texts(folder, files, errs)
+                self.assertEqual(errs, [], folder)
+                if self.g.bundle.reference_files(files):
+                    self.assertGreater(read, 0, folder)
+
     def test_validator_messages_fire_on_their_mutations(self):
         """Each validator message in VALIDATOR_MUTATIONS is produced by its mutation of a
         valid written test (the four the adversarial round named, and a keyed rule's text
@@ -628,6 +654,25 @@ def _clean_entry_in_another_document(files):
     _set_key(files, key)
 
 
+OLD_COUNT_SENTENCE = "Each count opens with the closing quantity of the count before it."
+
+
+def _reference_sentence_replaced(old, new):
+    """One sentence of the bundle's reference files rewritten on disk."""
+    def mutate(files):
+        refs = [p for p in files if p.startswith("context/") and old in files[p]]
+        if not refs:
+            raise AssertionError("%r is in no reference file" % old)
+        files[refs[0]] = files[refs[0]].replace(old, new, 1)
+    return mutate
+
+
+def _old_count_sentence(original):
+    """Family 6's count procedure as it was before the tie-break: its first sentence
+    restored to the closing-quantity reading."""
+    return (OLD_COUNT_SENTENCE,) + tuple(original[1:])
+
+
 def _rule_text_replaced(rule, old, new):
     def mutate(files):
         conv = [p for p in files if p.startswith("conventions/")][0]
@@ -652,6 +697,9 @@ VALIDATOR_MUTATIONS = [
     ("rule CONV-LA no longer states what carry_mismatch keys", "f6", {}, "base",
      _rule_text_replaced("CONV-LA", "carry the sum of the quantity column of the count before it",
                          "carry the closing quantity of the count before it")),
+    ("is broken by units the key plants no flaw in", "f6", {}, "base",
+     _reference_sentence_replaced("Each count opens with the sum of the quantity column of the count before it.",
+                                  OLD_COUNT_SENTENCE)),
 ]
 
 
@@ -893,6 +941,8 @@ NEUTRALISATIONS = [
      "bundle.multi_round_key", _no_earlier_rounds),
     ("the audit reads no label new in the later version", observe_self_validation, ("f4",),
      "audit.new_labels", lambda orig: (lambda res: {})),
+    ("the count procedure says each count opens with the closing quantity before it",
+     observe_self_validation, ("f6",), "family_ledger.REFERENCE_PROSE", _old_count_sentence),
 ]
 
 
@@ -1089,7 +1139,8 @@ def check():
                     "and ground-truth scanners with nothing unkeyed, in every bundle); unit "
                     "mismatches, rate, ratio and copy errors, neighbour-only carries and "
                     "long-range flaws are planted; family 2's rate and ratio rules and family 6's "
-                    "carry rule as written break exactly where keyed; every keyed rule's text "
+                    "carry rule as written break exactly where keyed; every reference sentence is "
+                    "read as declared and broken by no unkeyed unit; every keyed rule's text "
                     "states what it keys and %d validator messages fire on their mutations; a "
                     "seed that cannot build is retried deterministically; the same seed gives "
                     "identical bytes, also in a second process; a removed planted flaw (audit and "

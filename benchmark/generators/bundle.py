@@ -474,6 +474,65 @@ def check_rule_statements(name, files, errs):
                             % (name, e.get("rule"), e.get("kind"), missing))
 
 
+# How each family's reference files are read (the families' REFERENCE_READINGS), by the
+# family code a key's `generator.family` carries. Family 4 writes no reference file.
+REFERENCE_READINGS = {"f1": fr.REFERENCE_READINGS, "f2": fd.REFERENCE_READINGS, "f3": fs.REFERENCE_READINGS,
+                      "f4": (), "f5": fp.REFERENCE_READINGS, "f5lr": fp.LONG_REFERENCE_READINGS,
+                      "f6": fl.REFERENCE_READINGS}
+
+
+def reference_files(files):
+    """{name: text} of the bundle's reference files: the grounding files that are not an
+    earlier version of the document (the declared prior, or a case round)."""
+    _, man = _target(files)
+    earlier = set(man["prior"]) | set(_earlier_versions(files))
+    return {n: files["context/" + n] for n in man["grounding"] if n not in earlier}
+
+
+def check_reference_texts(name, files, errs):
+    """Every prose sentence of every reference file is read as its family declares
+    (REFERENCE_READINGS: a pattern the whole sentence matches, and a reader, or the reason
+    it states no condition on a unit), and no unit the key does not plant a flaw in breaks
+    a sentence that is read (S3 tie-break item 1: a reference that states a rule
+    differently from its convention is contradicted by a clean unit). The readers use
+    plain string handling of the rendered document, never the audit. A sentence no
+    reading declares, or two readings match, is refused. Returns how many sentences a
+    reader checked."""
+    key = _key(files)
+    readings = REFERENCE_READINGS.get(key.get("generator", {}).get("family"))
+    if readings is None:
+        errs.append("%s: no reference readings for this family" % name)
+        return 0
+    target, _ = _target(files)
+    units = tr.plain_units(files["context/" + target])
+    keyed = {e["unit"] for e in key.get("planted", [])} | {r["unit_id"] for r in key.get("band_irregularities", [])}
+    clean = set(key.get("clean", []))
+    ch = key.get("probe_change") or {}
+    rename = {ch["label_from"]: ch["label_to"]} if key.get("probe") == "reworded_labels" else {}
+
+    def label(words):
+        return rename.get(words, words)
+
+    read = 0
+    for ref, text in sorted(reference_files(files).items()):
+        for sentence in tr.reference_sentences(text):
+            hits = [(m, reader) for m, reader in ((re.fullmatch(p, sentence), r) for p, r in readings) if m]
+            if len(hits) != 1:
+                errs.append("%s: the reference sentence %r in %s matches %d declared readings (want one)"
+                            % (name, sentence, ref, len(hits)))
+                continue
+            m, reader = hits[0]
+            if isinstance(reader, str):
+                continue
+            read += 1
+            broken = reader(units, m, label, text) - keyed
+            if broken:
+                errs.append("%s: the reference sentence %r in %s is broken by units the key plants no "
+                            "flaw in: %s (clean distractors among them: %s)"
+                            % (name, sentence, ref, sorted(broken), sorted(broken & clean)))
+    return read
+
+
 def check_structure(name, files, errs):
     if not NEUTRAL_FOLDER.match(name):
         errs.append("%s: folder name is not neutral" % name)
@@ -1120,6 +1179,7 @@ def validate_test(test, min_flaws=10, min_kinds=3):
     for folder in sorted(test):
         check_case(folder, test[folder], errs)
         check_rule_statements(folder, test[folder], errs)
+        check_reference_texts(folder, test[folder], errs)
     base, twin = test[roles["base"]], test[roles["twin"]]
     bkey, tkey = _key(base), _key(twin)
     negotiation = "prior_records" in bkey
