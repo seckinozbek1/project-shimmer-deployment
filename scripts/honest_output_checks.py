@@ -43,47 +43,56 @@ ROOT = Path(__file__).resolve().parent.parent
 
 DOC_TEXT = ("# Returned batch sheet\n\nBatch: B-7. Readings for review.\n\n"
             "## Entry Alpha\n\nSample identifier: S-ALPHA\nReading: 61 units\n\n"
-            "## Entry Beta\n\nSample identifier: S-BETA\nReading: 4 units\nLine total: 9 kg\n\n"
+            "## Entry Beta\n\nSample identifier: S-BETA\nReading: 40 units\nTotal weight: 9 kg\n\n"
+            "| Line | Weight |\n|---|---|\n| L1 | 3 kg |\n| L2 | 5 kg |\n\n"
             "## Entry Gamma\n\nReading: 12 units\n")
 RULES = [
     {"id": "CONV-001", "category": "conv-h01", "severity": "required",
-     "rule": "A reading must not exceed the upper bound recorded for its batch."},
+     "rule": "A reading must lie between 10 units and 60 units."},
     {"id": "CONV-002", "category": "conv-h02", "severity": "required",
-     "rule": "Every entry must state its sample identifier."},
+     "rule": "Every entry must state its sample identifier.",
+     "scope": ["reading"], "requires": ["sample identifier"]},
     {"id": "CONV-003", "category": "conv-h03", "severity": "required",
-     "rule": "Line totals must equal the sum of the line weights."},
+     "rule": "The total weight must equal the sum of the weights listed."},
 ]
 GARBLED = ("against the range against", "values against a stated", " gives ",
            "against a stated range")
+# PRE-AUTHORED, NOT MODEL OUTPUT: the sentence a judging model returns when paired
+# review asks it whether a computed disagreement is material.
+AUTHORED_JUDGMENT = "AUTHORED FIXTURE SENTENCE: the difference is material under the rule."
 
 
 def _unit(units, slug):
     return next(u for u in units if slug in u)
 
 
-def computed_findings(doc_id="batch_sheet", text=DOC_TEXT):
-    """Typed findings minted by the real Python path, one per relation family."""
+def computed_findings(doc_id="batch_sheet", text=DOC_TEXT, refs=None):
+    """Typed findings minted by the real Python path (the template proofs use these;
+    the mocked run gets its computed findings from the real phase 5.5 instead)."""
     units = pr.unit_texts_for(text, doc_id)
     alpha, beta, gamma = (_unit(units, s) for s in ("entry-alpha", "entry-beta", "entry-gamma"))
+    refs = refs or {}
     band = {"relation": "above_band", "computed": 61.0, "computed_unit": "units", "stated": None,
             "stated_unit": "units", "band_low": 10.0, "band_high": 60.0, "agrees": False,
-            "basis": "reading against the range against the matched row in the reference corpus",
-            "stated_field": "reading", "ref_id": "REF-0001"}
-    total = {"relation": "sum_mismatch", "computed": 8.0, "computed_unit": "kg", "stated": 9.0,
-             "stated_unit": "kg", "agrees": False, "basis": "sum of 2 values under line weight",
-             "stated_field": "line total"}
+            "basis": "reading against the range the rule states", "stated_field": "reading"}
+    scalars, columns, rows = pr.extract_fields(units[beta]["text"])
+    total = next(c for c in pr.compute_checks(scalars, columns, row_counts=rows)
+                 if c["relation"] == "sum_mismatch")
     absent = pr._absence_check(("sample", "identifier"))
     return [
         pr.finding_from_check(unit_id=alpha, rule=RULES[0], check=band, source_rule_id="CONV-H01",
-                              refs=["REF-0002"]),
+                              refs=[refs[alpha]] if alpha in refs else ["REF-0002"]),
         pr.finding_from_check(unit_id=beta, rule=RULES[2], check=total, source_rule_id="CONV-H03",
-                              refs=["REF-0002"]),
+                              refs=[refs[beta]] if beta in refs else ["REF-0002"]),
         dict(pr.finding_from_check(unit_id=gamma, rule=RULES[1], check=absent, source_rule_id="CONV-H02",
-                                   refs=["REF-0002"]), absence_path="computed"),
+                                   refs=[refs[gamma]] if gamma in refs else ["REF-0002"]),
+             absence_path="computed"),
     ]
 
 
 def model_finding(doc_id="batch_sheet"):
+    """PRE-AUTHORED, NOT MODEL OUTPUT: a wide-review model finding whose figures
+    the unit it names does not state (a realistic model error)."""
     units = pr.unit_texts_for(DOC_TEXT, doc_id)
     return {"kind": "finding", "record_verdict": "irregular", "rule_id": "CONV-003", "unit_id": _unit(units, "entry-alpha"),
             "relation": "sum_mismatch", "value_a": 4, "unit_a": "units", "value_b": 5, "unit_b": "units",
@@ -101,61 +110,70 @@ class _Capture(logging.Handler):
 
 
 def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, language="en"):
-    """One mocked run through the real phase 6 and run summary. Returns a dict
-    with the run folder, the deliverables map and the captured run-log events."""
+    """One mocked run, faithful to a real one where it matters: the computed
+    findings come from the REAL phase 5.5 paired review (pairing map, planner,
+    arithmetic, mint, bus post under paired/python); only the judging model's
+    sentence is authored (`_run_one` returns it, as a model reply would). The model
+    finding is an authored wide-review reply posted under its model backend. Then
+    the real phase 6, the run summary, and the INST_FINDER record main() writes."""
     import pipeline as pl
     import reference_builder as rb
     import run_options
+    import uuid
     from harness.run_agent import build_orchestrator
     doc = {"id": "batch_sheet", "name": "batch_sheet.md", "text": DOC_TEXT}
     registry = {"conventions": RULES}
-    envelopes = [{"scope": "doc", "doc_id": doc["id"], "agent": "PRACTICE_AUDITOR", "ok": True,
-                  "backend": "paired", "model": "python+model",
-                  "parsed": {"agent": "PRACTICE_AUDITOR", "doc_id": doc["id"], "items": computed_findings()}}]
-    if style_guardian:
-        envelopes.append({"scope": "doc", "doc_id": doc["id"], "agent": "STYLE_GUARDIAN", "ok": True,
-                          "backend": "local_auditor", "model": "fixture-auditor", "call_id": "fixture-call-1",
-                          "parsed": {"agent": "STYLE_GUARDIAN", "doc_id": doc["id"], "items": [model_finding()]}})
     out_root = Path(out_root)
     orch = build_orchestrator(root=ROOT, out_root=out_root)
     run_options.configure(orch.run_context, "auto", language, "enabled")
+    pl._inst_finder_startup_guard(orch.run_context, ROOT)
     index = rb.ReferenceIndex.open(ROOT, index_path=out_root / "refs.json")
     index.add(input_type="context", document_id="reference", document_name="reference.md",
-              location={"page": 1}, text_excerpt="Upper bound for batch B-7: 60 units.")
+              location={"page": 1, "paragraph": 1}, text_excerpt="Readings for batch B-7 lie between 10 and 60 units.")
     index.add(input_type="operational", document_id=doc["id"], document_name=doc["name"],
               location={"page": 1, "paragraph": 1}, text_excerpt="# Returned batch sheet Batch: B-7. Readings for review.")
     if index_unit_passages:
-        for heading in ("## Entry Alpha", "## Entry Beta", "## Entry Gamma"):
+        for n, heading in enumerate(("## Entry Alpha", "## Entry Beta", "## Entry Gamma"), start=2):
             body = DOC_TEXT.split(heading, 1)[1].split("\n## ", 1)[0]
             index.add(input_type="operational", document_id=doc["id"], document_name=doc["name"],
-                      location={"page": 1}, text_excerpt=heading + body)
+                      location={"page": 1, "paragraph": n}, text_excerpt=heading + body)
     index.save()
-    # The envelopes reach the bus the way phase 5.5 posts them: under each one's
-    # own backend and model (paired/python for Python's records, the model's own
-    # backend for a model reply), through the real wrapper method.
-    with contextlib.redirect_stderr(io.StringIO()):
-        for env in envelopes:
-            pl._build_wrapper(env["agent"], orch, {}).post_to_bus(
-                recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
-                body={"event": "AGENT_OUTPUT", "backend": env["backend"], "model": env["model"],
-                      "payload": env["parsed"]},
-                constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED"})
+
+    async def judging_reply(wrapper, payload, run_objectives, *args, **kwargs):
+        return {"ok": True, "backend": "local_auditor", "model": "fixture-auditor",
+                "call_id": uuid.uuid4().hex, "raw_text": "", "item_count": 1,
+                "parsed": {"agent": wrapper.name, "doc_id": doc["id"],
+                           "items": [{"explanation": AUTHORED_JUDGMENT}]}}
     capture = _Capture()
     logger = logging.getLogger("shimmer.pipeline")
     logger.addHandler(capture)
     try:
-        with patch.object(pl, "_build_wrapper", side_effect=AssertionError("no model wrapper in this proof")), \
-                contextlib.redirect_stderr(io.StringIO()):
-            deliverables = asyncio.run(pl.phase_6_synthesis(
-                orch, {}, [doc], [], [], envelopes, "declared proof", registry, index,
-                embed_store=None, max_concurrent_docs=1))
+        with contextlib.redirect_stderr(io.StringIO()):
+            with patch.object(pl, "_run_one", judging_reply):
+                conv_review = asyncio.run(pl.phase_5_5_convention_review(
+                    orch, {}, [doc], "declared proof", registry, index, embed_store=None,
+                    max_concurrent_docs=1, review_mode="paired"))
+            if style_guardian:
+                env = {"scope": "doc", "doc_id": doc["id"], "agent": "STYLE_GUARDIAN", "ok": True,
+                       "backend": "local_auditor", "model": "fixture-auditor", "call_id": "fixture-call-1",
+                       "parsed": {"agent": "STYLE_GUARDIAN", "doc_id": doc["id"], "items": [model_finding()]}}
+                pl._build_wrapper("STYLE_GUARDIAN", orch, {}).post_to_bus(
+                    recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
+                    body={"event": "AGENT_OUTPUT", "backend": env["backend"], "model": env["model"],
+                          "payload": env["parsed"]},
+                    constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED"})
+                conv_review = list(conv_review) + [env]
+            with patch.object(pl, "_build_wrapper", side_effect=AssertionError("no model wrapper in phase 6")):
+                deliverables = asyncio.run(pl.phase_6_synthesis(
+                    orch, {}, [doc], [], [], conv_review, "declared proof", registry, index,
+                    embed_store=None, max_concurrent_docs=1))
             pl.write_deliverables_run_summary(orch.run_context.deliverables_dir(), [doc], deliverables,
                                               total_cost_usd=0.0, task="review")
     finally:
         logger.removeHandler(capture)
     run_dir = orch.run_context.run_dir
     return {"run_dir": run_dir, "ctx": orch.run_context, "deliverables": deliverables, "doc": doc,
-            "events": capture.events,
+            "events": capture.events, "refs": out_root / "refs.json",
             "files": {name: (run_dir / "deliverables" / doc["id"] / name) for name in
                       ("document_summary.md", "grounding_summary.md", "reviewed_document.md",
                        "review_findings.md", "review_data.json")},
@@ -226,6 +244,10 @@ def observe_marks():
             "review_findings": mark in files["review_findings.md"]
                                and any(mark in ln for ln in _model_lines(files["review_findings.md"], unit)),
             "master_model_findings": [f.get("unit_id") for f in master.get("model_findings_not_promoted", [])],
+            "master_model_checked_fields": sorted({k for f in master.get("model_findings_not_promoted", [])
+                                                   for k in finding_record.CHECKED_SOUNDING_FIELDS if k in f}),
+            "master_model_flags": [(f.get("checked_by_python"), f.get("promoted"), f.get("model_claimed_verdict"))
+                                   for f in master.get("model_findings_not_promoted", [])],
             "master_amendment_pairs": sorted("%s|%s|%s" % (a["finding_unit_id"], a["finding_rule_id"],
                                                           a.get("finding_value_a")) for a in master["amendments"]),
             "run_summary": mark in _read(run["run_summary"]),
@@ -239,6 +261,7 @@ def check_marks():
     unit = model_finding()["unit_id"]
     ok = (o["document_summary"] and o["reviewed_document"] and o["review_findings"] and o["run_summary"]
           and o["master_model_findings"] == [unit]
+          and o["master_model_checked_fields"] == [] and o["master_model_flags"] == [(False, False, "irregular")]
           and "%s|CONV-003|4" % unit not in o["master_amendment_pairs"]
           and ("sum_mismatch", "model") in o["server_written_by"]
           and ("above_band", "python") in o["server_written_by"]
@@ -268,9 +291,12 @@ def check_producer():
     o = observe_producer()
     a, b = o["computed_only"], o["mixed"]
     ok = (not a["names_style_guardian"] and not a["names_practice_auditor"]
-          and "3 computed by Python" in a["sentence"] and "0 written by a model (no model agent)" in a["sentence"]
+          and "computed by Python from the document's figures: 3." in a["sentence"]
+          and "Items written by a model (no model agent), not checked by Python and not promoted: 0." in a["sentence"]
+          and "in total" not in a["sentence"] + b["sentence"]
           and a["log"] == "findings_provenance computed=3 model=0 model_agents=none"
-          and "1 written by a model (STYLE_GUARDIAN)" in b["sentence"] and "STYLE_GUARDIAN" in b["body"]
+          and "Items written by a model (STYLE_GUARDIAN), not checked by Python and not promoted: 1." in b["sentence"]
+          and "STYLE_GUARDIAN" in b["body"]
           and b["log"] == "findings_provenance computed=3 model=1 model_agents=STYLE_GUARDIAN"
           and not b["names_practice_auditor"])
     # S2a-3 inside S2a-2: the Turkish rendering of both generated sentences.
@@ -291,8 +317,16 @@ def _localized_samples():
              finding_record.MODEL_FINDING_MARK, finding_record.COMPUTED_FINDING_MARK,
              amendment_render.MODEL_FINDINGS_HEADING, summary_generators.RELATIONS_FOUND_HEADING,
              summary_generators.RELATIONS_MODEL_HEADING, audit_synthesizer.AUDIT_COUNT_NOTE,
-             "## Audit-trail patterns (not document findings)", "- audit-trail patterns: "]
-    return texts + [a["comment"] for a in template_amendments()]
+             "## Audit-trail patterns (not document findings)", "- audit-trail patterns: ",
+             "**Findings computed by Python:**", "**Written by a model, not checked by Python, not promoted:**",
+             "The model wrote: ", "The unit it names does not state these figures.", summary_generators.MODEL_NOTE,
+             "Proposed amendments", "**Justification:**", "**Location:**",
+             audit_synthesizer.KIND_WORDS["propose_amendment"], audit_synthesizer.ACTION_WORDS["add_amendment"]]
+    sums = computed_findings()
+    return texts + [a["comment"] for a in template_amendments()] + [
+        pr.amendment_from_finding(sums[1], unit_texts=pr.unit_texts_for(DOC_TEXT, "batch_sheet"),
+                                  unit_refs={sums[1]["unit_id"]: "REF-0004"},
+                                  rule_texts={"CONV-003": RULES[2]["rule"]})["comment"]]
 
 
 def observe_catalog():
@@ -302,7 +336,9 @@ def observe_catalog():
 def check_catalog():
     rows = observe_catalog()
     english = ("computed by Python", "written by a model", "Computed in code", "Grounded in",
-               "under rule", "Not promoted", "Relations found", "audit-trail", "Model findings")
+               "under rule", "Not promoted", "Relations found", "audit-trail", "Model findings",
+               "Checked in code", "compared with", "reads:", "add up to", "The model wrote",
+               "Proposed amendments", "Justification", "change proposal", "the operator decides")
     ok = all(r["tr"] != r["en"] and not any(w in r["tr"] for w in english) for r in rows)
     return ("PASS" if ok else "FAIL", "%d Turkish renderings" % len(rows))
 
@@ -343,7 +379,7 @@ def template_amendments():
 def observe_templates():
     out = []
     for item, amendment in zip(template_cases(), template_amendments()):
-        lead = amendment["comment"].split(". Computed in code")[0]
+        lead = re.split(r"\. (?:Computed in code|Checked in code|Reported by the agent)", amendment["comment"])[0]
         out.append({"relation": item["relation"], "lead": lead, "explanation": item["explanation"],
                     "comment": amendment["comment"], "tr": loc.message(amendment["comment"], "tr")})
     return out
@@ -367,10 +403,11 @@ def check_templates():
             need += [fig(item["value_a"], item.get("unit_a")), fig(item["value_b"], unit_b)]
             need.append({"above_band": "above the upper bound", "below_band": "below the lower bound",
                          "ratio_out_of_range": "outside the permitted bound", "sum_mismatch": "add up to",
-                         "product_mismatch": "multiply to", "date_window": "longer than the allowed"}[relation])
+                         "product_mismatch": "comes to", "date_window": "longer than the allowed"}[relation])
         sentences = [s for s in re.split(r"(?<=[a-z0-9'])\. (?=[A-Z])", lead + ".") if s.strip()]
         if (not all(n in lead for n in need) or any(g in row["comment"] for g in GARBLED)
-                or len(sentences) > 2 or row["explanation"] != lead + "."
+                or len(sentences) > 2 or row["explanation"] != pr.computed_sentence(item)
+                or not lead.startswith("Unit %s (Entry Alpha) under rule" % item["unit_id"])
                 or row["tr"] == row["comment"] or "under rule" in row["tr"]):
             bad.append(row["relation"])
     return ("FAIL" if bad else "PASS", "templates: %s" % (bad or "all plain"))
@@ -386,7 +423,7 @@ def observe_absence_location():
             gamma_ref = next((e["ref_id"] for e in refs if "## Entry Gamma" in e.get("text_excerpt", "")), None)
             absent = [a for a in master["amendments"] if a.get("finding_relation") == "missing_field"]
             out[name] = {"locations": [a["location"] for a in absent], "gamma_ref": gamma_ref,
-                         "sentences": ["The location is the passage of unit" in a["comment"] for a in absent],
+                         "sentences": [("at %s." % gamma_ref) in a["comment"] for a in absent],
                          "unknown": ["could not find the passage of unit" in a["comment"] for a in absent],
                          "header_ref_used": any(a["location"] == "REF-0002" for a in absent)}
         return out
@@ -453,6 +490,7 @@ def observe_relations():
         return {"found_section": sorted(set(re.findall(r"- (\w+): \d", found))),
                 "model_section": sorted(set(re.findall(r"- (\w+): \d", model))),
                 "model_marked": finding_record.MODEL_FINDING_MARK in model,
+                "mentions_scorer": "scorer" in text,
                 "scorer_found": next((ln for ln in lines if ln.startswith("relations found")), ""),
                 "scorer_model": next((ln for ln in lines if ln.startswith("model-only")), ""),
                 "scorer_confirmed": confirmed.getvalue().splitlines()[0] if confirmed.getvalue() else ""}
@@ -461,11 +499,101 @@ def observe_relations():
 def check_relations():
     o = observe_relations()
     ok = (o["found_section"] == ["above_band", "missing_field", "sum_mismatch"]
-          and o["model_section"] == ["sum_mismatch"] and o["model_marked"]
+          and o["model_section"] == ["sum_mismatch"] and o["model_marked"] and not o["mentions_scorer"]
           and o["scorer_found"] == "relations found : above_band=1, missing_field=1, sum_mismatch=1"
           and "sum_mismatch=1" in o["scorer_model"]
           and o["scorer_confirmed"] == "relations found : above_band=1, missing_field=1, sum_mismatch=2")
     return ("PASS" if ok else "FAIL", "model-only relations listed apart")
+
+
+def _passages(refs_path):
+    """REF id -> excerpt, read from the run's own reference index file."""
+    return {e["ref_id"]: e.get("text_excerpt", "") for e in json.loads(_read(refs_path)).get("entries", [])}
+
+
+def observe_reader_check():
+    """Reader check round 1, read off one English and one Turkish mocked run."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_honest_reader_") as td:
+        en = mocked_run(Path(td) / "en")
+        tr = mocked_run(Path(td) / "tr", language="tr")
+        passages = _passages(en["refs"])
+        master = json.loads(_read(en["files"]["review_data.json"]))
+        units = pr.unit_texts_for(DOC_TEXT, "batch_sheet")
+        by_unit = {a["finding_unit_id"]: a for a in master["amendments"]}
+        files = {k: _read(v) for k, v in en["files"].items()}
+        tr_files = {k: _read(v) for k, v in tr["files"].items()}
+        audit = audit_synthesizer._render_md(dict(
+            generated_at="x", bus_messages=3, findings=[dict(severity="high", category="governance",
+                                                             summary="escalation topic 'TOPIC-1' recurred 3 times")],
+            delta_proposals=[dict(id="DELTA-1", kind="propose_amendment", trigger="repeated escalation: TOPIC-1",
+                                  proposed_change={"action": "add_amendment", "target": "constitution"},
+                                  requires_operator_approval=True)]))
+        beta = by_unit.get(_unit(units, "entry-beta"), {})
+        return {
+            # RC1: the sum names its addends, and they are in the unit's own text
+            "sum_names_addends": "'weight' (3.0 + 5.0 kg)" in beta.get("comment", ""),
+            "addends_in_unit": all(t in units[_unit(units, "entry-beta")]["text"] for t in ("3 kg", "5 kg")),
+            # RC2/RC3: each amendment sits at its own unit's passage, and the summary cites the same
+            "located_at_own_passage": sorted(
+                (uid, uid in by_unit and units[uid]["text"].splitlines()[0] in passages.get(by_unit[uid]["location"], ""))
+                for uid in by_unit),
+            "summary_cites_own_passages": all(
+                ("cites %s" % a["location"]) in files["document_summary.md"] for a in master["amendments"]),
+            "header_or_reference_located": [a["location"] for a in master["amendments"]
+                                            if a["location"] in ("REF-0001", "REF-0002")],
+            # RC5: the per-agent record names the backend and model the run recorded
+            "per_agent_backend": "Backend `paired`, model `python+model`" in files["reviewed_document.md"],
+            # RC6/RC12: a model's line is apart and carries no verdict; an absence says what was checked
+            "model_apart": "**Written by a model, not checked by Python, not promoted:**" in files["document_summary.md"],
+            "model_line_verdict": any("irregular" in ln and "u01-entry-alpha" in ln and "sum_mismatch" in ln
+                                      for ln in files["document_summary.md"].splitlines()),
+            "figures_note": "The unit it names does not state these figures." in files["document_summary.md"],
+            "absence_wording": ("Checked in code: the field is absent" in json.dumps(master)
+                                and "required field: sample identifier; found: none" in files["document_summary.md"]),
+            # RC9/RC15: governance wording and no placeholders
+            "audit_words": [w for w in ("propose_amendment", "add_amendment", "[HIGH]", "True", "<document>") if w in audit],
+            "placeholders": [w for w in ("/?)", "para ?", "setting not recorded") if w in
+                             files["document_summary.md"] + files["grounding_summary.md"] + _read(en["run_summary"])],
+            # RC16/RC17: names, the rule's words, the per-agent title
+            "names_and_rule_words": ("(Entry Beta)" in beta.get("comment", "")
+                                     and 'Rule CONV-003 reads: "' in beta.get("comment", "")),
+            "per_agent_title": "not the reviewed document" in files["reviewed_document.md"].splitlines()[0],
+            # RC4/RC11/RC13/RC14: the Turkish findings file has the English layout and no raw dump
+            "tr_layout": ("### Değişiklik 1 [" in tr_files["review_findings.md"]
+                          and "- değişiklikler: 3" in tr_files["review_findings.md"]
+                          and "```json" not in tr_files["review_findings.md"]
+                          and "model_findings_not_promoted" not in tr_files["review_findings.md"]
+                          and "written_by" not in tr_files["review_findings.md"]
+                          and "\\n" not in tr_files["review_findings.md"]),
+            "tr_band_grammar": "olan aralığın üzerindedir" in tr_files["review_findings.md"],
+            # RC18: no em or en dash in any reader-facing file, either language
+            "dashes": sum(text.count(chr(0x2014)) + text.count(chr(0x2013)) for text in
+                          list(files.values()) + list(tr_files.values())
+                          + [_read(en["run_summary"]), _read(tr["run_summary"]), audit]),
+            "tr_untranslated": [w for w in ("Computed in code", "Grounded in", "under rule", "Checked in code",
+                                            "figure:", "compared with:", "verdict=", "unit=")
+                                if w in tr_files["review_findings.md"] + tr_files["document_summary.md"]],
+        }
+
+
+def check_reader_check():
+    o = observe_reader_check()
+    expected_located = sorted((u, True) for u, _ in o["located_at_own_passage"])
+    ok = (o["sum_names_addends"] and o["addends_in_unit"]
+          and len(o["located_at_own_passage"]) == 3 and o["located_at_own_passage"] == expected_located
+          and o["summary_cites_own_passages"] and o["header_or_reference_located"] == []
+          and o["per_agent_backend"] and o["model_apart"] and not o["model_line_verdict"]
+          and o["figures_note"] and o["absence_wording"] and o["audit_words"] == []
+          and o["placeholders"] == [] and o["names_and_rule_words"] and o["per_agent_title"]
+          and o["tr_layout"] and o["tr_band_grammar"] and o["tr_untranslated"] == []
+          and o["dashes"] == 0)
+    return ("PASS" if ok else "FAIL", "reader check round 1 items closed")
+
+
+def _json_block_renderer(payload, document_name, category_for_conv, **kwargs):
+    """The removed Turkish layout (JSON blocks), as a neutralisation."""
+    return "# x\n```json\n" + json.dumps(payload, ensure_ascii=False, indent=2) + "\n```\n" + "\n".join(
+        "### Değişiklik %d" % i for i, _ in enumerate(payload.get("amendments", []), 1))
 
 
 # ---------- the proofs ---------------------------------------------------------------------
@@ -525,11 +653,46 @@ class HonestOutputChecks(unittest.TestCase):
 
     def test_s2a5_absence_points_to_its_unit(self):
         self.prove("s2a5_absence", observe_absence_location, check_absence_location,
-                   lambda: patch.object(pr, "ABSENCE_RELATIONS", ()))
+                   lambda: patch.object(pr, "unit_passage_refs", lambda *a, **k: None))
 
     def test_s2a6_audit_synthesis_says_what_it_counts(self):
         self.prove("s2a6_audit", observe_audit_synthesis, check_audit_synthesis,
                    lambda: patch.object(audit_synthesizer, "AUDIT_COUNT_NOTE", ""))
+
+    # Reader check round 1: each mechanism, neutralised alone, must fail the check.
+    def test_rc1_sum_names_its_addends(self):
+        self.prove("rc1_addends", observe_reader_check, check_reader_check,
+                   lambda: patch.object(pr, "RELATION_DETAIL_FIELDS", ()))
+
+    def test_rc2_rc3_amendment_and_finding_sit_at_the_units_passage(self):
+        self.prove("rc2_rc3_location", observe_reader_check, check_reader_check,
+                   lambda: patch.object(pr, "unit_passage_refs", lambda *a, **k: {}))
+
+    def test_rc6_rc7_model_items_apart_without_checked_fields(self):
+        self.prove("rc6_rc7_model_items", observe_reader_check, check_reader_check,
+                   lambda: patch.object(finding_record, "reader_line", finding_record.typed_line))
+
+    def test_rc9_audit_wording(self):
+        self.prove("rc9_audit_words", observe_reader_check, check_reader_check,
+                   lambda: patch.object(audit_synthesizer, "KIND_WORDS", {}))
+
+    def test_rc12_absence_says_what_was_checked(self):
+        self.prove("rc12_absence", observe_reader_check, check_reader_check,
+                   lambda: patch.object(pr, "ABSENCE_PROVENANCE",
+                                        "Computed in code from the figures in this unit, not judged by a model."))
+
+    def test_rc14_turkish_findings_file_has_the_english_layout(self):
+        self.prove("rc14_tr_layout", observe_reader_check, check_reader_check,
+                   lambda: patch.object(amendment_render, "_render_md", _json_block_renderer))
+
+    def test_rc16_units_named_and_rules_quoted(self):
+        self.prove("rc16_names", observe_reader_check, check_reader_check,
+                   lambda: patch.object(pr, "_unit_title", lambda record: ""))
+
+    def test_rc18_no_dashes_in_reader_files(self):
+        self.prove("rc18_dashes", observe_reader_check, check_reader_check,
+                   lambda: patch.object(amendment_render, "MODEL_FINDINGS_HEADING",
+                                        "## Written by a model " + chr(0x2014) + " not checked by Python"))
 
     def test_s2a7_model_only_relations_listed_apart(self):
         self.prove("s2a7_relations", observe_relations, check_relations,

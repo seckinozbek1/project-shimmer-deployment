@@ -240,6 +240,58 @@ def provenance_mark(item) -> str:
     return localization.text(COMPUTED_FINDING_MARK)
 
 
+# Reader check round 1 (RC7): the fields that make a record read as checked. A
+# model's record keeps its claim, but these are never shown on it as if they
+# described a checked finding; the model's own verdict travels as
+# `model_claimed_verdict`, and its confidence is not carried into a deliverable.
+CHECKED_SOUNDING_FIELDS = ("confidence", "record_verdict", "verdict")
+
+
+def model_finding_for_reader(item) -> dict:
+    """A model-written record as the deliverables carry it: its claim and figures,
+    marked unchecked, without the fields that would make it read as checked."""
+    out = {k: v for k, v in dict(item).items() if k not in CHECKED_SOUNDING_FIELDS}
+    claimed = item.get("record_verdict") or item.get("verdict")
+    if claimed:
+        out["model_claimed_verdict"] = claimed
+    out.update(written_by=WRITTEN_BY_MODEL, promoted=False, checked_by_python=False)
+    return out
+
+
+@localization.presentation
+def reader_line(item) -> str:
+    """One finding as a READER sees it (deliverables only; prompts keep
+    typed_line). The relation is named in words, a declared field the unit lacks
+    is said as such rather than as "0 values against 1 required", and a model's
+    line carries no verdict (RC6, RC12, RC13)."""
+    if not isinstance(item, dict):
+        return str(item)
+    parts = []
+    rule = resolved_rule_id(item)
+    if rule:
+        src = item.get("source_rule_id")
+        parts.append(f"{rule} ({src})" if src and src != rule else str(rule))
+    if item.get("unit_id"):
+        parts.append(localization.text("unit ") + str(item["unit_id"]))
+    relation = item.get("relation")
+    if relation:
+        parts.append(localization.label(str(relation)))
+    if relation == "missing_field" and str(item.get("unit_b") or "") == "required":
+        parts.append(localization.text("required field: ") + str(item.get("field_label") or "?")
+                     + localization.text("; found: none"))
+    else:
+        if item.get("value_a") is not None:
+            parts.append(localization.text("figure: ") + f"{item['value_a']} {item.get('unit_a') or ''}".strip())
+        if item.get("value_b") is not None:
+            parts.append(localization.text("compared with: ") + f"{item['value_b']} {item.get('unit_b') or ''}".strip())
+    if not is_model_written(item) and item.get("record_verdict"):
+        parts.append(localization.label(str(item["record_verdict"])))
+    refs = item.get("source_refs") or item.get("ref_ids")
+    if isinstance(refs, list) and refs:
+        parts.append(localization.text("cites ") + ", ".join(str(r) for r in refs[:4]))
+    return "; ".join(parts)
+
+
 def strip_reasoning(items):
     """Project items for an INTER-AGENT payload: every prose field removed.
 

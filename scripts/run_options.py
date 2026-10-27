@@ -91,40 +91,6 @@ def label(key, language="en"):
     return LABELS[language].get(key, localization.label(key, language))
 
 
-def review_markdown(payload, document_name="", language="tr"):
-    """Localized headings around the unchanged canonical master, including all fields.
-
-    JSON blocks preserve numeric values, quotations, IDs and enums verbatim.
-    A fence longer than any content backtick run prevents source text escaping it.
-    """
-    import re
-    Options(output_language=language)
-    def block(value):
-        text = json.dumps(value, ensure_ascii=False, indent=2)
-        fence = "`" * max(3, 1 + max((len(m[0]) for m in re.finditer(r"`+", text)), default=0))
-        return fence + "json\n" + text + "\n" + fence
-    lines = ["# " + label("review", language), block(document_name or payload.get("document_id", "")), ""]
-    for i, amendment in enumerate(payload.get("amendments", []), 1):
-        title = "Değişiklik" if language == "tr" else "Amendment"
-        headings = ({"original_text": "Özgün metin", "proposed_text": "Önerilen metin", "comment": "Gerekçe"}
-                    if language == "tr" else {"original_text": "Original", "proposed_text": "Proposed", "comment": "Justification"})
-        lines.append(f"### {title} {i}")
-        for field, heading in headings.items():
-            if amendment.get(field):
-                shown = localization.message(amendment[field], language) if field == "comment" else amendment[field]
-                lines.extend(["**" + heading + ":**", block(shown), ""])
-        lines.extend(["**" + label("evidence", language) + ":**",
-                      block({k: v for k, v in amendment.items() if k not in headings}), ""])
-    # S2a: the master's model findings, labelled in the output language. The JSON
-    # block below still carries every field verbatim.
-    import amendment_render
-    lines.extend(amendment_render.render_model_findings(
-        payload.get(amendment_render.MODEL_FINDINGS_KEY) or [], output_language=language))
-    lines.extend(["## " + label("evidence", language) + " / " + label("references", language),
-                  block({k: v for k, v in payload.items() if k != "amendments"})])
-    return "\n".join(lines)
-
-
 def record_prompt(ctx, call_id, agent, stable, dynamic):
     if ctx is None:
         return
