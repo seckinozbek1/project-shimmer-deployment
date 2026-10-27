@@ -14,14 +14,17 @@ What they implement, from `docs/benchmarks/PREREGISTRATION.md`:
 
 What they do not implement is listed at the end.
 
-## Developed on synthetic items only
+## Written on synthetic items, confirmed on development items
 
-No benchmark data was downloaded, opened or searched to write these adapters (hard limit H17, decision D-019). B-dev, the role that would pass on development items, could not run in loop stage S4. Each adapter was written from the schemas documented in `SELECTION.md` and the preregistration, and was checked only on synthetic items in those schemas (`<name>/fixtures/synthetic_items.json`).
+No benchmark data was downloaded, opened or searched to write these adapters (hard limit H17, decision D-019). Each adapter was written from the schemas documented in `SELECTION.md` and the preregistration, and was checked on synthetic items in those schemas.
+
+In loop stage S4c item 4 the adapters were then run on the development items B-dev passed on (development side only). Each named constant was checked against them, every one the data confirmed is marked so in a comment (no document text is quoted), and the faults the data showed were fixed (per adapter below). The fixtures were rewritten in the release's own schema and stay hand-written synthetic items: no real item is copied into them.
 
 - The items are hand-written.
 - CUAD's 41 QA entries per contract are expanded by the tracked script `cuad/fixtures/make_synthetic_items.py` from hand-written contract texts and answer choices. The script reproduces the fixture byte for byte.
+- FinDVer's fixture is laid out as the release is: `findver/fixtures/data/testmini.json` and the filings under `findver/fixtures/financial_reports/`.
 
-Where a field name or a stored value is not documented outside the data, the adapter takes it from a named constant marked PROVISIONAL, kept in one block at the top of the adapter. Nothing is inferred from data. Every PROVISIONAL constant must be confirmed on development items in S5 before freeze (preregistration section 12, item 5). Until then, results from these adapters on real items are not evidence.
+Where a field name or a stored value could not be confirmed on development items, it stays a named constant marked PROVISIONAL, kept in one block at the top of the adapter (section 12 of the preregistration, item 5). Nothing is inferred from data at run time.
 
 ## Layout
 
@@ -37,7 +40,8 @@ benchmark/adapters/
     metrics.py       section 3 measures, with ABSTAIN and zero division as section 4 says
     cli.py           the commands below
   contradoc/  cuad/  scitab/  findver/  contractnli/      adapter.py and fixtures/
-  <name>/fixtures/synthetic_items.json   synthetic items in the documented schema
+  <name>/fixtures/synthetic_items.json   synthetic items in the release's schema (FinDVer:
+                                         fixtures/data/testmini.json and fixtures/financial_reports/)
   <name>/fixtures/mapping_cases.json     synthetic run outputs with the expected labels
 ```
 
@@ -137,4 +141,4 @@ Where the preregistration left a choice, the adapters made one. The list of read
 - The 5.3 report figures: the share of words removed across a benchmark, and the uncut-only comparison. `parts.json` holds the numbers they are computed from.
 - The single-claim analysis of section 7. It is computed from `items.json` and the labels.
 - The real budget inputs and tokenizer. These are pending VERSIONS.md.
-- The SciTab demonstration tables and the CUAD descriptions. These are pending B-dev and freeze.
+- The SciTab demonstration tables (B-dev could not identify them) and the CUAD descriptions. These are pending freeze.
