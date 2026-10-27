@@ -1,5 +1,7 @@
 # BDEV: how to start it (IV.10a item 9 form)
 
+> **Dated note, 2026-10-27 13:5x +0300.** This file is the earlier blocked form. Role sessions became allowed (D-027), and B-dev ran on 27 October 2026 from 12:56:05 to 13:07:26 +0300 with the IV.10a item 4 flags (`--restricted`), started detached by the lead (D-032). `ROLE_BDEV.md` beside this file now holds the instructions actually used (SHA-256 `047d4f845148451865c11e74d0a0e6b8eb0ee87f43708bc93a5d98a79682beb5`): the same mechanical assembly as the earlier draft (`984e2a1a...`) plus Annex D's heading, its opening sentence and D-S3, word for word, because D-S3 amends H13 for ContractNLI.
+
 This session could not run role sessions (D-007: the lead's deny rules were not proven in this session, S0 step 15), so the B-dev step of S4c is BLOCKED here. `ROLE_BDEV.md` beside this file was assembled mechanically by IV.10a item 2; its SHA-256 is in `docs/loop/stages/S04_REPORT.md`.
 
 ## Before starting

@@ -84,8 +84,6 @@ B.14 **Model-text review on large benchmarks.** This amends 11.8.6 for this loop
 
 B.15 **A data-only B session before the freeze.** This narrows 11.3's "freezes it before B starts" for this loop only. B-dev (S4c) writes no test, key, convention or setting: it only downloads public data, verifies it, applies the preregistered split rule and passes on development items. It may run while the input format is still a draft. The input format is frozen (S8a item 2) before B1, the first B session that converts or writes a test.
 
----
-
 # PART II. HARD LIMITS
 
 These hold whatever any other part says, and whatever the decision profile suggests. A step that would cross one is not taken. If a stage cannot finish without crossing one, the stage is marked BLOCKED in `docs/loop/private/LOOP_STATE.md`, the reason goes to `docs/loop/private/FOR_SECKIN.md`, and the loop continues with every stage that does not depend on it.
@@ -124,4 +122,8 @@ These hold whatever any other part says, and whatever the decision profile sugge
 - **H16. Laptop pipeline runs.** No full pipeline run on the laptop (Annex A, 11.7.3; the 8 GB card pages, and the NVIDIA driver fault kills about one local run in three or four). The verify gate, fixtures, mocks and CPU-only steps may run on the laptop. So may the Python-only ablation tool (B2, `benchmark/baselines/python_only.py`, S4f): it makes no model call and is not a pipeline run.
 - **H17. The builder never touches benchmark data.** The lead and every agent it starts (role A) never download, open or search any benchmark data file, of any split, in any stage, except the development items B-dev passes on (below). Only role B does (B-dev in S4c and B in S8b, IV.10b); role V may also download a public source to check B's sample against it (S8b item 2). Research subagents read dataset cards, licence files, papers and schema documentation, never data files or dataset viewers. The lead works only with the development items B-dev places in `<USER_HOME>\local\shimmer-roles\_xfer\B_to_lead_dev\`, kept in `external/<name>/dev/` (gitignored).
 
----
+# ANNEX D. SECKIN'S DECISIONS OF 27 OCTOBER 2026, 12:10 (+03:00)
+
+Seckin took these decisions while the loop was running. They are in force from now on. Where an entry says it amends another part, including Part II, the entry wins. Seckin does not want to be involved further: put nothing in front of him that the decision profile (Part III) can decide. Record each entry's application in `DECISIONS.md`.
+
+**D-S3. ContractNLI is accepted.** Seckin accepted ContractNLI's terms of use on 27 October 2026 at 12:10 (+03:00). H13 is met for ContractNLI only: role B may download it under his acceptance. Add it to the selection (it ranks first by fit), write its adapter, and treat it like the other benchmarks. The selection and every report state that LegalBench's ContractNLI tasks are not independent of it. LLM-AggreFact stays out: Seckin skipped it.
