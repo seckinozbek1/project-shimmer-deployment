@@ -269,3 +269,9 @@ open-item sweep.
 - **Evidence.** `git ls-files tuning/auditor_external_relation_v1`; `docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V1.md`; `docs/fix/AUDITOR_EXTERNAL_DATA_ATTRIBUTION.md` (CC BY 4.0 attribution).
 - **Why it was left.** The files predate the rule, carry their attribution and licence, and are a frozen record of a quarantined experiment (TCR-010). Removing them from the tree does not remove them from history, and deleting a frozen record is not the loop's call (H12). SummEdits is rejected for sealed use instead (D-019).
 - **What would settle it.** The operator's decision: keep as an attributed record, or remove from the tree and include the paths in the S13 history-rewrite rules.
+
+## 15 (closed at loop S4, 2026-10-27 12:18 +0300). Converted third-party data tracked in the repository
+
+- **Closed by the operator's decision D-S7 (Annex D of the loop specification).** The SummEdits-derived files under `tuning/auditor_external_relation_v1/` stay as an attributed record; `PROVENANCE.md` in that folder names the source, the licence (CC BY 4.0, research purposes only) and that the files predate the loop; S13 does not remove them. SummEdits stays rejected as a benchmark (D-019).
+- **Correction.** The entry above cites TCR-010 for "quarantined"; TCR-010 says the folder is superseded by v2. The quarantine is stated in `docs/fix/AUDITOR_EXTERNAL_RELATION_DATA_V1.md`.
+- **Also covered (S4 checker H18).** `tuning/auditor_external_relation_v2/` likewise tracks converted third-party data (PAWS, WikiAtomicEdits, PEER) from before the loop, with its own licence record. Decided by the profile, by analogy with D-S7 (P13): it stays as an attributed record and is not removed by S13; no benchmark uses it.
