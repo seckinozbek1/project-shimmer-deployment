@@ -368,3 +368,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Decision.** All items go to `lane/s03-fix2` with the reviewers' recommended closures (the lane prompt names each choice). After it, round 3 (the last), then a tie-break for any CRITICAL or SERIOUS left.
 - **PROCESS-DEPARTURE (IV.7).** The S3 commits `381c775`, `0638d8d`, `16199b9`, `990ed88`, `fb82aed`, `0b25902` and `107bbe7` had no full gate run of their own: the earlier lanes ran only their own checks, and this session's gate waits for 4 GB of free memory (D-013), which the running lanes keep below the floor. The gate at the S3 tip (and on the loop branch after the merge) covers every tree before the stage closes; the record says so instead of hiding it.
 - **Rules.** IV.4, IV.7, P8, P10.
+
+## D-049. S3 round 2 closed; round 3 started
+
+- **When, stage.** 2026-10-27 17:52 +0300 (system clock), S3.
+- **Applied.** `lane/s03-fix2` (`e2a3068`, `e11a08f`, `d67adba`) merged as `bb88fc2`: every round-2 item in its scope closed with the reviewers' recommended closures (rule wording matches what is keyed; the family 6 probe rotates so no new pair breaks; a measure rule for unit mismatches; a planted ratio error; family 4 keys in the multi-round form, with no multi-round twin (open item 26); long-range baselines measured below 1; moves bounded above 2.05 percent; neutral fixture words; the child process runs with `-B`). Draft hashes in `VERSIONS.md` (input `a1837a9c...`, output `895237fe...`), equal to the committed blobs. The agreement report (a measurement, never a gate) shows real misses: Shimmer records a rename into another section as withdrawn, misses a withdrawal beside an unrelated newcomer, and does not compute reference-table bands, date windows or several planted kinds on this review path; these are S5 development measurements.
+- **Round 3 (the last).** Completeness with claims, adversarial, and a code-blind reading of the new format text (completeness round-2 gap 1); then a tie-break for any CRITICAL or SERIOUS left.
+- **Rules.** IV.4, P1, P16.
