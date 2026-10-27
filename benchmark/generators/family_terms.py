@@ -4,21 +4,28 @@ section 9, that is also a declared multi-round case).
 The version before the last is the prior; the last version is the target; the
 conventions file is the mandate, one rule per term of the target, each stating the band
 that side wants (section 6, "Negotiation-style tests"). The key is negotiation-style:
-`prior_records` (every change record Python writes, unchanged ones included) and
-`band_irregularities` (every irregular band finding), plus fields the scorer ignores:
-`version_changes` (the family's own plan, computed here from its own figures and
-checked against the audit), `rename_probes` (one typed row per rename-probe kind),
-`clean`, and per band row `unit_id`, `value_b` and `kind`.
+`prior_records` (the change records a correct reviewer writes, unchanged ones included)
+and `band_irregularities` (every band breach in the later version), plus fields the
+scorer ignores: `version_changes` (the family's own plan of every term), `rename_probes`
+(one typed row per rename-probe kind), `expected_refusals`, `clean`, and per band row
+`unit_id`, `value_b` and `kind`.
+
+Every expectation is GROUND TRUTH, decided here from what this family planted, never
+from what Shimmer computes (D-042): a term renamed with its value unchanged or moved is
+the same term, so a correct reviewer does not call it withdrawn (a refusal, or a matched
+rename, satisfies the key; a withdrawal record is a false positive); a term truly
+withdrawn is `absent_since_prior`, also when an unrelated new term sits in the same
+section in the same measure; a renamed term moved to another section is not withdrawn.
 
 Version changes planted between the prior and the target: terms unchanged, terms
 changed inside the band, terms moved toward or away from the band, a term renamed with
-its value unchanged (refused as a possible rename, no record), a term renamed with its
-value moved (refused as a possible successor: a newcomer in the same section in the same
-measure, S2b item 5; no record), a withdrawn term (absent_since_prior), a term new in
-the later version (no record), sections reordered, and a value written in a different
-format (unchanged).
+its value unchanged, a term renamed with its value moved (by a seeded 2 to 45 percent),
+a term renamed and moved to another section (also by a seeded 2 to 45 percent), a
+withdrawn term, a withdrawn term beside an unrelated new term in the same measure, terms
+new in the later version, sections reordered, and a value written in a different format
+(unchanged).
 
-The flaws (band irregularities in the later version) come in six kinds: a breach left
+The flaws (band breaches in the later version) come in six kinds: a breach left
 unchanged, a breach the later version moved into, a breach the later version moved
 toward the band but not into it, a breach on a new term, a breach on a renamed term,
 and a breach on a value written in a different format.
@@ -26,7 +33,8 @@ and a breach on a value written in a different format.
 With `rounds=3` an earliest version comes first: the prior with three ordinary terms
 at other figures, same labels, same section order. It is a grounding file, never a
 declared prior, and only the case manifest names it (round r1). Every bundle carries
-the live case manifest (`multi_round_case.py`).
+the live case manifest (`multi_round_case.py`) and holds only case documents in
+`context/` (INPUT_FORMAT section 12): no reference file.
 """
 from . import model as md
 from . import textrules as tr
@@ -55,8 +63,23 @@ TERMS = [
     ("Storage charge", "EUR", 100, 600, 0, "Warehousing charge", "Holding cost"),
     ("Interest margin", "%", 1.0, 4.0, 1, "Interest spread", "Rate premium"),
     ("Delivery window", "days", 5, 20, 0, "Delivery lead", "Shipping lag"),
+    ("Rebate threshold", "EUR", 2000, 8000, 0, "Rebate trigger", "Discount floor"),
+    ("Batch size", "box", 20, 80, 0, "Lot size", "Run quantity"),
+    ("Reporting lag", "days", 5, 15, 0, "Report delay", "Statement gap"),
+    ("Support hours", "hours", 20, 60, 0, "Help hours", "Assistance time"),
+    ("Uptime target", "%", 95.0, 99.5, 1, "Availability goal", "Service level"),
 ]
-NEW_TERM_PROBE = ("Review cycle", "6 months")
+MOVE_LOW, MOVE_HIGH = 0.02, 0.45      # a moved rename moves by 2 to 45 percent, seeded
+
+# The ground-truth expectation for each rename-probe kind, and the honest refusal a
+# blind reviewer may give instead of matching the rename (None: a refusal of any kind).
+RENAME_KINDS = {
+    "renamed_unchanged": ("renamed_value_unchanged", "same_term_new_label", "possible_rename"),
+    "breach_renamed_moved": ("renamed_value_moved", "same_term_new_label_moved_value",
+                             "possible_successor"),
+    "renamed_moved_section": ("renamed_moved_to_other_section",
+                              "same_term_new_label_other_section", None),
+}
 
 
 def _fmt(t, v, grouped=False):
@@ -76,6 +99,11 @@ def _orient(prior, now, lo, hi):
     if tr.same(da, db):
         return "changed_from_prior"
     return "moved_toward" if da < db else "moved_away"
+
+
+def moved_percent(before, after):
+    """How far a figure moved, in percent of the earlier figure."""
+    return round(abs(after - before) * 100.0 / abs(before), 2)
 
 
 def _values(rng, t, how):
@@ -104,23 +132,52 @@ def _values(rng, t, how):
     raise ValueError("no value for %s %s" % (t[0], how))
 
 
+def _moved_from(rng, t, later, inside=False):
+    """An earlier figure from which `later` moved by a seeded 2 to 45 percent (of the
+    earlier figure), optionally itself inside the band."""
+    lo, hi, dec = t[2], t[3], t[4]
+    for _ in range(2000):
+        m = rng.uniform(MOVE_LOW, MOVE_HIGH)
+        before = round(later / (1 + rng.choice([-1, 1]) * m), dec)
+        if before <= 0 or tr.same(before, later):
+            continue
+        if inside and not lo < before < hi:
+            continue
+        if MOVE_LOW * 100 <= moved_percent(before, later) <= MOVE_HIGH * 100:
+            return float(before)
+    raise ValueError("no moved earlier figure for %s" % t[0])
+
+
+def _inside_moved(rng, t):
+    """(earlier, later), both inside the band, the later moved by 2 to 45 percent."""
+    for _ in range(200):
+        later = _values(rng, t, "inside")
+        try:
+            return _moved_from(rng, t, later, inside=True), later
+        except ValueError:
+            continue
+    raise ValueError("no inside move for %s" % t[0])
+
+
 ROUND_CHANGES = 3          # ordinary terms at another figure in the earliest version
 REUSE_ROLES = ("breach_moved_away", "breach_moved_toward", "changed_inside", "moved_into_band",
                "unchanged_inside")
+SPECIAL = ("breach_new_term", "breach_renamed_moved", "renamed_unchanged", "withdrawn",
+           "withdrawn_beside_newcomer", "newcomer_unrelated", "renamed_moved_section")
 
 
 def _earliest(seed, terms, prior_units, prior_order, title, preamble):
     """The earliest version (round r1 of a three-round case): the prior with
     ROUND_CHANGES ordinary terms, in distinct sections, at a figure more than 5% away.
-    Its own random stream, so the two-version form of a seed is unchanged."""
+    Its own random stream."""
     rng = wl.make_rng(FAMILY + "-rounds", seed)
     pool = [e for e in terms if e["role"] in REUSE_ROLES and e["prior"] is not None]
     rng.shuffle(pool)
     chosen, units = [], set()
     for e in pool:
-        if e["unit"] not in units:
+        if e["prior_unit"] not in units:
             chosen.append(e)
-            units.add(e["unit"])
+            units.add(e["prior_unit"])
         if len(chosen) == ROUND_CHANGES:
             break
     if len(chosen) != ROUND_CHANGES:
@@ -134,34 +191,47 @@ def _earliest(seed, terms, prior_units, prior_order, title, preamble):
                 break
         else:
             raise ValueError("no earliest value for %s" % e["label"])
-        early_units[e["unit"]].set_line(e["label"], _fmt(e["t"], v))
-        changes.append({"field_label": tr.norm(e["label"]), "prior_position": prior_order.index(e["unit"]),
+        early_units[e["prior_unit"]].set_line(e["label"], _fmt(e["t"], v))
+        changes.append({"field_label": tr.norm(e["label"]),
+                        "prior_position": prior_order.index(e["prior_unit"]),
                         "value_before": tr.r6(v), "value_after": tr.r6(e["prior"]), "unit": e["t"][1]})
     changes.sort(key=lambda c: c["field_label"])
     return md.Doc(title, preamble, [early_units[i] for i in prior_order]), changes
+
+
+def _pick_roles(rng):
+    """(role, term) pairs. The withdrawal beside a newcomer and its newcomer share a
+    measure; every other term is drawn at random."""
+    exit_term = [t for t in TERMS if t[0] == "Exit charge"][0]
+    pool = [t for t in TERMS if t is not exit_term]
+    rng.shuffle(pool)
+    by_measure = {}
+    for t in pool:
+        by_measure.setdefault(t[1], []).append(t)
+    pair_measure = rng.choice(sorted(m for m, ts in by_measure.items() if len(ts) >= 2))
+    gone, newcomer = by_measure[pair_measure][:2]
+    pool = [t for t in pool if t is not gone and t is not newcomer]
+    roles = [("breach_reformatted", exit_term), ("withdrawn_beside_newcomer", gone),
+             ("newcomer_unrelated", newcomer)]
+    breach_roles = (["breach_unchanged"] * 2 + ["breach_moved_away"] * 3
+                    + ["breach_moved_toward"] * 2 + ["breach_new_term", "breach_renamed_moved"])
+    other_roles = ["unchanged_inside", "changed_inside", "moved_into_band", "renamed_unchanged",
+                   "withdrawn", "at_bound", "renamed_moved_section"]
+    for r in breach_roles + other_roles:
+        roles.append((r, pool.pop()))
+    return roles
 
 
 def build(seed, rounds=2):
     if rounds not in (2, 3):
         raise ValueError("family 4 writes two or three rounds")
     rng = wl.make_rng(FAMILY, seed)
-    exit_term = [t for t in TERMS if t[0] == "Exit charge"][0]
-    pool = [t for t in TERMS if t is not exit_term]
-    rng.shuffle(pool)
-    breach_roles = (["breach_unchanged"] * 2 + ["breach_moved_away"] * 3
-                    + ["breach_moved_toward"] * 2 + ["breach_new_term", "breach_renamed_moved"])
-    other_roles = ["unchanged_inside", "changed_inside", "moved_into_band", "renamed_unchanged",
-                   "withdrawn", "at_bound"]
-    roles = [("breach_reformatted", exit_term)]
-    for r in breach_roles + other_roles:
-        roles.append((r, pool.pop()))
-    # values: prior and later (target) and the twin's later value
     terms = []
-    for role, t in roles:
+    for role, t in _pick_roles(rng):
         label, meas, lo, hi, dec, alt, alt2 = t
         side = rng.choice(["above", "below"])
         e = {"role": role, "t": t, "label": label, "later_label": label, "prior": None, "later": None,
-             "twin": None, "relation": None, "kind": None}
+             "twin": None, "kind": None}
         if role == "breach_reformatted":
             e["prior"] = e["later"] = _values(rng, t, "above")
             side = "above"
@@ -178,11 +248,14 @@ def build(seed, rounds=2):
                     break
             else:
                 raise ValueError("no move toward")
-        elif role == "breach_new_term":
-            e["later"] = _values(rng, t, side)
+        elif role in ("breach_new_term", "newcomer_unrelated"):
+            e["later"] = _values(rng, t, side if role == "breach_new_term" else "inside")
         elif role == "breach_renamed_moved":
-            e["prior"] = _values(rng, t, "inside")
             e["later"] = _values(rng, t, side)
+            e["prior"] = _moved_from(rng, t, e["later"])
+            e["later_label"] = alt
+        elif role == "renamed_moved_section":
+            e["prior"], e["later"] = _inside_moved(rng, t)
             e["later_label"] = alt
         elif role == "unchanged_inside":
             e["prior"] = e["later"] = _values(rng, t, "inside")
@@ -198,14 +271,14 @@ def build(seed, rounds=2):
         elif role == "renamed_unchanged":
             e["prior"] = e["later"] = _values(rng, t, "inside")
             e["later_label"] = alt
-        elif role == "withdrawn":
+        elif role in ("withdrawn", "withdrawn_beside_newcomer"):
             e["prior"] = _values(rng, t, "inside")
         elif role == "at_bound":
             e["prior"] = e["later"] = float(rng.choice([lo, hi]))
         if role.startswith("breach_"):
             e["side"] = side
             e["kind"] = role
-            # the twin repairs the breach inside the band, more than 2% from the earlier figure
+            # the twin repairs the breach inside the band, more than 5% from the earlier figure
             for _ in range(200):
                 tv = _values(rng, t, "inside")
                 if e["prior"] is None or abs(tv - e["prior"]) > 0.05 * abs(e["prior"]):
@@ -214,32 +287,48 @@ def build(seed, rounds=2):
         else:
             e["twin"] = e["later"]
         terms.append(e)
-    # units: four special terms each beside one ordinary partner, a clean distractor
-    # unit (at_bound with unchanged_inside), the rest one or two per unit
-    special = [e for e in terms if e["role"] in ("breach_new_term", "breach_renamed_moved",
-                                                 "renamed_unchanged", "withdrawn")]
-    reserved = [e for e in terms if e["role"] in ("at_bound", "unchanged_inside")]
-    ordinary = [e for e in terms if e not in special and e not in reserved]
+    # Units. Each special term sits beside one ordinary partner (never a breach left
+    # unchanged, which probe 3 uses); the withdrawal beside a newcomer shares its unit
+    # with that newcomer; the renamed term moved to another section leaves its earlier
+    # unit (which keeps its partner) for a plain unit of its own; a clean distractor
+    # unit holds the term on its bound and an unchanged term; the rest one or two per unit.
+    by_role = {}
+    for e in terms:
+        by_role.setdefault(e["role"], []).append(e)
+    reserved = by_role["at_bound"] + by_role["unchanged_inside"]
+    ordinary = [e for e in terms if e["role"] not in SPECIAL and e not in reserved]
     rng.shuffle(ordinary)
+    partners = [e for e in ordinary if e["role"] != "breach_unchanged"]
     groups = []
-    for s in special:
-        groups.append([ordinary.pop(), s])
+    for role in ("breach_new_term", "breach_renamed_moved", "renamed_unchanged", "withdrawn",
+                 "renamed_moved_section"):
+        groups.append([partners.pop(), by_role[role][0]])
+    groups.append([partners.pop()] + by_role["withdrawn_beside_newcomer"] + by_role["newcomer_unrelated"])
     groups.append(reserved)
-    while ordinary:
-        k = 2 if len(ordinary) >= 2 and rng.random() < 0.5 else 1
-        groups.append([ordinary.pop() for _ in range(k)])
+    rest = [e for e in ordinary if not any(e in g for g in groups)]
+    plain = []
+    while rest:
+        k = 2 if len(rest) >= 2 and rng.random() < 0.5 else 1
+        plain.append([rest.pop() for _ in range(k)])
+        groups.append(plain[-1])
     rng.shuffle(groups)
+    moved = by_role["renamed_moved_section"][0]
+    later_home = rng.choice(plain)
+    for gi, g in enumerate(groups):
+        for e in g:
+            e["unit"] = e["prior_unit"] = gi
+    moved["unit"] = groups.index(later_home)
     heads = wl.pick(rng, wl.BIRDS, len(groups))
     later_units, prior_units, twin_units = [], [], []
-    for gi, (g, h) in enumerate(zip(groups, heads)):
+    for gi, h in enumerate(heads):
         lu, pu, tu = [], [], []
-        for e in g:
-            e["unit"] = gi
-            if e["later"] is not None:
+        members = groups[gi] + ([moved] if moved["unit"] == gi else [])
+        for e in members:
+            if e["later"] is not None and e["unit"] == gi:
                 grouped = e["role"] == "breach_reformatted"
                 lu.append([e["later_label"], _fmt(e["t"], e["later"], grouped)])
                 tu.append([e["later_label"], _fmt(e["t"], e["twin"], grouped)])
-            if e["prior"] is not None:
+            if e["prior"] is not None and e["prior_unit"] == gi:
                 pu.append([e["label"], _fmt(e["t"], e["prior"])])
         later_units.append(md.Unit("Clause " + h, [("lines", lu)]))
         twin_units.append(md.Unit("Clause " + h, [("lines", tu)]))
@@ -262,39 +351,34 @@ def build(seed, rounds=2):
                 rules.append(md.Rule(rid, e["later_label"], text))
                 rule_of[id(e)] = rid
     conv = md.Conventions("Mandate", "These rules state the reviewing side's position on each term.", rules)
-    # the family's own plan of change records, from its own figures
-    def plan_row(e, which):
+
+    def plan_row(e, which, dropped=None):
+        """The family's own ground truth for one term (D-042)."""
         lo, hi = e["t"][2], e["t"][3]
         now = e[which]
+        then = None if e is dropped else e["prior"]
         meas = e["t"][1]
         ln, lp = tr.norm(e["later_label"]), tr.norm(e["label"])
-        if e["role"] == "withdrawn":
-            # no label is new in its section (its partner is stated earlier too)
-            v = {"field_label": lp, "change": "withdrawn", "expect": "absent_since_prior",
-                 "refusal": None, "value_a": None, "value_b": e["prior"], "unit": meas}
-        elif e["role"] == "breach_new_term":
-            v = {"field_label": ln, "change": "new_in_later_version", "expect": "none",
-                 "refusal": None, "value_a": now, "value_b": None, "unit": meas}
-        elif e["role"] in ("renamed_unchanged", "breach_renamed_moved"):
-            # within 2% of the larger figure, 2% included: a possible rename; moved
-            # further: the new label in the same section and measure is a possible
-            # successor (S2b item 5). Refused either way, never withdrawn.
-            moved = abs(now - e["prior"]) > 0.02 * max(abs(now), abs(e["prior"]))
-            v = {"field_label": lp, "change": "renamed_to_" + ln.replace(" ", "_"),
-                 "expect": "refused", "refusal": "possible_successor" if moved else "possible_rename",
-                 "value_a": None, "value_b": e["prior"], "unit": meas}
+        v = {"field_label": lp, "later_field_label": None, "change": e["role"], "expect": None,
+             "value_a": None, "value_b": then, "unit": meas, "section": None}
+        if e["role"] in ("withdrawn", "withdrawn_beside_newcomer"):
+            v["expect"] = "absent_since_prior"
+        elif then is None:
+            v.update(field_label=ln, change="new_in_later_version", expect="none", value_a=now)
+        elif e["role"] in RENAME_KINDS:
+            v.update(later_field_label=ln, expect="not_withdrawn", value_a=now,
+                     section="other" if e["unit"] != e["prior_unit"] else "same")
         else:
-            v = {"field_label": lp,
-                 "change": "value_in_different_format" if e["role"] == "breach_reformatted" else e["role"],
-                 "expect": _orient(e["prior"], now, lo, hi), "refusal": None,
-                 "value_a": now, "value_b": e["prior"], "unit": meas}
+            v.update(change="value_in_different_format" if e["role"] == "breach_reformatted" else e["role"],
+                     expect=_orient(then, now, lo, hi), value_a=now)
         for f in ("value_a", "value_b"):
             if v[f] is not None:
                 v[f] = tr.r6(v[f])
         return v
 
-    def plan(which):
-        return sorted((plan_row(e, which) for e in terms), key=lambda v: v["field_label"])
+    def plan(which, dropped=None):
+        return sorted((plan_row(e, which, dropped) for e in terms), key=lambda v: v["field_label"])
+
     bands = []
     for e in terms:
         if not e["role"].startswith("breach_"):
@@ -306,38 +390,50 @@ def build(seed, rounds=2):
                       "value_a": e["later"], "value_b": hi if above else lo,
                       "rule": rule_of[id(e)], "kind": e["kind"]})
     bands.sort(key=lambda b: (b["unit"], b["field_label"]))
-    # One typed row per rename-probe kind (S2b item 5), from the same plan; unit is the
-    # target's unit index, mapped to the bundle's own id when the key is written.
-    probe_kinds = {"renamed_unchanged": "renamed_value_unchanged",
-                   "breach_renamed_moved": "renamed_value_moved", "withdrawn": "withdrawn",
-                   "breach_new_term": "new_in_later_version",
-                   "breach_reformatted": "value_in_different_format"}
-    fixed_reasons = {"withdrawn": "no_successor_in_section",
-                     "new_in_later_version": "not_stated_in_earlier_version",
-                     "value_in_different_format": "comma_grouped_digits"}
+    # One typed row per rename-probe kind, from the same ground truth; units are the
+    # target's and the prior's unit indexes, mapped to the bundle's ids when written.
+    probe_kinds = {"withdrawn": ("withdrawn", "no_successor", None),
+                   "withdrawn_beside_newcomer": ("withdrawn_beside_newcomer",
+                                                 "unrelated_newcomer_same_measure", None),
+                   "breach_new_term": ("new_in_later_version", "not_stated_in_earlier_version", None),
+                   "breach_reformatted": ("value_in_different_format", "comma_grouped_digits", None)}
+    probe_kinds.update(RENAME_KINDS)
 
     def rename_probes(which):
         out = []
         for e in terms:
-            kind = probe_kinds.get(e["role"])
-            if kind is None:
+            if e["role"] not in probe_kinds:
                 continue
+            kind, reason, refusal = probe_kinds[e["role"]]
             now = e[which]
             lp, ln = tr.norm(e["label"]), tr.norm(e["later_label"])
             v = plan_row(e, which)
-            out.append({"kind": kind, "field_label": ln if e["prior"] is None else lp,
-                        "later_field_label": ln if now is not None else None,
-                        "unit_id": e["unit"], "prior_order": [],
-                        "value_before": tr.r6(e["prior"]) if e["prior"] is not None else None,
-                        "value_after": tr.r6(now) if now is not None else None, "unit": e["t"][1],
-                        "written_before": _fmt(e["t"], e["prior"]) if e["prior"] is not None else None,
-                        "written_after": (_fmt(e["t"], now, e["role"] == "breach_reformatted")
-                                          if now is not None else None),
-                        "expect": v["expect"], "reason": v["refusal"] or fixed_reasons[kind]})
+            row = {"kind": kind, "field_label": ln if e["prior"] is None else lp,
+                   "later_field_label": ln if now is not None else None,
+                   "unit_id": e["unit"] if now is not None else None,
+                   "prior_unit_id": e["prior_unit"] if e["prior"] is not None else None,
+                   "prior_order": [],
+                   "value_before": tr.r6(e["prior"]) if e["prior"] is not None else None,
+                   "value_after": tr.r6(now) if now is not None else None, "unit": e["t"][1],
+                   "written_before": _fmt(e["t"], e["prior"]) if e["prior"] is not None else None,
+                   "written_after": (_fmt(e["t"], now, e["role"] == "breach_reformatted")
+                                     if now is not None else None),
+                   "moved_percent": (moved_percent(e["prior"], now)
+                                     if e["prior"] is not None and now is not None else None),
+                   "expect": v["expect"], "reason": reason, "refusal_kind": refusal,
+                   "satisfied_by": None, "false_positive_if": None}
+            if v["expect"] == "not_withdrawn":
+                row["satisfied_by"] = ["refusal", "matched_rename"]
+                row["false_positive_if"] = "absent_since_prior"
+            elif v["expect"] == "absent_since_prior":
+                row["satisfied_by"] = ["absent_since_prior"]
+            out.append(row)
         out.append({"kind": "reordered_sections", "field_label": None, "later_field_label": None,
-                    "unit_id": None, "prior_order": list(prior_order), "value_before": None,
-                    "value_after": None, "unit": None, "written_before": None, "written_after": None,
-                    "expect": "records_follow_headings", "reason": "unit_identity_by_heading"})
+                    "unit_id": None, "prior_unit_id": None, "prior_order": list(prior_order),
+                    "value_before": None, "value_after": None, "unit": None,
+                    "written_before": None, "written_after": None, "moved_percent": None,
+                    "expect": "records_follow_headings", "reason": "unit_identity_by_heading",
+                    "refusal_kind": None, "satisfied_by": None, "false_positive_if": None})
         return sorted(out, key=lambda r: r["kind"])
 
     issues = {}
@@ -348,9 +444,9 @@ def build(seed, rounds=2):
         earliest, round_changes = _earliest(seed, terms, prior_units, prior_order, title, preamble)
     clean_unit = [e["unit"] for e in terms if e["role"] == "at_bound"][0]
     # probes
-    unchanged_breach = [e for e in terms if e["role"] == "breach_unchanged"][0]
-    plain_units = [gi for gi, g in enumerate(groups)
-                   if not any(e in special for e in g)]
+    # The dropped term leaves its earlier unit with another line where it can.
+    size = {gi: len(g) for gi, g in enumerate(groups)}
+    reword_term, dropped = sorted(by_role["breach_unchanged"], key=lambda e: size[e["unit"]])
     reform = None
     for e in terms:
         if e["role"] in ("breach_moved_away", "changed_inside", "moved_into_band") and e["later"] is not None:
@@ -366,19 +462,20 @@ def build(seed, rounds=2):
     return {
         "family": FAMILY, "family_name": NAME, "seed": seed, "mode": "negotiation",
         "doc": doc, "twin": twin, "prior": prior, "conventions": conv,
-        "references": [("note", "Negotiation note", [
-            ("prose", "The parties exchange successive versions of the supply terms."),
-            ("prose", "Each version restates every term that remains on the table.")])],
+        "references": [],
         "bands": bands, "clean": [clean_unit],
         "version_changes": plan("later"), "twin_version_changes": plan("twin"),
+        "term_version_changes": plan("later", dropped),
         "rename_probes": rename_probes("later"), "twin_rename_probes": rename_probes("twin"),
         "rounds": rounds, "earliest": earliest, "round_changes": round_changes, "issues": issues,
         "doc_stem": "terms", "conv_stem": "mandate",
         "task": "Compare the later version of the supply terms with the earlier one and review it against the mandate.",
         "probes": {
-            "reword": {"old": unchanged_breach["later_label"], "new": unchanged_breach["t"][6]},
+            "reword": {"old": reword_term["later_label"], "new": reword_term["t"][6]},
             "reorder": wl.reorder(len(groups), rng),
-            "term": {"unit": plain_units[0], "label": NEW_TERM_PROBE[0], "value": NEW_TERM_PROBE[1]},
+            # Probe 3: a keyed breach on a term only in the later version. The term is
+            # dropped from every earlier version; the target is unchanged.
+            "term": {"unit": dropped["unit"], "label": dropped["label"], "drop_from_prior": True},
             "reformat": reform,
         },
     }

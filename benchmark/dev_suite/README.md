@@ -7,12 +7,19 @@ probes (see `benchmark/generators/README.md`).
 
 Every family 4 bundle is also a declared multi-round case: `case_manifest.json` beside
 its key, the live case manifest (`fixture` false) the controller seals and the pipeline
-runs with `--multi-round --multi-round-manifest case_manifest.json`. Its key carries
-the rename probes (`rename_probes`: renamed with the value kept, renamed with the value
-moved, withdrawn, new in the later version, sections reordered, a value in another
-format), each with its typed reason, and the rounds (`rounds`, `round_reuse`,
-`round_changes`). The rename probes are blind only in the ordinary two-version review
-of a bundle; a multi-round run is told each term's identity by the case manifest.
+runs with `--multi-round --multi-round-manifest case_manifest.json`, and its `context/`
+holds only the case documents. Its key carries the rename probes (`rename_probes`:
+renamed with the value kept, renamed with the value moved, renamed and moved to another
+section, withdrawn, withdrawn beside an unrelated new term in the same measure, new in
+the later version, sections reordered, a value in another format), each with its
+ground-truth expectation, the renamed terms in `expected_refusals`, and the rounds
+(`rounds`, `round_reuse`, `round_changes`). The rename probes are measured in the
+ordinary two-version review of a bundle; a multi-round run is told each term's identity
+by the case manifest and writes no change records.
+
+Every key states the ground truth the generator planted, never what Shimmer computes
+(D-042). `generated/suite_listing.json` records the input-format draft hash the suite
+was generated against.
 
 **Exposed by construction.** The generators, the seeds and therefore every answer key
 are in this repository, so anything that reads the repository can read the answers.

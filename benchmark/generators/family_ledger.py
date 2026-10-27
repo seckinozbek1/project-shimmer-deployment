@@ -13,12 +13,12 @@ Neighbour-dependent kinds (each with `depends_on_unit`, the neighbour it depends
   figure as its opening. Python sees a sum mismatch; only the next count confirms the
   computed sum. The count after a carry_out is a clean distractor: read beside its
   neighbour's stated closing it looks mis-carried, and it is not.
+- carry_mismatch: wrong ONLY given the neighbour. The opening row differs from the
+  closing quantity of the count before, and the received row absorbs the difference, so
+  each count adds up on its own and only the pair shows the flaw. Python compares no two
+  units, so this kind is keyed from this family's own ground truth and found again by
+  the ground-truth scanner (ground_truth.py), with the neighbour in `depends_on_unit`.
 Other kinds: shrinkage above the band the rule states, a missing counter.
-
-Every Python relation is computed inside one unit (INPUT_FORMAT sections 7 and 9), so a
-flaw invisible inside its own unit has no typed reason the format can state. The
-neighbour-dependent flaws here are therefore detectable in the unit as a sum mismatch,
-and depend on the neighbour for which figure is wrong and how it is repaired.
 """
 from . import model as md
 from . import textrules as tr
@@ -36,6 +36,8 @@ RULES = [
     md.Rule("CONV-LC", "Counter", "Every stock count must state who counted it.",
             scope=["movement"], requires=["counted by"]),
 ]
+GROUND_TRUTH = [{"check": "carry", "kind": "carry_mismatch", "rule": "CONV-LA",
+                 "closing": "closing quantity", "column": "quantity"}]
 
 
 def _unit(head, place, rows, closing, shrink, counter):
@@ -50,7 +52,7 @@ def _unit(head, place, rows, closing, shrink, counter):
 
 def build(seed):
     rng = wl.make_rng(FAMILY, seed)
-    n = rng.randint(18, 21)
+    n = rng.randint(24, 27)
     heads = wl.pick(rng, wl.TREES, n)
     # place neighbour-dependent flaws two or more units apart, then the rest
     taken = set()
@@ -58,7 +60,7 @@ def build(seed):
 
     order = list(range(n))
     rng.shuffle(order)
-    for kind, count in (("carry_out", 3), ("carry_in", 3)):
+    for kind, count in (("carry_out", 3), ("carry_in", 3), ("carry_mismatch", 2)):
         placed = 0
         for i in order:
             if placed == count:
@@ -111,6 +113,22 @@ def build(seed):
             planted.append({"unit": i, "rule": "CONV-LA", "relation": "sum_mismatch", "kind": kind,
                             "field_label": "closing quantity", "value_a": closing + delta,
                             "value_b": closing, "links": {"depends_on_unit": i - 1}})
+        elif kind == "carry_mismatch":
+            received_row = rows[1][1]
+            if received_row >= 3:
+                delta = rng.randint(3, min(15, received_row))
+            else:
+                delta = -rng.randint(3, min(15, opening)) if opening >= 3 else 3
+            bad_rows = [list(r) for r in rows]
+            bad_rows[0][1] = opening + delta
+            bad_rows[1][1] = received_row - delta
+            if bad_rows[0][1] < 0 or bad_rows[1][1] < 0:
+                raise ValueError("no carry mismatch that keeps the rows non-negative")
+            flawed = _unit(head, place, bad_rows, closing, shrink, counter)
+            planted.append({"unit": i, "rule": "CONV-LA", "relation": "carry_mismatch", "kind": kind,
+                            "field_label": "quantity row1", "value_a": opening,
+                            "value_b": opening + delta, "links": {"depends_on_unit": i - 1},
+                            "extra": {"chain_label": "closing quantity"}})
         elif kind == "carry_out":
             delta = rng.choice([-1, 1]) * rng.randint(3, 15)
             flawed = _unit(head, place, rows, closing + delta, shrink, counter)
@@ -144,18 +162,20 @@ def build(seed):
     for p in planted:
         if "links" in p:
             keep.append((p["unit"], p["links"]["depends_on_unit"]))
-    plain = [i for i in range(n) if i not in plan and i not in clean]
+    above = [p for p in planted if p["kind"] == "shrinkage_above"][0]
     carry = [p for p in planted if p["kind"] == "carry_out"][0]
     stated = doc_units[carry["unit"]].line_value("Closing quantity")
     return {
         "family": FAMILY, "family_name": NAME, "seed": seed, "mode": "single",
         "doc": doc, "twin": twin, "conventions": conv, "references": [reference],
         "planted": planted, "clean": clean, "doc_stem": "counts", "conv_stem": "rules",
+        "ground_truth_checks": GROUND_TRUTH,
         "task": "Review the stock count record against the count conventions, reading each count beside the counts next to it.",
         "probes": {
             "reword": {"old": "Closing quantity", "new": "Quantity at close"},
             "reorder": wl.reorder(n, rng, keep),
-            "term": {"unit": plain[0], "label": "Shrinkage"},
+            # probe 3: the term only in the later version carries a keyed flaw
+            "term": {"unit": above["unit"], "label": "Shrinkage"},
             "reformat": {"unit": carry["unit"], "label": "Closing quantity",
                          "text": stated.replace(" box", ".0 box")},
         },
