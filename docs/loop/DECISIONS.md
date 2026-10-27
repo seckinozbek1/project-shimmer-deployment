@@ -113,3 +113,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Fork 2.** S1 Part 4 says the harness and probes have no run context and write nothing. In fact `harness/run_agent.build_orchestrator` and three tool probes create their own run folder, so a live probe would write reply records there. The gate path injects its own dispatch and writes nothing.
 - **Choice.** Keep it: a probe's own run folder is a real run folder (not a fallback to `output/`), and saving its replies serves 11.6.4. Recorded in the S1 report.
 - **Reverse.** Either can be changed by a later commit.
+
+## D-013. Gate runs after the harness stopped one for low memory
+
+- **When, stage.** 2026-10-27, S1 after C4.
+- **What happened.** Claude Code stopped the background gate run for C4 (`7f5dd9d`) because the laptop was critically low on memory while the session was idle, and said not to start that run again without being asked. The main gate had already finished (PASS 247, WARN 1, SKIP 3, FAIL or ERROR 27, the C3 non-pass set; new check 277 passes) and four side gates had passed; `tools/cloud_run_checks.py` was cut off and `tools/ordinary_final_controller_gate.py` never started. Free memory afterwards: 2.8 of 15.7 GB, with the WSL virtual machine holding about 3 GB.
+- **Options.** (1) Restart the stopped run (refused: the harness said not to). (2) Never run a gate again in this session (would block every later commit). (3) Leave the stopped run as it is, record C4's two side gates as not run, and run each later commit's gate as a new command, in the foreground (not as an idle background job), only when free physical memory is at least 4 GB, with no other heavy local work running.
+- **Rules.** The harness instruction is followed literally for the stopped run; IV.7 needs a gate per commit; P19 (no idle waiting where other work is possible); P1 (the record says exactly what ran).
+- **Choice.** Option 3. The next gate (C5) covers C4's tree as well, since C5 only adds two documents.
+- **Reverse.** Seckin can ask for the C4 side gates to be re-run.
