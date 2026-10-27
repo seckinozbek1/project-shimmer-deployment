@@ -374,6 +374,12 @@ def check_negotiation(name, files, errs, enforce=True, compare=True):
                 and str(row.get("rule", "")).startswith("CONV-") and row.get("kind")
                 and row.get("unit_id")):
             errs.append("%s: incomplete band row %r" % (name, row))
+    seen = set()
+    for row in key.get("band_irregularities", []):
+        sig = (tr.norm(row.get("field_label", "")), row.get("relation"), repr(tr.r6(row.get("value_a", 0))))
+        if sig in seen:
+            errs.append("%s: two band rows share label, relation and figure %r" % (name, sig))
+        seen.add(sig)
     for row in key.get("prior_records", []):
         if set(row) != {"field_label", "relation", "value_a", "value_b", "unit"}:
             errs.append("%s: prior record fields %r" % (name, row))

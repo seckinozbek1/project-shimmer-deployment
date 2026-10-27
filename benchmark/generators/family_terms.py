@@ -233,7 +233,8 @@ def build(seed):
                 out.append({"field_label": ln, "change": "new_in_later_version", "expect": "none",
                             "value_a": now, "value_b": None, "unit": meas})
             elif e["role"] in ("renamed_unchanged", "breach_renamed_moved"):
-                moved = abs(now - e["prior"]) > 0.02 * abs(e["prior"])
+                # refused as a possible rename within 2% of the larger figure, inclusive
+                moved = abs(now - e["prior"]) > 0.02 * max(abs(now), abs(e["prior"]))
                 out.append({"field_label": lp, "change": "renamed_to_" + ln.replace(" ", "_"),
                             "expect": "absent_since_prior" if moved else "refused",
                             "value_a": None, "value_b": e["prior"], "unit": meas})

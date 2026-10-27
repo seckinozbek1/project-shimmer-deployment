@@ -52,7 +52,9 @@ possible rename, no record), a term renamed with its value moved (absent_since_p
 on the old label), a withdrawn term (absent_since_prior), a term new in the later
 version (no record), sections reordered, and a value written with comma groups
 (unchanged). `version_changes` in the key is the family's own plan of every record,
-computed from its own figures; the validator requires the audit to agree with it.
+computed from its own figures; the validator requires the audit to agree with it. The
+scorer reports no per-kind recall for a negotiation-style test, so f4's six kinds are
+for development.
 
 Family 5 with `long_range` puts the four definitions first and every flaw at least
 twelve units from the definition it needs. Every family 5 key entry names that unit in
@@ -112,50 +114,61 @@ the written files. A test that fails writes nothing. It checks:
 - for f4, the change records computed from the audit equal the family's own plan,
   rename refusals included.
 
-## Input-format questions and the readings chosen
+## Input-format questions, as settled (D-025)
 
-Each was resolved by the most conservative reading; none was guessed from code.
+The lane raised thirteen questions; the coordinator settled them from the code and the
+format draft now states each answer (`input-format-v1-draft`, D-025). Ten of the lane's
+readings stood; three changed the audit (9, 10, 13), and 11 is now stated more exactly.
 
-1. **Neighbour-dependent flaws (f6).** Every relation of section 9 is computed inside
-   one unit, so a flaw that cannot be seen inside its own unit has no typed reason the
-   format can state. Reading: f6 plants carry errors that are visible in the unit as a
-   `sum_mismatch`, and whose wrong figure (opening row or stated closing) is decided
-   only by the neighbour, named in `depends_on_unit` (an extra field the scorer
-   ignores). The neighbour requirement is in the rule's own text.
-2. **`[unless: ...]`.** Section 5, rule 2 lets only completeness rules declare a
-   directive, so no rule here uses `[unless: ...]`. Family 5's condition pointing at a
-   field is the pinned scope `[scope: provision type=Appeal]`; its condition pointing
-   at another rule is in the rule text only (`Read with CONV-RD, ...`).
-3. **Planted flaws in a two-version test (f4).** Section 9 ignores `planted` and
-   `clean` once a key has `prior_records`. Reading: f4 is keyed negotiation-style; its
-   flaws are the `band_irregularities` rows, each carrying, besides the scored fields,
-   `unit_id`, `value_b` (the bound crossed) and `kind`. `clean` and `version_changes`
-   are kept for developers and are not scored.
-4. **`twin_of` on a probe.** Section 11 is silent. Reading: probe keys carry no
-   `twin_of`; a probe has no twin of its own.
-5. **Where the single-version earlier version lives.** Read as the probe only (section
-   11.3, "adding an earlier version"): the test and its twin declare no prior.
-6. **A blank cell in a summed column.** Silent on whether the blank counts in the sum.
-   Reading: a blank cell is never planted in a column that has a stated total.
-7. **The low side of a band the rule states itself.** The low-side paragraph of
-   section 7 speaks of reference-table bands only. Reading: a `below_band` from a band
-   the rule states is firm (f3, f4, f6 plant some). If that is wrong, those entries
-   become conditional and never amendments.
-8. **Identical bound sentences in two files.** Silent on whether two copies tie.
-   Reading: bound sentences live only in the reference file, never in a document, so an
-   earlier version can never duplicate one.
-9. **What a sentence is** for the bound search. Silent on splitting and on label lines.
-   Reading: every label line and every period-ended piece of prose counts, so the audit
-   refuses more than Shimmer might, never less.
-10. **Counting the attribution overlap** (section 9, "each counted twice"): over the set
-    of words, or per named label? Reading: the planted rule must win strictly under
-    both counts, or the generator refuses.
-11. **The measure of a table cell.** Read as the header's bracket measure; every
-    numeric column here carries one, and cells hold a plain number.
-12. **"Unit mismatches" in family 1** (plan item 6). Python makes no comparison when
-    measures disagree, so there is no typed reason to key. Not planted.
-13. **Within 2% (section 6).** Read as relative to the earlier figure. Renamed moved
-    terms move more than 5%; renamed unchanged terms are equal.
+1. **Neighbour-dependent flaws (f6).** Settled as read: Python computes every relation
+   inside one unit, so a neighbour-dependent flaw is keyed only where it shows inside its
+   own unit (here a `sum_mismatch`); the neighbour is named in `depends_on_unit`, an
+   extra field the scorer ignores (section 9).
+2. **`[unless: ...]`.** Settled as read: section 5, rule 7 now forbids it outright. The
+   condition on a field is the pinned scope of a completeness rule
+   (`[scope: provision type=Appeal]`); the condition on another rule is in the text
+   only (`Read with CONV-RD, ...`), which only a reviewer reads.
+3. **Planted flaws in a two-version test (f4).** Settled as read: the
+   `band_irregularities` rows are the planted flaws; `unit_id`, `value_b` and `kind`
+   are ignored by the scorer, which reports no per-kind recall for such a test, so f4's
+   kinds serve development only. Rows must differ in (label, relation, figure); the
+   validator checks it.
+4. **`twin_of` on a probe.** Settled as read: a probe's key has none (section 11).
+5. **Where the single-version earlier version lives.** Settled as read: only probe 3
+   declares one. The earlier version is a grounding file, so it is audited as reference
+   material (its tables and sentences take part in bands and the bound search).
+6. **A blank cell in a summed column.** Settled: the sum runs over the filled cells
+   and both findings are computed independently. Reading kept: never planted together.
+7. **The low side of a band the rule states itself.** Settled as read: always firm
+   (section 7). f3, f4 and f6 `below_band` entries stand.
+8. **Identical bound sentences.** Settled as read: two copies tie wherever they sit.
+   Bound sentences stay in the reference file only.
+9. **What a sentence is.** Changed. The audit now reads as section 7 says: per
+   paragraph, lines starting with `|` or `#` are dropped, the rest joined with single
+   spaces and split after `.`, `?` or `!`; a grounding file (the earlier version
+   included) only as its stored passages (a prose paragraph's first 200 characters);
+   the document whole. A candidate holds exactly one number in all (a date counts as
+   three) and that number has a measure. The winner must be unique by word count and by
+   distinct-word count. Re-checked on every family 5 bundle of both suites: each window
+   rule has exactly one candidate, its intended sentence.
+10. **Attribution.** Changed. The score is the code's: the set of the named labels'
+    words, 2 for each in the field label, 1 for each in the basis sentence split at
+    spaces (`sum of N values under <column>`, `<a> times <b>`,
+    `<column> is filled in N of M rows`), so `sum`, `filled` and counts of three or more
+    digits score when a named label holds them. The planted rule must still win
+    strictly, under that count and under a per-label count, never by reading order or
+    the all-zero default.
+11. **The measure of a table cell.** Settled: in a document table a cell's own measure
+    replaces the header's; in a reference table the header's wins. Every cell written
+    here is a plain number (or a plain range), and the audit refuses any other cell.
+12. **"Unit mismatches" in family 1.** Settled as read: disagreeing measures are never
+    compared and nothing is written, so there is nothing to key. Not planted.
+13. **The rename window.** Changed. A new label's figure is a possible rename when it
+    differs from the earlier figure by at most 2% of the larger of the two in absolute
+    value, 2% included (from 100, 102.04 is refused and 97.96 is not). A label is new
+    unless the earlier version states it, under any heading, with a successful lookup;
+    a refused lookup counts as new. The audit and f4's own plan both use this; f4's
+    renamed terms either stay equal or move more than 5%, so no seed changed.
 
 ## File names
 

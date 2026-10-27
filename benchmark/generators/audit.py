@@ -28,7 +28,9 @@ LABEL_LINE = re.compile(r"^\s*(?:[-*+] )?([A-Za-z][A-Za-z0-9 ()/%._-]{1,48}):(.*
 HEADING = re.compile(r"^(#{1,6}) (.*)$")
 RULE_ID = re.compile(r"CONV-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*", re.I)
 LIST_START = re.compile(r"^\s*(?:[-*+] |\d+[.)] )")
-BOUND_SENTENCE = re.compile(r"^The [a-z ]+ is \d+ (?:days|hours)\.$")
+NL = chr(10)
+RENAME_TOLERANCE = 0.02   # the repository-wide rename tolerance of INPUT_FORMAT section 8
+BOUND_SENTENCE =re.compile(r"^The [a-z ]+ is \d+ (?:days|hours)\.$")
 SEVERITIES = ("required", "recommended", "advisory")
 
 
@@ -120,7 +122,7 @@ def parse_document(text, name):
            "prose": []}
     cur = pre
     position = 0
-    for para in paras:
+    for para_index, para in enumerate(paras, start=1):
         first = para[0]
         h = HEADING.match(first)
         if h:
@@ -151,7 +153,7 @@ def parse_document(text, name):
                 if kind[0] == "bad":
                     errors.append("%s: %s" % (name, kind[1]))
                 cur["lines"].append({"raw": label, "norm": tr.norm(label),
-                                     "value": value.strip(), "kind": kind})
+                                     "value": value.strip(), "kind": kind, "para": para_index})
             continue
         if any(label_lines):
             errors.append("%s: label lines mixed with prose in one paragraph" % name)
@@ -307,13 +309,33 @@ def parse_grounding(text, name):
             errors.append("%s: a paragraph past 200 characters carries a figure" % name)
         if re.search(r"\d", joined) and not BOUND_SENTENCE.match(joined):
             errors.append("%s: a digit outside a bound sentence: %r" % (name, joined))
-        sentences.extend(_sentences(joined))
+    sentences = reader_sentences(text, stored=True)
     return {"name": name, "tables": tables, "sentences": sentences, "errors": errors,
             "paragraphs": len(paras) + 1}
 
 
 def _sentences(text):
-    return [s for s in re.split(r"(?<=\.)\s+", text.strip()) if s]
+    """Split one joined paragraph after every '.', '?' or '!' followed by space."""
+    return [s for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s]
+
+
+def reader_sentences(text, stored=False):
+    """The bound search's sentences (INPUT_FORMAT section 7, "What a sentence is").
+    Per paragraph (a run of non-blank lines): lines starting, after spaces, with '|' or
+    '#' are dropped, the rest joined with single spaces, then split after '.', '?' or
+    '!'. With stored=True (a grounding file, the earlier version included) only the
+    stored passage is read: a prose paragraph's first 200 characters; a table passage
+    holds only '|' lines and gives nothing."""
+    out = []
+    for para in _paragraphs(text.split(NL)):
+        if stored:
+            if all(ln.lstrip().startswith("|") for ln in para):
+                continue
+            para = NL.join(para)[:200].split(NL)
+        kept = [ln.strip() for ln in para if not ln.lstrip().startswith(("|", "#"))]
+        if kept:
+            out.extend(_sentences(" ".join(kept)))
+    return out
 
 
 def _band_tables(tables, name, errors):
@@ -395,11 +417,15 @@ def _figures(u):
     return out
 
 
-def _attribute(u_rules, field, sources):
+def _attribute(u_rules, field, basis):
+    """Section 9: each paired rule scores 2 per word of the set of its named labels'
+    words found in the field label, plus 1 per such word found in the finding's basis
+    sentence split at spaces ('sum of N values under <column>', '<a> times <b>',
+    '<column> is filled in N of M rows'). The code counts the set; the per-label count
+    is kept as a stricter second reading, and the planted rule must win strictly under
+    both, never by reading order or an all-zero default."""
     fw = set(field.split()) if field else set()
-    sw = set()
-    for s in sources:
-        sw.update(s.split())
+    sw = set(basis.lower().split())
     best = {}
     for mode in ("set", "sum"):
         scores = []
@@ -425,21 +451,24 @@ def _attribute(u_rules, field, sources):
 def _bound_for(rule, sentences):
     cands = []
     for s in sentences:
-        nums = [n for n in tr.numbers_with_measures(s) if n[1]]
-        if len(nums) != 1:
+        nums = tr.numbers_with_measures(s)
+        if len(nums) != 1 or not nums[0][1]:
             continue
         val, meas = nums[0]
         rest = re.sub(r"(?<![\w.])" + tr.NUMBER + r"\s*" + re.escape(meas), " ", s, count=1)
         ow = tr.words(rest)
         if set(ow) <= rule["words"]:
-            cands.append((len(ow), val, meas, s))
+            cands.append((len(ow), len(set(ow)), val, meas, s))
     if not cands:
         return None, None
-    top = max(c[0] for c in cands)
-    best = [c for c in cands if c[0] == top]
-    if len(best) != 1:
-        return None, "date-window bound for %s is a tie" % rule["id"]
-    _, val, meas, s = best[0]
+    best = None
+    for idx in (0, 1):      # by word count, and by distinct words: the winner must agree
+        top = max(c[idx] for c in cands)
+        tops = [c for c in cands if c[idx] == top]
+        if len(tops) != 1 or (best is not None and tops[0] is not best):
+            return None, "date-window bound for %s is a tie or depends on the count" % rule["id"]
+        best = tops[0]
+    _, _, val, meas, s = best
     if meas not in ("days", "hours"):
         return None, None
     return (val, meas, s), None
@@ -463,10 +492,7 @@ def audit(target_text, target_name, conv_text, conv_name, grounding, prior_name=
             errors.extend(prior["errors"])
             for u in prior["units"]:
                 tables.extend(u["tables"])
-                for ln in u["lines"]:
-                    sentences.append("%s: %s" % (ln["raw"], ln["value"]))
-                for p in u["prose"]:
-                    sentences.extend(_sentences(p))
+            sentences.extend(reader_sentences(gtext, stored=True))
             if prior["paragraphs"] >= 120:
                 errors.append("%s: %d paragraphs (keep under 120)" % (gname, prior["paragraphs"]))
         else:
@@ -476,11 +502,7 @@ def audit(target_text, target_name, conv_text, conv_name, grounding, prior_name=
             sentences.extend(g["sentences"])
             if g["paragraphs"] >= 120:
                 errors.append("%s: %d paragraphs (keep under 120)" % (gname, g["paragraphs"]))
-    for u in doc["units"]:
-        for ln in u["lines"]:
-            sentences.append("%s: %s" % (ln["raw"], ln["value"]))
-        for p in u["prose"]:
-            sentences.extend(_sentences(p))
+    sentences.extend(reader_sentences(target_text, stored=False))
     bands = _band_tables(tables, "reference", errors)
     parse_errors = list(errors)
 
@@ -535,8 +557,8 @@ def audit(target_text, target_name, conv_text, conv_name, grounding, prior_name=
                         continue
                     prod = tr.r6(figs[i]["value"] * figs[j]["value"])
                     if not tr.same(prod, figs[k]["value"]):
-                        rid, why = _attribute(u_rules, figs[k]["label"],
-                                              [figs[i]["label"], figs[j]["label"]])
+                        rid, why = _attribute(u_rules, figs[k]["label"], "%s times %s"
+                                              % (figs[i]["label"], figs[j]["label"]))
                         if why:
                             errors.append("%s: %s" % (u["id"], why))
                         add(u, "product_mismatch", figs[k]["label"], prod, figs[k]["value"], rid)
@@ -548,7 +570,8 @@ def audit(target_text, target_name, conv_text, conv_name, grounding, prior_name=
                 nonblank = [k for k in cells if k[0] != "blank"]
                 if hd["measure"] or (nonblank and all(k[0] == "number" for k in nonblank)):
                     if any(k[0] == "blank" for k in cells):
-                        rid, why = _attribute(u_rules, hd["norm"], [])
+                        rid, why = _attribute(u_rules, hd["norm"], "%s is filled in %d of %d rows"
+                                              % (hd["norm"], len(nums), len(cells)))
                         if why:
                             errors.append("%s: %s" % (u["id"], why))
                         add(u, "missing_field", hd["norm"], len(nums), len(cells), rid)
@@ -561,7 +584,8 @@ def audit(target_text, target_name, conv_text, conv_name, grounding, prior_name=
                         if cw < fw:
                             s = tr.r6(sum(nums))
                             if not tr.same(s, f["value"]):
-                                rid, why = _attribute(u_rules, f["label"], [hd["norm"]])
+                                rid, why = _attribute(u_rules, f["label"], "sum of %d values under %s"
+                                                      % (len(nums), hd["norm"]))
                                 if why:
                                     errors.append("%s: %s" % (u["id"], why))
                                 add(u, "sum_mismatch", f["label"], s, f["value"], rid)
@@ -679,24 +703,37 @@ def prior_records(result):
             earlier.setdefault(ln["norm"], []).append((pu, ln))
         if pu["tables"]:
             refusals.append(("earlier tables are not modelled", pu["id"]))
+    def lookup(label, slug):
+        """The earlier statement of a label (section 6): (None, None) when the earlier
+        version does not state it with a figure, (None, why) when it is refused (several
+        figures even under the same slug, or no REF id), else (statement, None)."""
+        hits = [(pu, pl) for pu, pl in earlier.get(label, [])
+                if pl["kind"][0] in ("figure", "date")]
+        if not hits:
+            return None, None
+        def val(pl):
+            return pl["kind"][1] if pl["kind"][0] == "figure" else pl["kind"][1][0]
+        if len({val(pl) for _, pl in hits}) > 1:
+            hits = [(pu, pl) for pu, pl in hits if pu["id"][4:] == slug]
+            if len({val(pl) for _, pl in hits}) != 1:
+                return None, "several earlier figures"
+        if hits[0][1]["para"] >= 120:
+            return None, "past the indexed paragraphs"
+        return hits[0], None
+
     for u in doc["units"]:
         u_rules = pairing[u["id"]]
         for ln in u["lines"]:
             k = ln["kind"]
             if k[0] not in ("figure", "date"):
                 continue
-            hits = [(pu, pl) for pu, pl in earlier.get(ln["norm"], [])
-                    if pl["kind"][0] in ("figure", "date")]
-            if not hits:
+            hit, why = lookup(ln["norm"], u["id"][4:])
+            if why:
+                refusals.append((why, ln["norm"]))
                 continue
-            vals = {(pl["kind"][1] if pl["kind"][0] == "figure" else pl["kind"][1][0]) for _, pl in hits}
-            if len(vals) > 1:
-                hits = [(pu, pl) for pu, pl in hits if pu["id"][4:] == u["id"][4:]]
-                vals = {pl["kind"][1] for _, pl in hits}
-                if len(vals) != 1:
-                    refusals.append(("several earlier figures", ln["norm"]))
-                    continue
-            pu, pl = hits[0]
+            if hit is None:
+                continue
+            pu, pl = hit
             now_m = k[2] if k[0] == "figure" else ""
             then_m = pl["kind"][2] if pl["kind"][0] == "figure" else ""
             if not now_m or tr.measure_powers(now_m) != tr.measure_powers(then_m):
@@ -737,7 +774,6 @@ def prior_records(result):
         target_labels |= u["labels"]
     for pu in prior["units"]:
         tu = by_slug_t.get(pu["id"][4:])
-        prior_unit_labels = pu["labels"]
         for pl in pu["lines"]:
             if pl["kind"][0] not in ("figure", "date"):
                 continue
@@ -750,11 +786,16 @@ def prior_records(result):
             then_m = pl["kind"][2] if pl["kind"][0] == "figure" else ""
             renamed = False
             for tl in tu["lines"]:
-                if tl["norm"] in prior_unit_labels or tl["kind"][0] != "figure" or not then_m:
+                # new unless the earlier version states it, anywhere, with a successful lookup
+                if lookup(tl["norm"], tu["id"][4:])[0] is not None:
+                    continue
+                if tl["kind"][0] != "figure" or not then_m:
                     continue
                 if tr.measure_powers(tl["kind"][2]) != tr.measure_powers(then_m):
                     continue
-                if abs(tl["kind"][1] - then_v) <= 0.02 * abs(then_v):
+                # 2% of the larger of the two in absolute value, 2% included
+                scale = max(abs(tl["kind"][1]), abs(then_v), 1e-12)
+                if abs(tl["kind"][1] - then_v) <= RENAME_TOLERANCE * scale:
                     renamed = True
             if renamed:
                 refusals.append(("possible rename", pl["norm"]))
