@@ -8,7 +8,8 @@ For each item, the first matching line wins:
   4. an ok record (4a) or no record at all (4b)    -> CLEAR
 
 A record belongs to an item when its source_rule_id equals the item's rule id, compared
-without regard to case. UNDECIDED becomes the benchmark's undecided label where it has
+without regard to case. Before anything is classified, a record superseded by a higher
+`revision` of the same `item_id` (INFRA-037) is dropped. UNDECIDED becomes the benchmark's undecided label where it has
 one (SciTab: not enough info) and ABSTAIN elsewhere.
 
 Where the run output's exact names are not settled yet they are named constants here,
@@ -21,28 +22,38 @@ import zipfile
 from pathlib import Path
 
 FLAG, CLEAR, UNDECIDED, ABSTAIN = "FLAG", "CLEAR", "UNDECIDED", "ABSTAIN"
-CLASSES = (FLAG, CLEAR, UNDECIDED, ABSTAIN)
 ARMS = ("B0", "B1", "B2", "B3", "B4")
+PIPELINE_ARMS = ("B3", "B4")
 
-# --- PROVISIONAL: run output names (section 12 items 1 and 9; docs/OUTPUT_FORMAT.md) ---
+# --- PROVISIONAL: run output names (section 12 items 1 and 9) -------------------------
+# Every name in this block is PROVISIONAL until docs/OUTPUT_FORMAT.md (to be written in
+# S3) settles it. The completion record is the pipeline's own (scripts/run_completion.py),
+# read with the same validity rules as its read(); B2 writes the same record.
 TYPED_RECORDS_KEY = "findings"            # PROVISIONAL: key of the typed records in review_data.json
-REVIEW_DATA_FILE = "review_data.json"
-DELIVERABLES_DIR = "deliverables"         # <run>/deliverables/<document id>/review_data.json
-FINAL_STATUS_FILE = "FINAL_STATUS.json"   # PROVISIONAL: <run>/FINAL_STATUS.json
-FINAL_STATUS_FIELD = "state"              # PROVISIONAL
-FINAL_STATUS_COMPLETED = "completed"      # PROVISIONAL
-PAIRING_MAP_FILE = ("audit", "pairing_map.json")
+TYPED_RECORDS_SETTLED = False             # the pipeline does not emit that key yet: B3/B4 refused
+REVIEW_DATA_FILE = "review_data.json"     # PROVISIONAL
+DELIVERABLES_DIR = "deliverables"         # PROVISIONAL: <run>/deliverables/<document id>/
+COMPLETION_FILE = ("audit", "run_completion.json")    # PROVISIONAL: the pipeline's completion record
+COMPLETION_SCHEMA_VERSION = 1             # PROVISIONAL
+COMPLETION_STATES = ("running", "completed", "stopped", "interrupted", "failed")
+PAIRING_MAP_FILE = ("audit", "pairing_map.json")      # PROVISIONAL
 PAIRING_REFUSAL_LISTS = ("absence_refused",)          # PROVISIONAL: refusal entries in the map
 PAIRING_RULE_FIELDS = ("source_rule_id", "rule_id")   # PROVISIONAL: how an entry names its rule
-UNCERTAIN_FIELD = "confidence"            # PROVISIONAL: the UNCERTAIN marker on a record
-UNCERTAIN_VALUE = "UNCERTAIN"
-UNCERTAIN_FLAG_FIELD = "uncertain"        # PROVISIONAL: the boolean form of the marker
-RECORD_ID_FIELD = "item_id"               # PROVISIONAL: the record id counted once (section 3.4)
+UNCERTAIN_FIELD = "confidence"            # PROVISIONAL: the UNCERTAIN marker, tested as the
+UNCERTAIN_VALUE = "UNCERTAIN"             # verifiability gate tests it: a truthy `uncertain`,
+UNCERTAIN_FLAG_FIELD = "uncertain"        # or `confidence` equal to UNCERTAIN once uppercased
+RECORD_ID_FIELD = "item_id"               # PROVISIONAL: the record id (supersession, section 3.4)
+REVISION_FIELD = "revision"               # PROVISIONAL: INFRA-037 revision number
 COMPUTED_MARKERS = (("model", "python"), ("absence_path", "computed"), ("provenance", "computed"))
 B1_LABELS_DIR = "labels"                  # bare_model.py: <out>/labels/<item id>.json
 DELIVERABLE_FILES = ("review_data.json", "review_findings.md", "tracked_changes.docx",
                      "document_summary.md")
 # ---------------------------------------------------------------------------------------
+
+
+class Refused(Exception):
+    """A labelling step the preregistration does not allow yet."""
+
 
 MISSING_FIELD = "missing_field"
 PRIOR_RELATIONS = ("changed_from_prior", "unchanged_from_prior", "moved_toward", "moved_away",
@@ -100,25 +111,44 @@ def review_data_path(run_dir, document_id) -> Path:
     return Path(run_dir) / DELIVERABLES_DIR / document_id / REVIEW_DATA_FILE
 
 
+def read_completion(run_dir):
+    """The run's completion record, or None when it is absent, old or malformed: the
+    validity rules of scripts/run_completion.read(), reimplemented here so the adapters
+    import nothing from the repository. A `completed` record counts only with
+    reached_end true, an integer exit_code of 0 and a finished_at timestamp."""
+    path = Path(run_dir).joinpath(*COMPLETION_FILE)
+    record, _ = _read_json(path) if path.is_file() else (None, "missing")
+    if not isinstance(record, dict) or record.get("schema_version") != COMPLETION_SCHEMA_VERSION:
+        return None
+    state = record.get("state")
+    if not isinstance(state, str) or state not in COMPLETION_STATES:
+        return None
+    if state == "completed" and (record.get("reached_end") is not True
+                                 or type(record.get("exit_code")) is not int
+                                 or record["exit_code"] != 0
+                                 or not isinstance(record.get("finished_at"), str)
+                                 or not record["finished_at"]):
+        return None
+    return record
+
+
 def read_run(run_dir, document_id) -> dict:
     """{failure, failure_reasons, records, pairing_refusals, faults} for one document's
-    run. A run failure is a missing review_data.json or a final status that is not
-    completed (section 0)."""
+    run. A run failure (section 0) is a missing or unreadable review_data.json, or a
+    completion record that is absent, invalid, or not `completed`."""
     run = Path(run_dir)
     out = {"failure": False, "failure_reasons": [], "records": [], "pairing_refusals": [],
            "faults": []}
+    completion = read_completion(run)
+    if completion is None:
+        out["failure_reasons"].append("completion_record_missing_or_invalid")
+    elif completion["state"] != "completed":
+        out["failure_reasons"].append("completion_state:" + completion["state"])
     data_path = review_data_path(run, document_id)
     if not data_path.is_file():
         out["failure_reasons"].append("review_data_missing")
-    status, error = _read_json(run / FINAL_STATUS_FILE) if (run / FINAL_STATUS_FILE).is_file() \
-        else (None, "missing")
-    if status is None:
-        out["failure_reasons"].append("final_status_" + ("missing" if error == "missing" else "unreadable"))
-    elif not isinstance(status, dict) or status.get(FINAL_STATUS_FIELD) != FINAL_STATUS_COMPLETED:
-        value = status.get(FINAL_STATUS_FIELD) if isinstance(status, dict) else None
-        out["failure_reasons"].append("final_status_not_completed:" + str(value))
-    if data_path.is_file():
-        data, error = _read_json(data_path)
+    else:
+        data, _error = _read_json(data_path)
         if data is None or not isinstance(data, dict):
             out["failure_reasons"].append("review_data_unreadable")
         elif TYPED_RECORDS_KEY not in data:
@@ -128,11 +158,11 @@ def read_run(run_dir, document_id) -> dict:
             if not isinstance(records, list) or not all(isinstance(r, dict) for r in records):
                 out["faults"].append("typed_records_not_a_list_of_objects")
             else:
-                out["records"] = records
+                out["records"] = current_revisions(records)
     out["failure"] = bool(out["failure_reasons"])
     pairing_path = run.joinpath(*PAIRING_MAP_FILE)
     if pairing_path.is_file():
-        pairing, error = _read_json(pairing_path)
+        pairing, _error = _read_json(pairing_path)
         if isinstance(pairing, dict):
             mine = pairing.get(document_id)
             mine = mine if isinstance(mine, dict) else pairing
@@ -145,6 +175,27 @@ def read_run(run_dir, document_id) -> dict:
     return out
 
 
+def _revision(record) -> int:
+    try:
+        return int(record.get(REVISION_FIELD) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def current_revisions(records) -> list:
+    """INFRA-037: of the records sharing an item_id, only the highest revision is kept
+    (the later one on a tie); a record with no item_id is kept as it is. Order is kept."""
+    best = {}
+    for index, record in enumerate(records):
+        key = record.get(RECORD_ID_FIELD)
+        if key in (None, ""):
+            continue
+        if key not in best or _revision(record) >= _revision(records[best[key]]):
+            best[key] = index
+    return [r for i, r in enumerate(records)
+            if r.get(RECORD_ID_FIELD) in (None, "") or best[r.get(RECORD_ID_FIELD)] == i]
+
+
 def _fold(value) -> str:
     return str(value if value is not None else "").casefold()
 
@@ -154,9 +205,9 @@ def verdict(record) -> str:
 
 
 def is_refusal(record) -> bool:
-    if record.get(UNCERTAIN_FLAG_FIELD) is True:
-        return True
-    return _fold(record.get(UNCERTAIN_FIELD)).strip() == UNCERTAIN_VALUE.casefold()
+    """The verifiability gate's own test (scripts/verifiability_gate.py)."""
+    return (bool(record.get(UNCERTAIN_FLAG_FIELD))
+            or str(record.get(UNCERTAIN_FIELD, "")).upper() == UNCERTAIN_VALUE)
 
 
 def is_computed(record) -> bool:
@@ -187,6 +238,8 @@ def classify(spec: Spec, rule_id: str, run: dict) -> dict:
         if any(_fold(e.get(f)) == rid for f in PAIRING_RULE_FIELDS if e.get(f))]
     oks = [r for r in mine if verdict(r) == "ok" and not is_refusal(r)]
     unknown = [r for r in mine if verdict(r) not in ("ok", "irregular") and not is_refusal(r)]
+    if unknown:
+        faults.append("record_verdict_unrecognised:%d" % len(unknown))
     row = {"cited_unit_ids": [], "layer": "", "faults": faults,
            "missing_field_and_other": False, "judged_without_relation": 0}
     if run["failure"]:
@@ -204,7 +257,8 @@ def classify(spec: Spec, rule_id: str, run: dict) -> dict:
                 deciding, basis = absent, "irregular_missing_field"
             else:
                 cls, basis = CLEAR, "irregular_other_relation"
-        row["cited_unit_ids"] = sorted({str(r.get("unit_id")) for r in deciding if r.get("unit_id")})
+        row["cited_unit_ids"] = sorted({str(r.get("unit_id")).casefold()
+                                        for r in deciding if r.get("unit_id")})
         row["layer"] = _layer(deciding)
         return dict(row, **{"class": cls, "basis": basis})
     if refusals:
@@ -212,7 +266,6 @@ def classify(spec: Spec, rule_id: str, run: dict) -> dict:
     if oks:
         return dict(row, **{"class": CLEAR, "basis": "ok"})
     if unknown:
-        row["faults"].append("record_verdict_unrecognised:%d" % len(unknown))
         return dict(row, **{"class": CLEAR, "basis": "unrecognised_record"})
     return dict(row, **{"class": CLEAR, "basis": "silent"})
 

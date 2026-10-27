@@ -10,19 +10,19 @@
   ],
   "runs": {
     "r-run": {
-      "final_status": {"state": "completed"},
+      "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
       "review_data": {"findings": [
         {"item_id": "rec-a", "source_rule_id": "CONV-a1a1a1a1a1a1", "unit_id": "u02-p-00002", "relation": "sum_mismatch", "record_verdict": "irregular", "model": "python"},
-        {"item_id": "rec-b", "source_rule_id": "CONV-b2b2b2b2b2b2", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "uncertain": true},
+        {"item_id": "rec-b", "source_rule_id": "CONV-b2b2b2b2b2b2", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "uncertain": "yes"},
         {"item_id": "rec-d", "source_rule_id": "CONV-d4d4d4d4d4d4", "unit_id": "u01-p-00001", "relation": "unchanged_from_prior", "record_verdict": "ok", "provenance": "computed"}
       ]}
     },
     "r-nokey": {
-      "final_status": {"state": "completed"},
+      "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
       "review_data": {"amendments": []}
     },
     "r-fail": {
-      "final_status": {"state": "completed"},
+      "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
       "review_data": null
     }
   },
@@ -34,7 +34,7 @@
     }
   },
   "expected": {
-    "B3": {
+    "B2": {
       "f-a": ["FLAG", "refuted", "irregular"],
       "f-b": ["UNDECIDED", "ABSTAIN", "refusal"],
       "f-c": ["CLEAR", "entailed", "silent"],
@@ -42,7 +42,7 @@
       "f-e": ["CLEAR", "entailed", "silent"],
       "f-f": ["ABSTAIN", "ABSTAIN", "run_failure"]
     },
-    "B3 S-2": {
+    "B2 S-2": {
       "f-a": ["FLAG", "refuted", "irregular"],
       "f-b": ["CLEAR", "entailed", "s2_undecided_as_clear"],
       "f-c": ["CLEAR", "entailed", "silent"],
@@ -60,15 +60,15 @@
     }
   },
   "expected_detail": {
-    "B3": {
+    "B2": {
       "f-a": {"layer": "computed", "cited_unit_ids": ["u02-p-00002"]},
       "f-d": {"faults": ["prior_relation_ignored:1"]}
     }
   },
   "expected_counts": {
-    "B3": {"items": 6, "silent": 3, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 2, "document_faults": 1, "item_faults": 1}
+    "B2": {"items": 6, "silent": 3, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 2, "document_faults": 1, "item_faults": 1}
   },
   "expected_documents": {
-    "B3": {"r-nokey": {"faults": ["typed_records_key_absent:findings"]}}
+    "B2": {"r-nokey": {"faults": ["typed_records_key_absent:findings"]}}
   }
 }

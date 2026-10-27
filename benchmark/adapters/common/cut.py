@@ -1,21 +1,24 @@
-"""The cut rule for long documents (preregistration section 5.3), applied before
-bundling so every arm receives the same text.
+"""The cut rule for long documents (preregistration section 5.3): the only implementation.
 
-The token counter is injected: section 5.3 counts with the main reading agent's own
-tokenizer from the pinned checkpoint, which the standard library cannot load. The
-budget (context length minus the B1 prompt with an empty document, minus the output
-allowance, minus 32) is computed by the caller from the values VERSIONS.md pins;
-`budget()` is that arithmetic.
+Applied by the adapter before bundling, so every arm receives the same text. The budget
+is computed per document (`budget`): the main reading agent's context length, minus the
+B1 prompt with an empty document (the largest over the document's items, rendered from
+the bundle's own conventions by common/prompt.py), minus the output allowance, minus 32.
+Tokens are counted by an injected counter, the main reading agent's own tokenizer, which
+the standard library cannot load.
 
-What is counted is the document file exactly as it is written into the bundle
-(title, headings, label lines, part texts and the cut line). Words for the cut line
-are whitespace-separated words of the parts' source text before bundling.
+What the token count covers is the document file exactly as written into the bundle
+(title, headings, label lines, part texts and the cut line). The words N and M in the
+cut line are words of the source parts: whitespace-separated words of a text part, and
+for a table the words of its cells (and caption), so M equals the document's source
+word count.
 """
 from __future__ import annotations
 
 import re
 
-NOTE = "[Document cut: the remaining {removed} of {total} words are not shown.]"
+NOTE = "[Document cut. The remaining {removed} of {total} words are not shown.]"
+_TABLE_RULE = re.compile(r"^[|:\-]*\|[|:\-]*$")
 
 
 def budget(max_context: int, prompt_tokens_empty_document: int, output_allowance: int) -> int:
@@ -23,37 +26,41 @@ def budget(max_context: int, prompt_tokens_empty_document: int, output_allowance
 
 
 def words(text: str) -> int:
-    return len(text.split())
+    """Whitespace-separated words, a token made only of table pipes and rules not counted
+    (so a rendered table counts its cell words)."""
+    return sum(1 for token in text.split() if not _TABLE_RULE.match(token))
 
 
 def note(removed: int, total: int) -> str:
     return NOTE.format(removed=removed, total=total)
 
 
-def not_cut(texts) -> dict:
-    return {"cut": False, "applied": False, "words_total": sum(words(t) for t in texts),
-            "words_removed": 0, "parts_kept": len(texts), "whole_parts_kept": len(texts),
-            "parts_total": len(texts)}
+def not_cut(texts, part_words=None) -> dict:
+    counts = list(part_words) if part_words is not None else [words(t) for t in texts]
+    return {"cut": False, "applied": False, "words_total": sum(counts), "words_removed": 0,
+            "parts_kept": len(texts), "whole_parts_kept": len(texts), "parts_total": len(texts)}
 
 
-def _with_note(kept, total):
-    removed = total - sum(words(t) for t in kept)
-    return kept[:-1] + [kept[-1].rstrip() + "\n" + note(removed, total)], removed
-
-
-def cut_parts(texts, limit: int, count, render):
+def cut_parts(texts, limit: int, count, render, part_words=None):
     """(kept texts, info). `count(text) -> int` is the model's tokenizer; `render(texts)`
-    is the document file those part texts make. Whole parts from the start while the
-    document fits, the cut line appended to the last kept part; if the first part alone
-    does not fit, it is cut at the last whitespace that fits."""
+    is the document file those part texts make; `part_words` the source words of each
+    part. Whole parts from the start while the document fits, the cut line appended to
+    the last kept part; if the first part alone does not fit, it is cut at the last
+    whitespace that fits."""
     texts = list(texts)
-    total = sum(words(t) for t in texts)
-    info = dict(not_cut(texts), applied=True)
+    counts = list(part_words) if part_words is not None else [words(t) for t in texts]
+    total = sum(counts)
+    info = dict(not_cut(texts, counts), applied=True, budget=int(limit))
     if count(render(texts)) <= limit:
         return texts, info
+
+    def with_note(kept, kept_words):
+        removed = total - kept_words
+        return kept[:-1] + [kept[-1].rstrip() + "\n" + note(removed, total)], removed
+
     best = None
     for k in range(1, len(texts) + 1):
-        candidate, removed = _with_note(texts[:k], total)
+        candidate, removed = with_note(texts[:k], sum(counts[:k]))
         if count(render(candidate)) > limit:
             break
         best = (candidate, removed, k)
@@ -63,7 +70,8 @@ def cut_parts(texts, limit: int, count, render):
         lo, hi = 0, len(cuts) - 1
         while lo <= hi:
             mid = (lo + hi) // 2
-            candidate, removed = _with_note([first[:cuts[mid]]], total)
+            prefix = first[:cuts[mid]]
+            candidate, removed = with_note([prefix], words(prefix))
             if count(render(candidate)) <= limit:
                 best, lo = (candidate, removed, 0), mid + 1
             else:

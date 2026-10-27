@@ -1,20 +1,31 @@
-"""Gate checks for the two baseline arms under benchmark/baselines/ (loop stage S4f).
+"""Checks for the two baseline arms under benchmark/baselines/ (loop stage S4f), run by
+the verify gate (scripts/verify_session1.py) through check(); check_python_only() and
+check_bare_model() run one arm, and `py -3.12 -X utf8 scripts/baseline_checks.py` runs
+them by hand.
 
 B2 (``python_only.py``) runs Shimmer's computing layer on a synthetic bundle and
 must make ZERO model calls: every backend function of AgentWrapper (call_claude,
 call_gpt, call_qwen, call_local, dispatch, run_task), the classifier's predict and
-the reply-record writer are replaced by mocks that fail when touched, and no model
-library may be imported. It must still find the planted product mismatch, list the
-plan a model would have been asked under ``ablation_not_asked``, and mark every file
-it writes as an ablation on its first line or in its first key.
+the reply-record writer are replaced by mocks that fail when touched. It must still
+find the planted product mismatch, list the plan a model would have been asked under
+``ablation_not_asked``, write the pipeline's completion record (read back by
+scripts/run_completion.read as completed), and mark every file it writes as an
+ablation on its first line (text) or in its first key (JSON).
 
 B1 (``bare_model.py``) runs with a mocked model backend (no model load) and must write
 EXACTLY ONE reply record per item through reply_records.write, joined to the item's
 typed label by call id, including the item whose call fails, and never ask an item of
-another document. Its parser, its prompt (word for word against the preregistration
-when that file is present), its cut rule (a fake token counter) and its reading of
-the reading agent's model and decoding policy from the tracked configuration are
-checked beside it.
+another document. It must load and verify the model once before the first item and
+stop, generating nothing, when the load fails, the loaded identity differs from the
+recorded values, a prompt plus the allowance exceeds the context, or a reply record
+cannot be written. Its parser (escape repair, UNCERTAIN), its prompt (word for word
+against the preregistration, rendered by benchmark/adapters/common/prompt.py, with the
+bundle's reference material), its use of the one cut rule (benchmark/adapters/common/
+cut.py; it carries none of its own) and its reading of the reading agent's model and
+decoding policy from the tracked configuration are checked beside it.
+
+Neither tool may import a model library: that is checked in a fresh subprocess, so a
+library the gate process already imported cannot hide an import.
 
 Every case runs in a temporary directory and writes nothing under config/, durable/,
 ontology/ or output/. benchmark/ is not shipped in the container image, so with
@@ -24,6 +35,8 @@ import contextlib
 import importlib.util
 import json
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -52,6 +65,75 @@ def _load(name):
 def _absent(base=None):
     base = Path(base) if base is not None else BASELINES
     return not (base / "python_only.py").is_file() or not (base / "bare_model.py").is_file()
+
+
+EXPECTED = {"model_id": "fixture-model", "digest": "fixture-digest", "decoding": {}}
+
+
+class FakeBackend:
+    """A mocked model: canned replies by item id, one token per word."""
+
+    def __init__(self, replies, identity=None, context=100000, fail_prepare=False):
+        self.replies, self.identity, self.context = replies, identity or dict(EXPECTED), context
+        self.fail_prepare, self.asked, self.users, self.prepared = fail_prepare, [], {}, 0
+
+    def prepare(self):
+        self.prepared += 1
+        if self.fail_prepare:
+            raise RuntimeError("fixture load failure")
+        return dict(self.identity)
+
+    def count_prompt(self, system, user):
+        return len((system + " " + user).split())
+
+    def max_context(self):
+        return self.context
+
+    def generate(self, system, user, max_new_tokens):
+        item_id = next(i for i in self.replies if ("Item id: %s\n" % i) in user)
+        self.asked.append(item_id)
+        self.users[item_id] = user
+        if self.replies[item_id].get("raise"):
+            raise RuntimeError("fixture failure")
+        return {"text": self.replies[item_id]["reply"], "payload": system + "\n" + user,
+                "form": "fixture_messages"}
+
+
+_SUBPROCESS = r"""
+import json, sys, tempfile
+from pathlib import Path
+root = Path(sys.argv[1])
+for p in (root / "scripts", root / "benchmark" / "baselines", root / "benchmark" / "adapters"):
+    sys.path.insert(0, str(p))
+import python_only, bare_model
+replies = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))["replies"]
+class Fake:
+    def prepare(self): return {"model_id": "m", "digest": "d", "decoding": {}}
+    def count_prompt(self, s, u): return 1
+    def max_context(self): return 10
+    def generate(self, s, u, n):
+        i = next(k for k in replies if ("Item id: %s\n" % k) in u)
+        return {"text": replies[i].get("reply", ""), "payload": u, "form": "f"}
+with tempfile.TemporaryDirectory() as tmp:
+    python_only.run(sys.argv[2], Path(tmp) / "b2")
+    reader = {"agent": "X", "agent_source": "argument", "backend": "local_producer", "model_id": "m",
+              "model_mode": "base", "max_new_tokens": 1, "max_new_tokens_source": "argument",
+              "decoding": {"status": "s", "source": "s", "sha256": "s", "kwargs": {}}}
+    bare_model.run(sys.argv[2], sys.argv[4], Path(tmp) / "b1", backend=Fake(), reader=reader,
+                   development=True)
+print(json.dumps(sorted(m for m in sys.argv[5].split(",") if m in sys.modules)))
+"""
+
+
+def _imports_in_subprocess():
+    """The model libraries a fresh process holds after importing both tools and running
+    each once (B1 on a mocked backend)."""
+    out = subprocess.run([sys.executable, "-X", "utf8", "-c", _SUBPROCESS, str(ROOT), str(BUNDLE),
+                          str(REPLIES), str(ITEMS), ",".join(MODEL_LIBRARIES)],
+                         capture_output=True, text=True, encoding="utf-8", timeout=600)
+    if out.returncode != 0:
+        raise AssertionError("subprocess failed: " + (out.stderr.strip().splitlines() or ["?"])[-1])
+    return json.loads(out.stdout.strip().splitlines()[-1])
 
 
 @contextlib.contextmanager
@@ -83,7 +165,6 @@ class PythonOnlyChecks(unittest.TestCase):
         self.tool = _load("python_only")
 
     def test_zero_model_calls_and_marked_output(self):
-        loaded_before = {m for m in MODEL_LIBRARIES if m in sys.modules}
         config_before = _config_snapshot()
         with tempfile.TemporaryDirectory(prefix="b2_check_") as tmp:
             out = Path(tmp) / "out"
@@ -108,14 +189,21 @@ class PythonOnlyChecks(unittest.TestCase):
                               for f in irregular],
                              [("product_mismatch", "CONV-QA-01", 48.0, 52.0)])
             self.assertEqual(len(data["amendments"]), 1)
+            sys.path.insert(0, str(ROOT / "scripts"))
+            import run_completion
+            completion = run_completion.read(out)
+            self.assertIsNotNone(completion, "B2 wrote a valid completion record")
+            self.assertEqual((completion["state"], completion["reached_end"], completion["exit_code"]),
+                             ("completed", True, 0))
             pairing = json.loads((out / "audit" / "pairing_map.json").read_text(encoding="utf-8"))["dq4"]
             self.assertEqual(pairing["calls_made"], 0)
             self.assertEqual([(r["unit_id"], r["source_rule_id"], r["kind"])
                               for r in pairing["ablation_not_asked"]],
                              [("u03-p-00003", "CONV-QA-02", "uncomputable")])
-        self.assertEqual({m for m in MODEL_LIBRARIES if m in sys.modules} - loaded_before, set(),
-                         "B2 imported a model library")
         self.assertEqual(_config_snapshot(), config_before, "B2 changed a config file")
+
+    def test_no_model_library_in_a_fresh_process(self):
+        self.assertEqual(_imports_in_subprocess(), [], "a baseline tool imported a model library")
 
 
 class BareModelChecks(unittest.TestCase):
@@ -132,23 +220,13 @@ class BareModelChecks(unittest.TestCase):
     def test_one_reply_record_per_item(self):
         import reply_records
         replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
-        asked = []
-
-        class FakeBackend:
-            def generate(self, system, user, max_new_tokens):
-                item_id = next(i for i in replies if ("Item id: %s\n" % i) in user)
-                asked.append(item_id)
-                if replies[item_id].get("raise"):
-                    raise RuntimeError("fixture failure")
-                return {"text": replies[item_id]["reply"], "payload": system + "\n" + user,
-                        "form": "fixture_messages"}
-
-        loaded_before = {m for m in MODEL_LIBRARIES if m in sys.modules}
+        backend = FakeBackend(replies)
         with tempfile.TemporaryDirectory(prefix="b1_check_") as tmp:
             out = Path(tmp) / "out"
-            summary = self.tool.run(BUNDLE, ITEMS, out, backend=FakeBackend(), reader=self._reader(),
-                                    run_id="b1-fixture")
-            self.assertEqual(sorted(asked), sorted(replies), "items asked")
+            summary = self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=self._reader(),
+                                    run_id="b1-fixture", expected=EXPECTED)
+            self.assertEqual(backend.prepared, 1, "the model is prepared once, before the first item")
+            self.assertEqual(sorted(backend.asked), sorted(replies), "items asked")
             records = reply_records.records(out / "audit" / "model_replies")
             labels = {p.stem: json.loads(p.read_text(encoding="utf-8"))
                       for p in (out / "labels").glob("*.json")}
@@ -170,11 +248,58 @@ class BareModelChecks(unittest.TestCase):
             sent = next(r for r in records if r["backend_ok"])["payload"]["text"]
             self.assertIn("REFERENCE MATERIAL\nNone.\n", sent)
             self.assertIn("Line total: 52 credit", sent)
-            self.assertIn("CONV-QA-01: The line total must equal", sent)
+            self.assertIn("CONV-QA-01 Total [required] [conformance]: The line total must equal", sent)
             rates = {k: v["parse_rate"] for k, v in summary["benchmarks"].items()}
             self.assertEqual(sorted(rates.values()), [0.0, 0.0, 1.0, 1.0])
-        self.assertEqual({m for m in MODEL_LIBRARIES if m in sys.modules} - loaded_before, set(),
-                         "B1 loaded a model library with a mocked backend")
+            self.assertEqual(summary["verified_against"], ["decoding", "digest", "model_id"])
+
+    def test_setup_failures_stop_before_anything_is_generated(self):
+        import reply_records
+        replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
+        cases = [
+            ("load", FakeBackend(replies, fail_prepare=True), EXPECTED, RuntimeError),
+            ("digest", FakeBackend(replies, identity=dict(EXPECTED, digest="other")), EXPECTED,
+             self.tool.SetupError),
+            ("unrecorded", FakeBackend(replies), None, self.tool.SetupError),
+            ("context", FakeBackend(replies, context=50), EXPECTED, self.tool.SetupError),
+        ]
+        for name, backend, expected, error in cases:
+            with tempfile.TemporaryDirectory(prefix="b1_stop_") as tmp:
+                out = Path(tmp) / "out"
+                with self.assertRaises(error, msg=name):
+                    self.tool.run(BUNDLE, ITEMS, out, backend=backend, reader=self._reader(),
+                                  expected=expected)
+                self.assertEqual(backend.asked, [], name + ": nothing generated")
+                self.assertFalse((out / "labels").exists(), name + ": no label written")
+        with tempfile.TemporaryDirectory(prefix="b1_stop_") as tmp:
+            backend = FakeBackend(replies)
+            with mock.patch.object(reply_records, "write", return_value=None):
+                with self.assertRaises(self.tool.SetupError):
+                    self.tool.run(BUNDLE, ITEMS, Path(tmp) / "out", backend=backend,
+                                  reader=self._reader(), expected=EXPECTED)
+            self.assertEqual(len(backend.asked), 1, "the run stops at the first unrecorded reply")
+
+    def test_reference_material_is_shown_and_sensitive_runs_keep_hashes(self):
+        replies = json.loads(REPLIES.read_text(encoding="utf-8"))["replies"]
+        with tempfile.TemporaryDirectory(prefix="b1_ref_") as tmp:
+            bundle = Path(tmp) / "bundle"
+            shutil.copytree(BUNDLE, bundle)
+            (bundle / "context" / "ref_q4.md").write_text("# Reference\n\nA reference passage.\n",
+                                                          encoding="utf-8")
+            manifest = json.loads((bundle / "context" / "_review_targets.json").read_text(encoding="utf-8"))
+            manifest["grounding"] = ["ref_q4.md"]
+            (bundle / "context" / "_review_targets.json").write_text(json.dumps(manifest), encoding="utf-8")
+            backend = FakeBackend(replies)
+            out = Path(tmp) / "out"
+            summary = self.tool.run(bundle, ITEMS, out, backend=backend, reader=self._reader(),
+                                    expected=EXPECTED, sensitive=True)
+            self.assertTrue(summary["reference_material"])
+            self.assertIn("REFERENCE MATERIAL\nref_q4.md\n# Reference\n\nA reference passage.\n\nITEM",
+                          backend.users["a1"])
+            label = json.loads((out / "labels" / "a1.json").read_text(encoding="utf-8"))
+            self.assertIsNone(label["evidence"])
+            self.assertEqual(set(label["evidence_hashed"]), {"sha256", "length_bytes"})
+            self.assertNotIn("Line total: 52 credit", (out / "labels" / "a1.json").read_text(encoding="utf-8"))
 
     def test_parser(self):
         parse = self.tool.parse_reply
@@ -191,6 +316,11 @@ class BareModelChecks(unittest.TestCase):
             self.assertFalse(parse("{\"label\": \"%s\"" % first, bench)["parsed"], key)
             self.assertFalse(parse("", bench)["parsed"], key)
             self.assertTrue(parse(json.dumps({"item_id": "other", "label": first}), bench, "x")["parsed"])
+            # an invalid JSON escape in evidence costs nothing; a valid escaped pair is kept
+            repaired = parse('{"evidence": "a \\| b \\\\ c \\cite", "label": "%s"}' % first, bench)
+            self.assertEqual((repaired["label"], repaired["repaired"], repaired["evidence"]),
+                             (first, True, "a \\| b \\ c \\cite"), key)
+            self.assertEqual(parse('{"label": "UNCERTAIN"}', bench)["label"], bench["undecided"], key)
 
     def test_prompt_is_the_preregistered_text(self):
         if not PREREGISTRATION.is_file():
@@ -202,7 +332,8 @@ class BareModelChecks(unittest.TestCase):
         self.assertIn("```\n" + self.spec["system"] + "\n```", section)
         template = self.spec["user_template"]
         for slot, written in (("{document}", "{document, after the cut rule, as it stands in the bundle}"),
-                              ("{conventions}", "{every convention in the bundle, as written in it, one per line with its rule id}"),
+                              ("{conventions}", "{every convention in the bundle as written in it, one per line: its heading without the leading # characters, a colon, a space, then its text}"),
+                              ("{reference_material}", "{the bundle's reference material: for each grounding file, the earlier version included, in file-name order, its file name on one line and its text below, the files separated by a blank line; the single line None. when there is none}"),
                               ("{item_id}", "{opaque item id}"), ("{rule_id}", "{the item's rule id}"),
                               ("{question}", "{the item's question line, below}"),
                               ("{label_lines}", "{the benchmark's label lines, below}"),
@@ -214,31 +345,22 @@ class BareModelChecks(unittest.TestCase):
             self.assertIn("Labels: " + " / ".join("`%s`" % line for line in bench["labels"]), section)
             self.assertIn("Undecided label: `%s`." % bench["undecided"], section)
 
-    def test_cut_rule(self):
-        count = self.tool.words
-        self.assertEqual(self.tool.cut_budget(1000, 100, 200), 668)
-        paragraphs = [" ".join("w%d" % (8 * p + i) for i in range(8)) for p in range(3)]
-        text = "\n\n".join(paragraphs)
-        same, info = self.tool.cut_document(text, 24, count)
-        self.assertEqual((same, info["cut"]), (text, False))
-        note = self.tool.cut_note(16, 24)
-        cut, info = self.tool.cut_document(text, 8 + count(note), count)
-        self.assertEqual(cut, paragraphs[0] + "\n" + note)
-        self.assertEqual((info["words_removed"], info["paragraphs_kept"]), (16, 1))
-        note = self.tool.cut_note(21, 24)
-        cut, info = self.tool.cut_document(text, 3 + count(note), count)
-        self.assertEqual(cut, "w0 w1 w2\n" + note)
-        self.assertEqual((info["words_removed"], info["paragraphs_kept"]), (21, 0))
-        with self.assertRaises(ValueError):
-            self.tool.cut_document(text, 2, count)
-        items = [{"item_id": "x", "rule_id": "CONV-X", "benchmark": key}
-                 for key in self.spec["benchmarks"]]
-        overhead = self.tool.prompt_overhead(self.spec, items, [("CONV-X", "text")],
-                                             lambda system, user: count(system) + count(user))
-        longest = max(count(self.spec["system"]) + count(self.tool.render_user(
-            self.spec, i["benchmark"], document="", conventions=[("CONV-X", "text")], item=i))
-            for i in items)
-        self.assertEqual(overhead, longest)
+    def test_one_cut_rule_and_one_renderer(self):
+        for name in ("cut_document", "cut_budget", "cut_note", "prompt_overhead", "conventions_block"):
+            self.assertFalse(hasattr(self.tool, name), "bare_model carries its own " + name)
+        sys.path.insert(0, str(ROOT / "benchmark" / "adapters"))
+        try:
+            from common import cut, prompt
+        finally:
+            sys.path.remove(str(ROOT / "benchmark" / "adapters"))
+        self.assertIs(self.tool.b1_prompt, prompt)
+        self.assertEqual(cut.budget(1000, 100, 200), 668)
+        count = lambda system, user: len(system.split()) + len(user.split())  # noqa: E731
+        items = [{"item_id": "x", "rule_id": "CONV-X", "benchmark": key} for key in self.spec["benchmarks"]]
+        conventions = [("CONV-X Name [required] [conformance]", "text")]
+        longest = max(count(self.spec["system"], self.tool.render_user(
+            self.spec, i["benchmark"], document="", conventions=conventions, item=i)) for i in items)
+        self.assertEqual(prompt.overhead(self.spec, items, conventions, count), longest)
 
     def test_reader_from_configuration(self):
         import decoding_policy
@@ -246,7 +368,7 @@ class BareModelChecks(unittest.TestCase):
         with mock.patch.dict(os.environ, {"SHIMMER_MODEL_MODE": "base"}):
             plain = self.tool.resolve_reader(ROOT)
         chosen = json.loads((ROOT / "config" / "local_models.json").read_text(encoding="utf-8"))
-        self.assertEqual(reader["agent"], "PROCESSOR")
+        self.assertEqual((reader["agent"], reader["agent_source"]), ("PROCESSOR", "placeholder"))
         self.assertIn(reader["backend"], decoding_policy.LOCAL_BACKENDS)
         self.assertEqual(reader["model_id"], chosen["active_producer"])
         self.assertEqual(reader["decoding"], decoding_policy.policy(reader["backend"], ROOT))
@@ -287,24 +409,30 @@ def _verdict(results, what):
 def check_python_only():
     return _verdict([_run(PythonOnlyChecks), _run(AbsentChecks)],
                     "B2 runs the computing layer on a mocked bundle with every model route "
-                    "mocked to fail and touches none, imports no model library, finds the planted "
-                    "product mismatch, lists the unasked plan, and marks every file an ablation")
+                    "mocked to fail and touches none, imports no model library (fresh subprocess), "
+                    "finds the planted product mismatch, lists the unasked plan, writes the "
+                    "pipeline's completion record, and marks every file an ablation")
 
 
 def check_bare_model():
     return _verdict([_run(BareModelChecks), _run(AbsentChecks)],
                     "B1 with a mocked backend writes exactly one reply record per item (a failed "
                     "call included) joined to one typed label by call id, asks no item of another "
-                    "document, loads no model, parses the final-line JSON label or abstains, sends "
-                    "the preregistered prompt, cuts by the section 5.3 rule, and reads its model "
-                    "and decoding policy from the tracked configuration")
+                    "document, prepares and verifies its model once and stops before generating on "
+                    "a load, identity, context or record failure, parses the final-line JSON label "
+                    "(escape repair, UNCERTAIN) or abstains, sends the preregistered prompt with the "
+                    "reference material, uses the one cut rule in common/cut.py, and reads its "
+                    "model and decoding policy from the tracked configuration")
 
 
 def check():
     results = [_run(PythonOnlyChecks), _run(BareModelChecks), _run(AbsentChecks)]
-    return _verdict(results, "B2 makes no model call and marks its output an ablation; B1 writes "
-                             "one reply record per item through reply_records.write, parses or "
-                             "abstains, and reads its model from the tracked configuration")
+    return _verdict(results, "B2 makes no model call, imports no model library, writes the "
+                             "pipeline's completion record and marks its output an ablation; B1 "
+                             "verifies its model once and stops before generating on any setup "
+                             "failure, writes one reply record per item, parses (with escape "
+                             "repair) or abstains, sends the preregistered prompt with reference "
+                             "material, and uses the one cut rule and prompt renderer")
 
 
 if __name__ == "__main__":

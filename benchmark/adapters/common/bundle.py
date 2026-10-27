@@ -10,7 +10,9 @@ format changes one file. A bundle, for one document:
     conventions/rules.md                `# Review rules`, one heading and paragraph per rule
     answer_key.json                     gold, read only by the scorer (section 9)
   <out>/items.json                      the item table, beside the bundles, no gold
-  <out>/parts.json                      unit id per part and the source span or index
+  <out>/parts.json                      unit id per part and the source span or index, side,
+                                        cluster, words, the cut record; source ids, no gold;
+                                        no arm's model sees it
 
 Nothing inside a bundle carries a source id. Build output is byte-identical for the
 same input: no clock, no randomness, a fixed order and LF line endings everywhere.
@@ -57,6 +59,15 @@ def normalise_space(text: str) -> str:
     """Whitespace-normalised form used for containment (sections 3.1, 3.2): runs of
     whitespace to one space, trimmed."""
     return " ".join(text.split())
+
+
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+
+
+def sentences(text: str) -> list:
+    """The section 1 sentence rule: runs of text ended by `.`, `!` or `?` followed by
+    whitespace, or by the end of the text, each whitespace-normalised; empty ones dropped."""
+    return [s for s in (normalise_space(p) for p in _SENTENCE_END.split(text or "")) if s]
 
 
 def blank_line_paragraphs(text: str):
@@ -245,50 +256,59 @@ def _evidence_units(item, part_texts, unit_ids):
     return sorted(found)
 
 
+def is_empty(doc) -> bool:
+    return not any(str(p["text"]).strip() for p in doc["parts"])
+
+
 def build_document(benchmark: str, doc: dict, cut=None):
     """(document text, parts record, answer rows) for one document. `doc` carries
-    document_id, source_document_id, split_key, cluster, source_words, parts
-    ([{text, source}]), rules ([{rule_id, name, text}]) and items ([{item_id,
-    source_item_id, rule_id, gold, location_measurable, evidence_parts or
-    evidence_texts, extra}])."""
+    document_id, source_document_id, split_key, side, cluster, parts ([{text, words,
+    source}]), rules ([{rule_id, name, text}]) and items ([{item_id, source_item_id,
+    rule_id, gold, location_measurable, evidence_parts or evidence_texts, extra}]).
+    `cut` is (count, budget_for): the model's token counter and a function giving
+    (budget, prompt overhead) for this document (section 5.3), or None for no cut."""
     rule_ids = [r["rule_id"] for r in doc["rules"]]
     item_rules = [i["rule_id"] for i in doc["items"]]
     if len(set(rule_ids)) != len(rule_ids) or sorted(rule_ids) != sorted(item_rules):
         raise ValueError("one rule per item and one item per rule: " + doc["document_id"])
-    if not doc["parts"]:
-        raise ValueError("a document with no part cannot be bundled: " + doc["document_id"])
     source_texts = [p["text"] for p in doc["parts"]]
+    part_words = [int(p["words"]) if "words" in p else ids.word_count(p["text"]) for p in doc["parts"]]
     texts = list(source_texts)
-    info = cut_rule.not_cut(texts)
+    info = cut_rule.not_cut(texts, part_words)
     if cut is not None:
-        budget, count = cut
+        count, budget_for = cut
+        limit, overhead = budget_for(doc)
         texts, info = cut_rule.cut_parts(
-            texts, budget, count, lambda kept: render_document(doc["document_id"], kept))
+            texts, limit, count, lambda kept: render_document(doc["document_id"], kept), part_words)
+        info["prompt_overhead"] = overhead
     all_ids = [unit_id(k) for k in range(1, len(source_texts) + 1)]
     unit_ids = all_ids[:len(texts)]
     text = render_document(doc["document_id"], texts)
     answers = []
     for item in sorted(doc["items"], key=lambda i: i["item_id"]):
         everywhere = _evidence_units(item, source_texts, all_ids)
-        evidence = [u for u in everywhere if u in unit_ids]
+        # evidence units are read on the text as kept: a part cut mid-text holds only
+        # the evidence that survived the cut
+        evidence = _evidence_units(item, texts, unit_ids)
         answers.append(dict({
             "item_id": item["item_id"], "rule_id": item["rule_id"], "gold": item["gold"],
             "location_measurable": bool(item.get("location_measurable")),
             "evidence_unit_ids": evidence,
             "evidence_beyond_cut": len(everywhere) > len(evidence),
         }, **(item.get("extra") or {})))
-    parts = [{"part": k, "unit_id": unit_ids[k - 1], "source": doc["parts"][k - 1]["source"]}
-             for k in range(1, len(texts) + 1)]
+    parts = [{"part": k, "unit_id": unit_ids[k - 1], "words": part_words[k - 1],
+              "source": doc["parts"][k - 1]["source"]} for k in range(1, len(texts) + 1)]
     dropped = [{"part": k, "source": doc["parts"][k - 1]["source"]}
                for k in range(len(texts) + 1, len(doc["parts"]) + 1)]
+    words = sum(part_words)
     record = {
         "document_id": doc["document_id"],
         "source_document_id": doc["source_document_id"],
         "split_key": ids.key_string(doc["split_key"]),
-        "side": ids.split_side(doc["split_key"]) if doc.get("hash_split", True) else doc.get("side"),
+        "side": doc["side"],
         "cluster": ids.key_string(doc["cluster"]),
-        "source_words": doc["source_words"],
-        "length_band": ids.length_band(doc["source_words"]),
+        "source_words": words,
+        "length_band": ids.length_band(words),
         "cut": info,
         "parts": parts,
         "parts_beyond_cut": dropped,
@@ -298,18 +318,32 @@ def build_document(benchmark: str, doc: dict, cut=None):
     return text, record, answers
 
 
-def write_bundles(out_dir, benchmark: str, documents, cut=None) -> dict:
+def write_bundles(out_dir, benchmark: str, documents, cut=None, declared_side=None,
+                  build_extra=None) -> dict:
     """Write one bundle per document under `out_dir`, the item table and the parts
-    record beside them. Refuses a non-empty `out_dir`. Returns the summary."""
+    record beside them. Refuses a non-empty `out_dir`, and refuses the whole build
+    (writing nothing) when a document's recorded side differs from `declared_side`.
+    A document with no text is skipped and listed. Returns the summary."""
     out = Path(out_dir)
     if out.exists() and any(out.iterdir()):
         raise ValueError("the output folder is not empty: " + str(out))
-    seen_docs, seen_items, table, records = set(), set(), [], []
-    for doc in sorted(documents, key=lambda d: d["document_id"]):
+    documents = sorted(documents, key=lambda d: d["document_id"])
+    if declared_side is not None:
+        wrong = [ids.key_string(d["source_document_id"]) + " (" + str(d["side"]) + ")"
+                 for d in documents if d["side"] != declared_side]
+        if wrong:
+            raise ValueError("documents not on the declared side %s: %s"
+                             % (declared_side, ", ".join(wrong[:10])))
+    seen_docs, seen_items, table, records, skipped = set(), set(), [], [], []
+    for doc in documents:
         doc_id = doc["document_id"]
         if doc_id in seen_docs:
             raise ValueError("two documents share the opaque id " + doc_id)
         seen_docs.add(doc_id)
+        if is_empty(doc):
+            skipped.append({"document_id": doc_id, "source_document_id": doc["source_document_id"],
+                            "reason": "no text", "items": len(doc["items"])})
+            continue
         text, record, answers = build_document(benchmark, doc, cut)
         name = doc_id + ".md"
         bundle = out / doc_id
@@ -330,8 +364,11 @@ def write_bundles(out_dir, benchmark: str, documents, cut=None) -> dict:
                           "source_document_id": ids.key_string(doc["source_document_id"])})
         records.append(record)
     write_json(out / ITEM_TABLE_NAME, {"benchmark": benchmark, "items": table})
-    write_json(out / PARTS_RECORD_NAME, {"benchmark": benchmark,
-                                         "input_format": INPUT_FORMAT_VERSION,
-                                         "documents": records})
+    parts_record = {"benchmark": benchmark, "input_format": INPUT_FORMAT_VERSION,
+                    "declared_side": declared_side, "cut_applied": cut is not None}
+    parts_record.update(build_extra or {})
+    parts_record.update(documents=records, skipped=skipped)
+    write_json(out / PARTS_RECORD_NAME, parts_record)
     return {"benchmark": benchmark, "documents": len(records), "items": len(table),
-            "cut_documents": sum(1 for r in records if r["cut"]["cut"])}
+            "cut_documents": sum(1 for r in records if r["cut"]["cut"]),
+            "skipped_documents": skipped}

@@ -5,6 +5,12 @@ One item per document, one rule for every document (CONV-CDOC-01). The document 
 split key is the near-duplicate group's key (section 1): documents sharing 80 percent
 or more of their sentences are grouped, and the group's key is its smallest `unique id`.
 
+Groups are computed ONCE, on the whole input B-dev receives, by `split --out <file>`;
+that file is frozen and its SHA-256 recorded. `build --assignment <file>` reads each
+document's group and side from it (a document it does not list is refused), so a build
+from a sample never regroups. Only `build --development` may compute groups over its own
+input, and parts.json records which was done.
+
 Developed on hand-written synthetic items only (D-019): no ContraDoc data was opened.
 
 Usage:
@@ -16,7 +22,6 @@ Usage:
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -51,7 +56,6 @@ SPEC = mapping.Spec(
     b1_labels={"contradictory": mapping.FLAG, "not_contradictory": mapping.CLEAR,
                "undecided": mapping.UNDECIDED},
     s2=True)
-_SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 
 
 def read_source(path) -> list:
@@ -63,9 +67,8 @@ def read_source(path) -> list:
 
 
 def sentences(text: str) -> set:
-    """Runs of text ended by `.`, `!` or `?` followed by whitespace, or by the end of the
-    text, each compared after collapsing whitespace."""
-    return {s for s in (" ".join(p.split()) for p in _SENTENCE_END.split(text)) if s}
+    """The section 1 sentence rule (common/bundle.py), as a set."""
+    return set(bundle.sentences(text))
 
 
 def _smallest(values):
@@ -117,14 +120,35 @@ def _texts(value) -> list:
     return [value] if isinstance(value, str) else [str(v) for v in value]
 
 
-def documents(records) -> list:
+def read_assignment(path) -> dict:
+    """{key string of a unique id: (group key, side)} from a frozen `split --out` file."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if data.get("benchmark") != BENCHMARK:
+        raise ValueError("the assignment file is not a ContraDoc split file")
+    return {ids.key_string(r["source_document_id"]): (r["split_key"], r["side"])
+            for r in data["documents"]}
+
+
+def documents(records, options=None) -> list:
+    options = options or {}
     seen = set()
     for r in records:
         key = ids.key_string(r[DOCUMENT_ID_FIELD])
         if key in seen:
             raise ValueError("duplicate unique id " + key)
         seen.add(key)
-    group_of = groups(records)
+    if options.get("assignment"):
+        assigned = read_assignment(options["assignment"])
+        missing = sorted(k for k in seen if k not in assigned)
+        if missing:
+            raise ValueError("documents the assignment file does not list: " + ", ".join(missing[:10]))
+        groups_from = "assignment"
+    elif options.get("development"):
+        group_of = groups(records)
+        assigned = {k: (ids.key_string(g), ids.split_side(g)) for k, g in group_of.items()}
+        groups_from = "input (development build)"
+    else:
+        raise ValueError("ContraDoc needs --assignment (the frozen split file) outside --development")
     out = []
     for r in records:
         sid, text = r[DOCUMENT_ID_FIELD], r[TEXT_FIELD]
@@ -134,11 +158,13 @@ def documents(records) -> list:
         flag = gold == SPEC.labels[mapping.FLAG]
         doc_id = ids.opaque_document_id(BENCHMARK, sid)
         item_id = ids.opaque_item_id(BENCHMARK, sid)
-        group = group_of[ids.key_string(sid)]
+        group, side = assigned[ids.key_string(sid)]
         out.append({
             "document_id": doc_id, "source_document_id": sid,
-            "split_key": group, "cluster": group, "source_words": ids.word_count(text),
-            "parts": [{"text": text[s:e], "source": {"start": s, "end": e}}
+            "split_key": group, "side": side, "cluster": group,
+            "record_extra": {"groups_from": groups_from},
+            "parts": [{"text": text[s:e], "words": ids.word_count(text[s:e]),
+                       "source": {"start": s, "end": e}}
                       for s, e in bundle.blank_line_paragraphs(text)],
             "rules": [{"rule_id": RULE_ID, "name": RULE_NAME, "text": RULE_TEXT}],
             "items": [{

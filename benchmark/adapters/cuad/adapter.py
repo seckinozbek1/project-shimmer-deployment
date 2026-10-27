@@ -114,7 +114,7 @@ def _qa(contract, index):
     return hits[0]
 
 
-def documents(records) -> list:
+def documents(records, options=None) -> list:
     kept, merged_count = merged(records)
     out = []
     for contract in kept:
@@ -133,8 +133,9 @@ def documents(records) -> list:
                 "extra": {"category_row": row_name(index)}})
         out.append({
             "document_id": doc_id, "source_document_id": sid, "split_key": sid, "cluster": sid,
-            "source_words": ids.word_count(text),
-            "parts": [{"text": text[s:e], "source": {"start": s, "end": e}}
+            "side": ids.split_side(sid),
+            "parts": [{"text": text[s:e], "words": ids.word_count(text[s:e]),
+                       "source": {"start": s, "end": e}}
                       for s, e in bundle.blank_line_paragraphs(text)],
             "rules": rules, "items": items,
             "record_extra": {"merged_duplicates_in_input": merged_count}})
