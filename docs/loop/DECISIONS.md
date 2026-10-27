@@ -361,3 +361,10 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Check numbers.** The new gate check is numbered 284, not 282: `loop/s04` already registers 282 and 283 and its documents cite them; no gate logic depends on the numbers (searched), only on the list. Options: renumber S4's checks at its merge (rejected: many S4 documents cite them), or skip to 284 (chosen; P13).
 - **Partly closed, recorded.** The review mode is not yet recorded in `audit/run_options.json` (OUTPUT_FORMAT 8.1 says how to infer it); no scorer reads `expected_refusals` or the multi-round key yet (open item 17).
 - **Rules.** P1, P11, P13, P16, IV.7.
+
+## D-048. S3 checker round 2, and S3 commits without their own gate
+
+- **When, stage.** 2026-10-27 17:14 +0300 (system clock), S3 round 2 (completeness 9 MINOR; adversarial 4 SERIOUS, 5 MINOR; claims 6 MINOR). No key is derived from Shimmer any more; the SERIOUS items are wrong ground truth (an unkeyed duty breach, unkeyed carry breaks in a reordered probe, a long-range corpus a positional baseline still solves, unit mismatches no convention forbids).
+- **Decision.** All items go to `lane/s03-fix2` with the reviewers' recommended closures (the lane prompt names each choice). After it, round 3 (the last), then a tie-break for any CRITICAL or SERIOUS left.
+- **PROCESS-DEPARTURE (IV.7).** The S3 commits `381c775`, `0638d8d`, `16199b9`, `990ed88`, `fb82aed`, `0b25902` and `107bbe7` had no full gate run of their own: the earlier lanes ran only their own checks, and this session's gate waits for 4 GB of free memory (D-013), which the running lanes keep below the floor. The gate at the S3 tip (and on the loop branch after the merge) covers every tree before the stage closes; the record says so instead of hiding it.
+- **Rules.** IV.4, IV.7, P8, P10.
