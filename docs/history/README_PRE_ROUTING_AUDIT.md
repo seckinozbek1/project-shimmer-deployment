@@ -75,6 +75,11 @@ clean twin was never run. The last scored run predates all of that work, and the
 is owed. Until it is made, every mechanism dated 10 or 11 September below should be read as
 built, not as working, and the worst-case reading is the honest one.
 
+> **Correction note, 2026-10-27.** "Its clean twin was never run" was true when written, but
+> later passages of this same document report clean-twin runs: the 2026-09-12 overnight runs
+> (around lines 612 to 635) and the 2026-09-11 deepening-pass measurements (around lines 3080
+> to 3092). The text above is kept as history.
+
 **This repository is a public source snapshot, MIT licensed** (see `LICENSE` and
 `CITATION.cff`). It carries the source code, the configuration, and the test corpora the
 repository's own gate exercises; it does not carry any run history, any private material, or
@@ -2885,6 +2890,11 @@ pairs and showed that the four rules checking the planted flaw kinds paired with
 which is what the declared-scope fix addresses. The clean twin was never run. **That
 measurement is owed**, and until it is made the figures below describe the code as it was,
 not the code at HEAD.
+
+> **Correction note, 2026-10-27.** "The clean twin was never run" is contradicted by other
+> passages of this same document, which report clean-twin runs: the 2026-09-12 overnight runs
+> (around lines 612 to 635) and the 2026-09-11 deepening-pass measurements (around lines 3080
+> to 3092, just below). The text above is kept as history.
 
 From operator testing before productization (cloud profile, wide review, the redaction phase
 active), on a five-document synthetic competition-law corpus (five regulations plus five

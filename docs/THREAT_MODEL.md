@@ -180,7 +180,29 @@ fixed allowlist; provider error strings are scrubbed before they reach a
 `CallResult` or the cost log (gate check 95 embeds a synthetic key and asserts
 `[REDACTED_KEY]`); `.gitignore` carries belt-and-braces patterns
 (`**/config.py`, `**/*key*`, `**/*secret*`, `**/*credential*`, `**/.env*`,
-`api_keys*/`); `scripts/guard_secrets.py` scans the staged diff; structured log
+`api_keys*/`); `scripts/guard_secrets.py` scans the contents of the files in the
+working tree for key patterns (ignored folders included, except `.git`, `__pycache__`,
+`node_modules`, `.venv` and `venv`, binary and archive files by suffix, and the guard's
+own source file), and with
+`--staged` refuses a staged path with the segment `seals/` (seal manifests) or
+`audit/model_replies/` (saved model replies) at any depth, compared case-insensitively,
+force-added or not; it also reads every staged archive from the index (`git show
+:0:<path>`, the literal path at stage 0), never from the working tree or disk, and
+chooses the reader by the file's suffix, never by sniffing the bytes. A `.tar`,
+`.tar.gz`, `.tgz`, `.tar.xz`, `.txz`, `.tar.bz2` or `.tbz2` is streamed header by header
+and never held in memory; the decompressor continues through every gzip member or
+bz2/xz stream, and everything after the tar's end marker must be zero bytes, so two
+tars joined end to end, or a tar followed by any other bytes, are refused as
+unreadable rather than passed half read. A `.zip` is read whole only up to 512 MiB and
+refused above that ("archive too large to inspect (over 512 MiB); repack as
+.tar.gz"). A suffix that names an archive or compression the guard cannot read
+(`.7z`, `.rar`, `.zst`, `.tzst`, `.lz4`, and a bare `.gz`, `.bz2` or `.xz` that is not one
+of the tar forms) is refused unread (fail closed). An archive is also refused if any
+member path carries either segment, if it cannot be read in full, or if git fails or
+runs past 300 seconds; a failed listing of the staged paths refuses the whole check.
+Archives nested inside archives are not opened, other archive suffixes (for example
+`.lz` or `.lzma`) are not recognised and are not read, and staged deletions are
+allowed (gate check 275); structured log
 events are bounded by construction to a snake_case name plus whitespace-free
 `key=value` pairs, and gate check 112 asserts that over every call site, so
 document or prompt text cannot be smuggled into a log line; a contract-violation
@@ -188,11 +210,14 @@ dump under a sensitive run persists a SHA-256 and a length, never the raw text
 (gate check 100); `GET /health` is proven to leak no `SHIMMER_` value, path or
 hash (gate check 105).
 
-Not mitigated: the pre-commit hook that runs the secret guard is **NOT
-installed** in this clone (`core.hooksPath` unset, `.git/hooks/pre-commit`
-absent, verified in STEP 10). Until `git config core.hooksPath .githooks` is
-run, the guard only runs when someone remembers. Also: full prompts are not
-logged, but a provider retains what it receives under its own policy.
+Not mitigated: no hook runs the secret guard. It acts only when someone runs it.
+(Corrected 2026-10-27: this paragraph used to say the hook could be installed with
+`git config core.hooksPath .githooks`, but this repository has no `.githooks` folder.
+The guard does not scan the staged diff's text for keys; its `--staged` mode checks
+staged paths and the member paths of staged archives.) During the 2026-10-27 loop, the loop runs the guard and a staged-diff key
+scan before every commit, and a local pre-push hook outside version control refuses
+pushes that add a path under `seals/` or `audit/model_replies/`. Also: full prompts are not logged, but a
+provider retains what it receives under its own policy.
 
 ### T7. Path traversal or upload abuse through the dock
 **Residual risk: LOW.**

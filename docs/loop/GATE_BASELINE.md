@@ -46,3 +46,13 @@ The earlier comparison record (`main_gate_comparison_274.json`) put all 28 reds 
 | `tools/ordinary_final_controller_gate.py --output-dir <private folder>` | 0 | 29 | passed, 0 failures, 0 errors (it requires `--output-dir`; a first call without it exited 2 with the usage message) |
 
 Every later side-gate run is compared with these figures.
+
+## Environment 2: a lane worktree (S1, 2026-10-27)
+
+- **Tree.** `.claude/worktrees/s01-credential`, a git worktree of `lane/s01-credential` (base `979aa4e`). A worktree holds only tracked files: the gitignored runtime state of the main checkout (`input/`, `durable/`, model caches, local evidence under ignored folders) is absent.
+- **Interpreter.** `py -3.12`, as in environment 1.
+- **First runs there (by the Part 3 lane agent).** `tools/ordinary_final_controller_gate.py`: passed, 29 tests, 0 failures, 0 errors. `tools/cloud_run_checks.py`: 81 of 83; `test_full_bundle_reproducible_and_readiness_last` and `test_preparation_refuses_existing_evidence` fail with `FileNotFoundError` on evidence files (dependency pins, model cache) that exist only in the main checkout's ignored folders, and fail the same way with the lane's changes stashed. That is this environment's baseline for those two side gates. The main gate was not run in a lane worktree; lanes are gated in the main checkout when the lead merges them (IV.7).
+- **The other S1 lane worktrees share this environment** (same interpreter, tracked files only). Individual checks the lanes ran there, each compared with the same check at the lane's base commit:
+  - `s01-replies` (base `b761171`): checks 21, 100, 112, 120, 242, 269 and 275 pass; 118, 121, 126 and 146 fail exactly as at the base (missing `fastapi`, `uvicorn`, or ignored and untracked files a worktree does not have).
+  - `s01-instfinder` (base `f8d0087`): checks 03, 04, 10, 87, 116, 127, 195, 258 and 260 pass; 108 and 259 error on the missing `fastapi`, as at the base; 252 fails on the Dockerfile line (open item 7), as in the main checkout.
+  These are the worktree baseline for those checks.

@@ -171,18 +171,11 @@ loop's evidence rule for gate checks, with its own neutralise, fail, restore, pa
 
 ---
 
-## 8. Gate check 112 fails on a real log-event name in agent_wrapper.py (found at loop S0)
+## 8. (Closed 2026-10-27, loop S1 commit C3.) Gate check 112 and a log-event name
 
-**What it is.** `scripts/agent_wrapper.py:1783` logs `'prompt_structure_write_error error_type=' +
-type(exc).__name__`. The event name contains the word `prompt`, which check 112 treats as a
-content-bearing name. The value interpolated is only an exception class name.
-
-**Evidence.** The loop's S0 baseline, check 112's printed reason.
-
-**Why it was left.** S0 changes no product file. S1 Part 4 changes `agent_wrapper.py` and fixes
-it there (P16).
-
-**What would settle it.** A content-free event name for that line, with check 112 passing.
+The event in `scripts/agent_wrapper.py` that check 112 refused (its name contained the word
+`prompt`) is now `call_structure_write_error`; no reader used the old name. Kept here only so
+item numbers do not shift.
 
 ---
 
@@ -200,3 +193,72 @@ side-gate run. Changing the gate's output location is a test-infrastructure chan
 
 **What would settle it.** The gate writing its log to a temporary or ignored folder, with the
 tracked log kept as the historical record it is.
+
+---
+
+## 10. A docstring cites the wrong gate check for LAW-III (found at loop S1)
+
+**What it is.** The docstring of `_withheld_audit_agents` in `scripts/pipeline.py` (around line
+1440 at the loop's start) says LAW-III enforcement is held by check 148. Check 148 is "tolerant
+recovery prefers a populated envelope"; the LAW-III checks are 87 and 127.
+
+**Evidence.** `scripts/verify_session1.py` CHECKS list (entries 87, 127 and 148).
+
+**Why it was left.** Changing a docstring changes the function's pinned code hash, so it goes
+through the pinned-baseline path; the loop's S1 stage was told not to change it.
+
+**What would settle it.** The corrected docstring with a pinned-baseline amendment, in the loop's
+open-item sweep (S6).
+
+---
+
+## 11. Exit 9 (an unratified INST_FINDER switch) shows as "failed" in the server (found at loop S1)
+
+**What it is.** The pipeline refuses a run with `SHIMMER_INST_FINDER=off` and no ratified
+amendment with exit code 9. The server's exit-status map in `scripts/server.py` has no entry for
+9 (nor for 8), so the console shows such a refusal as a plain failure.
+
+**Evidence.** The Part 7 lane's trace of `scripts/server.py` (`_EXIT_STATUS_MAP`).
+
+**Why it was left.** `scripts/server.py` was outside the S1 lane's files; the console and its
+status labels are loop stage S7's work.
+
+**What would settle it.** A governance status for exit 9 (and a label for 8) in the server and
+the console, with its gate check, in S7.
+
+---
+
+## 12. The execution seal does not check the INST_FINDER ratification, and FINAL_STATUS does not state the setting (found at loop S1)
+
+**What it is.** `tools/prepare_ordinary_final_run.py` writes `SHIMMER_INST_FINDER` into the
+manifest's environment but does not check, at seal time, that an `off` value is ratified; such a
+bundle would refuse only on the rented instance. `tools/analyze_ordinary_final_run.py`, which
+writes `FINAL_STATUS.json`, does not yet read `audit/agent_switches.json`.
+
+**Evidence.** The Part 7 lane's report.
+
+**Why it was left.** Both are run-controller and run-report work, which is loop stage S2c (items
+3 and 4: the report template and the manifest parameters).
+
+**What would settle it.** A seal-time refusal for an unratified `off`, and the setting in the
+report template, both in S2c.
+
+---
+
+## 13. Two narrow gaps in the staged-archive guard (found at loop S1)
+
+**What it is.** `scripts/guard_secrets.py --staged` reads staged tar and zip archives and refuses
+one with a seal manifest or saved model reply inside. Two cases are not covered: bytes after a
+valid bz2 or xz stream are skipped by Python's decompressors, so the tar check never sees them;
+and a compression format outside the guard's list (`.lz`, `.lzma`, `.Z`) is neither read nor
+refused.
+
+**Evidence.** The S1 round-3 fix lane's report (commit `3b864f0`); `docs/THREAT_MODEL.md` names
+the second gap.
+
+**Why it was left.** The realistic case, the controller's `.tar.gz` evidence archive, is fully
+covered, and S1 had used its three checker rounds (D-016).
+
+**What would settle it.** Refusing any archive with trailing data after its last compressed
+stream, and refusing unrecognised compressed suffixes, each with a gate-check case, in the S6
+open-item sweep.
