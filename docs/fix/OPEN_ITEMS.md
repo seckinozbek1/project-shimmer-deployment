@@ -242,3 +242,23 @@ writes `FINAL_STATUS.json`, does not yet read `audit/agent_switches.json`.
 
 **What would settle it.** A seal-time refusal for an unratified `off`, and the setting in the
 report template, both in S2c.
+
+---
+
+## 13. Two narrow gaps in the staged-archive guard (found at loop S1)
+
+**What it is.** `scripts/guard_secrets.py --staged` reads staged tar and zip archives and refuses
+one with a seal manifest or saved model reply inside. Two cases are not covered: bytes after a
+valid bz2 or xz stream are skipped by Python's decompressors, so the tar check never sees them;
+and a compression format outside the guard's list (`.lz`, `.lzma`, `.Z`) is neither read nor
+refused.
+
+**Evidence.** The S1 round-3 fix lane's report (commit `3b864f0`); `docs/THREAT_MODEL.md` names
+the second gap.
+
+**Why it was left.** The realistic case, the controller's `.tar.gz` evidence archive, is fully
+covered, and S1 had used its three checker rounds (D-016).
+
+**What would settle it.** Refusing any archive with trailing data after its last compressed
+stream, and refusing unrecognised compressed suffixes, each with a gate-check case, in the S6
+open-item sweep.

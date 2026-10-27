@@ -361,8 +361,8 @@ processing swarm governed by an append-only constitution.
   prose changed, recall moved 2/9 to 5/9, and a true band finding scored as a false positive
   for saying "exceeds the typical yield range" instead of naming the figures. Context for that
   figure (from the operator's own records): it was measured on 7 September 2026, on the
-  synthetic wheat test, on code from an earlier repository that is not in this repository's
-  history; it was a single draw; it was a location count, not a reason-confirmed count; and the
+  synthetic wheat test, on code from the earlier `shimmer-fix` repository that is not in this
+  repository's history; it was a single draw; it was a location count, not a reason-confirmed count; and the
   wheat test and its key are not published here.
 - The COMPUTED FIGURES LEAD every comment, with their units, the registry rule id, the
   operator's own id and the REF-* the finding rests on. They were a fallback used only when the

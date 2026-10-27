@@ -212,9 +212,10 @@ later to `outcomes.jsonl` by call id (`accepted_to_bus`, `advisory_not_record`,
 with no line reads as `not_decided`. A call with no run context writes nothing.
 Embedding calls are not saved. No server route serves these files yet. They are
 gitignored, and `scripts/guard_secrets.py --staged` refuses any staged path with the
-segment `audit/model_replies/` at any depth, and any staged archive (for example a
-collected evidence `.tar.gz`) whose members include such a path (gate checks 275 and
-276).
+segment `audit/model_replies/` at any depth, and any staged tar or `.zip` archive (for
+example a collected evidence `.tar.gz`) whose members include such a path; other
+compressed files it recognises but cannot read are refused (gate checks 275 and 276;
+the full rule is in `docs/THREAT_MODEL.md`).
 
 `review_data.json` is the amendment master; Markdown and DOCX are renders, not
 independent findings. Audit synthesis, editorial records, DELTA proposals,

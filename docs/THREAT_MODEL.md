@@ -186,12 +186,23 @@ working tree for key patterns (ignored folders included, except `.git`, `__pycac
 own source file), and with
 `--staged` refuses a staged path with the segment `seals/` (seal manifests) or
 `audit/model_replies/` (saved model replies) at any depth, compared case-insensitively,
-force-added or not; it also reads every staged archive from the index, never from the
-working tree or disk (a tar, `.tar.gz`, `.tgz`, `.tar.xz`, `.txz`, `.tar.bz2` or `.tbz2`
-streamed member by member; a `.zip` read whole only up to 512 MiB, and refused above
-that), chooses the reader by the file's suffix, and refuses the archive if any member
-path carries either segment or if it cannot be read; archives nested inside archives are
-not opened, and staged deletions are allowed (gate check 275); structured log
+force-added or not; it also reads every staged archive from the index (`git show
+:0:<path>`, the literal path at stage 0), never from the working tree or disk, and
+chooses the reader by the file's suffix, never by sniffing the bytes. A `.tar`,
+`.tar.gz`, `.tgz`, `.tar.xz`, `.txz`, `.tar.bz2` or `.tbz2` is streamed header by header
+and never held in memory; the decompressor continues through every gzip member or
+bz2/xz stream, and everything after the tar's end marker must be zero bytes, so two
+tars joined end to end, or a tar followed by any other bytes, are refused as
+unreadable rather than passed half read. A `.zip` is read whole only up to 512 MiB and
+refused above that ("archive too large to inspect (over 512 MiB); repack as
+.tar.gz"). A suffix that names an archive or compression the guard cannot read
+(`.7z`, `.rar`, `.zst`, `.tzst`, `.lz4`, and a bare `.gz`, `.bz2` or `.xz` that is not one
+of the tar forms) is refused unread (fail closed). An archive is also refused if any
+member path carries either segment, if it cannot be read in full, or if git fails or
+runs past 300 seconds; a failed listing of the staged paths refuses the whole check.
+Archives nested inside archives are not opened, other archive suffixes (for example
+`.lz` or `.lzma`) are not recognised and are not read, and staged deletions are
+allowed (gate check 275); structured log
 events are bounded by construction to a snake_case name plus whitespace-free
 `key=value` pairs, and gate check 112 asserts that over every call site, so
 document or prompt text cannot be smuggled into a log line; a contract-violation
