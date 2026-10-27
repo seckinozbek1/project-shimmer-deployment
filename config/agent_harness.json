@@ -516,9 +516,9 @@
       "fires_at_all": {
         "decided": true,
         "activation_audit": "scripts/agent_activation.py records eligibility, activation, actual dispatch and outcome in audit/agent_activation.json. --activation-profile dense retains reference firing; sparse currently retains the same conservative policy and existing phase gates. Neither profile forces prohibited or unavailable paths. A phase not reached has unknown eligibility, not a successful skip. Legal follow-ups and editorial climbs are bounded additional work, distinct from the zero contract-failure retry limit.",
-        "summary": "Runs whenever its scheduled stage has work to process.",
-        "condition": "Always, once per its fixed phase, unconditionally.",
-        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_PER_DOC, PRODUCTION_AGENTS_CORPUS_LEVEL and AUDIT_AGENTS_PER_DOC, the fixed per-phase lists that name this agent. A production or audit agent has no per-agent gate: it produces the material the convention review consumes, so gating it on rules would starve the review (docs/api/CONVENTION_ASSIGNMENT_DESIGN.md, W3)."
+        "summary": "Runs once per review in its scheduled stage, unless you switch it off for the run with the SHIMMER_INST_FINDER setting, which is honoured only after you ratify the amendment that allows it. A switched-off run records it as not called, with the reason.",
+        "condition": "Once in phase 3-4 as a corpus-level production agent, unless SHIMMER_INST_FINDER=off and config/constitution.json holds an operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER; then it is not dispatched and is recorded as not called (state switched_off, reason 'switched off by operator setting'). Without that amendment a run with the setting off refuses to start. Any other value, or none, keeps it on.",
+        "where": "scripts/pipeline.py: PRODUCTION_AGENTS_CORPUS_LEVEL (it stays in the list), _inst_finder_switch, _inst_finder_startup_guard (main) and the corpus loop of phase_3_4_content_production; the setting is saved in <run>/audit/agent_switches.json. Gate check 277 (scripts/inst_finder_switch_checks.py)."
       },
       "refire_condition_and_limit": {
         "see": "shared_parts.refire_condition_and_limit"
