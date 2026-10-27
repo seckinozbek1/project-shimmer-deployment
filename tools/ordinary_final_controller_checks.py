@@ -923,8 +923,15 @@ class ControllerChecks(unittest.TestCase):
         (only curl is replaced), through the controller's whole run, its refusal
         paths, the status reader and both live preflights. The sentinel reaches curl's
         stdin configuration, and appears in no argv, no stdout, no stderr, no console
-        line and no file the run writes."""
+        line and no file the run writes.
+
+        The loader reads the LAMBDA_API_KEY environment variable before any file, so
+        it is removed for the whole test (restored after): otherwise an operator shell
+        that exports it would make every load return that value instead of the
+        sentinel, and a neutralised printing loader would print it."""
         import uuid
+        self.enterContext(patch.dict(os.environ))
+        os.environ.pop('LAMBDA_API_KEY', None)
         sentinel = 'shimmer' + uuid.uuid4().hex + 'sentinel'
         self.credential.write_text('LAMBDA_API_KEY = ' + repr(sentinel) + '\n', encoding='utf8')
         curl = FakeCurl()
@@ -1130,8 +1137,12 @@ NEUTRALIZATIONS = [
     # The refusal dropped: an unresolvable credential reaches the provider as None.
     ('test_no_resolvable_credential_refuses_in_one_line_naming_shimmer_config_path', controller, 'credential_path',
      lambda: agent_wrapper.resolve_config_path()),
-    # A loader that prints what it loaded: the sentinel reaches stdout.
+    # A loader that prints what it loaded: the sentinel reaches stdout. Proven through
+    # BOTH names the loader is reached by: the watchdog's own, and the adapter's, which
+    # imports it by name (lambda_experiment_provider.py, from cloud_run_watchdog import
+    # load_credential), so patching the watchdog alone never reaches an adapter call.
     ('test_no_key_value_is_ever_printed', cloud_run_watchdog, 'load_credential', printing_load_credential),
+    ('test_no_key_value_is_ever_printed', provider_adapter, 'load_credential', printing_load_credential),
     # A widened removal target: the Linux home itself instead of the rehearsal folder under it.
     ('test_rehearsal_removes_only_its_own_folder_under_the_linux_home', rehearsal, 'rehearsal_root',
      lambda home: home.strip().rstrip('/') or '/'),

@@ -11,9 +11,11 @@ With ``--staged`` it instead checks the paths staged for the next commit
 deletions are allowed) and refuses any path that must never be committed: a
 ``seals/`` segment (Annex B.3 of the 2026-10-27 loop) or an
 ``audit/model_replies/`` segment at any depth, case-insensitively. A staged
-.tar.gz, .tgz, .tar or .zip is opened in memory from the index and refused when a
-member name carries a refused segment or when it cannot be read. It acts only
-when it is run.
+archive is read from the index, its reader chosen by suffix: a tar (.tar,
+.tar.gz, .tgz, .tar.xz, .txz, .tar.bz2, .tbz2) is streamed from git with constant
+memory, a .zip is read whole only up to ZIP_SIZE_CAP. It is refused when a member
+name carries a refused segment, when it is too large to inspect, or when it
+cannot be read. It acts only when it is run.
 """
 import io
 import re
@@ -31,7 +33,7 @@ EXCLUDE_SUFFIXES = {
     ".pdf", ".pkl", ".pyc",
     ".png", ".jpg", ".jpeg", ".gif", ".ico", ".bmp", ".webp",
     ".so", ".dll", ".exe", ".bin",
-    ".tar", ".zip", ".gz", ".7z",
+    ".tar", ".zip", ".gz", ".7z", ".tgz", ".xz", ".bz2", ".txz", ".tbz2",
     ".woff", ".woff2", ".ttf", ".otf",
     ".docx", ".xlsx", ".pptx",
 }
@@ -184,8 +186,19 @@ def scan_line(line: str):
 REFUSED_STAGED_SEGMENTS = ("seals/", "audit/model_replies/")
 # Staged files whose MEMBER names are read as well: the controller packs every
 # file under project/output into collected_evidence.tar.gz, so a refused path can
-# reach git inside an archive whose own name is harmless.
-ARCHIVE_SUFFIXES = (".tar.gz", ".tgz", ".tar", ".zip")
+# reach git inside an archive whose own name is harmless. The reader is chosen by
+# the SUFFIX and never by sniffing the bytes: a plain tar whose last member is a
+# small zip would otherwise be read as that zip and its tar members skipped. A
+# tar (plain or compressed) is streamed from git with constant memory; a zip
+# needs its central directory at the end, so it is read whole, and only up to
+# ZIP_SIZE_CAP bytes (a larger one is refused, never inspected partly).
+TAR_SUFFIXES = (".tar", ".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar.bz2", ".tbz2")
+ZIP_SUFFIXES = (".zip",)
+ARCHIVE_SUFFIXES = TAR_SUFFIXES + ZIP_SUFFIXES
+ZIP_SIZE_CAP = 512 * 1024 * 1024
+UNREADABLE = "unreadable archive"
+TOO_LARGE = "archive too large to inspect"
+_CHUNK = 1024 * 1024
 
 
 def is_refused_path(name):
@@ -210,45 +223,122 @@ def is_archive_name(name):
     return name.casefold().endswith(ARCHIVE_SUFFIXES)
 
 
-def archive_member_names(data):
-    """The member names of an archive held in memory (never extracted to disk).
-    A directory member is reported with a trailing "/" so a bare refused folder
-    entry is caught as well. Raises ValueError when the bytes are not a tar
-    (plain or compressed) or zip archive."""
-    # Any failure to read is reported as one ValueError (fail closed): a corrupt
-    # stream can raise from several layers (zlib, gzip, tarfile, zipfile).
-    try:
-        if zipfile.is_zipfile(io.BytesIO(data)):
-            with zipfile.ZipFile(io.BytesIO(data)) as archive:
-                return archive.namelist()
-        with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as archive:
-            return [member.name + ("/" if member.isdir() else "")
-                    for member in archive.getmembers()]
-    except Exception as exc:  # noqa: BLE001 - every unreadable form is refused
-        raise ValueError(str(exc) or type(exc).__name__) from exc
-
-
-def archive_refusal(data):
-    """None when every member of the archive bytes may be committed, otherwise the
-    reason it is refused. An archive that cannot be opened is refused (fail
-    closed): what cannot be read cannot be shown to be clean."""
-    try:
-        members = archive_member_names(data)
-    except ValueError:
-        return "unreadable archive"
-    bad = [member for member in members if is_refused_path(member)]
-    if bad:
-        return f"archive member {bad[0]} must never be committed ({len(bad)} refused member(s))"
+def archive_kind(name):
+    """"tar" or "zip" from the name's suffix alone, None for any other name."""
+    folded = name.casefold()
+    if folded.endswith(ZIP_SUFFIXES):
+        return "zip"
+    if folded.endswith(TAR_SUFFIXES):
+        return "tar"
     return None
 
 
+def _members_refusal(names):
+    """The refusal for a sequence of member names, read one at a time so a
+    streamed tar is never held whole. None when every member may be committed."""
+    first, count = None, 0
+    for member in names:
+        if is_refused_path(member):
+            count += 1
+            first = first or member
+    if count:
+        return f"archive member {first} must never be committed ({count} refused member(s))"
+    return None
+
+
+def _tar_names(stream):
+    """Member names of a tar (plain, gz, xz or bz2) read from a forward-only
+    stream ("r|*"): one header at a time, member data skipped, nothing extracted.
+    A directory member is reported with a trailing "/" so a bare refused folder
+    entry is caught as well."""
+    with tarfile.open(fileobj=stream, mode="r|*") as archive:
+        for member in archive:
+            yield member.name + ("/" if member.isdir() else "")
+
+
+def tar_refusal(stream):
+    return _members_refusal(_tar_names(stream))
+
+
+def zip_refusal(data):
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        return _members_refusal(archive.namelist())
+
+
+def archive_refusal(name, data):
+    """None when every member of the archive bytes may be committed, otherwise the
+    reason it is refused. The reader is chosen by `name`'s suffix. An archive that
+    cannot be opened by that reader is refused (fail closed): what cannot be read
+    cannot be shown to be clean. Any failure (zlib, lzma, bz2, tarfile, zipfile,
+    MemoryError, OSError) becomes the one line UNREADABLE, never a traceback."""
+    kind = archive_kind(name)
+    try:
+        if kind == "zip":
+            if len(data) > ZIP_SIZE_CAP:
+                return TOO_LARGE
+            return zip_refusal(data)
+        if kind == "tar":
+            return tar_refusal(io.BytesIO(data))
+    except Exception:  # noqa: BLE001 - MemoryError and OSError are Exceptions too
+        return UNREADABLE
+    return UNREADABLE
+
+
+def staged_size(root, name):
+    """The size in bytes of the STAGED blob, from git, without reading it."""
+    result = subprocess.run(["git", "cat-file", "-s", ":" + name], cwd=str(root or ROOT),
+                            capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError("git cat-file failed")
+    return int(result.stdout.strip())
+
+
 def staged_blob(root, name):
-    """The STAGED content of a path (the index, not the working tree), as bytes."""
+    """The STAGED content of a path (the index, not the working tree), as bytes.
+    Used for a zip only, after its size has been checked against ZIP_SIZE_CAP."""
     result = subprocess.run(["git", "show", ":" + name], cwd=str(root or ROOT),
                             capture_output=True)
     if result.returncode != 0:
         raise RuntimeError("git show failed")
     return result.stdout
+
+
+def staged_tar_refusal(root, name):
+    """Stream a staged tar from git into the tar reader with constant memory.
+    The rest of git's output is drained after the last header, so git exits on
+    its own and a non-zero exit is a real failure (refused as unreadable)."""
+    proc = subprocess.Popen(["git", "show", ":" + name], cwd=str(root or ROOT),
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    try:
+        reason = tar_refusal(proc.stdout)
+        while proc.stdout.read(_CHUNK):
+            pass
+    except BaseException:
+        proc.kill()
+        proc.wait()
+        raise
+    finally:
+        proc.stdout.close()
+    if proc.wait() != 0:
+        raise RuntimeError("git show failed")
+    return reason
+
+
+def staged_archive_refusal(root, name):
+    """The refusal for one staged archive, by its suffix: a tar is streamed, a zip
+    above ZIP_SIZE_CAP is refused unread. Every failure is UNREADABLE."""
+    try:
+        size = staged_size(root, name)
+        kind = archive_kind(name)
+        if kind == "zip":
+            if size > ZIP_SIZE_CAP:
+                return TOO_LARGE
+            return zip_refusal(staged_blob(root, name))
+        if kind == "tar":
+            return staged_tar_refusal(root, name)
+    except Exception:  # noqa: BLE001 - MemoryError and OSError are Exceptions too
+        return UNREADABLE
+    return UNREADABLE
 
 
 def staged_names(root=None):
@@ -271,10 +361,7 @@ def staged_refusals(root=None):
         if is_refused_path(name):
             refusals.append((name, "this path must never be committed"))
         elif is_archive_name(name):
-            try:
-                reason = archive_refusal(staged_blob(root, name))
-            except RuntimeError:
-                reason = "unreadable archive"
+            reason = staged_archive_refusal(root, name)
             if reason:
                 refusals.append((name, reason))
     return refusals
