@@ -171,3 +171,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **New draft hash.** `991c25f6a6a121be6cccd9d39392f1e0ebb13576085b453d1909195016352f92` (VERSIONS.md). The closure table is kept privately until S03_REPORT.md is written.
 - **Rules.** P1, P9, P13, P16.
 - **Reverse.** Each format choice can be changed in a later draft before the freeze; every change is re-hashed and the generators and checks re-run (S3a item 3).
+
+## D-025. The input format after the generators' 13 questions
+
+- **When, stage.** 2026-10-27 11:34 +0300 (system clock), S3a item 3 (a draft change).
+- **What happened.** The generators lane reported 13 points where the format was silent and it chose a reading. A read-only agent settled each from the code with probes on invented strings (no pipeline, gate or model): 10 readings right, 2 wrong (what a "sentence" is for the date-window bound search: Shimmer joins a paragraph's lines and splits after . ? !, so joined label lines can beat the intended bound; the 2% rename window is 2% of the larger figure, inclusive), 1 right only by luck (a document table cell's own measure word wins over the header; in a reference table the header wins). The riskiest, the low side of a band the rule states itself, is firm (that path never sets `conditional_on`), as the lane assumed.
+- **Change.** 17 edits to `docs/INPUT_FORMAT.md` stating each settled point (format policy: `[unless: ...]` is not used in tests; a probe key carries no `twin_of`; neighbour-dependent flaws are keyed in the unit where Python sees them, with the neighbour named in an extra field the scorer ignores). New draft hash `c2723037d73a3f855721c48a8b6f67831db6afae277aa37b0aad414a9deb982f`.
+- **Follow-up (S3a item 3).** Merge `loop/s03` into the generators lane, correct the lane's sentence reader, rename window and attribution scoring, regenerate the development suite and the long-range corpus, re-run the generator checks, record the hash.
+- **Defect found.** `reference_tables.band_conditions_for_unit` reports a firm low-side comparison as conditional in the pairing map's `band_conditions` (findings and amendments are unaffected): open item 20.
+- **Rules.** P1, P9, P13, S3a item 3.
