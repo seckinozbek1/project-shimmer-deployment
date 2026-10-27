@@ -2,20 +2,27 @@
 
 Each count is one unit: a location, a table of movements in box whose first row is
 the opening quantity carried from the count before, the stated closing quantity, the
-shrinkage in percent and the counter. The chain is: opening of count k equals the
-closing quantity of count k - 1.
+shrinkage in percent and the counter. CONV-LA says exactly what is computed (S3 checker
+round 3): the closing quantity equals the sum of the quantity column, and the opening
+row carries the sum of the quantity column of the count before. Every keyed unit breaks
+that text as written and every other unit keeps it; `units_breaking_carry_rule` reads it
+a second time from the rendered text with plain string handling.
 
 Neighbour-dependent kinds (each with `depends_on_unit`, the neighbour it depends on):
-- carry_in: the opening row was mis-carried from the count before; the stated closing
-  quantity is right given the neighbour. Python sees a sum mismatch in the unit; only
-  the neighbour says which figure is wrong (the opening row).
-- carry_out: the stated closing quantity is wrong; the count after carries the right
-  figure as its opening. Python sees a sum mismatch; only the next count confirms the
-  computed sum. The count after a carry_out is a clean distractor: read beside its
-  neighbour's stated closing it looks mis-carried, and it is not.
+- carry_in: the opening row was mis-carried from the count before (it is not that
+  count's column sum); the stated closing quantity is right given that neighbour.
+  Python sees a sum mismatch in the unit; only the neighbour says which figure is wrong
+  (the opening row). The count after a carry_in carries the carry_in's column sum, the
+  mis-carried figure included, and its issued (or received) row absorbs the difference,
+  so it adds up on its own and closes as the twin's does: a clean distractor, which
+  read beside its neighbour's stated closing looks mis-carried, and is not. A carry_in
+  is never the last count, whose successor in the reordered-sections probe is the first.
+- carry_out: the stated closing quantity is wrong; the count after carries the column
+  sum as its opening. Python sees a sum mismatch; only the next count confirms the
+  computed sum. The count after a carry_out is a clean distractor in the same way.
 - carry_mismatch: wrong ONLY given the neighbour. The opening row differs from the
-  closing quantity of the count before, and the received row absorbs the difference, so
-  each count adds up on its own and only the pair shows the flaw. Python compares no two
+  column sum of the count before, and the received row absorbs the difference, so each
+  count adds up on its own and only the pair shows the flaw. Python compares no two
   units, so this kind is keyed from this family's own ground truth and found again by
   the ground-truth scanner (ground_truth.py), with the neighbour in `depends_on_unit`.
 Other kinds: shrinkage above the band the rule states, a missing counter.
@@ -31,13 +38,50 @@ LOW, HIGH = 0.5, 3.0
 RULES = [
     md.Rule("CONV-LA", "Closing quantity",
             "The closing quantity must equal the sum of the quantity column, and the opening row "
-            "must carry the closing quantity of the count before it."),
+            "must carry the sum of the quantity column of the count before it."),
     md.Rule("CONV-LB", "Shrinkage", "The shrinkage must lie between 0.5% and 3%."),
     md.Rule("CONV-LC", "Counter", "Every stock count must state who counted it.",
             scope=["movement"], requires=["counted by"]),
 ]
 GROUND_TRUTH = [{"check": "carry", "kind": "carry_mismatch", "rule": "CONV-LA",
                  "closing": "closing quantity", "column": "quantity"}]
+# What each keyed kind's rule text must state (bundle.check_rule_statements reads the
+# rendered conventions): the clause a unit of that kind breaks as written.
+RULE_STATEMENTS = {
+    "carry_in": ("the closing quantity must equal the sum of the quantity column",),
+    "carry_out": ("the closing quantity must equal the sum of the quantity column",),
+    "carry_mismatch": ("the opening row must carry the sum of the quantity column of the count before it",),
+    "shrinkage_above": ("the shrinkage must lie between 0.5% and 3%",),
+    "shrinkage_below": ("the shrinkage must lie between 0.5% and 3%",),
+    "missing_counter": ("must state who counted it",),
+}
+
+
+def units_breaking_carry_rule(text, closing_label="Closing quantity"):
+    """An independent second reading of CONV-LA as written, straight from a rendered
+    document with plain string handling (no audit, no scanner): the headings of the
+    counts whose closing quantity is not the sum of their quantity column, or whose
+    opening row is not the sum of the quantity column of the count before. The gate
+    check requires them to be exactly the units keyed under CONV-LA (in the
+    reworded-labels probe, `closing_label` is the label the probe writes)."""
+    out, before = set(), None
+    for block in text.split("\n## ")[1:]:
+        heading, _, body = block.partition("\n")
+        column, closing = [], None
+        for ln in body.split("\n"):
+            cells = [c.strip() for c in ln.strip().strip("|").split("|")] if ln.startswith("|") else []
+            if len(cells) == 2 and cells[1].lstrip("-").isdigit():
+                column.append(int(cells[1]))
+            label, sep, value = ln.partition(": ")
+            if sep and label == closing_label:
+                closing = int(value.split(" ")[0].replace(",", "").split(".")[0])
+        if not column or closing is None:
+            before = None
+            continue
+        if closing != sum(column) or (before is not None and column[0] != before):
+            out.add(heading)
+        before = sum(column)
+    return out
 
 
 def _unit(head, place, rows, closing, shrink, counter):
@@ -50,8 +94,8 @@ def _unit(head, place, rows, closing, shrink, counter):
                           ("lines", lines_after)])
 
 
-def build(seed):
-    rng = wl.make_rng(FAMILY, seed)
+def build(seed, attempt=0):
+    rng = wl.make_rng(FAMILY, seed, attempt)
     n = rng.randint(24, 27)
     heads = wl.pick(rng, wl.TREES, n)
     # place neighbour-dependent flaws two or more units apart, then the rest
@@ -68,6 +112,10 @@ def build(seed):
             pair = {i, i + 1} if kind == "carry_out" else {i - 1, i}
             if min(pair) < 0 or max(pair) > n - 1 or pair & taken:
                 continue
+            if kind == "carry_in" and i == n - 1:
+                # its successor in the rotated probe would be the first count, which
+                # opens at the true chain and not at the carry_in's column sum
+                continue
             plan[i] = kind
             taken |= pair
             placed += 1
@@ -78,8 +126,10 @@ def build(seed):
         for _ in range(count):
             plan[rest.pop()] = kind
     after_out = [i + 1 for i, k in plan.items() if k == "carry_out"]
+    after_in = [i + 1 for i, k in plan.items() if k == "carry_in"]
     at_bound = rest.pop()
-    clean = sorted(after_out + [at_bound])
+    clean = sorted(set(after_out + [at_bound] + [i for i in after_in if i not in plan]))
+    carried_in = {}     # the count after a carry_in: the mis-carried difference it carries
     # the true chain
     opening = first_opening = rng.randint(40, 200)
     doc_units, twin_units, planted = [], [], []
@@ -108,25 +158,38 @@ def build(seed):
         counter = wl.person(rng)
         head = "Count " + heads[i]
         clean_u = _unit(head, place, rows, closing, shrink, counter)
+        # The document's rows: the twin's, except in the count after a carry_in, which
+        # carries that count's column sum (the mis-carried difference included) and
+        # absorbs the difference in its issued row (received, when it would make the
+        # issued row positive), so it adds up and closes as the twin's count does.
+        shown = [list(r) for r in rows]
+        if i in carried_in:
+            d = carried_in[i]
+            shown[0][1] = opening + d
+            if d > 0:
+                shown[2][1] = issued - d
+            else:
+                shown[1][1] = received - d
         kind = plan.get(i)
-        flawed = clean_u.clone()
+        flawed = _unit(head, place, shown, closing, shrink, counter)
         if kind == "carry_in":
             delta = rng.choice([-1, 1]) * rng.randint(3, 15)
             if opening + delta < 0:
                 delta = abs(delta)
-            bad_rows = [list(r) for r in rows]
+            bad_rows = [list(r) for r in shown]
             bad_rows[0][1] = opening + delta
             flawed = _unit(head, place, bad_rows, closing, shrink, counter)
+            carried_in[i + 1] = delta
             planted.append({"unit": i, "rule": "CONV-LA", "relation": "sum_mismatch", "kind": kind,
                             "field_label": "closing quantity", "value_a": closing + delta,
                             "value_b": closing, "links": {"depends_on_unit": i - 1}})
         elif kind == "carry_mismatch":
-            received_row = rows[1][1]
+            received_row = shown[1][1]
             if received_row >= 3:
                 delta = rng.randint(3, min(15, received_row))
             else:
                 delta = -rng.randint(3, min(15, opening)) if opening >= 3 else 3
-            bad_rows = [list(r) for r in rows]
+            bad_rows = [list(r) for r in shown]
             bad_rows[0][1] = opening + delta
             bad_rows[1][1] = received_row - delta
             if bad_rows[0][1] < 0 or bad_rows[1][1] < 0:
@@ -138,19 +201,19 @@ def build(seed):
                             "extra": {"chain_label": "closing quantity"}})
         elif kind == "carry_out":
             delta = rng.choice([-1, 1]) * rng.randint(3, 15)
-            flawed = _unit(head, place, rows, closing + delta, shrink, counter)
+            flawed = _unit(head, place, shown, closing + delta, shrink, counter)
             planted.append({"unit": i, "rule": "CONV-LA", "relation": "sum_mismatch", "kind": kind,
                             "field_label": "closing quantity", "value_a": closing,
                             "value_b": closing + delta, "links": {"depends_on_unit": i + 1}})
         elif kind in ("shrinkage_above", "shrinkage_below"):
             bad = round(rng.uniform(3.4, 6.0), 1) if kind == "shrinkage_above" else round(rng.uniform(0.0, 0.3), 1)
-            flawed = _unit(head, place, rows, closing, bad, counter)
+            flawed = _unit(head, place, shown, closing, bad, counter)
             planted.append({"unit": i, "rule": "CONV-LB",
                             "relation": "above_band" if kind == "shrinkage_above" else "below_band",
                             "kind": kind, "field_label": "shrinkage", "value_a": bad,
                             "value_b": HIGH if kind == "shrinkage_above" else LOW})
         elif kind == "missing_counter":
-            flawed = _unit(head, place, rows, closing, shrink, None)
+            flawed = _unit(head, place, shown, closing, shrink, None)
             planted.append({"unit": i, "rule": "CONV-LC", "relation": "missing_field", "kind": kind,
                             "field_label": "counted", "value_a": 0, "value_b": 1})
         doc_units.append(flawed)

@@ -30,11 +30,14 @@ track, which are schedules and no definitions). Six definitions in all (the four
 windows, the fee class and the appeal body) against four use types, spread through the
 document with the fee tables and the uses, so no position and no label alone finds the
 deciding unit: a planted flaw cannot be judged without the right unit of its track, at
-least twelve units away. The reference schedule carries no figure at all. Only about
-half of the uses (seeded) carry a cross-reference line, among the planted uses as
-well, so a cross-reference baseline is not perfect by construction; `baselines`
-measures a positional ("the first k units") and two label-only baselines, and every
-bundle keeps all of them below 1. Python computes none of these flaws (no bound
+least twelve units away. The reference schedule carries no figure at all. Two of the
+six deciding units (DISGUISED, seeded; S3 checker round 3) name their track as a
+procedure and their figure in other words (`Period allowed`, a `Charge range` column),
+which the schedule explains in prose, so they match their uses on neither the deciding
+label nor the track. Only about half of the uses (seeded) carry a cross-reference
+line, among the planted uses as well, so a cross-reference baseline is not perfect by
+construction; `baselines` measures a positional ("the first k units"), two label-only
+and a track-and-term baseline, and every bundle keeps all of them below 1. Python computes none of these flaws (no bound
 sentence, no reference table): they are keyed from this family's own ground truth and
 found again by the ground-truth scanner (ground_truth.py). Planted kinds: a notice
 window exceeded, an answer window exceeded, a filing fee above, and below, the band its
@@ -103,16 +106,44 @@ LONG_RULES = [
     md.Rule("CONV-RF", "Fee table", "Every fee table must name the body that issued it.",
             scope=["provision type=Fee table"], requires=["issued by"]),
 ]
+# About a third of the deciding units (seeded, DISGUISED of the six) name their track
+# as a procedure and their figure under other words, so they match the use on neither
+# the deciding label nor the track: only the schedule's prose (no figure) says that the
+# standard procedure is the Ordinary track, the accelerated procedure the Expedited one,
+# a period allowed a window length and a charge range a fee range.
+DISGUISED = 2
+PROCEDURE = {"Ordinary": "Standard", "Expedited": "Accelerated"}
+PLAIN_WORDS = {"window": "Window length", "fee": "Fee range"}
+OTHER_WORDS = {"window": "Period allowed", "fee": "Charge range"}
 LONG_RANGE_TRUTH = [
-    {"check": "far_window", "bound_label": "window length", "match_label": "track",
+    {"check": "far_window", "bound_labels": ["window length", "period allowed"], "match_label": "track",
+     "match_aliases": {"procedure": {v: k for k, v in PROCEDURE.items()}},
      "pairs": [["filed", "notice", [["defined term", "Notice window"]], "CONV-RA", "notice_window_far"],
                ["received", "answered", [["defined term", "Answer window"]], "CONV-RB", "answer_window_far"]]},
     {"check": "far_fee", "select": [["provision type", "Fee table"]], "match_label": "track",
-     "fee": "filing fee", "class": "fee class", "table_column": "fee range", "rule": "CONV-RC",
-     "kinds": {"above": "fee_above_band_far", "below": "fee_below_band_far"}},
+     "match_aliases": {"procedure": {v: k for k, v in PROCEDURE.items()}},
+     "fee": "filing fee", "class": "fee class", "table_columns": ["fee range", "charge range"],
+     "rule": "CONV-RC", "kinds": {"above": "fee_above_band_far", "below": "fee_below_band_far"}},
 ]
 # The label a label-only baseline looks for, by the relation of the planted entry.
 DECIDED_BY_LABEL = {"date_window": "window length", "above_band": "fee range", "below_band": "fee range"}
+# The term a track-and-term baseline looks for, by the use's provision type: the unit
+# stating that (label, value) on the use's own track.
+DECIDED_BY_TERM = {"Filing": ["defined term", "Notice window"], "Reply": ["defined term", "Answer window"],
+                   "Fee": ["provision type", "Fee table"]}
+# What each keyed kind's rule text must state (bundle.check_rule_statements).
+RULE_STATEMENTS = {
+    "notice_window_exceeded": ("must not exceed the standard notice window",),
+    "answer_window_exceeded": ("must not exceed the standard answer window",),
+    "fee_above_band": ("must lie within the fee band for the fee class",),
+    "fee_below_band": ("must lie within the fee band for the fee class",),
+    "missing_definition_source": ("must state the source of the definition",),
+    "missing_appeal_body": ("must name the appeal body",),
+    "notice_window_far": ("must not exceed the notice window for its track",),
+    "answer_window_far": ("must not exceed the answer window for its track",),
+    "fee_above_band_far": ("the fee table of its track sets for its fee class",),
+    "fee_below_band_far": ("the fee table of its track sets for its fee class",),
+}
 LONG_KINDS = (["notice_window_far"] * 4 + ["answer_window_far"] * 3 + ["fee_above_band_far"] * 3
               + ["fee_below_band_far"])
 LONG_USES = {"filing": 10, "reply": 8, "fee": 8, "appeal": 5}
@@ -122,21 +153,30 @@ def _date(offset):
     return (BASE_DATE + datetime.timedelta(days=offset)).isoformat()
 
 
-def baselines(units, planted, decided_by=DECIDED_BY_LABEL):
-    """How well three baselines that read no value find each planted entry's related
+BASELINES = ("first_4", "first_k", "label_nearest", "label_first", "track_term")
+
+
+def baselines(units, planted, decided_by=DECIDED_BY_LABEL, decided_by_term=DECIDED_BY_TERM):
+    """How well four baselines that read no figure find each planted entry's related
     unit (the fraction of planted entries they get right; 1 is perfect).
 
-    `units` is [(unit id, set of normalised labels)] in reading order; `planted` is
-    [(unit id, related unit id, relation)]. The baselines:
+    `units` is [(unit id, {normalised label: value})] in reading order (a table header
+    has the value ""); `planted` is [(unit id, related unit id, relation)]. The
+    baselines:
     - `first_4` and `first_k`: the related unit is among the first 4 units (the old
       layout's definitions), or among the first k, k the number of distinct related
       units the test has (the smallest set that could be perfect);
     - `label_nearest`: the nearest other unit that carries the deciding label (a window
       length, or a fee range column), ties to the earlier;
-    - `label_first`: the first unit in reading order that carries it."""
+    - `label_first`: the first unit in reading order that carries it;
+    - `track_term`: the nearest other unit that states the term the use's provision type
+      needs (`decided_by_term`: a notice or answer window definition, or a fee table)
+      and the use's own `track` value, ties to the earlier. It reads label values (the
+      track and the term), never a figure."""
     pos = {u: i for i, (u, _) in enumerate(units)}
     k = len({r for _, r, _ in planted})
-    out = {"k": k, "first_4": 0, "first_k": 0, "label_nearest": 0, "label_first": 0}
+    out = {"k": k}
+    out.update((b, 0) for b in BASELINES)
     for use, rel, relation in planted:
         label = decided_by[relation]
         carriers = [i for i, (u, labs) in enumerate(units) if label in labs and u != use]
@@ -146,14 +186,21 @@ def baselines(units, planted, decided_by=DECIDED_BY_LABEL):
             near = min(carriers, key=lambda i: (abs(i - pos[use]), i))
             out["label_nearest"] += units[near][0] == rel
             out["label_first"] += units[carriers[0]][0] == rel
+        fields = units[pos[use]][1]
+        term = decided_by_term.get(fields.get("provision type"))
+        if term is not None and fields.get("track"):
+            same = [i for i, (u, f) in enumerate(units) if u != use and f.get(term[0]) == term[1]
+                    and f.get("track") == fields["track"]]
+            if same:
+                out["track_term"] += units[min(same, key=lambda i: (abs(i - pos[use]), i))][0] == rel
     n = float(len(planted) or 1)
-    for key in ("first_4", "first_k", "label_nearest", "label_first"):
+    for key in BASELINES:
         out[key] = round(out[key] / n, 3)
     return out
 
 
 def baselines_below_one(scores):
-    return all(scores[k] < 1 for k in ("first_4", "first_k", "label_nearest", "label_first"))
+    return all(scores[k] < 1 for k in BASELINES)
 
 
 def _far_reorder(n, rng, planted, labels):
@@ -173,10 +220,10 @@ def _far_reorder(n, rng, planted, labels):
     raise ValueError("no long-range reordering")
 
 
-def build(seed, long_range=False):
+def build(seed, long_range=False, attempt=0):
     if long_range:
-        return build_long_range(seed)
-    rng = wl.make_rng(FAMILY, seed)
+        return build_long_range(seed, attempt)
+    rng = wl.make_rng(FAMILY, seed, attempt)
     kinds = (["notice_window_exceeded"] * 3 + ["answer_window_exceeded"] * 2 + ["fee_above_band"] * 2
              + ["fee_below_band"] * 1 + ["missing_definition_source"] * 1 + ["missing_appeal_body"] * 2)
     counts = {"filing": 6, "reply": 5, "fee": 5, "appeal": 3}
@@ -371,22 +418,43 @@ def _long_layout(rng):
 FOR_TYPE_BY_DECIDER = {"notice": "filing", "answer": "reply", "fee": "fee"}
 
 
-def build_long_range(seed):
-    rng = wl.make_rng(FAMILY + "L", seed)
+USE_TYPE = {"filing": "Filing", "reply": "Reply", "fee": "Fee", "appeal": "Appeal"}
+
+
+def _fields(units, disguised):
+    """{normalised label: value} of every unit as the layout will write it (a table
+    header has the value ""), for the baselines; the figures are left out."""
+    out = []
+    for i, (k, what, tk) in enumerate(units):
+        hidden = i in disguised
+        if k == "def":
+            f = {"defined term": DEFINED[what][0], "definition source": ""}
+            if tk is not None:
+                f["procedure" if hidden else "track"] = PROCEDURE[tk] if hidden else tk
+            if what in ("notice", "answer"):
+                f[tr.norm(OTHER_WORDS["window"] if hidden else PLAIN_WORDS["window"])] = ""
+        elif k == "table":
+            f = {"provision type": "Fee table", "issued": "", "fee class": "",
+                 tr.norm(OTHER_WORDS["fee"] if hidden else PLAIN_WORDS["fee"]): ""}
+            f["procedure" if hidden else "track"] = PROCEDURE[tk] if hidden else tk
+        else:
+            f = {"provision type": USE_TYPE[what]}
+            if tk is not None:
+                f["track"] = tk
+        out.append(f)
+    return out
+
+
+def build_long_range(seed, attempt=0):
+    rng = wl.make_rng(FAMILY + "L", seed, attempt)
     for _ in range(2000):
         got = _long_layout(rng)
         if got is None:
             continue
         units, deciders, plan, distract = got
-        labels = []
-        for k, what, tk in units:
-            if k == "def":
-                labels.append({"defined term", "definition source"}
-                              | ({"window length", "track"} if what in ("notice", "answer") else set()))
-            elif k == "table":
-                labels.append({"provision type", "track", "issued", "fee class", "fee range"})
-            else:
-                labels.append({"provision type"})
+        # about a third of the deciding units are written in other words (DISGUISED)
+        disguised = set(rng.sample(sorted(deciders.values()), DISGUISED))
+        labels = _fields(units, disguised)
         planted_pos = [(i, deciders[(NEED[kd], units[i][2])], "date_window" if NEED[kd] != "fee"
                         else ("above_band" if "above" in kd else "below_band")) for i, kd in plan.items()]
         if baselines_below_one(baselines(list(enumerate(labels)), planted_pos)):
@@ -410,21 +478,24 @@ def build_long_range(seed):
     for i, (k, what, tk) in enumerate(units):
         head = "Provision " + heads[i]
         kind = plan.get(i)
+        hidden = i in disguised
+        track_line = ["Procedure", PROCEDURE[tk]] if hidden else ["Track", tk]
         if k == "def":
             term, meaning = DEFINED[what]
             prose = "In these provisions the %s means %s." % (term.lower(), meaning)
             lines = [["Defined term", term]]
             if tk is not None:
-                lines.append(["Track", tk])
+                lines.append(track_line)
             lines.append(["Definition source", rng.choice(SOURCES)])
             if what in ("notice", "answer"):
-                lines.append(["Window length", "%d days" % WINDOW_DAYS[(what, tk)]])
+                lines.append([OTHER_WORDS["window"] if hidden else PLAIN_WORDS["window"],
+                              "%d days" % WINDOW_DAYS[(what, tk)]])
             clean_u = md.Unit(head, [("lines", lines), ("prose", prose)])
             flawed = clean_u.clone()
         elif k == "table":
             clean_u = md.Unit(head, [
-                ("lines", [["Provision type", "Fee table"], ["Track", tk], ["Issued by", rng.choice(BODIES)]]),
-                ("table", ["Fee class", "Fee range (EUR)"],
+                ("lines", [["Provision type", "Fee table"], track_line, ["Issued by", rng.choice(BODIES)]]),
+                ("table", ["Fee class", "%s (EUR)" % (OTHER_WORDS["fee"] if hidden else PLAIN_WORDS["fee"])],
                  [[c, "%d to %d" % (lo, hi)] for c, lo, hi in FEE_TABLES[tk]])])
             flawed = clean_u.clone()
         else:
@@ -503,6 +574,9 @@ def build_long_range(seed):
         ("prose", "This schedule explains how the provisions are read."),
         ("prose", "Each window is stated in the provision that defines it for a track, and each fee band "
                   "in the fee table of a track."),
+        ("prose", "Some provisions name their track as a procedure. The standard procedure is the "
+                  "Ordinary track and the accelerated procedure is the Expedited track."),
+        ("prose", "A period allowed is a window length, and a charge range is a fee range."),
     ])
     conv = md.Conventions("Provision conventions", "These rules govern the procedural provisions.", LONG_RULES)
     fee_flaw = [p for p in planted if p["relation"] in ("above_band", "below_band")][0]
@@ -518,10 +592,14 @@ def build_long_range(seed):
         "key_extra": {"long_range": {
             "related_by": "every planted entry names in related_unit the unit of its own track whose figure "
                           "decides it (a window definition's window length, or a fee table's range for its "
-                          "class), stated only there; distance is how many units apart the two are",
+                          "class), stated only there; distance is how many units apart the two are; some "
+                          "of those units name the track as a procedure and the figure in other words, "
+                          "as the schedule explains",
             "definitions_first": all(units[i][0] == "def" for i in range(6)),
             "min_distance": MIN_DISTANCE,
             "decided_by_label": DECIDED_BY_LABEL,
+            "decided_by_term": DECIDED_BY_TERM,
+            "deciding_units_in_other_words": len(disguised),
             "cross_reference_share": round(sum(xref_on.values()) / float(len(xref_on)), 2)}},
         "probes": {
             "reword": {"old": "Filed", "new": "Lodged"},
