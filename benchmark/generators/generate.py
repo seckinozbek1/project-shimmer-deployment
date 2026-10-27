@@ -2,7 +2,7 @@
 
     py -3.12 benchmark/generators/generate.py suite dev          # benchmark/dev_suite/generated/
     py -3.12 benchmark/generators/generate.py suite long_range   # benchmark/long_range/generated/
-    py -3.12 benchmark/generators/generate.py one f3 7 --out DIR [--long-range]
+    py -3.12 benchmark/generators/generate.py one f3 7 --out DIR [--long-range] [--rounds 3]
     py -3.12 benchmark/generators/generate.py check DIR          # re-validate a written suite
 
 `suite` reads the committed SEEDS.json of that suite, builds and validates every test in
@@ -29,9 +29,17 @@ def _suite_tests(suite):
     seeds = json.loads((SUITES[suite] / "SEEDS.json").read_text(encoding="utf-8"))
     out = []
     for entry in seeds["tests"]:
-        opts = {"long_range": True} if entry.get("long_range") else {}
-        out.append((entry["family"], int(entry["seed"]), opts))
+        out.append((entry["family"], int(entry["seed"]), _options(entry)))
     return out
+
+
+def _options(entry):
+    """The generator options a SEEDS.json entry records: long_range (family 5) and
+    rounds (family 4, two or three)."""
+    opts = {"long_range": True} if entry.get("long_range") else {}
+    if entry.get("rounds") is not None:
+        opts["rounds"] = int(entry["rounds"])
+    return opts
 
 
 def _test_name(test):
@@ -43,9 +51,12 @@ def _listing(built):
     rows = []
     for (family, seed, opts), test in built:
         roles = bundle._roles(test)
-        rows.append({"test": _test_name(test), "family": family, "seed": seed,
-                     "long_range": bool(opts.get("long_range")),
-                     "bundles": {role: roles[role] for role in sorted(roles)}})
+        row = {"test": _test_name(test), "family": family, "seed": seed,
+               "long_range": bool(opts.get("long_range"))}
+        if family == "f4":
+            row["rounds"] = opts.get("rounds", 2)
+        row["bundles"] = {role: roles[role] for role in sorted(roles)}
+        rows.append(row)
     return {"format": gen.bundle.tr.FORMAT_VERSION, "tests": rows}
 
 
@@ -80,7 +91,7 @@ def cmd_suite(args):
 
 
 def cmd_one(args):
-    opts = {"long_range": True} if args.long_range else {}
+    opts = _options({"long_range": args.long_range, "rounds": args.rounds})
     try:
         test = gen.generate(args.family, args.seed, **opts)
     except bundle.ValidationError as exc:
@@ -118,6 +129,8 @@ def main(argv=None):
     o.add_argument("seed", type=int)
     o.add_argument("--out", required=True)
     o.add_argument("--long-range", action="store_true")
+    o.add_argument("--rounds", type=int, choices=(2, 3), default=None,
+                   help="family 4 only: two or three versions (default two)")
     c = sub.add_parser("check")
     c.add_argument("dir")
     args = ap.parse_args(argv)

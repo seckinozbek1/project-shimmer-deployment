@@ -1,27 +1,32 @@
-"""Family 4: contract terms across two versions (a negotiation-style test, section 9).
+"""Family 4: contract terms across two or three versions (a negotiation-style test,
+section 9, that is also a declared multi-round case).
 
-The earlier version is the prior; the later version is the target; the conventions file
-is the mandate, one rule per term of the target, each stating the band that side
-wants (section 6, "Negotiation-style tests"). The key is negotiation-style:
+The version before the last is the prior; the last version is the target; the
+conventions file is the mandate, one rule per term of the target, each stating the band
+that side wants (section 6, "Negotiation-style tests"). The key is negotiation-style:
 `prior_records` (every change record Python writes, unchanged ones included) and
 `band_irregularities` (every irregular band finding), plus fields the scorer ignores:
 `version_changes` (the family's own plan, computed here from its own figures and
-checked against the audit), `clean`, and per band row `unit_id`, `value_b` and `kind`.
+checked against the audit), `rename_probes` (one typed row per rename-probe kind),
+`clean`, and per band row `unit_id`, `value_b` and `kind`.
 
-Version changes planted between the two versions: terms unchanged, terms changed
-inside the band, terms moved toward or away from the band, a term renamed with its
-value unchanged (refused as a possible rename, no record), a term renamed with its
-value moved (absent_since_prior on the old label), a withdrawn term (absent_since_prior),
-a term new in the later version (no record), sections reordered, and a value written
-in a different format (unchanged).
+Version changes planted between the prior and the target: terms unchanged, terms
+changed inside the band, terms moved toward or away from the band, a term renamed with
+its value unchanged (refused as a possible rename, no record), a term renamed with its
+value moved (refused as a possible successor: a newcomer in the same section in the same
+measure, S2b item 5; no record), a withdrawn term (absent_since_prior), a term new in
+the later version (no record), sections reordered, and a value written in a different
+format (unchanged).
 
 The flaws (band irregularities in the later version) come in six kinds: a breach left
 unchanged, a breach the later version moved into, a breach the later version moved
 toward the band but not into it, a breach on a new term, a breach on a renamed term,
 and a breach on a value written in a different format.
 
-The two-version form only. The three-version (multi-round) case declaration waits for
-S2 and is not written here (see README.md, TODO).
+With `rounds=3` an earliest version comes first: the prior with three ordinary terms
+at other figures, same labels, same section order. It is a grounding file, never a
+declared prior, and only the case manifest names it (round r1). Every bundle carries
+the live case manifest (`multi_round_case.py`).
 """
 from . import model as md
 from . import textrules as tr
@@ -99,7 +104,46 @@ def _values(rng, t, how):
     raise ValueError("no value for %s %s" % (t[0], how))
 
 
-def build(seed):
+ROUND_CHANGES = 3          # ordinary terms at another figure in the earliest version
+REUSE_ROLES = ("breach_moved_away", "breach_moved_toward", "changed_inside", "moved_into_band",
+               "unchanged_inside")
+
+
+def _earliest(seed, terms, prior_units, prior_order, title, preamble):
+    """The earliest version (round r1 of a three-round case): the prior with
+    ROUND_CHANGES ordinary terms, in distinct sections, at a figure more than 5% away.
+    Its own random stream, so the two-version form of a seed is unchanged."""
+    rng = wl.make_rng(FAMILY + "-rounds", seed)
+    pool = [e for e in terms if e["role"] in REUSE_ROLES and e["prior"] is not None]
+    rng.shuffle(pool)
+    chosen, units = [], set()
+    for e in pool:
+        if e["unit"] not in units:
+            chosen.append(e)
+            units.add(e["unit"])
+        if len(chosen) == ROUND_CHANGES:
+            break
+    if len(chosen) != ROUND_CHANGES:
+        raise ValueError("no earliest-version changes")
+    early_units = [u.clone() for u in prior_units]
+    changes = []
+    for e in chosen:
+        for _ in range(500):
+            v = _values(rng, e["t"], rng.choice(["inside", "above", "below"]))
+            if abs(v - e["prior"]) > 0.05 * max(abs(v), abs(e["prior"])):
+                break
+        else:
+            raise ValueError("no earliest value for %s" % e["label"])
+        early_units[e["unit"]].set_line(e["label"], _fmt(e["t"], v))
+        changes.append({"field_label": tr.norm(e["label"]), "prior_position": prior_order.index(e["unit"]),
+                        "value_before": tr.r6(v), "value_after": tr.r6(e["prior"]), "unit": e["t"][1]})
+    changes.sort(key=lambda c: c["field_label"])
+    return md.Doc(title, preamble, [early_units[i] for i in prior_order]), changes
+
+
+def build(seed, rounds=2):
+    if rounds not in (2, 3):
+        raise ValueError("family 4 writes two or three rounds")
     rng = wl.make_rng(FAMILY, seed)
     exit_term = [t for t in TERMS if t[0] == "Exit charge"][0]
     pool = [t for t in TERMS if t is not exit_term]
@@ -219,35 +263,38 @@ def build(seed):
                 rule_of[id(e)] = rid
     conv = md.Conventions("Mandate", "These rules state the reviewing side's position on each term.", rules)
     # the family's own plan of change records, from its own figures
+    def plan_row(e, which):
+        lo, hi = e["t"][2], e["t"][3]
+        now = e[which]
+        meas = e["t"][1]
+        ln, lp = tr.norm(e["later_label"]), tr.norm(e["label"])
+        if e["role"] == "withdrawn":
+            # no label is new in its section (its partner is stated earlier too)
+            v = {"field_label": lp, "change": "withdrawn", "expect": "absent_since_prior",
+                 "refusal": None, "value_a": None, "value_b": e["prior"], "unit": meas}
+        elif e["role"] == "breach_new_term":
+            v = {"field_label": ln, "change": "new_in_later_version", "expect": "none",
+                 "refusal": None, "value_a": now, "value_b": None, "unit": meas}
+        elif e["role"] in ("renamed_unchanged", "breach_renamed_moved"):
+            # within 2% of the larger figure, 2% included: a possible rename; moved
+            # further: the new label in the same section and measure is a possible
+            # successor (S2b item 5). Refused either way, never withdrawn.
+            moved = abs(now - e["prior"]) > 0.02 * max(abs(now), abs(e["prior"]))
+            v = {"field_label": lp, "change": "renamed_to_" + ln.replace(" ", "_"),
+                 "expect": "refused", "refusal": "possible_successor" if moved else "possible_rename",
+                 "value_a": None, "value_b": e["prior"], "unit": meas}
+        else:
+            v = {"field_label": lp,
+                 "change": "value_in_different_format" if e["role"] == "breach_reformatted" else e["role"],
+                 "expect": _orient(e["prior"], now, lo, hi), "refusal": None,
+                 "value_a": now, "value_b": e["prior"], "unit": meas}
+        for f in ("value_a", "value_b"):
+            if v[f] is not None:
+                v[f] = tr.r6(v[f])
+        return v
+
     def plan(which):
-        out = []
-        for e in terms:
-            lo, hi = e["t"][2], e["t"][3]
-            now = e[which]
-            meas = e["t"][1]
-            ln, lp = tr.norm(e["later_label"]), tr.norm(e["label"])
-            if e["role"] == "withdrawn":
-                out.append({"field_label": lp, "change": "withdrawn", "expect": "absent_since_prior",
-                            "value_a": None, "value_b": e["prior"], "unit": meas})
-            elif e["role"] == "breach_new_term":
-                out.append({"field_label": ln, "change": "new_in_later_version", "expect": "none",
-                            "value_a": now, "value_b": None, "unit": meas})
-            elif e["role"] in ("renamed_unchanged", "breach_renamed_moved"):
-                # refused as a possible rename within 2% of the larger figure, inclusive
-                moved = abs(now - e["prior"]) > 0.02 * max(abs(now), abs(e["prior"]))
-                out.append({"field_label": lp, "change": "renamed_to_" + ln.replace(" ", "_"),
-                            "expect": "absent_since_prior" if moved else "refused",
-                            "value_a": None, "value_b": e["prior"], "unit": meas})
-            else:
-                out.append({"field_label": lp,
-                            "change": "value_in_different_format" if e["role"] == "breach_reformatted" else e["role"],
-                            "expect": _orient(e["prior"], now, lo, hi),
-                            "value_a": now, "value_b": e["prior"], "unit": meas})
-        for v in out:
-            for f in ("value_a", "value_b"):
-                if v[f] is not None:
-                    v[f] = tr.r6(v[f])
-        return sorted(out, key=lambda v: v["field_label"])
+        return sorted((plan_row(e, which) for e in terms), key=lambda v: v["field_label"])
     bands = []
     for e in terms:
         if not e["role"].startswith("breach_"):
@@ -259,6 +306,46 @@ def build(seed):
                       "value_a": e["later"], "value_b": hi if above else lo,
                       "rule": rule_of[id(e)], "kind": e["kind"]})
     bands.sort(key=lambda b: (b["unit"], b["field_label"]))
+    # One typed row per rename-probe kind (S2b item 5), from the same plan; unit is the
+    # target's unit index, mapped to the bundle's own id when the key is written.
+    probe_kinds = {"renamed_unchanged": "renamed_value_unchanged",
+                   "breach_renamed_moved": "renamed_value_moved", "withdrawn": "withdrawn",
+                   "breach_new_term": "new_in_later_version",
+                   "breach_reformatted": "value_in_different_format"}
+    fixed_reasons = {"withdrawn": "no_successor_in_section",
+                     "new_in_later_version": "not_stated_in_earlier_version",
+                     "value_in_different_format": "comma_grouped_digits"}
+
+    def rename_probes(which):
+        out = []
+        for e in terms:
+            kind = probe_kinds.get(e["role"])
+            if kind is None:
+                continue
+            now = e[which]
+            lp, ln = tr.norm(e["label"]), tr.norm(e["later_label"])
+            v = plan_row(e, which)
+            out.append({"kind": kind, "field_label": ln if e["prior"] is None else lp,
+                        "later_field_label": ln if now is not None else None,
+                        "unit_id": e["unit"], "prior_order": [],
+                        "value_before": tr.r6(e["prior"]) if e["prior"] is not None else None,
+                        "value_after": tr.r6(now) if now is not None else None, "unit": e["t"][1],
+                        "written_before": _fmt(e["t"], e["prior"]) if e["prior"] is not None else None,
+                        "written_after": (_fmt(e["t"], now, e["role"] == "breach_reformatted")
+                                          if now is not None else None),
+                        "expect": v["expect"], "reason": v["refusal"] or fixed_reasons[kind]})
+        out.append({"kind": "reordered_sections", "field_label": None, "later_field_label": None,
+                    "unit_id": None, "prior_order": list(prior_order), "value_before": None,
+                    "value_after": None, "unit": None, "written_before": None, "written_after": None,
+                    "expect": "records_follow_headings", "reason": "unit_identity_by_heading"})
+        return sorted(out, key=lambda r: r["kind"])
+
+    issues = {}
+    for e in terms:
+        issues[e["label"]] = issues[e["later_label"]] = "issue-" + tr.slug(e["label"])
+    earliest, round_changes = (None, [])
+    if rounds == 3:
+        earliest, round_changes = _earliest(seed, terms, prior_units, prior_order, title, preamble)
     clean_unit = [e["unit"] for e in terms if e["role"] == "at_bound"][0]
     # probes
     unchanged_breach = [e for e in terms if e["role"] == "breach_unchanged"][0]
@@ -284,6 +371,8 @@ def build(seed):
             ("prose", "Each version restates every term that remains on the table.")])],
         "bands": bands, "clean": [clean_unit],
         "version_changes": plan("later"), "twin_version_changes": plan("twin"),
+        "rename_probes": rename_probes("later"), "twin_rename_probes": rename_probes("twin"),
+        "rounds": rounds, "earliest": earliest, "round_changes": round_changes, "issues": issues,
         "doc_stem": "terms", "conv_stem": "mandate",
         "task": "Compare the later version of the supply terms with the earlier one and review it against the mandate.",
         "probes": {
