@@ -75,3 +75,21 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **D-002 wording.** Its option (2) says "run complete searches"; the choice made in its revision keeps the spec's "incomplete" label, completed so it stays true. The choice is what applies.
 - **D-004 measurement at the branch tip.** At 06:46:55 +03:00, with the loop branch at `30a42f0` (ahead of `main`), a worktree made by `git worktree add --detach .claude/worktrees/wtproof2 loop/2026-10-27` started at `30a42f0`; it was then removed. A subagent's isolation worktree had started at `939da2c`. This confirms the fallback is needed and works.
 - **Rules.** P1, P10 (corrections are recorded, nothing is dropped). Append-only record (IV.8).
+
+## D-009. No stage fallback for the H5 slip of 2026-10-27 (INC-003)
+
+- **When, stage.** 2026-10-27 06:54 +03:00 (system clock), S1 after C1.
+- **Fork.** The lead typed the collaborator's project name in plain letters inside a search pattern in one tool call (session transcript only; no file, commit, message, record or log carries it; re-checked with the hex pattern). IV.6 calls a hard limit that came close to being crossed a critical error, whose fallback resets the stage branch to its start.
+- **Options.** (1) Run the IV.6 fallback: save the state on `loop/failed/s01-attempt1`, reset `loop/s01` to `loop-s00-v1-open`, redo C1. (2) Record the incident, put it at the top of `FOR_SECKIN.md`, tighten the working rule, and continue.
+- **Rules.** P18 (protect the other person first: what protects the collaborator is that no file or commit carries the name, which holds; a reset of correct product work removes nothing from the transcript), P10 (reported, not hidden), P12 (deleting the transcript is not the loop's to do; H12).
+- **Choice.** Option 2. Every later name search copies the spec's hex pattern verbatim.
+- **Reverse.** Seckin can order the fallback; `loop/s01` would then be reset as IV.6 describes.
+
+## D-010. Unbound past credential-reading tools are treated as frozen by function (S1 Part 3)
+
+- **When, stage.** 2026-10-27 06:57 +03:00 (system clock), S1, before the Part 3 lane.
+- **Fork.** S1 Part 3 sorts the 20 tools that hard-code the credential path into live (the `ordinary_final_*` family and anything `tools/prepare_cloud_run.py` or `tools/prepare_ordinary_final_run.py` uses) and frozen (a past tool whose hash a manifest or freeze binds). Neither prepare tool uses any of the 20. Of the 16 that are not `ordinary_final_*`, only `tools/checkpoint120_cloud.py` is bound by a record (`tuning/second_tuning_eval_runtime_v2_1/historical_preservation.json`). The other 15 fit neither class as written.
+- **Options.** (1) Treat the 15 as live and change them too. (2) Treat them as frozen by function: past tuning, probe and evaluation tools that no live path imports; leave them unchanged and list them for the history rewrite (S13).
+- **Rules.** P3 (keep past tools as they ran), P16 (change only what the stage needs; the spec says frozen tools stay as they are), P13.
+- **Choice.** Option 2. They are listed in the S1 report with the note "frozen by function, no binding record".
+- **Reverse.** A later stage may change any of them if it is ever run again.
