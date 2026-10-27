@@ -12792,15 +12792,6 @@ def check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence():
                "scalars/hits brings the false record back")
 
 
-if __name__ == "__main__":
-    import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(sys.argv[1]) / "scripts"))
-    _fail = lambda d: ("FAIL", d)
-    _ok = lambda d: ("PASS", d)
-    print(check_185_a_reworded_label_refuses_instead_of_fabricating_an_absence())
-
-
 def check_186_a_run_reports_queued_then_running_then_a_distinguishable_terminal_state():
     """api STEP B1: GET /runs/{run_id} (and GET /runs, its list twin) report the
     new run-resource shape end to end, with NO real pipeline subprocess ever
