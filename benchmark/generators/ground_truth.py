@@ -160,22 +160,42 @@ def chain(u, closing, column):
 
 
 def _scan_carry(res, chk):
+    """A count that adds up on its own whose first row is not the sum of the column of
+    the count before (the rule's text: "the opening row must carry the sum of the
+    quantity column of the count before it"). A count that does not add up is the sum
+    rule's, which the figure audit finds."""
     out = []
     units = _units(res)
     for p_u, q_u in zip(units, units[1:]):
         p, q = chain(p_u, chk["closing"], chk["column"]), chain(q_u, chk["closing"], chk["column"])
         if p is None or q is None or not tr.same(sum(q[0]), q[1]):
             continue
-        if not tr.same(q[0][0], p[1]) and not tr.same(q[0][0], tr.r6(sum(p[0]))):
+        carried = tr.r6(sum(p[0]))
+        if not tr.same(q[0][0], carried):
             out.append(_entry(q_u["id"], chk["rule"], "carry_mismatch", chk["kind"],
-                              "%s row1" % chk["column"], p[1], q[0][0], depends_on_unit=p_u["id"]))
+                              "%s row1" % chk["column"], carried, q[0][0], depends_on_unit=p_u["id"]))
     return out
 
 
-def related(res, select, match_label, use):
+def _match_value(u, match_label, aliases):
+    """The unit's `match_label` value, or the value a declared alias names: `aliases`
+    maps another label to {its value: the match_label value it stands for} (the family
+    declares the words its deciding units use, which the reference file explains)."""
+    ln = _line(u, match_label)
+    if ln is not None:
+        return ln["value"]
+    for label, values in sorted((aliases or {}).items()):
+        ln = _line(u, label)
+        if ln is not None and ln["value"] in values:
+            return values[ln["value"]]
+    return None
+
+
+def related(res, select, match_label, use, aliases=None):
     """The one unit that decides a use: every (label, value) in `select` stated on its
-    label lines, and the same `match_label` value as the use. None when there is no such
-    unit or more than one (a ground truth that names no single unit is no ground truth)."""
+    label lines, and the same `match_label` value as the use (directly or through a
+    declared alias). None when there is no such unit or more than one (a ground truth
+    that names no single unit is no ground truth)."""
     want = _line(use, match_label)
     if want is None:
         return None
@@ -183,12 +203,27 @@ def related(res, select, match_label, use):
     for u in _units(res):
         if u is use:
             continue
-        ln = _line(u, match_label)
-        if ln is None or ln["value"] != want["value"]:
+        if _match_value(u, match_label, aliases) != want["value"]:
             continue
         if all((_line(u, lab) or {}).get("value") == val for lab, val in select):
             hits.append(u)
     return hits[0] if len(hits) == 1 else None
+
+
+def _first_figure(u, labels):
+    for label in labels:
+        fig = _figure(u, label)
+        if fig is not None:
+            return fig
+    return None
+
+
+def _first_column(u, labels):
+    for label in labels:
+        col = _column(u, label)
+        if col is not None:
+            return col
+    return None
 
 
 def _scan_far_window(res, chk):
@@ -198,8 +233,8 @@ def _scan_far_window(res, chk):
             a, b = _line(u, first), _line(u, second)
             if a is None or b is None or a["kind"][0] != "date" or b["kind"][0] != "date":
                 continue
-            d = related(res, select, chk["match_label"], u)
-            bound = _figure(d, chk["bound_label"]) if d is not None else None
+            d = related(res, select, chk["match_label"], u, chk.get("match_aliases"))
+            bound = _first_figure(d, chk["bound_labels"]) if d is not None else None
             if bound is None:
                 continue
             gap = abs((datetime.date(*b["kind"][1]) - datetime.date(*a["kind"][1])).days)
@@ -215,8 +250,8 @@ def _scan_far_fee(res, chk):
         fee, cls = _figure(u, chk["fee"]), _line(u, chk["class"])
         if fee is None or cls is None:
             continue
-        d = related(res, chk["select"], chk["match_label"], u)
-        col = _column(d, chk["table_column"]) if d is not None else None
+        d = related(res, chk["select"], chk["match_label"], u, chk.get("match_aliases"))
+        col = _first_column(d, chk["table_columns"]) if d is not None else None
         cls_col = _column(d, chk["class"]) if d is not None else None
         if col is None or cls_col is None or col[0] is not cls_col[0]:
             continue

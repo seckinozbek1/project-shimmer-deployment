@@ -50,6 +50,18 @@ RULES = [
     md.Rule("CONV-DG", "Freight share",
             "The freight share must equal the freight as a percentage of the consignment's stated total."),
 ]
+# What each keyed kind's rule text must state (bundle.check_rule_statements reads the
+# rendered conventions): the clause a unit of that kind breaks as written.
+RULE_STATEMENTS = {
+    "product_mismatch": ("must equal the quantity times the unit price",),
+    "band_above": ("must lie within the price band for the goods class",),
+    "band_below": ("must lie within the price band for the goods class",),
+    "total_mismatch": ("must equal the sum of the line value column",),
+    "missing_required_field": ("must state the country of origin",),
+    "rate_mismatch": ("the duty rate applied to the consignment's stated total",),
+    "ratio_mismatch": ("the freight as a percentage of the consignment's stated total",),
+    "copy_mismatch": ("must carry the line value of its declaration line",),
+}
 GROUND_TRUTH = [
     {"check": "rate", "kind": "rate_mismatch", "rule": "CONV-DE",
      "rate": "duty rate", "base": "total line value", "result": "duty due"},
@@ -102,8 +114,8 @@ def summaries_breaking_rules(text):
     return duty, ratio
 
 
-def build(seed):
-    rng = wl.make_rng(FAMILY, seed)
+def build(seed, attempt=0):
+    rng = wl.make_rng(FAMILY, seed, attempt)
     classes = rng.sample(CLASSES, 5)
     n_lines = rng.choice([23, 24, 26])
     group = 3

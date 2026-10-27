@@ -26,6 +26,17 @@ The same family and seed always give byte-identical files. The gate check
 `suite_listing.json`, written next to the tests, records the SHA-256 of the input-format
 draft the suite was generated against (`input_format_sha256`).
 
+**Retries.** A seed whose own draw cannot make a valid test (a build that raises, or a
+test that fails its own validation) is retried inside the build, from a sub-seed
+derived from the seed and the attempt number alone (`wordlists.make_rng`, up to
+`MAX_ATTEMPTS` 20 in `__init__.py`), so the retry sequence, and the bytes, depend only
+on the seed. The key's `generator.attempt` and the listing's `attempt` record the
+attempt that was kept; a seed that builds at its own draw records none in the key and
+gives exactly the bytes it gave before retries existed. Five such seeds are known (the
+S3 round-3 adversarial sweep): f4 4003, 4007, 4020 and 4071 (a rename-probe check of
+the reordered sections that does not hold) and f6 6097 (no carry mismatch that keeps
+every row non-negative); each builds at attempt 1. No committed seed needs a retry.
+
 ## What one test is
 
 One test is six bundles side by side in one folder (section 1 and 10 of the format):
@@ -50,8 +61,8 @@ section 8 says none is read.
 | f3 financial statement | `family_statement.py` | current-period subtotal wrong, prior-period subtotal wrong, period change above the band the rule states, below it, a missing preparer | a period change just inside a bound, a subtotal with comma groups |
 | f4 contract terms across two or three versions | `family_terms.py` | band breaches in the later version: unchanged, moved away into a breach, moved toward the band but still out, on a new term, on a renamed term, on a value in a different format | a term on its bound; the version changes below |
 | f5 regulation-style provisions | `family_provisions.py` | a filing-to-notice gap over its window, a receipt-to-answer gap over its window, a filing fee above its band, below it, a definition without its source, an appeal provision without its appeal body | gaps exactly equal to the window, fees on a bound, filing provisions outside the appeal rule's pinned scope |
-| f5 long-range layout | `family_provisions.py` | a notice window, an answer window, a fee above and below its band, each decided by a figure stated only in a unit of the use's own track at least twelve units away (a window definition, or a fee table that is no definition) | gaps equal to their window, a fee on a bound, a filing and a fee the other track would break |
-| f6 neighbour-dependent stock count | `family_ledger.py` | carry_in (the opening row mis-carried, the unit's own sum then disagrees), carry_out (the stated closing wrong; the next count carries the right figure), carry_mismatch (the opening row differs from the count before and the received row absorbs it: each count adds up on its own, only the pair is wrong), shrinkage above the band, below it, a missing counter | the count after each carry_out, which looks mis-carried beside its neighbour and is not; a shrinkage on its bound |
+| f5 long-range layout | `family_provisions.py` | a notice window, an answer window, a fee above and below its band, each decided by a figure stated only in a unit of the use's own track at least twelve units away (a window definition, or a fee table that is no definition; two of the six deciding units name the track and the figure in other words) | gaps equal to their window, a fee on a bound, a filing and a fee the other track would break |
+| f6 neighbour-dependent stock count | `family_ledger.py` | carry_in (the opening row mis-carried, the unit's own sum then disagrees), carry_out (the stated closing wrong; the next count carries the column sum), carry_mismatch (the opening row differs from the column sum of the count before and the received row absorbs it: each count adds up on its own, only the pair is wrong), shrinkage above the band, below it, a missing counter. CONV-LA states what is computed: the closing quantity is the column sum, and the opening row carries the column sum of the count before | the count after each carry_out and after each carry_in (it carries the carry_in's column sum and absorbs the difference in its issued or received row), which look mis-carried beside their neighbour's stated closing and are not; a shrinkage on its bound |
 
 Every test plants at least 10 flaws of at least three kinds (f1: 14 of 6, f2: 18 of 8,
 f3: 11 of 5, f4: 10 of 6, f5: 11 of 6, the long-range layout: 11 of 4, f6: 13 of 6).
@@ -87,19 +98,22 @@ Every expectation is the ground truth (D-042):
   versions state under the same label, and both withdrawn terms (`absent_since_prior`).
   A renamed term is the same term and gets no row.
 - `expected_refusals` lists each renamed term: its earlier and later label, the unit
-  where its refusal sits, and the refusal kind its planted figures support, derived from
-  them by section 6's definitions (`family_terms.expected_refusal_kind`): within 2% of
-  the larger figure, `possible_rename`; moved further in the same section,
-  `possible_successor`; another section, `null`.
-  A refusal or a matched rename satisfies a row; a withdrawal record on it is a false
-  positive.
+  where its refusal sits, the two figures and their measure (`value_a` the later,
+  `value_b` the earlier, `unit`), and the refusal kind its planted figures support,
+  derived from them by section 6's definitions (`family_terms.expected_refusal_kind`):
+  within 2% of the larger figure, `possible_rename`; moved further in the same section,
+  `possible_successor` (every measure here is non-empty, so never
+  `possible_successor_no_unit`); another section, `null`. A refusal on the row's unit or
+  a matched rename satisfies a row; a `null` row (Python is expected to refuse nothing)
+  only a matched rename; a withdrawal record on it is a false positive. Every key, single
+  or negotiation-style, names its task in `task_given_to_the_pipeline`.
 - `version_changes` is the family's own plan of every term (`expect`:
   `unchanged_from_prior`, `changed_from_prior`, `moved_toward`, `moved_away`,
   `absent_since_prior`, `not_withdrawn` or `none`), computed from its own figures.
 - `rename_probes` is one typed row per rename-probe kind: `renamed_value_unchanged`,
   `renamed_value_moved`, `renamed_moved_to_other_section` (each `expect` `not_withdrawn`,
-  `satisfied_by` a refusal or a matched rename, `false_positive_if`
-  `absent_since_prior`), `withdrawn` and `withdrawn_beside_newcomer` (each `expect`
+  `satisfied_by` a refusal or a matched rename, only a matched rename for the one moved
+  to another section, `false_positive_if` `absent_since_prior`), `withdrawn` and `withdrawn_beside_newcomer` (each `expect`
   `absent_since_prior`), `new_in_later_version` (`none`), `value_in_different_format`
   (`unchanged_from_prior`) and `reordered_sections` (the target's unit ids in the prior's
   reading order). Each row names the earlier and later label, the target and prior unit,
@@ -114,8 +128,9 @@ withdrawal unrelated and in the same measure, the moved percentage as stated and
 2.05 to 45 percent in every bundle, the twin included, the refusal kind the one its
 figures support). Only section 6's 2% line is restated here, to name the kind a
 refusal should carry; whether a vanished label was renamed is never decided from it.
-The rename probes are measured in the ordinary two-version review of a bundle; a
-multi-round run writes no change records.
+The rename probes are measured in the ordinary two-version review of a bundle (the same
+files without `case_manifest.json`, INPUT_FORMAT section 12); a multi-round run writes
+no change records.
 
 The scorer reports no per-kind recall for a negotiation-style test, so f4's six breach
 kinds are for development.
@@ -127,16 +142,21 @@ notice and an answer window per track) state their window length; two fee tables
 per track, which are no definitions) hold the band for each fee class; the fee-class and
 appeal-body definitions decide nothing. All of them sit anywhere in the document among
 the uses, and the reference file carries no figure, so a planted flaw cannot be judged
-without the deciding unit of its own track. Every planted use sits at least twelve units
-from it; each key entry names it in `related_unit`, states the `distance`, and says
-whether the use carries a cross-reference line (`cross_reference_line`): about half the
-uses do, planted ones included, so a cross-reference baseline is not perfect by
-construction. A positional baseline (the first 4 units, or the first k, k the number of
-distinct related units) and two label-only baselines (the nearest, or the first, unit
-carrying the deciding label: `Window length`, or the `Fee range` column) each score
-below 1 in every bundle (`family_provisions.baselines`; printed by
-`py -3.12 scripts/generator_checks.py --baselines`). See `benchmark/long_range/README.md`
-for exactly what holds.
+without the deciding unit of its own track. Two of the six deciding units (seeded, about
+a third) name their track as a procedure (`Procedure: Standard` for `Ordinary`,
+`Accelerated` for `Expedited`) and their figure in other words (`Period allowed`, or a
+`Charge range` column); the reference file says so in prose, with no figure. Every
+planted use sits at least twelve units from its deciding unit; each key entry names it
+in `related_unit`, states the `distance`, and says whether the use carries a
+cross-reference line (`cross_reference_line`): about half the uses do, planted ones
+included, so a cross-reference baseline is not perfect by construction. A positional
+baseline (the first 4 units, or the first k, k the number of distinct related units),
+two label-only baselines (the nearest, or the first, unit carrying the deciding label:
+`Window length`, or the `Fee range` column) and a track-and-term baseline (the nearest
+unit stating the use's term, `decided_by_term`, with the use's own `Track` value) each
+score below 1 in every bundle (`family_provisions.baselines`; printed, with their range,
+by `py -3.12 scripts/generator_checks.py --baselines`). See
+`benchmark/long_range/README.md` for exactly what holds.
 
 ### Family 4 as a declared multi-round case
 
@@ -209,8 +229,8 @@ only: drop `answer_key.json` and move `context/_review_targets.json` to the top.
   `depends_on_unit`, `source_unit`, `related_unit`, `distance`) are remapped; f6 cuts
   only between pairs, so a neighbour-dependent flaw stays beside its neighbour, and
   moves one block by a rotation whose only new neighbour pair is the last count before
-  the first, which carries (the last count closes at the first count's opening), so no
-  new pair breaks the chain; the long-range layout retries the move until every distance
+  the first, which carries (the last count closes at the first count's opening, and no
+  carry_in is the last count), so no new pair breaks the chain; the long-range layout retries the move until every distance
   stays at least twelve and every baseline below 1, and the key states the true
   distances. Fully re-audited, the carry scanner included.
 - **A term only in the later version**: the term carries a keyed flaw in every family.
@@ -229,7 +249,12 @@ the written files. A test that fails writes nothing. It checks:
 
 - at least 10 planted flaws and at least three kinds; every planted entry has a
   complete typed reason (unit, operator rule id, relation, kind, field label in
-  normalised form, both figures as numbers);
+  normalised form, both figures as numbers); every key carries the required top-level
+  fields of its form (INPUT_FORMAT section 9);
+- every keyed entry's rule, read from the bundle's own conventions file, still states
+  what that entry's kind breaks (each family's `RULE_STATEMENTS`): a rule reworded back
+  to something the planted flaw does not break (a duty "on the summed line values", a
+  carry of "the closing quantity" where the column sum is what is carried) is caught;
 - at least one clean distractor; the twin exists, plants nothing, names the test, and
   neither its audit nor the ground-truth scanners find any flaw in it; all four probes
   are present, probe 3's term carries a keyed flaw, and each probe differs from the test
@@ -248,8 +273,10 @@ the written files. A test that fails writes nothing. It checks:
   `ground_truth_checks` declares, found in the rendered text, equals the keyed entries
   of those kinds exactly, so a dropped entry and a flawed twin are both caught;
 - for f6, the neighbour arithmetic: the carried figure read in both units disagrees
-  exactly as the key says, every other neighbour pair carries it, and the whole twin
-  chain is consistent;
+  exactly as the key says, every other count's first row is the column sum of the count
+  before, and the whole twin chain is consistent; the gate check also reads CONV-LA a
+  second time with plain string handling (`family_ledger.units_breaking_carry_rule`)
+  and requires exactly the keyed units, and no clean unit, in every bundle;
 - for f4, the version facts and the rename probes as above, and the case manifest: the
   controller's rules restated, the rounds the key names in version order, only case
   documents in `context/`, a source for every label line and one issue per renamed term,
@@ -260,6 +287,12 @@ the written files. A test that fails writes nothing. It checks:
   `definitions_first` as the text shows, related units both definitions and not,
   cross-reference lines on some planted uses and not on others and on 30 to 70 percent
   of all uses, every baseline below 1, and no figure in the reference file.
+
+Each of the validator's messages that the round-3 adversarial check found never shown to
+fire (the related units all definitions or none, a baseline at 1, the target round's
+multi-round entries not the band breaches, a multi-round clean entry in the wrong
+round), and a keyed rule's text reverted, is produced by its own mutation of a valid
+test (`VALIDATOR_MUTATIONS` in the gate check; `--mutations` prints each).
 
 ## Agreement with Shimmer (a measurement)
 

@@ -16,8 +16,9 @@ ground-truth expectation, the renamed terms in `expected_refusals`, the rounds
 (`rounds`, `round_reuse`, `round_changes`), and the multi-round key (`multi_round`:
 planted and clean entries scoped by `round_id` and `document_id`, every round keyed;
 `docs/INPUT_FORMAT.md` section 9). The rename probes are measured in the ordinary
-two-version review of a bundle; a multi-round run is told each term's identity by the
-case manifest and writes no change records.
+two-version review of a bundle (the same files run without `case_manifest.json`,
+section 12 of the format); a multi-round run is told each term's identity by the case
+manifest and writes no change records.
 
 Every key states the ground truth the generator planted, never what Shimmer computes
 (D-042). `generated/suite_listing.json` records the input-format draft hash the suite
