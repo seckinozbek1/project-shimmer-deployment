@@ -14,7 +14,9 @@ is exactly what Shimmer would read. It implements, from docs/INPUT_FORMAT.md alo
   every computed absence;
 - attribution of each finding to an operator rule (section 9), refusing a winner that
   depends on how the word overlap is counted;
-- the change records of section 6 (for two-version tests).
+- the change records of section 6 (for two-version tests), with the rename refusal of
+  S2b item 5: a vanished label is refused, not withdrawn, while its section states an
+  unclaimed newcomer in the same measure.
 
 Nothing here imports Shimmer. The arithmetic is plain float arithmetic rounded to six
 places, with the section 6 tolerance.
@@ -475,9 +477,13 @@ def _bound_for(rule, sentences):
 
 
 def audit(target_text, target_name, conv_text, conv_name, grounding, prior_name=None,
-          enforce_section5=True):
+          enforce_section5=True, earlier_names=()):
     """Every comparison Python would make on the target. `grounding` maps a file name
-    to its text; `prior_name` (if any) is one of them and is read as a document."""
+    to its text; `prior_name` (if any) is one of them and is read as a document.
+    `earlier_names` are grounding files that are earlier versions a multi-round case
+    declares as rounds but that are not the declared prior: read as documents for their
+    form, and as grounding (their tables and stored passages) for the comparisons; the
+    change records compare with the prior only."""
     errors = []
     doc = parse_document(target_text, target_name)
     errors.extend(doc["errors"])
@@ -487,14 +493,16 @@ def audit(target_text, target_name, conv_text, conv_name, grounding, prior_name=
     prior = None
     for gname in sorted(grounding):
         gtext = grounding[gname]
-        if gname == prior_name:
-            prior = parse_document(gtext, gname)
-            errors.extend(prior["errors"])
-            for u in prior["units"]:
+        if gname == prior_name or gname in earlier_names:
+            version = parse_document(gtext, gname)
+            if gname == prior_name:
+                prior = version
+            errors.extend(version["errors"])
+            for u in version["units"]:
                 tables.extend(u["tables"])
             sentences.extend(reader_sentences(gtext, stored=True))
-            if prior["paragraphs"] >= 120:
-                errors.append("%s: %d paragraphs (keep under 120)" % (gname, prior["paragraphs"]))
+            if version["paragraphs"] >= 120:
+                errors.append("%s: %d paragraphs (keep under 120)" % (gname, version["paragraphs"]))
         else:
             g = parse_grounding(gtext, gname)
             errors.extend(g["errors"])
@@ -772,8 +780,38 @@ def prior_records(result):
     target_labels = set()
     for u in doc["units"]:
         target_labels |= u["labels"]
+    def then_of(pl):
+        then_v = pl["kind"][1] if pl["kind"][0] == "figure" else float(pl["kind"][1][0])
+        then_m = pl["kind"][2] if pl["kind"][0] == "figure" else ""
+        return then_v, then_m
+
     for pu in prior["units"]:
         tu = by_slug_t.get(pu["id"][4:])
+        # The labels new in this unit of the target, in reading order: new unless the
+        # earlier version states it, anywhere, with a successful lookup.
+        newcomers = []
+        if tu is not None:
+            newcomers = [tl for tl in tu["lines"] if tl["kind"][0] == "figure"
+                         and lookup(tl["norm"], tu["id"][4:])[0] is None]
+
+        def value_rename(then_v, then_m):
+            """The first newcomer in the same non-empty measure within 2% of the larger
+            of the two figures in absolute value, 2% included; None when there is none."""
+            if not then_m:
+                return None
+            for tl in newcomers:
+                if tr.measure_powers(tl["kind"][2]) != tr.measure_powers(then_m):
+                    continue
+                scale = max(abs(tl["kind"][1]), abs(then_v), 1e-12)
+                if abs(tl["kind"][1] - then_v) <= RENAME_TOLERANCE * scale:
+                    return tl["norm"]
+            return None
+
+        vanished = [pl for pl in pu["lines"] if pl["kind"][0] in ("figure", "date")
+                    and tu is not None and pl["norm"] not in target_labels]
+        # A newcomer a value-corroborated rename accounts for is that label's successor
+        # and cannot also stand in for another vanished label.
+        claimed = {value_rename(*then_of(pl)) for pl in vanished} - {None}
         for pl in pu["lines"]:
             if pl["kind"][0] not in ("figure", "date"):
                 continue
@@ -782,23 +820,12 @@ def prior_records(result):
                 continue
             if pl["norm"] in target_labels:
                 continue
-            then_v = pl["kind"][1] if pl["kind"][0] == "figure" else float(pl["kind"][1][0])
-            then_m = pl["kind"][2] if pl["kind"][0] == "figure" else ""
-            renamed = False
-            for tl in tu["lines"]:
-                # new unless the earlier version states it, anywhere, with a successful lookup
-                if lookup(tl["norm"], tu["id"][4:])[0] is not None:
-                    continue
-                if tl["kind"][0] != "figure" or not then_m:
-                    continue
-                if tr.measure_powers(tl["kind"][2]) != tr.measure_powers(then_m):
-                    continue
-                # 2% of the larger of the two in absolute value, 2% included
-                scale = max(abs(tl["kind"][1]), abs(then_v), 1e-12)
-                if abs(tl["kind"][1] - then_v) <= RENAME_TOLERANCE * scale:
-                    renamed = True
-            if renamed:
+            then_v, then_m = then_of(pl)
+            if value_rename(then_v, then_m) is not None:
                 refusals.append(("possible rename", pl["norm"]))
+                continue
+            if possible_successor(newcomers, claimed, then_m):
+                refusals.append(("possible successor", pl["norm"]))
                 continue
             citing = [r for r in rules if pl["norm"] in set(_named_any(r, pl["norm"]))]
             if not citing and not pairing[tu["id"]]:
@@ -808,6 +835,16 @@ def prior_records(result):
                             "value_a": None, "value_b": tr.r6(then_v), "unit": then_m,
                             "unit_id": tu["id"]})
     return records, refusals
+
+
+def possible_successor(newcomers, claimed, measure):
+    """S2b item 5 (the rename refusal, general form): a label new in this unit of the
+    target, in the same measure as the vanished label (two figures with no measure count
+    as the same), that no value-corroborated rename has claimed. While one exists the
+    withdrawal is not confirmed: it is refused, never minted as absent_since_prior."""
+    return any(tl["norm"] not in claimed
+               and tr.measure_powers(tl["kind"][2]) == tr.measure_powers(measure)
+               for tl in newcomers)
 
 
 def _named_any(rule, label):
