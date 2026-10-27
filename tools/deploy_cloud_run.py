@@ -42,7 +42,7 @@ def plan(bundle, host, running_epoch):
     limits = budget_deadlines(exp['hourly_rate_usd'], running_epoch, soft_usd=exp['soft_budget_usd'],
                               hard_usd=exp['absolute_budget_usd'])
     return {'host': host, 'remote_directory': remote, 'experiment_id': exp['experiment_id'], 'hourly_rate': exp['hourly_rate_usd'],
-            'max_runs': 1, 'budget': limits, 'steps': ['arm independent local termination watchdog',
+            'max_runs': 1, 'budget': limits, 'soft_usd': exp['soft_budget_usd'], 'hard_usd': exp['absolute_budget_usd'], 'steps': ['arm independent local termination watchdog',
             'verify manually provisioned instance identity and IP', 'first SSH success',
             'resolve absolute compatible Python before transfer', 'verify A100 identity/VRAM', 'create exclusive experiment directory',
             'transfer sealed bundle', 'verify transfer/source hashes', 'compile and import source before dependencies',
@@ -131,7 +131,8 @@ def execute(args, runner=subprocess.run, provider=None):
     write_json(local / 'deployment_plan.json', config)
     watch_cmd = [sys.executable, str(Path(__file__).with_name('cloud_run_watchdog.py')), '--arm',
                  '--instance-id', args.instance_id, '--hourly-rate', str(config['hourly_rate']),
-                 '--running-epoch', str(epoch), '--directory', str(local)]
+                 '--running-epoch', str(epoch), '--directory', str(local),
+                 '--soft-usd', str(config['soft_usd']), '--hard-usd', str(config['hard_usd'])]
     if getattr(args, 'credential_file', None):
         watch_cmd += ['--credential-file', str(args.credential_file.resolve())]
     flags = (getattr(subprocess, 'DETACHED_PROCESS', 0) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0)
@@ -231,13 +232,13 @@ def main(argv=None):
         if args.execute and not isinstance(exc, GuardRefusal) and re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id):
             # Even a local prerequisite discovered AFTER provisioning triggers
             # termination. Never leave a paid instance idle while repairing setup.
-            from cloud_run_watchdog import LambdaTermination, watch
+            from cloud_run_watchdog import LambdaTermination, terminate_now
             emergency = args.collection.resolve() / ('emergency_' + str(time.time_ns()))
             emergency.mkdir(parents=True)
-            (emergency / 'TERMINATE_REQUEST').touch()
             try:
                 epoch = datetime.fromisoformat(args.running_since.replace('Z', '+00:00')).timestamp()
-                watch(LambdaTermination(args.credential_file), args.instance_id, args.hourly_rate, epoch, emergency)
+                # Termination is requested at once, so no budget cap is read or assumed.
+                terminate_now(LambdaTermination(args.credential_file), args.instance_id, args.hourly_rate, epoch, emergency)
                 report['termination_verified'] = True
             except Exception as stop_error:
                 report.update(termination_verified=False, termination_error_type=type(stop_error).__name__,
