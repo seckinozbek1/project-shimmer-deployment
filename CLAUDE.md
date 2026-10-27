@@ -476,7 +476,9 @@ processing swarm governed by an append-only constitution.
   (`paired_review.judging_call_record`) on the computed bus post (`judging_calls`), on a
   `PAIRED_JUDGING_CALLS` post when no computed finding carries it, and in the pairing map; the
   deliverables state the calls made and the notes kept. A docx comment's author is read from the
-  amendment's provenance (`docx_builder.comment_author`), never a fixed agent name. Figures go
+  amendment's provenance (`docx_builder.comment_author`): Python for an amendment built from a
+  computed finding, the model agent for one built from a model's record, and the drafter only for
+  an amendment taken from AMENDMENT_DRAFTER's own payload. Figures go
   through one formatter (`finding_record.figure_text`). A record without a `written_by` stamp is
   never Python's in any section (`finding_record.is_model_written`). An escalation naming an agent
   the run did not register is counted apart in `audit_synthesis.md`, with the names listed. The

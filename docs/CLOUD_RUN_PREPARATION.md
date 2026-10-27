@@ -240,7 +240,7 @@ deployment tool supplies the experiment's sealed caps. The deployment tool
 (`tools/deploy_cloud_run.py`), not the watchdog, resolves the
 instance's name first, with retries, refuses a `shimmer-loop-` instance, and on a
 failure terminates only an instance whose name it resolved and which is not a loop
-instance; anything else is left to the operator. It requests termination 120 seconds before the calculated hard ceiling
+instance; anything else is left to the operator. The watchdog requests termination 120 seconds before the calculated hard ceiling
 and retries until the provider verifies termination. An emergency termination after
 a failed deployment requests termination at once and reads no cap. Keep the operator workstation and its
 watchdog running. A provider outage can prevent timely termination; an unverified
@@ -348,16 +348,20 @@ or R's); the guard always reads both of those beside any `--read-ledger`, needs 
 its decision through the intent line, reading the provider inventory again just
 before it. It refuses, in one line, when another loop instance is running (an
 open launch in a ledger, or a `shimmer-loop-` name in the provider inventory),
-when the per-run cap `min(1.5 x forecast, budget - spend - caps of running loop
-instances - storage forecast - 1)` is below the forecast (measured minutes times
-the live price times 1.3), or when the capped run time does not cover the forecast
-time plus the run's stop reserve. The cap rule alone keeps spend plus forecast plus
-storage at or below the budget less one dollar, which is the reaper's hard stop.
-The budget is not a number in the code: the guard and the reaper read it from the
-latest `budget_open` or `budget_change` line in the ledgers (the hard stop is that
-line's `hard_stop_usd`, or the budget less one dollar when the line names none). A
-launch with no readable budget line is refused, and the reaper terminates every loop
-instance while it can read none. Spend is counted once per launch across every
+when the per-run cap `min(1.5 x forecast, ceiling - spend - caps of running loop
+instances - storage forecast)` is below the forecast (measured minutes times the
+live price times 1.3), or when the capped run time does not cover the forecast time
+plus the run's stop reserve. The ceiling is the smaller of the reaper's hard stop
+and the budget less one dollar, so the cap rule alone keeps spend plus forecast plus
+storage at or below both. The budget is not a number in the code: the guard and the
+reaper read it from the latest `budget_open` or `budget_change` line in the ledgers
+(the hard stop is that line's `hard_stop_usd`, or the budget less one dollar when
+the line names none). A launch with no readable budget line is refused, and the
+reaper terminates every loop instance while it can read none. An open launch accrues
+spend only up to its recorded deadline; past it, with no instance of its name
+listed, the reaper closes it with one termination line charged to the deadline (a
+ceiling, counted as actual and never refunded), written to the ledger that holds
+the launch. Spend is counted once per launch across every
 ledger read; a termination closes a launch by its instance id or its name. The controller also refuses when the sealed hard cap no longer fits
 under the cap at the live price; reseal in that case.
 

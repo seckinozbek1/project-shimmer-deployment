@@ -2491,7 +2491,7 @@ JUDGING_OUTCOMES = {
     "note_kept": "its note is attached to Python's finding",
     "no_note_returned": "it returned no note",
     "no_finding_to_attach": "Python found no disagreement on this unit and rule, so its note was not kept",
-    "advisory_not_kept": ("Python could compute nothing for this unit and rule, so the reply was advisory "
+    "advisory_not_kept": ("Python's checks for this unit and rule produced no comparison it could settle, so the reply was advisory "
                           "and was kept neither as a finding nor as a note"),
     "reply_failed": "the call failed, so no note was kept",
     "judged_absence": "its answer is a judged absence, listed as a model's item",
