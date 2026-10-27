@@ -161,3 +161,13 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Clean-twin naming (section 10).** The scorer finds a twin's run by the document file name, so a twin's document gets a different neutral name and its own `document` field, and unscoped clean units would draw "no rule applies" findings; section 5 item 4 (coverage) is the rule that prevents it. Documented, nothing changed in code.
 - **Rules.** P1, P9, P13, P16, H11.
 - **Reverse.** Each reading can be changed by a later entry; the draft is frozen as `input-format-v1` only after the code-blind check and before any sealed test is written.
+
+## D-020. The input format after the code-blind check
+
+- **When, stage.** 2026-10-27 10:16 +03:00 (system clock), S3a item 4.
+- **What happened.** The code-blind checker (a fresh `Plan` agent given only `docs/INPUT_FORMAT.md`) wrote a small test and listed 52 guesses (10 BLOCKING), 5 contradicting examples, 8 rules that could not be followed and 15 undefined terms (81 items). A subagent settled every item from the code, verifying behaviour on invented strings through the pure functions only (no pipeline, gate or model); the lead reviewed the full text and changed one rule: bundles need not sit in `benchmark/corpora/`; the document now says the repository's scorer reads only from there (open item 17).
+- **Format choices made in settling.** `[scope: ...]` without `[requires: ...]` is forbidden for preparers (it hands each unit in scope to the model, whose answers vary); every rule names a document label or declares a scope (a rule naming none switches off the "no rule applies" finding on every unit); every number in a value counts as a figure, so identifiers carry letters only; the complete stop-word list is printed; single-version tests with a prior keep `planted` and `clean`.
+- **Defects.** Ten product defects found on the way are recorded, not fixed (open item 16; P16: none in a file S3 changes).
+- **New draft hash.** `991c25f6a6a121be6cccd9d39392f1e0ebb13576085b453d1909195016352f92` (VERSIONS.md). The closure table is kept privately until S03_REPORT.md is written.
+- **Rules.** P1, P9, P13, P16.
+- **Reverse.** Each format choice can be changed in a later draft before the freeze; every change is re-hashed and the generators and checks re-run (S3a item 3).
