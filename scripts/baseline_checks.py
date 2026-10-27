@@ -10,7 +10,10 @@ the reply-record writer are replaced by mocks that fail when touched. It must st
 find the planted product mismatch, list the plan a model would have been asked under
 ``ablation_not_asked``, write the pipeline's completion record (read back by
 scripts/run_completion.read as completed), and mark every file it writes as an
-ablation on its first line (text) or in its first key (JSON).
+ablation on its first line (text) or in its first key (JSON). Every record it writes
+carries the provenance the pipeline gives Python's findings (envelope backend paired,
+model python; the WRITTEN-BY-A stamp ``written_by: python``), and the adapters' mapping
+reads the catch layer of its FLAG as computed.
 
 B1 (``bare_model.py``) runs with a mocked model backend (no model load) and must write
 EXACTLY ONE reply record per item through reply_records.write, joined to the item's
@@ -201,6 +204,36 @@ class PythonOnlyChecks(unittest.TestCase):
                               for r in pairing["ablation_not_asked"]],
                              [("u03-p-00003", "CONV-QA-02", "uncomputable")])
         self.assertEqual(_config_snapshot(), config_before, "B2 changed a config file")
+
+    def test_records_carry_python_provenance(self):
+        # Every record B2 writes is Python's: its envelope carries the pipeline's computed
+        # post (backend paired, model python) and each record the WRITTEN-BY-A stamp
+        # decided from it, so the adapters read the catch layer as Python's (computed).
+        self.assertEqual([self.tool.written_by(b, m) for b, m in (
+            ("paired", "python"), ("computed", "python-x"), ("paired", "python+model"),
+            ("paired", "qwen"), ("local", "python"), (None, None))],
+            ["python", "python", "python", "model", "model", "model"])
+        with tempfile.TemporaryDirectory(prefix="b2_layer_") as tmp:
+            out = Path(tmp) / "runs" / "dq4"
+            with _no_model_calls():
+                status = self.tool.run(BUNDLE, out)
+            self.assertEqual(status["documents"]["dq4"]["posts"],
+                             [{"agent": status["documents"]["dq4"]["posts"][0]["agent"],
+                               "backend": "paired", "model": "python", "items": 1}])
+            data = json.loads((out / "deliverables" / "dq4" / "review_data.json").read_text(encoding="utf-8"))
+            self.assertTrue(data["findings"])
+            self.assertEqual({f.get("written_by") for f in data["findings"]}, {"python"})
+            sys.path.insert(0, str(ROOT / "benchmark" / "adapters"))
+            try:
+                from common import mapping
+            finally:
+                sys.path.remove(str(ROOT / "benchmark" / "adapters"))
+            spec = mapping.Spec("findver", labels={mapping.FLAG: "refuted", mapping.CLEAR: "entailed",
+                                                   mapping.UNDECIDED: None},
+                                b1_labels={"refuted": mapping.FLAG})
+            items = [{"item_id": "a1", "document_id": "dq4", "rule_id": "CONV-QA-01"}]
+            row = mapping.label_pipeline_arm(spec, items, Path(tmp) / "runs", arm="B2")["labels"][0]
+            self.assertEqual((row["class"], row["layer"]), ("FLAG", "computed"))
 
     def test_no_model_library_in_a_fresh_process(self):
         self.assertEqual(_imports_in_subprocess(), [], "a baseline tool imported a model library")
@@ -411,7 +444,9 @@ def check_python_only():
                     "B2 runs the computing layer on a mocked bundle with every model route "
                     "mocked to fail and touches none, imports no model library (fresh subprocess), "
                     "finds the planted product mismatch, lists the unasked plan, writes the "
-                    "pipeline's completion record, and marks every file an ablation")
+                    "pipeline's completion record, marks every file an ablation, and stamps every "
+                    "record written_by python from the pipeline's computed post (backend paired, "
+                    "model python), which the adapters read as the computed layer")
 
 
 def check_bare_model():

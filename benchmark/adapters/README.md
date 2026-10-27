@@ -102,7 +102,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 - The UNCERTAIN marker is tested as `scripts/verifiability_gate.py` tests it.
 - Pairing-map refusals are the entries under `absence_refused`, naming their rule by `source_rule_id` or `rule_id`. The pipeline writes the registry id there, so they do not match item rules yet (section 12 item 11).
 - The record id `item_id` and its `revision` (INFRA-037 supersession).
-- The computed-layer markers.
+- The computed-layer markers: the WRITTEN-BY-A stamp `written_by` decides where a record carries one (B2 stamps every record `python`); a record with no stamp is read by `model: python`, `absence_path: computed` or `provenance: computed` (section 3.6).
 - The deliverables path.
 
 **ContraDoc.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now:

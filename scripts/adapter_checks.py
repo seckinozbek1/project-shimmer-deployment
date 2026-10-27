@@ -33,7 +33,8 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              of the hand-written run outputs (run failure from the completion record,
              refusal, silence, irregular, ok, superseded revisions, CUAD missing_field
              against another relation, prior relations), for B2, B1 and B0, with S-1
-             and S-2; B3 is refused while the typed-record key is unsettled
+             and S-2; B3 is refused while the typed-record key is unsettled; the catch
+             layer is read from the WRITTEN-BY-A stamp where a record carries one
   metrics    each benchmark's metric on a tiny confusion example equals the hand
              computation written beside it, and an end-to-end score on a built
              bundle gives the hand-computed accuracy, location recall and false
@@ -816,6 +817,24 @@ class MappingChecks(_Case):
         self.assertEqual((code, refused), (3, 4))
         self.assertFalse((self.root / "m.json").exists(), "a refused arm writes no labels")
 
+    def test_catch_layer_reads_the_written_by_stamp(self):
+        # Section 3.6: the WRITTEN-BY-A stamp alone decides the layer where a record carries
+        # it, so a record stamped `model` stays judged even when it carries `model: python`
+        # or `absence_path: computed`; a record with no stamp is read by the older markers.
+        m = _common()["mapping"]
+        spec = _adapter("findver").SPEC
+        cases = [({"written_by": "python"}, "computed"),
+                 ({"written_by": "Python"}, "computed"),
+                 ({"written_by": "model", "model": "python", "absence_path": "computed"}, "judged"),
+                 ({"model": "python"}, "computed"),
+                 ({"model": "fixture-reader"}, "judged")]
+        for extra, layer in cases:
+            record = dict({"item_id": "r", "source_rule_id": "CONV-X-1", "unit_id": "u01-p-00001",
+                           "relation": "sum_mismatch", "record_verdict": "irregular"}, **extra)
+            run = {"failure": False, "records": [record], "pairing_refusals": []}
+            row = m.classify(spec, "CONV-X-1", run)
+            self.assertEqual((row["class"], row["layer"]), ("FLAG", layer), str(extra))
+
 
 # ---------------------------------------------------------------------------
 # metrics
@@ -987,7 +1006,8 @@ GROUPS = {
     "mapping": (MappingChecks, "the section 5.1 and 5.2 mapping gives the hand-written expected "
                                "label for every run-output case (completion record, supersession, "
                                "refusal, CUAD missing_field), for B2, B1 and B0 with S-1 and S-2; "
-                               "B3 and B4 refused while the typed-record key is unsettled"),
+                               "B3 and B4 refused while the typed-record key is unsettled; the "
+                               "catch layer read from the written_by stamp where a record has one"),
     "metrics": (MetricChecks, "every benchmark's metric equals the hand computation on a tiny "
                               "confusion example, and an end-to-end score (location for B3 and B1, "
                               "false positives, unlabelled gold refused) matches by hand"),
