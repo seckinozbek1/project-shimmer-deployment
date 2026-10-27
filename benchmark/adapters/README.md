@@ -101,11 +101,13 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 - The computed-layer markers.
 - The deliverables path.
 
-**ContraDoc.** `unique id` is documented; `text` is named by section 5.6. These are PROVISIONAL:
+**ContraDoc.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now:
 
-- `label`, with the stored values `contradictory` and `not contradictory`;
-- `evidence` and `reference`;
-- the file shape.
+- the file is an object of two containers, `pos` and `neg`, each `{unique id: record}`; the container is the gold (`pos` contradictory, `neg` not contradictory) and no record has a label field;
+- `unique id` is a string; `text` a string;
+- `evidence` is one string in every `pos` record; `ref sentences` is a string, a list of strings, or absent.
+
+`--assignment` reads the adapter's own `split --out` file and the frozen file B-dev wrote with its own implementation of section 1 (`assignments`: `{unique id: {group, side}}`), and refuses a side that is not the hash rule on its group key. On the 184 development documents the adapter's own grouping equals B-dev's (125 groups).
 
 **CUAD.** PROVISIONAL as a whole: the SQuAD-style container, the `__<Category>` QA-id suffix, the data's category spellings, the category descriptions (empty until freeze), and `title` as the tie-break between duplicate copies.
 
