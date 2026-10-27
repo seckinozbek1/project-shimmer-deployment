@@ -322,4 +322,17 @@ The loop accepts no terms itself: ContractNLI's were accepted by the operator (D
 
 ## Dry-run results (development)
 
-Pending S5. Results here will be labelled development (exposed items) and never counted as evidence.
+Results here are development results (exposed items): illustrative, never counted as evidence. The full dry run is S5's.
+
+Measured in loop stage S4 on the development items B-dev passed on, on the laptop, with no model call: B0 needs no run, B1 and B3 were not run, and every cut used a stand-in token counter (one token per whitespace-separated word), not the main reading agent's tokenizer, which S5 pins.
+
+- **B2 (Python only, `benchmark/baselines/python_only.py`).**
+  - ContraDoc (184 documents) and ContractNLI (61 agreements): no record of any kind. ContractNLI was run under both part rules, one part per agreement and one part per span (preregistration section 5.6 now); under span parts B2 lists 84,394 plans a model would be asked (`ablation_not_asked`, one per unit and hypothesis), against 1,037 (one per item) under one part per agreement. Every one of the 1,037 items is silent, so CLEAR (Entailment). B2 took 1,728 s for the 61 agreements (2.6 s to 132.5 s each).
+  - CUAD (8 of 96 contracts): no record; 4 s to 438 s per contract, 752 s for the 8.
+  - SciTab (29 tables, 95 claims): 3 claims flagged.
+  - FinDVer (8 of 255 filings, the first 8 by opaque id, 29 claims): 9 claims flagged on the cut bundles (below), 11 on the uncut ones. About 5 s per filing in the first measurement; 0.2 s to 43 s per filing in a second, run beside another B2 run.
+  - Every flag came from the figure audit (preregistration section 12 item 7), not from a check of the claim: on SciTab 12 `below_band` records (band checks on table figures) and 3 `missing_field` records; on FinDVer only `missing_field` records from blank table cells, 780 on the cut bundles and 1,200 on the uncut ones. Each record is attributed to the bundle's first rule, so it lands on that rule's claim.
+  - The catch layer: B2 now stamps every record `written_by: python` (the pipeline's provenance for Python's findings), and the adapters report these catches as computed; before the stamp they were reported as judged.
+- **Cut (section 5.3), FinDVer**, stand-in counter, 32,768-token context, 2,048-token output allowance: 158 of 255 filings cut, 28.6 percent of their words removed, 159 items whose evidence lies beyond the cut. ContractNLI under the same inputs: no agreement cut. Illustrative until the real tokenizer is pinned in S5.
+- **Parts (section 5.6).** ContractNLI: 5,039 parts over 61 agreements, 20 to 255 per agreement (quartiles 52, 72, 100), 16 agreements above 99; Shimmer's own unit splitter gives the adapter's unit ids on all 61; every Contradiction item (95) has its evidence in 1 to 8 parts. ContraDoc: 123 of 184 documents are one part (94 of them a single line of text). CUAD: 6 to 891 parts (median 60). FinDVer: 26 to 492 (median 223). SciTab: one part per table by design.
+- **Length bands (section 5.6, Words).** ContraDoc A 132, B 52; CUAD A 12, B 33, C 46, D 5; SciTab A 29; FinDVer B 4, C 65, D 186; ContractNLI A 13, B 48. B-dev's reading for `_handoff/B_SIZES.json` (raw whitespace tokens, table pipes counted) puts 11 FinDVer filings in D that the rule puts in C, and every other development document in the same band.
