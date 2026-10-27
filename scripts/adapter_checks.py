@@ -14,7 +14,9 @@ image, so with benchmark/adapters/ absent every case is SKIPPED with the reason.
              document from the bundle's own conventions with the B1 prompt; the cut rule
              keeps whole parts and writes the cut line with hand-counted words; evidence
              units are read on the kept text; a build without a budget, or with a
-             document off its declared side, is refused; an empty document is skipped
+             document off its declared side, is refused; an empty document is skipped;
+             one word rule (section 5.6, Words) counts every part, band and cut line;
+             ContractNLI makes one part per span of the agreement's own span list
   split      the hash split rule (SHA-256 of the document's split key, mod 5) is
              recomputed here independently, and every item of a document falls on
              that document's side, including where the item's own id would not
@@ -216,6 +218,31 @@ class BuildChecks(_Case):
         # A table part counts its cell words, as the source word count does.
         self.assertEqual(c["cut"].words("| A | 71.2 |\n|---|---|\n| B \\| C | 9 |"), 6)
 
+    def test_one_word_rule_for_bands_and_the_cut_line(self):
+        # Section 5.6, Words: whitespace-separated tokens, a token made only of `|`, `-` and
+        # `:` with at least one `|` (table markup) not counted. One function counts every
+        # part, the band and the cut line: a token of hyphens or colons alone, or a pipe
+        # inside other characters, is still a word.
+        c = _common()
+        sample = "Revenue | 2023 rose :--| 5 percent -- a|b ||"
+        self.assertEqual(c["ids"].word_count(sample), 7)
+        self.assertEqual(c["cut"].words(sample), c["ids"].word_count(sample))
+        for name in ("contradoc", "cuad", "findver", "contractnli"):
+            _build(name, self.root / name)
+            for record in _json(self.root / name / "parts.json")["documents"]:
+                text = (self.root / name / record["document_id"] / "context"
+                        / (record["document_id"] + ".md")).read_text(encoding="utf-8")
+                units = c["bundle"].read_units(text)
+                self.assertEqual([p["words"] for p in record["parts"]],
+                                 [c["ids"].word_count(u[3]) for u in units], name)
+                self.assertEqual(record["source_words"], sum(p["words"] for p in record["parts"]))
+                self.assertEqual(record["length_band"], c["ids"].length_band(record["source_words"]))
+        # A FinDVer table counts its cell words, not its pipes: the fixture's table entry is
+        # 6 words of text and 6 cell words between 9 pipes on 3 rows (17 with the line of
+        # text after it), where splitting at whitespace alone gives 26.
+        entry = _json(_fixture("findver", "financial_reports/SYNA-2024-01-31_10-K.json"))["context"][1]
+        self.assertEqual((_adapter("findver").entry_text(entry)[2], len(entry["context"].split())), (17, 26))
+
     def test_budget_is_computed_per_document_from_its_own_conventions(self):
         # One line per convention in the B1 prompt: the two-claim table's prompt is one
         # line longer than the one-claim table's, so its budget is one token smaller.
@@ -299,7 +326,11 @@ class BuildChecks(_Case):
 
     def test_contractnli_items_rules_and_evidence(self):
         # 2 agreements x 3 hypotheses; one rule per hypothesis with the hypothesis as its
-        # only slot (whitespace collapsed); evidence spans map to the paragraphs they touch.
+        # only slot (whitespace collapsed). One part per span of the agreement's own span
+        # list (section 5.6): 7101 has 7 spans, span 3 a single space (no part), span 2 and
+        # span 4 two halves of one line (two parts), span 5 a `#` line (escaped). An
+        # evidence index marks the part made from the span it names; nda-1 names spans 1
+        # and 3, and the space marks nothing.
         _build("contractnli", self.root / "b")
         items = _json(self.root / "b" / "items.json")["items"]
         self.assertEqual(len(items), 6)
@@ -309,12 +340,39 @@ class BuildChecks(_Case):
                       "agreement: The receiving party shall not share the information with its "
                       "employees. The hypothesis must agree with the passages of the agreement. If the "
                       "agreement does not settle the hypothesis, emit UNCERTAIN.\n", rules)
+        record = next(d for d in _json(self.root / "b" / "parts.json")["documents"] if d["document_id"] == doc)
+        self.assertEqual([p["source"]["span"] for p in record["parts"]], [0, 1, 2, 4, 5, 6])
+        self.assertEqual((record["spans"], record["spans_without_text"]), (7, [3]))
+        self.assertEqual([p["words"] for p in record["parts"]], [3, 10, 7, 8, 2, 10])
+        text = (self.root / "b" / doc / "context" / (doc + ".md")).read_text(encoding="utf-8")
+        self.assertIn("## P-00003\n\nPassage: part\n\nThe receiving party may share confidential "
+                      "information\n\n## P-00004\n\nPassage: part\n\nwith its employees who need "
+                      "to know it.\n\n## P-00005\n\nPassage: part\n\n\\# Term\n\n## P-00006", text)
         answers = {a["hypothesis_key"]: a for a in _json(self.root / "b" / doc / "answer_key.json")["items"]}
         self.assertEqual((answers["nda-2"]["gold"], answers["nda-2"]["evidence_unit_ids"],
-                          answers["nda-2"]["location_measurable"]), ("contradiction", ["u03-p-00003"], True))
+                          answers["nda-2"]["location_measurable"]), ("contradiction", ["u04-p-00004"], True))
         self.assertEqual((answers["nda-1"]["evidence_unit_ids"], answers["nda-1"]["location_measurable"]),
                          (["u02-p-00002"], False))
         self.assertEqual(answers["nda-11"]["gold"], "not mentioned")
+        other = _common()["ids"].opaque_document_id("contractnli", 7102)
+        answers = {a["hypothesis_key"]: a for a in _json(self.root / "b" / other / "answer_key.json")["items"]}
+        self.assertEqual(answers["nda-11"]["evidence_unit_ids"], ["u03-p-00003"])
+        # Text the spans leave out is kept as a part of its own (span None), never dropped;
+        # spans out of order, overlapping or outside the text, a missing span list, and an
+        # evidence index naming no span are refused rather than read.
+        adapter = _adapter("contractnli")
+        self.assertEqual(adapter.span_pieces("Head. Body text. Tail", [[6, 16]]),
+                         [{"span": None, "start": 0, "end": 6}, {"span": 0, "start": 6, "end": 16},
+                          {"span": None, "start": 16, "end": 21}])
+        for spans, message in (([[5, 9], [3, 4]], "out of order"), ([[0, 5], [4, 9]], "out of order"),
+                               ([[0, 99]], "outside the text"), ([], "has no 'spans' list"),
+                               ([[0, "5"]], "not a \\[start, end\\] pair")):
+            with self.assertRaisesRegex(ValueError, message):
+                adapter.span_pieces("Some agreement text.", spans, "x")
+        data = adapter.read_source(_fixture("contractnli", "synthetic_items.json"))
+        data["documents"][0]["annotation_sets"][0]["annotations"]["nda-2"]["spans"] = [7]
+        with self.assertRaisesRegex(ValueError, "evidence index 7 for nda-2 names no span"):
+            adapter.documents(data)
 
     def test_contradoc_reads_the_release_shape(self):
         # The release (confirmed on the B-dev development items) is {"pos": {...}, "neg":
@@ -912,8 +970,10 @@ GROUPS = {
                            "document from its own conventions; the cut keeps whole parts with the "
                            "hand-counted cut line and evidence read on the kept text; no budget, "
                            "an off-side document or a testmini report is refused; empty documents "
-                           "are skipped and listed; each release's schema is read as the B-dev "
-                           "development items showed it"),
+                           "are skipped and listed; one word rule counts every part, band and cut "
+                           "line (table markup not a word); each release's schema is read as the "
+                           "B-dev development items showed it, ContractNLI one part per span of its "
+                           "own span list"),
     "split": (SplitChecks, "the split key is the documented document key, its SHA-256 mod 5 "
                            "recomputed independently, every item of a document on its side, "
                            "ContraDoc groups read from the frozen assignment, FinDVer's testmini "

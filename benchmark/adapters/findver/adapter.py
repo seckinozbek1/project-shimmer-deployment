@@ -29,7 +29,7 @@ HERE = Path(__file__).resolve().parent
 if str(HERE.parent) not in sys.path:
     sys.path.insert(0, str(HERE.parent))
 
-from common import bundle, cli, cut, ids, mapping, metrics  # noqa: E402
+from common import bundle, cli, ids, mapping, metrics  # noqa: E402
 
 BENCHMARK = "findver"
 RULE_NAME = "Claim"
@@ -136,11 +136,13 @@ def table_text(text: str) -> str:
 
 
 def entry_text(entry):
-    """(part text, kind, words) for one context entry. A table's words are its cell words
-    (pipes not counted), as the cut rule counts them (section 5.3)."""
+    """(part text, kind, words) for one context entry. Words follow the one word rule
+    (section 5.6, Words; `ids.word_count`) on the entry's string as the release stores it,
+    so a table's words are its cell words (pipes not counted), for the band and the cut
+    line alike."""
     text, kind = entry[ENTRY_TEXT_FIELD], entry.get(ENTRY_KIND_FIELD)
     if kind == TABLE_KIND:
-        return table_text(text), "table", cut.words(text)
+        return table_text(text), "table", ids.word_count(text)
     return text, "paragraph", ids.word_count(text)
 
 
