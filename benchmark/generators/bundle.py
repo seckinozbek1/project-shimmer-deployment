@@ -16,6 +16,7 @@ import random
 import re
 
 from . import audit as au
+from . import ground_truth as gt
 from . import model as md
 from . import multi_round_case as mc
 from . import textrules as tr
@@ -72,12 +73,46 @@ def _planted_entries(spec, ids):
              "kind": p["kind"],
              "claim": {"relation": p["relation"], "field_label": p["field_label"],
                        "value_a": tr.r6(p["value_a"]), "value_b": tr.r6(p["value_b"])}}
+        for k in ("unit_a", "unit_b"):
+            if k in p:
+                e["claim"][k] = p[k]
         for k, v in sorted(p.get("links", {}).items()):
             e[k] = ids[v]
         for k, v in sorted(p.get("extra", {}).items()):
             e[k] = v
+        if "long_range" in spec.get("key_extra", {}) and "related_unit" in e:
+            e["distance"] = unit_distance(e["unit"], e["related_unit"])
         out.append(e)
     return out
+
+
+def unit_distance(a, b):
+    """How many units apart two unit ids are (their positions, section 2)."""
+    return abs(int(a[1:3]) - int(b[1:3]))
+
+
+RECORD_RELATIONS = ("unchanged_from_prior", "changed_from_prior", "moved_toward", "moved_away",
+                    "absent_since_prior")
+
+
+def prior_records_from(plan):
+    """The change records a correct reviewer writes, from the family's own plan: every
+    label both versions state, and every withdrawn term. A renamed term has no row: a
+    refusal or a matched rename both satisfy it (its expected_refusals row)."""
+    rows = [{"field_label": v["field_label"], "relation": v["expect"], "value_a": v["value_a"],
+             "value_b": v["value_b"], "unit": v["unit"]}
+            for v in plan if v["expect"] in RECORD_RELATIONS]
+    return sorted(rows, key=lambda r: (r["field_label"], r["relation"]))
+
+
+def expected_refusals_from(rename_rows):
+    """One row per renamed term: the earlier label, the unit its refusal sits on (the
+    target unit with the earlier statement's heading), the later label a matched rename
+    names, and the typed kind of the honest refusal (null: any kind)."""
+    return [{"field_label": r["field_label"], "later_field_label": r["later_field_label"],
+             "unit_id": r["prior_unit_id"], "reason_kind": r["refusal_kind"],
+             "kind": r["kind"]}
+            for r in rename_rows if r.get("expect") == "not_withdrawn"]
 
 
 def _band_rows(spec, ids, which="bands"):
@@ -157,36 +192,29 @@ def build_bundles(spec):
         elif role == "twin":
             key["twin_of"] = folders["base"]
         if negotiation:
-            key["prior_records"] = []          # filled from the audit below, then checked
+            plan = spec[{"twin": "twin_version_changes",
+                         "term_only_in_later_version": "term_version_changes"}.get(role, "version_changes")]
+            key["prior_records"] = prior_records_from(plan)
             key["band_irregularities"] = [] if role == "twin" else _band_rows(spec, ids)
             key["clean"] = [ids[i] for i in spec["clean"]]
-            key["version_changes"] = spec["twin_version_changes" if role == "twin" else "version_changes"]
+            key["version_changes"] = plan
             if spec.get("rename_probes") is not None:
                 key["rename_probes"] = [
                     dict(r, unit_id=ids[r["unit_id"]] if r["unit_id"] is not None else None,
+                         prior_unit_id=ids[r["prior_unit_id"]] if r["prior_unit_id"] is not None else None,
                          prior_order=[ids[i] for i in r["prior_order"]])
                     for r in spec["twin_rename_probes" if role == "twin" else "rename_probes"]]
+                key["expected_refusals"] = expected_refusals_from(key["rename_probes"])
         else:
             key["planted"] = [] if role == "twin" else _planted_entries(spec, ids)
             key["clean"] = [ids[i] for i in spec["clean"]]
+            key["ground_truth_checks"] = spec.get("ground_truth_checks", [])
         if role in PROBES:
             key["probe"] = role
             key["probe_change"] = key_extra
         for k, v in sorted(spec.get("key_extra", {}).items()):
             key[k] = v
         key["generator"] = gen
-        if negotiation:
-            res = au.audit(files["context/" + target], target, conv_text, conv_name,
-                           {n[len("context/"):]: t for n, t in files.items()
-                            if n.startswith("context/") and n.endswith(".md") and n != "context/" + target},
-                           prior_name if prior_doc is not None else None,
-                           enforce_section5=(role != "reworded_labels"),
-                           earlier_names=(earliest_name,) if early_doc is not None else ())
-            records, _ = au.prior_records(res)
-            key["prior_records"] = [{"field_label": r["field_label"], "relation": r["relation"],
-                                     "value_a": r["value_a"], "value_b": r["value_b"],
-                                     "unit": r["unit"]}
-                                    for r in sorted(records, key=lambda r: (r["field_label"], r["relation"]))]
         if spec.get("rounds") and prior_doc is not None:
             # The declared multi-round case: rounds in version order, the live case
             # manifest beside the key, and what the per-round review should reuse.
@@ -257,12 +285,16 @@ def build_bundles(spec):
     # 3. a term only in the later version
     t = pr["term"]
     if negotiation:
-        d3 = spec["doc"].clone()
-        d3.units[t["unit"]].insert_line(t["label"], t["value"])
+        # The term is dropped from every earlier version; the target is unchanged, so
+        # the keyed breach on it now sits on a term only in the later version.
+        heading = spec["doc"].units[t["unit"]].heading
+        p3, e3 = base_prior.clone(), (ed.clone() if ed is not None else None)
+        for version in [p3] + ([e3] if e3 is not None else []):
+            [u for u in version.units if u.heading == heading][0].remove_line(t["label"])
         out[folders["term_only_in_later_version"]] = bundle(
-            "term_only_in_later_version", d3, identity, base_prior,
-            {"term": t["label"], "unit": tr.unit_id(t["unit"] + 1, d3.units[t["unit"]].heading)},
-            early_doc=ed)
+            "term_only_in_later_version", spec["doc"], identity, p3,
+            {"term": t["label"], "unit": tr.unit_id(t["unit"] + 1, heading)},
+            early_doc=e3)
     else:
         prior3 = spec["doc"].clone()
         prior3.units[t["unit"]].remove_line(t["label"])
@@ -382,7 +414,7 @@ def _claim_complete(e):
             and _num(c.get("value_a")) and _num(c.get("value_b")))
 
 
-def check_single(name, files, errs, enforce=True, compare=True):
+def check_single(name, files, errs, enforce=True, compare=True, ordered=True):
     key = _key(files)
     res = _audit_bundle(files, enforce)
     errs.extend("%s: %s" % (name, e) for e in res["errors" if compare else "parse_errors"])
@@ -400,8 +432,21 @@ def check_single(name, files, errs, enforce=True, compare=True):
             errs.append("%s: %s is both planted and clean" % (name, c))
     if not compare:
         return res
+    # Ground truth Python does not compute: every instance the family's own scanners
+    # find in the text must be keyed, and every keyed one found (D-042).
+    checks = key.get("ground_truth_checks", [])
+    truth_kinds = gt.kinds(checks)
+    if not ordered:
+        truth_kinds -= {c["kind"] for c in checks if c["check"] == "carry"}
+    found = sorted(gt.signature(x) for x in gt.scan(res, checks, ordered))
+    keyed = sorted(gt.signature(e) for e in planted if e.get("kind") in truth_kinds)
+    if found != keyed:
+        errs.append("%s: ground-truth flaws differ from the key: unkeyed %s, not in the text %s"
+                    % (name, sorted(set(found) - set(keyed)), sorted(set(keyed) - set(found))))
     unmatched = list(res["findings"])
     for e in planted:
+        if e.get("kind") in gt.kinds(checks):
+            continue
         c = e["claim"]
         want = sorted([tr.r6(c["value_a"]), tr.r6(c["value_b"])])
         hit = [f for f in unmatched if f["unit"] == e["unit"] and f["relation"] == e["relation"]
@@ -462,72 +507,98 @@ def check_negotiation(name, files, errs, enforce=True, compare=True):
     if sorted(got, key=repr) != sorted(want, key=repr):
         errs.append("%s: band findings differ from the key: got %s, key %s"
                     % (name, sorted(set(got) - set(want), key=repr), sorted(set(want) - set(got), key=repr)))
-    records, refusals = au.prior_records(res)
+    records, refusals, vanished = au.prior_records(res)
     rk = lambda r: (r["field_label"], r["relation"], repr(r["value_a"]), repr(r["value_b"]), r["unit"])
-    have = sorted(rk(r) for r in records)
-    keyed = sorted(rk(r) for r in key.get("prior_records", []))
-    if have != keyed:
-        errs.append("%s: change records differ from the key" % name)
-    # The family's own plan, computed from its own figures, must agree with the audit.
     plan = key.get("version_changes", [])
-    planned = sorted(rk({"field_label": v["field_label"], "relation": v["expect"],
-                         "value_a": tr.r6(v["value_a"]) if v["value_a"] is not None else None,
-                         "value_b": tr.r6(v["value_b"]), "unit": v["unit"]})
-                     for v in plan if v["expect"] not in ("refused", "none"))
+    if key.get("prior_records") != prior_records_from(plan):
+        errs.append("%s: prior_records are not the family's plan" % name)
+    # The comparisons of labels both versions state are mechanical: the audit reads
+    # them from the text and they must be the plan's.
+    have = sorted(rk(r) for r in records)
+    planned = sorted(rk(dict(v, relation=v["expect"])) for v in plan
+                     if v["expect"] in RECORD_RELATIONS and v["expect"] != "absent_since_prior")
     if have != planned:
         errs.append("%s: change records differ from the family's plan: audit %s, plan %s"
                     % (name, sorted(set(have) - set(planned)), sorted(set(planned) - set(have))))
-    refused = sorted((lab, RENAME_REFUSALS[why]) for why, lab in refusals if why in RENAME_REFUSALS)
-    want_refused = sorted((v["field_label"], v.get("refusal")) for v in plan if v["expect"] == "refused")
-    if refused != want_refused:
-        errs.append("%s: rename refusals %s, plan %s" % (name, refused, want_refused))
-    others = [x for x in refusals if x[0] not in RENAME_REFUSALS]
-    if others:
-        errs.append("%s: unplanned refusals %s" % (name, others))
+    # A vanished label is withdrawn or renamed by the family's ground truth; the audit
+    # only states the facts, which must be the plan's.
+    gone = {v["field_label"]: v for v in vanished}
+    want_gone = {v["field_label"]: v for v in plan
+                 if v["expect"] in ("absent_since_prior", "not_withdrawn")}
+    if sorted(gone) != sorted(want_gone):
+        errs.append("%s: vanished labels %s, plan %s" % (name, sorted(gone), sorted(want_gone)))
+    for lab, v in want_gone.items():
+        g = gone.get(lab)
+        if g is not None and not (tr.same(g["value_b"], v["value_b"]) and g["unit"] == v["unit"]):
+            errs.append("%s: the earlier figure of %s is not the plan's" % (name, lab))
+    new = au.new_labels(res)
+    want_new = {v["field_label"] for v in plan if v["expect"] == "none"}
+    want_new |= {v["later_field_label"] for v in plan if v["expect"] == "not_withdrawn"}
+    if sorted(new) != sorted(want_new):
+        errs.append("%s: labels new in the later version %s, plan %s" % (name, sorted(new), sorted(want_new)))
+    if refusals:
+        errs.append("%s: unplanned refusals %s" % (name, refusals))
     if "rename_probes" in key:
-        _check_rename_probes(name, key, res, records, refusals, errs)
+        _check_rename_probes(name, key, res, gone, new, errs)
+        if key.get("expected_refusals") != expected_refusals_from(key["rename_probes"]):
+            errs.append("%s: expected_refusals are not the renamed terms" % name)
     return res
 
 
-# The audit's refusal of a vanished label, and the typed reason the key gives it.
-RENAME_REFUSALS = {"possible rename": "possible_rename", "possible successor": "possible_successor"}
-RENAME_PROBE_KINDS = ("new_in_later_version", "renamed_value_moved", "renamed_value_unchanged",
-                      "reordered_sections", "value_in_different_format", "withdrawn")
+RENAME_PROBE_KINDS = ("new_in_later_version", "renamed_moved_to_other_section", "renamed_value_moved",
+                      "renamed_value_unchanged", "reordered_sections", "value_in_different_format",
+                      "withdrawn", "withdrawn_beside_newcomer")
+RENAMED = {"renamed_value_unchanged": "same", "renamed_value_moved": "same",
+           "renamed_moved_to_other_section": "other"}
 
 
 def _line_values(doc):
     return {ln["norm"]: ln["value"] for u in doc["units"] for ln in u["lines"]}
 
 
-def _check_rename_probes(name, key, res, records, refusals, errs):
-    """Every rename-probe row (S2b item 5) holds in the rendered versions, by the audit."""
+def _check_rename_probes(name, key, res, gone, new, errs):
+    """Every rename-probe row holds in the rendered versions: the facts the generator
+    planted, read back from the text by the audit (D-042: ground truth, never Shimmer's
+    refusal rule)."""
     rows = key["rename_probes"]
     kinds = sorted({r.get("kind") for r in rows})
     if kinds != sorted(RENAME_PROBE_KINDS):
         errs.append("%s: rename probe kinds %s" % (name, kinds))
     target, prior = res["doc"], res["prior"]
     now_v, then_v = _line_values(target), _line_values(prior)
-    rec = {(r["field_label"], r["relation"]) for r in records}
-    rec_labels = {r["field_label"] for r in records}
-    why = {(RENAME_REFUSALS.get(w), lab) for w, lab in refusals}
+    plan = {v["field_label"]: v for v in key.get("version_changes", [])}
     for r in rows:
         k, lab, later = r.get("kind"), r.get("field_label"), r.get("later_field_label")
         ok = True
-        if k in ("renamed_value_unchanged", "renamed_value_moved"):
-            want = "possible_rename" if k == "renamed_value_unchanged" else "possible_successor"
-            ok = (r.get("reason") == want and r.get("expect") == "refused" and (want, lab) in why
-                  and lab in then_v and lab not in now_v and later in now_v and later not in then_v
-                  and lab not in rec_labels
-                  and then_v[lab] == r.get("written_before") and now_v[later] == r.get("written_after"))
-        elif k == "withdrawn":
-            ok = (r.get("reason") == "no_successor_in_section" and (lab, "absent_since_prior") in rec
-                  and lab in then_v and lab not in now_v and later is None)
+        if k in RENAMED:
+            g = gone.get(lab)
+            ok = (r.get("expect") == "not_withdrawn" and g is not None and later in new
+                  and lab in then_v and lab not in now_v and later not in then_v
+                  and r.get("satisfied_by") == ["refusal", "matched_rename"]
+                  and r.get("false_positive_if") == "absent_since_prior"
+                  and g["unit_id"] == r.get("prior_unit_id") and new[later][0] == r.get("unit_id")
+                  and (r.get("unit_id") == r.get("prior_unit_id")) == (RENAMED[k] == "same")
+                  and then_v[lab] == r.get("written_before") and now_v[later] == r.get("written_after")
+                  and r.get("moved_percent") == round(abs(r["value_after"] - r["value_before"]) * 100.0
+                                                      / abs(r["value_before"]), 2)
+                  and (r["moved_percent"] == 0) == (k == "renamed_value_unchanged"))
+            if k == "renamed_moved_to_other_section" and g is not None:
+                ok = ok and not g["newcomers_same_measure"]
+        elif k in ("withdrawn", "withdrawn_beside_newcomer"):
+            g = gone.get(lab)
+            unrelated = [n for n in (g or {}).get("newcomers_same_measure", [])
+                         if plan.get(n, {}).get("expect") == "none"]
+            ok = (r.get("expect") == "absent_since_prior" and g is not None and later is None
+                  and lab in then_v and lab not in now_v
+                  and (bool(unrelated) == (k == "withdrawn_beside_newcomer"))
+                  and (k == "withdrawn_beside_newcomer"
+                       or not g["newcomers_same_measure"]))
         elif k == "new_in_later_version":
             ok = (r.get("reason") == "not_stated_in_earlier_version" and r.get("expect") == "none"
-                  and lab == later and lab in now_v and lab not in then_v and lab not in rec_labels)
+                  and lab == later and lab in new and lab not in then_v)
         elif k == "value_in_different_format":
             ok = (r.get("reason") == "comma_grouped_digits" and lab == later
-                  and (lab, r.get("expect")) in rec and "," in now_v.get(lab, "")
+                  and plan.get(lab, {}).get("expect") == r.get("expect") and "," in now_v.get(lab, "")
                   and then_v.get(lab) == r.get("written_before") and now_v.get(lab) == r.get("written_after"))
         elif k == "reordered_sections":
             by_slug = {u["id"][4:]: u["id"] for u in target["units"] if not u["preamble"]}
@@ -578,6 +649,10 @@ def check_case(name, files, errs):
                                       or round_names[0] in man["prior"]))):
         errs.append("%s: the case rounds are not earliest, prior and target in order" % name)
         return
+    # INPUT_FORMAT section 12: a multi-round bundle's context/ holds only case documents.
+    others = sorted(n for n in context if n != MANIFEST[len("context/"):] and n not in round_names)
+    if others:
+        errs.append("%s: context/ holds files no round names: %s" % (name, others))
     by_doc = {}
     for s in case["sources"]:
         by_doc.setdefault(s["document_id"], []).append(s)
@@ -659,7 +734,8 @@ def _neighbour_checks(name, res, planted, errs, twin_res=None):
     deps = [e for e in planted if "depends_on_unit" in e]
     if not deps:
         return
-    label = deps[0]["claim"]["field_label"]
+    labels = [e["claim"]["field_label"] for e in deps if e["relation"] == "sum_mismatch"]
+    label = labels[0] if labels else deps[0].get("chain_label")
     units = [u for u in res["doc"]["units"] if not u["preamble"]]
     pos = {u["id"]: i for i, u in enumerate(units)}
     broken = set()
@@ -673,7 +749,14 @@ def _neighbour_checks(name, res, planted, errs, twin_res=None):
             errs.append("%s: %s carries no chain figure" % (name, e["unit"]))
             continue
         total = tr.r6(sum(me[1]))
-        if b < a:      # carried in from the unit before
+        if e["relation"] == "carry_mismatch":
+            # Wrong only beside its neighbour: both units add up on their own, and the
+            # carried figure differs from the closing figure of the unit before.
+            ok = (b == a - 1 and not tr.same(me[0], nb[2]) and tr.same(total, me[2])
+                  and tr.same(tr.r6(sum(nb[1])), nb[2])
+                  and tr.same(e["claim"]["value_a"], nb[2]) and tr.same(e["claim"]["value_b"], me[0]))
+            broken.add((b, a))
+        elif b < a:    # carried in from the unit before
             ok = (not tr.same(me[0], nb[2]) and tr.same(nb[2] + sum(me[1][1:]), me[2])
                   and tr.same(e["claim"]["value_a"], total) and tr.same(e["claim"]["value_b"], me[2]))
             broken.add((b, a))
@@ -695,6 +778,54 @@ def _neighbour_checks(name, res, planted, errs, twin_res=None):
             p, q = _chain_figures(tunits[i - 1], label), _chain_figures(tunits[i], label)
             if p and q and not (tr.same(q[0], p[2]) and tr.same(p[2], tr.r6(sum(p[1])))):
                 errs.append("twin: %s does not carry the figure of the unit before" % tunits[i]["id"])
+
+
+def check_long_range(name, files, errs):
+    """A long-range bundle (every one: the test, its twin and the four probes): every
+    planted entry names its related unit, its stated distance is the true distance and
+    at least `min_distance`; the definitions open the document when the key says so;
+    the operative figure of every definition lives only in that unit (no grounding file
+    carries a digit); and a cross-reference line sits on some uses only, as the key says."""
+    key = _key(files)
+    lr = key["long_range"]
+    target, _ = _target(files)
+    doc = au.parse_document(files["context/" + target], target)
+    units = [u for u in doc["units"] if not u["preamble"]]
+    by_id = {u["id"]: u for u in units}
+    far = int(lr.get("min_distance", 0))
+    dists = []
+    for e in key.get("planted", []):
+        rel = e.get("related_unit")
+        if rel not in by_id or e["unit"] not in by_id:
+            errs.append("%s: %s names no related unit" % (name, e["unit"]))
+            continue
+        d = unit_distance(e["unit"], rel)
+        dists.append(d)
+        if e.get("distance") != d or d < far:
+            errs.append("%s: %s is %d units from %s (key %s, at least %d)"
+                        % (name, e["unit"], d, rel, e.get("distance"), far))
+        xref = [ln for ln in by_id[e["unit"]]["lines"] if ln["norm"] == "cross reference"]
+        has = bool(xref) and xref[0]["value"] == by_id[rel]["heading"]
+        if bool(xref) != has or e.get("cross_reference_line") is not has:
+            errs.append("%s: %s cross reference line %s, key %s"
+                        % (name, e["unit"], has, e.get("cross_reference_line")))
+    flags = {e.get("cross_reference_line") for e in key.get("planted", [])}
+    if key.get("planted") and flags != {True, False}:
+        errs.append("%s: every planted use has a cross reference, or none does" % name)
+    first = [u for u in units[:4]]
+    defs_first = len(first) == 4 and all(any(ln["norm"] == "defined term" for ln in u["lines"]) for u in first)
+    if lr.get("definitions_first") is not defs_first or not defs_first:
+        errs.append("%s: definitions_first is %s in the text, %s in the key"
+                    % (name, defs_first, lr.get("definitions_first")))
+    uses = [u for u in units if any(ln["norm"] == "provision type" for ln in u["lines"])]
+    share = round(sum(any(ln["norm"] == "cross reference" for ln in u["lines"]) for u in uses)
+                  / float(len(uses) or 1), 2)
+    if lr.get("cross_reference_share") != share or not 0.3 <= share <= 0.7:
+        errs.append("%s: cross reference share %s, key %s" % (name, share, lr.get("cross_reference_share")))
+    for n, t in files.items():
+        if (n.startswith("context/") and n.endswith(".md") and n != "context/" + target
+                and n[len("context/"):] not in json.loads(files[MANIFEST])["prior"] and re.search(r"\d", t)):
+            errs.append("%s: grounding file %s states a figure" % (name, n))
 
 
 def _roles(test):
@@ -782,12 +913,9 @@ def validate_test(test, min_flaws=10, min_kinds=3):
         errs.append("twin: unit ids do not line up")
     if not negotiation:
         _neighbour_checks("base", bres, bkey["planted"], errs, tres)
-    if "long_range" in bkey:
-        far = int(bkey["long_range"].get("min_distance", 0))
-        for e in bkey["planted"]:
-            rel = e.get("related_unit")
-            if not rel or abs(int(e["unit"][1:3]) - int(rel[1:3])) < far:
-                errs.append("base: %s has no related unit %d or more units away" % (e["unit"], far))
+    for folder in sorted(test):
+        if "long_range" in _key(test[folder]):
+            check_long_range(folder, test[folder], errs)
     # probes
     bdoc = base["context/" + bkey["document"]]
     for probe in PROBES:
@@ -820,7 +948,10 @@ def validate_test(test, min_flaws=10, min_kinds=3):
             if _strip(key) != exp:
                 errs.append("%s: the key differs from the test's by more than the label" % probe)
         elif probe == "reordered_sections":
-            res = check(roles[probe], files, errs)
+            # A cut between two counts reads as a broken chain: the carry scanner reads
+            # reading order, so it does not run on this probe (section 11.2).
+            res = (check(roles[probe], files, errs) if negotiation
+                   else check(roles[probe], files, errs, ordered=False))
             if sorted(bdoc.split("\n")) != sorted(doc.split("\n")) or bdoc == doc:
                 errs.append("%s: not a reordering of the same sections" % probe)
             by_head = {u["heading"]: u["id"] for u in res["doc"]["units"]}
@@ -834,8 +965,10 @@ def validate_test(test, min_flaws=10, min_kinds=3):
                 if "rename_probes" in exp:
                     exp["rename_probes"] = [
                         dict(r, unit_id=remap(r["unit_id"]) if r["unit_id"] else None,
+                             prior_unit_id=remap(r["prior_unit_id"]) if r["prior_unit_id"] else None,
                              prior_order=[remap(x) for x in r["prior_order"]])
                         for r in exp["rename_probes"]]
+                    exp["expected_refusals"] = expected_refusals_from(exp["rename_probes"])
                 if "round_reuse" in exp:
                     last = exp["rounds"][-1]["round_id"]
                     exp["round_reuse"] = [dict(r, unit_id=remap(r["unit_id"])) if r["round_id"] == last else r
@@ -844,9 +977,11 @@ def validate_test(test, min_flaws=10, min_kinds=3):
                 new_pl = []
                 for e in exp["planted"]:
                     e2 = dict(e, unit=remap(e["unit"]))
-                    for lk in ("depends_on_unit", "related_unit"):
+                    for lk in gt.LINKS:
                         if lk in e2:
                             e2[lk] = remap(e2[lk])
+                    if "distance" in e2:
+                        e2["distance"] = unit_distance(e2["unit"], e2["related_unit"])
                     new_pl.append(e2)
                 exp["planted"] = new_pl
                 for e in new_pl:
@@ -864,20 +999,41 @@ def validate_test(test, min_flaws=10, min_kinds=3):
                 continue
             prior_text = files["context/" + man["prior"][0]]
             term = key["probe_change"]["term"]
+            exp = _strip(bkey)
             if negotiation:
-                bprior = base["context/" + json.loads(base[MANIFEST])["prior"][0]]
-                gone, new = _lines_diff(bdoc, doc)
-                if gone or len(new) != 1 or not new[0].startswith(term + ": ") or prior_text != bprior:
-                    errs.append("%s: the later version does not add exactly the one term" % probe)
-                if any(ln.startswith(term + ":") for ln in prior_text.split("\n")):
-                    errs.append("%s: the earlier version states the term" % probe)
+                # Every earlier version is the test's less the one term; the target is the
+                # test's; the term carries a keyed breach (D-042, decision 6).
+                bman = json.loads(base[MANIFEST])
+                bprior = base["context/" + bman["prior"][0]]
+                gone, new = _lines_diff(bprior, prior_text)
+                gone = [g for g in gone if g.strip()]    # a unit left with no line loses its blank line too
+                if doc != bdoc or new or len(gone) != 1 or not gone[0].startswith(term + ": "):
+                    errs.append("%s: the earlier version is not the test's less the one term" % probe)
+                for n in sorted(set(bman["grounding"]) - set(bman["prior"])):
+                    if "context/" + n in files:
+                        g2, n2 = _lines_diff(base["context/" + n], files["context/" + n])
+                        g2 = [g for g in g2 if g.strip()]
+                        if n2 or len(g2) != 1 or not g2[0].startswith(term + ": "):
+                            errs.append("%s: %s is not the test's less the one term" % (probe, n))
+                tn = tr.norm(term)
+                if not any(r["field_label"] == tn for r in bkey["band_irregularities"]):
+                    errs.append("%s: the term carries no keyed flaw" % probe)
+                exp["version_changes"] = [
+                    dict(v, change="new_in_later_version", expect="none", value_b=None)
+                    if v["field_label"] == tn else v for v in exp["version_changes"]]
+                exp["prior_records"] = prior_records_from(exp["version_changes"])
+                exp["round_reuse"] = key.get("round_reuse")   # checked against the documents
             else:
                 gone, new = _lines_diff(bdoc, prior_text)
                 if doc != bdoc or new or len(gone) != 1 or not gone[0].startswith(term + ": "):
                     errs.append("%s: the earlier version is not the test less the one term" % probe)
                 if not re.search(r"\d", gone[0] if gone else ""):
                     errs.append("%s: the term carries no figure" % probe)
-            if _strip(key) != _strip(bkey):
+                unit = key["probe_change"]["unit"]
+                if not any(e["unit"] == unit and e["claim"]["field_label"] == tr.norm(term)
+                           for e in bkey["planted"]):
+                    errs.append("%s: the term carries no keyed flaw" % probe)
+            if _strip(key) != exp:
                 errs.append("%s: the key differs from the test's" % probe)
         else:
             check(roles[probe], files, errs)

@@ -4,26 +4,35 @@ use, conditions pointing at a field and at another rule).
 Provisions are of five types. Definition provisions define a term in prose and state
 the term and its source. Filing provisions state a filing date and a notice date,
 reply provisions a receipt date and an answer date, fee provisions a fee class and a
-filing fee in EUR, appeal provisions the appeal body. Every provision that uses a
-defined term carries a text cross reference to the provision that defines it.
+filing fee in EUR, appeal provisions the appeal body.
 
-The two date windows are bound by sentences in the reference schedule (section 7,
-"A date window"); the fee band comes from the schedule's table keyed by fee class.
 The appeal rule's scope is pinned to a field value ([scope: provision type=Appeal]),
 which is the condition pointing at a field; its text is read with another rule, the
 condition pointing at another rule. Section 5 forbids [unless: ...], so that second
 condition lives in the rule text only, where only the model reads it.
 
-Planted kinds: a filing-to-notice gap over its window, a receipt-to-answer gap over
-its window, a filing fee above its band, one below it, a definition without its
-source, an appeal provision without its appeal body. Every planted entry names the
-unit it relates to (`related_unit`): the definition behind it, or for a definition,
-the provision that uses it. Distractors: gaps exactly equal to the window, fees
-exactly on a bound, and filing provisions that state no appeal body (outside the
+Ordinary layout: definitions anywhere, every use carries a cross-reference line to its
+definition, the two windows are bound by sentences in the reference schedule (section
+7, "A date window") and the fee band comes from the schedule's table keyed by fee
+class. Planted kinds: a filing-to-notice gap over its window, a receipt-to-answer gap
+over its window, a filing fee above its band, one below it, a definition without its
+source, an appeal provision without its appeal body. Every planted entry names the unit
+it relates to (`related_unit`): the definition behind it, or for a definition, the
+provision that uses it farthest away. Distractors: gaps exactly equal to the window,
+fees exactly on a bound, and filing provisions that state no appeal body (outside the
 pinned scope).
 
-With long_range=True the definitions open the document and every flaw sits far from
-the unit it relates to (S3 item 12).
+Long-range layout (S3 item 12, D-042): the four definitions open the document, and the
+figure that decides each planted flaw lives ONLY in its definition: the notice and the
+answer definitions state their window length, the fee-class definition holds the table
+of allowed fees per class, and the reference schedule carries no figure at all. So a
+planted flaw cannot be judged without its related unit, at least twelve units away.
+Only about half of the uses (seeded) carry a cross-reference line, among the planted
+uses as well, so a cross-reference baseline is not perfect by construction. Python
+computes none of these flaws (no bound sentence, no reference table): they are keyed
+from this family's own ground truth and found again by the ground-truth scanner
+(ground_truth.py). Planted kinds: a notice window exceeded, an answer window exceeded,
+a filing fee above, and below, the allowed fee for its class.
 """
 import datetime
 
@@ -57,21 +66,50 @@ RULES = [
     md.Rule("CONV-RE", "Appeal body", "Read with CONV-RD, every appeal provision must name the appeal body.",
             scope=["provision type=Appeal"], requires=["appeal body"]),
 ]
+LONG_RANGE_TRUTH = [
+    {"check": "far_window", "bound_label": "window length", "term_label": "defined term",
+     "pairs": [["filed", "notice", "Notice window", "CONV-RA", "notice_window_far"],
+               ["received", "answered", "Answer window", "CONV-RB", "answer_window_far"]]},
+    {"check": "far_fee", "term_label": "defined term", "term": "Fee class", "fee": "filing fee",
+     "class": "fee class", "table_column": "allowed fee", "rule": "CONV-RC",
+     "kinds": {"above": "fee_above_band_far", "below": "fee_below_band_far"}},
+]
 BASE_DATE = datetime.date(2026, 1, 5)
+NEED = {"notice_window_exceeded": "filing", "answer_window_exceeded": "reply",
+        "fee_above_band": "fee", "fee_below_band": "fee", "missing_appeal_body": "appeal",
+        "notice_window_far": "filing", "answer_window_far": "reply",
+        "fee_above_band_far": "fee", "fee_below_band_far": "fee"}
+FOR_TYPE = {"filing": "notice", "reply": "answer", "fee": "fee", "appeal": "appeal"}
 
 
 def _date(offset):
     return (BASE_DATE + datetime.timedelta(days=offset)).isoformat()
 
 
+def _far_reorder(n, rng, planted):
+    """A reordered-sections permutation that moves blocks of uses only, and only among
+    the units at least MIN_DISTANCE + 1 positions past the last definition, so the
+    definitions still open the document and every planted use stays at least
+    MIN_DISTANCE units from its definition."""
+    start = 4 + MIN_DISTANCE
+    for _ in range(500):
+        tail = wl.reorder(n - start, rng)
+        order = list(range(start)) + [start + x for x in tail]
+        pos = {orig: p for p, orig in enumerate(order)}
+        if all(abs(pos[p["unit"]] - pos[p["links"]["related_unit"]]) >= MIN_DISTANCE for p in planted):
+            return order
+    raise ValueError("no long-range reordering")
+
+
 def build(seed, long_range=False):
     rng = wl.make_rng(FAMILY + ("L" if long_range else ""), seed)
-    kinds = (["notice_window_exceeded"] * 3 + ["answer_window_exceeded"] * 2 + ["fee_above_band"] * 2
-             + ["fee_below_band"] * 1 + ["missing_definition_source"] * 1 + ["missing_appeal_body"] * 2)
     if long_range:
-        kinds += ["notice_window_exceeded", "answer_window_exceeded", "fee_above_band"]
+        kinds = (["notice_window_far"] * 4 + ["answer_window_far"] * 3 + ["fee_above_band_far"] * 3
+                 + ["fee_below_band_far"])
         counts = {"filing": 10, "reply": 8, "fee": 8, "appeal": 5}
     else:
+        kinds = (["notice_window_exceeded"] * 3 + ["answer_window_exceeded"] * 2 + ["fee_above_band"] * 2
+                 + ["fee_below_band"] * 1 + ["missing_definition_source"] * 1 + ["missing_appeal_body"] * 2)
         counts = {"filing": 6, "reply": 5, "fee": 5, "appeal": 3}
     # the use units, each with its type
     uses = []
@@ -83,17 +121,15 @@ def build(seed, long_range=False):
     if long_range:
         # retry the order of the uses until each type has room, far from its
         # definition, for its flaws and one distractor
-        need_far = {"filing": kinds.count("notice_window_exceeded"),
-                    "reply": kinds.count("answer_window_exceeded"),
-                    "fee": kinds.count("fee_above_band") + kinds.count("fee_below_band"),
-                    "appeal": kinds.count("missing_appeal_body")}
+        need_far = {}
+        for k in kinds:
+            need_far[NEED[k]] = need_far.get(NEED[k], 0) + 1
         for _ in range(500):
             layout = [("def", d) for d in defs] + [("use", t) for t in uses]
             dpos = {d: i for i, d in enumerate(defs)}
             far = {}
             for i, (k, t) in enumerate(layout):
-                if k == "use" and i - dpos[{"filing": "notice", "reply": "answer", "fee": "fee",
-                                             "appeal": "appeal"}[t]] >= MIN_DISTANCE:
+                if k == "use" and i - dpos[FOR_TYPE[t]] >= MIN_DISTANCE:
                     far[t] = far.get(t, 0) + 1
             if all(far.get(t, 0) >= need_far[t] + 1 for t in need_far):
                 break
@@ -107,26 +143,23 @@ def build(seed, long_range=False):
     n = len(layout)
     heads = wl.pick(rng, wl.BIRDS, n)
     def_unit = {d: i for i, (k, d) in enumerate(layout) if k == "def"}
-    for_type = {"filing": "notice", "reply": "answer", "fee": "fee", "appeal": "appeal"}
     # which units carry which flaw: far from their definition when long_range
     by_type = {}
     for i, (k, t) in enumerate(layout):
         if k == "use":
             by_type.setdefault(t, []).append(i)
-    need = {"notice_window_exceeded": "filing", "answer_window_exceeded": "reply",
-            "fee_above_band": "fee", "fee_below_band": "fee", "missing_appeal_body": "appeal"}
     plan, used = {}, set()
     for kind in kinds:
         if kind == "missing_definition_source":
             continue
-        typ = need[kind]
+        typ = NEED[kind]
         cands = [i for i in by_type[typ] if i not in used]
         if long_range:
-            cands = [i for i in cands if i - def_unit[for_type[typ]] >= MIN_DISTANCE]
+            cands = [i for i in cands if i - def_unit[FOR_TYPE[typ]] >= MIN_DISTANCE]
         i = rng.choice(cands)
         plan[i] = kind
         used.add(i)
-    missing_def = rng.choice(defs)
+    missing_def = None if long_range else rng.choice(defs)
     distract = {}
     for typ, tag in (("filing", "gap_equals_window"), ("reply", "gap_equals_window"),
                      ("fee", "fee_on_bound")):
@@ -134,6 +167,17 @@ def build(seed, long_range=False):
         j = rng.choice(free)
         distract[j] = tag
         used.add(j)
+    # Long range: about half the uses carry a cross-reference line, planted ones included,
+    # with and without it among the planted (seeded, retried until both hold).
+    xref_on = {i: True for i, (k, _) in enumerate(layout) if k == "use"}
+    if long_range:
+        for _ in range(500):
+            xref_on = {i: rng.random() < 0.5 for i in xref_on}
+            share = sum(xref_on.values()) / float(len(xref_on))
+            if 0.4 <= share <= 0.6 and {xref_on[i] for i in plan} == {True, False}:
+                break
+        else:
+            raise ValueError("no cross-reference draw")
     doc_units, twin_units, planted, clean = [], [], [], []
     referencing = {d: [] for d in defs}
     for i, (k, t) in enumerate(layout):
@@ -143,7 +187,14 @@ def build(seed, long_range=False):
             term, meaning = DEFINED[t]
             prose = "In these provisions the %s means %s." % (term.lower(), meaning)
             lines = [["Defined term", term], ["Definition source", rng.choice(SOURCES)]]
-            clean_u = md.Unit(head, [("lines", lines), ("prose", prose)])
+            blocks = [("lines", lines)]
+            if long_range and t in ("notice", "answer"):
+                lines.append(["Window length", "%d days" % (NOTICE_DAYS if t == "notice" else ANSWER_DAYS)])
+            if long_range and t == "fee":
+                blocks.append(("table", ["Fee class", "Allowed fee (EUR)"],
+                               [[c, "%d to %d" % (lo, hi)] for c, lo, hi in FEE_CLASSES]))
+            blocks.append(("prose", prose))
+            clean_u = md.Unit(head, blocks)
             flawed = clean_u.clone()
             if t == missing_def:
                 flawed.remove_line("Definition source")
@@ -151,10 +202,11 @@ def build(seed, long_range=False):
                                 "kind": "missing_definition_source", "field_label": "definition source",
                                 "value_a": 0, "value_b": 1, "links": {"related_unit": None}, "def": t})
         else:
-            dref = def_unit[for_type[t]]
-            referencing[for_type[t]].append(i)
-            xref = ["Cross reference", "Provision " + heads[dref]]
+            dref = def_unit[FOR_TYPE[t]]
+            referencing[FOR_TYPE[t]].append(i)
+            xref = [["Cross reference", "Provision " + heads[dref]]] if xref_on[i] else []
             links = {"related_unit": dref}
+            extra = {"cross_reference_line": xref_on[i]} if long_range else {}
             if t in ("filing", "reply"):
                 bound = NOTICE_DAYS if t == "filing" else ANSWER_DAYS
                 start = rng.randint(0, 300)
@@ -163,39 +215,44 @@ def build(seed, long_range=False):
                     gap = bound
                 bad = bound + rng.randint(3, 20)
                 labels = ("Filed", "Notice") if t == "filing" else ("Received", "Answered")
+
                 def mk(g):
                     return md.Unit(head, [("lines", [["Provision type", "Filing" if t == "filing" else "Reply"],
-                                                     [labels[0], _date(start)], [labels[1], _date(start + g)], xref])])
+                                                     [labels[0], _date(start)], [labels[1], _date(start + g)]]
+                                           + xref)])
                 clean_u = mk(gap)
                 flawed = mk(bad) if kind else clean_u.clone()
                 if kind:
                     planted.append({"unit": i, "rule": "CONV-RA" if t == "filing" else "CONV-RB",
                                     "relation": "date_window", "kind": kind,
                                     "field_label": labels[0].lower(), "value_a": bad, "value_b": bound,
-                                    "links": links})
+                                    "links": links, "extra": extra})
             elif t == "fee":
                 cname, lo, hi = rng.choice(FEE_CLASSES)
                 fee = rng.randint(lo + (hi - lo) // 5, hi - (hi - lo) // 5)
                 if distract.get(i) == "fee_on_bound":
                     fee = rng.choice([lo, hi])
+
                 def mk(f):
                     return md.Unit(head, [("lines", [["Provision type", "Fee"], ["Fee class", cname],
-                                                     ["Filing fee", "%d EUR" % f], xref])])
+                                                     ["Filing fee", "%d EUR" % f]] + xref)])
                 clean_u = mk(fee)
                 flawed = clean_u.clone()
-                if kind == "fee_above_band":
+                if kind in ("fee_above_band", "fee_above_band_far"):
                     bad = hi + rng.randint(10, (hi - lo) // 2)
                     flawed = mk(bad)
                     planted.append({"unit": i, "rule": "CONV-RC", "relation": "above_band", "kind": kind,
-                                    "field_label": "filing fee", "value_a": bad, "value_b": hi, "links": links})
-                elif kind == "fee_below_band":
+                                    "field_label": "filing fee", "value_a": bad, "value_b": hi,
+                                    "links": links, "extra": extra})
+                elif kind in ("fee_below_band", "fee_below_band_far"):
                     bad = rng.randint(max(1, lo // 3), lo - 5)
                     flawed = mk(bad)
                     planted.append({"unit": i, "rule": "CONV-RC", "relation": "below_band", "kind": kind,
-                                    "field_label": "filing fee", "value_a": bad, "value_b": lo, "links": links})
+                                    "field_label": "filing fee", "value_a": bad, "value_b": lo,
+                                    "links": links, "extra": extra})
             else:
                 body = rng.choice(BODIES)
-                clean_u = md.Unit(head, [("lines", [["Provision type", "Appeal"], ["Appeal body", body], xref])])
+                clean_u = md.Unit(head, [("lines", [["Provision type", "Appeal"], ["Appeal body", body]] + xref)])
                 flawed = clean_u.clone()
                 if kind == "missing_appeal_body":
                     flawed.remove_line("Appeal body")
@@ -215,34 +272,43 @@ def build(seed, long_range=False):
     preamble = "These provisions govern filings, replies, fees and appeals before the board."
     doc = md.Doc(title, preamble, doc_units)
     twin = md.Doc(title, preamble, twin_units)
-    reference = ("schedule", "Schedule", [
-        ("prose", "This schedule sets the standard windows and the fee bands."),
-        ("prose", "The standard notice window is %d days." % NOTICE_DAYS),
-        ("prose", "The standard answer window is %d days." % ANSWER_DAYS),
-        ("table", ["Fee class", "Fee band (EUR)"], [[c, "%d to %d" % (lo, hi)] for c, lo, hi in FEE_CLASSES]),
-    ])
+    if long_range:
+        reference = ("schedule", "Schedule", [
+            ("prose", "This schedule explains how the provisions are read."),
+            ("prose", "Each window and each fee band is stated in the provision that defines it."),
+        ])
+    else:
+        reference = ("schedule", "Schedule", [
+            ("prose", "This schedule sets the standard windows and the fee bands."),
+            ("prose", "The standard notice window is %d days." % NOTICE_DAYS),
+            ("prose", "The standard answer window is %d days." % ANSWER_DAYS),
+            ("table", ["Fee class", "Fee band (EUR)"], [[c, "%d to %d" % (lo, hi)] for c, lo, hi in FEE_CLASSES]),
+        ])
     conv = md.Conventions("Provision conventions", "These rules govern the procedural provisions.", RULES)
-    flaw_units = {p["unit"] for p in planted}
-    plain_fee = [i for i in by_type["fee"] if i not in flaw_units and i not in clean]
     fee_flaw = [p for p in planted if p["relation"] in ("above_band", "below_band")][0]
     fee_text = doc_units[fee_flaw["unit"]].line_value("Filing fee").replace(" EUR", ".00 EUR")
+    planted = sorted(planted, key=lambda p: p["unit"])
     spec = {
         "family": FAMILY, "family_name": NAME, "seed": seed, "mode": "single",
         "doc": doc, "twin": twin, "conventions": conv, "references": [reference],
-        "planted": sorted(planted, key=lambda p: p["unit"]), "clean": sorted(clean),
+        "planted": planted, "clean": sorted(clean),
         "doc_stem": "provisions", "conv_stem": "rules",
         "task": "Review the provisions against the provision conventions, grounded in the schedule.",
         "probes": {
             "reword": {"old": "Filed", "new": "Lodged"},
-            "reorder": wl.reorder(n, rng),
-            "term": {"unit": plain_fee[0], "label": "Filing fee"},
+            "reorder": _far_reorder(n, rng, planted) if long_range else wl.reorder(n, rng),
+            # probe 3: the term only in the later version carries a keyed flaw
+            "term": {"unit": fee_flaw["unit"], "label": "Filing fee"},
             "reformat": {"unit": fee_flaw["unit"], "label": "Filing fee", "text": fee_text},
         },
     }
     if long_range:
         spec["family"] = "f5lr"
+        spec["ground_truth_checks"] = LONG_RANGE_TRUTH
         spec["key_extra"] = {"long_range": {
-            "related_by": "every planted entry names in related_unit the unit a reader needs to judge it: "
-                          "the definition behind it, or for a definition, the farthest provision that uses it",
-            "definitions_first": True, "min_distance": MIN_DISTANCE}}
+            "related_by": "every planted entry names in related_unit the definition whose figure decides "
+                          "it (its window length, or the allowed fee for its class), stated only there; "
+                          "distance is how many units apart the two are",
+            "definitions_first": True, "min_distance": MIN_DISTANCE,
+            "cross_reference_share": round(sum(xref_on.values()) / float(len(xref_on)), 2)}}
     return spec

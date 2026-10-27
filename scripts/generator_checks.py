@@ -1,37 +1,48 @@
 """Gate check: the synthetic test generators under benchmark/generators/ (S3 items 8 to 10).
 
+The development suite MEASURES Shimmer and is never fitted to it (D-042): every key states
+the ground truth the generator planted, and no case here asserts that a key equals what
+Shimmer computes. How far Shimmer agrees with the keys is a measurement, printed by
+`report_agreement` (`py -3.12 scripts/generator_checks.py --agreement`), never a pass
+condition.
+
 For every generator family (and the long-range layout of the provisions family) a test
 is generated from a fixed seed into a temporary folder and read back from disk, and:
 
 - its self-validation passes on the written files: at least ten planted flaws of at
   least three kinds, each with a complete typed reason; a clean distractor; a clean
-  twin that plants nothing and in which the package's own figure audit finds no
-  comparison at all; all four perturbation probes; every planted figure recomputed by
-  the package's own arithmetic from the rendered text (never Shimmer's computing
-  layer) and found exactly as keyed, with no unintended comparison anywhere;
+  twin that plants nothing; all four perturbation probes, probe 3 carrying a keyed flaw;
+  every planted figure recomputed by the package's own code from the rendered text,
+  the comparisons Python would make by the figure audit and the flaws Python does not
+  compute (unit mismatches, rate and copy errors, neighbour-only carries, long-range
+  windows and fees) by the ground-truth scanners, each found exactly as keyed and
+  nowhere else;
 - the same seed gives byte-identical files, also in a separate process under a
   different string-hash seed;
-- a planted flaw removed from the key is caught, as is a twin left with its flaws, a
-  digit in a text value, and a missing probe;
+- a planted flaw removed from the key is caught (audit kinds and ground-truth kinds), as
+  is a twin left with its flaws (every family), a digit in a text value, and a missing
+  probe;
+- family 4's rename probes state the ground truth: a renamed term (value kept, moved by
+  2 to 45 percent, or moved to another section) is expected not withdrawn, a withdrawal
+  beside an unrelated newcomer in the same measure is expected withdrawn; every family 4
+  bundle holds only case documents in context/;
+- the long-range layout holds in every bundle, probes included: true distances of at
+  least twelve units, definitions first, cross-reference lines on some uses only;
 - the slug and unit id rule matches the published examples; no generator source file
   name matches a credential or key ignore pattern;
-- family 4, two and three rounds, as a declared multi-round case (after S2): every
-  bundle's case manifest is accepted by the controller's own validate_live_case_manifest
-  on the documents the bound pipeline's _load_corpus loads, and by the generator's
-  restatement of its rules, and both refuse every mutation in MUTATIONS and accept every
-  harmless one; Shimmer's per-round review (multi_round_rounds.review_rounds) reuses
-  exactly the units the key names and computes the key's band irregularities in the last
-  round; Shimmer's own absent_checks (S2b item 5) mints and refuses exactly what the key's
-  prior records and rename probes say, on the generated versions and on RENAME_CASES;
-- each of those parts is neutralised in process (NEUTRALISATIONS: the generator's
-  case validator, its spans, its reuse prediction, its rename refusal), caught on an
+- family 4, two and three rounds: every bundle's case manifest is accepted by the
+  controller's own validate_live_case_manifest (its published rules) on the documents
+  the bound pipeline's _load_corpus loads, and by the generator's restatement of those
+  rules, and both refuse every mutation in MUTATIONS and accept every harmless one;
+- each of those parts is neutralised in process (NEUTRALISATIONS), caught on an
   unvalidated build, restored, and passes again.
 
 The generators are not shipped in the container image, so when benchmark/generators/
 is absent every case is skipped with the reason, never failed. Every case writes only
-inside temporary folders. Shimmer's code is imported read-only by the agreement cases;
-the generators themselves never import it.
+inside temporary folders. The controller is imported read-only by the case-manifest
+case; the generators themselves never import Shimmer.
 """
+import copy
 import fnmatch
 import hashlib
 import importlib.util
@@ -79,6 +90,16 @@ def _digest(files):
     return h.hexdigest()
 
 
+def _key(files):
+    return json.loads(files["answer_key.json"])
+
+
+def _twin_errors(errs, twin):
+    return [e for e in errs if e.startswith(twin) and ("unintended comparison" in e
+                                                       or "ground-truth flaws differ" in e
+                                                       or "band findings differ" in e)]
+
+
 class GeneratorChecks(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -110,14 +131,37 @@ class GeneratorChecks(unittest.TestCase):
             errs = self.g.bundle.validate_test(test)
             self.assertEqual(errs, [], "%s %s: %s" % (fam, opts, errs[:5]))
             roles = self._roles(test)
-            key = json.loads(test[roles["base"]]["answer_key.json"])
+            key = _key(test[roles["base"]])
             flaws = key.get("planted") or key.get("band_irregularities")
             self.assertGreaterEqual(len(flaws), 10)
             self.assertGreaterEqual(len({f["kind"] for f in flaws}), 3)
             self.assertGreaterEqual(len(key["clean"]), 1)
             self.assertEqual(sorted(roles), sorted(["base", "twin"] + list(self.g.bundle.PROBES)))
             if opts.get("long_range"):
-                self.assertTrue(all(e.get("related_unit") for e in key["planted"]))
+                self.assertTrue(all(e.get("related_unit") and e["distance"] >= 12 for e in key["planted"]))
+
+    def test_every_planted_kind_the_decisions_name_is_planted(self):
+        """D-042 decisions 3, 4 and 5: unit mismatches (both kinds of measure source) in
+        family 1, rate and cross-unit copy errors in family 2, neighbour-only carries in
+        family 6, and long-range flaws judged only from the distant definition; each found
+        by the ground-truth scanners, which the audit does not model."""
+        want = {("f1", ""): {"unit_mismatch"}, ("f2", ""): {"rate_mismatch", "copy_mismatch"},
+                ("f6", ""): {"carry_mismatch"},
+                ("f5", "long_range-True"): {"notice_window_far", "answer_window_far",
+                                            "fee_above_band_far", "fee_below_band_far"}}
+        for (fam, tag), kinds in want.items():
+            test = self.g.bundle.read_test(self.written[(fam, tag or "plain")])
+            key = _key(test[self._roles(test)["base"]])
+            planted = key["planted"]
+            self.assertLessEqual(kinds, {e["kind"] for e in planted}, fam)
+            self.assertLessEqual(kinds, self.g.ground_truth.kinds(key["ground_truth_checks"]), fam)
+            if fam == "f1":
+                self.assertEqual({e["compared_with"] for e in planted if e["kind"] == "unit_mismatch"},
+                                 {"reference", "column"})
+            if fam == "f6":
+                for e in planted:
+                    if e["kind"] == "carry_mismatch":
+                        self.assertEqual(int(e["unit"][1:3]) - int(e["depends_on_unit"][1:3]), 1)
 
     def test_same_seed_gives_identical_bytes(self):
         for fam, seed, opts in FIXED:
@@ -142,33 +186,44 @@ class GeneratorChecks(unittest.TestCase):
         self.assertEqual(proc.stdout.strip(), here)
 
     def test_removed_planted_flaw_is_caught(self):
+        """An audit-computed entry and, where the family has one, a ground-truth entry,
+        each removed from the key, are caught."""
         for fam, _, opts in FIXED:
             test = self._read(fam, **opts)
             base = self._roles(test)["base"]
-            key = json.loads(test[base]["answer_key.json"])
-            field = "planted" if "planted" in key else "band_irregularities"
-            key[field] = key[field][1:]
-            test[base]["answer_key.json"] = json.dumps(key)
-            errs = self.g.bundle.validate_test(test)
-            self.assertTrue(any("unintended comparison" in e or "band findings differ" in e
-                                for e in errs), "%s: %s" % (fam, errs[:3]))
+            key = _key(test[base])
+            if "planted" not in key:
+                k2 = dict(key, band_irregularities=key["band_irregularities"][1:])
+                t2 = dict(test, **{base: dict(test[base], **{"answer_key.json": json.dumps(k2)})})
+                errs = self.g.bundle.validate_test(t2)
+                self.assertTrue(any("band findings differ" in e for e in errs), "%s: %s" % (fam, errs[:3]))
+                continue
+            truth = self.g.ground_truth.kinds(key["ground_truth_checks"])
+            for pick, msg in ((lambda e: e["kind"] not in truth, "unintended comparison"),
+                              (lambda e: e["kind"] in truth, "ground-truth flaws differ")):
+                drop = [e for e in key["planted"] if pick(e)][:1]
+                if not drop:
+                    continue
+                k2 = dict(key, planted=[e for e in key["planted"] if e is not drop[0]])
+                t2 = dict(test, **{base: dict(test[base], **{"answer_key.json": json.dumps(k2)})})
+                errs = self.g.bundle.validate_test(t2)
+                self.assertTrue(any(e.startswith(base) and msg in e for e in errs),
+                                "%s %s: %s" % (fam, msg, errs[:3]))
 
     def test_twin_left_with_its_flaws_is_caught(self):
-        for fam in ("f1", "f3", "f6"):
-            test = self._read(fam)
+        for fam, _, opts in FIXED:
+            test = self._read(fam, **opts)
             roles = self._roles(test)
             base, twin = test[roles["base"]], test[roles["twin"]]
-            bdoc = json.loads(base["answer_key.json"])["document"]
-            tdoc = json.loads(twin["answer_key.json"])["document"]
+            bdoc, tdoc = _key(base)["document"], _key(twin)["document"]
             twin["context/" + tdoc] = base["context/" + bdoc]
             errs = self.g.bundle.validate_test(test)
-            self.assertTrue(any(e.startswith(roles["twin"]) and "unintended comparison" in e
-                                for e in errs), "%s: %s" % (fam, errs[:3]))
+            self.assertTrue(_twin_errors(errs, roles["twin"]), "%s %s: %s" % (fam, opts, errs[:3]))
 
     def test_digit_in_a_text_value_is_refused(self):
         test = self._read("f2")
         base = self._roles(test)["base"]
-        doc = "context/" + json.loads(test[base]["answer_key.json"])["document"]
+        doc = "context/" + _key(test[base])["document"]
         lines = test[base][doc].split("\n")
         for i, ln in enumerate(lines):
             if ": " in ln and not any(ch.isdigit() for ch in ln):
@@ -196,37 +251,94 @@ class GeneratorChecks(unittest.TestCase):
         self.assertEqual(tr.norm("series"), "sery")
 
     def test_settled_readings_of_the_format(self):
-        """D-025: the audit reads sentences, renames and attribution as the format now says."""
+        """D-025: the audit reads sentences, dates and attribution as the format says
+        (neutral fixture words, D-042 decision 8)."""
         au, tr = self.g.bundle.au, self.g.bundle.tr
-        text = ("# T\n\nWindow note: standard\nWindow length: 48 hours\n\n"
-                "The standard reply window is 48 hours. Then a reply follows!\n| a | b |\n")
+        text = ("# T\n\nGauge note: standard\nGauge span: 48 hours\n\n"
+                "The standard gauge span is 48 hours. Then a mark follows!\n| a | b |\n")
         self.assertEqual(au.reader_sentences(text),
-                         ["Window note: standard Window length: 48 hours",
-                          "The standard reply window is 48 hours.", "Then a reply follows!"])
+                         ["Gauge note: standard Gauge span: 48 hours",
+                          "The standard gauge span is 48 hours.", "Then a mark follows!"])
         self.assertEqual(len(tr.numbers_with_measures("Logged: 2026-03-01")), 3)
-        conv = ("# C\n\nThese rules govern the clauses.\n\n"
-                "## CONV-XA Other [required] [conformance]\n\n"
-                "The other term must lie between 1 box and 9 box.\n\n"
-                "## CONV-XB New [required] [conformance]\n\n"
-                "The new charge must lie between 50 box and 200 box.\n")
-        prior = "# T\n\n## Clause Alpha\n\nOld charge: 100 box\nOther term: 5 box\n"
-        for now, renamed in (("102.04", True), ("102", True), ("98", True), ("97.96", False)):
-            target = "# T\n\n## Clause Alpha\n\nNew charge: %s box\nOther term: 5 box\n" % now
-            res = au.audit(target, "t.md", conv, "c.md", {"p.md": prior}, "p.md")
-            self.assertEqual(res["errors"], [])
-            records, refusals = au.prior_records(res)
-            absent = [r for r in records if r["relation"] == "absent_since_prior"]
-            self.assertEqual(("possible rename", "old charge") in refusals, renamed, now)
-            # S2b item 5: outside the 2% window the newcomer is still a possible
-            # successor in the same measure, so the old label is never withdrawn.
-            self.assertEqual(("possible successor", "old charge") in refusals, not renamed, now)
-            self.assertEqual(absent, [], now)
-        for case in RENAME_CASES:
-            if case[3]:
-                self.assertEqual(_audit_rename_outcomes(au, case), case[2], case)
         rules = [{"id": "A", "named": ["line total"]}, {"id": "B", "named": ["line total sum"]}]
         self.assertEqual(au._attribute(rules, "line total", "sum of 3 values under line"),
                          ("B", None))
+        # The audit states facts about a vanished label and never decides it (D-042).
+        conv = ("# C\n\nThese rules govern the parts.\n\n"
+                "## CONV-XA Other [required] [conformance]\n\n"
+                "The other gauge must lie between 1 kg and 9 kg.\n\n"
+                "## CONV-XB New [required] [conformance]\n\n"
+                "The new mark must lie between 50 kg and 200 kg.\n")
+        prior = "# T\n\n## Part Alpha\n\nOld mark: 100 kg\nOther gauge: 5 kg\n"
+        target = "# T\n\n## Part Alpha\n\nNew mark: 140 kg\nOther gauge: 5 kg\n"
+        res = au.audit(target, "t.md", conv, "c.md", {"p.md": prior}, "p.md")
+        self.assertEqual(res["errors"], [])
+        records, refusals, vanished = au.prior_records(res)
+        self.assertEqual(refusals, [])
+        self.assertEqual([(v["field_label"], v["newcomers_same_measure"]) for v in vanished],
+                         [("old mark", ["new mark"])])
+        self.assertEqual([r["relation"] for r in records], ["unchanged_from_prior"])
+
+    def test_rename_probes_state_the_ground_truth(self):
+        """D-042 decision 2: expectations from what was planted, never from Shimmer."""
+        rk = self.g.bundle.RENAMED
+        for test in self._f4_tests():
+            for folder, files in sorted(test.items()):
+                key = _key(files)
+                rows = {r["kind"]: r for r in key["rename_probes"]}
+                self.assertEqual(sorted(rows), sorted(self.g.bundle.RENAME_PROBE_KINDS), folder)
+                for k in rk:
+                    self.assertEqual(rows[k]["expect"], "not_withdrawn", folder)
+                    self.assertEqual(rows[k]["false_positive_if"], "absent_since_prior", folder)
+                for k in ("withdrawn", "withdrawn_beside_newcomer"):
+                    self.assertEqual(rows[k]["expect"], "absent_since_prior", folder)
+                self.assertNotEqual(rows["renamed_moved_to_other_section"]["unit_id"],
+                                    rows["renamed_moved_to_other_section"]["prior_unit_id"])
+                self.assertEqual(sorted(r["field_label"] for r in key["expected_refusals"]),
+                                 sorted(rows[k]["field_label"] for k in rk))
+                withdrawn = {r["field_label"] for r in key["prior_records"]
+                             if r["relation"] == "absent_since_prior"}
+                self.assertEqual(withdrawn, {rows["withdrawn"]["field_label"],
+                                             rows["withdrawn_beside_newcomer"]["field_label"]})
+                if key.get("probe") is None and "twin_of" in key and key["band_irregularities"]:
+                    for k in ("renamed_value_moved", "renamed_moved_to_other_section"):
+                        self.assertTrue(2 <= rows[k]["moved_percent"] <= 45, (folder, rows[k]))
+
+    def test_multi_round_bundles_hold_only_case_documents(self):
+        for test in self._f4_tests():
+            for folder, files in sorted(test.items()):
+                case = json.loads(files[self.g.bundle.mc.FILE])
+                docs = {d for r in case["rounds"] for d in r["document_ids"]}
+                ctx = {p[len("context/"):].rsplit(".", 1)[0] for p in files
+                       if p.startswith("context/") and not p.endswith("_review_targets.json")}
+                self.assertEqual(ctx, docs, folder)
+            test = self._f4_tests()[0]
+            folder = sorted(test)[0]
+            test[folder]["context/note_zz.md"] = "# Note\n\nA note that no round names.\n"
+            man = json.loads(test[folder]["context/_review_targets.json"])
+            man["grounding"] = sorted(man["grounding"] + ["note_zz.md"])
+            test[folder]["context/_review_targets.json"] = json.dumps(man)
+            errs = self.g.bundle.validate_test(test)
+            self.assertTrue(any("files no round names" in e for e in errs), errs[:3])
+
+    def test_long_range_holds_in_every_bundle(self):
+        """D-042 decision 5: true distances of at least twelve units in every bundle,
+        probes included, definitions first, cross-reference lines on some uses only;
+        each property broken once is caught."""
+        test = self._read("f5", long_range=True)
+        for folder, files in sorted(test.items()):
+            key = _key(files)
+            self.assertTrue(key["long_range"]["definitions_first"], folder)
+            self.assertTrue(all(e["distance"] >= 12 for e in key["planted"]), folder)
+            self.assertEqual({e["cross_reference_line"] for e in key["planted"]} or {True, False},
+                             {True, False}, folder)
+        reorder = self._roles(test)["reordered_sections"]
+        for mutate, msg in ((_wrong_distance, "units from"), (_every_use_crossref, "cross reference"),
+                            (_figure_in_grounding, "states a figure")):
+            t2 = copy.deepcopy(test)
+            mutate(t2[reorder])
+            errs = self.g.bundle.validate_test(t2)
+            self.assertTrue(any(e.startswith(reorder) and msg in e for e in errs), (msg, errs[:3]))
 
     def test_no_source_name_matches_a_trap_pattern(self):
         traps = ("*key*", "*config*.py", "*secret*", "*credential*")
@@ -248,80 +360,59 @@ class GeneratorChecks(unittest.TestCase):
         ok, detail = observe_case_agreement(self.g, self._f4_tests())
         self.assertTrue(ok, detail)
 
-    def test_round_review_agrees_with_the_key(self):
-        """Shimmer's per-round review (multi_round_rounds.review_rounds) reuses exactly the
-        units the key's round_reuse names, and its last round computes exactly the key's
-        band irregularities (none on the twin)."""
-        ok, detail = observe_round_review(self.g, self._f4_tests())
-        self.assertTrue(ok, detail)
-
-    def test_rename_probes_agree_with_the_rename_refusal(self):
-        """Every rename-probe kind is in every family 4 key with a typed reason, and
-        Shimmer's own absent_checks (S2b item 5) mints and refuses exactly what the key
-        says, on the generated versions and on the RENAME_CASES fixtures."""
-        ok, detail = observe_rename_refusals(self.g, self._f4_tests())
-        self.assertTrue(ok, detail)
-
     def test_neutralised_generator_parts_are_caught(self):
-        """Neutralise, fail, restore, pass for each part the three checks above hold,
-        each on an unvalidated build (bundle.build_bundles), so the controller and
-        Shimmer's own code are what catch it, not the generator's self-validation."""
-        for name, observe, patch_target, replacement in NEUTRALISATIONS:
+        """Neutralise, fail, restore, pass for each part, each on an unvalidated build
+        (bundle.build_bundles), so the controller or the generator's own validator is what
+        catches it."""
+        for name, observe, build, patch_target, replacement in NEUTRALISATIONS:
             obj, attr = _resolve(self.g, patch_target)
             original = getattr(obj, attr)
-            ok, detail = observe(self.g, [_unvalidated(self.g)])
+            ok, detail = observe(self.g, [_unvalidated(self.g, *build)])
             self.assertTrue(ok, "%s before: %s" % (name, detail))
             setattr(obj, attr, replacement(original))
             try:
-                ok, detail = observe(self.g, [_unvalidated(self.g)])
+                ok, detail = observe(self.g, [_unvalidated(self.g, *build)])
             finally:
                 setattr(obj, attr, original)
             self.assertFalse(ok, "%s: the neutralised part was not caught" % name)
-            ok, detail = observe(self.g, [_unvalidated(self.g)])
+            ok, detail = observe(self.g, [_unvalidated(self.g, *build)])
             self.assertTrue(ok, "%s restored: %s" % (name, detail))
 
 
-# ---- helpers for the multi-round case checks ----------------------------------------
+# ---- helpers ----------------------------------------------------------------------
 
-# (prior label lines, target label lines, {earlier label: outcome}, audited) in one
-# section; the outcome is possible_rename, possible_successor or absent (absent_since_prior
-# minted). Shimmer decides every case; the generator's audit decides those it can read (a
-# figure with no measure is outside the subset the generators write).
-RENAME_CASES = [
-    (["Old charge: 100 box"], ["New charge: 102.04 box"], {"old charge": "possible_rename"}, True),
-    (["Old charge: 100 box"], ["New charge: 97.96 box"], {"old charge": "possible_successor"}, True),
-    (["Old charge: 100 box"], ["New charge: 140 box"], {"old charge": "possible_successor"}, True),
-    (["Old charge: 100 box"], ["New charge: 140 kg"], {"old charge": "absent"}, True),
-    (["Old charge: 100 box", "Old levy: 300 box"], ["New charge: 101 box"],
-     {"old charge": "possible_rename", "old levy": "absent"}, True),
-    (["Old count: 100"], ["New count: 140"], {"old count": "possible_successor"}, False),
-    (["Old charge: 100 box"], [], {"old charge": "absent"}, True),
-]
+def _target_name(files):
+    return "context/" + json.loads(files["context/_review_targets.json"])["targets"][0]
 
 
-def _rename_texts(case):
-    prior_lines, target_lines = case[:2]
-    body = "# T\n\n## Clause Alpha\n\n%s\n"
-    prior = body % "\n".join(prior_lines + ["Other term: 5 box"])
-    target = body % "\n".join(target_lines + ["Other term: 5 box"])
-    rules = ["## CONV-XA Other [required] [conformance]\n\nThe other term must be stated."]
-    for i, ln in enumerate(target_lines):
-        label = ln.split(":")[0].lower()
-        rules.append("## CONV-X%s New [required] [conformance]\n\nThe %s must be stated."
-                     % (chr(ord("B") + i), label))
-    conv = "# C\n\nThese rules govern the clauses.\n\n" + "\n\n".join(rules) + "\n"
-    return prior, target, conv
+def _wrong_distance(files):
+    key = _key(files)
+    key["planted"][0]["distance"] += 1
+    files["answer_key.json"] = json.dumps(key)
 
 
-def _audit_rename_outcomes(au, case):
-    prior, target, conv = _rename_texts(case)
-    res = au.audit(target, "t.md", conv, "c.md", {"p.md": prior}, "p.md")
-    if res["errors"]:
-        return {"errors": res["errors"]}
-    records, refusals = au.prior_records(res)
-    out = {lab: why.replace(" ", "_") for why, lab in refusals}
-    out.update({r["field_label"]: "absent" for r in records if r["relation"] == "absent_since_prior"})
-    return out
+def _every_use_crossref(files):
+    """Give every use a cross-reference line (the baseline would then be perfect)."""
+    path = _target_name(files)
+    blocks = files[path].split("\n\n## ")
+    fixed = [blocks[0]]
+    for b in blocks[1:]:
+        if "Provision type: " in b and "Cross reference: " not in b:
+            b = b.rstrip("\n") + "\nCross reference: Provision Heron" + ("\n" if b.endswith("\n") else "")
+        fixed.append(b)
+    files[path] = "\n\n## ".join(fixed)
+
+
+def _figure_in_grounding(files):
+    man = json.loads(files["context/_review_targets.json"])
+    ref = [g for g in man["grounding"] if g not in man["prior"]][0]
+    files["context/" + ref] = files["context/" + ref] + "\nThe standard notice window is 30 days.\n"
+
+
+def _controller():
+    _shimmer_path()
+    import ordinary_final_run
+    return ordinary_final_run
 
 
 def _shimmer_path():
@@ -329,74 +420,6 @@ def _shimmer_path():
         p = str(ROOT / sub)
         if p not in sys.path:
             sys.path.insert(0, p)
-
-
-def shimmer_rename_outcomes(target_text, prior_text):
-    """{earlier label: outcome} from Shimmer's own prior index, lookup and absent_checks,
-    called unit by unit as the pipeline's prior comparison calls them (every paragraph
-    given a REF id)."""
-    _shimmer_path()
-    import paired_review as pr
-    import pairing_map as pm
-    import reference_tables as rt
-    known = set(rt.document_unit_tokens(target_text)) | set(rt.document_unit_tokens(prior_text))
-    index = pr.prior_index(prior_text, lambda i: "REF-%04d" % i, known_units=known)
-    units = pm.split_units(target_text)
-    present = set()
-    for u in units:
-        present |= pm.unit_fields(u.get("text", ""))
-    out = {}
-    for u in units:
-        scalars, _, _ = pr.extract_fields(u.get("text", ""), known_units=known)
-        slug = u["unit_id"].split("-", 1)[1] if "-" in u["unit_id"] else ""
-        hits, _ = pr.prior_lookup(index, scalars, slug)
-        checks, refused = pr.absent_checks(index, present, slug, scalars=scalars, hits=hits)
-        for c in checks:
-            out[c["stated_field"]] = "absent"
-        for r in refused:
-            reason = r["reason"]
-            out[r["label"]] = ("possible_rename" if reason.startswith("possible rename, not a")
-                               else "possible_successor" if reason.startswith("possible rename")
-                               else reason)
-    return out
-
-
-def _bundle_texts(files):
-    man = json.loads(files["context/_review_targets.json"])
-    return files["context/" + man["targets"][0]], files["context/" + man["prior"][0]]
-
-
-def observe_rename_refusals(g, tests):
-    kinds = set(g.bundle.RENAME_PROBE_KINDS)
-    for case in RENAME_CASES:
-        prior, target, _ = _rename_texts(case)
-        got = shimmer_rename_outcomes(target, prior)
-        if got != case[2]:
-            return False, "fixture %r: Shimmer %r" % (case[:2], got)
-    n = 0
-    for test in tests:
-        for folder, files in sorted(test.items()):
-            key = json.loads(files["answer_key.json"])
-            rows = key.get("rename_probes", [])
-            if {r["kind"] for r in rows} != kinds or not all(r.get("reason") for r in rows):
-                return False, "%s: rename probe kinds or reasons" % folder
-            absent = {r["field_label"]: "absent" for r in key["prior_records"]
-                      if r["relation"] == "absent_since_prior"}
-            refused = {r["field_label"]: r["reason"] for r in rows if r["kind"].startswith("renamed_")}
-            if set(absent) & set(refused):
-                return False, "%s: the key withdraws a term it also refuses as renamed" % folder
-            want = dict(absent, **refused)
-            got = shimmer_rename_outcomes(*_bundle_texts(files))
-            if got != want:
-                return False, "%s: Shimmer %r, key %r" % (folder, got, want)
-            n += 1
-    return True, "%d bundles" % n
-
-
-def _controller():
-    _shimmer_path()
-    import ordinary_final_run
-    return ordinary_final_run
 
 
 def _context_members(files):
@@ -417,7 +440,6 @@ def _first_round_doc(case):
 
 def _mutate(case, members, name):
     """One mutation of a valid case (and its documents); returns (case, members)."""
-    import copy
     c, m = copy.deepcopy(case), dict(members)
     s0 = c["sources"][0]
     if name == "fixture_true":
@@ -442,7 +464,7 @@ def _mutate(case, members, name):
         rs = sorted(c["rounds"], key=lambda r: r["sequence"])
         rs[1]["document_ids"] = rs[1]["document_ids"] + rs[0]["document_ids"]
     elif name == "unit_id_not_an_identifier":
-        s0["unit_id"] = "u01 clause"
+        s0["unit_id"] = "u01 part"
     elif name == "unknown_state":
         s0["state"] = "agreed"
     elif name == "empty_span":
@@ -512,64 +534,19 @@ def observe_case_agreement(g, tests):
         n, len(MUTATIONS), len(HARMLESS))
 
 
-class _Ctx:
-    """The two things review_rounds reads from a run context."""
-
-    def __init__(self, root):
-        self.project_root = root
-
-    def audit_dir(self):
-        return Path(self.project_root) / "audit"
-
-
-def observe_round_review(g, tests):
-    _shimmer_path()
-    import convention_parser
-    import multi_round_rounds
-    ofr = _controller()
-    source = (ROOT / "scripts" / "pipeline.py").read_bytes()
-    n, reused = 0, 0
+def observe_self_validation(g, tests):
     for test in tests:
-        for folder, files in sorted(test.items()):
-            key = json.loads(files["answer_key.json"])
-            case = json.loads(files[g.bundle.mc.FILE])
-            docs = ofr.case_corpus_documents(_context_members(files), source)
-            with tempfile.TemporaryDirectory(prefix="gen_rounds_") as td:
-                conv = Path(td) / "input" / "conventions"
-                conv.mkdir(parents=True)
-                for p, t in files.items():
-                    if p.startswith("conventions/"):
-                        (conv / p.split("/", 1)[1]).write_text(t, encoding="utf-8", newline="\n")
-                registry = convention_parser.parse_conventions(Path(td)).as_dict()
-                record = multi_round_rounds.review_rounds(
-                    _Ctx(td), case, [{"id": k, "name": k, "text": v} for k, v in docs.items()],
-                    convention_registry=registry)
-            got = [{"round_id": r["round_id"], "unit_id": u["unit_id"],
-                    "from_round": u["reused_from"]["round_id"], "from_unit": u["reused_from"]["unit_id"]}
-                   for r in record["rounds"] for d in r["documents"] for u in d["units"]
-                   if u["status"] == "reused"]
-            if got != key["round_reuse"]:
-                return False, "%s: Shimmer reuses %s, key %s" % (folder, got, key["round_reuse"])
-            last = record["rounds"][-1]["documents"][0]["findings"]
-            have = sorted((f["unit_id"], f["relation"], f.get("field_label"), round(float(f["value_a"]), 6),
-                           round(float(f["value_b"]), 6)) for f in last)
-            want = sorted((b["unit_id"], b["relation"], b["field_label"], round(float(b["value_a"]), 6),
-                           round(float(b["value_b"]), 6)) for b in key["band_irregularities"])
-            # The reworded-labels probe is checked for form only: by design its rules
-            # stop pairing through the reworded label (INPUT_FORMAT section 11.1).
-            if have != want and key.get("probe") != "reworded_labels":
-                return False, "%s: last-round findings %s, key %s" % (
-                    folder, sorted(set(have) ^ set(want)), len(want))
-            n += 1
-            reused += len(got)
-    if not reused:
-        return False, "no round reused a unit"
-    return True, "%d bundles, %d reused units" % (n, reused)
+        errs = g.bundle.validate_test(test)
+        if errs:
+            return False, "; ".join(errs[:3])
+    return True, "%d tests valid" % len(tests)
 
 
-def _unvalidated(g, seed=17):
-    """A three-round family 4 test built but not self-validated."""
-    return g.bundle.build_bundles(g.build_spec("f4", seed, rounds=3))
+def _unvalidated(g, family="f4", seed=17, opts=None):
+    """A test built but not self-validated (three rounds by default for family 4)."""
+    if opts is None:
+        opts = {"rounds": 3} if family == "f4" else {}
+    return g.bundle.build_bundles(g.build_spec(family, seed, **opts))
 
 
 def _resolve(g, dotted):
@@ -590,34 +567,36 @@ def _shift_spans(build):
     return shifted
 
 
-def _naive_reuse(_original):
-    def reuse(round_texts, parse):
-        out, first = [], {}
-        for i, text in enumerate(round_texts, start=1):
-            for uid, body in g_unit_texts(text):
-                if body in first:
-                    out.append({"round_id": "r%d" % i, "unit_id": uid,
-                                "from_round": first[body][0], "from_unit": first[body][1]})
-                else:
-                    first[body] = ("r%d" % i, uid)
-        return out
-    return reuse
+def _scanner_off(name):
+    return lambda scanners: dict(scanners, **{name: lambda res, chk: []})
 
 
-def g_unit_texts(text):
-    return _load().multi_round_case.unit_texts(text)
+def _plain_reorder(_original):
+    def reorder(n, rng, planted):
+        return _load().wordlists.reorder(n, rng)
+    return reorder
 
 
-# (name, observation, generator attribute neutralised, replacement factory)
+# (name, observation, build arguments, generator attribute neutralised, replacement factory)
 NEUTRALISATIONS = [
-    ("the generator's case-manifest validator accepts anything", observe_case_agreement,
+    ("the generator's case-manifest validator accepts anything", observe_case_agreement, ("f4",),
      "multi_round_case.validate", lambda orig: (lambda *a, **k: [])),
-    ("the case spans are one character off", observe_case_agreement,
+    ("the case spans are one character off", observe_case_agreement, ("f4",),
      "multi_round_case.build", _shift_spans),
-    ("the reuse prediction ignores the field vocabulary", observe_round_review,
-     "multi_round_case.round_reuse", _naive_reuse),
-    ("the rename refusal no longer refuses a moved rename", observe_rename_refusals,
-     "bundle.au.possible_successor", lambda orig: (lambda *a, **k: False)),
+    ("the unit-mismatch scanner finds nothing", observe_self_validation, ("f1",),
+     "ground_truth.SCANNERS", _scanner_off("measure")),
+    ("the rate scanner finds nothing", observe_self_validation, ("f2",),
+     "ground_truth.SCANNERS", _scanner_off("rate")),
+    ("the cross-unit copy scanner finds nothing", observe_self_validation, ("f2",),
+     "ground_truth.SCANNERS", _scanner_off("copy")),
+    ("the neighbour-only carry scanner finds nothing", observe_self_validation, ("f6",),
+     "ground_truth.SCANNERS", _scanner_off("carry")),
+    ("the long-range window scanner finds nothing", observe_self_validation, ("f5", 17, {"long_range": True}),
+     "ground_truth.SCANNERS", _scanner_off("far_window")),
+    ("the long-range reordering ignores the distances", observe_self_validation, ("f5", 17, {"long_range": True}),
+     "family_provisions._far_reorder", _plain_reorder),
+    ("the audit reads no label new in the later version", observe_self_validation, ("f4",),
+     "audit.new_labels", lambda orig: (lambda res: {})),
 ]
 
 
@@ -628,6 +607,147 @@ def _tag(opts):
 def _flatten(test):
     return {"%s/%s" % (folder, path): text for folder, files in test.items()
             for path, text in files.items()}
+
+
+# ---- a reported measurement, never a pass condition (D-042) -----------------------
+
+def shimmer_rename_outcomes(target_text, prior_text):
+    """{earlier label: outcome} from Shimmer's own prior index, lookup and absent_checks,
+    called unit by unit as the pipeline's prior comparison calls them (every paragraph
+    given a REF id): `absent` for a withdrawal minted, else the refusal's reason_kind."""
+    _shimmer_path()
+    import paired_review as pr
+    import pairing_map as pm
+    import reference_tables as rt
+    known = set(rt.document_unit_tokens(target_text)) | set(rt.document_unit_tokens(prior_text))
+    index = pr.prior_index(prior_text, lambda i: "REF-%04d" % i, known_units=known)
+    units = pm.split_units(target_text)
+    present = set()
+    for u in units:
+        present |= pm.unit_fields(u.get("text", ""))
+    out = {}
+    for u in units:
+        scalars, _, _ = pr.extract_fields(u.get("text", ""), known_units=known)
+        slug = u["unit_id"].split("-", 1)[1] if "-" in u["unit_id"] else ""
+        hits, _ = pr.prior_lookup(index, scalars, slug)
+        checks, refused = pr.absent_checks(index, present, slug, scalars=scalars, hits=hits)
+        for c in checks:
+            out[c["stated_field"]] = "absent"
+        for r in refused:
+            out[r["label"]] = r.get("reason_kind") or "refused"
+    return out
+
+
+def _bundle_texts(files):
+    man = json.loads(files["context/_review_targets.json"])
+    return files["context/" + man["targets"][0]], files["context/" + man["prior"][0]]
+
+
+def _python_findings(files):
+    """Shimmer's Python review of the target document (multi_round_rounds.review_document:
+    sums, products, blank cells, rule-stated bands, declared absences; NOT reference-table
+    bands, date windows or change records), as (unit, relation, field label, figures)."""
+    _shimmer_path()
+    import convention_parser
+    import multi_round_rounds
+    with tempfile.TemporaryDirectory(prefix="gen_agree_") as td:
+        conv = Path(td) / "input" / "conventions"
+        conv.mkdir(parents=True)
+        for p, t in files.items():
+            if p.startswith("conventions/"):
+                (conv / p.split("/", 1)[1]).write_text(t, encoding="utf-8", newline="\n")
+        registry = convention_parser.parse_conventions(Path(td)).as_dict()
+    target = _target_name(files)
+    rules = [r for r in registry.get("conventions", []) if isinstance(r, dict)]
+    _, found, _ = multi_round_rounds.review_document(
+        {"id": "doc", "text": files[target]}, rules, {}, round_id="r1")
+    return [f for f in found if str(f.get("record_verdict", "")).lower() == "irregular"]
+
+
+def _same(f, unit, relation, label, a, b):
+    try:
+        figs = sorted([round(float(f["value_a"]), 6), round(float(f["value_b"]), 6)])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return (f.get("unit_id") == unit and f.get("relation") == relation
+            and (f.get("field_label") or "") == (label or "")
+            and figs == sorted([round(float(a), 6), round(float(b), 6)]))
+
+
+def report_agreement(tests=None):
+    """How far Shimmer's own Python agrees with the generated keys: counts, printed.
+
+    Family 4: per rename-probe kind, what Shimmer's absent_checks does with the earlier
+    label against what the key expects (ground truth). Every family: per planted kind,
+    how many keyed flaws Shimmer's Python review of the document confirms. Never gating."""
+    g = _load()
+    if tests is None:
+        tests = [g.generate(f, s, **o) for f, s, o in FIXED]
+    rows = []
+    for test in tests:
+        roles = g.bundle._roles(test)
+        base = test[roles["base"]]
+        key = _key(base)
+        fam = key["generator"]["family"]
+        if "rename_probes" in key:
+            got = shimmer_rename_outcomes(*_bundle_texts(base))
+            for r in key["rename_probes"]:
+                if r["kind"] not in g.bundle.RENAMED and not r["kind"].startswith("withdrawn"):
+                    continue
+                outcome = got.get(r["field_label"], "nothing")
+                if r["expect"] == "absent_since_prior":
+                    verdict = "agrees" if outcome == "absent" else "miss (%s)" % outcome
+                else:
+                    verdict = ("false withdrawal" if outcome == "absent"
+                               else "agrees (%s)" % outcome)
+                rows.append((fam, "rename probe " + r["kind"], verdict))
+            found = _python_findings(base)
+            for b in key["band_irregularities"]:
+                hit = any(_same(f, b["unit_id"], b["relation"], b["field_label"], b["value_a"], b["value_b"])
+                          for f in found)
+                rows.append((fam, b["kind"], "confirmed" if hit else "not confirmed"))
+            continue
+        found = _python_findings(base)
+        for e in key["planted"]:
+            c = e["claim"]
+            hit = any(_same(f, e["unit"], e["relation"], c["field_label"], c["value_a"], c["value_b"])
+                      for f in found)
+            rows.append((fam, e["kind"], "confirmed" if hit else "not confirmed"))
+    counts = {}
+    for fam, kind, verdict in rows:
+        counts[(fam, kind, verdict)] = counts.get((fam, kind, verdict), 0) + 1
+    lines = ["%-5s %-34s %-28s %d" % (f, k, v, n) for (f, k, v), n in sorted(counts.items())]
+    return "\n".join(["Shimmer's Python against the generated keys (a measurement, never a gate).",
+                      "Planted flaws: Shimmer's Python review of the document "
+                      "(multi_round_rounds.review_document), which computes no reference-table band, "
+                      "no date window and no change record, so those kinds read 'not confirmed' by "
+                      "the path's scope. Rename probes: paired_review.absent_checks on the two "
+                      "versions, against the key's ground truth."] + lines)
+
+
+def probe_open_item_22():
+    """OPEN_ITEMS item 22, reproducible: the pairing map's band_conditions record
+    (reference_tables.band_conditions_for_unit) calls the low side conditional where the
+    finding path (paired_review.compute_checks) treats it as firm, on the input format's
+    own unit-price example. Returns (map record, finding's conditional_on)."""
+    _shimmer_path()
+    import paired_review as pr
+    import pairing_map as pm
+    import reference_tables as rt
+    unit = "## Item P-100\n\nItem class: Bracket\nQuantity: 4 box\nUnit price: 5 zed/box\nLine total: 20 zed\n"
+    table = "| Item class | Price band (zed/box) |\n|---|---|\n| Bracket | 8 to 15 |\n| Hinge | 3 to 6 |\n"
+    rule = "The unit price must lie within the price band for the item class."
+    known = rt.document_unit_tokens(unit)
+    tables = rt.parse_tables(table, ref_id="REF-0002", document_id="ref", known_units=known)
+    labels = pm.unit_fields(unit)
+    record = rt.band_conditions_for_unit(tables, unit, [{"id": "CONV-001", "rule": rule}], vocabulary=labels)
+    scalars, columns, _ = pr.extract_fields(unit, known_units=known)
+    checks = pr.compute_checks(scalars, columns, rule_text=rule,
+                               reference_bands=rt.bands_for_unit(tables, unit, rule),
+                               vocabulary=labels, unit_labels=labels, unit_text=unit)
+    below = [c for c in checks if c["relation"] == "below_band" and c.get("stated_field") == "unit price"]
+    return ([(r["low_side_verdict"], r["condition_fields"]) for r in record],
+            [c.get("conditional_on") for c in below])
 
 
 def check():
@@ -644,20 +764,24 @@ def check():
     return ("PASS", "%d cases: six generator families and the long-range layout each generate "
                     "a test from a fixed seed that validates from disk (ten or more typed "
                     "flaws of three or more kinds, a distractor, a flawless twin, four probes, "
-                    "every figure recomputed with no unintended comparison); the same seed "
-                    "gives identical bytes, also in a second process; a removed planted flaw, "
-                    "a flawed twin, a digit in a text value and a missing probe are caught; "
-                    "ids follow the published slug rule; the audit joins a paragraph's lines "
-                    "into sentences, counts a date as three numbers, refuses a rename within "
-                    "2%% of the larger figure, refuses a moved rename as a possible successor "
-                    "and scores the basis words; no source name matches a trap pattern; "
-                    "family 4's case manifests (two and three rounds) are accepted by the "
-                    "controller and the generator alike, %d mutations refused by both; "
-                    "Shimmer's round review reuses the keyed units and finds the keyed "
-                    "band breaches; Shimmer's rename refusal agrees with every rename probe; "
-                    "four neutralisations caught and restored"
-                    % (result.testsRun, len(MUTATIONS)))
+                    "probe 3 on a keyed flaw, every figure recomputed by the package's own audit "
+                    "and ground-truth scanners with nothing unkeyed); unit mismatches, rate and "
+                    "copy errors, neighbour-only carries and long-range flaws are planted; the "
+                    "same seed gives identical bytes, also in a second process; a removed planted "
+                    "flaw (audit and ground-truth kinds), a flawed twin in every family, a digit "
+                    "in a text value and a missing probe are caught; family 4's rename probes "
+                    "state the ground truth and its bundles hold only case documents; the "
+                    "long-range layout holds in every bundle; ids follow the published slug "
+                    "rule; no source name matches a trap pattern; family 4's case manifests are "
+                    "accepted by the controller and the generator alike, %d mutations refused by "
+                    "both; %d neutralisations caught and restored. No case compares a key with "
+                    "Shimmer's output (D-042)" % (result.testsRun, len(MUTATIONS), len(NEUTRALISATIONS)))
 
 
 if __name__ == "__main__":
-    unittest.main()
+    if "--agreement" in sys.argv:
+        print(report_agreement())
+    elif "--probe-open-item-22" in sys.argv:
+        print(probe_open_item_22())
+    else:
+        unittest.main()
