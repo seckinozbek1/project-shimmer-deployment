@@ -3,8 +3,10 @@
 Every provider action, ssh, scp, ssh-keygen, the watchdog process and the clock are
 replaced. The real controller execute() runs end to end against them, so the
 phase sequence, the detached-phase polling, the failure teardown and the cleanup
-are the controller's own code paths. No credential is read, no network is used,
-no instance exists. Run v3 (2026-09-18) is the case under test: a phase whose
+are the controller's own code paths. No real credential is read (one test reads a
+fixture file holding a random sentinel, through the real adapter with only curl
+replaced, to prove no key value is ever printed), no network is used, no
+instance exists. Run v3 (2026-09-18) is the case under test: a phase whose
 remote work completes while the connection carrying it dies must be recognised
 as completed, never failed, and the workload must then run.
 """
@@ -29,6 +31,8 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'scripts')]
 import agent_wrapper
+import cloud_run_watchdog
+import lambda_experiment_provider as provider_adapter
 import ordinary_final_cloud as controller
 from ordinary_final_run import read, write, sha
 
@@ -103,6 +107,66 @@ class FakeProvider:
         self.s['terminate_calls'] += 1
         self.s['status'][instance_id] = 'terminated'
         self.s['instances'] = [x for x in self.s['instances'] if x[0] != instance_id]
+
+
+class FakeCurl:
+    """The provider's HTTP API behind the REAL adapter (LambdaExperiment and the
+    LambdaTermination it extends). Only the curl process is replaced: the adapter
+    loads the credential from the operator file and writes it into curl's stdin
+    configuration exactly as it does live, and every response is in the provider's
+    raw shape, so the adapter's own projection runs. Nothing reaches the network."""
+    def __init__(self):
+        self.instances, self.keys, self.launches, self.argvs, self.stdins = [], [], 0, [], []
+
+    @staticmethod
+    def raw_type():
+        return dict(name='gpu_1x_a10', gpu_description='A10 (24 GB PCIe)', architecture='x86_64',
+                    specs=dict(gpus=1, vcpus=30, memory_gib=200, storage_gib=1400), price_cents_per_hour=129)
+
+    def answer(self, endpoint, method, body):
+        if endpoint == 'instances':
+            return [dict(id=i, name=n, status='active', ip='10.0.0.2', region=dict(name='us-east-1'),
+                         instance_type=self.raw_type()) for i, n in self.instances]
+        if endpoint == 'instance-types':
+            return {'gpu_1x_a10': dict(instance_type=self.raw_type(),
+                                       regions_with_capacity_available=[dict(name='us-east-1')])}
+        if endpoint == 'images':
+            return [dict(id=IMAGE['id'], family=IMAGE['family'], version=IMAGE['version'],
+                         architecture=IMAGE['architecture'], region=dict(name=IMAGE['region']))]
+        if endpoint == 'ssh-keys' and body is not None:
+            self.keys.append(dict(id=KEY_ID, name=body['name']))
+            return dict(id=KEY_ID, name=body['name'], public_key=body['public_key'])
+        if endpoint == 'ssh-keys':
+            return list(self.keys)
+        if endpoint.startswith('ssh-keys/') and method == 'DELETE':
+            self.keys = [k for k in self.keys if k['id'] != endpoint.split('/')[1]]
+            return {}
+        if endpoint == 'instance-operations/launch':
+            self.launches += 1
+            self.instances.append((INSTANCE, body['name']))
+            return dict(instance_ids=[INSTANCE])
+        if endpoint == 'instance-operations/terminate':
+            self.instances = [x for x in self.instances if x[0] not in body['instance_ids']]
+            return dict(terminated_instances=[])
+        raise AssertionError('unexpected provider endpoint ' + endpoint)
+
+    def run(self, args, input=None, **kwargs):
+        self.argvs.append(list(args))
+        self.stdins.append(input)
+        endpoint = args[-1].split('/api/v1/', 1)[1]
+        method = args[args.index('--request') + 1] if '--request' in args else None
+        body = json.loads(args[args.index('--data-binary') + 1]) if '--data-binary' in args else None
+        payload = json.dumps(dict(data=self.answer(endpoint, method, body)))
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout=payload + '\n200', stderr='')
+
+    @contextlib.contextmanager
+    def installed(self):
+        """Replace only curl, in the two adapter modules; the adapter code itself runs."""
+        process = SimpleNamespace(run=self.run, CompletedProcess=subprocess.CompletedProcess)
+        which = SimpleNamespace(which=lambda name: 'curl-fixture' if name.startswith('curl') else None)
+        with patch.object(provider_adapter, 'subprocess', process), patch.object(provider_adapter, 'shutil', which), \
+                patch.object(cloud_run_watchdog, 'subprocess', process), patch.object(cloud_run_watchdog, 'shutil', which):
+            yield self
 
 
 class FakeTransport:
@@ -249,8 +313,9 @@ class ControllerChecks(unittest.TestCase):
     def declare_copy(self, mount='/lambda/nfs/fixture'):
         write(self.base / 'asset_copy_declaration.json', dict(filesystem_name='fixture-fs', mount=mount, operator_authorized=True))
 
-    def execute(self, polls=None, outputs=None, progress=None, existing=(), mount=None):
-        """Run the real controller against the fakes; return (transport, console, failure or None)."""
+    def execute(self, polls=None, outputs=None, progress=None, existing=(), mount=None, provider=None):
+        """Run the real controller against the fakes; return (transport, console, failure or None).
+        `provider` replaces FakeProvider (the real adapter, over FakeCurl, in the key test)."""
         outputs = dict(outputs or {})
         outputs.setdefault('evidence_hash', (hashlib.sha256(EVIDENCE).hexdigest() + '  collected_evidence.tar.gz\n').encode())
         transport = FakeTransport(self.base, polls, outputs, progress, existing, mount)
@@ -261,7 +326,7 @@ class ControllerChecks(unittest.TestCase):
         with patch.object(controller, 'ROOT', self.root), patch.object(controller, 'BASE', self.base), \
                 patch.object(controller, 'MANIFEST', sha(self.base / 'execution_manifest.json')), \
                 patch.object(controller, 'SEAL', sha(self.base / 'seal.json')), \
-                patch.object(controller, 'LambdaExperiment', FakeProvider), \
+                patch.object(controller, 'LambdaExperiment', provider or FakeProvider), \
                 patch.object(controller, 'subprocess', fake_subprocess), \
                 patch.object(controller, 'time', self.clock), \
                 patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}), \
@@ -851,6 +916,81 @@ class ControllerChecks(unittest.TestCase):
             self.assertFalse(hasattr(module, 'CREDENTIAL'), name + ' still fixes a credential path at import')
         self.assertFalse(hasattr(loaded['ordinary_final_rehearsal'], 'LINUX_ROOT'))
 
+    def test_no_key_value_is_ever_printed(self):
+        """(e) S1 Part 3: no key is ever printed. A fixture operator file assigns a
+        unique sentinel to the variable the loader reads (LAMBDA_API_KEY, by AST), and
+        SHIMMER_CONFIG_PATH names it. The REAL adapter loads it on every provider call
+        (only curl is replaced), through the controller's whole run, its refusal
+        paths, the status reader and both live preflights. The sentinel reaches curl's
+        stdin configuration, and appears in no argv, no stdout, no stderr, no console
+        line and no file the run writes."""
+        import uuid
+        sentinel = 'shimmer' + uuid.uuid4().hex + 'sentinel'
+        self.credential.write_text('LAMBDA_API_KEY = ' + repr(sentinel) + '\n', encoding='utf8')
+        curl = FakeCurl()
+        out, err = io.StringIO(), io.StringIO()
+        console = []
+        with curl.installed(), contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            # The controller's credential path, end to end with the real adapter.
+            with patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}):
+                self.assertEqual(controller.credential_path(), self.credential)
+            transport, console, failure = self.execute(provider=provider_adapter.LambdaExperiment)
+            self.assertIsNone(failure, failure)
+            self.assertEqual(curl.launches, 1)
+            self.assertEqual(json.loads((self.base / 'cleanup.json').read_text())['inventory_empty'], True)
+            argv = transport.popen_argv
+            self.assertEqual(argv[argv.index('--credential-file') + 1], str(self.credential))
+            # The refusal paths: nothing resolvable, and an operator file the loader refuses.
+            absent, environment = self.unresolvable()
+            with patch.object(agent_wrapper, 'candidate_config_paths', lambda: list(absent)), \
+                    patch.dict(os.environ, environment, clear=True):
+                with self.assertRaisesRegex(RuntimeError, '^' + re.escape(controller.CREDENTIAL_REFUSAL) + '$'):
+                    controller.credential_path()
+            refused = self.root / 'operator_provider_access_refused.txt'
+            for text in ('LAMBDA_API_KEY = ' + repr(sentinel) + '\n') * 2, 'LAMBDA_API_KEY = ' + repr(sentinel + ' x') + '\n':
+                refused.write_text(text, encoding='utf8')
+                for call in (lambda: cloud_run_watchdog.load_credential(refused),
+                             lambda: provider_adapter.LambdaExperiment(refused).request('images'),
+                             lambda: provider_adapter.LambdaExperiment(refused).request('instances')):
+                    with self.assertRaises(ValueError) as caught:
+                        call()
+                    print('refused:', caught.exception)
+                    self.assertFalse(sentinel in str(caught.exception), 'sentinel in a refusal message')
+            refused.unlink()
+            with patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}):
+                # The status reader, querying the provider.
+                import ordinary_final_status as status
+                before = len(curl.argvs)
+                tasklist = SimpleNamespace(run=lambda *a, **k: SimpleNamespace(stdout=''))  # no local process query
+                with patch.object(status, 'subprocess', tasklist):
+                    status.main(self.base, 'T', True)
+                self.assertGreater(len(curl.argvs), before)
+                self.assertIn('instance (provider): not in inventory', out.getvalue())
+                # Both live preflights, each printing its receipt.
+                import ordinary_final_bound_preflight as bound_preflight
+                import ordinary_final_v3_preflight as v3_preflight
+                manifest = read(self.base / 'execution_manifest.json')
+                write(self.base / 'execution_manifest.json', dict(manifest, max_hourly_rate=1.29))
+                write(self.base / 'authorization_binding.json', dict(manifest_sha256=sha(self.base / 'execution_manifest.json')))
+                for call in (lambda: bound_preflight.main(self.base), v3_preflight.main):
+                    (self.base / 'authorized_live_preflight.json').unlink(missing_ok=True)
+                    with patch.object(v3_preflight, 'BASE', self.base), \
+                            patch.object(v3_preflight, 'MANIFEST', sha(self.base / 'execution_manifest.json')):
+                        call()
+                    self.assertTrue(read(self.base / 'authorized_live_preflight.json')['passed'])
+        # The credential really was loaded and used, so its absence below means something.
+        # Every assertion is boolean with a fixed message, so a failure never echoes the value.
+        self.assertTrue(any(sentinel in (s or '') for s in curl.stdins), 'the adapter never loaded the fixture value')
+        self.assertFalse(any(sentinel in a for argv in curl.argvs for a in argv), 'sentinel in a curl argv')
+        self.assertGreater(len(out.getvalue()), 0)
+        self.assertFalse(sentinel in out.getvalue(), 'sentinel printed to stdout')
+        self.assertFalse(sentinel in err.getvalue(), 'sentinel printed to stderr')
+        self.assertFalse(sentinel in '\n'.join(console), 'sentinel printed to the controller console')
+        written = [p for p in self.root.rglob('*') if p.is_file() and p != self.credential]
+        self.assertTrue(written)
+        self.assertEqual([p.name for p in written if sentinel.encode() in p.read_bytes()], [],
+                         'sentinel written to a run file')
+
     def test_rehearsal_removes_only_its_own_folder_under_the_linux_home(self):
         """(d) The rehearsal's folder is <Linux home>/shimmer-rehearsal, read at run time,
         and every rm -rf it computes targets that folder or a path below it."""
@@ -939,6 +1079,17 @@ def v4_phases_dir(remote):
     return remote.rstrip('/') + '/phases'
 
 
+_ORIGINAL_LOADER = cloud_run_watchdog.load_credential
+
+
+def printing_load_credential(credential_file=None):
+    """A loader that prints the value it loaded: the leak the key test must catch.
+    Calls the original captured at import, so the neutralised run loads for real."""
+    value = _ORIGINAL_LOADER(credential_file)
+    print('loaded provider access value:', value)
+    return value
+
+
 _CONTROLLER_FILES = {'ordinary_final_cloud.py', 'ordinary_final_bound_cloud.py',
                      'lambda_experiment_provider.py', 'ordinary_final_run.py'}
 
@@ -979,6 +1130,8 @@ NEUTRALIZATIONS = [
     # The refusal dropped: an unresolvable credential reaches the provider as None.
     ('test_no_resolvable_credential_refuses_in_one_line_naming_shimmer_config_path', controller, 'credential_path',
      lambda: agent_wrapper.resolve_config_path()),
+    # A loader that prints what it loaded: the sentinel reaches stdout.
+    ('test_no_key_value_is_ever_printed', cloud_run_watchdog, 'load_credential', printing_load_credential),
     # A widened removal target: the Linux home itself instead of the rehearsal folder under it.
     ('test_rehearsal_removes_only_its_own_folder_under_the_linux_home', rehearsal, 'rehearsal_root',
      lambda home: home.strip().rstrip('/') or '/'),

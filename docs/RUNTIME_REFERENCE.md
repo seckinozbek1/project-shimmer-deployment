@@ -201,14 +201,18 @@ output/runs/<run folder>/
 (taken under a lock), call id, run id, agent, backend, model id and mode as resolved
 at run time, timestamp, phase, document id, decoding settings, and the payload and
 reply, each with its SHA-256 and byte length and, in a run without redaction, its
-full text. With redaction enabled the text is never stored. The outcome is appended
+full text. For the two local backends the payload is the exact rendered prompt
+given to the model; for the two cloud backends it is a canonical JSON form of the
+messages list sent (sorted keys, compact separators), not the SDK's own wire bytes. With redaction enabled the text is never stored. The outcome is appended
 later to `outcomes.jsonl` by call id (`accepted_to_bus`, `advisory_not_record`,
 `not_promoted`, `contract_violation`, `refused`, `backend_failure`, `classified`,
 `classifier_failed`, `free_text`); a later line for the same call wins, and a call
 with no line reads as `not_decided`. A call with no run context writes nothing.
 Embedding calls are not saved. No server route serves these files yet. They are
-gitignored, and `scripts/guard_secrets.py --staged` refuses any staged path under
-`audit/model_replies/` (gate checks 275 and 276).
+gitignored, and `scripts/guard_secrets.py --staged` refuses any staged path with the
+segment `audit/model_replies/` at any depth, and any staged archive (for example a
+collected evidence `.tar.gz`) whose members include such a path (gate checks 275 and
+276).
 
 `review_data.json` is the amendment master; Markdown and DOCX are renders, not
 independent findings. Audit synthesis, editorial records, DELTA proposals,

@@ -7,13 +7,20 @@ Run from project root:
     py -3.9 scripts/guard_secrets.py
 
 With ``--staged`` it instead checks the paths staged for the next commit
-(``git diff --cached --name-only``, which also lists force-added paths) and
-refuses any path that must never be committed: a seal manifest under
-``seals/`` (Annex B.3 of the 2026-10-27 loop). It acts only when it is run.
+(``git diff --cached --name-only``, which also lists force-added paths; staged
+deletions are allowed) and refuses any path that must never be committed: a
+``seals/`` segment (Annex B.3 of the 2026-10-27 loop) or an
+``audit/model_replies/`` segment at any depth, case-insensitively. A staged
+.tar.gz, .tgz, .tar or .zip is opened in memory from the index and refused when a
+member name carries a refused segment or when it cannot be read. It acts only
+when it is run.
 """
+import io
 import re
 import subprocess
 import sys
+import tarfile
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -168,47 +175,115 @@ def scan_line(line: str):
     return findings
 
 
-# Staged paths that are never committed, as plain path prefixes (no regex: a
-# module-level alternation of lowercase words would need gate check 242's list).
-# A prefix matches at the repository root only.
-REFUSED_STAGED_PREFIXES = ("seals/",)
-# Path segments refused at ANY depth: a run folder's saved model replies
-# (<run>/audit/model_replies/, scripts/reply_records.py) hold reply and payload
-# text and are never committed, wherever the run folder sits.
-REFUSED_STAGED_SEGMENTS = ("audit/model_replies/",)
+# Path segments refused at ANY depth, as plain strings (no regex: a module-level
+# alternation of lowercase words would need gate check 242's list). `seals/` is a
+# seal manifest folder (Annex B.3), refused wherever it sits, the same rule the
+# unanchored `.gitignore` line `seals/` applies. A run folder's saved model
+# replies (<run>/audit/model_replies/, scripts/reply_records.py) hold reply and
+# payload text and are never committed, wherever the run folder sits.
+REFUSED_STAGED_SEGMENTS = ("seals/", "audit/model_replies/")
+# Staged files whose MEMBER names are read as well: the controller packs every
+# file under project/output into collected_evidence.tar.gz, so a refused path can
+# reach git inside an archive whose own name is harmless.
+ARCHIVE_SUFFIXES = (".tar.gz", ".tgz", ".tar", ".zip")
+
+
+def is_refused_path(name):
+    """Whether one path (a staged name or an archive member name) must never be
+    committed. Compared with forward slashes and case-folded, because .gitignore
+    matches case-insensitively on Windows: `Seals/x.json` is the same folder. A
+    segment matches at the root or after any "/"."""
+    normal = name.replace("\\", "/").casefold()
+    return any(normal.startswith(segment) or ("/" + segment) in normal
+               for segment in REFUSED_STAGED_SEGMENTS)
 
 
 def refused_staged_paths(names):
     """Return the staged names that must never be committed.
 
     A pure function over git's own name list, so it can be tested without git.
-    Names are compared with forward slashes, case as git reports them. A prefix
-    matches at the root; a segment matches at the root or after any "/".
     """
-    refused = []
-    for name in names:
-        normal = name.replace("\\", "/")
-        if any(normal.startswith(prefix) for prefix in REFUSED_STAGED_PREFIXES):
-            refused.append(name)
-        elif any(normal.startswith(segment) or ("/" + segment) in normal
-                 for segment in REFUSED_STAGED_SEGMENTS):
-            refused.append(name)
-    return refused
+    return [name for name in names if is_refused_path(name)]
+
+
+def is_archive_name(name):
+    return name.casefold().endswith(ARCHIVE_SUFFIXES)
+
+
+def archive_member_names(data):
+    """The member names of an archive held in memory (never extracted to disk).
+    A directory member is reported with a trailing "/" so a bare refused folder
+    entry is caught as well. Raises ValueError when the bytes are not a tar
+    (plain or compressed) or zip archive."""
+    # Any failure to read is reported as one ValueError (fail closed): a corrupt
+    # stream can raise from several layers (zlib, gzip, tarfile, zipfile).
+    try:
+        if zipfile.is_zipfile(io.BytesIO(data)):
+            with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                return archive.namelist()
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as archive:
+            return [member.name + ("/" if member.isdir() else "")
+                    for member in archive.getmembers()]
+    except Exception as exc:  # noqa: BLE001 - every unreadable form is refused
+        raise ValueError(str(exc) or type(exc).__name__) from exc
+
+
+def archive_refusal(data):
+    """None when every member of the archive bytes may be committed, otherwise the
+    reason it is refused. An archive that cannot be opened is refused (fail
+    closed): what cannot be read cannot be shown to be clean."""
+    try:
+        members = archive_member_names(data)
+    except ValueError:
+        return "unreadable archive"
+    bad = [member for member in members if is_refused_path(member)]
+    if bad:
+        return f"archive member {bad[0]} must never be committed ({len(bad)} refused member(s))"
+    return None
+
+
+def staged_blob(root, name):
+    """The STAGED content of a path (the index, not the working tree), as bytes."""
+    result = subprocess.run(["git", "show", ":" + name], cwd=str(root or ROOT),
+                            capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError("git show failed")
+    return result.stdout
 
 
 def staged_names(root=None):
-    """The paths staged for the next commit, force-added ones included."""
-    result = subprocess.run(["git", "diff", "--cached", "--name-only", "-z"],
+    """The paths staged for the next commit, force-added ones included. Staged
+    DELETIONS are left out (`--diff-filter=d`): removing a file that was committed
+    by mistake must be allowed."""
+    result = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=d", "-z"],
                             cwd=str(root or ROOT), capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError("git diff --cached failed")
     return [name for name in result.stdout.split("\0") if name]
 
 
+def staged_refusals(root=None):
+    """Every staged path that must not be committed, with its reason: a refused
+    path, or an archive (by name) whose staged content holds a refused member or
+    cannot be read."""
+    refusals = []
+    for name in staged_names(root):
+        if is_refused_path(name):
+            refusals.append((name, "this path must never be committed"))
+        elif is_archive_name(name):
+            try:
+                reason = archive_refusal(staged_blob(root, name))
+            except RuntimeError:
+                reason = "unreadable archive"
+            if reason:
+                refusals.append((name, reason))
+    return refusals
+
+
 def main_staged(root=None):
-    refused = refused_staged_paths(staged_names(root))
-    for name in refused:
-        print(f"BLOCKED {name}: this path must never be committed")
+    refused = staged_refusals(root)
+    for name, reason in refused:
+        print(f"BLOCKED {name}: {reason}")
     if refused:
         print(f"\nguard_secrets --staged: {len(refused)} refused path(s) staged.")
         return 1

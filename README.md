@@ -91,7 +91,9 @@ Every model call also leaves one record under the run's `audit/model_replies/`: 
 reply, the exact payload sent, the model and the decoding settings, plus an
 `outcomes.jsonl` that says what became of each reply (for example posted, advisory,
 or not promoted). In a run with redaction enabled only SHA-256 hashes and byte
-lengths are kept. These records are never committed.
+lengths are kept. These records are gitignored, and the secret guard's `--staged` mode
+(`scripts/guard_secrets.py --staged`, which runs only when someone runs it) refuses
+them if they are staged anyway.
 
 The corpus-level agent INST_FINDER can be switched off for a run with
 `SHIMMER_INST_FINDER=off`. Because switching an agent off changes how the agents
