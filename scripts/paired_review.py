@@ -1795,6 +1795,21 @@ def prior_checks(scalars, hits, bands_by_label):
     return checks, refused
 
 
+def possible_successor(unit, candidates, claimed):
+    """S2b item 5: the first label newly stated in this section, in the same unit
+    of measure as a vanished label, that no value-corroborated rename has claimed;
+    (label, value) or None. Structural only (no word meaning is read): it says a
+    successor is POSSIBLE, which is enough to refuse calling the vanished label
+    withdrawn. `candidates` are (label, value, unit) as absent_checks builds them."""
+    def measure(u):
+        return _unit_str(unit_exponents(u)) if u else ""
+    for cand_label, cand_val, cand_unit in candidates:
+        if cand_label in claimed or measure(cand_unit) != measure(unit):
+            continue
+        return cand_label, cand_val
+    return None
+
+
 def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
     """A field the earlier version stated under THIS unit's heading that no unit
     of the document under review states any more: absent_since_prior.
@@ -1836,6 +1851,23 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
                 return cand_label, cand_val
         return None
 
+    # S2b, item 5 (the rename refusal, general form). A label renamed between
+    # rounds whose VALUE ALSO MOVED was still minted as withdrawn: the value test
+    # above finds no newcomer within rename_tolerance(), and nothing else stood
+    # between the vanished label and an absent_since_prior record. Whether a
+    # newcomer is the same term under a new name is a question about what words
+    # mean, and no measured decision for it exists yet (WORDS-A: never a keyword
+    # table, never one method alone; the measurement is S5's, on S3's rename
+    # probes). What the structure CAN say is whether a successor is possible: a
+    # label newly stated in the same section, in the same unit of measure, that
+    # no value-corroborated rename has already claimed. While one exists the
+    # withdrawal is not confirmed and is refused, naming both labels and both
+    # values; refusing is always allowed, fabricating a withdrawal never is. A
+    # label with no possible successor (no unclaimed newcomer in that unit of
+    # measure in its section) is still minted as withdrawn. (possible_successor)
+    def _moved_rename_candidate(value, unit, claimed):
+        return possible_successor(unit, candidates, claimed)
+
     seen, checks, refused = set(), [], []
     entries = list(index.get("lines", []))
     for t in index.get("tables", []):
@@ -1859,6 +1891,15 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
                     entries.append({"label": label, "value": q[0],
                                     "unit": _unit_str(unit_exponents(unit)) if unit else "",
                                     "ref_id": t["ref_id"], "unit_slug": t["unit_slug"]})
+    # The newcomers a value-corroborated rename already accounts for: each is one
+    # vanished label's successor and cannot also stand in for another.
+    claimed = set()
+    for entry in entries:
+        if entry["label"] in present_labels or entry.get("unit_slug") != unit_slug:
+            continue
+        rename = _rename_candidate(entry["label"], entry["value"], entry["unit"])
+        if rename is not None:
+            claimed.add(rename[0])
     for entry in entries:
         label = entry["label"]
         if label in present_labels or label in seen:
@@ -1896,6 +1937,21 @@ def absent_checks(index, present_labels, unit_slug, scalars=None, hits=None):
                         " ".join(label), entry["value"],
                         " ".join(cand_label), cand_val,
                         rename_tolerance() * 100)),
+                "ref_ids": refs,
+            })
+            continue
+        moved = _moved_rename_candidate(entry["value"], entry["unit"], claimed)
+        if moved is not None:
+            cand_label, cand_val = moved
+            refused.append({
+                "label": " ".join(label),
+                "reason": (
+                    "possible rename with a moved value, not a confirmed withdrawal: "
+                    "'%s' (%g) vanished and '%s' (%g) is newly stated in the same "
+                    "section in the same unit of measure; whether it is the same term "
+                    "is not decided here" % (
+                        " ".join(label), entry["value"],
+                        " ".join(cand_label), cand_val)),
                 "ref_ids": refs,
             })
             continue

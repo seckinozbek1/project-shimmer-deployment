@@ -1144,6 +1144,14 @@ var SHIMMER_TR = {
   "invalid_run_options_schema": "Geçersiz çalışma seçenekleri şeması",
   "_messages": [
     {
+      "pattern": "^possible\\ rename,\\ not\\ a\\ confirmed\\ withdrawal:\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ vanished\\ but\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ is\\ newly\\ stated\\ in\\ the\\ same\\ section\\ within\\ ([\\s\\S]*?)%\\ of\\ the\\ same\\ value$",
+      "translation": "olası yeniden adlandırma, doğrulanmış bir geri çekilme değil: '{0}' ({1}) kayboldu, ancak '{2}' ({3}) aynı bölümde yeni belirtildi ve değeri %{4} içinde aynı"
+    },
+    {
+      "pattern": "^possible\\ rename\\ with\\ a\\ moved\\ value,\\ not\\ a\\ confirmed\\ withdrawal:\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ vanished\\ and\\ '([\\s\\S]*?)'\\ \\(([\\s\\S]*?)\\)\\ is\\ newly\\ stated\\ in\\ the\\ same\\ section\\ in\\ the\\ same\\ unit\\ of\\ measure;\\ whether\\ it\\ is\\ the\\ same\\ term\\ is\\ not\\ decided\\ here$",
+      "translation": "değeri değişmiş olası yeniden adlandırma, doğrulanmış bir geri çekilme değil: '{0}' ({1}) kayboldu ve '{2}' ({3}) aynı bölümde aynı ölçü birimiyle yeni belirtildi; aynı terim olup olmadığına burada karar verilmez"
+    },
+    {
       "pattern": "^([\\s\\S]+?) A\\ model's\\ note,\\ not\\ checked\\ by\\ Python:\\ ([\\s\\S]*)$",
       "translation": "{0!m} Bir modelin notu (Python tarafından denetlenmedi): {1}"
     },
