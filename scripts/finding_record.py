@@ -194,6 +194,36 @@ WRITTEN_BY_MODEL = "model"
 MODEL_FINDING_MARK = ("Written by a model. Not promoted to an amendment. "
                       "Not checked by Python.")
 COMPUTED_FINDING_MARK = "Computed by Python from the document's own figures."
+# Reader check RD14: an absence is checked, not computed from figures.
+CHECKED_ABSENCE_MARK = "Checked in code: the field is absent from this unit's text."
+ABSENCE_RELATIONS = ("missing_field", "licence_missing")
+# Reader check RD9: how a relation READS in a deliverable. The relation names are
+# the Finding record's vocabulary and stay exactly as they are everywhere else;
+# only the words a reader sees change (the irregular reading, then the ok one).
+RELATION_WORDS = {
+    "above_band": ("above the allowed range", "inside the allowed range"),
+    "below_band": ("below the allowed range", "inside the allowed range"),
+    "ratio_out_of_range": ("ratio outside the allowed range", "ratio inside the allowed range"),
+    "sum_mismatch": ("total does not match its parts", "total matches its parts"),
+    "product_mismatch": ("product does not match the stated figure", "product matches the stated figure"),
+    "missing_field": ("required field missing", "required field present"),
+    "date_window": ("dates further apart than allowed", "dates within the allowed gap"),
+    "licence_missing": ("required reference missing", "required reference present"),
+    "changed_from_prior": ("changed since the earlier version", "changed since the earlier version"),
+    "unchanged_from_prior": ("unchanged since the earlier version", "unchanged since the earlier version"),
+    "moved_toward": ("moved toward the allowed range", "moved toward the allowed range"),
+    "moved_away": ("moved away from the allowed range", "moved away from the allowed range"),
+    "absent_since_prior": ("absent since the earlier version", "absent since the earlier version"),
+}
+
+
+@localization.presentation
+def relation_words(relation, verdict="irregular") -> str:
+    """A relation in a reader's words, in the run's output language."""
+    words = RELATION_WORDS.get(str(relation))
+    if not words:
+        return str(relation)
+    return localization.text(words[0] if str(verdict or "irregular").lower() != "ok" else words[1])
 
 
 def written_by(backend, model) -> str:
@@ -237,6 +267,8 @@ def provenance_mark(item) -> str:
     """The reader-facing mark for one finding, in the run's output language."""
     if is_model_written(item):
         return localization.text(MODEL_FINDING_MARK)
+    if item.get("relation") in ABSENCE_RELATIONS:
+        return localization.text(CHECKED_ABSENCE_MARK)
     return localization.text(COMPUTED_FINDING_MARK)
 
 
@@ -258,6 +290,24 @@ def model_finding_for_reader(item) -> dict:
     return out
 
 
+def written_form(value, tokens):
+    """Reader check RD18: `value` as one of `tokens` (numbers as a text writes
+    them) writes it, or None when none does."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return None
+    for token in tokens or ():
+        try:
+            if float(token) == float(value):
+                return token
+        except ValueError:
+            continue
+    return None
+
+
+def _shown(value, unit, tokens):
+    return f"{written_form(value, tokens) or value} {unit or ''}".strip()
+
+
 @localization.presentation
 def reader_line(item) -> str:
     """One finding as a READER sees it (deliverables only; prompts keep
@@ -275,17 +325,18 @@ def reader_line(item) -> str:
         parts.append(localization.text("unit ") + str(item["unit_id"]))
     relation = item.get("relation")
     if relation:
-        parts.append(localization.label(str(relation)))
+        # RD9: in words; a model's item reads as what the model claimed.
+        claimed = item.get("record_verdict") or item.get("model_claimed_verdict") or "irregular"
+        parts.append(relation_words(relation, claimed))
     if relation == "missing_field" and str(item.get("unit_b") or "") == "required":
         parts.append(localization.text("required field: ") + str(item.get("field_label") or "?")
                      + localization.text("; found: none"))
     else:
+        tokens = item.get("_written_tokens")
         if item.get("value_a") is not None:
-            parts.append(localization.text("figure: ") + f"{item['value_a']} {item.get('unit_a') or ''}".strip())
+            parts.append(localization.text("figure: ") + _shown(item["value_a"], item.get("unit_a"), tokens))
         if item.get("value_b") is not None:
-            parts.append(localization.text("compared with: ") + f"{item['value_b']} {item.get('unit_b') or ''}".strip())
-    if not is_model_written(item) and item.get("record_verdict"):
-        parts.append(localization.label(str(item["record_verdict"])))
+            parts.append(localization.text("compared with: ") + _shown(item["value_b"], item.get("unit_b"), tokens))
     refs = item.get("source_refs") or item.get("ref_ids")
     if isinstance(refs, list) and refs:
         parts.append(localization.text("cites ") + ", ".join(str(r) for r in refs[:4]))

@@ -23,39 +23,63 @@ def _now(): return datetime.now(timezone.utc).isoformat()
 # envelope it was posted under), never from a fixed list of agent names. Both
 # sentences have a Turkish rendering in scripts/ui/localization_catalog.js.
 NO_MODEL_AGENT = "no model agent"
-# The same words paired_review.MODEL_NOTE_PREFIX puts before a model's sentence.
-MODEL_NOTE = "A model's note, not checked by Python: "
+# Reader check RD1/RD4: a model's note beside Python's figures names the model the
+# record says wrote it; with none recorded, it says so.
+NOTE_MODEL_NOT_RECORDED = "not recorded"
+NO_NOTE_MODEL = "none"
+RULES_APPLIED_HEADING = "## Rules applied"
+RULE_TEXT_LABEL = "rule text: "
+
+
+def model_note_line(text, model=None) -> str:
+    return (localization.text("A model's note (model: ") + str(model or localization.text(NOTE_MODEL_NOT_RECORDED))
+            + localization.text("), not checked by Python: ") + '"' + str(text) + '"')
 
 
 def findings_provenance(findings) -> dict:
-    """Counts by who wrote them, and the agents whose MODEL replies carried one."""
+    """Counts by who wrote them: Python's findings, the items a model wrote (and
+    the agents whose replies carried them), and the model-written NOTES attached
+    to Python's findings with the models the records name for them (RD4)."""
     findings = [f for f in findings or [] if isinstance(f, dict)]
     model = [f for f in findings if finding_record.is_model_written(f)]
+    notes = [f for f in findings if not finding_record.is_model_written(f)
+             and f.get("explanation_by") == finding_record.WRITTEN_BY_MODEL]
     return {"total": len(findings), "computed": len(findings) - len(model),
             "model": len(model),
-            "model_agents": sorted({str(f.get("agent") or "?") for f in model})}
+            "model_agents": sorted({str(f.get("agent") or "?") for f in model}),
+            "notes": len(notes),
+            "note_models": sorted({str(f.get("explanation_model") or NOTE_MODEL_NOT_RECORDED) for f in notes})}
 
 
 def _agents_text(provenance):
     return ", ".join(provenance["model_agents"]) or NO_MODEL_AGENT
 
 
+def _note_models_text(provenance):
+    return ", ".join(provenance.get("note_models") or []) or NO_NOTE_MODEL
+
+
 def context_findings_sentence(n_conventions, provenance, document_name) -> str:
-    # Reader check RC10: no bare total that mixes the two kinds.
+    # Reader check RC10/RD4: no bare total that mixes the kinds; the model-written
+    # notes on Python's findings are counted and their models named apart.
     return ("This document was reviewed against %d conventions. Findings computed by Python "
             "from the document's figures: %d. Items written by a model (%s), not checked by "
-            "Python and not promoted: %d. The context references below are filtered for "
-            "topical relevance to %s." % (n_conventions, provenance["computed"],
-                                          _agents_text(provenance), provenance["model"],
-                                          document_name))
+            "Python and not promoted: %d. Model-written notes attached to Python's findings "
+            "(model: %s), not checked by Python: %d. The context references below are filtered "
+            "for topical relevance to %s." % (n_conventions, provenance["computed"],
+                                              _agents_text(provenance), provenance["model"],
+                                              _note_models_text(provenance), provenance.get("notes", 0),
+                                              document_name))
 
 
 def topic_line(category, conventions) -> str:
-    """Reader check RC16: a topic named by its rules, not only by its slug."""
+    """Reader check RC16/RD12/RD16: a rule group named by its rules and their
+    quoted words, labelled as the rule's own text."""
     rules = [c for c in conventions or [] if isinstance(c, dict) and c.get("id")]
     if not rules:
         return str(category)
-    shown = "; ".join('%s: "%s"' % (c["id"], " ".join(str(c.get("rule") or "").split())[:120])
+    shown = "; ".join('%s, %s"%s"' % (c["id"], localization.text(RULE_TEXT_LABEL),
+                                       " ".join(str(c.get("rule") or "").split())[:120])
                       for c in rules[:3])
     return "%s (%s)" % (category, shown)
 
@@ -93,12 +117,12 @@ def relation_report_lines(deliverables, op_docs) -> list:
     if not computed and not model_only:
         return []
     lines = ["", localization.text(RELATIONS_FOUND_HEADING), ""]
-    lines += ([f"- {localization.label(rel)}: {n}" for rel, n in sorted(computed.items())]
+    lines += ([f"- {finding_record.relation_words(rel)}: {n}" for rel, n in sorted(computed.items())]
               or [localization.text('- (none)')])
     lines += ["", localization.text(RELATIONS_MODEL_HEADING), ""]
     if model_only:
         mark = localization.text(finding_record.MODEL_FINDING_MARK)
-        lines += [f"- {localization.label(rel)}: {n} ({mark})" for rel, n in sorted(model_only.items())]
+        lines += [f"- {finding_record.relation_words(rel)}: {n} ({mark})" for rel, n in sorted(model_only.items())]
     else:
         lines.append(localization.text('- (none)'))
     return lines
@@ -107,9 +131,11 @@ def relation_report_lines(deliverables, op_docs) -> list:
 def operative_findings_sentence(provenance) -> str:
     return ("Findings below come from the convention review. Computed by Python from the "
             "document's figures: %d. Written by a model (%s), not checked by Python and not "
-            "promoted, listed apart under each category: %d. Each finding cites the convention "
-            "ID and the reference ID(s) and says who wrote it."
-            % (provenance["computed"], _agents_text(provenance), provenance["model"]))
+            "promoted, listed apart under each category: %d. Model-written notes attached to "
+            "Python's findings (model: %s), not checked by Python: %d. Each finding cites the "
+            "convention ID and the reference ID(s) and says who wrote it."
+            % (provenance["computed"], _agents_text(provenance), provenance["model"],
+               _note_models_text(provenance), provenance.get("notes", 0)))
 
 
 @localization.presentation
@@ -127,17 +153,18 @@ def render_context_summary(
              f'{localization.text('- document id: ')}{document_id}',
              f'{localization.text('- context references cited: ')}{len(context_refs)}',
              "",
-             localization.text("## What the reference corpus establishes about this document's topics"),
              ""]
+    # Reader check RD12: the list is the operator's rule book, said so; the
+    # reference corpus has its own section below.
     if topics:
-        lines.append(localization.text('**Topics addressed:**'))
+        lines += [localization.text(RULES_APPLIED_HEADING), ""]
         for t in topics:
             lines.append(f"- {t}")
         lines.append("")
     if body_text.strip():
         lines.append(localization.message(body_text.strip()))
         lines.append("")
-    lines.append(localization.text('## Reference citations (from context corpus)'))
+    lines.append(localization.text('## Reference corpus passages cited'))
     lines.append("")
     if not context_refs:
         lines.append(localization.text('_no context references cited_'))
@@ -206,7 +233,9 @@ def render_operative_summary(
     rendered_count = 0
     for category in sorted(categories):
         conventions = conventions_by_category.get(category, [])
-        lines.append(f"### {category}")
+        # Reader check RD18: the heading says what the slug is (the operator's
+        # own rule group id); the rules and their words follow.
+        lines.append(f"### {localization.text('Rule group ')}{category}" if stamped else f"### {category}")
         lines.append("")
         if conventions:
             for c in conventions:
@@ -214,7 +243,7 @@ def render_operative_summary(
                 # never shown as "?"; the rule's own words are quoted.
                 declared = "/".join(localization.label(str(c[k])) for k in ("severity", "action") if c.get(k))
                 lines.append(f"- **[{c.get('id')}]**" + (f" ({declared})" if declared else "")
-                             + f': "{c.get('rule', '')[:240]}"' if stamped else
+                             + f': {localization.text(RULE_TEXT_LABEL)}"{c.get('rule', '')[:240]}"' if stamped else
                              f"- **[{c.get('id')}]** ({c.get('severity', '?')}/{c.get('action', '?')}): "
                              f"{c.get('rule', '')[:240]}")
         else:
@@ -236,7 +265,7 @@ def render_operative_summary(
                     if prose and f.get("explanation_by") == finding_record.WRITTEN_BY_MODEL:
                         # The judging model's sentence beside Python's figures is the
                         # model's, said so and quoted (reader check RC5).
-                        lines.append("  - " + localization.text(MODEL_NOTE) + '"' + prose + '"')
+                        lines.append("  - " + model_note_line(prose, f.get("explanation_model")))
                     elif prose:
                         lines.append(f"  - {localization.message(prose)}")
                     rendered_count += 1
@@ -247,7 +276,10 @@ def render_operative_summary(
                     prose = str(f.get("explanation") or f.get("reasoning") or "").strip()[:240]
                     if prose:
                         lines.append(f'  - {localization.text("The model wrote: ")}"{prose}"')
-                    if f.get("figures_in_unit") is False:
+                    # Reader check RD2: what Python can say about the item, in words.
+                    for note in f.get("reader_notes") or []:
+                        lines.append(f"  - {localization.message(note)}")
+                    if f.get("figures_in_unit") is False and not f.get("reader_notes"):
                         lines.append(f'  - {localization.text("The unit it names does not state these figures.")}')
                     rendered_count += 1
         elif category_findings:

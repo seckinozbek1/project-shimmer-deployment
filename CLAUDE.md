@@ -411,7 +411,14 @@ processing swarm governed by an append-only constitution.
   log event) and names only what ran; Python findings and model items are counted apart; a
   relation only a model reported is listed apart and marked, in the run summary and in
   `tools/score_corpus.py`. `audit_synthesis.md` counts "audit-trail patterns", not document
-  findings. No reader file carries an em dash. Check 278.
+  findings, and counts an escalation once per distinct topic and payload
+  (`audit_synthesizer.escalation_key`); one with no topic or no payload is reported apart and
+  never becomes a pattern or a proposal. A judging model's sentence on a Python finding is a
+  quoted note naming the model its call recorded (`paired_review.stamp_note_writer`, the
+  computed bus post's `note_models`), "not recorded" otherwise, and notes are counted apart.
+  A model item carries `reader_notes` (`paired_review.model_item_notes`: another unit's
+  passage cited, the pairing map's rejection of its rule, no addends named, figures not in its
+  unit). No reader file carries an em dash. Check 278.
 
 ## Document role resolution and task modes
 

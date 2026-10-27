@@ -59,7 +59,9 @@ GARBLED = ("against the range against", "values against a stated", " gives ",
            "against a stated range")
 # PRE-AUTHORED, NOT MODEL OUTPUT: the sentence a judging model returns when paired
 # review asks it whether a computed disagreement is material.
-AUTHORED_JUDGMENT = "AUTHORED FIXTURE SENTENCE: the difference is material under the rule."
+# (Authored for the fixture; no model wrote it. It is labelled in every deliverable
+# as a model's note because, in a real run, a model would have.)
+AUTHORED_JUDGMENT = "The difference is material under the rule."
 
 
 def _unit(units, slug):
@@ -126,6 +128,10 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
     out_root = Path(out_root)
     orch = build_orchestrator(root=ROOT, out_root=out_root)
     run_options.configure(orch.run_context, "auto", language, "enabled")
+    # As main() does: every registered agent gets an activation record.
+    import agent_activation
+    agent_activation.initialize(orch.run_context, json.loads(
+        (ROOT / "config" / "agent_registry.json").read_text(encoding="utf-8")).get("agents", {}), "dense")
     pl._inst_finder_startup_guard(orch.run_context, ROOT)
     index = rb.ReferenceIndex.open(ROOT, index_path=out_root / "refs.json")
     index.add(input_type="context", document_id="reference", document_name="reference.md",
@@ -139,9 +145,19 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
                       location={"page": 1, "paragraph": n}, text_excerpt=heading + body)
     index.save()
 
+    def record_call(agent, call_id, source_phase):
+        """What run_task's activation observation records for a dispatched call."""
+        audit = agent_activation.get(orch.run_context)
+        if audit is not None:
+            row = audit.decision(agent, eligible=True, activated=True, reason="selected_paired_plan",
+                                 source_phase=source_phase, doc_id=doc["id"])
+            audit.update(row, actual_call=True, call_id=call_id, state="completed", outcome="accepted")
+
     async def judging_reply(wrapper, payload, run_objectives, *args, **kwargs):
+        call_id = uuid.uuid4().hex
+        record_call(wrapper.name, call_id, "5.5")
         return {"ok": True, "backend": "local_auditor", "model": "fixture-auditor",
-                "call_id": uuid.uuid4().hex, "raw_text": "", "item_count": 1,
+                "call_id": call_id, "raw_text": "", "item_count": 1,
                 "parsed": {"agent": wrapper.name, "doc_id": doc["id"],
                            "items": [{"explanation": AUTHORED_JUDGMENT}]}}
     capture = _Capture()
@@ -154,6 +170,7 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
                     orch, {}, [doc], "declared proof", registry, index, embed_store=None,
                     max_concurrent_docs=1, review_mode="paired"))
             if style_guardian:
+                record_call("STYLE_GUARDIAN", "fixture-call-1", "5.5")
                 env = {"scope": "doc", "doc_id": doc["id"], "agent": "STYLE_GUARDIAN", "ok": True,
                        "backend": "local_auditor", "model": "fixture-auditor", "call_id": "fixture-call-1",
                        "parsed": {"agent": "STYLE_GUARDIAN", "doc_id": doc["id"], "items": [model_finding()]}}
@@ -223,7 +240,7 @@ def _read(path):
 
 
 def _model_lines(text, unit_id):
-    return [ln for ln in text.splitlines() if "sum_mismatch" in ln and unit_id in ln]
+    return [ln for ln in text.splitlines() if "total does not match its parts" in ln and unit_id in ln]
 
 
 # ---------- observations (each executes the real consumer; no verdicts) -----------------
@@ -319,7 +336,7 @@ def _localized_samples():
              summary_generators.RELATIONS_MODEL_HEADING, audit_synthesizer.AUDIT_COUNT_NOTE,
              "## Audit-trail patterns (not document findings)", "- audit-trail patterns: ",
              "**Findings computed by Python:**", "**Written by a model, not checked by Python, not promoted:**",
-             "The model wrote: ", "The unit it names does not state these figures.", summary_generators.MODEL_NOTE,
+             "The model wrote: ", "The unit it names does not state these figures.", "A model's note (model: ",
              "Proposed amendments", "**Justification:**", "**Location:**",
              audit_synthesizer.KIND_WORDS["propose_amendment"], audit_synthesizer.ACTION_WORDS["add_amendment"]]
     sums = computed_findings()
@@ -390,7 +407,7 @@ def check_templates():
     bad = []
     for item, row in zip(template_cases(), rows):
         lead = row["lead"]
-        need = [item["unit_id"], "CONV-001 (CONV-H01)"]
+        need = [item["unit_id"], "CONV-001 (operator's id CONV-H01)"]
         relation, unit_b = item["relation"], item.get("unit_b")
         if relation == "licence_missing":
             need.append("a reference the rule requires is not present")
@@ -399,7 +416,8 @@ def check_templates():
         elif unit_b == "rows":                # a column filled in fewer rows than the table has
             need += ["'%s'" % item["field_label"], "%s of %s rows" % (item["value_a"], item["value_b"])]
         else:                                 # two figures, each with its unit, and the relation
-            fig = lambda v, u: ("%s %s" % (v, u)) if u not in ("1", None) else str(v)
+            tokens = pr._number_tokens(pr.unit_texts_for(DOC_TEXT, "batch_sheet")[item["unit_id"]]["text"])
+            fig = lambda v, u: pr._figure(v, u, tokens)
             need += [fig(item["value_a"], item.get("unit_a")), fig(item["value_b"], unit_b)]
             need.append({"above_band": "above the upper bound", "below_band": "below the lower bound",
                          "ratio_out_of_range": "outside the permitted bound", "sum_mismatch": "add up to",
@@ -423,7 +441,7 @@ def observe_absence_location():
             gamma_ref = next((e["ref_id"] for e in refs if "## Entry Gamma" in e.get("text_excerpt", "")), None)
             absent = [a for a in master["amendments"] if a.get("finding_relation") == "missing_field"]
             out[name] = {"locations": [a["location"] for a in absent], "gamma_ref": gamma_ref,
-                         "sentences": [("at %s." % gamma_ref) in a["comment"] for a in absent],
+                         "sentences": [("passage %s." % gamma_ref) in a["comment"] for a in absent],
                          "unknown": ["could not find the passage of unit" in a["comment"] for a in absent],
                          "header_ref_used": any(a["location"] == "REF-0002" for a in absent)}
         return out
@@ -438,6 +456,21 @@ def check_absence_location():
     return ("PASS" if ok else "FAIL", "absence amendment points to its unit")
 
 
+def post_escalations(bus, *, distinct, copies):
+    """Escalations shaped as orchestrator.escalate posts them ({topic, payload}):
+    `distinct` different payloads on one topic, and `copies` identical messages
+    with no topic and no content (the shape RD3 found counted as a recurrence)."""
+    for n in range(distinct):
+        bus.post({"sender": "ORCHESTRATOR", "sender_role": "orchestrator", "recipient": "OPERATOR",
+                  "channel": "escalation", "type": "ESCALATE",
+                  "body": {"topic": "model_approval", "payload": {"agent": "AGENT_%d" % n, "reason": "deprecated"}},
+                  "constitution_check": {"laws_consulted": ["LAW-0"], "result": "UNRESOLVED"}})
+    for _ in range(copies):
+        bus.post({"sender": "ORCHESTRATOR", "sender_role": "orchestrator", "recipient": "OPERATOR",
+                  "channel": "escalation", "type": "ESCALATE", "body": {},
+                  "constitution_check": {"laws_consulted": ["LAW-V"], "result": "RESOLVED"}})
+
+
 def observe_audit_synthesis():
     from message_bus import MessageBus
     from run_context import RunContext
@@ -445,11 +478,13 @@ def observe_audit_synthesis():
         ctx = RunContext(project_root=Path(td), run_id="auditfixture", run_dir=Path(td) / "run")
         ctx.ensure()
         bus = MessageBus.open(ctx.bus_path())
-        for _ in range(3):
-            bus.post({"sender": "ORCHESTRATOR", "sender_role": "orchestrator", "recipient": "OPERATOR",
-                      "channel": "escalation", "type": "ESCALATE", "body": {"topic": "TOPIC-1"},
-                      "constitution_check": {"laws_consulted": ["LAW-V"], "result": "RESOLVED"}})
-        audit_synthesizer.AuditSynthesizer(project_root=Path(td), bus=bus, run_context=ctx).synthesize()
+        post_escalations(bus, distinct=0, copies=3)
+        empty = audit_synthesizer.AuditSynthesizer(project_root=Path(td), bus=bus, run_context=ctx).synthesize()
+        ctx2 = RunContext(project_root=Path(td), run_id="auditfixture2", run_dir=Path(td) / "run2")
+        ctx2.ensure()
+        bus2 = MessageBus.open(ctx2.bus_path())
+        post_escalations(bus2, distinct=3, copies=0)
+        real = audit_synthesizer.AuditSynthesizer(project_root=Path(td), bus=bus2, run_context=ctx2).synthesize()
         text = _read(ctx.audit_synthesis_path())
         tr = audit_synthesizer._render_md(dict(generated_at="x", bus_messages=3, delta_proposals=[],
                                                findings=[dict(severity="high", category="governance",
@@ -458,13 +493,20 @@ def observe_audit_synthesis():
         return {"count_line": next((ln for ln in text.splitlines() if "patterns" in ln and ln.startswith("- ")), ""),
                 "says_not_document": "not findings about the document under review" in text,
                 "old_label": "- findings: " in text, "heading": "## Audit-trail patterns (not document findings)" in text,
-                "tr_says_not_document": "belge hakkındaki bulgular değildir" in tr}
+                "tr_says_not_document": "belge hakkındaki bulgular değildir" in tr,
+                "copies_patterns": len(empty["findings"]), "copies_deltas": len(empty["delta_proposals"]),
+                "copies_line": "- escalation messages with no topic or no content (not counted as a pattern): 3" in text,
+                "distinct_patterns": len(real["findings"]), "distinct_deltas": len(real["delta_proposals"]),
+                "tr_one_term": ("üst makama iletme" in tr and "yükseltme" not in tr and "Üst karar" not in tr
+                                and "Yüksek" not in tr)}
 
 
 def check_audit_synthesis():
     o = observe_audit_synthesis()
-    ok = (o["count_line"].startswith("- audit-trail patterns: 1 (") and o["says_not_document"]
-          and not o["old_label"] and o["heading"] and o["tr_says_not_document"])
+    ok = (o["count_line"].startswith("- audit-trail patterns: 0 (") and o["says_not_document"]
+          and not o["old_label"] and o["heading"] and o["tr_says_not_document"]
+          and o["copies_patterns"] == 0 and o["copies_deltas"] == 0 and o["copies_line"]
+          and o["distinct_patterns"] == 1 and o["distinct_deltas"] == 1 and o["tr_one_term"])
     return ("PASS" if ok else "FAIL", "audit synthesis says what it counts")
 
 
@@ -487,8 +529,8 @@ def observe_relations():
         with contextlib.redirect_stdout(confirmed):
             scorer._print_relation_breakdown(findings, [f for f in findings if f.get("relation") == "sum_mismatch"
                                                         and f.get("_written_by") == "model"])
-        return {"found_section": sorted(set(re.findall(r"- (\w+): \d", found))),
-                "model_section": sorted(set(re.findall(r"- (\w+): \d", model))),
+        return {"found_section": sorted(set(re.findall(r"- ([^:\n]+): \d", found))),
+                "model_section": sorted(set(re.findall(r"- ([^:\n]+): \d", model))),
                 "model_marked": finding_record.MODEL_FINDING_MARK in model,
                 "mentions_scorer": "scorer" in text,
                 "scorer_found": next((ln for ln in lines if ln.startswith("relations found")), ""),
@@ -498,8 +540,8 @@ def observe_relations():
 
 def check_relations():
     o = observe_relations()
-    ok = (o["found_section"] == ["above_band", "missing_field", "sum_mismatch"]
-          and o["model_section"] == ["sum_mismatch"] and o["model_marked"] and not o["mentions_scorer"]
+    ok = (o["found_section"] == ["above the allowed range", "required field missing", "total does not match its parts"]
+          and o["model_section"] == ["total does not match its parts"] and o["model_marked"] and not o["mentions_scorer"]
           and o["scorer_found"] == "relations found : above_band=1, missing_field=1, sum_mismatch=1"
           and "sum_mismatch=1" in o["scorer_model"]
           and o["scorer_confirmed"] == "relations found : above_band=1, missing_field=1, sum_mismatch=2")
@@ -524,14 +566,17 @@ def observe_reader_check():
         tr_files = {k: _read(v) for k, v in tr["files"].items()}
         audit = audit_synthesizer._render_md(dict(
             generated_at="x", bus_messages=3, findings=[dict(severity="high", category="governance",
-                                                             summary="escalation topic 'TOPIC-1' recurred 3 times")],
-            delta_proposals=[dict(id="DELTA-1", kind="propose_amendment", trigger="repeated escalation: TOPIC-1",
+                                                             summary="escalation topic 'model_approval' recurred 3 times")],
+            delta_proposals=[dict(id="DELTA-1", kind="propose_amendment", trigger="repeated escalation: model_approval",
                                   proposed_change={"action": "add_amendment", "target": "constitution"},
                                   requires_operator_approval=True)]))
+        refs_entries = json.loads(_read(en["refs"])).get("entries", [])
+        cited = {e["ref_id"]: e.get("cited_by") for e in refs_entries}
+        alpha = by_unit.get(_unit(units, "entry-alpha"), {})
         beta = by_unit.get(_unit(units, "entry-beta"), {})
         return {
             # RC1: the sum names its addends, and they are in the unit's own text
-            "sum_names_addends": "'weight' (3.0 + 5.0 kg)" in beta.get("comment", ""),
+            "sum_names_addends": "'weight' (3 + 5 kg) add up to 8 kg, but the stated total weight is 9 kg" in beta.get("comment", ""),
             "addends_in_unit": all(t in units[_unit(units, "entry-beta")]["text"] for t in ("3 kg", "5 kg")),
             # RC2/RC3: each amendment sits at its own unit's passage, and the summary cites the same
             "located_at_own_passage": sorted(
@@ -542,10 +587,53 @@ def observe_reader_check():
             "header_or_reference_located": [a["location"] for a in master["amendments"]
                                             if a["location"] in ("REF-0001", "REF-0002")],
             # RC5: the per-agent record names the backend and model the run recorded
-            "per_agent_backend": "Backend `paired`, model `python+model`" in files["reviewed_document.md"],
+            "per_agent_backend": ("Backend `paired`, model `python`." in files["reviewed_document.md"]
+                                  and "Notes written by a model, not checked by Python: `fixture-auditor`."
+                                  in files["reviewed_document.md"]),
+            # RD1/RD4/RD6: the note is quoted and names its model; the counts keep notes apart
+            "note_named": ('A model\'s note (model: fixture-auditor), not checked by Python: "%s"' % AUTHORED_JUDGMENT
+                           in alpha.get("comment", "")),
+            "note_counts": ("Model-written notes attached to Python's findings (model: fixture-auditor), not checked "
+                            "by Python: 2." in files["grounding_summary.md"]
+                            and "Items written by a model (STYLE_GUARDIAN), not checked by Python and not promoted: 1."
+                            in files["grounding_summary.md"]),
+            # RD2: the model item's citation, applicability and missing addends, in words
+            "model_item_notes": all(n in files["document_summary.md"] and n in files["review_findings.md"] for n in (
+                "It cites REF-0002, which is the passage of Returned batch sheet, not this unit's own passage (REF-0003).",
+                "Python's pairing map found that rule CONV-003 does not apply to this unit: unit lacks total weight.",
+                "The model names no addends for this sum.")),
+            # RD7: the rule and the passage named apart
+            "ground_wording": ("Rule CONV-001 (operator's id CONV-H01); passage REF-0003." in alpha.get("comment", "")
+                               and "Grounded in" not in json.dumps(master)),
+            # RD8: the evidence line is a sentence, not a key dump
+            "evidence_plain": ("Python's record: " in files["review_findings.md"]
+                               and "derived_from:" not in files["review_findings.md"]
+                               and "finding_value_a" not in files["review_findings.md"]),
+            # RD9: relation words
+            "relation_words": ("above the allowed range" in files["document_summary.md"]
+                               and "above_band" not in files["document_summary.md"] + _read(en["run_summary"])
+                               and "toplam uyuşmazlığı" in _read(tr["run_summary"])),
+            # RD11: the reference index records who cites what
+            "cited_by": all(cited.get(a["location"]) for a in master["amendments"]),
+            # RD12/RD16: the rule book is called that, its words labelled
+            "rules_applied": ("## Rules applied" in files["grounding_summary.md"]
+                              and "reference corpus establishes" not in files["grounding_summary.md"]
+                              and "kuralın özgün metni: " in tr_files["document_summary.md"]),
+            # RD13: every registered agent, and INST_FINDER's recorded calls
+            "all_agents": all(("- %s: " % a) in files["reviewed_document.md"]
+                              for a in ("INST_FINDER", "AMENDMENT_DRAFTER", "REDACTOR", "ARCHIVIST")),
+            "inst_finder_calls": "- INST_FINDER model calls in this run: 0 (it produced no output)" in _read(en["run_summary"]),
+            # RD14: an absence is checked, not computed from figures
+            "absence_mark": ("required field: sample identifier; found: none; cites REF-0005 (Checked in code"
+                             in files["document_summary.md"]),
+            # RD15: the Turkish band sentence quotes the document's own field name
+            "tr_field_quoted": "'reading' değeri 61 units" in tr_files["review_findings.md"],
+            # RD18: figures as written, the second id explained, flagged passages
+            "as_written": "the reading is 61 units, above the upper bound of 60 units" in alpha.get("comment", ""),
+            "flagged_title": files["review_findings.md"].splitlines()[0].endswith(": Flagged passages"),
             # RC6/RC12: a model's line is apart and carries no verdict; an absence says what was checked
             "model_apart": "**Written by a model, not checked by Python, not promoted:**" in files["document_summary.md"],
-            "model_line_verdict": any("irregular" in ln and "u01-entry-alpha" in ln and "sum_mismatch" in ln
+            "model_line_verdict": any("irregular" in ln and "u01-entry-alpha" in ln and "total does not match its parts" in ln
                                       for ln in files["document_summary.md"].splitlines()),
             "figures_note": "The unit it names does not state these figures." in files["document_summary.md"],
             "absence_wording": ("Checked in code: the field is absent" in json.dumps(master)
@@ -557,15 +645,18 @@ def observe_reader_check():
             # RC16/RC17: names, the rule's words, the per-agent title
             "names_and_rule_words": ("(Entry Beta)" in beta.get("comment", "")
                                      and 'Rule CONV-003 reads: "' in beta.get("comment", "")),
-            "per_agent_title": "not the reviewed document" in files["reviewed_document.md"].splitlines()[0],
+            "per_agent_title": "raw reply for this document" in files["reviewed_document.md"].splitlines()[0],
             # RC4/RC11/RC13/RC14: the Turkish findings file has the English layout and no raw dump
             "tr_layout": ("### Değişiklik 1 [" in tr_files["review_findings.md"]
                           and "- değişiklikler: 3" in tr_files["review_findings.md"]
+                          and "İnceleme: işaretlenen bölümler" in tr_files["review_findings.md"]
                           and "```json" not in tr_files["review_findings.md"]
                           and "model_findings_not_promoted" not in tr_files["review_findings.md"]
                           and "written_by" not in tr_files["review_findings.md"]
                           and "\\n" not in tr_files["review_findings.md"]),
             "tr_band_grammar": "olan aralığın üzerindedir" in tr_files["review_findings.md"],
+            "placeholder_left": [w for w in ("AUTHORED FIXTURE", "TOPIC-1") if w in
+                                 json.dumps(master) + files["review_findings.md"] + tr_files["review_findings.md"]],
             # RC18: no em or en dash in any reader-facing file, either language
             "dashes": sum(text.count(chr(0x2014)) + text.count(chr(0x2013)) for text in
                           list(files.values()) + list(tr_files.values())
@@ -587,7 +678,12 @@ def check_reader_check():
           and o["placeholders"] == [] and o["names_and_rule_words"] and o["per_agent_title"]
           and o["tr_layout"] and o["tr_band_grammar"] and o["tr_untranslated"] == []
           and o["dashes"] == 0)
-    return ("PASS" if ok else "FAIL", "reader check round 1 items closed")
+    rd = ("note_named", "note_counts", "model_item_notes", "ground_wording", "evidence_plain", "relation_words",
+          "cited_by", "rules_applied", "all_agents", "inst_finder_calls", "absence_mark", "tr_field_quoted",
+          "as_written", "flagged_title")
+    ok = ok and all(o[k] for k in rd) and o["placeholder_left"] == []
+    return ("PASS" if ok else "FAIL", "reader check rounds 1 and 2 items closed: %s" % (
+        [k for k in rd if not o[k]] or "all"))
 
 
 def _json_block_renderer(payload, document_name, category_for_conv, **kwargs):
@@ -694,6 +790,55 @@ class HonestOutputChecks(unittest.TestCase):
                    lambda: patch.object(amendment_render, "MODEL_FINDINGS_HEADING",
                                         "## Written by a model " + chr(0x2014) + " not checked by Python"))
 
+    # Reader check round 2: each mechanism, neutralised alone, must fail the check.
+    def test_rd1_rd4_rd6_note_writer_named_and_counted(self):
+        self.prove("rd1_note_writer", observe_reader_check, check_reader_check,
+                   lambda: patch.object(pr, "stamp_note_writer", lambda item, reply: item))
+
+    def test_rd2_model_item_notes(self):
+        self.prove("rd2_model_notes", observe_reader_check, check_reader_check,
+                   lambda: patch.object(pr, "model_item_notes", lambda *a, **k: []))
+
+    def test_rd3_escalation_copies_are_not_a_pattern(self):
+        self.prove("rd3_escalations", observe_audit_synthesis, check_audit_synthesis,
+                   lambda: patch.object(audit_synthesizer, "escalation_key",
+                                        lambda body: ("model_approval", __import__("uuid").uuid4().hex)))
+
+    def test_rd7_rule_and_passage_named_apart(self):
+        self.prove("rd7_ground", observe_reader_check, check_reader_check,
+                   lambda: patch.object(pr, "GROUND_AT_PASSAGE", "Grounded in %s at %s."))
+
+    def test_rd8_evidence_in_words(self):
+        self.prove("rd8_evidence", observe_reader_check, check_reader_check,
+                   lambda: patch.object(amendment_render, "evidence_sentence", lambda a, **k: ""))
+
+    def test_rd9_relations_in_words(self):
+        self.prove("rd9_relations", observe_reader_check, check_reader_check,
+                   lambda: patch.object(finding_record, "relation_words", lambda rel, verdict="irregular", **k: str(rel)))
+
+    def test_rd11_reference_index_records_citations(self):
+        import reference_builder
+        self.prove("rd11_cited_by", observe_reader_check, check_reader_check,
+                   lambda: patch.object(reference_builder.ReferenceIndex, "cite", lambda self, ref, agent: None))
+
+    def test_rd12_rd16_rule_book_named_and_quoted(self):
+        self.prove("rd12_rules", observe_reader_check, check_reader_check,
+                   lambda: patch.object(summary_generators, "RULES_APPLIED_HEADING",
+                                        "## What the reference corpus establishes about this document's topics"))
+
+    def test_rd13_every_registered_agent(self):
+        import agent_activation
+        self.prove("rd13_agents", observe_reader_check, check_reader_check,
+                   lambda: patch.object(agent_activation, "initialize", lambda *a, **k: None))
+
+    def test_rd14_absence_is_checked_not_computed(self):
+        self.prove("rd14_absence_mark", observe_reader_check, check_reader_check,
+                   lambda: patch.object(finding_record, "CHECKED_ABSENCE_MARK", finding_record.COMPUTED_FINDING_MARK))
+
+    def test_rd18_figures_as_written_and_flagged_title(self):
+        self.prove("rd18_written", observe_reader_check, check_reader_check,
+                   lambda: patch.object(pr, "_written", lambda value, tokens: None))
+
     def test_s2a7_model_only_relations_listed_apart(self):
         self.prove("s2a7_relations", observe_relations, check_relations,
                    lambda: patch.object(finding_record, "is_model_written", lambda item: False))
@@ -721,10 +866,9 @@ def write_mocked_deliverables(target):
         run = mocked_run(target / language, language=language)
         ctx = run["ctx"]
         bus = MessageBus.open(ctx.bus_path())
-        for _ in range(3):   # one audit-trail pattern, so the count line has something to count
-            bus.post({"sender": "ORCHESTRATOR", "sender_role": "orchestrator", "recipient": "OPERATOR",
-                      "channel": "escalation", "type": "ESCALATE", "body": {"topic": "TOPIC-1"},
-                      "constitution_check": {"laws_consulted": ["LAW-V"], "result": "RESOLVED"}})
+        # Three distinct escalations on one topic (a real pattern) and two
+        # content-free copies (counted apart, never a pattern).
+        post_escalations(bus, distinct=3, copies=2)
         audit_synthesizer.AuditSynthesizer(project_root=target / language, bus=bus,
                                            run_context=ctx).synthesize()
         print(language, run["run_dir"])
