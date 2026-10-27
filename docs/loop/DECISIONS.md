@@ -383,3 +383,11 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **PROCESS-DEPARTURE extension (D-048).** The S3 commits `e2a3068`, `e11a08f`, `d67adba`, `bb88fc2`, `7d9ada3`, `562fde5` and `afb77e8` were also not gated on their own; the gate at the S3 tip covers them.
 - **Recorded, not fixed here.** The repository scorer still prints `task` for negotiation-style keys and reads neither `archives` nor `expected_refusals` (open item 17 already holds the scorer's gap; the S5 scorer work owns it).
 - **Rules.** IV.4, IV.7, P8, P16.
+
+## D-051. S3 tie-break: two items confirmed in narrower form, fixed
+
+- **When, stage.** 2026-10-27 18:56 +0300 (system clock), S3, after round 3 (IV.4 step 5).
+- **Tie-break.** The CONV-LA item was fixed in the rule and the key but survived in the family 6 procedure reference text (a grounding file in every f6 bundle); the multi-round scoring tie used `deliverables/`, which every run creates. One MINOR: no format named where a cloud run records its archive hash. Both confirmed items were fixed, as IV.4 requires, by `lane/s03-fix4` (`a9f3bd4`, `2a26632`), merged as `5ac15f3`: every family declares how its reference sentences read and a gate case fails when an unkeyed unit breaks one; runs are told apart by `audit/multi_round.json`; the seal's `test_archive_sha256` is named. Draft hashes recorded (input `47904fae...`, output `2e65a790...`).
+- **Remaining weakness, recorded.** The reference readers for families 1, 2 and the long-range layout only check coverage; no mutation shows they can fail (the lane says so). Recorded in the S3 report; not a confirmed defect.
+- **The checker rounds of S3 are closed.** Next: the gate at the tip, the report and the close.
+- **Rules.** IV.4, P10.
