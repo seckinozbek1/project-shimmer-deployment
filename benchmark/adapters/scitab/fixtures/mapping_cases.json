@@ -1,5 +1,5 @@
 {
-  "description": "Hand-written synthetic run outputs for SciTab (section 5.2): refusal is not enough info, a run failure is ABSTAIN, S-2 does not apply.",
+  "description": "Hand-written synthetic run outputs for SciTab (section 5.2): refusal is not enough info, a run failure is ABSTAIN, S-2 does not apply. A band record Python stamps belongs to the rule that produced it and decides that rule's item (s-a); a blank-cell missing_field record Python stamps in this several-rule bundle decides no item and is unattached (s-c), and S-3 attributes it.",
   "items": [
     {"item_id": "s-a", "document_id": "t-run", "rule_id": "CONV-aaaaaaaaaaaa", "benchmark": "scitab"},
     {"item_id": "s-b", "document_id": "t-run", "rule_id": "CONV-bbbbbbbbbbbb", "benchmark": "scitab"},
@@ -13,6 +13,7 @@
       "review_data": {"findings": [
         {"item_id": "rec-a", "source_rule_id": "CONV-AAAAAAAAAAAA", "unit_id": "u01-p-00001", "relation": "above_band", "record_verdict": "irregular", "model": "python", "written_by": "python"},
         {"item_id": "rec-b", "source_rule_id": "CONV-bbbbbbbbbbbb", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "confidence": "UNCERTAIN"},
+        {"item_id": "rec-c", "source_rule_id": "CONV-cccccccccccc", "unit_id": "u01-p-00001", "relation": "missing_field", "record_verdict": "irregular", "model": "python", "written_by": "python"},
         {"item_id": "rec-d", "source_rule_id": "CONV-dddddddddddd", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "ok"}
       ]}
     },
@@ -31,14 +32,14 @@
   },
   "expected": {
     "B2": {
-      "s-a": ["CLEAR", "supports", "silent"],
+      "s-a": ["FLAG", "refutes", "irregular"],
       "s-b": ["UNDECIDED", "not enough info", "refusal"],
       "s-c": ["CLEAR", "supports", "silent"],
       "s-d": ["CLEAR", "supports", "ok"],
       "s-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
     },
     "B2 S-2": {
-      "s-a": ["CLEAR", "supports", "silent"],
+      "s-a": ["FLAG", "refutes", "irregular"],
       "s-b": ["UNDECIDED", "not enough info", "refusal"],
       "s-c": ["CLEAR", "supports", "silent"],
       "s-d": ["CLEAR", "supports", "ok"],
@@ -47,7 +48,7 @@
     "B2 S-3": {
       "s-a": ["FLAG", "refutes", "irregular"],
       "s-b": ["UNDECIDED", "not enough info", "refusal"],
-      "s-c": ["CLEAR", "supports", "silent"],
+      "s-c": ["FLAG", "refutes", "irregular"],
       "s-d": ["CLEAR", "supports", "ok"],
       "s-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
     },
@@ -67,10 +68,11 @@
     }
   },
   "expected_detail": {
-    "B2": {"s-a": {"figure_audit_set_aside": 1, "cited_unit_ids": []}},
-    "B2 S-3": {"s-a": {"layer": "computed", "cited_unit_ids": ["u01-p-00001"]}}
+    "B2": {"s-a": {"figure_audit_set_aside": 0, "layer": "computed", "cited_unit_ids": ["u01-p-00001"]},
+           "s-c": {"figure_audit_set_aside": 1, "cited_unit_ids": []}},
+    "B2 S-3": {"s-c": {"layer": "computed", "cited_unit_ids": ["u01-p-00001"]}}
   },
   "expected_counts": {
-    "B2": {"items": 5, "silent": 2, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 1}
+    "B2": {"items": 5, "silent": 1, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 1, "items_with_figure_audit_set_aside": 1, "unattached_figure_audit": 1}
   }
 }
