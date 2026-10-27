@@ -1,5 +1,7 @@
 # S4 plan: external benchmarks (selection, rules, adapters, baselines, preregistration draft)
 
+> **Dated note, 2026-10-27 +0300 (afternoon).** Since this plan: role sessions became allowed (D-027); B-dev ran and delivered development items only (D-032); checker rounds 1 and 2 closed (D-029, D-039, D-043). Items marked BLOCKED below for B-dev are done; the stage tag is `loop-s04-v<k>` unless a confirmed item stays open (IV.4).
+
 Branch `loop/s04` from `loop-s01-v1` (`cef0294`). S4a, S4b, S4d and S4e depend only on S1; S4f on S1 Part 4 (merged); S4c waits for S4a's selection, the S3a input-format draft and the S4e draft (Part V). H17 binds every agent the lead starts: no agent downloads, opens or searches any benchmark data file of any split; research reads cards, licences, papers and schema documentation only. B-dev (the role session that would pass on development items) cannot run in this session (D-007), so no development item reaches the lead: adapters are written and gate-checked on hand-written synthetic items in each benchmark's documented schema, and S4's exit item "development items received from B-dev" is recorded BLOCKED for this session (tag `-open` unless a later session runs B-dev).
 
 ## Lanes and owners
