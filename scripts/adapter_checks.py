@@ -279,6 +279,35 @@ class BuildChecks(_Case):
             with self.assertRaisesRegex(ValueError, message):
                 adapter.read_source(source)
 
+    def test_cuad_matches_the_data_spelling(self):
+        # The QA ids spell 15 categories differently from the paper's list (confirmed on the
+        # B-dev development items): the item is found by the data's spelling at the end of
+        # its id, and the rule text keeps the paper's name (section 5.5).
+        _build("cuad", self.root / "b")
+        ids_ = _common()["ids"]
+        source = _json(_fixture("cuad", "synthetic_items.json"))
+        alpha = next(e for e in source["data"] if e["title"] == "SYN-AARDVARK-COPY")
+        doc = ids_.opaque_document_id("cuad", hashlib.sha256(
+            alpha["paragraphs"][0]["context"].encode("utf-8")).hexdigest())
+        answers = {a["category_row"]: a for a in _json(self.root / "b" / doc / "answer_key.json")["items"]}
+        self.assertEqual(answers["cuad-16"]["item_id"], ids_.opaque_item_id(
+            "cuad", "SYN-AARDVARK-COPY__Termination For Convenience"))
+        self.assertEqual((answers["cuad-16"]["gold"], answers["cuad-07"]["gold"]), ("present", "absent"))
+        rules = (self.root / "b" / doc / "conventions" / "rules.md").read_text(encoding="utf-8")
+        self.assertIn("## CONV-CUAD-16 Category [required] [conformance]\n\nThe document must contain, "
+                      "in at least one passage, a clause of this category: Termination for "
+                      "Convenience.\n", rules)
+        # A QA id spelled as the paper spells it matches no row: the build is refused, never
+        # guessed.
+        changed = json.loads(json.dumps(source))
+        entry = next(e for e in changed["data"] if e["title"] == "SYN-AARDVARK-COPY")
+        qa = next(q for q in entry["paragraphs"][0]["qas"] if q["id"].endswith("Terminate Renewal"))
+        qa["id"] = "SYN-AARDVARK-COPY__Notice to Terminate Renewal"
+        path = self.root / "wrong.json"
+        path.write_text(json.dumps(changed), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "0 QA entries for category 'Notice Period To Terminate Renewal'"):
+            _build("cuad", self.root / "w", path)
+
     def test_empty_document_is_skipped_and_listed(self):
         records = _json(_fixture("contradoc", "synthetic_items.json"))
         records["neg"]["777"] = {"unique id": "777", "text": "  \n\n \n"}

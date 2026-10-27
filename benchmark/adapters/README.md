@@ -109,7 +109,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 
 `--assignment` reads the adapter's own `split --out` file and the frozen file B-dev wrote with its own implementation of section 1 (`assignments`: `{unique id: {group, side}}`), and refuses a side that is not the hash rule on its group key. On the 184 development documents the adapter's own grouping equals B-dev's (125 groups).
 
-**CUAD.** PROVISIONAL as a whole: the SQuAD-style container, the `__<Category>` QA-id suffix, the data's category spellings, the category descriptions (empty until freeze), and `title` as the tie-break between duplicate copies.
+**CUAD.** Confirmed on the B-dev development items (S4c item 4): the SQuAD-style container (`{version, data}`, one paragraph per contract, 41 QA entries), the `<title>__<category>` QA id, `answers` empty exactly when `is_impossible` is true, `title` as the tie-break between duplicate copies, and the data's own category spellings (`DATA_SPELLING`: 15 of the 41 differ from the paper's names, which stay in the rule text). Still PROVISIONAL: the category descriptions, empty until they are copied at freeze from the release's `CUAD_v1_README.txt` category list.
 
 **SciTab.** `id`, `table_id`, `paper_id` and `label` are documented. These are PROVISIONAL:
 
