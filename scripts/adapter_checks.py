@@ -95,11 +95,22 @@ def _fixture(name, file_name):
     return ADAPTERS / name / "fixtures" / file_name
 
 
+# FinDVer's fixture is laid out as the release is: an items file under data/ and the
+# filings under financial_reports/ beside it.
+_SOURCES = {"findver": "data/testmini.json"}
+
+
+def _source(name):
+    """The synthetic items file of one adapter."""
+    return _fixture(name, _SOURCES.get(name, "synthetic_items.json"))
+
+
 def _build(name, out, source=None, **options):
     """A build of the synthetic items; --development unless the caller says otherwise."""
     options.setdefault("development", True)
-    return _common()["cli"].build(_adapter(name), source or _fixture(name, "synthetic_items.json"),
-                                  out, **options)
+    if name == "findver" and source is not None:
+        options.setdefault("reports", _fixture("findver", "financial_reports"))
+    return _common()["cli"].build(_adapter(name), source or _source(name), out, **options)
 
 
 class WordCounter:
@@ -224,13 +235,66 @@ class BuildChecks(_Case):
         self.assertFalse((self.root / "b").exists() and any((self.root / "b").iterdir()),
                          "a refused build writes nothing")
         # FinDVer: a holdout build needs testmini and refuses a report testmini holds.
-        records = _json(_fixture("findver", "synthetic_items.json"))
+        records = _json(_source("findver"))
         mini = self.root / "mini.json"
         mini.write_text(json.dumps([records[0]]), encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "needs --testmini"):
             _build("findver", self.root / "c", development=False, side="holdout", **budget)
         with self.assertRaisesRegex(ValueError, "also appear in testmini"):
             _build("findver", self.root / "d", development=False, side="holdout", testmini=mini, **budget)
+        # An item whose own `split` names the other official split is refused: the testmini
+        # items are not holdout, even with no report in common with the testmini file given.
+        other = self.root / "other_mini.json"
+        other.write_text(json.dumps([dict(records[0], report="SYN-NONE-2024-01-01_10-K.json")]),
+                         encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "official split is not the declared side holdout: syn-ex-1"):
+            _build("findver", self.root / "e", development=False, side="holdout", testmini=other, **budget)
+
+    def test_findver_reads_claims_and_filings_apart(self):
+        # The release (confirmed on the B-dev development items) keeps the claims in
+        # data/<split>.json and each filing in financial_reports/<report>: `statement` is the
+        # claim, `entailment_label` a boolean (true is entailed), `relevant_context` the
+        # integer ids of the filing's entries, from 0. A table entry is pipe rows with no
+        # separator row; it is written with one after its first row (section 5.6, as
+        # SciTab's), and its words are its cell words.
+        _build("findver", self.root / "b")
+        ids_ = _common()["ids"]
+        doc = ids_.opaque_document_id("findver", "SYNA-2024-01-31_10-K.json")
+        record = next(d for d in _json(self.root / "b" / "parts.json")["documents"] if d["document_id"] == doc)
+        # 5 words; 6 + 6 cell words + 5 (pipes not counted); `#` is a word, 2 + 5.
+        self.assertEqual([p["words"] for p in record["parts"]], [5, 17, 7])
+        self.assertEqual([p["source"] for p in record["parts"]],
+                         [{"context_index": 0, "kind": "paragraph"}, {"context_index": 1, "kind": "table"},
+                          {"context_index": 2, "kind": "paragraph"}])
+        self.assertEqual((record["issuer_cik"], record["context_index_base"]), (1000001, 0))
+        self.assertEqual(record["report_sha256"], hashlib.sha256(
+            _fixture("findver", "financial_reports/SYNA-2024-01-31_10-K.json").read_bytes()).hexdigest())
+        text = (self.root / "b" / doc / "context" / (doc + ".md")).read_text(encoding="utf-8")
+        self.assertIn("Units by quarter are shown below.\n\n| Quarter | Units |\n|---|---|\n"
+                      "| First | 120 |\n| Second | 140 |\n\nUnits are counted when shipped.", text)
+        answers = {a["item_id"]: a for a in _json(self.root / "b" / doc / "answer_key.json")["items"]}
+        gold = {s: answers[ids_.opaque_item_id("findver", s)] for s in ("syn-ex-1", "syn-ex-2", "syn-ex-3")}
+        self.assertEqual([(g["gold"], g["subset"], g["evidence_unit_ids"], g["location_measurable"])
+                          for g in gold.values()],
+                         [("entailed", "ie", ["u02-p-00002"], False),
+                          ("refuted", "numeric", ["u02-p-00002"], True),
+                          ("refuted", "ie", ["u01-p-00001"], True)])
+        rules = (self.root / "b" / doc / "conventions" / "rules.md").read_text(encoding="utf-8")
+        self.assertIn("Claim about the filing: The company sells two products. The claim must agree "
+                      "with the passages of the filing.", rules)
+        # A label that is not a boolean, and a filing whose entry ids are not 0, 1, 2 ..., are
+        # refused rather than read.
+        adapter = _adapter("findver")
+        with self.assertRaisesRegex(ValueError, "not a boolean"):
+            adapter._gold({"example_id": "x", "entailment_label": "true"})
+        folder = self.root / "reports"
+        folder.mkdir()
+        (folder / "X-2024-01-01_10-K.json").write_text(json.dumps(
+            {"url": "", "context": [{"id": 1, "context": "a", "type": "paragraph"}]}), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "does not carry id 0"):
+            adapter.read_filing(folder, "X-2024-01-01_10-K.json")
+        with self.assertRaisesRegex(ValueError, "a report name is a file name"):
+            adapter.read_filing(folder, "../X-2024-01-01_10-K.json")
 
     def test_contractnli_items_rules_and_evidence(self):
         # 2 agreements x 3 hypotheses; one rule per hypothesis with the hypothesis as its
@@ -355,7 +419,7 @@ def _independent_side(key) -> str:
 class SplitChecks(_Case):
     # the documented split key of each hash-split benchmark, read from the source record
     def _expected_keys(self, name):
-        source = _json(_fixture(name, "synthetic_items.json"))
+        source = _json(_source(name))
         if name == "contradoc":  # 101 and 102 share 6 of 7 sentences: one group, key 101
             return {"101": "101", "102": "101", "205": "205", "409": "409"}
         if name == "scitab":
@@ -385,7 +449,7 @@ class SplitChecks(_Case):
                 by_doc.setdefault(item["document_id"], set()).add(side_of[item["document_id"]])
                 differs += _independent_side(item["source_item_id"]) != side_of[item["document_id"]]
             self.assertTrue(all(len(s) == 1 for s in by_doc.values()), name)
-            rows = _adapter(name).split_rows(_adapter(name).read_source(_fixture(name, "synthetic_items.json")))
+            rows = _adapter(name).split_rows(_adapter(name).read_source(_source(name)))
             for row in rows:
                 self.assertEqual(row["side"], _independent_side(row["split_key"]), name)
         self.assertGreater(differs, 0, "no fixture item whose own id would fall on another side")
@@ -462,12 +526,13 @@ class SplitChecks(_Case):
 
     def test_findver_official_split_drops_testmini_reports(self):
         adapter = _adapter("findver")
-        records = adapter.read_source(_fixture("findver", "synthetic_items.json"))
+        records = adapter.read_source(_source("findver"))
         mini = self.root / "mini.json"
         mini.write_text(json.dumps([records[0]]), encoding="utf-8")
         args = type("A", (), {"official": "holdout", "testmini": str(mini)})()
         rows = {r["source_document_id"]: r["side"] for r in adapter.split_rows(records, args)}
-        self.assertEqual(rows, {"SYN-FILING-ONE": "removed_overlap", "SYN-FILING-TWO": "holdout"})
+        self.assertEqual(rows, {"SYNA-2024-01-31_10-K.json": "removed_overlap",
+                                "SYNB-WT-2024-02-29_10-Q.json": "holdout"})
 
 
 # ---------------------------------------------------------------------------
@@ -487,12 +552,12 @@ class OpaqueChecks(_Case):
                     ("document:%s:%s" % (name, item["source_document_id"])).encode("utf-8")).hexdigest()[:12])
                 sources.update({str(item["source_item_id"]), str(item["source_document_id"])})
             if name == "cuad":
-                sources.update(e["title"] for e in _json(_fixture(name, "synthetic_items.json"))["data"])
+                sources.update(e["title"] for e in _json(_source(name))["data"])
             if name == "scitab":
-                sources.update(r[k] for r in _json(_fixture(name, "synthetic_items.json"))
+                sources.update(r[k] for r in _json(_source(name))
                                for k in ("paper_id", "paper"))
             if name == "contractnli":
-                sources.update(d["file_name"] for d in _json(_fixture(name, "synthetic_items.json"))["documents"])
+                sources.update(d["file_name"] for d in _json(_source(name))["documents"])
             patterns = [re.compile(r"(?<![0-9A-Za-z])" + re.escape(s) + r"(?![0-9A-Za-z])") for s in sources]
             bundles = [p for p in (self.root / name).iterdir() if p.is_dir()]
             self.assertEqual(sorted(p.name for p in bundles), sorted({i["document_id"] for i in items}))
@@ -742,16 +807,16 @@ class MetricChecks(_Case):
         self.assertAlmostEqual(h["macro_f1"], 0.5)
         self.assertEqual(h["zero_denominators"], 3)
         # FinDVer. accuracy 2/4 (ABSTAIN wrong), coverage 3/4, accuracy on answered 2/3;
-        # FDV-IE 1/2, FDV-MATH 1/2 with coverage 1/2.
+        # ie (FDV-IE) 1/2, numeric (FDV-MATH) 1/2 with coverage 1/2, by the stored spellings.
         e, f = "entailed", "refuted"
         pairs = [(f, f), (e, f), (A, e), (e, e)]
-        answers = {str(i): {"subset": "FDV-IE" if i < 2 else "FDV-MATH"} for i in range(4)}
+        answers = {str(i): {"subset": "ie" if i < 2 else "numeric"} for i in range(4)}
         h = _adapter("findver").headline(pairs, [{"item_id": str(i)} for i in range(4)], answers)
         self.assertAlmostEqual(h["accuracy"]["accuracy"], 0.5)
         self.assertAlmostEqual(h["coverage"]["coverage"], 0.75)
         self.assertAlmostEqual(h["coverage"]["accuracy_on_answered"], 2 / 3)
-        self.assertAlmostEqual(h["per_subset"]["FDV-MATH"]["accuracy"]["accuracy"], 0.5)
-        self.assertAlmostEqual(h["per_subset"]["FDV-MATH"]["coverage"]["coverage"], 0.5)
+        self.assertAlmostEqual(h["per_subset"]["numeric"]["accuracy"]["accuracy"], 0.5)
+        self.assertAlmostEqual(h["per_subset"]["numeric"]["coverage"]["coverage"], 0.5)
         # ContractNLI. (pred, gold): 3 of 6 correct (ABSTAIN wrong): accuracy 1/2.
         # contradiction: tp 1, fp 1, fn 1 -> F1 2/(2+1+1) = 1/2; entailment: tp 1, fp 1,
         # fn 2 (ABSTAIN and contradiction) -> P 1/2, R 1/3, F1 2/(2+1+2) = 2/5.

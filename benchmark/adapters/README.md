@@ -52,7 +52,7 @@ Standard library only. Nothing imports the repository's `scripts/`. Copy `benchm
 Every adapter has the same four commands:
 
 ```
-py -3.12 benchmark/adapters/<name>/adapter.py build --input <benchmark file> --out <empty folder> --side development|holdout --max-context N --output-allowance N --token-counter <file.py> [--b1-prompt F] [--assignment F] [--testmini F]
+py -3.12 benchmark/adapters/<name>/adapter.py build --input <benchmark file> --out <empty folder> --side development|holdout --max-context N --output-allowance N --token-counter <file.py> [--b1-prompt F] [--assignment F] [--testmini F] [--reports D]
 py -3.12 benchmark/adapters/<name>/adapter.py build --input <file> --out <folder> --development     (synthetic or development work only)
 py -3.12 benchmark/adapters/<name>/adapter.py split --input <benchmark file> [--out <file>]
 py -3.12 benchmark/adapters/<name>/adapter.py label --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json>
@@ -116,14 +116,12 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 - the spelling `not enough info`: no development claim carries that class;
 - `DEMONSTRATION_TABLE_IDS`, empty: B-dev matched four of the five tables by caption (all in the holdout pool) but could not identify the fifth or the 25 claims, so section 1 excludes nothing.
 
-**FinDVer.** `example_id` and `report` are documented. These are PROVISIONAL:
+**FinDVer.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now. The release keeps claims and filings apart:
 
-- `claim` and `label` with its values;
-- `context`, a list in index order;
-- `CONTEXT_INDEX_BASE`;
-- `relevant_context` and `subset`.
+- the items file (`data/testmini.json`, `data/test.json`) is a list of claims: `example_id`, `statement` (the claim), `entailment_label` (a boolean, true is entailed), `relevant_context` (integer entry ids), `subset` (`ie`, `numeric`, `knowledge`), `split` (`testmini` or `test`) and `report`, the filing's file name;
+- the filing is `financial_reports/<report>`, an object whose `context` lists the entries `{id, context, type}` in id order from 0 (`CONTEXT_INDEX_BASE` 0); `type` is `paragraph` or `table`, and a table's text is pipe rows with no separator row between lines of text.
 
-The issuer is not derived.
+`build --reports <folder>` names the filings' folder; by default it is `financial_reports` beside the items file's folder, as the release lays it out. A table entry is written with a separator row after the first row of its pipe rows (section 5.6, as SciTab's table is; Shimmer reads a table's header only when a separator row follows it), and its words are its cell words. An item whose `split` names the other official split is refused. `parts.json` records per filing its SHA-256 and `issuer_cik`, the number after `/edgar/data/` in the filing's `url`, for the issuer bootstrap.
 
 **ContractNLI.** PROVISIONAL as a whole: `documents`, `id`, `text`, `spans`, `annotation_sets` (the first set is used), `annotations`, `choice` with its values, `labels` and `hypothesis`. The hypothesis keys also feed the rule ids.
 

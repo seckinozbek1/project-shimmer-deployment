@@ -1,0 +1,10 @@
+{
+  "url": "https://www.sec.gov/Archives/edgar/data/1000002/000100000224000002/synb-10q.htm",
+  "report_type": "10-Q",
+  "context": [
+    {"id": 0, "context": "The filing covers one quarter.", "type": "paragraph"},
+    {"id": 1, "context": "", "type": "paragraph"},
+    {"id": 2, "context": "Staff numbers held steady.", "type": "paragraph"}
+  ],
+  "html_tables": []
+}
