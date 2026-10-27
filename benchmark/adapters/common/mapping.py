@@ -309,9 +309,11 @@ def classify(spec: Spec, rule_id: str, run: dict, rule_count: int = 1,
            # per-unit records that disagree (section 12 item 2): reported, never a label
            "refusal_and_ok": bool(refusals) and bool(oks),
            "irregular_and_ok": bool(irregular) and bool(oks),
-           "ok_over_refusal": not irregular and bool(refusals) and bool(oks)}
+           "ok_over_refusal": False}
     if run["failure"]:
         return dict(row, **{"class": ABSTAIN, "basis": "run_failure"})
+    # counted only once the run has not failed: a failed run decides nothing by an ok
+    row["ok_over_refusal"] = not irregular and bool(refusals) and bool(oks)
     if irregular:
         relations = {str(r.get("relation") or "") for r in irregular}
         row["judged_without_relation"] = sum(
