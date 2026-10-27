@@ -18,7 +18,7 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Fork.** `.claude/loop_private_patterns.txt` cannot be written.
 - **Options.** (1) Label every name search "incomplete: private patterns missing", as the spec prescribes for a missing file. (2) Keep the same three hex lines at `docs/loop/private/loop_private_patterns.txt` (gitignored) and run complete searches.
 - **Rules.** P7 and P18 (protect others' names first), H5.
-- **Choice.** Option 2. Searches read the file by absolute path from the main checkout, because it does not exist in worktrees, clones or the mirror. S0 step 3 and H5 tie the "incomplete" label to the file being missing; here it exists at another path, so that label would be false (P1). Every name-search record states instead: "I.0 item 4 failed; patterns read from `docs/loop/private/loop_private_patterns.txt`".
+- **Choice.** Option 2. Searches read the file by absolute path from the main checkout, because it does not exist in worktrees, clones or the mirror. S0 step 3 says a failed item 4 means every name search is labelled "incomplete: private patterns missing". That label is kept, as the spec requires, and is completed so that it stays true (P1): every name-search record reads "incomplete: private patterns missing from `.claude/` (I.0 item 4 failed); the same three patterns were applied from `docs/loop/private/loop_private_patterns.txt`". (Revised 07:00 after the S0 completeness checker; the first wording dropped the spec's label.)
 - **Reverse.** Move the file to `.claude/` when that folder can be written.
 
 ## D-003. The pre-push hook is installed through `core.hooksPath`
