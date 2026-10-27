@@ -352,3 +352,12 @@ Every Class R and Class M decision (Part III.2), every PROCESS-DEPARTURE (P8), a
 - **Options weighed for (A).** Keep the exception (rejected: it rested on reading model records as Python's); one definition with the stamp (chosen; P1, P5, P11).
 - **After the lane.** Each remaining SERIOUS item goes to one tie-break checker with the evidence (IV.4 step 5).
 - **Rules.** P1, P5, P11, IV.4, III.2.
+
+## D-047. S3 round 1 closed by `lane/s03-fix1`; check numbering across stage branches
+
+- **When, stage.** 2026-10-27 17:01 +0300 (system clock), S3.
+- **Applied.** All eleven D-042 decisions, merged on `loop/s03` as `107bbe7` (lane commits `1b7cc06`, `8ef5322`, `1e6f938`; proofs in the private `s3_fix1_proofs.txt`). Keys now state the planted ground truth; check 281 no longer compares a key with Shimmer. The reported agreement count already shows two real misses the suite was built to hide: Shimmer writes a false withdrawal on all 4 renames moved to another section and misses all 4 withdrawals beside an unrelated newcomer (it refuses them as possible successors). These are S5 development measurements of the S2b rename rule, not defects to fix in S3 (P16; S2b item 5 says S5 measures it).
+- **Product change.** Every refused change record carries a typed `reason_kind` (`paired_review.PRIOR_REFUSAL_KINDS`); pinned-baseline amendment for `_prior_comparison` and `_prior_refusals_for` (both contracts). It changes runtime files a sealed bundle pins, so earlier seals refuse (none sealed since S2).
+- **Check numbers.** The new gate check is numbered 284, not 282: `loop/s04` already registers 282 and 283 and its documents cite them; no gate logic depends on the numbers (searched), only on the list. Options: renumber S4's checks at its merge (rejected: many S4 documents cite them), or skip to 284 (chosen; P13).
+- **Partly closed, recorded.** The review mode is not yet recorded in `audit/run_options.json` (OUTPUT_FORMAT 8.1 says how to infer it); no scorer reads `expected_refusals` or the multi-round key yet (open item 17).
+- **Rules.** P1, P11, P13, P16, IV.7.
