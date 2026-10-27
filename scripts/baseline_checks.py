@@ -272,7 +272,10 @@ def _verdict(results, what):
     if failures:
         first = next(r.failures[0][1] if r.failures else r.errors[0][1] for r in results
                      if r.failures or r.errors)
-        return ("FAIL", "%d failures/errors; first: %s" % (failures, first.strip().splitlines()[-1]))
+        lines = first.strip().splitlines()
+        cause = next((l for l in lines if l.split(":", 1)[0].endswith(("Error", "Exception"))),
+                     lines[-1])
+        return ("FAIL", "%d failures/errors; first: %s" % (failures, cause))
     ran = sum(r.testsRun - len(r.skipped) for r in results)
     skipped = [s for r in results for s in r.skipped]
     if _absent():
