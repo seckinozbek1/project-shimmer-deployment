@@ -2,7 +2,7 @@
 
   build  --input <benchmark file> --out <empty folder> --side development|holdout
          --max-context N --output-allowance N --token-counter <file.py> [--b1-prompt F]
-         [--assignment <split file>] [--testmini <file>]
+         [--assignment <split file>] [--testmini <file>] [--reports <folder> (FinDVer)]
          or, for synthetic or development work only, --development (no budget needed,
          side unchecked unless --side is given; recorded in parts.json)
   split  --input <benchmark file> [--out F]     the side of every document (section 1)
@@ -43,6 +43,11 @@ def load_counter(path):
     return module
 
 
+def _dest(option: str) -> str:
+    """The argparse destination of an option name: `--reports` gives `reports`."""
+    return option.lstrip("-").replace("-", "_")
+
+
 def _sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -62,7 +67,12 @@ def budget_function(counter, max_context, output_allowance, b1_prompt=None):
 
 def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_allowance=None,
           token_counter=None, b1_prompt=None, development=False, assignment=None,
-          testmini=None) -> dict:
+          testmini=None, **adapter_options) -> dict:
+    """Build the bundles. `adapter_options` are the adapter's own BUILD_OPTIONS (FinDVer's
+    --reports), passed to its `documents` with the input path."""
+    unknown = sorted(set(adapter_options) - {_dest(n) for n, _h in getattr(adapter, "BUILD_OPTIONS", ())})
+    if unknown:
+        raise ValueError("options this adapter does not take: " + ", ".join(unknown))
     budget_given = [v is not None for v in (max_context, output_allowance, token_counter)]
     if not development:
         if side not in (ids.DEVELOPMENT, ids.HOLDOUT):
@@ -73,7 +83,8 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
     elif any(budget_given) and not all(budget_given):
         raise ValueError("give all of --max-context, --output-allowance and --token-counter, or none")
     options = {"side": side, "assignment": assignment, "testmini": testmini,
-               "development": development}
+               "development": development, "input_path": str(input_path)}
+    options.update({k: v for k, v in adapter_options.items() if v is not None})
     records = adapter.read_source(input_path)
     documents = adapter.documents(records, options)
     for doc in documents:
@@ -149,6 +160,8 @@ def main(adapter, argv=None) -> int:
     b.add_argument("--testmini", help="FinDVer: the testmini file; overlapping reports are refused")
     b.add_argument("--development", action="store_true",
                    help="synthetic or development work only: no budget needed, recorded")
+    for name, help_text in getattr(adapter, "BUILD_OPTIONS", ()):
+        b.add_argument(name, help=help_text)
     s = sub.add_parser("split")
     s.add_argument("--input", required=True)
     s.add_argument("--out")
@@ -170,7 +183,9 @@ def main(adapter, argv=None) -> int:
                 adapter, args.input, args.out, side=args.side, max_context=args.max_context,
                 output_allowance=args.output_allowance, token_counter=args.token_counter,
                 b1_prompt=args.b1_prompt, development=args.development,
-                assignment=args.assignment, testmini=args.testmini), indent=2))
+                assignment=args.assignment, testmini=args.testmini,
+                **{_dest(n): getattr(args, _dest(n))
+                   for n, _h in getattr(adapter, "BUILD_OPTIONS", ())}), indent=2))
             return 0
         if args.command == "split":
             rows = adapter.split_rows(adapter.read_source(args.input), args)
