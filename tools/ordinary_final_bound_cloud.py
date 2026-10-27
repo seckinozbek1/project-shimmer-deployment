@@ -50,25 +50,33 @@ def spawn_detached(argv, log):
         stream.close()
 
 
+def consumed(bundle):
+    """A bundle launched once, in place (LAUNCH_INTENT.json) or in a run folder (RUN_FOLDER.json)."""
+    return (Path(bundle) / 'LAUNCH_INTENT.json').exists() or (Path(bundle) / 'RUN_FOLDER.json').exists()
+
+
 def run_folder(bundle, output_dir, sealed):
     """The folder the run writes into. Without --output-dir it is the bundle (the development
     default). With it, a fresh folder <output-dir>/<bundle name> receives a copy of every sealed
-    file except the asset archive, which is read where it is; the bundle records the folder,
-    so it is consumed once."""
+    file except the asset archive, which is read where it is. A folder left by an attempt
+    refused before its launch intent is kept as evidence and the next attempt takes the next
+    name (<bundle name>.2, .3, ...). The bundle records its run folder only once the launch
+    intent exists (the controller writes RUN_FOLDER.json then), so it is consumed once."""
     if output_dir is None:
         require(not sealed or not bundle.is_relative_to(controller.ROOT.resolve()),
-                'A sealed run folder sits outside the repository')
+                'A sealed run folder must sit outside the repository')
         return bundle
-    out = Path(output_dir).resolve() / bundle.name
-    require(not sealed or not out.is_relative_to(controller.ROOT.resolve()), 'A sealed run folder sits outside the repository')
-    require(not (bundle / 'RUN_FOLDER.json').exists() and not (bundle / 'LAUNCH_INTENT.json').exists(),
-            'Authorization already consumed')
-    out.mkdir(parents=True, exist_ok=False)
+    root = Path(output_dir).resolve()
+    require(not sealed or not root.is_relative_to(controller.ROOT.resolve()), 'A sealed run folder must sit outside the repository')
+    out, n = root / bundle.name, 2
+    while out.exists():
+        require(not (out / 'LAUNCH_INTENT.json').exists(), 'Authorization already consumed')
+        out, n = root / ('%s.%d' % (bundle.name, n)), n + 1
+    out.mkdir(parents=True)
     archive = read(bundle / 'execution_manifest.json')['assets_archive']['filename']
     for item in bundle.iterdir():
         if item.is_file() and item.name != archive:
             (out / item.name).write_bytes(item.read_bytes())
-    write(bundle / 'RUN_FOLDER.json', dict(run_folder=out.as_posix()))
     return out
 
 
@@ -79,7 +87,7 @@ def execute(bundle, plan, output_dir=None):
     controller.SEAL = binding['seal_sha256']
     controller.PREPARATION = binding['preparation_commit']
     controller.INSTANCE_NAME = guard.instance_name(binding['preparation_commit'][:7] + '-' + binding['manifest_sha256'][:8])
-    controller.LAUNCH = plan
+    controller.LAUNCH = dict(plan, bundle_folder=b)
     require(sha(b / 'execution_manifest.json') == binding['manifest_sha256'] and sha(b / 'seal.json') == binding['seal_sha256'],
             'Authorized identity changed')
     m = read(b / 'execution_manifest.json')
@@ -98,7 +106,9 @@ def execute(bundle, plan, output_dir=None):
     # Multi-round and protected tests are admitted exactly when declared, sealed and valid.
     require(m['model_mode'] == 'final' and m['max_runs'] == 1, 'Scope differs from the authorization')
     run.admit_workload(m, seal, b)
-    require(not (b / 'LAUNCH_INTENT.json').exists(), 'Authorization already consumed')
+    # Consumed by a launch in place (LAUNCH_INTENT.json) or in a run folder (RUN_FOLDER.json),
+    # with or without --output-dir this time (A6).
+    require(not consumed(b), 'Authorization already consumed')
     verified = read(b / 'asset_verification.json')
     require(verified['passed'] and verified['manifest_sha256'] == binding['manifest_sha256']
             and verified['archive_sha256'] == binding['assets_sha256'], 'Asset verification absent for this identity')

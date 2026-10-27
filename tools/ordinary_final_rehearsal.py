@@ -55,7 +55,7 @@ DISTRO = 'Ubuntu'
 # through the same launch plan, budget guard and ledger lines as a real launch, on a ledger
 # of its own beside each rehearsal bundle (never the loop's ledger).
 REHEARSAL_FORECAST_MINUTES = 60
-REHEARSAL_PURPOSE = 'rehearsal against a mocked provider'
+REHEARSAL_PURPOSE = 'rehearsal'
 
 
 def rehearsal_name():
@@ -85,8 +85,10 @@ def rehearsal_plan(base):
                                       storage_usd_per_day=0.0,
                                       a10_reference_price_usd_per_hour=A10_TYPE['metadata']['hourly_rate']),
                                  sort_keys=True) + '\n', encoding='utf8')
+    # `reaped` names this mocked ledger as the one the (mocked) reaper reads: the rehearsal's
+    # explicit mocked path, so the loop's real ledgers are neither read nor written.
     return dict(ledger=ledger, purpose=REHEARSAL_PURPOSE, forecast_minutes=REHEARSAL_FORECAST_MINUTES,
-                forecast_includes_upload=True, storage_forecast_usd=0.0)
+                forecast_includes_upload=True, storage_forecast_usd=0.0, reaped=[ledger])
 
 
 def repository_label(path):

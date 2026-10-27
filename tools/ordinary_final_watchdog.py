@@ -1,5 +1,6 @@
 """Operator-side budget watchdog for one authorized ordinary final run; cannot launch."""
 import argparse
+import json
 import math
 import os
 from pathlib import Path
@@ -49,8 +50,14 @@ def watch(base, provider, permit, manifest, now=time.time, sleep=time.sleep):
             try:
                 state=provider.instance(identity)
                 if state['status']=='terminated':
-                    write(base/'TERMINATION_VERIFIED.json',dict(instance_id=identity,
-                        confirmed_epoch=now(),provider='Lambda',status='terminated'))
+                    # Written only if absent: the controller's own termination record (with its
+                    # `epoch`) is never overwritten by this one (`confirmed_epoch`).
+                    try:
+                        with (base/'TERMINATION_VERIFIED.json').open('x',encoding='utf8') as stream:
+                            json.dump(dict(instance_id=identity,confirmed_epoch=now(),provider='Lambda',
+                                           status='terminated'),stream,indent=2,sort_keys=True)
+                    except FileExistsError:
+                        pass
                     return
                 provider.terminate(identity)
             except Exception as exc:

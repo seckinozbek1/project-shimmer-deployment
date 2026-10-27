@@ -17,7 +17,7 @@ import time
 
 from cloud_run_common import budget_deadlines, digest, require, safe_metadata, verify_bundle, verify_files, write_json
 from runtime_contract import load_contract, remote_resolver_command, compatible
-from loop_budget_guard import GuardRefusal, refuse_general_path
+from loop_budget_guard import GuardRefusal, PREFIX, refuse_general_path, refuse_while_loop_open
 
 
 def host_value(value):
@@ -98,6 +98,18 @@ def transport_plan(host, bundle, remote, identity_file=None, known_hosts=None, i
             'ssh': ssh, 'options': options}
 
 
+def resolve_instance_name(provider, instance_id, attempts=3, pause=2):
+    """The instance's provider name ('' for an unnamed one), with retries; a refusal, never a
+    guess, when it cannot be read."""
+    for attempt in range(attempts):
+        try:
+            return str(provider.instance(instance_id).get('name') or '')
+        except Exception:
+            if attempt + 1 < attempts:
+                time.sleep(pause)
+    raise GuardRefusal('Instance name could not be resolved; nothing deployed and nothing terminated by this tool')
+
+
 def execute(args, runner=subprocess.run, provider=None):
     from cloud_run_watchdog import LambdaTermination, operator_preflight
     bundle = args.bundle.resolve()
@@ -105,6 +117,16 @@ def execute(args, runner=subprocess.run, provider=None):
     require(timestamp.tzinfo is not None, 'running-since must include UTC offset')
     epoch = timestamp.timestamp()
     config = plan(bundle, args.host, epoch)
+    if args.execute:
+        # First, before any other step that can fail (A7): who is this instance? The name is
+        # resolved with retries; a loop instance is refused, and only an instance whose name
+        # is known and is not a loop name is ever terminated by this tool on a failure.
+        require(re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id), 'invalid instance ID')
+        provider = provider or LambdaTermination(getattr(args, 'credential_file', None))
+        args.resolved_name = resolve_instance_name(provider, args.instance_id)
+        refuse_general_path(names=[args.resolved_name])
+        # Not a loop launch path, and it spends outside the loop's ledger (A11).
+        refuse_while_loop_open()
     requested_upload_timeout = getattr(args, 'upload_timeout_seconds', 1200)
     require(isinstance(requested_upload_timeout, (int, float)) and not isinstance(requested_upload_timeout, bool)
             and math.isfinite(requested_upload_timeout) and requested_upload_timeout > 0,
@@ -121,10 +143,6 @@ def execute(args, runner=subprocess.run, provider=None):
     require(0 <= time.time()-epoch < 600, 'running timestamp is future or setup already delayed; terminate and prepare locally')
     require(re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id), 'invalid instance ID')
     require(config['budget']['soft_epoch'] > time.time(), 'soft budget already exhausted')
-    # Not a loop launch path (R4): refused before any watchdog is armed, so a loop instance
-    # named here is never touched, let alone terminated, by this tool.
-    provider = provider or LambdaTermination(getattr(args, 'credential_file', None))
-    refuse_general_path(names=[provider.instance(args.instance_id).get('name')])
     # This is outside the immutable bundle. It is never uploaded to the instance.
     local = args.collection.resolve() / config['experiment_id']
     local.mkdir(parents=True, exist_ok=False)
@@ -228,8 +246,12 @@ def main(argv=None):
         return execute(args)
     except Exception as exc:
         report = {'deployment_refused': True, 'error_type': type(exc).__name__}
-        # A loop instance refused by name is the guarded controller's to end, never this tool's.
-        if args.execute and not isinstance(exc, GuardRefusal) and re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id):
+        # Only an instance whose name was resolved and is not a loop name is ended here: a
+        # loop instance is the guarded controller's and the reaper's to end, and an instance
+        # this tool could not identify is left to the operator (A7).
+        name = getattr(args, 'resolved_name', None)
+        if (args.execute and name is not None and not name.startswith(PREFIX)
+                and re.fullmatch('[a-f0-9]{32}|[a-f0-9-]{36}', args.instance_id)):
             # Even a local prerequisite discovered AFTER provisioning triggers
             # termination. Never leave a paid instance idle while repairing setup.
             from cloud_run_watchdog import LambdaTermination, terminate_now
@@ -243,6 +265,10 @@ def main(argv=None):
             except Exception as stop_error:
                 report.update(termination_verified=False, termination_error_type=type(stop_error).__name__,
                               operator_action='Terminate the specified instance immediately and verify provider status.')
+        elif args.execute:
+            report.update(termination_verified=False, terminated_by_this_tool=False,
+                          operator_action='Not terminated here: the instance was not identified, or it is a loop '
+                                          'instance the guarded controller and the reaper end.')
         print(json.dumps(report))
         return 2
 

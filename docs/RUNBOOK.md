@@ -248,12 +248,15 @@ launch. In order:
 2. Run the existing asset verification, the bound local reverification and the
    live preflight.
 3. Launch with `tools/ordinary_final_bound_cloud.py --bundle ... --ledger ...
-   --purpose "..." --forecast-minutes ... --storage-forecast-usd ...`, adding
+   --purpose dev-smoke --forecast-minutes ... --storage-forecast-usd ...` (the
+   ledger is the loop's private ledger, the one the reaper reads), adding
    `--forecast-includes-upload` unless an asset-copy declaration for this bundle
    applies, `--test-manifest` and `--frozen-tag` for a sealed run, `--batch` for
    several bundles in one session, and `--detach` to let the controller outlive the
    session. The budget guard may refuse in one line before any instance exists:
-   read the figure it names, and reseal or wait rather than editing a cap.
+   read the figure it names, and reseal or wait rather than editing a cap. A bundle
+   launches once; a run folder left by an attempt refused before its launch is kept,
+   and the next attempt with `--output-dir` takes `<bundle>.2`.
 4. Analyse with `tools/analyze_ordinary_final_run.py --bundle RUN_FOLDER`
    (`--batch` for a batch session) and read `RUN_REPORT.md`, which states the
    purpose, sealed or exposed, the settings, the cost and what the run does not

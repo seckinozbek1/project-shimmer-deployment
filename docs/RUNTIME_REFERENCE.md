@@ -383,9 +383,13 @@ tables in [cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launc
 | `tools/ordinary_final_bound_cloud.py` (bound wrapper) | `--output-dir`, the required `--ledger`, `--purpose`, `--forecast-minutes`, `--storage-forecast-usd`, and `--read-ledger`, `--r-inputs`, `--forecast-includes-upload`, `--test-manifest`, `--frozen-tag`, `--batch`, `--test-version`, `--test-author`, `--key-author`, `--scorer-author`, `--scorer-version`, `--detach` |
 | `tools/analyze_ordinary_final_run.py` (analyser) | `--batch`; writes `RUN_REPORT.md` beside `FINAL_STATUS.json` |
 | `tools/cloud_run_watchdog.py` (general path watchdog) | the required `--soft-usd` and `--hard-usd` |
+| `tools/prepare_cloud_run.py` (general path sealer) | the required `--soft-usd` and `--hard-usd`, sealed into `experiment.json` |
+| `tools/run_remote_experiment.py` (general path controller) | `--soft-usd` and `--hard-usd`, required by `prepare` |
 
 `tools/loop_budget_guard.py` is the budget guard, instance-type rule and ledger
-writer every ordinary final launch passes through; it calls no provider.
+writer every ordinary final launch passes through; it calls no provider. The bound
+wrapper's `--purpose` is a short identifier, and its `--ledger` must be a ledger the
+reaper reads.
 
 ### Server environment
 
