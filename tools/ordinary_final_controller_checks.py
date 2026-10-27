@@ -925,10 +925,11 @@ class ControllerChecks(unittest.TestCase):
         stdin configuration, and appears in no argv, no stdout, no stderr, no console
         line and no file the run writes.
 
-        The loader reads the LAMBDA_API_KEY environment variable before any file, so
-        it is removed for the whole test (restored after): otherwise an operator shell
-        that exports it would make every load return that value instead of the
-        sentinel, and a neutralised printing loader would print it."""
+        The loader takes the LAMBDA_API_KEY environment variable when it is given no
+        credential file, so the variable is removed for the whole test (restored
+        after): otherwise an operator shell that exports it would make any load without
+        a credential file return that value, and a neutralised printing loader would
+        print it."""
         import uuid
         self.enterContext(patch.dict(os.environ))
         os.environ.pop('LAMBDA_API_KEY', None)
