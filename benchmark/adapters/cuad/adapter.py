@@ -86,11 +86,15 @@ DATA_SPELLING = {
 # Description line per category); copying it is the freeze step of section 5.5.
 DESCRIPTIONS = {}
 
+# D-039 item 3 (figure-audit records decide no item in a several-rule bundle) is NOT applied
+# to CUAD, pending the lead: every CUAD bundle has 41 rules, and CUAD's FLAG (absent) is
+# read from missing_field alone (section 5.2), so applying it would make absent
+# unreachable in the primary analysis. S-3 therefore equals the primary analysis here.
 SPEC = mapping.Spec(
     BENCHMARK,
     labels={mapping.FLAG: "absent", mapping.CLEAR: "present", mapping.UNDECIDED: None},
     b1_labels={"absent": mapping.FLAG, "present": mapping.CLEAR, "undecided": mapping.UNDECIDED},
-    absence_flag=True, s2=True)
+    absence_flag=True, s2=True, figure_audit_unattached=False)
 
 
 def row_name(index: int) -> str:
@@ -193,7 +197,9 @@ def headline(pairs, rows, answers, unit_text=None) -> dict:
     per_category = {cat: metrics.macro_f1(p, classes) for cat, p in sorted(by_category.items())}
     zero = [0]
     mean = metrics._ratio(sum(v["macro_f1"] for v in per_category.values()), len(per_category), zero)
-    return {"measure": "macro-F1 over present and absent, pooled (not the official AUPR)",
+    return {"headline_measure": "macro-F1 over present and absent, pooled (not the official AUPR)",
+            "headline_value": pooled["macro_f1"],
+            "measure": "macro-F1 over present and absent, pooled (not the official AUPR)",
             "macro_f1": pooled["macro_f1"], "per_class": pooled["per_class"],
             "zero_denominators": pooled["zero_denominators"],
             "present": metrics.class_scores(pairs, "present"),
