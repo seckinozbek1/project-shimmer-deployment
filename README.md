@@ -190,8 +190,9 @@ controller (`tools/ordinary_final_bound_cloud.py`) launches only as a budgeted l
 launch: it reads the loop ledger, lets `tools/loop_budget_guard.py` refuse a launch
 the budget cannot carry, names the instance `shimmer-loop-...` and writes the
 launch and termination lines. It can run detached, run several bundles in one
-session, run a sealed test that prints counts only, and write a `RUN_REPORT.md`
-per run; the [cloud preparation guide](docs/CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)
+session and run a sealed test that prints counts only; the analyser
+(`tools/analyze_ordinary_final_run.py`) then writes a `RUN_REPORT.md` per run. The
+[cloud preparation guide](docs/CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)
 describes it.
 
 ## Development and validation

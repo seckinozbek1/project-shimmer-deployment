@@ -98,6 +98,38 @@ def validate_live_case_manifest(value, documents=None):
     return checked
 
 
+def case_corpus_documents(members, pipeline_source):
+    """{document id: text} for context files ({path under input/context/: bytes}), loaded by
+    the BOUND pipeline's own _load_corpus: top-level files only, `_` files skipped, empty text
+    skipped, ids `stem__ext` on a stem collision, binary formats through its extractor. Read
+    from the bound source rather than restated, so sealing and launch validate exactly the
+    documents bind_sources will see on the instance."""
+    import ast
+    import contextlib
+    import io
+    import tempfile
+    source = pipeline_source.decode('utf-8-sig') if isinstance(pipeline_source, bytes) else pipeline_source
+    function = next(n for n in ast.parse(source).body if isinstance(n, ast.FunctionDef) and n.name == '_load_corpus')
+    try:
+        import text_extract
+    except ImportError:
+        sys.path.append(str(Path(__file__).resolve().parents[1]/'scripts'))
+        import text_extract
+    scope = dict(Path=Path, text_extract=text_extract)
+    exec(compile(ast.Module(body=[function], type_ignores=[]), 'bound_pipeline_load_corpus', 'exec'), scope)
+    with tempfile.TemporaryDirectory() as folder:
+        for name, data in members.items():
+            parts = name.split('/')
+            require(name and not name.startswith('/') and '..' not in parts and '' not in parts, 'Unsafe case document name')
+            target = Path(folder, *parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        # The extractor warns on unsupported files by name; nothing of a test is printed here.
+        with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+            documents = scope['_load_corpus'](Path(folder))
+    return {d['id']: d['text'] for d in documents}
+
+
 def argv_for(manifest):
     """The one sealed flag list for the workload the manifest declares."""
     return MULTI_ROUND_ARGV if manifest.get('multi_round') is True else ARGV

@@ -102,37 +102,56 @@ processing swarm governed by an append-only constitution.
   (2026-10-27) changed six of the seven bound files (`tools/cloud_run_common.py`,
   `tools/cloud_run_watchdog.py`, `tools/ordinary_final_bound_cloud.py`,
   `tools/ordinary_final_cloud.py`, `tools/ordinary_final_run.py`,
-  `tools/ordinary_final_watchdog.py`; `tools/lambda_experiment_provider.py` is unchanged), so
-  every bundle sealed before S2 refuses the same way and cannot be re-executed; a new seal
-  carries the new hashes. `scripts/agent_wrapper.py` is not in the controller binding: the seal
-  already pins it among the runtime files the bundle carries.
+  `tools/ordinary_final_watchdog.py`; `tools/lambda_experiment_provider.py` is unchanged) and
+  added four files the controller imports to decide and record a launch to the binding
+  (`tools/loop_budget_guard.py`, `tools/loop/instance_reaper.py`, `tools/loop/keep_awake.py`,
+  `tools/run_remote_experiment.py`), so every bundle sealed before S2 refuses the same way and
+  cannot be re-executed; a new seal carries the new hashes. `scripts/agent_wrapper.py` is not
+  in the controller binding: the seal already pins it among the runtime files the bundle
+  carries.
 - LOOP-LAUNCH-A (loop S2): every ordinary final launch is a loop launch. The bound wrapper
-  (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose`,
-  `--forecast-minutes` and `--storage-forecast-usd`; `execute()` refuses without that launch
-  plan. Before the launch request `tools/loop_budget_guard.py` decides from the ledgers given
-  (`--ledger`, any `--read-ledger`, and `--r-inputs` when role R launches): it refuses when
-  another loop instance runs (an open ledger launch or a `shimmer-loop-` name in the
-  inventory), when the per-run cap `min(1.5 x forecast, 50 - spend - running caps - storage
-  forecast - 1)` is below the forecast (measured minutes x live price x 1.3), when the capped
-  run time is shorter than the forecast time, or when spend + forecast + storage would pass
-  50 dollars. Spend is counted once per launch by instance id across ledgers (a `copied_from`
-  line is not counted twice). The instance name always starts `shimmer-loop-` and the
-  `launch_intent` line, with its `deadline_utc`, is written before the request; `launch` and
-  `termination` lines follow. A ledger line carries exactly the IV.3 fields
-  (`loop_budget_guard.LEDGER_FIELDS`) and anything else is refused, so no line can carry test
-  content. Instance candidates (the A10 first, then other single-GPU types with the run's VRAM
-  at no more than twice the A10's recorded price), rate caps, soft and hard caps and both
-  reserves are sealed manifest fields set by the sealer from the live inventory and the
-  guard's formula, never typed in; the type rule polls for the A10 in us-east-1 for up to 30
-  minutes before a fallback, and the runner's hardware check reads the selected candidate. No
-  cap is a code default anywhere: `cloud_run_common.budget_deadlines` and the general
-  watchdog (`--soft-usd`, `--hard-usd`) take them as required arguments. The general cloud
-  path (`tools/deploy_cloud_run.py`, `tools/run_remote_experiment.py`) refuses a
-  `shimmer-loop-` name and any loop ledger argument, so a loop launch only goes through the
-  guarded controller. `--detach` runs the controller as a detached process that survives the
-  session; while an instance can exist the controller holds `SetThreadExecutionState` through
-  `tools/loop/keep_awake.py`, and the ledger deadline is what `tools/loop/instance_reaper.py`
-  acts on if the controller dies.
+  (`tools/ordinary_final_bound_cloud.py`) requires `--ledger`, `--purpose` (a short
+  identifier: lower case, digits, hyphens), `--forecast-minutes` and `--storage-forecast-usd`;
+  `execute()` refuses without that launch plan. The `--ledger` must be one the reaper reads
+  (the private ledger or R's), and the guard always reads both of those beside any
+  `--read-ledger` and needs a `budget_open` line among them. Before the launch request
+  `tools/loop_budget_guard.py` decides, holding an exclusive lock beside the ledger from its
+  decision through the intent line and reading the provider inventory again just before it:
+  it refuses when another loop instance runs (an open ledger launch or a `shimmer-loop-` name
+  in the inventory), when the per-run cap `min(1.5 x forecast, 50 - spend - running caps -
+  storage forecast - 1)` is below the forecast (measured minutes x live price x 1.3), or when
+  the capped run time does not cover the forecast time plus the run's stop reserve (the cap
+  rule alone keeps spend + forecast + storage at or below 49). Spend is counted once per
+  launch across ledgers, a termination closing a launch by its instance id or its name (a
+  `copied_from` line is not counted twice). The instance name always starts `shimmer-loop-`
+  and the `launch_intent` line, with its `deadline_utc`, is written before the request;
+  `launch` and `termination` lines follow, a recovered launch gets its `launch` line before
+  its termination, and the ledger is closed in its own try before the rest of the cleanup. A
+  ledger line carries only the declared fields (`loop_budget_guard.LEDGER_FIELDS`, which also
+  declares the reaper's `by` and `reason`) and anything else is refused. Instance candidates
+  (the A10 first, then other single-GPU types with the run's VRAM at no more than twice the
+  A10's recorded price), rate caps and the soft and hard caps are sealed manifest fields set
+  by the sealer from the provider inventory it is given and the guard's formula; the type rule
+  polls for the A10 in us-east-1 for up to 30 minutes before a fallback, and the runner's
+  hardware check reads the selected candidate. Which figures are CODE CONSTANTS, stated
+  exactly: the loop's budget rule (`BUDGET_USD` 50, the 1-dollar margin, the 1.5 cap factor,
+  the 1.3 forecast factor, the type rule's factor 2) in `tools/loop_budget_guard.py`, the two
+  reserves (`WORKLOAD_STOP_RESERVE_SECONDS` 900, `TERMINATION_RESERVE_SECONDS` 180) in the
+  sealer, and the run's own hardware floors. No per-run cap is a code default:
+  `cloud_run_common.budget_deadlines` and the general watchdog (`--soft-usd`, `--hard-usd`)
+  take them as required arguments, and the general path's sealers take them on the command
+  line (`prepare_cloud_run.py --soft-usd/--hard-usd`, `run_remote_experiment.py prepare
+  --soft-usd/--hard-usd`). The general cloud path (`tools/deploy_cloud_run.py`,
+  `tools/run_remote_experiment.py`) refuses a `shimmer-loop-` name, any loop ledger argument,
+  and any launch while a loop ledger is open (`budget_open` without `budget_close`);
+  `deploy_cloud_run` resolves the instance name first and, on a failure, terminates only an
+  instance whose name it resolved and which is not a loop instance. `--detach` runs the
+  controller as a detached process that survives the session; while an instance can exist the
+  controller holds `SetThreadExecutionState` through `tools/loop/keep_awake.py`, and the ledger
+  deadline is what `tools/loop/instance_reaper.py` acts on if the controller dies. A bundle is
+  launched once: `RUN_FOLDER.json` is written into it only after the launch intent, and either
+  marker refuses a second launch with or without `--output-dir`; a run folder left by an
+  attempt refused earlier is kept and the next attempt takes `<bundle>.2`.
 - SEALED-RUN-A (loop S2): a sealed run (`--exposure sealed` at sealing, role B's
   `--test-manifest`) is prepared outside the repository from the test archive; its seal
   carries the test manifest's SHA-256 (an exposed seal says `exposed, no manifest`). At launch
@@ -155,10 +174,12 @@ processing swarm governed by an append-only constitution.
 - MULTI-ROUND-A (loop S2, D-011): final mode admits Review with `--multi-round` and
   `--multi-round-manifest` together; Draft, the flag alone and the manifest alone stay refused
   by `main()`'s own final-mode block. The controller admits a multi-round workload only when
-  DECLARED, SEALED and VALID (`ordinary_final_run.admit_workload`): `multi_round` true, the
-  case manifest hash in `support_files` and `case_manifest_sha256`, the live schema
-  (`fixture: false`, spans measured on the bundled text) and exactly `MULTI_ROUND_ARGV`
-  (`reference_serial`, no topology file); `execution_topology` is unchanged (D-011 choice 3).
+  DECLARED, SEALED and VALID: `ordinary_final_run.admit_workload` checks `multi_round` true,
+  the case manifest hash in `support_files` and `case_manifest_sha256`, `fixture: false`, the
+  live field set and exactly `MULTI_ROUND_ARGV` (`reference_serial`, no topology file); the
+  spans are checked by `validate_live_case_manifest` at sealing and at launch (not on the
+  instance), against the documents the bound pipeline's own `_load_corpus` loads;
+  `execution_topology` is unchanged (D-011 choice 3).
   The runner's assessment passes a multi-round run only on outcome `reviewed` and activation
   `activated` (`multi_round.read_saved`). Later rounds reuse unchanged units through a
   Python-only per-round review (`multi_round_rounds`), recorded in `audit/round_reuse.json`. A
