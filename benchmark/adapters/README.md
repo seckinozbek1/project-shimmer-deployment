@@ -102,7 +102,7 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 - The UNCERTAIN marker is tested as `scripts/verifiability_gate.py` tests it.
 - Pairing-map refusals are the entries under `absence_refused`, naming their rule by `source_rule_id` or `rule_id`. The pipeline writes the registry id there, so they do not match item rules yet (section 12 item 11).
 - The record id `item_id` and its `revision` (INFRA-037 supersession).
-- The computed-layer markers.
+- The computed-layer markers: the WRITTEN-BY-A stamp `written_by` decides where a record carries one (B2 stamps every record `python`); a record with no stamp is read by `model: python`, `absence_path: computed` or `provenance: computed` (section 3.6).
 - The deliverables path.
 
 **ContraDoc.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now:
@@ -127,7 +127,11 @@ py -3.12 benchmark/adapters/<name>/adapter.py score --labels <labels.json> --bun
 
 `build --reports <folder>` names the filings' folder; by default it is `financial_reports` beside the items file's folder, as the release lays it out. A table entry is written with a separator row after the first row of its pipe rows (section 5.6, as SciTab's table is; Shimmer reads a table's header only when a separator row follows it), and its words are its cell words. An item whose `split` names the other official split is refused. `parts.json` records per filing its SHA-256 and `issuer_cik`, the number after `/edgar/data/` in the filing's `url`, for the issuer bootstrap.
 
-**ContractNLI.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now: `documents`, `id` (an integer), `text`, `spans` (character spans that segment the text, none crossing a line break), `annotation_sets` (one per agreement; the first is used), `annotations`, `choice` with the values `Entailment`, `Contradiction`, `NotMentioned`, `labels` and `hypothesis`; the hypothesis keys are `nda-1` to `nda-20` (17 keys). No development agreement's text holds a blank line, so under section 5.6 every agreement is one part (61 of 61), and location is not measurable in the sense of section 3.2.
+**ContractNLI.** Confirmed on the B-dev development items (S4c item 4), none PROVISIONAL now: `documents`, `id` (an integer), `text`, `spans` (character spans that segment the text, none crossing a line break), `annotation_sets` (one per agreement; the first is used), `annotations`, `choice` with the values `Entailment`, `Contradiction`, `NotMentioned`, `labels` and `hypothesis`; the hypothesis keys are `nda-1` to `nda-20` (17 keys). No development agreement's text holds a blank line, so the earlier rule (one part per blank-line paragraph) made every agreement one part. Section 5.6 now makes one part per span of the agreement's own `spans` list: on the 61 development agreements the spans are in order, never overlap and leave only whitespace between them; 63 of the 5,102 spans hold a single space and make no part, so there are 5,039 parts, 20 to 255 per agreement (median 72), 16 agreements above 99. Every evidence index names a span; one names a single-space span (on an Entailment item with five other spans). `parts.json` records the span index of every part and, per agreement, `spans` and `spans_without_text`.
+
+## Words
+
+One rule counts words for the length band, the cut line and `parts.json` (section 5.6, Words): `common/ids.py` `word_count`, whitespace-separated tokens with table markup (a token made only of `|`, `-` and `:` holding a `|`) not counted. `common/cut.py` `words` is the same function, and every adapter counts its parts with it, so a FinDVer table's words are its cell words wherever they are counted.
 
 ## Readings
 
