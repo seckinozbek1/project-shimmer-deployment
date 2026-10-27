@@ -182,3 +182,6 @@ benchmark/keys/
 # Frozen V2 local tuning design reports are part of the reviewable release.
 !docs/fix/SECOND_TUNING_DATA_AND_FAILURE_AUDIT.md
 !docs/fix/SECOND_TUNING_EXPERIMENT_IMPLEMENTATION.md
+
+# Autonomous loop private records (never committed)
+docs/loop/private/
