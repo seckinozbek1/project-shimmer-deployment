@@ -14,20 +14,30 @@ is generated from a fixed seed into a temporary folder and read back from disk, 
   twin that plants nothing; all four perturbation probes, probe 3 carrying a keyed flaw;
   every planted figure recomputed by the package's own code from the rendered text,
   the comparisons Python would make by the figure audit and the flaws Python does not
-  compute (unit mismatches, rate and copy errors, neighbour-only carries, long-range
-  windows and fees) by the ground-truth scanners, each found exactly as keyed and
-  nowhere else;
-- the same seed gives byte-identical files, also in a separate process under a
-  different string-hash seed;
+  compute (unit mismatches, rate, ratio and copy errors, neighbour-only carries,
+  long-range windows and bands) by the ground-truth scanners, each found exactly as keyed
+  and nowhere else, in every bundle (the reworded-labels probe and the reordered
+  sections, carry scanner on, included);
+- family 2's rate and ratio rules as written, read a second time from the
+  rendered text by independent string handling, break exactly where the key says, and a
+  broken rate result on a clean unit is caught;
+- the same seed gives byte-identical files, also in a separate process (started with
+  -B, so it writes no __pycache__ into the repository) under a different string-hash
+  seed;
 - a planted flaw removed from the key is caught (audit kinds and ground-truth kinds), as
   is a twin left with its flaws (every family), a digit in a text value, and a missing
   probe;
 - family 4's rename probes state the ground truth: a renamed term (value kept, moved by
-  2 to 45 percent, or moved to another section) is expected not withdrawn, a withdrawal
+  2.05 to 45 percent in every bundle, the twin included, or moved to another section)
+  is expected not withdrawn, with the refusal kind its figures support; a withdrawal
   beside an unrelated newcomer in the same measure is expected withdrawn; every family 4
-  bundle holds only case documents in context/;
+  bundle holds only case documents in context/ and carries the multi-round key
+  (entries scoped by round and document, every round keyed), a dropped earlier-round
+  entry caught;
 - the long-range layout holds in every bundle, probes included: true distances of at
-  least twelve units, definitions first, cross-reference lines on some uses only;
+  least twelve units, the definitions not all first, cross-reference lines on some uses
+  only; a positional and two label-only baselines score below 1 in every bundle of the
+  fixed test and of the long-range corpus's seeds (`--baselines` prints them);
 - the slug and unit id rule matches the published examples; no generator source file
   name matches a credential or key ignore pattern;
 - family 4, two and three rounds: every bundle's case manifest is accepted by the
@@ -35,7 +45,7 @@ is generated from a fixed seed into a temporary folder and read back from disk, 
   the bound pipeline's _load_corpus loads, and by the generator's restatement of those
   rules, and both refuse every mutation in MUTATIONS and accept every harmless one;
 - each of those parts is neutralised in process (NEUTRALISATIONS), caught on an
-  unvalidated build, restored, and passes again.
+  unvalidated build, restored, and passes again (`--neutralisations` prints each step).
 
 The generators are not shipped in the container image, so when benchmark/generators/
 is absent every case is skipped with the reason, never failed. Every case writes only
@@ -142,19 +152,19 @@ class GeneratorChecks(unittest.TestCase):
 
     def test_every_planted_kind_the_decisions_name_is_planted(self):
         """D-042 decisions 3, 4 and 5: unit mismatches (both kinds of measure source) in
-        family 1, rate and cross-unit copy errors in family 2, neighbour-only carries in
-        family 6, and long-range flaws judged only from the distant definition; each found
-        by the ground-truth scanners, which the audit does not model."""
-        want = {("f1", ""): {"unit_mismatch"}, ("f2", ""): {"rate_mismatch", "copy_mismatch"},
-                ("f6", ""): {"carry_mismatch"},
-                ("f5", "long_range-True"): {"notice_window_far", "answer_window_far",
-                                            "fee_above_band_far", "fee_below_band_far"}}
-        for (fam, tag), kinds in want.items():
+        family 1, rate, ratio and cross-unit copy errors in family 2, neighbour-only
+        carries in family 6, and long-range flaws judged only from a distant unit; each
+        found by the ground-truth scanners, which the audit does not model. Named by the
+        scanner each needs; every kind those scanners find is planted."""
+        want = {("f1", ""): {"measure"}, ("f2", ""): {"rate", "ratio", "copy"}, ("f6", ""): {"carry"},
+                ("f5", "long_range-True"): {"far_window", "far_fee"}}
+        for (fam, tag), checks in want.items():
             test = self.g.bundle.read_test(self.written[(fam, tag or "plain")])
             key = _key(test[self._roles(test)["base"]])
             planted = key["planted"]
-            self.assertLessEqual(kinds, {e["kind"] for e in planted}, fam)
-            self.assertLessEqual(kinds, self.g.ground_truth.kinds(key["ground_truth_checks"]), fam)
+            declared = [c for c in key["ground_truth_checks"] if c["check"] in checks]
+            self.assertEqual({c["check"] for c in declared}, checks, fam)
+            self.assertLessEqual(self.g.ground_truth.kinds(declared), {e["kind"] for e in planted}, fam)
             if fam == "f1":
                 self.assertEqual({e["compared_with"] for e in planted if e["kind"] == "unit_mismatch"},
                                  {"reference", "column"})
@@ -180,7 +190,8 @@ class GeneratorChecks(unittest.TestCase):
                 "enumerate(c.FIXED) for p, t in c._flatten(g.generate(f, s, **o)).items()}))\n"
                 % str(Path(__file__).resolve().parent))
         env = dict(os.environ, PYTHONHASHSEED="12345")
-        proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+        # -B: the child writes no __pycache__ into the repository either.
+        proc = subprocess.run([sys.executable, "-B", "-c", code], capture_output=True, text=True,
                               env=env, timeout=300)
         self.assertEqual(proc.returncode, 0, proc.stderr[-800:])
         self.assertEqual(proc.stdout.strip(), here)
@@ -300,9 +311,90 @@ class GeneratorChecks(unittest.TestCase):
                              if r["relation"] == "absent_since_prior"}
                 self.assertEqual(withdrawn, {rows["withdrawn"]["field_label"],
                                              rows["withdrawn_beside_newcomer"]["field_label"]})
-                if key.get("probe") is None and "twin_of" in key and key["band_irregularities"]:
-                    for k in ("renamed_value_moved", "renamed_moved_to_other_section"):
-                        self.assertTrue(2 <= rows[k]["moved_percent"] <= 45, (folder, rows[k]))
+                # In every bundle, the twin included: a moved rename moves by 2.05 to 45
+                # percent (never within 2% of the larger figure), and the expected refusal
+                # kind is the one the planted figures support.
+                ft = self.g.family_terms
+                for k in ("renamed_value_moved", "renamed_moved_to_other_section"):
+                    r = rows[k]
+                    self.assertTrue(ft.in_move_range(r["value_before"], r["value_after"]), (folder, r))
+                    self.assertTrue(2.05 <= r["moved_percent"] <= 45, (folder, r))
+                self.assertEqual(rows["renamed_value_unchanged"]["refusal_kind"], "possible_rename", folder)
+                self.assertEqual(rows["renamed_value_moved"]["refusal_kind"], "possible_successor", folder)
+                self.assertIsNone(rows["renamed_moved_to_other_section"]["refusal_kind"], folder)
+
+    def test_rate_and_ratio_rules_as_written(self):
+        """Family 2: an independent second reading of CONV-DE (a rate applied to the
+        stated total) and CONV-DG (a share of the stated total), straight from the
+        rendered text, finds exactly the keyed rate and ratio errors in every bundle;
+        a rate result broken on a clean unit is then caught by the validator."""
+        fd = self.g.family_declaration
+        test = self._read("f2")
+        for folder, files in sorted(test.items()):
+            key = _key(files)
+            text = files[_target_name(files)]
+            heads = {u["id"]: u["heading"] for u in self.g.audit.parse_document(text, "t")["units"]}
+            rate, ratio = fd.summaries_breaking_rules(text)
+            self.assertEqual(rate, {heads[e["unit"]] for e in key["planted"] if e["kind"] == "rate_mismatch"},
+                             folder)
+            self.assertEqual(ratio, {heads[e["unit"]] for e in key["planted"] if e["kind"] == "ratio_mismatch"},
+                             folder)
+        base = self._roles(test)["base"]
+        path = _target_name(test[base])
+        blocks = test[base][path].split("\n## ")
+        planted = {e["unit"] for e in _key(test[base])["planted"]}
+        for i, b in enumerate(blocks[1:], start=1):
+            uid = self.g.textrules.unit_id(i, b.split("\n", 1)[0])
+            line = [ln for ln in b.split("\n") if ln.startswith(fd.RATE_RESULT_LABEL + ": ")]
+            if line and uid not in planted:
+                value = line[0].split(": ", 1)[1]
+                blocks[i] = b.replace(line[0], "%s: %s" % (fd.RATE_RESULT_LABEL,
+                                                           "1" + value), 1)
+                break
+        t2 = copy.deepcopy(test)
+        t2[base][path] = "\n## ".join(blocks)
+        errs = self.g.bundle.validate_test(t2)
+        self.assertTrue(any(e.startswith(base) and "ground-truth flaws differ" in e for e in errs), errs[:3])
+
+    def test_long_range_baselines_score_below_one(self):
+        """D-042 decision 5, revised: the related units vary in position and type, so a
+        positional baseline (the first 4 units, the first k) and two label-only baselines
+        (the nearest, or the first, unit carrying the deciding label) each score below 1
+        in every bundle of the fixed test and of the long-range corpus's seeds."""
+        tests = [self._read("f5", long_range=True)] + long_range_corpus(self.g)
+        for test in tests:
+            for folder, files in sorted(test.items()):
+                if not _key(files)["planted"]:
+                    continue
+                scores = self.g.bundle.long_range_baselines(files)
+                self.assertTrue(self.g.family_provisions.baselines_below_one(scores), (folder, scores))
+
+    def test_multi_round_keys_in_the_round_form(self):
+        """Family 4: the key carries the multi-round form of INPUT_FORMAT section 9:
+        planted and clean entries scoped by round_id and document_id, the target round's
+        entries the band breaches, earlier rounds keyed too; a dropped earlier-round entry
+        is caught."""
+        for test in self._f4_tests():
+            for folder, files in sorted(test.items()):
+                key = _key(files)
+                case = json.loads(files[self.g.bundle.mc.FILE])
+                docs = {r["round_id"]: r["document_ids"][0] for r in case["rounds"]}
+                mr = key["multi_round"]
+                for e in mr["planted"] + mr["clean"]:
+                    self.assertEqual(docs[e["round_id"]], e["document_id"], folder)
+                last = sorted(case["rounds"], key=lambda r: r["sequence"])[-1]["round_id"]
+                self.assertEqual(len([e for e in mr["planted"] if e["round_id"] == last]),
+                                 len(key["band_irregularities"]), folder)
+            base = self._roles(test)["base"]
+            key = _key(test[base])
+            early = [e for e in key["multi_round"]["planted"] if e["kind"] == self.g.bundle.EARLIER_ROUND_KIND]
+            self.assertTrue(early, "no earlier-round breach keyed")
+            key["multi_round"]["planted"].remove(early[0])
+            t2 = copy.deepcopy(test)
+            t2[base]["answer_key.json"] = json.dumps(key)
+            errs = self.g.bundle.validate_test(t2)
+            self.assertTrue(any(e.startswith(base) and "multi-round planted entries differ" in e for e in errs),
+                            errs[:3])
 
     def test_multi_round_bundles_hold_only_case_documents(self):
         for test in self._f4_tests():
@@ -322,19 +414,20 @@ class GeneratorChecks(unittest.TestCase):
             self.assertTrue(any("files no round names" in e for e in errs), errs[:3])
 
     def test_long_range_holds_in_every_bundle(self):
-        """D-042 decision 5: true distances of at least twelve units in every bundle,
-        probes included, definitions first, cross-reference lines on some uses only;
-        each property broken once is caught."""
+        """D-042 decision 5, revised: true distances of at least twelve units in every
+        bundle, probes included, the definitions not all first, cross-reference lines on
+        some uses only; each property broken once is caught."""
         test = self._read("f5", long_range=True)
         for folder, files in sorted(test.items()):
             key = _key(files)
-            self.assertTrue(key["long_range"]["definitions_first"], folder)
+            self.assertFalse(key["long_range"]["definitions_first"], folder)
             self.assertTrue(all(e["distance"] >= 12 for e in key["planted"]), folder)
             self.assertEqual({e["cross_reference_line"] for e in key["planted"]} or {True, False},
                              {True, False}, folder)
         reorder = self._roles(test)["reordered_sections"]
         for mutate, msg in ((_wrong_distance, "units from"), (_every_use_crossref, "cross reference"),
-                            (_figure_in_grounding, "states a figure")):
+                            (_figure_in_grounding, "states a figure"),
+                            (_definitions_first_claimed, "definitions_first")):
             t2 = copy.deepcopy(test)
             mutate(t2[reorder])
             errs = self.g.bundle.validate_test(t2)
@@ -391,14 +484,25 @@ def _wrong_distance(files):
     files["answer_key.json"] = json.dumps(key)
 
 
+def _definitions_first_claimed(files):
+    key = _key(files)
+    key["long_range"]["definitions_first"] = not key["long_range"]["definitions_first"]
+    files["answer_key.json"] = json.dumps(key)
+
+
 def _every_use_crossref(files):
-    """Give every use a cross-reference line (the baseline would then be perfect)."""
+    """Give every use a cross-reference line (the baseline would then be perfect). The
+    labels are the family's own (family_provisions.USE_LABEL and XREF_LABEL); the line
+    names the document's first unit heading."""
+    fp = _load().family_provisions
     path = _target_name(files)
     blocks = files[path].split("\n\n## ")
+    first = blocks[1].split("\n", 1)[0]
     fixed = [blocks[0]]
     for b in blocks[1:]:
-        if "Provision type: " in b and "Cross reference: " not in b:
-            b = b.rstrip("\n") + "\nCross reference: Provision Heron" + ("\n" if b.endswith("\n") else "")
+        if fp.USE_LABEL + ": " in b and "|" not in b and fp.XREF_LABEL + ": " not in b:
+            b = (b.rstrip("\n") + "\n%s: %s" % (fp.XREF_LABEL, first)
+                 + ("\n" if b.endswith("\n") else ""))
         fixed.append(b)
     files[path] = "\n\n## ".join(fixed)
 
@@ -406,7 +510,13 @@ def _every_use_crossref(files):
 def _figure_in_grounding(files):
     man = json.loads(files["context/_review_targets.json"])
     ref = [g for g in man["grounding"] if g not in man["prior"]][0]
-    files["context/" + ref] = files["context/" + ref] + "\nThe standard notice window is 30 days.\n"
+    files["context/" + ref] = files["context/" + ref] + "\nThe standard gauge span is 30 days.\n"
+
+
+def long_range_corpus(g):
+    """The long-range corpus's tests, generated in memory from its committed seeds."""
+    seeds = json.loads((ROOT / "benchmark" / "long_range" / "SEEDS.json").read_text(encoding="utf-8"))
+    return [g.generate(e["family"], int(e["seed"]), long_range=True) for e in seeds["tests"]]
 
 
 def _controller():
@@ -572,9 +682,25 @@ def _scanner_off(name):
 
 
 def _plain_reorder(_original):
-    def reorder(n, rng, planted):
+    def reorder(n, rng, planted, *rest):
         return _load().wordlists.reorder(n, rng)
     return reorder
+
+
+def _block_reorder(_original):
+    """Family 6 reordered by moving two blocks (wordlists.reorder) instead of a rotation:
+    two new neighbour pairs then break the chain."""
+    def rotate(n, rng, keep=()):
+        return _load().wordlists.reorder(n, rng, keep)
+    return rotate
+
+
+def _no_earlier_rounds(build):
+    def keyed(spec, rounds, alias=None):
+        out = build(spec, rounds, alias)
+        last = rounds[-1][0]
+        return {"planted": [e for e in out["planted"] if e["round_id"] == last], "clean": out["clean"]}
+    return keyed
 
 
 # (name, observation, build arguments, generator attribute neutralised, replacement factory)
@@ -587,14 +713,22 @@ NEUTRALISATIONS = [
      "ground_truth.SCANNERS", _scanner_off("measure")),
     ("the rate scanner finds nothing", observe_self_validation, ("f2",),
      "ground_truth.SCANNERS", _scanner_off("rate")),
+    ("the ratio scanner finds nothing", observe_self_validation, ("f2",),
+     "ground_truth.SCANNERS", _scanner_off("ratio")),
     ("the cross-unit copy scanner finds nothing", observe_self_validation, ("f2",),
      "ground_truth.SCANNERS", _scanner_off("copy")),
     ("the neighbour-only carry scanner finds nothing", observe_self_validation, ("f6",),
      "ground_truth.SCANNERS", _scanner_off("carry")),
+    ("the stock-count reordering breaks the chain", observe_self_validation, ("f6",),
+     "wordlists.rotate", _block_reorder),
     ("the long-range window scanner finds nothing", observe_self_validation, ("f5", 17, {"long_range": True}),
      "ground_truth.SCANNERS", _scanner_off("far_window")),
+    ("the long-range band scanner finds nothing", observe_self_validation, ("f5", 17, {"long_range": True}),
+     "ground_truth.SCANNERS", _scanner_off("far_fee")),
     ("the long-range reordering ignores the distances", observe_self_validation, ("f5", 17, {"long_range": True}),
      "family_provisions._far_reorder", _plain_reorder),
+    ("the multi-round key leaves out the earlier rounds", observe_self_validation, ("f4",),
+     "bundle.multi_round_key", _no_earlier_rounds),
     ("the audit reads no label new in the later version", observe_self_validation, ("f4",),
      "audit.new_labels", lambda orig: (lambda res: {})),
 ]
@@ -725,18 +859,37 @@ def report_agreement(tests=None):
                       "versions, against the key's ground truth."] + lines)
 
 
+def report_baselines():
+    """The long-range baselines per test and bundle (fixed seed and corpus seeds): the
+    share of planted entries whose related unit a baseline that reads no value finds."""
+    g = _load()
+    tests = [g.generate("f5", 17, long_range=True)] + long_range_corpus(g)
+    lines = ["Long-range baselines (1 would be perfect; every bundle must stay below 1)."]
+    for test in tests:
+        roles = g.bundle._roles(test)
+        for role in ["base"] + list(g.bundle.PROBES):
+            files = test[roles[role]]
+            s = g.bundle.long_range_baselines(files)
+            lines.append("%-28s %-28s k=%d first_4=%.3f first_k=%.3f label_nearest=%.3f label_first=%.3f"
+                         % (roles[role], role, s["k"], s["first_4"], s["first_k"], s["label_nearest"],
+                            s["label_first"]))
+    return "\n".join(lines)
+
+
 def probe_open_item_22():
     """OPEN_ITEMS item 22, reproducible: the pairing map's band_conditions record
     (reference_tables.band_conditions_for_unit) calls the low side conditional where the
-    finding path (paired_review.compute_checks) treats it as firm, on the input format's
-    own unit-price example. Returns (map record, finding's conditional_on)."""
+    finding path (paired_review.compute_checks) treats it as firm, on the shape of the
+    input format's own unit-price example in neutral words (a gauge rate of 5 zed/box
+    against the band 8 to 15 for its part group). Returns (map record, finding's
+    conditional_on)."""
     _shimmer_path()
     import paired_review as pr
     import pairing_map as pm
     import reference_tables as rt
-    unit = "## Item P-100\n\nItem class: Bracket\nQuantity: 4 box\nUnit price: 5 zed/box\nLine total: 20 zed\n"
-    table = "| Item class | Price band (zed/box) |\n|---|---|\n| Bracket | 8 to 15 |\n| Hinge | 3 to 6 |\n"
-    rule = "The unit price must lie within the price band for the item class."
+    unit = "## Part P-100\n\nPart group: Alpha\nCount: 4 box\nGauge rate: 5 zed/box\nPart sum: 20 zed\n"
+    table = "| Part group | Rate band (zed/box) |\n|---|---|\n| Alpha | 8 to 15 |\n| Beta | 3 to 6 |\n"
+    rule = "The gauge rate must lie within the rate band for the part group."
     known = rt.document_unit_tokens(unit)
     tables = rt.parse_tables(table, ref_id="REF-0002", document_id="ref", known_units=known)
     labels = pm.unit_fields(unit)
@@ -745,7 +898,7 @@ def probe_open_item_22():
     checks = pr.compute_checks(scalars, columns, rule_text=rule,
                                reference_bands=rt.bands_for_unit(tables, unit, rule),
                                vocabulary=labels, unit_labels=labels, unit_text=unit)
-    below = [c for c in checks if c["relation"] == "below_band" and c.get("stated_field") == "unit price"]
+    below = [c for c in checks if c["relation"] == "below_band" and c.get("stated_field") == "gauge rate"]
     return ([(r["low_side_verdict"], r["condition_fields"]) for r in record],
             [c.get("conditional_on") for c in below])
 
@@ -765,17 +918,46 @@ def check():
                     "a test from a fixed seed that validates from disk (ten or more typed "
                     "flaws of three or more kinds, a distractor, a flawless twin, four probes, "
                     "probe 3 on a keyed flaw, every figure recomputed by the package's own audit "
-                    "and ground-truth scanners with nothing unkeyed); unit mismatches, rate and "
-                    "copy errors, neighbour-only carries and long-range flaws are planted; the "
-                    "same seed gives identical bytes, also in a second process; a removed planted "
-                    "flaw (audit and ground-truth kinds), a flawed twin in every family, a digit "
-                    "in a text value and a missing probe are caught; family 4's rename probes "
-                    "state the ground truth and its bundles hold only case documents; the "
-                    "long-range layout holds in every bundle; ids follow the published slug "
-                    "rule; no source name matches a trap pattern; family 4's case manifests are "
+                    "and ground-truth scanners with nothing unkeyed, in every bundle); unit "
+                    "mismatches, rate, ratio and copy errors, neighbour-only carries and "
+                    "long-range flaws are planted; family 2's rate and ratio rules as written "
+                    "break exactly where keyed; the same seed gives identical bytes, also in a "
+                    "second process; a removed planted flaw (audit and ground-truth kinds), a "
+                    "flawed twin in every family, a digit in a text value and a missing probe are "
+                    "caught; family 4's rename probes state the ground truth (moves of 2.05 to "
+                    "45 percent in every bundle), its bundles hold only case documents and carry "
+                    "the multi-round key; the long-range layout holds in every bundle and its "
+                    "positional and label-only baselines score below 1; ids follow the published "
+                    "slug rule; no source name matches a trap pattern; family 4's case manifests are "
                     "accepted by the controller and the generator alike, %d mutations refused by "
                     "both; %d neutralisations caught and restored. No case compares a key with "
                     "Shimmer's output (D-042)" % (result.testsRun, len(MUTATIONS), len(NEUTRALISATIONS)))
+
+
+def report_neutralisations():
+    """Each neutralisation in NEUTRALISATIONS, printed step by step: before (passes),
+    neutralised (must fail), restored (passes again), with each observation's detail.
+    The same steps test_neutralised_generator_parts_are_caught asserts."""
+    g = _load()
+    lines, caught = [], 0
+    for name, observe, build, patch_target, replacement in NEUTRALISATIONS:
+        obj, attr = _resolve(g, patch_target)
+        original = getattr(obj, attr)
+        before = observe(g, [_unvalidated(g, *build)])
+        setattr(obj, attr, replacement(original))
+        try:
+            during = observe(g, [_unvalidated(g, *build)])
+        finally:
+            setattr(obj, attr, original)
+        after = observe(g, [_unvalidated(g, *build)])
+        ok = before[0] and not during[0] and after[0]
+        caught += ok
+        lines.append("%s %s (%s)" % ("CAUGHT" if ok else "NOT CAUGHT", name, patch_target))
+        lines.append("  before:      %s %s" % ("pass" if before[0] else "FAIL", before[1][:300]))
+        lines.append("  neutralised: %s %s" % ("pass" if during[0] else "FAIL", during[1][:300]))
+        lines.append("  restored:    %s %s" % ("pass" if after[0] else "FAIL", after[1][:300]))
+    lines.append("%d of %d neutralisations caught and restored" % (caught, len(NEUTRALISATIONS)))
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
@@ -783,5 +965,9 @@ if __name__ == "__main__":
         print(report_agreement())
     elif "--probe-open-item-22" in sys.argv:
         print(probe_open_item_22())
+    elif "--neutralisations" in sys.argv:
+        print(report_neutralisations())
+    elif "--baselines" in sys.argv:
+        print(report_baselines())
     else:
         unittest.main()

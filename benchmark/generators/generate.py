@@ -63,9 +63,11 @@ def _listing(built):
 
 
 def input_format_sha256():
-    """The SHA-256 of the input-format draft the suite was generated against (the bytes
-    of docs/INPUT_FORMAT.md, as VERSIONS.md records them)."""
-    return hashlib.sha256((BENCH.parent / "docs" / "INPUT_FORMAT.md").read_bytes()).hexdigest()
+    """The SHA-256 of the input-format draft the suite was generated against: the bytes
+    of docs/INPUT_FORMAT.md as committed (CRLF read as LF, so a Windows checkout with
+    autocrlf gives the hash VERSIONS.md records)."""
+    data = (BENCH.parent / "docs" / "INPUT_FORMAT.md").read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
 
 
 def _replace_generated(target):

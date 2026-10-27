@@ -45,24 +45,28 @@ section 8 says none is read.
 
 | Family | Module | Planted kinds | Distractors |
 |---|---|---|---|
-| f1 tabular result sheet | `family_result_sheet.py` | result above its reference range, below it, a total volume that does not add up, a missing analyst (computed absence), a blank aliquot cell, a unit mismatch (a result written in g/L against a range in mg/L, or a total volume in L against a column in mL; the figure is right in the right measure) | results exactly on a bound, decimal totals that add up |
-| f2 declaration with arithmetic | `family_declaration.py` | line value not quantity times unit price (product), unit price above its band, below it (the ratio of line value to quantity agrees, so it duplicates and is not keyed), a consignment total that does not add up, a missing country of origin, a duty due that is not the duty rate applied to the total (rate), a summary row that does not carry its declaration line's value (cross-row, between two units that each add up) | unit prices on a bound, decimal products, a total written with comma groups |
+| f1 tabular result sheet | `family_result_sheet.py` | result above its reference range, below it, a total volume that does not add up, a missing analyst (computed absence), a blank aliquot cell, a unit mismatch (a result written in g/L against a range in mg/L, or a total volume in L against a column in mL; the figure is right in the right measure, and it breaks CONV-SE, which requires each result in its range's measure and each total in its column's measure) | results exactly on a bound, decimal totals that add up |
+| f2 declaration with arithmetic | `family_declaration.py` | line value not quantity times unit price (product), unit price above its band, below it (the ratio of line value to quantity agrees, so it duplicates and is not keyed), a consignment total that does not add up, a missing country of origin, a duty due that is not the duty rate applied to the stated total (rate; CONV-DE says the duty follows the total as written, so a wrong total's duty is right), a freight share that is not the freight as a percentage of the stated total (ratio: a stated ratio that disagrees with the unit's own figures), a summary row that does not carry its declaration line's value (cross-row, between two units that each add up) | unit prices on a bound, decimal products, a total written with comma groups |
 | f3 financial statement | `family_statement.py` | current-period subtotal wrong, prior-period subtotal wrong, period change above the band the rule states, below it, a missing preparer | a period change just inside a bound, a subtotal with comma groups |
 | f4 contract terms across two or three versions | `family_terms.py` | band breaches in the later version: unchanged, moved away into a breach, moved toward the band but still out, on a new term, on a renamed term, on a value in a different format | a term on its bound; the version changes below |
 | f5 regulation-style provisions | `family_provisions.py` | a filing-to-notice gap over its window, a receipt-to-answer gap over its window, a filing fee above its band, below it, a definition without its source, an appeal provision without its appeal body | gaps exactly equal to the window, fees on a bound, filing provisions outside the appeal rule's pinned scope |
-| f5 long-range layout | `family_provisions.py` | a notice window, an answer window, a fee above and below its allowed band, each decided by a figure stated only in a definition at least twelve units away | as f5 |
+| f5 long-range layout | `family_provisions.py` | a notice window, an answer window, a fee above and below its band, each decided by a figure stated only in a unit of the use's own track at least twelve units away (a window definition, or a fee table that is no definition) | gaps equal to their window, a fee on a bound, a filing and a fee the other track would break |
 | f6 neighbour-dependent stock count | `family_ledger.py` | carry_in (the opening row mis-carried, the unit's own sum then disagrees), carry_out (the stated closing wrong; the next count carries the right figure), carry_mismatch (the opening row differs from the count before and the received row absorbs it: each count adds up on its own, only the pair is wrong), shrinkage above the band, below it, a missing counter | the count after each carry_out, which looks mis-carried beside its neighbour and is not; a shrinkage on its bound |
 
-Every test plants at least 10 flaws of at least three kinds (f1: 14 of 6, f2: 16 of 7,
+Every test plants at least 10 flaws of at least three kinds (f1: 14 of 6, f2: 18 of 8,
 f3: 11 of 5, f4: 10 of 6, f5: 11 of 6, the long-range layout: 11 of 4, f6: 13 of 6).
 
 **Flaws Python does not compute** are keyed all the same (input format, section 9): the
-unit mismatches (`unit_mismatch`), the rate errors (`rate_mismatch`), the cross-row
-copies (`copy_mismatch`, the source unit in `source_unit`), the neighbour-only carries
+unit mismatches (`unit_mismatch`), the rate errors (`rate_mismatch`), the ratio errors
+(relation `rate_mismatch`, kind `ratio_mismatch`), the cross-row copies
+(`copy_mismatch`, the source unit in `source_unit`), the neighbour-only carries
 (`carry_mismatch`, the neighbour in `depends_on_unit`), and the long-range windows and
 fees (`date_window`, `above_band`, `below_band`, with `related_unit`). Each family
 declares how to find them in the key's `ground_truth_checks`, and `ground_truth.py`
-finds every instance in the rendered text again.
+finds every instance in the rendered text again, in every bundle (the reworded-labels
+probe with its checks reworded too). Each is keyed under a rule its text breaks as
+written. The unit-mismatch scanner takes a sample's reference row by the family's own
+planted parameter, not by restating Shimmer's row matching.
 
 ### Family 4: version changes and rename probes
 
@@ -70,10 +74,12 @@ Family 4 is keyed as a negotiation-style test (section 9): `prior_records` and
 `band_irregularities` are what the scorer reads. Between the prior and the target it
 plants: terms unchanged, changed inside the band, moved toward the band (also into it),
 moved away, a term renamed with its value unchanged, a term renamed with its value moved
-(by a seeded 2 to 45 percent of the earlier figure), a term renamed and moved to another
-section (also moved by 2 to 45 percent), a withdrawn term, a withdrawn term beside an
-unrelated new term in the same section and measure, terms new in the later version,
-sections reordered, and a value written with comma groups (unchanged).
+(by a seeded 2.05 to 45 percent of the earlier figure: above 2/0.98 = 2.0408 percent, so
+never within 2% of the larger figure; the twin's repair of it is such a move too), a
+term renamed and moved to another section (also moved by 2.05 to 45 percent), a
+withdrawn term, a withdrawn term beside an unrelated new term in the same section and
+measure, terms new in the later version, sections reordered, and a value written with
+comma groups (unchanged).
 
 Every expectation is the ground truth (D-042):
 
@@ -81,8 +87,10 @@ Every expectation is the ground truth (D-042):
   versions state under the same label, and both withdrawn terms (`absent_since_prior`).
   A renamed term is the same term and gets no row.
 - `expected_refusals` lists each renamed term: its earlier and later label, the unit
-  where its refusal sits, and the refusal kind the evidence supports
-  (`possible_rename`, `possible_successor`, or `null` for the rename to another section).
+  where its refusal sits, and the refusal kind its planted figures support, derived from
+  them by section 6's definitions (`family_terms.expected_refusal_kind`): within 2% of
+  the larger figure, `possible_rename`; moved further in the same section,
+  `possible_successor`; another section, `null`.
   A refusal or a matched rename satisfies a row; a withdrawal record on it is a false
   positive.
 - `version_changes` is the family's own plan of every term (`expect`:
@@ -102,24 +110,33 @@ nothing about a vanished label: the comparisons of labels both versions state mu
 the plan's, the vanished labels must be exactly the withdrawn and renamed terms with
 their earlier figures, the new labels exactly the new and renamed ones, and every rename
 probe row must hold in the text (same or other section, the newcomer beside the second
-withdrawal unrelated and in the same measure, the moved percentage as stated). Shimmer's
-refusal rule is not restated anywhere in this package. The rename probes are measured
-in the ordinary two-version review of a bundle; a multi-round run writes no change
-records.
+withdrawal unrelated and in the same measure, the moved percentage as stated and inside
+2.05 to 45 percent in every bundle, the twin included, the refusal kind the one its
+figures support). Only section 6's 2% line is restated here, to name the kind a
+refusal should carry; whether a vanished label was renamed is never decided from it.
+The rename probes are measured in the ordinary two-version review of a bundle; a
+multi-round run writes no change records.
 
 The scorer reports no per-kind recall for a negotiation-style test, so f4's six breach
 kinds are for development.
 
 ### Family 5 in the long-range layout (S3d)
 
-The four definitions open the document. The notice and answer definitions state their
-window length, the fee-class definition holds the allowed fee for each class, and the
-reference file carries no figure, so a planted flaw cannot be judged without its
-definition. Every planted use sits at least twelve units from it; each key entry names
-it in `related_unit`, states the `distance`, and says whether the use carries a
-cross-reference line (`cross_reference_line`): about half the uses do, planted ones
-included, so a cross-reference baseline is not perfect by construction. See
-`benchmark/long_range/README.md` for exactly what holds.
+Every provision belongs to a track (Ordinary or Expedited). Four window definitions (a
+notice and an answer window per track) state their window length; two fee tables (one
+per track, which are no definitions) hold the band for each fee class; the fee-class and
+appeal-body definitions decide nothing. All of them sit anywhere in the document among
+the uses, and the reference file carries no figure, so a planted flaw cannot be judged
+without the deciding unit of its own track. Every planted use sits at least twelve units
+from it; each key entry names it in `related_unit`, states the `distance`, and says
+whether the use carries a cross-reference line (`cross_reference_line`): about half the
+uses do, planted ones included, so a cross-reference baseline is not perfect by
+construction. A positional baseline (the first 4 units, or the first k, k the number of
+distinct related units) and two label-only baselines (the nearest, or the first, unit
+carrying the deciding label: `Window length`, or the `Fee range` column) each score
+below 1 in every bundle (`family_provisions.baselines`; printed by
+`py -3.12 scripts/generator_checks.py --baselines`). See `benchmark/long_range/README.md`
+for exactly what holds.
 
 ### Family 4 as a declared multi-round case
 
@@ -150,10 +167,17 @@ live case manifest a declared multi-round Review is sealed and run with
 
 The key adds `case_manifest`, `rounds` (`round_id`, `sequence`, `version`:
 `earliest`, `prior`, `target`), `round_reuse` (the units whose text, label set and
-measures repeat a unit of an earlier round) and, for three rounds, `round_changes`
-(each term at another figure in the earliest version). The scorer reads none of them.
-The key is not yet in the multi-round form of section 9 (entries scoped by round and
-document): its band breaches are the target's only.
+measures repeat a unit of an earlier round), for three rounds `round_changes` (each term
+at another figure in the earliest version), and `multi_round`: the multi-round form of
+section 9, `planted` and `clean` entries scoped by `round_id` and `document_id` on that
+document's unit id. Every round is keyed: in each, every term outside the band of the
+mandate rule that governs it is a planted entry (the target round's entries are the
+`band_irregularities` with their kinds; an earlier round's carry the kind
+`breach_in_earlier_round`), a renamed term's earlier label under the rule naming its
+later label (the case declares them one issue; `issue_id` says which), and the clean
+entry is the unit holding the term on its bound. The twin repairs the last round only,
+so its earlier rounds keep their breaches and no multi-round `twin_of` is named (open
+item 26). The ordinary scorer reads none of these fields.
 
 The validator restates the controller's `validate_live_case_manifest` rules
 (`multi_round_case.validate`) and checks the declaration itself: rounds in version
@@ -177,15 +201,18 @@ only: drop `answer_key.json` and move `context/_review_targets.json` to the top.
   same `clean` list, and both keys name each other.
 - **Reworded labels**: one label that appears in a keyed reason is rewritten with other
   words of the same meaning in the document (and the earlier versions for f4);
-  conventions and reference unchanged; the key's `field_label` updated (section 11.1).
-  This probe is checked for form only: by design, rules stop pairing through the label.
+  conventions and reference unchanged; the key's `field_label` updated (section 11.1),
+  table cells of it too (`<label> rowN`), and the labels the `ground_truth_checks` name.
+  The figure audit is skipped (by design, rules stop pairing through the label); the
+  ground-truth scan runs, since every planted flaw is still there.
 - **Reordered sections**: blocks of units are moved; the key's unit ids (and
   `depends_on_unit`, `source_unit`, `related_unit`, `distance`) are remapped; f6 cuts
-  only between pairs, so a neighbour-dependent flaw stays beside its neighbour; the
-  long-range layout moves only units past the twelfth after the definitions, so every
-  distance stays at least twelve and the definitions stay first. Fully re-audited, except
-  the carry scanner, which reads reading order (a cut between two counts reads as a
-  broken chain).
+  only between pairs, so a neighbour-dependent flaw stays beside its neighbour, and
+  moves one block by a rotation whose only new neighbour pair is the last count before
+  the first, which carries (the last count closes at the first count's opening), so no
+  new pair breaks the chain; the long-range layout retries the move until every distance
+  stays at least twelve and every baseline below 1, and the key states the true
+  distances. Fully re-audited, the carry scanner included.
 - **A term only in the later version**: the term carries a keyed flaw in every family.
   f1, f2, f3, f5, f6 add an earlier version (the test's document less that term's line)
   declared as `prior`; f4 drops a term with a keyed breach from every earlier version
@@ -226,11 +253,13 @@ the written files. A test that fails writes nothing. It checks:
 - for f4, the version facts and the rename probes as above, and the case manifest: the
   controller's rules restated, the rounds the key names in version order, only case
   documents in `context/`, a source for every label line and one issue per renamed term,
-  and the key's reuse and round changes as the round documents show;
+  the key's reuse and round changes as the round documents show, and the `multi_round`
+  key read back from the round documents, the conventions and the case manifest alone;
 - for the long-range layout, in every bundle, probes included: every planted entry's
-  related unit at its stated true distance and at least twelve units away, the
-  definitions first, cross-reference lines on some planted uses and not on others and
-  on 30 to 70 percent of all uses, and no figure in the reference file.
+  related unit at its stated true distance and at least twelve units away,
+  `definitions_first` as the text shows, related units both definitions and not,
+  cross-reference lines on some planted uses and not on others and on 30 to 70 percent
+  of all uses, every baseline below 1, and no figure in the reference file.
 
 ## Agreement with Shimmer (a measurement)
 
@@ -293,11 +322,13 @@ D-042 then changed what a key may hold (1, 12 and 13 below).
     another measure, but a correct reviewer reports the measure, so unit mismatches are
     planted and keyed (`unit_mismatch`, both measures in the claim) from the family's
     ground truth and found again by the ground-truth scanner.
-13. **The rename window.** Settled by D-042: the generators no longer restate Shimmer's
-    rename refusal (neither the 2% window nor the S2b possible-successor rule), and no
-    key follows it. Whether a vanished label was renamed or withdrawn is the family's
-    ground truth; section 6 of the format states Shimmer's own rule, and section 9 how a
-    key lists the refusals it expects (`expected_refusals`).
+13. **The rename window.** Settled by D-042: no key follows Shimmer's rename refusal.
+    Whether a vanished label was renamed or withdrawn is the family's ground truth;
+    section 6 of the format states Shimmer's own rule, and section 9 how a key lists the
+    refusals it expects (`expected_refusals`). Revised in S3 checker round 2: the kind
+    a refusal should carry is derived from the planted figures by section 6's 2% line,
+    and a moved rename moves by 2.05 to 45 percent, so it never sits within 2% of the
+    larger figure.
 
 ## File names
 

@@ -81,16 +81,23 @@ def build(seed):
     at_bound = rest.pop()
     clean = sorted(after_out + [at_bound])
     # the true chain
-    opening = rng.randint(40, 200)
+    opening = first_opening = rng.randint(40, 200)
     doc_units, twin_units, planted = [], [], []
     places = wl.PLACES
     true_closing = []
     for i in range(n):
         received = rng.randint(0, 60)
         issued = -rng.randint(0, min(opening + received, 60))
+        ret = rng.randint(1, 9) if rng.random() < 0.3 else None
+        if i == n - 1:
+            # The last count closes at the first count's opening quantity, so the
+            # reordered-sections probe (a rotation, `rotate`) creates no neighbour pair
+            # that breaks the chain: its one new pair is the last count before the first.
+            issued = first_opening - opening - received - (ret or 0)
+            if issued > 0:
+                received, issued = received + issued, 0
         rows = [["Opening", opening], ["Received", received], ["Issued", issued]]
-        if rng.random() < 0.3:
-            ret = rng.randint(1, 9)
+        if ret is not None:
             rows.append(["Returned", ret])
         closing = sum(v for _, v in rows)
         true_closing.append(closing)
@@ -173,7 +180,9 @@ def build(seed):
         "task": "Review the stock count record against the count conventions, reading each count beside the counts next to it.",
         "probes": {
             "reword": {"old": "Closing quantity", "new": "Quantity at close"},
-            "reorder": wl.reorder(n, rng, keep),
+            # A rotation: the last count (which closes at the first count's opening)
+            # comes before the first, so every neighbour pair still carries.
+            "reorder": wl.rotate(n, rng, keep),
             # probe 3: the term only in the later version carries a keyed flaw
             "term": {"unit": above["unit"], "label": "Shrinkage"},
             "reformat": {"unit": carry["unit"], "label": "Closing quantity",

@@ -3,18 +3,22 @@
 Declaration lines state a goods class, a quantity in box, a unit price (a rate in
 EUR/box), the line value in EUR and the country of origin. Consignment summaries copy
 the line values of the lines before them into a table, state their total, a duty rate
-in percent and the duty due on the total. Bands on the unit price come from a
-reference table keyed by goods class; the ratio of line value to quantity is compared
-with the same band (section 7), so every price figure is planted where that ratio
-agrees with it.
+in percent and the duty due on the stated total (CONV-DE says so: the duty follows the
+total as written, whether or not that total adds up, so a wrong total is one flaw and
+its duty is right), and the freight with the freight share in percent of the stated
+total. Bands on the unit price come from a reference table keyed by goods class; the
+ratio of line value to quantity is compared with the same band (section 7), so every
+price figure is planted where that ratio agrees with it.
 
 Planted kinds: a line value that is not quantity times unit price, a unit price above
 its band, one below it, a consignment total that does not add up, a missing country
-of origin, a duty due that is not the duty rate applied to the total (a rate error),
-and a summary row that does not carry the line value of the declaration line it names
-(a cross-row error between two units: each unit adds up on its own). Python computes
-no percentage of a figure and compares no two units, so the rate and copy errors are
-keyed from this family's own ground truth and found again by the ground-truth scanner
+of origin, a duty due that is not the duty rate applied to the stated total (a rate
+error), a freight share that is not the freight as a percentage of the stated total (a
+ratio error: a stated ratio that disagrees with the unit's own figures), and a summary
+row that does not carry the line value of the declaration line it names (a cross-row
+error between two units: each unit adds up on its own). Python computes no percentage
+of a figure and compares no two units, so the rate, ratio and copy errors are keyed
+from this family's own ground truth and found again by the ground-truth scanner
 (ground_truth.py). Distractors: unit prices exactly on a bound, a line value with
 decimals that is right, and a consignment total written with comma groups that is right.
 """
@@ -37,15 +41,25 @@ RULES = [
     md.Rule("CONV-DC", "Consignment total", "The total line value must equal the sum of the line value column."),
     md.Rule("CONV-DD", "Origin", "Every declaration line must state the country of origin.",
             scope=["goods class"], requires=["country of origin"]),
-    md.Rule("CONV-DE", "Duty", "The duty due must equal the duty rate applied to the summed line values."),
+    # The rule says exactly what the generator computes: the duty on the total as stated.
+    # It names no label but the two duty lines, so it takes no sum finding from CONV-DC.
+    md.Rule("CONV-DE", "Duty",
+            "The duty due must equal the duty rate applied to the consignment's stated total, "
+            "whether or not that total adds up."),
     md.Rule("CONV-DF", "Entries", "Each entry of a consignment must carry the line value of its declaration line."),
+    md.Rule("CONV-DG", "Freight share",
+            "The freight share must equal the freight as a percentage of the consignment's stated total."),
 ]
 GROUND_TRUTH = [
     {"check": "rate", "kind": "rate_mismatch", "rule": "CONV-DE",
      "rate": "duty rate", "base": "total line value", "result": "duty due"},
+    {"check": "ratio", "kind": "ratio_mismatch", "rule": "CONV-DG",
+     "part": "freight", "whole": "total line value", "result": "freight share"},
     {"check": "copy", "kind": "copy_mismatch", "rule": "CONV-DF",
      "column": "line value", "key_column": "entry", "source_label": "line value"},
 ]
+FREIGHT_SHARES = [2, 3, 4, 5, 6]
+RATE_RESULT_LABEL = "Duty due"     # the line a rate error is planted on (read by the gate check)
 
 
 def _price(rng, lo, hi):
@@ -61,6 +75,31 @@ def _duty(total, rate):
 def _money(x):
     """A figure in EUR with two decimals, or four when the exact value needs them."""
     return tr.format_number(x, 2) if tr.same(round(x, 2), x) else tr.format_number(x, 4)
+
+
+def summaries_breaking_rules(text):
+    """An independent second reading of CONV-DE and CONV-DG as written, straight from a
+    rendered document with plain string handling (no audit, no scanner): the headings of
+    the summaries whose duty due is not the duty rate applied to the stated total, and of
+    those whose freight share is not the freight as a percentage of the stated total.
+    The gate check requires them to be exactly the keyed rate and ratio errors."""
+    duty, ratio = set(), set()
+    for block in text.split("\n## ")[1:]:
+        heading, _, body = block.partition("\n")
+        fields = {}
+        for ln in body.split("\n"):
+            label, sep, value = ln.partition(": ")
+            number = value.split(" ")[0].rstrip("%").replace(",", "")
+            if sep and number.replace(".", "", 1).isdigit():
+                fields[label] = float(number)
+        if not {"Total line value", "Duty rate", "Duty due", "Freight", "Freight share"} <= set(fields):
+            continue
+        total = fields["Total line value"]
+        if not tr.same(round(total * fields["Duty rate"] / 100.0, 6), fields["Duty due"]):
+            duty.add(heading)
+        if not tr.same(round(fields["Freight"] * 100.0 / total, 6), fields["Freight share"]):
+            ratio.add(heading)
+    return duty, ratio
 
 
 def build(seed):
@@ -144,6 +183,8 @@ def build(seed):
     rng.shuffle(summaries)
     sum_plan, rate_plan, copy_plan = summaries[:3], summaries[3:5], summaries[5:7]
     comma_summary = summaries[7] if len(summaries) > 7 else None
+    # Two ratio errors, on summaries that are not the comma-grouped distractor.
+    ratio_plan = rng.sample([s for s in summaries if s != comma_summary], 2)
     for g, sname in enumerate(sum_heads):
         members = list(range(g * group, min((g + 1) * group, n_lines)))
         for m in members:
@@ -166,7 +207,10 @@ def build(seed):
             # a row that does not carry its line's value; the summary adds up on its own
             plain = [k for k, m in enumerate(members) if not info[m]["planted"]] or list(range(len(members)))
             k = rng.choice(plain)
-            values_f[k] = round(values_f[k] + rng.choice([-1, 1]) * rng.randint(5, 60), 2)
+            sign, step = rng.choice([-1, 1]), rng.randint(5, 60)
+            if values_f[k] - step <= 0:
+                sign = 1          # a copied line value is never zero or negative
+            values_f[k] = round(values_f[k] + sign * step, 2)
             planted.append({"unit": idx, "rule": "CONV-DF", "relation": "copy_mismatch",
                             "kind": "copy_mismatch", "field_label": "line value row%d" % (k + 1),
                             "value_a": tr.r6(round(info[members[k]]["value"], 2)), "value_b": values_f[k],
@@ -187,18 +231,30 @@ def build(seed):
             planted.append({"unit": idx, "rule": "CONV-DE", "relation": "rate_mismatch",
                             "kind": "rate_mismatch", "field_label": "duty due",
                             "value_a": right, "value_b": duty_f})
+        # Freight: an exact share (a whole percent) of the stated total.
+        share = rng.choice(FREIGHT_SHARES)
+        freight_f, freight_c = _duty(stated_f, share), _duty(total_c, share)
+        share_f = share
+        if g in ratio_plan:
+            sign, step = rng.choice([-1, 1]), rng.randint(1, 2)
+            share_f = share + (sign if share - step >= 1 else 1) * step
+            planted.append({"unit": idx, "rule": "CONV-DG", "relation": "rate_mismatch",
+                            "kind": "ratio_mismatch", "field_label": "freight share",
+                            "value_a": tr.r6(freight_f * 100.0 / stated_f), "value_b": share_f})
         if grouped:
             clean.append(idx)
 
-        def summary(rows, total, duty):
+        def summary(rows, total, duty, freight, fshare):
             return md.Unit("Consignment " + sname, [
                 ("table", ["Entry", "Line value (EUR)"],
                  [[lines_clean[m].heading, tr.format_number(v, 2)] for m, v in zip(members, rows)]),
                 ("lines", [["Total line value", "%s EUR" % tr.format_number(total, 2, grouped)],
                            ["Duty rate", "%d%%" % rate],
-                           ["Duty due", "%s EUR" % _money(duty)]])])
-        doc_units.append(summary(values_f, stated_f, duty_f))
-        twin_units.append(summary(values_c, total_c, duty_c))
+                           ["Duty due", "%s EUR" % _money(duty)],
+                           ["Freight", "%s EUR" % _money(freight)],
+                           ["Freight share", "%d%%" % fshare]])])
+        doc_units.append(summary(values_f, stated_f, duty_f, freight_f, share_f))
+        twin_units.append(summary(values_c, total_c, duty_c, freight_c, share))
     title = "Declaration " + wl.letters_tag(rng).title()
     preamble = "This declaration lists the goods of one shipment and its consignment totals."
     doc = md.Doc(title, preamble, doc_units)
