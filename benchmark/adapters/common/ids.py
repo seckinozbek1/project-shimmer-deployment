@@ -9,7 +9,7 @@ OPAQUE_LENGTH = 12
 SPLIT_MODULUS = 5
 DEVELOPMENT = "development"
 HOLDOUT = "holdout"
-# Length bands by whitespace-separated words of the source text: (name, lower bound).
+# Length bands by the document's words (`word_count`, section 5.6): (name, lower bound).
 LENGTH_BANDS = (("A", 0), ("B", 1000), ("C", 5000), ("D", 20000))
 
 
@@ -64,8 +64,20 @@ def split_side(key) -> str:
     return DEVELOPMENT if split_value(key) % SPLIT_MODULUS == 0 else HOLDOUT
 
 
+_MARKUP_CHARACTERS = frozenset("|-:")
+
+
+def is_word(token: str) -> bool:
+    """A whitespace-separated token is a word unless it is table markup: made only of `|`,
+    `-` and `:` with at least one `|` (preregistration section 5.6, Words)."""
+    return not ("|" in token and set(token) <= _MARKUP_CHARACTERS)
+
+
 def word_count(text: str) -> int:
-    return len(text.split())
+    """The one word count (section 5.6, Words): the whitespace-separated tokens of a source
+    text that are not table markup. Bands, the cut line's N and M and every count in
+    parts.json use it, so a table's words are its cell words wherever it is counted."""
+    return sum(1 for token in text.split() if is_word(token))
 
 
 def length_band(words: int) -> str:

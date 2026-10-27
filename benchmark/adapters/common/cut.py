@@ -9,16 +9,17 @@ the standard library cannot load.
 
 What the token count covers is the document file exactly as written into the bundle
 (title, headings, label lines, part texts and the cut line). The words N and M in the
-cut line are words of the source parts: whitespace-separated words of a text part, and
-for a table the words of its cells (and caption), so M equals the document's source
-word count.
+cut line are words of the source parts by the one word rule (section 5.6, Words;
+`ids.word_count`), so a table's words are its cell words (and caption) and M equals the
+document's source word count, the count its length band is read from.
 """
 from __future__ import annotations
 
 import re
 
+from . import ids
+
 NOTE = "[Document cut. The remaining {removed} of {total} words are not shown.]"
-_TABLE_RULE = re.compile(r"^[|:\-]*\|[|:\-]*$")
 
 
 def budget(max_context: int, prompt_tokens_empty_document: int, output_allowance: int) -> int:
@@ -26,9 +27,9 @@ def budget(max_context: int, prompt_tokens_empty_document: int, output_allowance
 
 
 def words(text: str) -> int:
-    """Whitespace-separated words, a token made only of table pipes and rules not counted
-    (so a rendered table counts its cell words)."""
-    return sum(1 for token in text.split() if not _TABLE_RULE.match(token))
+    """The one word rule (`ids.word_count`): a token made only of table pipes and rules is
+    not a word, so a rendered table counts its cell words."""
+    return ids.word_count(text)
 
 
 def note(removed: int, total: int) -> str:
