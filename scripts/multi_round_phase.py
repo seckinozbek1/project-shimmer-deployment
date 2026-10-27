@@ -32,12 +32,17 @@ def _call(wrapper, contract, payload, case_id, objectives):
 
 
 def execute(ctx, record, documents, reference_index, wrapper_factory, *, sensitive,
-            run_objectives=""):
+            run_objectives="", convention_registry=None):
     """Called only on explicit request, after the ordinary startup governance gates.
 
 Sensitive cases refuse before binding sources or constructing wrappers. This
 matches the current advisory editorial limitation: no new privacy release path.
 The case path returns before ordinary ontology/end-work capture.
+
+S2b item 3: before any model call, Python reviews the declared rounds in order
+(multi_round_rounds.review_rounds); a later round re-runs only the units that
+changed, and the reuse is recorded in audit/round_reuse.json. The registry is the
+operator's conventions, compiled from input/conventions when not passed.
 """
     mr.require(record["run_id"] == ctx.run_id, "run_identity")
     try:
@@ -46,6 +51,15 @@ The case path returns before ordinary ontology/end-work capture.
         mr.require(not manifest["fixture"], "fixture_requires_offline_test_adapter")
         record["evidence"] = mr.bind_sources(manifest, documents, reference_index)
         record["activation"] = mr.activation(True, eligible=True, reached=True)
+        mr.write_record(ctx, record)
+        import multi_round_rounds
+        try:
+            review = multi_round_rounds.review_rounds(ctx, manifest, documents,
+                                                      convention_registry=convention_registry)
+            record["round_review"] = {"record": "audit/" + multi_round_rounds.RECORD_NAME,
+                                      "availability": review.get("availability")}
+        except Exception as exc:  # the computed review never takes the case phase down
+            record["round_review"] = {"availability": "failed", "error_type": type(exc).__name__}
         mr.write_record(ctx, record)
         contracts = json.loads((Path(__file__).resolve().parent.parent / "config" /
                                "multi_round_contracts.json").read_text(encoding="utf-8"))
