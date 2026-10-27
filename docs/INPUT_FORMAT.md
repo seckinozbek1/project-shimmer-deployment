@@ -20,24 +20,55 @@ This document tells you how to prepare a test for Shimmer. Every rule here descr
 - **Band**: an allowed range for a figure, such as 8 to 15 (section 7).
 - **Twin**: a second bundle identical to the first, with every flaw repaired (section 10).
 
-A **test bundle** is one folder holding everything one test needs. It is **sealed** once written: nothing in it changes after a result on it has been seen.
+A test is delivered as two separate things:
+
+- the **test archive**: everything Shimmer needs to run the test, and nothing else;
+- the **answer key** (section 9): one file, `answer_key.json`, delivered to the scorer by its own route. It is never inside the archive, and the machine that runs Shimmer never receives it.
+
+Both are **sealed** once written: nothing in them changes after a result on the test has been seen.
+
+**The test archive** is a tar file (compressed or not) whose members sit at these paths, and only these:
+
+```
+_review_targets.json     the manifest (section 6)
+context/
+  <document>.md          the document under review
+  <earlier version>.md   optional (section 6)
+  <reference>.md         the reference corpus, one or more files (section 7)
+conventions/
+  <rules>.md             the conventions (sections 3 to 5)
+case_manifest.json       multi-round cases only (section 12)
+```
+
+- The manifest sits at the top of the archive, beside `context/`, not inside it. An archive without it is refused. When the test is prepared, the manifest is placed where Shimmer reads it, next to the documents.
+- Do not also put a copy of the manifest inside `context/`: both copies land on the same file, and which one is kept depends on the order of the archive's members.
+- Any other member refuses the whole archive: an `answer_key.json`, a notes file, anything at the top other than the two files shown. A member's path may start with `./`. A link, or `..` in a path, is refused.
+- Put no subfolder inside `context/` or `conventions/`. Its files are carried to the machine that runs the test, but Shimmer never reads them.
+- When the test is prepared, every CRLF line end in a text member (`.md`, `.json` and other plain-text files) becomes LF. `case_manifest.json` is kept byte for byte.
+
+**The answer key.** Never put the key, or any answer, in the archive or in `context/`. A `.json` file in `context/` is read as a document, and a `.json` file at the top of the archive other than the two named above refuses the archive.
+
+**The working folder.** To run a test on this machine and score it with the scorer in this repository, keep it as one folder:
 
 ```
 <bundle>/
   context/
-    _review_targets.json     the manifest (section 6)
-    <document>.md            the document under review
-    <earlier version>.md     optional (section 6)
-    <reference>.md           the reference corpus, one or more files (section 7)
+    _review_targets.json
+    <document>.md
+    <earlier version>.md
+    <reference>.md
   conventions/
-    <rules>.md               the conventions (sections 3 to 5)
-  answer_key.json            the answer key (section 9)
+    <rules>.md
+  answer_key.json
+  case_manifest.json     multi-round cases only (section 12)
 ```
 
-- **Where bundles live.** One folder per bundle, and a bundle and its twin (section 10) side by side in the same parent folder. The scorer in this repository (`tools/score_corpus.py`) reads keys only from `benchmark/corpora/<bundle>/` and finds a twin by its folder name there, so a bundle is scored with it only when it sits there.
-- Only files directly inside `context/` and `conventions/` reach Shimmer. Subfolders are ignored.
-- `answer_key.json` stays at the top of the bundle. Never put it, or any answer, in `context/`: a `.json` file there is read as a document.
-- **File types.** Documents, reference files and conventions are Markdown files (`.md`). The manifest and the answer key are JSON files (`.json`). Nothing else.
+- Here the manifest sits inside `context/`: the staging tool (`tools/stage_corpus.py`) copies only the files directly inside `context/` and `conventions/` into Shimmer's input folders, so a manifest anywhere else is never seen. It does not copy `answer_key.json` or `case_manifest.json`.
+- **Where working folders live.** One folder per test under `benchmark/corpora/`, and a test and its twin (section 10) side by side there. The scorer in this repository (`tools/score_corpus.py`) reads keys only from `benchmark/corpora/<bundle>/answer_key.json` and finds a twin's key by its folder name there, so a test is scored with its twin only when both sit there.
+- **From working folder to archive.** Move `context/_review_targets.json` to the archive's top, leave `answer_key.json` out, and keep `case_manifest.json` at the top for a multi-round case. Change nothing else. Shimmer then reads the same manifest, documents and conventions in both forms.
+- **Sealed tests.** Keep a sealed test's archive and key outside this repository, and keep no working folder of it under `benchmark/corpora/`. The cloud tool builds a sealed bundle only outside the repository and refuses to launch one inside it; it does not check where the archive itself is, so this part is the preparer's rule.
+
+- **File types.** Documents, reference files and conventions are Markdown files (`.md`). The manifest, the case manifest and the answer key are JSON files (`.json`). Nothing else.
 - **Encoding.** UTF-8 without a byte-order mark. A byte-order mark hides the heading on the first line: in a conventions file, the first rule is then lost without any warning. Use LF line endings; CRLF is read the same way.
 - **Underscores.** In `context/`, a file whose name starts with `_` is never read as a document (the manifest relies on this). In `conventions/`, every file is read as rules, whatever its name. Put no notes there.
 - **Neutral naming.**
@@ -419,7 +450,7 @@ Changing one of these for one test is a code change.
 
 ## 9. The answer key
 
-`answer_key.json` is read only by the scorer, never by Shimmer. It must exist before any run.
+`answer_key.json` is read only by the scorer, never by Shimmer. It travels apart from the test archive (section 1). It must exist before any run.
 
 **Single-version test:**
 
@@ -522,7 +553,7 @@ The **clean twin** is a second bundle identical to the first, except that every 
 - Keep headings, labels, conventions, reference corpus, the earlier version's file name and the manifest roles the same, so the unit ids line up.
 - Repair a flaw by changing values. Repair a missing field by adding its label line, with a value. Adding a label line changes no unit id. A blank `Label:` line still counts as absent.
 - Give the twin's document a different neutral file name, because the scorer finds a twin's run by that name. Update `targets` to match.
-- The twin's key has `"planted": []`, its own `document`, a `twin_of` naming the first bundle, and the same `clean` list. The first bundle's key names the twin. Both folders sit side by side in the same parent folder (section 1).
+- The twin's key has `"planted": []`, its own `document`, a `twin_of` naming the first bundle, and the same `clean` list. The first bundle's key names the twin. Both working folders sit side by side under `benchmark/corpora/` (section 1).
 - Every amendment on the twin is a false positive.
 
 **The twin check.** The scorer takes the twin's newest run (by run folder name) and lists the claims (relation, field label and the finding's explanation sentence) worded identically in both runs. A claim worded identically in both twins' runs did not come from the document.
@@ -538,12 +569,127 @@ A **perturbation probe** is a copy of a bundle with one controlled change, shipp
 
 ## 12. How a multi-round case is declared
 
-A **multi-round case** is a test that spans more than two versions of one document. This section is completed after S2 merges (S2 is the development stage that settles how such a case is declared).
+<!-- Sources (loop/s03, commit 990ed88): tools/ordinary_final_run.py (CASE_MANIFEST, LIVE_CASE_FIELDS, validate_live_case_manifest, case_corpus_documents, admit_workload, MULTI_ROUND_ARGV, assess); tools/prepare_ordinary_final_run.py (workload_members, prepare: root _review_targets.json required and not parsed, case manifest kept byte for byte and validated against the bound pipeline's _load_corpus); tools/ordinary_final_cloud.py (admit: validate_live_case_manifest at launch); scripts/multi_round.py (identifier, validate_manifest, normalize_request, bind_sources, STATES); scripts/strategic_support.py (MODES, mode); scripts/multi_round_phase.py (execute: fixture refusal, independent_review_unavailable, models given the case and the evidence only); scripts/multi_round_rounds.py (review_rounds, review_document, _findings_for_plans, unit_signature, SIGNATURE_INPUTS, PYTHON_PLAN_KINDS); scripts/pipeline.py (main: final-mode block, multi-round request parsing and exit 2, exit 8 branches, case documents loaded by _load_corpus from input/context); scripts/text_extract.py (_extract_plaintext). -->
+
+A **multi-round case** is a test that reviews two or more versions of a document set in order. Each version belongs to a **round**. The case is declared in one extra file, the **case manifest**. Everything in sections 1 to 5 still applies to the documents and the conventions.
+
+The test archive of a multi-round case (section 1):
+
+```
+_review_targets.json       the manifest of section 6 (required; not read in this mode, below)
+case_manifest.json         the case manifest (this section)
+context/
+  <round 1 document>.md
+  <round 2 document>.md
+conventions/
+  <rules>.md
+```
+
+- An archive that holds `case_manifest.json` is prepared and run as a multi-round case. An archive without it is an ordinary test.
+- The file name is exactly `case_manifest.json`, at the top of the archive. It holds one JSON object, in UTF-8 without a byte-order mark. A byte-order mark makes the file unreadable: the preparation fails, and a run started by hand stops before it starts. The file travels byte for byte; its line ends are not rewritten.
+- In a working folder (section 1), keep `case_manifest.json` at the folder's top, beside `context/`. A run on this machine is given its path.
+- **Which files are case documents.** In a multi-round run Shimmer does not read `_review_targets.json`. Every Markdown file directly inside `context/` whose name does not start with `_` and whose text is not empty is a case document. Keep the targets manifest anyway, written as section 6 describes: the preparation tool refuses a test without one.
+- **No reference corpus.** A multi-round run reads no grounding files: no reference tables, no labelled sentences, no bound sentences. A file in `context/` that no round names is loaded and then not used. Put only case documents in `context/`.
+- **Document ids.** A case document's id is its file name without the extension: `quote_r1.md` has the id `quote_r1`. If two files share a name and differ only in extension, each gets the id `<name>__<extension>` (`quote_r1__md`). Avoid that: give every file its own name.
+- **Conventions.** `conventions/` must hold at least one rule. With none, the round review records `no_conventions` and a cloud run fails its health check.
+
+**Example.** Two rounds of an invented supply quote. `context/quote_r1.md`:
+
+```
+# Supply quote
+
+## Item A-KX
+
+Supplier: North desk
+Unit price: 12 EUR/box
+Quantity: 4 box
+Line total: 48 EUR
+```
+
+`context/quote_r2.md` is the same text with `Unit price: 11 EUR/box` and `Line total: 44 EUR`. `case_manifest.json`:
+
+```json
+{
+  "schema_version": 1,
+  "case_id": "supply-quote-k3",
+  "fixture": false,
+  "rounds": [
+    {"round_id": "r1", "sequence": 1, "document_ids": ["quote_r1"]},
+    {"round_id": "r2", "sequence": 2, "document_ids": ["quote_r2"]}
+  ],
+  "actors": [{"actor_id": "supplier"}, {"actor_id": "buyer"}],
+  "issues": [{"issue_id": "unit-price"}],
+  "sources": [
+    {"source_id": "s1", "round_id": "r1", "actor_id": "supplier", "issue_id": "unit-price",
+     "document_id": "quote_r1", "unit_id": "u01-item-a-kx",
+     "char_start": 51, "char_end": 73, "quote": "Unit price: 12 EUR/box", "state": "accepted"},
+    {"source_id": "s2", "round_id": "r2", "actor_id": "supplier", "issue_id": "unit-price",
+     "document_id": "quote_r2", "unit_id": "u01-item-a-kx",
+     "char_start": 51, "char_end": 73, "quote": "Unit price: 11 EUR/box", "state": "accepted"}
+  ]
+}
+```
+
+In both files the line `Unit price: ...` starts at character 51 (the title line, a blank line, the heading line, a blank line and the `Supplier` line come before it, each with its line end) and is 22 characters long, so it ends at 73.
+
+**Fields.** An **identifier** below is 1 to 128 characters, each an ASCII letter, a digit, `_`, `-` or `.`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `schema_version` | integer | Always `1`. |
+| `case_id` | identifier | The case's own name. Make it neutral (section 1). |
+| `fixture` | boolean | Always `false`. `true` is refused (below). |
+| `allow_recommendations` | boolean, optional | Whether the models may write recommendations. Default `false`. Leave it out. |
+| `decision_support_mode` | string, optional | One of `trajectory_only` (the default), `decision_support`, `strategic_options`, `recommendation`. `recommendation` also needs `allow_recommendations: true`. Leave it out. |
+| `rounds` | list of objects | The rounds, two or more. |
+| `rounds[].round_id` | identifier | The round's name, unique in the case. |
+| `rounds[].sequence` | integer | The round's place in time, 1 to 10000, unique in the case. Rounds are read in this order, not in list order. A gap (1, 3) is allowed. |
+| `rounds[].document_ids` | list of identifiers | The ids of this round's documents, no repeats. A document belongs to one round only. Give every round at least one document. |
+| `actors` | list of objects | The parties, one or more. Each has a unique `actor_id` (identifier). |
+| `issues` | list of objects | The subjects the parties take positions on, one or more. Each has a unique `issue_id` (identifier). |
+| `sources` | list of objects | The evidence spans (below). The list may be empty, but then no position can be accepted. |
+| `sources[].source_id` | identifier | The span's name, unique in the case. |
+| `sources[].round_id` | identifier | A declared round. |
+| `sources[].actor_id` | identifier | A declared actor: whose position the span states. |
+| `sources[].issue_id` | identifier | A declared issue: which subject the span is about. |
+| `sources[].document_id` | identifier | A document of that same round. |
+| `sources[].unit_id` | identifier | The unit the span sits in. Shimmer checks only that it is an identifier and stores it with the span. Write the unit id of section 2. |
+| `sources[].char_start`, `sources[].char_end` | integers | Where the span starts and ends in the document's text (below). `0 <= char_start < char_end`. |
+| `sources[].quote` | string, not empty | The exact text of the span. |
+| `sources[].state` | string | Your standing for this evidence: `accepted`, `rejected`, `refused`, `unresolved`, `insufficient_evidence`, `not_comparable` or `unknown`. A position the models propose can end up `accepted` only when every span it rests on is `accepted`. |
+
+No other top-level field is allowed: one more field is refused. Inside rounds, actors, issues and sources, other fields are not checked and not used. Write none.
+
+**Character positions.** `char_start` and `char_end` count characters, not bytes, from 0, in the document's text as Shimmer reads it: UTF-8 decoded, with every CRLF line end, and every lone CR, turned into LF. `char_end` is the position just after the last character. The quote must equal the text from `char_start` up to `char_end` exactly. A letter outside ASCII counts as one character, and so would a byte-order mark; keep documents ASCII and without a byte-order mark (sections 1 and 2), and count with a tool.
+
+**The rules the manifest must meet.** A broken rule is refused with a one-line reason that names the rule, never the content:
+
+1. The file is one JSON object whose top-level fields are among those above, with `fixture` set to `false`.
+2. `schema_version` is 1, `case_id` is an identifier, and every optional field has an allowed value.
+3. There are at least two rounds, at least one actor and at least one issue. Every id is an identifier and unique in its list.
+4. Every round has a whole-number `sequence` from 1 to 10000, unique in the case, and a list of document ids with no repeats. No document belongs to two rounds.
+5. Every source names a declared round, actor and issue, and a document of its own round. Its `unit_id` is an identifier, `0 <= char_start < char_end`, `quote` is not empty, and `state` is an allowed value.
+6. Every document a round names is a case document of the archive.
+7. Every source's quote equals its document's text between `char_start` and `char_end`.
+
+**When the rules are checked.** On the cloud path, all seven are checked when the bundle is sealed and again at launch, against the documents exactly as the run will load them, so a broken manifest is refused before any machine starts. A run started by hand on this machine checks rules 2 to 5 at start (it then stops with an argument error and writes no run folder), refuses a fixture with exit code 8, and checks rule 7, and rule 6 for every document a source names, when it binds the spans (exit code 8). It does not check rule 1's field list. A round document that no source names and that is missing is only recorded as missing.
+
+**Why a fixture is refused.** A **fixture** is a manifest with `fixture: true`. The repository's own fixture carries synthetic spans and model answers written in advance, and keeps its documents inside the file instead of in `context/`. A live run with answers written in advance would measure nothing. So a fixture is refused when the bundle is sealed, again at launch, and again by the run itself, which stops with exit code 8 and the reason `fixture_requires_offline_test_adapter`.
+
+**What a multi-round run does.** This decides what a test can expect to find in the results.
+
+- The cloud tool runs a multi-round case with fixed settings: a Review, the paired review, both override flags (section 8 and the commands in the repository), English output, and the case manifest. A test cannot change them. A run with redaction on, or without both override flags, is refused with exit code 8. The two model agents used (the producer and the reviewer) must differ in both backend and model, or the run is refused with exit code 8.
+- Each source span gets a REF id (section 7). The models are shown the case manifest and the spans, never the documents themselves.
+- **The Python round review.** Python reviews the rounds in `sequence` order, and each round's documents, unit by unit, against the conventions, with the paired machinery of sections 2 to 5. It computes sums, products, blank cells, bands the rule states itself, and declared absences (`[requires: ...]`). It does **not** compute, in a multi-round run: reference-table or labelled-sentence bands, date windows, the change records of section 6, or the "no rule applies" finding. A pair that needs a model (a judged absence, or a pair where nothing can be computed) is recorded as needing a model and not asked.
+- **Reuse.** A unit whose own text, paired rules, document label set and document measures are all identical to a unit of an earlier round is not computed again. Its findings are copied from the earliest round that computed them, under the new unit id. A unit that moved position is still recognised, because the unit id is not part of the comparison.
+- Then the producer model proposes typed position records from the spans, and the reviewer model accepts, rejects or withholds each one. Nothing in a multi-round run becomes an amendment, and the run writes no deliverables. The round findings carry the registry id of their rule, not the operator's own id. `docs/OUTPUT_FORMAT.md` describes what the run writes.
+
+**What this format does not define yet.** Section 9 defines answer keys for ordinary tests only. No answer key format exists yet for a multi-round case, so a multi-round case cannot be scored by this format.
 
 ## 13. Glossary
 
 - **Amendment**: a proposed change to the document, made from an irregular finding under a required or recommended rule.
-- **Answer key**: `answer_key.json`; it states the planted flaws and is read only by the scorer.
+- **Answer key**: `answer_key.json`; it states the planted flaws and is read only by the scorer; it never travels in the test archive.
 - **Band**: an allowed range for a figure, from a rule's text or a reference table; both bounds included.
 - **Clean distractor**: a correct unit built to look like a flaw.
 - **Clean twin**: the same bundle with every flaw repaired.
@@ -590,7 +736,8 @@ A **multi-round case** is a test that spans more than two versions of one docume
 - **Severity**: required, recommended or advisory.
 - **Slug**: the lowercased, hyphenated form of a heading.
 - **Subject tag**: a heading bracket word that routes a rule to a reviewer.
-- **Test bundle**: the folder holding one complete test.
+- **Test archive**: the tar file holding everything Shimmer needs to run one test (section 1).
+- **Working folder**: one test kept as a folder for local runs and the repository's scorer, with the manifest inside `context/` and the key at its top (section 1).
 - **Typed reason (claim)**: the relation, field label and figures of a planted flaw.
 - **Unit**: the piece of a document that a rule is applied to.
 - **Unit id**: `u`, a two-digit position, a hyphen, and the heading's slug.
