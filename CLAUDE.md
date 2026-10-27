@@ -260,7 +260,9 @@ processing swarm governed by an append-only constitution.
   `outcomes.jsonl`; a redaction-enabled run keeps `sha256:` and `length_bytes:` only; a call with
   no run context writes nothing (never a fallback to `output/`). Saving a reply never promotes
   it: check 269 still holds that only Python-computed findings become amendments.
-  `guard_secrets.py --staged` refuses `audit/model_replies/` at any depth. Checks 275 and 276.
+  `guard_secrets.py --staged` refuses `audit/model_replies/` and `seals/` at any depth (case
+  folded), including inside a staged archive such as the controller's collected evidence
+  `.tar.gz`, which has been force-committed under `docs/fix/` before. Checks 275 and 276.
 
 ## Review modes
 

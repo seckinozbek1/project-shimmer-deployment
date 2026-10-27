@@ -293,7 +293,7 @@ Counted in the git index of S1 commit C5 (after C1 to C4 were merged; `loop/s01`
 | F4 | 11 | 39 | 10 | 38 |
 | F5 | 3 | 11 | 3 | 11 |
 | F6, F7, F8 | 0 | 0 | 0 | 0 |
-| **Union** | **186** | **15438** | **181** | |
+| **Union** | **186** | **15438** | **181** | **15433** |
 
 The difference is S1 Part 3 (commit C2): the four live controller tools no longer hard-code the credential path (four F2 hits) and the rehearsal no longer hard-codes its Linux folder (one F4 hit). Every other file is unchanged; the history rewrite (S13) handles the rest.
 

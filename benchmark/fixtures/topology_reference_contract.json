@@ -16,7 +16,7 @@
     "_emit_progress": "904718efcb3a53cd0bc5b475ecaea719836438ef1e930d1f9954e43dd4523d52",
     "_emit_local_progress": "85c8da750d9ddbf45ff8d104d91f319b5130e7752b16a5e5e566f611f4902d1e",
     "_local_progress_reset": "c445be7906ba2d82de25c8d155ec43a2b593ce4a6e78c9e76a4f7d5f89327880",
-    "_local_progress_baseline": "1d9ea0ef85458a6d4c220f9b1d455b6f4dba1eccbde7a83c3e02b93ae2db7741",
+    "_local_progress_baseline": "cc413d710ee6dad6f7f2ad295cfbc4781eaf4280944d75ed298bc7a99fc445b1",
     "_local_progress_bump_expected": "0893425ec9e0651ce360018512d08df4746dcba49a55a33ffbc600c6aaded333",
     "_local_contract_outcome": "f9e5201851ec447febd6f0aa55a55f969ea3a80847f1d8ec232d9dbe2300fbbe",
     "_local_progress_memory_sampler": "e131bea3eb4e5d332b932931e6d356fcc67457be51753fca9cde645dd350e6f7",
@@ -42,7 +42,7 @@
     "_run_one": "2090d175f6a463271cb991aa2be51b1186e249b32d1ab557fc36c5f3d8e17338",
     "_gather_docs": "6291d3023b4d8ef0132cf02aaced91dfebaaefbba9498d0b575f76fb636462e0",
     "_deepen_legal_analyst_findings_local": "ad57ca75ef8189186e2dbffa6a02545eb0532f4fb81b42a264ddc094a9379aae",
-    "phase_3_4_content_production": "9bcf3e9d8ebd73b9038506bfa7a8f93fc3a9dd290adb5dd72ddfba4a306a3842",
+    "phase_3_4_content_production": "15287c483a14d0801c38107f18ea299953e44396a60539ccde6f417cdfcefde3",
     "phase_5_audit": "6d994ae0dabfbe3bc390142c7c7773b2e2dc4a3259c8807fb8b5cf74069d2f79",
     "_prior_docs_for": "b7301219374e01b85dc3ca336d9534aa11f89fa87ebd7ee46866b848ed1c5354",
     "_forced_roles": "dd7c1cef1c40b6ccdabbed761b080f55a1e9f9bedfaafd46c31385d0792d9a31",
@@ -85,14 +85,15 @@
     "_record_operator_decision": "02c069f918bfd2b3da4f05acf31f46a63f0c088aecee6e6d1a5dff91cc1ce2b3",
     "_make_file_operator_handler": "631d0b86500dd41183daf116e52ed0fa3b953dcaf99ed35f47a63ea5fc8e9bb3",
     "_resolve_operator_handler": "b4c3b6ed30bd810ed7996f4c13c84a5d6f246d11188083509ad66b4a68cdc6c6",
-    "_cost_projection": "35825e354e1946c08f802736aeed19b8953d86f17931e755cb59dbb493bcb211",
+    "_cost_projection": "c674e191002472bbc27cf576005c53f1cf05f99a30cafd95373fe4da8c2df14e",
     "_build_arg_parser": "9d7a8bd8150f50df8ce3398cb03515eb9f80394375a80fbaa3b35e93a69c802d",
-    "main": "68af325e7f52e4c0afb1c74ca15d10685addb954815226834377df15ee5d4155",
+    "main": "9060797f05fc322b42f1f613b4a9d1c7497ef5ed775f487c74ac75e4b949fe83",
     "_verifier_has_a_draft": "c4e41f66480b346de439afa09434fdc4d9865be64541805aaeecd20912391aee",
     "_accepted_draft": "db86d069977b5d020bb3fa6389e0296b8e308d28141422ad0c4838de267c55f2",
     "_withheld_audit_agents": "b90fabfcc5dc43479b182ba5fd8455b197c061a780971aca51a94a70a8b0b0f3",
     "_inst_finder_startup_guard": "428211885568447fe8c66e4ada55e60e6b5760b5f5acb7683e23f47d4c18dfa0",
-    "_inst_finder_switch": "ea3829c6e66633ef5047147ee52447bd4dbec71726a698f9ca50dc87df7f0d87"
+    "_inst_finder_switch": "ea3829c6e66633ef5047147ee52447bd4dbec71726a698f9ca50dc87df7f0d87",
+    "_inst_finder_decision": "c849da06408de7a8e1489a13b81146c4a0e8edaaac624e1d7f684bbf46f44e39"
   },
   "reference_amendments": [
     {
@@ -198,6 +199,33 @@
         "write_deliverables_run_summary": {
           "from": "5e2c58f726f084150828312cea3063dca145f1d24dbbc8a6a9072a0cdfdc119b",
           "to": "bfbd01eb57a7334da3236e0da8e7fecefb30e5cb2267c90bd21ac7b74a898db1"
+        }
+      }
+    },
+    {
+      "date": "2026-10-27",
+      "reason": "Operator-directed, 2026-10-27, loop stage S01 (checker round 1 fix): the INST_FINDER switch is decided once per run. The new _inst_finder_decision reads the decision main saved at start-up in audit/agent_switches.json (and computes it only where no record exists, as in fixtures); phase_3_4_content_production, _local_progress_baseline and _cost_projection use it, and main passes the run context to the two helpers, so a constitution or setting changed during a run cannot make the dispatched agents differ from the saved record.",
+      "document": "docs/loop/stages/S01_REPORT.md",
+      "functions": {
+        "_cost_projection": {
+          "from": "35825e354e1946c08f802736aeed19b8953d86f17931e755cb59dbb493bcb211",
+          "to": "c674e191002472bbc27cf576005c53f1cf05f99a30cafd95373fe4da8c2df14e"
+        },
+        "_inst_finder_decision": {
+          "from": null,
+          "to": "c849da06408de7a8e1489a13b81146c4a0e8edaaac624e1d7f684bbf46f44e39"
+        },
+        "_local_progress_baseline": {
+          "from": "1d9ea0ef85458a6d4c220f9b1d455b6f4dba1eccbde7a83c3e02b93ae2db7741",
+          "to": "cc413d710ee6dad6f7f2ad295cfbc4781eaf4280944d75ed298bc7a99fc445b1"
+        },
+        "main": {
+          "from": "68af325e7f52e4c0afb1c74ca15d10685addb954815226834377df15ee5d4155",
+          "to": "9060797f05fc322b42f1f613b4a9d1c7497ef5ed775f487c74ac75e4b949fe83"
+        },
+        "phase_3_4_content_production": {
+          "from": "9bcf3e9d8ebd73b9038506bfa7a8f93fc3a9dd290adb5dd72ddfba4a306a3842",
+          "to": "15287c483a14d0801c38107f18ea299953e44396a60539ccde6f417cdfcefde3"
         }
       }
     }

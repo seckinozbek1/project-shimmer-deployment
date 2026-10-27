@@ -1,7 +1,7 @@
 """Gate check 277: the operator setting SHIMMER_INST_FINDER switches INST_FINDER off
 only under a ratified DELTA, and is never ignored silently.
 
-Three cases, each in a temporary directory with copied configuration (the real
+Four cases, each in a temporary directory with copied configuration (the real
 config/, durable/ and ontology/ are never written):
 
   (a) the variable absent: INST_FINDER is dispatched exactly as before;
@@ -10,7 +10,11 @@ config/, durable/ and ontology/ are never written):
       phase 3-4 refuses rather than dispatching;
   (c) `off` with a fixture constitution carrying a ratified amendment: INST_FINDER
       is not dispatched, the activation record gives the reason, and every
-      gathered result carries its own agent's name.
+      gathered result carries its own agent's name;
+  (d) the decision is made once, by main() at start-up, and saved: a constitution
+      or variable changed between start-up and phase time does not change what
+      phase 3-4 dispatches, what the cost projection counts or what the progress
+      baseline counts, in either direction; an unreadable saved record refuses.
 
 Every case drives the real code (pipeline._inst_finder_startup_guard and
 pipeline.phase_3_4_content_production, with the model boundary replaced: no
@@ -108,9 +112,10 @@ def _label_with_the_constant(node):
     assert replaced == 1, replaced
 
 
-def _produce(root, waves, phase=None):
-    """Run the real phase 3-4 corpus loop with the model boundary replaced."""
-    ctx = run_context_mod.create_run(root)
+def _produce(root, waves, phase=None, ctx=None):
+    """Run the real phase 3-4 corpus loop with the model boundary replaced. With
+    `ctx`, the phase runs in that run folder (and reads any decision saved there)."""
+    ctx = ctx or run_context_mod.create_run(root)
     agents = json.loads((root / "config" / "agent_registry.json").read_text(encoding="utf-8"))["agents"]
     pipeline.agent_activation.initialize(ctx, agents, "dense")
     orch = SimpleNamespace(run_context=ctx)
@@ -168,12 +173,20 @@ def _summary(ctx):
         ctx.deliverables_dir(), [], {}, total_cost_usd=0.0, task="review").read_text(encoding="utf-8")
 
 
-def _projected_calls(root):
+def _projected_calls(root, ctx=None):
     seen = {}
     with patch.object(pipeline, "ROOT", root), \
             patch.object(pipeline, "estimate_cost", lambda **kw: seen.update(kw) or kw):
-        pipeline._cost_projection(1, 0)
-        return seen["claude_calls"], pipeline._local_progress_baseline(1)
+        pipeline._cost_projection(1, 0, run_ctx=ctx)
+        return seen["claude_calls"], pipeline._local_progress_baseline(1, run_ctx=ctx)
+
+
+def _corpus_count(calls, progress):
+    """The corpus-level agents counted by the cost projection and the progress
+    baseline, for one operational document."""
+    return (calls - len(pipeline.PRODUCTION_AGENTS_PER_DOC) - len(pipeline.CONVENTION_REVIEW_AGENTS) - 1 - 3,
+            progress - len(pipeline.PRODUCTION_AGENTS_PER_DOC) - len(pipeline.AUDIT_AGENTS_PER_DOC)
+            - len(pipeline.CONVENTION_REVIEW_AGENTS) - 1)
 
 
 class InstFinderSwitchChecks(unittest.TestCase):
@@ -331,6 +344,54 @@ class InstFinderSwitchChecks(unittest.TestCase):
                 phase[0] = None
         self.prove("c", "labels_from_the_constant", observe, labels_from_the_constant)
 
+    # (d) the decision is made once, at start-up: a later change does not move it ----
+    def test_d_saved_decision_wins_over_a_later_change(self):
+        root = _root(self.tmp.name, strip_ratifying=True)
+        path = root / "config" / "constitution.json"
+        unratified = path.read_text(encoding="utf-8")
+        data = json.loads(unratified)
+        data["amendments"].append(_ratifying())
+        ratified = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+
+        def observe():
+            try:
+                # Started switched off under a ratified amendment; by phase time the
+                # amendment is gone and the variable unset. The saved decision stands.
+                path.write_text(ratified, encoding="utf-8")
+                with _setting("off"):
+                    ctx = run_context_mod.create_run(root)
+                    self.assertIsNone(pipeline._inst_finder_startup_guard(ctx, root))
+                path.write_text(unratified, encoding="utf-8")
+                with _setting(None):
+                    for waves in (False, True):
+                        out = _produce(root, waves, ctx=ctx)
+                        self.assertIsNone(out["error"])
+                        self.assertEqual(out["requested"], ["ARCHIVIST", "CITATION_RESOLVER"])
+                    self.assertEqual(_corpus_count(*_projected_calls(root, ctx)), (2, 2))
+                # Started on; by phase time a ratifying amendment exists and the
+                # variable says off. Still on: all three are dispatched.
+                with _setting(None):
+                    ctx = run_context_mod.create_run(root)
+                    self.assertIsNone(pipeline._inst_finder_startup_guard(ctx, root))
+                path.write_text(ratified, encoding="utf-8")
+                with _setting("off"):
+                    for waves in (False, True):
+                        out = _produce(root, waves, ctx=ctx)
+                        self.assertIsNone(out["error"])
+                        self.assertEqual(out["requested"], ALL)
+                    self.assertEqual(_corpus_count(*_projected_calls(root, ctx)), (3, 3))
+                # A saved record that cannot be read refuses rather than recomputing.
+                (ctx.audit_dir() / "agent_switches.json").write_text("{", encoding="utf-8")
+                with self.assertRaises(RuntimeError):
+                    pipeline._inst_finder_decision(ctx, root)
+            finally:
+                path.write_text(unratified, encoding="utf-8")
+
+        def recomputed(run_ctx, root_):
+            return pipeline._inst_finder_switch(root_)
+        self.prove("d", "decision_recomputed_at_phase_time", observe,
+                   lambda: patch.object(pipeline, "_inst_finder_decision", recomputed))
+
 
 def check():
     del PROOFS[:]
@@ -343,7 +404,8 @@ def check():
     return "PASS", ("SHIMMER_INST_FINDER: absent dispatches all three corpus agents; off without a ratified "
                     "amendment refuses in one line (guard, main before any model call, phase 3-4); off with a "
                     "ratified fixture amendment skips INST_FINDER, records it switched_off with the reason, and "
-                    "labels every result with its own agent, waves on and off; neutralise/fail/restore/pass: "
+                    "labels every result with its own agent, waves on and off; the decision saved at start-up "
+                    "wins over a constitution or variable changed by phase time; neutralise/fail/restore/pass: "
                     + ", ".join(PROOFS) + "; real constitution ratifying amendments: %d" % len(_real_ratifying_ids()))
 
 

@@ -180,10 +180,15 @@ fixed allowlist; provider error strings are scrubbed before they reach a
 `CallResult` or the cost log (gate check 95 embeds a synthetic key and asserts
 `[REDACTED_KEY]`); `.gitignore` carries belt-and-braces patterns
 (`**/config.py`, `**/*key*`, `**/*secret*`, `**/*credential*`, `**/.env*`,
-`api_keys*/`); `scripts/guard_secrets.py` scans the contents of every file in the
-working tree for key patterns (ignored folders included), and with `--staged` refuses a
-staged path under `seals/` (seal manifests, never committed, force-added or not; gate
-check 275); structured log
+`api_keys*/`); `scripts/guard_secrets.py` scans the contents of the files in the
+working tree for key patterns (ignored folders included, except `.git`, `__pycache__`,
+`node_modules`, `.venv` and `venv`, and binary or archive files by suffix), and with
+`--staged` refuses a staged path with the segment `seals/` (seal manifests) or
+`audit/model_replies/` (saved model replies) at any depth, compared case-insensitively,
+force-added or not; it also opens every staged `.tar.gz`, `.tgz`, `.tar` or `.zip` from
+the index in memory and refuses it if any member path carries either segment (an
+archive it cannot open is refused); archives nested inside archives are not opened, and
+staged deletions are allowed (gate check 275); structured log
 events are bounded by construction to a snake_case name plus whitespace-free
 `key=value` pairs, and gate check 112 asserts that over every call site, so
 document or prompt text cannot be smuggled into a log line; a contract-violation
@@ -194,10 +199,10 @@ hash (gate check 105).
 Not mitigated: no hook runs the secret guard. It acts only when someone runs it.
 (Corrected 2026-10-27: this paragraph used to say the hook could be installed with
 `git config core.hooksPath .githooks`, but this repository has no `.githooks` folder.
-The guard does not read the staged diff's contents; its `--staged` mode checks staged
-paths only.) During the 2026-10-27 loop, the loop runs the guard and a staged-diff key
+The guard does not scan the staged diff's text for keys; its `--staged` mode checks
+staged paths and the member paths of staged archives.) During the 2026-10-27 loop, the loop runs the guard and a staged-diff key
 scan before every commit, and a local pre-push hook outside version control refuses
-pushes that add a path under `seals/`. Also: full prompts are not logged, but a
+pushes that add a path under `seals/` or `audit/model_replies/`. Also: full prompts are not logged, but a
 provider retains what it receives under its own policy.
 
 ### T7. Path traversal or upload abuse through the dock
