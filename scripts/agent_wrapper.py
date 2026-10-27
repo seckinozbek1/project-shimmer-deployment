@@ -33,6 +33,7 @@ import generation_observation
 import decoding_policy
 import final_models
 import model_telemetry
+import reply_records
 from bus_reader import (_estimate_tokens, assemble_context,
                         begin_truncation_capture, end_truncation_capture)
 from constitution import CheckResult, Constitution
@@ -703,6 +704,36 @@ class AgentWrapper:
             call_id=getattr(self, "_cost_call_id", ""),
         )
 
+    def _write_reply(self, r, sent):
+        """S1 Part 4: save this call's reply under <run>/audit/model_replies/
+        (scripts/reply_records.py). Called from inside each backend function, the
+        one point where the raw reply exists for every route that reaches it.
+        `sent` holds the exact payload text sent (after any outbound masking), its
+        form, the decoding settings and the model mode once the request is built;
+        it stays empty for a call that ended before that. Hashes and lengths only
+        under a sensitive run (self.sensitive, the contract-violation dump's own
+        test). No run context: nothing is written."""
+        mode = sent.get("model_mode")
+        if mode is None:
+            try:
+                mode = final_models.mode()
+            except Exception:
+                mode = None
+        return reply_records.write(
+            self.run_context, agent=self.name,
+            call_id=getattr(self, "_cost_call_id", "") or None,
+            backend=r.backend, model_id=r.model, model_mode=mode,
+            payload=sent.get("payload"), payload_form=sent.get("form"),
+            reply=r.raw_text if (r.ok or r.raw_text) else None,
+            ok=r.ok, error=r.error, decoding=sent.get("decoding"),
+            sensitive=bool(getattr(self, "sensitive", False)),
+            phase=getattr(self, "_cost_phase", ""), doc_id=getattr(self, "_cost_doc_id", ""))
+
+    @staticmethod
+    def _messages_text(messages):
+        """The request's message list as one canonical text: what is hashed and kept."""
+        return json.dumps(messages, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
     def check_constitution(self, situation): return self.constitution.check(situation)
 
     def call_claude(self, stable_prefix, dynamic_suffix="", *, max_tokens=4096):
@@ -710,8 +741,10 @@ class AgentWrapper:
         # _record_cost() below (including the early-return paths) so duration_ms
         # is populated regardless of where the call ends.
         _t0 = time.perf_counter()
+        _sent = {}
         def _record_cost(r):
             self._record_cost(r, duration_ms=int((time.perf_counter() - _t0) * 1000))
+            self._write_reply(r, _sent)
 
         key = self.keys.get("ANTHROPIC_API_KEY")
         if not key:
@@ -743,6 +776,9 @@ class AgentWrapper:
                 content.append({"type": "text", "text": dynamic_suffix})
         else:
             content = [{"type": "text", "text": dynamic_suffix}]
+        _sent.update(payload=self._messages_text([{"role": "user", "content": content}]),
+                     form="anthropic_messages_json",
+                     decoding={"max_tokens": max_tokens, "other_settings": "provider_default"})
         # BP-5: retry rate-limit / overload (429/529) with backoff. Parallel document
         # processing raises the number of concurrent Claude calls on one API key;
         # call_claude previously had no retry (unlike call_gpt), so a transient 429
@@ -791,8 +827,10 @@ class AgentWrapper:
     def _call_gpt_locked(self, stable_prefix, dynamic_suffix="", *, max_tokens=4096):
         # productization STEP 4: same per-call wall-clock timing pattern as call_claude.
         _t0 = time.perf_counter()
+        _sent = {}
         def _record_cost(r):
             self._record_cost(r, duration_ms=int((time.perf_counter() - _t0) * 1000))
+            self._write_reply(r, _sent)
 
         # Prompt caching (INFRA-036), AUTOMATIC for OpenAI: no cache_control. We
         # only STRUCTURE the prompt stable-prefix-first (identical discipline as
@@ -816,6 +854,9 @@ class AgentWrapper:
             _record_cost(r); return r
 
         timeout_s = _provider_timeout_s()
+        _sent.update(payload=self._messages_text([{"role": "user", "content": prompt}]),
+                     form="openai_messages_json",
+                     decoding={"max_tokens": max_tokens, "other_settings": "provider_default"})
 
         def _attempt():
             try:
@@ -875,8 +916,10 @@ class AgentWrapper:
         # call_claude/call_gpt. Qwen has no wall-clock timeout parameter (STEP 3
         # note); this is purely a duration MEASUREMENT, not a bound.
         _t0 = time.perf_counter()
+        _sent = {}
         def _record_cost(r):
             self._record_cost(r, duration_ms=int((time.perf_counter() - _t0) * 1000))
+            self._write_reply(r, _sent)
 
         try:
             torch = importlib.import_module("torch")
@@ -908,10 +951,17 @@ class AgentWrapper:
                 raise ValueError("Configured local tokenizer has no chat template")
             prompt = tok.apply_chat_template([{"role": "user", "content": prompt}],
                                             tokenize=False, add_generation_prompt=True)
+        _sent.update(payload=prompt, form="rendered_prompt",
+                     decoding=dict(decoding_policy.usage_fields(decoding), max_new_tokens=max_new_tokens))
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
-        with torch.no_grad():
-            out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
+        try:
+            with torch.no_grad():
+                out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
+        except Exception as exc:
+            # A raised generation is still a call: its record says so, then it raises on.
+            self._write_reply(CallResult("qwen_local", model_id, "", ok=False, error=type(exc).__name__), _sent)
+            raise
         generation_ended = time.perf_counter()
         generation_seconds = generation_ended - generation_started
         model_telemetry.emit(self.run_context, "generation_interval", call_id=getattr(self, "_cost_call_id", None),
@@ -954,8 +1004,10 @@ class AgentWrapper:
         template_applied = bool(getattr(self, "_optimized_semantics", False))
         if system is not None and not template_applied:
             raise ValueError("A system message needs the native chat template")
+        _sent = {}
         def _record_cost(r):
             self._record_cost(r, duration_ms=int((time.perf_counter() - _t0) * 1000))
+            self._write_reply(r, _sent)
 
         try:
             torch = importlib.import_module("torch")
@@ -994,10 +1046,18 @@ class AgentWrapper:
             messages = ([{"role": "system", "content": system}] if system is not None else []) + \
                        [{"role": "user", "content": prompt}]
             prompt = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        _sent.update(payload=prompt, form="rendered_prompt",
+                     model_mode=(getattr(self, "_model_identity", None) or {}).get("model_mode"),
+                     decoding=dict(decoding_policy.usage_fields(decoding), max_new_tokens=max_new_tokens))
         inputs = tok(prompt, return_tensors="pt", **({"add_special_tokens": False} if template_applied else {})).to(mdl.device)
         generation_started = time.perf_counter()
-        with torch.no_grad():
-            out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
+        try:
+            with torch.no_grad():
+                out = mdl.generate(**inputs, max_new_tokens=max_new_tokens, **decoding["kwargs"])
+        except Exception as exc:
+            # A raised generation is still a call: its record says so, then it raises on.
+            self._write_reply(CallResult(self.backend, model_id, "", ok=False, error=type(exc).__name__), _sent)
+            raise
         generation_ended = time.perf_counter()
         generation_seconds = generation_ended - generation_started
         model_telemetry.emit(self.run_context, "generation_interval", call_id=getattr(self, "_cost_call_id", None),
@@ -1780,7 +1840,7 @@ class AgentWrapper:
         try:
             run_options.record_prompt(self.run_context, call_id, self.name, stable_prefix, dynamic_suffix)
         except OSError as exc:
-            log_event(_LOG, "prompt_structure_write_error error_type=" + type(exc).__name__, level="warning")
+            log_event(_LOG, f"call_structure_write_error error_type={type(exc).__name__}", level="warning")
         try:
             evidence_written = call_evidence.record(self.run_context, call_evidence.extract(
                 work_payload, call_id=call_id,
@@ -1834,6 +1894,7 @@ class AgentWrapper:
                              constitution_check=self.build_constitution_check(
                                  laws_consulted=["LAW-V"], result="RESOLVED",
                                  resolution="agent yielded on backend error"))
+            reply_records.write_outcome(self.run_context, call_id, "backend_failure", source="run_task")
             return {"ok": False, "agent": self.name, "backend": result.backend, "model": result.model,
                     "parsed": None, "raw_text": "", "contract_missing": [], "error": result.error,
                     "call_id": call_id, "call_evidence_path": str(evidence_written) if evidence_written else None}
@@ -1872,6 +1933,7 @@ class AgentWrapper:
                     resolution="agent output did not match contract"
                 ),
             )
+            reply_records.write_outcome(self.run_context, call_id, "contract_violation", source="run_task")
             return {"ok": False, "agent": self.name, "backend": result.backend, "model": result.model,
                     "parsed": parsed, "raw_text": result.raw_text, "contract_missing": missing,
                     "contract_normalized": normalized,
@@ -1926,6 +1988,15 @@ class AgentWrapper:
                              result=check.layer or ("RESOLVED" if check.resolved else "RESOLVED"),
                              resolution=(f"governed by {check.rule_id}" if check.resolved
                                          else "no governing rule yet; novel action recorded")))
+        # S1 Part 4: what became of this reply, decided only now that it is posted
+        # (scripts/reply_records.py). A valid reply that refuses is "refused" (the
+        # status auditor_pairs.compare already reads); an advisory reply's items
+        # were withheld above; every other reply's items are on the bus.
+        reply_records.write_outcome(
+            self.run_context, call_id,
+            "refused" if reply_records.is_refusal(parsed, result.raw_text)
+            else "advisory_not_record" if items_are_advisory else "accepted_to_bus",
+            source="run_task", item_count=item_count)
         return {"ok": True, "agent": self.name, "backend": result.backend, "model": result.model,
                 "parsed": parsed, "raw_text": result.raw_text, "contract_missing": [], "error": None,
                 "contract_normalized": normalized,
