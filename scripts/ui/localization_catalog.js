@@ -2012,5 +2012,5 @@ var SHIMMER_TR = {
   "Shimmer / computed by Python": "Shimmer / Python tarafından hesaplandı",
   "- findings computed by Python from the document's figures: ": "- Python tarafından belgenin sayılarından hesaplanan bulgular: ",
   "- required fields Python checked in code and found absent: ": "- Python'un kodla denetleyip eksik bulduğu zorunlu alanlar: ",
-  "Python could compute nothing for this unit and rule, so the reply was advisory and was kept neither as a finding nor as a note": "Python bu birim ve kural için hiçbir şey hesaplayamadı; bu nedenle yanıt yalnızca danışma niteliğindeydi, ne bulgu ne not olarak tutuldu"
+  "Python's checks for this unit and rule produced no comparison it could settle, so the reply was advisory and was kept neither as a finding nor as a note": "Python'un bu birim ve kural için yaptığı denetimler sonuçlandırabileceği bir karşılaştırma üretmedi; bu nedenle yanıt yalnızca danışma niteliğindeydi, ne bulgu ne not olarak tutuldu"
 };

@@ -962,7 +962,7 @@ def observe_round3():
             "bus_outcomes": sorted(c.get("outcome") for c in bus_calls),
             "calls_stated": ("Judging calls this agent made on this document: 3; notes kept on Python's findings: 2."
                              in files["reviewed_document.md"]
-                             and ("Python could compute nothing for this unit and rule, so the reply was advisory "
+                             and ("Python's checks for this unit and rule produced no comparison it could settle, so the reply was advisory "
                                   "and was kept neither as a finding nor as a note") in files["reviewed_document.md"]
                              and "2 kept from 3 judging call(s)" in files["document_summary.md"]
                              and "2 kept from 3 judging call(s)" in files["grounding_summary.md"]
