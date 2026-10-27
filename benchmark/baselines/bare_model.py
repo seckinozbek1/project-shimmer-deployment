@@ -1,37 +1,44 @@
 """B1, the bare-model arm: the main reading agent's model, one fixed prompt per item, no pipeline.
 
 An evaluation tool, not a review. For one test bundle and the item table the adapter
-wrote beside it (``items.json``: item_id, document_id, rule_id, benchmark; no gold),
-it sends the preregistered prompt (``b1_prompt.json``, from
-docs/benchmarks/PREREGISTRATION.md section 5.4) once per item, with the document as
-it stands in the bundle (already cut by the adapter, section 5.3), every convention
-of the bundle, and the fixed line ``None.`` for reference material. It writes:
+wrote beside it (``items.json``: item_id, document_id, rule_id, benchmark; no gold;
+the source ids it also holds are never put in a prompt), it sends the preregistered
+prompt (``b1_prompt.json``, from docs/benchmarks/PREREGISTRATION.md section 5.4) once
+per item. The prompt is rendered by benchmark/adapters/common/prompt.py, the same code
+the adapters' cut rule counts with: the document as it stands in the bundle (already cut
+by the adapter, section 5.3), every convention of the bundle as written in it, and the
+bundle's reference material (its grounding files, the earlier version included), or the
+line ``None.`` when it has none. It writes:
 
   <out>/audit/model_replies/   one record per call, through reply_records.write (the
-                               S1 Part 4 write path every pipeline backend uses), with
-                               this tool's own run context
+                               S1 Part 4 write path every pipeline backend uses); the
+                               run stops if a record cannot be written
   <out>/labels/<item_id>.json  one typed label per item; a reply that does not parse,
                                or whose label is not in the list, is ABSTAIN
   <out>/b1_summary.json        counts and the parse rate per benchmark
 
-The model is read at run time from the configuration the pipeline uses: the agent's
-backend from the pipeline's local profile table and config/local_models.json (both
-read as data, the pipeline is never imported), its checkpoint through final_models
-in final mode, and its decoding policy through scripts/decoding_policy.py. The output
-allowance is the pipeline's PROCESSOR budget (PRODUCTION_MAX_TOKENS), also read as
-data, unless --max-new-tokens overrides it (the value used is recorded either way).
+Before the first item the model is loaded and verified ONCE: its model id, checkpoint
+digest and decoding are compared with the values passed in (from VERSIONS.md; section 4),
+and every item's prompt plus the output allowance must fit the model's context. Any
+failure there stops the run with a non-zero exit before anything is generated. Inside
+the item loop only a generation error is caught (and recorded as a failed call).
 
-The cut rule of section 5.3 is applied by the adapter before bundling; its two
-functions live here (``cut_budget``, ``cut_document``) with an injected token
-counter, because the budget depends on this prompt with an empty document.
+The reading agent is passed in (``--agent``). PROCESSOR is a PLACEHOLDER default until
+preregistration section 12 item 8 names the main reading agent. Its backend comes from
+the pipeline's local profile table and config/local_models.json (read as data, the
+pipeline is never imported), its checkpoint through final_models in final mode, its
+decoding policy through scripts/decoding_policy.py, and its output allowance from the
+pipeline's PROCESSOR budget (PRODUCTION_MAX_TOKENS) unless --max-new-tokens overrides it.
 
 Usage (loads a local model; for the rented machine, never this laptop):
     py -3.12 benchmark/baselines/bare_model.py --bundle <bundle> --items <items.json> --out <dir>
+        --agent <AGENT> --expect-model-id <id> --expect-digest <sha256> --expect-decoding '<json>'
 """
 from __future__ import annotations
 
 import argparse
-import ast
+
+import hashlib
 import json
 import re
 import sys
@@ -43,24 +50,30 @@ from types import SimpleNamespace
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 SCRIPTS = ROOT / "scripts"
-for _p in (str(SCRIPTS), str(HERE)):
+ADAPTERS = HERE.parent / "adapters"
+for _p in (str(SCRIPTS), str(HERE), str(ADAPTERS)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 import decoding_policy  # noqa: E402
 import final_models  # noqa: E402
-import finding_record  # noqa: E402
 import python_only  # noqa: E402  the bundle loader shared with B2
 import reply_records  # noqa: E402
+from common import prompt as b1_prompt  # noqa: E402  the one renderer of the section 5.4 prompt
 
 ARM = "B1"
 AGENT_LABEL = "B1_BARE_MODEL"
 BASELINE_TEXT = "BASELINE B1 (bare model): one fixed prompt per item, no pipeline. This is not a review."
 PROMPT_PATH = HERE / "b1_prompt.json"
-READING_AGENT = "PROCESSOR"
+READING_AGENT = "PROCESSOR"   # PLACEHOLDER until preregistration section 12 item 8 is settled
 PIPELINE_SOURCE = SCRIPTS / "pipeline.py"
-_SLOT = re.compile(r"\{(document|conventions|item_id|rule_id|question|label_lines|undecided_label)\}")
 _FENCE = re.compile(r"^\s*```[^`\s]*\s*$")
+_ESCAPE = re.compile(r'\\(["\\/bfnrtu])|\\')
+UNCERTAIN_LABEL = "uncertain"
+
+
+class SetupError(Exception):
+    """A failure before or outside generation: never caught per item."""
 
 
 def _now():
@@ -72,10 +85,7 @@ def _now():
 
 
 def load_prompt(path=PROMPT_PATH):
-    spec = json.loads(Path(path).read_text(encoding="utf-8"))
-    for key in ("system", "user_template", "convention_line", "benchmarks"):
-        if key not in spec:
-            raise ValueError("b1_prompt.json lacks " + key)
+    spec = b1_prompt.load_prompt(path)
     for name, bench in spec["benchmarks"].items():
         names = label_names(bench)
         if _norm_label(bench["undecided"]) not in {_norm_label(n) for n in names}:
@@ -88,31 +98,9 @@ def label_names(bench):
     return [line.split(":", 1)[0].strip() for line in bench["labels"]]
 
 
-def conventions_block(registry):
-    """Every convention of the bundle, one per line with its rule id (the operator's own
-    id where the heading carries one, else the registry id)."""
-    lines = []
-    for c in registry.get("conventions", []):
-        rule_id = finding_record.source_rule_id_for(c.get("id"), registry) or c.get("id")
-        text = " ".join(str(c.get("rule") or "").split())
-        lines.append((rule_id, text))
-    return lines
-
-
-def render_user(spec, bench_key, *, document, conventions, item):
-    bench = spec["benchmarks"][bench_key]
-    values = {
-        "document": document,
-        "conventions": "\n".join(spec["convention_line"].replace("{rule_id}", rid)
-                                 .replace("{rule_text}", text) for rid, text in conventions),
-        "item_id": item["item_id"],
-        "rule_id": item["rule_id"],
-        "question": bench["question"],
-        "label_lines": "\n".join(bench["labels"]),
-        "undecided_label": bench["undecided"],
-    }
-    # One pass: a filled slot is never read again, so braces in the document stay text.
-    return _SLOT.sub(lambda m: values[m.group(1)], spec["user_template"])
+def render_user(spec, bench_key, *, document, conventions, item, reference=""):
+    return b1_prompt.render_user(spec, bench_key, document=document, conventions=conventions,
+                                 item=item, reference=reference)
 
 
 # ---------------------------------------------------------------------------
@@ -144,10 +132,21 @@ def _last_balanced_object(text):
     return None
 
 
+def _loads(candidate):
+    """(object, repaired): the JSON object, or, when it does not parse, the same text with
+    every backslash that starts no valid JSON escape doubled (a copied `\\|`, `\\#` or
+    LaTeX command in `evidence` or `reason` must not cost the label)."""
+    try:
+        return json.loads(candidate), False
+    except ValueError:
+        fixed = _ESCAPE.sub(lambda m: m.group(0) if m.group(1) else "\\\\", candidate)
+        return json.loads(fixed), True
+
+
 def parse_reply(reply, bench, item_id=None):
-    """{parsed, label, evidence, reason, reply_item_id, item_id_matches, failure}."""
+    """{parsed, label, evidence, reason, reply_item_id, item_id_matches, failure, repaired}."""
     out = {"parsed": False, "label": None, "evidence": None, "reason": None,
-           "reply_item_id": None, "item_id_matches": None, "failure": None}
+           "reply_item_id": None, "item_id_matches": None, "failure": None, "repaired": False}
     if not isinstance(reply, str) or not reply.strip():
         out["failure"] = "empty_reply"
         return out
@@ -157,7 +156,7 @@ def parse_reply(reply, bench, item_id=None):
         out["failure"] = "no_json_object"
         return out
     try:
-        obj = json.loads(candidate)
+        obj, out["repaired"] = _loads(candidate)
     except ValueError:
         out["failure"] = "json_invalid"
         return out
@@ -165,6 +164,8 @@ def parse_reply(reply, bench, item_id=None):
         out["failure"] = "no_label"
         return out
     wanted = _norm_label(obj["label"])
+    if wanted == UNCERTAIN_LABEL:  # a rule's "emit UNCERTAIN" means the undecided label
+        wanted = _norm_label(bench["undecided"])
     match = next((name for name in label_names(bench) if _norm_label(name) == wanted), None)
     out["reply_item_id"] = obj.get("item_id")
     out["item_id_matches"] = (str(obj.get("item_id")) == str(item_id)) if item_id else None
@@ -179,88 +180,14 @@ def parse_reply(reply, bench, item_id=None):
 
 
 # ---------------------------------------------------------------------------
-# the cut rule (section 5.3), with an injected token counter
-
-
-def words(text):
-    return len(str(text).split())
-
-
-def cut_note(remaining, total):
-    return "[Document cut: the remaining %d of %d words are not shown.]" % (remaining, total)
-
-
-def cut_budget(max_context, prompt_tokens_empty_document, output_allowance):
-    """Context minus the prompt with an empty document (the largest over the document's
-    items) minus the output allowance minus 32."""
-    return int(max_context) - int(prompt_tokens_empty_document) - int(output_allowance) - 32
-
-
-def prompt_overhead(spec, items, conventions, count_prompt):
-    """The token count of this prompt with an empty document, the largest over `items`.
-    count_prompt(system, user) -> int counts the whole prompt as the model sees it."""
-    return max(count_prompt(spec["system"], render_user(
-        spec, str(item["benchmark"]).lower(), document="", conventions=conventions, item=item))
-        for item in items)
-
-
-def cut_document(text, budget, count):
-    """(text, info). Whole blank-line paragraphs from the start while they fit, the cut
-    line appended to the last one kept; a first paragraph that alone does not fit is cut
-    at the last whitespace that fits. count(text) -> int, the model's own tokenizer."""
-    total = words(text)
-    if count(text) <= budget:
-        return text, {"cut": False, "words_total": total, "words_removed": 0, "paragraphs_kept": None}
-    ends = [m.start() for m in re.finditer(r"\n(?:[ \t]*\n)+", text)] + [len(text)]
-
-    def candidate(prefix):
-        removed = total - words(prefix)
-        return prefix.rstrip() + "\n" + cut_note(removed, total), removed
-
-    kept, kept_count = None, 0
-    for k, end in enumerate(ends, start=1):
-        cand, removed = candidate(text[:end])
-        if count(cand) > budget:
-            break
-        kept, kept_count = (cand, removed), k
-    if kept is not None:
-        return kept[0], {"cut": True, "words_total": total, "words_removed": kept[1],
-                         "paragraphs_kept": kept_count}
-    first = text[:ends[0]]
-    cuts = [m.start() for m in re.finditer(r"\s", first)]
-    lo, hi, best = 0, len(cuts) - 1, None
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        cand, removed = candidate(first[:cuts[mid]])
-        if count(cand) <= budget:
-            best, lo = (cand, removed), mid + 1
-        else:
-            hi = mid - 1
-    if best is None:
-        raise ValueError("the budget does not hold even the cut line")
-    return best[0], {"cut": True, "words_total": total, "words_removed": best[1], "paragraphs_kept": 0}
-
-
-# ---------------------------------------------------------------------------
 # the model, read from the pipeline's own configuration
 
 
-def pipeline_literal(name, source=PIPELINE_SOURCE):
-    """The first top-level assignment of `name` in the pipeline source whose value is a
-    literal, read with ast (the pipeline is never imported)."""
-    tree = ast.parse(Path(source).read_text(encoding="utf-8"))
-    for node in tree.body:
-        if isinstance(node, ast.Assign) and any(
-                isinstance(t, ast.Name) and t.id == name for t in node.targets):
-            try:
-                return ast.literal_eval(node.value)
-            except ValueError:
-                continue
-    raise KeyError(name + " is not a literal assignment in " + Path(source).name)
+pipeline_literal = python_only.pipeline_literal  # one ast reader of the pipeline source
 
 
 def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_tokens=None):
-    """The main reading agent's backend, model, decoding policy and output allowance."""
+    """The reading agent's backend, model, decoding policy and output allowance."""
     root = Path(root)
     registry = json.loads((root / "config" / "agent_registry.json").read_text(encoding="utf-8"))
     entry = registry["agents"][agent]
@@ -287,7 +214,8 @@ def resolve_reader(root=ROOT, *, agent=READING_AGENT, profile="local", max_new_t
         sources["model"] = "config/final_models.json producer"
     allowance = (int(max_new_tokens) if max_new_tokens is not None
                  else int(pipeline_literal("PRODUCTION_MAX_TOKENS", root / "scripts" / "pipeline.py")))
-    return {"agent": agent, "backend": backend, "model_id": model_id, "model_mode": mode,
+    return {"agent": agent, "agent_source": "placeholder" if agent == READING_AGENT else "argument",
+            "backend": backend, "model_id": model_id, "model_mode": mode,
             "role": role, "decoding": decoding, "max_new_tokens": allowance,
             "max_new_tokens_source": "argument" if max_new_tokens is not None
             else "pipeline PRODUCTION_MAX_TOKENS", "sources": sources}
@@ -297,42 +225,54 @@ class LocalBackend:
     """The model, loaded and called the way agent_wrapper.call_local loads and calls it:
     final mode through final_models.resident, base mode through the shared loader, the
     model's own chat template with a system and a user turn, the frozen decoding kwargs.
-    Imported lazily: nothing here loads before the first call."""
+    prepare() loads it once; nothing generates before that."""
 
     def __init__(self, reader, run_context):
         self.reader, self.run_context = reader, run_context
         self._tok = self._mdl = None
 
-    def _load(self):
+    def prepare(self):
+        """Load and verify; returns {model_id, digest, decoding} of what was loaded."""
+        if self.reader["model_mode"] == "final" and self.reader["backend"] == "local_producer":
+            final_models.verify_runtime()
+            self._tok, self._mdl = final_models.resident("producer", self.run_context)
+            ident = final_models.identity("producer")
+            digest = ident["adapter_sha256"]
+        else:
+            import agent_wrapper
+            from huggingface_hub import snapshot_download
+            self._tok, self._mdl = agent_wrapper._load_qwen(self.reader["model_id"])
+            # PROVISIONAL: a base checkpoint is identified by its local snapshot revision
+            snapshot = Path(snapshot_download(self.reader["model_id"], local_files_only=True))
+            digest = "snapshot:" + snapshot.name
+        return {"model_id": self.reader["model_id"], "digest": digest,
+                "decoding": dict(self.reader["decoding"]["kwargs"])}
+
+    def _loaded(self):
         if self._tok is None:
-            if self.reader["model_mode"] == "final" and self.reader["backend"] == "local_producer":
-                final_models.verify_runtime()
-                self._tok, self._mdl = final_models.resident("producer", self.run_context)
-            else:
-                import agent_wrapper
-                self._tok, self._mdl = agent_wrapper._load_qwen(self.reader["model_id"])
+            raise SetupError("the model was not prepared before the first call")
         return self._tok, self._mdl
 
     def _render(self, system, user):
-        tok, _ = self._load()
+        tok, _ = self._loaded()
         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
         return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
     def count_prompt(self, system, user):
-        tok, _ = self._load()
+        tok, _ = self._loaded()
         return len(tok(self._render(system, user), add_special_tokens=False)["input_ids"])
 
-    def count_text(self, text):
-        tok, _ = self._load()
+    def count(self, text):
+        tok, _ = self._loaded()
         return len(tok(text, add_special_tokens=False)["input_ids"])
 
     def max_context(self):
-        _, mdl = self._load()
+        _, mdl = self._loaded()
         return int(mdl.config.max_position_embeddings)
 
     def generate(self, system, user, max_new_tokens):
         import torch
-        tok, mdl = self._load()
+        tok, mdl = self._loaded()
         prompt = self._render(system, user)
         inputs = tok(prompt, return_tensors="pt", add_special_tokens=False).to(mdl.device)
         with torch.no_grad():
@@ -366,17 +306,37 @@ def _write_json(path, data):
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def _hashed(text):
+    if text is None:
+        return None
+    data = text.encode("utf-8")
+    return {"sha256": hashlib.sha256(data).hexdigest(), "length_bytes": len(data)}
+
+
+def verify_identity(loaded, expected):
+    """Compare what was loaded with the values passed in (VERSIONS.md): a mismatch stops
+    the run (section 4)."""
+    wrong = [key for key in ("model_id", "digest", "decoding")
+             if key in expected and expected[key] != loaded.get(key)]
+    if wrong:
+        raise SetupError("loaded model differs from the recorded values on: " + ", ".join(wrong))
+
+
 def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMPT_PATH,
-        run_id=None):
-    """Run B1 on one bundle. `backend` needs generate(system, user, max_new_tokens) ->
-    {text, payload, form}; None builds the LocalBackend (a real model load)."""
+        run_id=None, expected=None, development=False, sensitive=False):
+    """Run B1 on one bundle. `backend` needs prepare() -> {model_id, digest, decoding},
+    count_prompt(system, user), max_context() and generate(system, user, max_new_tokens)
+    -> {text, payload, form}; None builds the LocalBackend (a real model load).
+    `expected` holds the recorded model_id, digest and decoding; it may be omitted only
+    with development=True, which is recorded."""
     out = Path(out)
+    if not expected and not development:
+        raise SetupError("the recorded model id, checkpoint digest and decoding are required "
+                         "(section 4); only a development run may omit them")
     spec = load_prompt(prompt_path)
     data = python_only.load_bundle(bundle)
     if len(data["targets"]) != 1:
         raise ValueError("a benchmark bundle names exactly one document under review")
-    if data["grounding"] or data["prior"]:
-        raise ValueError("the preregistered prompt shows no reference material; this bundle declares some")
     doc = data["targets"][0]
     items = load_items(items_path, doc["id"])
     if not items:
@@ -387,52 +347,77 @@ def run(bundle, items_path, out, *, backend=None, reader=None, prompt_path=PROMP
     reader = reader or resolve_reader()
     context = SimpleNamespace(run_dir=str(out), run_id=run_id or ("b1-" + uuid.uuid4().hex[:12]))
     backend = backend or LocalBackend(reader, context)
-    conventions = conventions_block(data["registry"])
+    conventions = b1_prompt.conventions_from_bundle(bundle)
+    reference = b1_prompt.reference_from_bundle(bundle)
+    # Load and verify once, before the first item; nothing below is caught.
+    loaded = backend.prepare()
+    verify_identity(loaded, expected or {})
+    users = {i["item_id"]: render_user(spec, str(i["benchmark"]).lower(), document=doc["text"],
+                                       conventions=conventions, item=i, reference=reference)
+             for i in items}
+    limit = backend.max_context()
+    over = [i for i, user in users.items()
+            if backend.count_prompt(spec["system"], user) + reader["max_new_tokens"] > limit]
+    if over:
+        raise SetupError("prompt plus output allowance exceeds the model's context for %d item(s): %s"
+                         % (len(over), ", ".join(over[:5])))
     decoding = dict(decoding_policy.usage_fields(reader["decoding"]),
                     max_new_tokens=reader["max_new_tokens"])
-    summary = {}
+    summary, written = {}, []
     for item in items:
         bench_key = str(item["benchmark"]).lower()
         bench = spec["benchmarks"][bench_key]
-        user = render_user(spec, bench_key, document=doc["text"], conventions=conventions, item=item)
         error, result = "", {}
         try:
-            result = backend.generate(spec["system"], user, reader["max_new_tokens"]) or {}
-        except Exception as exc:  # a failed call is an unparseable reply, and still a record
+            result = backend.generate(spec["system"], users[item["item_id"]], reader["max_new_tokens"]) or {}
+        except SetupError:
+            raise
+        except Exception as exc:  # a generation error is a failed call, and still a record
             error = type(exc).__name__
         reply = result.get("text") if isinstance(result.get("text"), str) else None
         call_id = reply_records.write(
             context, agent=AGENT_LABEL, backend=reader["backend"], model_id=reader["model_id"],
             model_mode=reader["model_mode"], payload=result.get("payload"),
             payload_form=result.get("form"), reply=reply, ok=not error, error=error,
-            decoding=decoding, phase=ARM, doc_id=doc["id"])
+            decoding=decoding, sensitive=sensitive, phase=ARM, doc_id=doc["id"])
+        if not call_id:
+            raise SetupError("the reply record for item %s could not be written" % item["item_id"])
+        written.append(call_id)
         parsed = parse_reply(reply, bench, item["item_id"]) if not error else dict(
             parse_reply(None, bench), failure="backend_failure")
         undecided = bool(parsed["parsed"]) and _norm_label(parsed["label"]) == _norm_label(bench["undecided"])
-        _write_json(out / "labels" / (str(item["item_id"]) + ".json"), {
-            "baseline": BASELINE_TEXT, "arm": ARM, "schema": "b1-label-v1",
+        texts = ({"evidence": parsed["evidence"], "reason": parsed["reason"]} if not sensitive else
+                 {"evidence": None, "reason": None, "evidence_hashed": _hashed(parsed["evidence"]),
+                  "reason_hashed": _hashed(parsed["reason"])})
+        _write_json(out / "labels" / (str(item["item_id"]) + ".json"), dict({
+            "baseline": BASELINE_TEXT, "arm": ARM, "schema": "b1-label-v2",
             "item_id": item["item_id"], "document_id": doc["id"], "rule_id": item["rule_id"],
             "benchmark": bench_key, "label": parsed["label"], "abstain": not parsed["parsed"],
             "undecided": undecided, "parse_failure": parsed["failure"],
-            "evidence": parsed["evidence"], "reason": parsed["reason"],
+            "parse_repaired": parsed["repaired"]}, **texts, **{
             "reply_item_id": parsed["reply_item_id"], "item_id_matches": parsed["item_id_matches"],
             "call_id": call_id, "backend_ok": not error, "reading_agent": reader["agent"],
-            "model_id": reader["model_id"], "model_mode": reader["model_mode"]})
+            "model_id": reader["model_id"], "model_mode": reader["model_mode"]}))
         row = summary.setdefault(bench_key, {"items": 0, "parsed": 0, "undecided": 0,
-                                             "abstain": 0, "backend_failures": 0})
+                                             "abstain": 0, "backend_failures": 0, "repaired": 0})
         row["items"] += 1
         row["parsed"] += int(parsed["parsed"])
         row["undecided"] += int(undecided)
         row["abstain"] += int(not parsed["parsed"])
         row["backend_failures"] += int(bool(error))
+        row["repaired"] += int(parsed["repaired"])
+    if len(written) != len(items) or len(set(written)) != len(items):
+        raise SetupError("reply records (%d) do not match items (%d)" % (len(set(written)), len(items)))
     for row in summary.values():
         row["parse_rate"] = row["parsed"] / row["items"]
     result = {"baseline": BASELINE_TEXT, "arm": ARM, "finished_at": _now(), "run_id": context.run_id,
               "bundle": Path(bundle).name, "document_id": doc["id"],
               "prompt": {"source": spec.get("source"), "status": spec.get("status")},
-              "reader": {k: reader[k] for k in ("agent", "backend", "model_id", "model_mode",
-                                                "max_new_tokens", "max_new_tokens_source")},
-              "decoding": decoding, "benchmarks": summary}
+              "reader": {k: reader[k] for k in ("agent", "agent_source", "backend", "model_id",
+                                                "model_mode", "max_new_tokens", "max_new_tokens_source")},
+              "loaded": loaded, "verified_against": sorted((expected or {}).keys()),
+              "development": bool(development), "sensitive": bool(sensitive),
+              "reference_material": bool(reference), "decoding": decoding, "benchmarks": summary}
     _write_json(out / "b1_summary.json", result)
     return result
 
@@ -442,13 +427,33 @@ def main(argv=None):
     parser.add_argument("--bundle", required=True)
     parser.add_argument("--items", required=True, help="items.json written beside the bundle")
     parser.add_argument("--out", required=True)
-    parser.add_argument("--agent", default=READING_AGENT)
+    parser.add_argument("--agent", default=READING_AGENT,
+                        help="the main reading agent (PROCESSOR is a placeholder pending section 12 item 8)")
     parser.add_argument("--profile", choices=["local", "registry"], default="local")
     parser.add_argument("--max-new-tokens", type=int, default=None)
+    parser.add_argument("--expect-model-id")
+    parser.add_argument("--expect-digest")
+    parser.add_argument("--expect-decoding", help="the decoding kwargs as a JSON object")
+    parser.add_argument("--development", action="store_true",
+                        help="development run: the recorded values may be omitted (recorded)")
+    parser.add_argument("--sensitive", action="store_true",
+                        help="keep only hashes of prompts, replies, evidence and reason")
     args = parser.parse_args(argv)
-    reader = resolve_reader(agent=args.agent, profile=args.profile,
-                            max_new_tokens=args.max_new_tokens)
-    result = run(args.bundle, args.items, args.out, reader=reader)
+    expected = {}
+    if args.expect_model_id:
+        expected["model_id"] = args.expect_model_id
+    if args.expect_digest:
+        expected["digest"] = args.expect_digest
+    if args.expect_decoding:
+        expected["decoding"] = json.loads(args.expect_decoding)
+    try:
+        reader = resolve_reader(agent=args.agent, profile=args.profile,
+                                max_new_tokens=args.max_new_tokens)
+        result = run(args.bundle, args.items, args.out, reader=reader, expected=expected,
+                     development=args.development, sensitive=args.sensitive)
+    except Exception as exc:  # setup, load, verification or record failure: stop, non-zero
+        print("B1 stopped before or during the run: %s: %s" % (type(exc).__name__, exc), file=sys.stderr)
+        return 4
     print(json.dumps(result["benchmarks"], indent=2))
     return 0
 

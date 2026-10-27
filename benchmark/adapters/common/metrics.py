@@ -27,14 +27,16 @@ def _ratio(num, den, zero):
 
 
 def class_scores(pairs, cls) -> dict:
-    """Precision, recall and F1 of one class over (predicted, gold) label pairs."""
+    """Precision, recall and F1 of one class over (predicted, gold) label pairs. F1 is
+    2tp / (2tp + fp + fn), as scikit-learn computes it, so its denominator is zero only
+    when tp, fp and fn are all zero."""
     zero = [0]
     tp = sum(1 for p, g in pairs if p == cls and g == cls)
     fp = sum(1 for p, g in pairs if p == cls and g != cls)
     fn = sum(1 for p, g in pairs if g == cls and p != cls)
     precision = _ratio(tp, tp + fp, zero)
     recall = _ratio(tp, tp + fn, zero)
-    f1 = _ratio(2 * precision * recall, precision + recall, zero)
+    f1 = _ratio(2 * tp, 2 * tp + fp + fn, zero)
     return {"class": cls, "tp": tp, "fp": fp, "fn": fn, "precision": precision,
             "recall": recall, "f1": f1, "zero_denominators": zero[0]}
 
@@ -101,6 +103,12 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
     missing = [r["item_id"] for r in rows if r["item_id"] not in answers]
     if missing:
         raise ValueError("labels for items with no gold: " + ", ".join(missing[:5]))
+    labelled_docs = {r["document_id"] for r in rows}
+    labelled = {r["item_id"] for r in rows}
+    unlabelled = sorted(i for i, a in answers.items()
+                        if a["document_id"] in labelled_docs and i not in labelled)
+    if unlabelled:
+        raise ValueError("gold items of a labelled document have no label: " + ", ".join(unlabelled[:5]))
     pairs = [(r["label"], answers[r["item_id"]]["gold"]) for r in rows]
     flag, clear = spec.labels[mapping.FLAG], spec.labels[mapping.CLEAR]
     gold_flag = [r for r in rows if answers[r["item_id"]]["gold"] == flag]
@@ -109,24 +117,28 @@ def score_arm(spec, labels: dict, bundles_dir, headline) -> dict:
     unit_cache = {}
 
     def located(row):
-        evidence = set(answers[row["item_id"]]["evidence_unit_ids"])
+        """B2, B3, B4: a deciding record cites a unit holding the evidence (unit ids
+        compared without regard to case). B1: any one sentence of its `evidence` string
+        (split by the section 1 sentence rule) lies, whitespace-normalised, in a unit
+        holding the evidence."""
+        evidence = {u.casefold() for u in answers[row["item_id"]]["evidence_unit_ids"]}
         if row["class"] != mapping.FLAG or not evidence:
             return False
         if row["arm"] != "B1":
-            return bool(evidence & set(row["cited_unit_ids"]))
-        needle = bundle.normalise_space(row.get("evidence") or "")
-        if not needle:
-            return False
-        return any(needle in bundle.normalise_space(unit_text(row["document_id"], u))
-                   for u in evidence)
+            return bool(evidence & {u.casefold() for u in row["cited_unit_ids"]})
+        quoted = bundle.sentences(row.get("evidence") or "")
+        return any(s in bundle.normalise_space(unit_text(row["document_id"], u))
+                   for s in quoted for u in evidence)
 
     def unit_text(document_id, uid):
-        units = unit_cache.setdefault(document_id, _units(bundles_dir, document_id))
-        return units.get(uid, "")
+        units = unit_cache.setdefault(document_id, {
+            k.casefold(): v for k, v in _units(bundles_dir, document_id).items()})
+        return units.get(uid.casefold(), "")
 
     zero = [0]
     if measurable:
-        location = {"measure": "location recall", "value": _ratio(
+        location = {"measure": "location recall over FLAG items whose evidence is marked",
+                    "value": _ratio(
             sum(1 for r in measurable if located(r)), len(measurable), zero),
             "flag_items_measurable": len(measurable)}
     else:

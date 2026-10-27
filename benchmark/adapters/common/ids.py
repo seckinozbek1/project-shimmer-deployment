@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 
-BENCHMARKS = ("contradoc", "cuad", "scitab", "findver")
+BENCHMARKS = ("contradoc", "cuad", "scitab", "findver", "contractnli")
 OPAQUE_LENGTH = 12
 SPLIT_MODULUS = 5
 DEVELOPMENT = "development"
