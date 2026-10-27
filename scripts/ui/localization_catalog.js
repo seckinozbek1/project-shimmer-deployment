@@ -1227,11 +1227,11 @@ var SHIMMER_TR = {
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?),\\ above\\ the\\ upper\\ bound\\ of\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1} kuralı: {2} karşılaştırıldı. Hesaplanan değer {3}; bu, üst sınırı {4} olan aralığın üzerindedir."
+      "translation": "{0} birimi, {1} kuralı: {2} değeri {3}; bu, üst sınırı {4} olan aralığın üzerindedir."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?),\\ below\\ the\\ lower\\ bound\\ of\\ ([\\s\\S]*?)\\.$",
-      "translation": "{0} birimi, {1} kuralı: {2} karşılaştırıldı. Hesaplanan değer {3}; bu, alt sınırı {4} olan aralığın altındadır."
+      "translation": "{0} birimi, {1} kuralı: {2} değeri {3}; bu, alt sınırı {4} olan aralığın altındadır."
     },
     {
       "pattern": "^Unit\\ ([\\s\\S]*?)\\ under\\ rule\\ ([\\s\\S]*?):\\ the\\ ratio\\ ([\\s\\S]*?)\\ is\\ ([\\s\\S]*?),\\ outside\\ the\\ permitted\\ bound\\ of\\ ([\\s\\S]*?)\\.$",

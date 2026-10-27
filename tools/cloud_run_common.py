@@ -158,11 +158,15 @@ def extract_source(archive, destination, expected):
             path.write_bytes(tar.extractfile(m).read())
 
 
-def budget_deadlines(hourly_rate, running_epoch, reserve_seconds=120):
+# The caps are required parameters with no default: every caller passes its own sealed soft
+# and hard caps (R3), so no cap is ever a code default.
+def budget_deadlines(hourly_rate, running_epoch, reserve_seconds=120, *, soft_usd, hard_usd):
     require(type(hourly_rate) in (int, float) and math.isfinite(hourly_rate) and hourly_rate > 0,
             'positive operator hourly rate required')
     require(math.isfinite(running_epoch) and running_epoch > 0, 'billing start required')
-    require(0 < reserve_seconds < 5 / hourly_rate * 3600, 'invalid termination reserve')
-    return {'soft_epoch': running_epoch + 5 / hourly_rate * 3600,
-            'terminate_epoch': running_epoch + 10 / hourly_rate * 3600 - reserve_seconds,
-            'ceiling_epoch': running_epoch + 10 / hourly_rate * 3600}
+    require(all(type(v) in (int, float) and not isinstance(v, bool) and math.isfinite(v) for v in (soft_usd, hard_usd))
+            and 0 < soft_usd < hard_usd, 'positive soft cap below the hard cap required')
+    require(0 < reserve_seconds < soft_usd / hourly_rate * 3600, 'invalid termination reserve')
+    return {'soft_epoch': running_epoch + soft_usd / hourly_rate * 3600,
+            'terminate_epoch': running_epoch + hard_usd / hourly_rate * 3600 - reserve_seconds,
+            'ceiling_epoch': running_epoch + hard_usd / hourly_rate * 3600}

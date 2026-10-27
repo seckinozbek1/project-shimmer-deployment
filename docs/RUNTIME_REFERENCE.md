@@ -171,6 +171,31 @@ ontology/GNN processing. It does not produce conventional review amendments or
 promote negotiation state into durable memory. Existing startup model/privacy
 governance still applies; Sensitive case analysis is unavailable.
 
+Before the PROCESSOR and VERIFIER calls, the case phase reviews the declared rounds
+in sequence in Python only (`scripts/multi_round_rounds.py`), with the same pairing
+map and arithmetic as paired review. A unit is recomputed only when something its
+computation reads changed: its own text, the full rules paired to it, the
+document's field labels or the units of measure the document writes. An unchanged
+unit's findings are reused from the earliest round that computed them, under this
+round's unit id, and the reuse is recorded in `audit/round_reuse.json`; a plan that
+would need a model is recorded as `needs_model` and not asked. A failure of this
+review is recorded in the case master and never takes the case phase down. Every
+model call of a case run saves its reply like any other call, with outcome
+`advisory_not_record` (or `refused` for a refusal).
+
+In a prior-version comparison, a term that vanished while its section states a
+newly stated term in the same unit of measure that no value-corroborated rename
+claims is refused ("possible rename with a moved value, not a confirmed
+withdrawal", `paired_review.possible_successor`), never minted as
+`absent_since_prior`. The rule is structural; whether the new term is the same
+term is a word-meaning decision left to a later measured ensemble rule.
+
+With `SHIMMER_MODEL_MODE=final`, the frozen final models serve ordinary Review and
+a declared multi-round Review (`--multi-round` and `--multi-round-manifest`
+together). Draft, the flag alone and the manifest alone are refused by the
+final-mode admission in `main()`. A sealed cloud bundle declares a multi-round
+Review under `reference_serial` (see [cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)).
+
 Ordinary runs require no case artifact, read no case manifest, use no case contract
 and gain no model call. Fixture success establishes contracts, not model quality.
 
@@ -219,7 +244,38 @@ the full rule is in `docs/THREAT_MODEL.md`).
 
 `review_data.json` is the amendment master; Markdown and DOCX are renders, not
 independent findings. Audit synthesis, editorial records, DELTA proposals,
-contract-violation dumps and approval artifacts also live under `audit/`.
+contract-violation dumps and approval artifacts also live under `audit/`. A
+multi-round run also writes `audit/round_reuse.json` (see above).
+
+**Who wrote a finding.** Every finding is stamped `written_by` from the bus post it
+travelled in: `python` only for Python's own records (backend `paired` or
+`computed` with a model id starting `python`), `model` for everything else. A
+model-written finding never becomes an amendment and is never hidden: the master
+keeps it apart under `model_findings_not_promoted` (rendered in
+`review_findings.md` under "Written by a model: not checked by Python, not
+promoted"), with `model_claimed_verdict`, `checked_by_python: false` and
+`promoted: false` and without `confidence`, `record_verdict` or `verdict`.
+`document_summary.md`, `reviewed_document.md`, `_run_summary.md` and the console
+mark each one "Written by a model. Not promoted to an amendment. Not checked by
+Python." The sentence naming who produced a document's findings is generated from
+those stamps (log event `findings_provenance`), Python findings and model items
+are counted separately, and relations only a model reported are listed apart from
+the relations Python computed. `audit_synthesis.md` counts audit-trail patterns
+and says they are not findings about the document under review; a DELTA proposal
+gives its reason as "N escalation messages on this topic". Deliverable headings
+use colons, not em dashes. The per-agent `reviewed_document.md` is titled as a
+technical record of raw agent output, not the reviewed document. The Turkish
+JSON-block renderer `run_options.review_markdown` was removed: the Turkish
+`review_findings.md` has the English layout.
+
+**Amendment comments.** Each comment opens with one plain sentence naming the unit
+(with its heading), the rule, both figures with their units and the relation; a
+sum names the values it added and a product its two factors; an absence says what
+was checked in code. The rule's own words follow, quoted, and a model's sentence
+comes last, labelled as the model's. An amendment and its finding sit at the
+unit's own passage when exactly one indexed passage holds the unit's first line; a
+figure compared from elsewhere is cited separately; a unit Python cannot place sits
+at document level and the comment says so.
 Scorers join saved bus, pairing/assignment, call evidence, master and completion;
 they do not infer clean coverage from empty output.
 
@@ -262,7 +318,7 @@ endpoint exists. Cancel a run through its route; stop the owned server in the st
 | `GET` | `/runs/{run_id}/deliverables` | token | ZIP existing deliverables; whole-run partial flag reflects server outcome, not completeness/privacy. |
 | `GET` | `/runs/{run_id}/deliverables/{doc_id}` | token | ZIP an existing document folder; presence of files is not completed-stage proof. |
 | `GET` | `/runs/{run_id}/log` | token | Merged server-child stdout/stderr; 404 if not yet recorded. |
-| `GET` | `/runs/{run_id}/findings` | token | Typed bus finding projection; some full on-disk fields are omitted. |
+| `GET` | `/runs/{run_id}/findings` | token | Typed bus finding projection; each record carries `written_by` (`python` or `model`, read off its bus post); some full on-disk fields are omitted. |
 | `GET` | `/runs/{run_id}/pairs` | token | Pairing map projection, counts, refusals and unjudged plans; full absence/band detail remains on disk. |
 | `GET` | `/runs/{run_id}/amendments` | token | Read existing document masters; empty does not certify a clean review. |
 | `GET` | `/runs/{run_id}/amendment-refusals` | token | Explicit AMENDMENT_REFUSED bus events, separate from findings. |
@@ -306,6 +362,19 @@ requires explicit governance choices; the starter's Normal choice is not a globa
 waiver. `scripts/harness/run_agent.py` tests one chosen unit/rule/agent, not an
 entire cluster or full review. Legacy `shimmer.bat` / `shimmer.sh` perform setup
 and preflight work and are not the normal desktop start path.
+
+Ordinary final cloud entry points (operator tools, not server routes; full flag
+tables in [cloud preparation](CLOUD_RUN_PREPARATION.md#ordinary-final-loop-launches)):
+
+| Tool | Flags added in loop S2 |
+|---|---|
+| `tools/prepare_ordinary_final_run.py` (sealer) | `--inputs-from`, `--workload`, `--exposure`, `--test-manifest`, `--protected-test`, and the required `--ledger`, `--forecast-minutes`, `--storage-forecast-usd` |
+| `tools/ordinary_final_bound_cloud.py` (bound wrapper) | `--output-dir`, the required `--ledger`, `--purpose`, `--forecast-minutes`, `--storage-forecast-usd`, and `--read-ledger`, `--r-inputs`, `--forecast-includes-upload`, `--test-manifest`, `--frozen-tag`, `--batch`, `--test-version`, `--test-author`, `--key-author`, `--scorer-author`, `--scorer-version`, `--detach` |
+| `tools/analyze_ordinary_final_run.py` (analyser) | `--batch`; writes `RUN_REPORT.md` beside `FINAL_STATUS.json` |
+| `tools/cloud_run_watchdog.py` (general path watchdog) | the required `--soft-usd` and `--hard-usd` |
+
+`tools/loop_budget_guard.py` is the budget guard, instance-type rule and ledger
+writer every ordinary final launch passes through; it calls no provider.
 
 ### Server environment
 
@@ -404,7 +473,8 @@ rank dependencies remain. The historical one-document shape maps to five groups,
 not a certified universal five-wave bound.
 
 PROCESSOR uses existing unit IDs/indexes with a complete source-offset ledger.
-Each request owns up to four 1200-character spans. A compact alias is expanded
+Each request owns at most `owned_spans_per_request` 1200-character spans
+(declared in `config/compact_extraction_prompt.json`, today 2; EXTRACTION-C). A compact alias is expanded
 into exact source text by Python before the canonical extraction reaches readers.
 Claims/questions and uncertainty remain model judgments. Ownership, coverage,
 duplicate and completeness checks refuse ambiguous results. One failed partition
