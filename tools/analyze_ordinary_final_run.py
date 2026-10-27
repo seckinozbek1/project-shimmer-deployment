@@ -76,8 +76,10 @@ def report_fields(bundle, manifest, record, launch, status, receipt):
         ('Backend and machine','local open-weight models on one rented GPU; %s in %s'%(launch.get('instance_type','gpu_1x_a10'),
             launch.get('region','us-east-1'))),
         ('Instance type and price','%s at %s dollars an hour'%(launch.get('instance_type','gpu_1x_a10'),launch['hourly_rate'])),
-        ('Cost','%.4f dollars estimated (infrastructure, from launch to confirmed empty inventory; not an invoice)'
-            %status['cost_estimates']['combined_estimate']),
+        ('Cost','%.4f dollars estimated (infrastructure, from launch to confirmed empty inventory; not an invoice)%s'
+            %(status['cost_estimates']['combined_estimate'],
+              '; this is the whole instance session, shared by every bundle of its batch, not the cost of this bundle alone'
+              if (Path(bundle)/'seal_entry.json').exists() else '')),
         ('Location and reason-confirmed recall',NOT_SCORED),
         ('Attribution',NOT_SCORED),
         ('False positives in every deliverable',NOT_SCORED),

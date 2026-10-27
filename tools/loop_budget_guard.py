@@ -3,28 +3,38 @@
 Nothing here calls a provider. The controller reads the live price and the inventory
 through the allowlisted adapter and hands them in; this module only decides.
 
-The guard refuses a launch, in one line, when:
+The guard always reads the ledgers the reaper reads (the private ledger and R's ledger,
+tools/loop/instance_reaper.py) beside any it is given, needs a `budget_open` line among
+them, and refuses a launch whose own ledger is not one the reaper reads, so a wrong or new
+path can never read as zero spend while the reaper kills the unrecorded instance. It
+refuses a launch, in one line, when:
   * another loop instance runs (an open launch in a ledger, or a `shimmer-loop-` name
     in the provider inventory the caller listed);
   * the per-run cap formula leaves less than the forecast:
         cap = min(1.5 x forecast, 50 - spend - caps of running loop instances
                   - storage forecast - 1);
-  * the capped run time (cap / live price) is shorter than the forecast time;
-  * spend + forecast + storage forecast would pass the 50 dollars budget.
-Spend is counted once per launch by instance id across every ledger it is given (the
-reaper's own reading, so a line copied from R's ledger with `copied_from` is not counted
-twice). The forecast is the measured basis in minutes times the live price times 1.3.
+  * the capped run time (cap / live price) does not cover the forecast time plus the
+    run's stop reserve (the runner stops its workload that long before the ceiling).
+"Spend + forecast + storage passes 50" needs no refusal of its own: the cap rule already
+keeps it at or below 49. Spend is counted once per launch by instance id or name across
+every ledger read (the reaper's own reading, so a line copied from R's ledger with
+`copied_from` is not counted twice). The forecast is the measured basis in minutes times
+the live price times 1.3.
 
-Ledger lines carry exactly the IV.3 fields and nothing else: no test content, ever.
+Ledger lines carry exactly the declared IV.3 fields (and the reaper's `by` and `reason`,
+the lead's `copied_from`) and nothing else: no test content, ever. A purpose is a short
+identifier, never prose.
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
 import math
+import os
 from pathlib import Path
 import re
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 _LOOP = str(ROOT / 'tools' / 'loop')
@@ -33,6 +43,8 @@ if _LOOP not in sys.path:
 import instance_reaper  # noqa: E402  (the reaper's ledger reading is the one reading)
 
 PREFIX = instance_reaper.PREFIX
+# Constants of the loop's budget rule (IV.3), not run settings: the total budget, the
+# one-dollar margin, the cap and forecast factors and the type-rule factor.
 BUDGET_USD = 50.0
 RESERVE_USD = 1.0
 CAP_FACTOR = 1.5
@@ -45,8 +57,8 @@ POLL_INTERVAL_SECONDS = 60
 EVENTS = ('launch_intent', 'launch', 'termination')
 LEDGER_FIELDS = ('event', 'time_utc', 'launch_requested_utc', 'instance_id', 'instance_name', 'type', 'region',
                  'price_usd_per_hour', 'purpose', 'forecast_usd', 'cap_usd', 'deadline_utc', 'actual_minutes',
-                 'actual_cost')
-PURPOSE = re.compile(r'[A-Za-z0-9][A-Za-z0-9 .,:()_-]{0,79}')
+                 'actual_cost', 'by', 'reason', 'copied_from')
+PURPOSE = re.compile(r'[a-z0-9][a-z0-9-]{0,39}')
 R_INPUT_FIELDS = ('spend_usd', 'storage_forecast_usd', 'allocation_left_usd', 'forecast_usd', 'cap_usd', 'instance_type')
 # The run's own needs, not an instance type's: the VRAM the frozen checkpoints were
 # admitted with on the A10, and the host floors the runner has always required.
@@ -92,8 +104,33 @@ def per_run_cap(forecast, spend, running_caps, storage_forecast, budget=BUDGET_U
     return min(CAP_FACTOR * forecast, budget - spend - running_caps - storage_forecast - RESERVE_USD)
 
 
+def reaper_ledgers():
+    """The ledgers the scheduled reaper reads, resolved at call time."""
+    return [Path(instance_reaper.PRIVATE_LEDGER), Path(instance_reaper.R_LEDGER)]
+
+
+def same_path(a, b):
+    return os.path.normcase(str(Path(a).resolve())) == os.path.normcase(str(Path(b).resolve()))
+
+
+def ledger_set(ledgers, reaped=None):
+    """The ledgers given, plus the reaper's, each once."""
+    out = []
+    for path in [*map(Path, ledgers), *(reaper_ledgers() if reaped is None else map(Path, reaped))]:
+        if not any(same_path(path, seen) for seen in out):
+            out.append(path)
+    return out
+
+
+def require_reaped(ledger, reaped=None):
+    """A launch's own ledger must be one the reaper reads, or the reaper would find no
+    deadline for the instance and its cost would be counted nowhere."""
+    refuse(any(same_path(ledger, r) for r in (reaper_ledgers() if reaped is None else reaped)),
+           'The launch ledger is not one the reaper reads')
+
+
 def ledger_state(ledgers, now_epoch):
-    """(spend, running launches, running caps), each launch counted once by instance id."""
+    """(spend, running launches, running caps, rows), each launch counted once by id or name."""
     rows = []
     for path in ledgers:
         rows.extend(instance_reaper.read_ledger(path))
@@ -122,14 +159,18 @@ def read_r_inputs(path):
     return {k: value[k] for k in R_INPUT_FIELDS}
 
 
-def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_epoch, provider_names=(),
-          instance_type=None, r_inputs=None, budget=BUDGET_USD):
-    """Decide one loop launch. Returns the cap and the figures it rests on, or refuses."""
-    ledgers = [Path(p) for p in ledgers]
-    refuse(ledgers, 'A loop ledger path is required')
+def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_epoch, reserve_minutes,
+          provider_names=(), instance_type=None, r_inputs=None, reaped=None, budget=BUDGET_USD):
+    """Decide one loop launch. Returns the cap and the figures it rests on, or refuses.
+
+    `reaped` replaces the reaper's ledgers only for a mocked launch (the rehearsal and the
+    fixtures); a real launch reads the reaper's own."""
+    ledgers = ledger_set([Path(p) for p in ledgers], reaped)
     forecast = forecast_usd(forecast_minutes, hourly_rate)
     storage = number(storage_forecast_usd, 'storage forecast', positive=False)
-    spend, running, running_caps, _ = ledger_state(ledgers, now_epoch)
+    reserve = number(reserve_minutes, 'reserve minutes', positive=False)
+    spend, running, running_caps, rows = ledger_state(ledgers, now_epoch)
+    refuse(any(r.get('event') == 'budget_open' for r in rows), 'No budget_open line in the loop ledgers')
     if r_inputs is not None:
         r = read_r_inputs(r_inputs)
         spend = max(spend, number(r['spend_usd'], 'R spend', positive=False))
@@ -144,33 +185,78 @@ def check(*, ledgers, forecast_minutes, hourly_rate, storage_forecast_usd, now_e
         cap = min(cap, number(r['cap_usd'], 'R cap'))
     refuse(cap >= forecast, 'Per-run cap %.2f dollars leaves less than the forecast %.2f dollars' % (cap, forecast))
     capped_minutes = cap / hourly_rate * 60
-    refuse(capped_minutes >= forecast_minutes,
-           'Capped run time %.1f min is shorter than the forecast %.1f min' % (capped_minutes, forecast_minutes))
-    refuse(spend + forecast + storage <= budget,
-           'Spend %.2f + forecast %.2f + storage %.2f dollars passes the %.0f dollars budget' % (spend, forecast, storage, budget))
+    refuse(capped_minutes >= forecast_minutes + reserve,
+           'Capped run time %.1f min does not cover the forecast %.1f min and the %.1f min stop reserve'
+           % (capped_minutes, forecast_minutes, reserve))
     return dict(forecast_usd=round(forecast, 4), cap_usd=round(cap, 4), capped_minutes=round(capped_minutes, 2),
                 spend_usd=round(spend, 4), running_caps_usd=round(running_caps, 4), storage_forecast_usd=storage)
 
 
+def undeclared(fields):
+    """The field names a ledger line may not carry."""
+    return set(fields) - set(LEDGER_FIELDS)
+
+
 def ledger_line(event, **fields):
-    """One ledger line with exactly the IV.3 fields; anything else is refused, never dropped."""
+    """One ledger line with exactly the declared fields; anything else is refused, never dropped."""
     refuse(event in EVENTS, 'Unknown ledger event')
-    extra = set(fields) - set(LEDGER_FIELDS)
+    extra = undeclared(fields)
     refuse(not extra, 'Ledger line field outside IV.3: ' + ','.join(sorted(extra)))
     refuse(str(fields.get('instance_name', '')).startswith(PREFIX), 'Ledger line without a loop instance name')
     if 'purpose' in fields:
         refuse(isinstance(fields['purpose'], str) and PURPOSE.fullmatch(fields['purpose']) is not None,
-               'Purpose must be one short plain line')
+               'Purpose must be a short identifier (lower case, digits, hyphens)')
     if event == 'launch_intent':
         refuse(fields.get('deadline_utc') and fields.get('launch_requested_utc'), 'Intent needs a deadline and a request time')
     return dict(event=event, **fields)
 
 
 def append(path, line):
-    refuse(set(line) <= set(LEDGER_FIELDS), 'Ledger line field outside IV.3')
+    refuse('event' in line and not undeclared(line), 'Ledger line field outside IV.3')
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with open(path, 'a', encoding='utf-8') as handle:
         handle.write(json.dumps(line, sort_keys=True) + '\n')
+
+
+# ---- one launch decision at a time (A12) -------------------------------------------------
+
+def acquire_lock(ledger):
+    """An exclusive lock beside the ledger, held from the guard's decision through the intent
+    line, so two controllers can never both pass the guard for one free slot. A lock left by
+    a crash is reported with its holder and time, never broken silently."""
+    lock = Path(str(ledger) + '.lock')
+    try:
+        with open(lock, 'x', encoding='utf-8') as handle:
+            handle.write(json.dumps(dict(pid=os.getpid(), time_utc=utc(time.time()))) + '\n')
+    except FileExistsError:
+        raise GuardRefusal('Another launch holds the ledger lock (' + lock.name
+                           + '); remove it only if no launch is running') from None
+    return lock
+
+
+def release_lock(lock):
+    if lock is not None:
+        Path(lock).unlink(missing_ok=True)
+
+
+# ---- the general cloud path while the loop is open (A11) ---------------------------------
+
+def loop_open(ledgers=None):
+    """True while a loop ledger opened by `budget_open` has not been closed by `budget_close`."""
+    state = None
+    for path in (reaper_ledgers() if ledgers is None else ledgers):
+        for row in instance_reaper.read_ledger(path):
+            if row.get('event') == 'budget_open':
+                state = True
+            elif row.get('event') == 'budget_close':
+                state = False
+    return bool(state)
+
+
+def refuse_while_loop_open(ledgers=None):
+    """The general cloud path spends outside the loop's ledger, so it does not launch while
+    the loop's budget is open."""
+    refuse(not loop_open(ledgers), 'The loop budget is open: the general cloud path does not launch until it is closed')
 
 
 # ---- the instance-type rule (IV.3, R3) ------------------------------------------------
@@ -185,11 +271,6 @@ def gpu_token(description):
     """The GPU model token the hardware check matches ('A10', 'A100', 'H100')."""
     found = re.match(r'\s*([A-Za-z0-9]+)', str(description or ''))
     return found.group(1) if found else ''
-
-
-def gpu_matches(token, name):
-    """Whole-token match, so 'A10' never admits an 'A100'."""
-    return bool(token) and re.search(r'(?<![A-Za-z0-9])' + re.escape(token) + r'(?![0-9])', str(name)) is not None
 
 
 def candidate(entry):

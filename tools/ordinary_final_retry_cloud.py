@@ -1,4 +1,10 @@
-"""One operator-authorized retry bound exclusively to the fixed eb71e6b seal."""
+"""One operator-authorized retry bound exclusively to the fixed eb71e6b seal.
+
+HISTORICAL (loop stage S2): kept frozen as the record of that retry, never edited and never
+deleted. It can no longer launch: its bundle's authorization is consumed, its instance name
+lacks the shimmer-loop- prefix and it sets no launch plan, so the current controller refuses
+it before any provider call. A launch goes through tools/ordinary_final_bound_cloud.py.
+"""
 import ordinary_final_cloud as controller
 from ordinary_final_run import read, write, sha, require
 

@@ -148,8 +148,9 @@ def prepare_bundle(root, case):
     cc.open_ledger(ledger)
     bundle = root / 'bundle'
     with sealing_stand_ins():
+        # reaped=[ledger]: the guard reads only this fixture ledger, never the loop's real ones.
         sealer.prepare(bundle, budget=dict(ledgers=[ledger], forecast_minutes=cc.FORECAST_MINUTES,
-                                           storage_forecast_usd=cc.STORAGE_USD),
+                                           storage_forecast_usd=cc.STORAGE_USD, reaped=[ledger]),
                        workload=root / 'workload', inputs_from=inputs, now_epoch=cc.FakeClock().now)
     return bundle, ledger
 
