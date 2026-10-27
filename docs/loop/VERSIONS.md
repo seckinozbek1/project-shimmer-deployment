@@ -8,6 +8,7 @@ One row per tag (IV.1): tag, commit, stage, product version, gate result against
 |---|---|---|---|---|---|---|
 | `loop-base` | `f31eff4` | start (fallback point for S0) | 0.1.0.dev0 (no `VERSION` file yet at this commit) | main checkout baseline: PASS 243, WARN 1, SKIP 3, FAIL or ERROR 28; six side gates pass | none (starting point) | 0.00 |
 | `loop-s01-v1` | `cef0294` | S1 hygiene, replies saved, INST_FINDER switch, readiness, attempt 1 | 0.1.0.dev1 | loop branch after merge: main PASS 247, WARN 1, SKIP 3, FAIL or ERROR 27 (baseline minus 112; new 275 to 277 pass); six side gates pass | three rounds; no CRITICAL or SERIOUS left; 70 named, 66 worked, 4 deferred (reason c) | 0.00 |
+| `loop-s02-v1` | `3b802a1` | S2 honest outputs, multi-round enablement, run controller, attempt 1 | 0.1.0.dev2 | loop branch after merge: main PASS 250, WARN 1, SKIP 3, FAIL or ERROR 27 (the baseline's 31 non-pass checks; new 278 to 280 pass); six side gates pass | three rounds plus three reader-check rounds and two tie-breaks; no CRITICAL or SERIOUS left; open items 20 and 21 recorded | 0.00 USD instances; storage share 0.05 USD |
 | `loop-s00-v1-open` | `5e844ed` | S0 Start, attempt 1 | 0.1.0.dev0 | equal to baseline at `7c6d132` (later commits change only `docs/loop/`) | reading check 3 rounds closed; completeness 2 rounds; tie-break confirmed 3 items unmet this session (status line and hooks registration, checker definitions, deny rules by canary) | 0.00 |
 
 ## Frozen hashes
