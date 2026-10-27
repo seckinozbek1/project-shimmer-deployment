@@ -70,9 +70,11 @@ class Refused(Exception):
 
 MISSING_FIELD = "missing_field"
 # The figure audit's relations (docs/INPUT_FORMAT.md section 7): Python computes them on any
-# figure in a part, whatever the rules say, and attributes them to a paired rule. With every
-# rule naming only `passage`, that is the bundle's first rule in hash order, not the rule
-# the figure bears on, so they decide an item only in a one-rule bundle (D-039 item 3).
+# figure in a part, whatever the rules say, and attributes them to a paired rule: by the
+# words a rule's text shares with the record's labels, a tie or no shared word going to the
+# first rule in reading order (hash order of the opaque ids), and a band record to the rule
+# that produced it (section 9). In a bundle of several claims that is not a check of the
+# item's claim, so they decide an item only in a one-rule bundle (D-039 item 3).
 FIGURE_AUDIT_RELATIONS = ("missing_field", "below_band", "above_band", "sum_mismatch",
                           "product_mismatch")
 PRIOR_RELATIONS = ("changed_from_prior", "unchanged_from_prior", "moved_toward", "moved_away",
