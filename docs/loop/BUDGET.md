@@ -7,6 +7,7 @@ The Lambda budget for this loop is 50 USD in total (Part II, H3), counted from t
 | Date (UTC) | Event | Instance minutes | Instance cost (USD) | Storage share to date (USD) | Total spent (USD) | Remaining (USD) |
 |---|---|---|---|---|---|---|
 | 2026-10-27 03:16 | Budget opened at S0. No instance running, no orphan. | 0 | 0.00 | 0.00 | 0.00 | 50.00 |
+| 2026-10-27 09:34 | Budget raised to 70 USD by the operator (D-S9); reaper hard stop 69 USD; seven-day launch limit 95%. No instance has run. | 0 | 0.00 | 0.03 | 0.03 | 69.97 |
 
 ## Allocations (IV.3)
 
@@ -49,3 +50,14 @@ v10 and v11 have no `cost.json` on this laptop. The v12 phases, from its local `
 | Run | Purpose | Forecast (USD) | Cap (USD) | Actual (USD) | Variance |
 |---|---|---|---|---|---|
 | (none yet) | | | | | |
+
+## Allocation from 2026-10-27 09:34 UTC (operator decision D-S9; supersedes the table above)
+
+| Allocation | USD | Notes |
+|---|---|---|
+| S5 development runs | 24.00 | S6 may spend only what S5 leaves unused. |
+| S8 sealed evaluation | 36.00 | Reserve pays only infrastructure re-runs in S8. S4e item 2's sizing rule is re-run with this figure when the preregistration is completed at the end of S5. |
+| Smoke runs (S12 item 8) | 3.00 | |
+| Reserve | 7.00 | Storage share is charged here first (forecast 3.90 USD to the loop's end). Unused allocation rolls forward. |
+
+The reaper's hard stop is 69 USD and the controller's budget guard counts against 70 USD; both read the budget from the ledger's latest budget line once the code change of D-S9 item 3 lands (until then the reaper still holds 49 USD in code, which only stops earlier). No new launch while five-hour usage is at or above 70 percent or seven-day usage at or above 95 percent.
