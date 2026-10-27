@@ -1,0 +1,53 @@
+[
+  {
+    "example_id": "syn-ex-1",
+    "report": "SYN-FILING-ONE",
+    "claim": "Units sold rose from the first to the second quarter.",
+    "label": "entailed",
+    "subset": "FDV-IE",
+    "relevant_context": [1],
+    "context": [
+      "The company sells one product.",
+      [["Quarter", "Units"], ["First", "120"], ["Second", "140"]],
+      "# Outlook\nThe company expects steady demand."
+    ]
+  },
+  {
+    "example_id": "syn-ex-2",
+    "report": "SYN-FILING-ONE",
+    "claim": "Units sold in the two quarters total 300.",
+    "label": "refuted",
+    "subset": "FDV-MATH",
+    "relevant_context": [1],
+    "context": [
+      "The company sells one product.",
+      [["Quarter", "Units"], ["First", "120"], ["Second", "140"]],
+      "# Outlook\nThe company expects steady demand."
+    ]
+  },
+  {
+    "example_id": "syn-ex-3",
+    "report": "SYN-FILING-ONE",
+    "claim": "The company sells two products.",
+    "label": "refuted",
+    "subset": "FDV-IE",
+    "relevant_context": [0],
+    "context": [
+      "The company sells one product.",
+      [["Quarter", "Units"], ["First", "120"], ["Second", "140"]],
+      "# Outlook\nThe company expects steady demand."
+    ]
+  },
+  {
+    "example_id": "syn-ex-4",
+    "report": "SYN-FILING-TWO",
+    "claim": "The filing names no auditor.",
+    "label": "entailed",
+    "subset": "FDV-KNOW",
+    "relevant_context": [],
+    "context": [
+      "The filing covers one year.",
+      "Staff numbers held steady."
+    ]
+  }
+]

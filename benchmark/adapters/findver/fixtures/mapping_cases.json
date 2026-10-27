@@ -1,0 +1,74 @@
+{
+  "description": "Hand-written synthetic run outputs for FinDVer (section 5.2): a refusal is ABSTAIN, prior relations are ignored and reported, and a review_data.json without the typed-record key is reported as an adapter fault.",
+  "items": [
+    {"item_id": "f-a", "document_id": "r-run", "rule_id": "CONV-a1a1a1a1a1a1", "benchmark": "findver"},
+    {"item_id": "f-b", "document_id": "r-run", "rule_id": "CONV-b2b2b2b2b2b2", "benchmark": "findver"},
+    {"item_id": "f-c", "document_id": "r-run", "rule_id": "CONV-c3c3c3c3c3c3", "benchmark": "findver"},
+    {"item_id": "f-d", "document_id": "r-run", "rule_id": "CONV-d4d4d4d4d4d4", "benchmark": "findver"},
+    {"item_id": "f-e", "document_id": "r-nokey", "rule_id": "CONV-e5e5e5e5e5e5", "benchmark": "findver"},
+    {"item_id": "f-f", "document_id": "r-fail", "rule_id": "CONV-f6f6f6f6f6f6", "benchmark": "findver"}
+  ],
+  "runs": {
+    "r-run": {
+      "final_status": {"state": "completed"},
+      "review_data": {"findings": [
+        {"item_id": "rec-a", "source_rule_id": "CONV-a1a1a1a1a1a1", "unit_id": "u02-p-00002", "relation": "sum_mismatch", "record_verdict": "irregular", "model": "python"},
+        {"item_id": "rec-b", "source_rule_id": "CONV-b2b2b2b2b2b2", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "uncertain": true},
+        {"item_id": "rec-d", "source_rule_id": "CONV-d4d4d4d4d4d4", "unit_id": "u01-p-00001", "relation": "unchanged_from_prior", "record_verdict": "ok", "provenance": "computed"}
+      ]}
+    },
+    "r-nokey": {
+      "final_status": {"state": "completed"},
+      "review_data": {"amendments": []}
+    },
+    "r-fail": {
+      "final_status": {"state": "completed"},
+      "review_data": null
+    }
+  },
+  "b1": {
+    "r-run": {
+      "f-a": {"label": "refuted", "abstain": false},
+      "f-b": {"label": "undecided", "abstain": false},
+      "f-c": {"label": "Entailed", "abstain": false}
+    }
+  },
+  "expected": {
+    "B3": {
+      "f-a": ["FLAG", "refuted", "irregular"],
+      "f-b": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "f-c": ["CLEAR", "entailed", "silent"],
+      "f-d": ["CLEAR", "entailed", "silent"],
+      "f-e": ["CLEAR", "entailed", "silent"],
+      "f-f": ["ABSTAIN", "ABSTAIN", "run_failure"]
+    },
+    "B3 S-2": {
+      "f-a": ["FLAG", "refuted", "irregular"],
+      "f-b": ["CLEAR", "entailed", "s2_undecided_as_clear"],
+      "f-c": ["CLEAR", "entailed", "silent"],
+      "f-d": ["CLEAR", "entailed", "silent"],
+      "f-e": ["CLEAR", "entailed", "silent"],
+      "f-f": ["ABSTAIN", "ABSTAIN", "run_failure"]
+    },
+    "B1": {
+      "f-a": ["FLAG", "refuted", "b1_label"],
+      "f-b": ["UNDECIDED", "ABSTAIN", "b1_label"],
+      "f-c": ["CLEAR", "entailed", "b1_label"],
+      "f-d": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "f-e": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "f-f": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"]
+    }
+  },
+  "expected_detail": {
+    "B3": {
+      "f-a": {"layer": "computed", "cited_unit_ids": ["u02-p-00002"]},
+      "f-d": {"faults": ["prior_relation_ignored:1"]}
+    }
+  },
+  "expected_counts": {
+    "B3": {"items": 6, "silent": 3, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 2, "document_faults": 1, "item_faults": 1}
+  },
+  "expected_documents": {
+    "B3": {"r-nokey": {"faults": ["typed_records_key_absent:findings"]}}
+  }
+}
