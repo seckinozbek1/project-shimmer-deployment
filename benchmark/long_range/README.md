@@ -6,7 +6,8 @@ question: is the related unit in the candidate set? (S3 item 12, used by S6c.)
 
 ## The layout
 
-Every provision belongs to a track, `Ordinary` or `Expedited` (a `Track` line). The
+Every provision belongs to a track, `Ordinary` or `Expedited` (a `Track` line, or a
+`Procedure` line on a unit written in other words, below). The
 units that decide a flaw are of two types and spread through the document among the
 uses, at seeded positions:
 
@@ -20,13 +21,21 @@ six definitions for four kinds of use (filing, reply, fee, appeal), and a flaw i
 decided by the deciding unit of the use's own track: the right definition among four
 that carry the same label, or a fee table that is no definition at all.
 
+Two of the six deciding units (seeded, about a third) are written in other words: they
+name their track as a procedure (`Procedure: Standard` for the `Ordinary` track,
+`Procedure: Accelerated` for `Expedited`), and their figure as a `Period allowed` (a
+window length) or a `Charge range (EUR)` column (a fee range). The reference file says
+so in two sentences with no figure. Such a unit matches its uses on neither the deciding
+label nor the `Track` line; `deciding_units_in_other_words` in the key gives the count.
+
 ## What holds, in every bundle (the test, its twin and the four probes)
 
 The generator's validator checks each of these on the written files (D-042, revised in
 S3 checker round 2):
 
 - Every planted flaw is decided by a figure stated ONLY in its related unit: a window
-  definition's `Window length`, or a fee table's range for the use's class. The
+  definition's `Window length` (or `Period allowed`), or a fee table's range for the
+  use's class. The
   reference file carries no figure at all. Python computes none of these flaws (no
   sentence it would read as a bound, no reference table), so they are keyed from the
   generator's ground truth and found again by its own scanner. One exception: probe 3
@@ -43,12 +52,21 @@ S3 checker round 2):
   (`cross_reference_share` in the key, between 0.3 and 0.7), and among the planted uses
   some do and some do not (`cross_reference_line` per entry). A baseline that follows
   cross-reference lines is therefore not perfect by construction.
-- Three baselines that read no value score below 1 (the share of planted entries whose
+- Four baselines that read no figure score below 1 (the share of planted entries whose
   related unit they find): the first 4 units, or the first k (k the number of distinct
   related units in the test); the nearest unit carrying the deciding label
-  (`Window length` for a window, the `Fee range` column for a fee); and the first unit
-  carrying it. `decided_by_label` in the key names those labels.
-  `py -3.12 scripts/generator_checks.py --baselines` prints every bundle's scores.
+  (`Window length` for a window, the `Fee range` column for a fee); the first unit
+  carrying it; and the **track-and-term** baseline, the nearest unit that states the
+  term the use's provision type needs (a `Defined term` of `Notice window` for a filing,
+  `Answer window` for a reply, a `Provision type` of `Fee table` for a fee) with the
+  use's own `Track` value. `decided_by_label` and `decided_by_term` in the key name what
+  they look for. The track-and-term baseline finds every deciding unit written in the
+  plain words and none written in other words, so it scores below 1 because at least one
+  planted entry is decided by a unit written in other words; S6c reports against it.
+  Over every bundle of the committed seeds and the gate's fixed seed it scores 0.545 to
+  0.818 (the others: first 4 and first k 0 to 0.273, nearest label 0 to 0.364, first
+  label 0.182 to 0.455). `py -3.12 scripts/generator_checks.py --baselines` prints every
+  bundle's scores and the range.
 
 | Planted kind | `related_unit` |
 |---|---|

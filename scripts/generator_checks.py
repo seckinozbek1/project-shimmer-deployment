@@ -18,9 +18,14 @@ is generated from a fixed seed into a temporary folder and read back from disk, 
   long-range windows and bands) by the ground-truth scanners, each found exactly as keyed
   and nowhere else, in every bundle (the reworded-labels probe and the reordered
   sections, carry scanner on, included);
-- family 2's rate and ratio rules as written, read a second time from the
-  rendered text by independent string handling, break exactly where the key says, and a
-  broken rate result on a clean unit is caught;
+- family 2's rate and ratio rules and family 6's carry rule as written, read a second
+  time from the rendered text by independent string handling, break exactly where the
+  key says (and on no clean unit), and a broken rate result on a clean unit is caught;
+- every keyed rule's text, read from the written conventions, still states what its
+  keyed kinds break (each family's RULE_STATEMENTS), and each validator message in
+  VALIDATOR_MUTATIONS fires on its mutation (`--mutations` prints them);
+- a seed whose own draw cannot make a valid test is retried with a derived sub-seed,
+  deterministically, and the key records the attempt; the fixed seeds record none;
 - the same seed gives byte-identical files, also in a separate process (started with
   -B, so it writes no __pycache__ into the repository) under a different string-hash
   seed;
@@ -36,8 +41,9 @@ is generated from a fixed seed into a temporary folder and read back from disk, 
   entry caught;
 - the long-range layout holds in every bundle, probes included: true distances of at
   least twelve units, the definitions not all first, cross-reference lines on some uses
-  only; a positional and two label-only baselines score below 1 in every bundle of the
-  fixed test and of the long-range corpus's seeds (`--baselines` prints them);
+  only; a positional, two label-only and a track-and-term baseline score below 1 in
+  every bundle of the fixed test and of the long-range corpus's seeds (`--baselines`
+  prints them and their range);
 - the slug and unit id rule matches the published examples; no generator source file
   name matches a credential or key ignore pattern;
 - family 4, two and three rounds: every bundle's case manifest is accepted by the
@@ -322,6 +328,17 @@ class GeneratorChecks(unittest.TestCase):
                 self.assertEqual(rows["renamed_value_unchanged"]["refusal_kind"], "possible_rename", folder)
                 self.assertEqual(rows["renamed_value_moved"]["refusal_kind"], "possible_successor", folder)
                 self.assertIsNone(rows["renamed_moved_to_other_section"]["refusal_kind"], folder)
+                # null: Python is expected to refuse nothing; only a matched rename satisfies.
+                self.assertEqual(rows["renamed_moved_to_other_section"]["satisfied_by"], ["matched_rename"])
+                for k in ("renamed_value_unchanged", "renamed_value_moved"):
+                    self.assertEqual(rows[k]["satisfied_by"], ["refusal", "matched_rename"], folder)
+                # every expected refusal carries the figures a matched rename compares
+                for r in key["expected_refusals"]:
+                    row = [x for x in key["rename_probes"] if x["field_label"] == r["field_label"]][0]
+                    self.assertEqual((r["value_a"], r["value_b"], r["unit"]),
+                                     (row["value_after"], row["value_before"], row["unit"]), folder)
+                self.assertIn("task_given_to_the_pipeline", key)
+                self.assertNotIn("task", key)
 
     def test_rate_and_ratio_rules_as_written(self):
         """Family 2: an independent second reading of CONV-DE (a rate applied to the
@@ -356,11 +373,57 @@ class GeneratorChecks(unittest.TestCase):
         errs = self.g.bundle.validate_test(t2)
         self.assertTrue(any(e.startswith(base) and "ground-truth flaws differ" in e for e in errs), errs[:3])
 
+    def test_stock_count_rule_as_written(self):
+        """Family 6: an independent second reading of CONV-LA as written ("the opening row
+        must carry the sum of the quantity column of the count before it"), by plain string
+        handling of the rendered text, finds exactly the units keyed under CONV-LA in every
+        bundle of the fixed test and of the development suite's seeds, and no clean unit."""
+        fl = self.g.family_ledger
+        seeds = json.loads((ROOT / "benchmark" / "dev_suite" / "SEEDS.json").read_text(encoding="utf-8"))
+        tests = [self._read("f6")] + [self.g.generate("f6", int(e["seed"])) for e in seeds["tests"]
+                                      if e["family"] == "f6"]
+        for test in tests:
+            for folder, files in sorted(test.items()):
+                key = _key(files)
+                text = files[_target_name(files)]
+                heads = {u["id"]: u["heading"] for u in self.g.audit.parse_document(text, "t")["units"]}
+                ch = key.get("probe_change") or {}
+                label = ch["label_to"] if key.get("probe") == "reworded_labels" else "Closing quantity"
+                got = fl.units_breaking_carry_rule(text, label)
+                self.assertEqual(got, {heads[e["unit"]] for e in key["planted"] if e["rule"] == "CONV-LA"},
+                                 folder)
+                self.assertFalse(got & {heads[c] for c in key["clean"]}, folder)
+
+    def test_validator_messages_fire_on_their_mutations(self):
+        """Each validator message in VALIDATOR_MUTATIONS is produced by its mutation of a
+        valid written test (the four the adversarial round named, and a keyed rule's text
+        reverted to what its flaw does not break)."""
+        ok, detail = observe_validator_mutations(self.g, self._read)
+        self.assertTrue(ok, detail)
+
+    def test_a_seed_that_cannot_build_is_retried_deterministically(self):
+        """A seed whose own draw cannot make a valid test is retried inside the build with
+        a derived sub-seed; the retry sequence depends only on the seed (two builds give
+        identical bytes), the key records the attempt kept, and a seed that builds at its
+        own draw records none."""
+        for fam, seed, opts in RETRIED:
+            with self.assertRaises((ValueError, self.g.bundle.ValidationError)):
+                self.g.bundle.generate(self.g.build_spec(fam, seed, **opts))
+            a, b = self.g.generate(fam, seed, **opts), self.g.generate(fam, seed, **opts)
+            self.assertEqual(_flatten(a), _flatten(b), (fam, seed))
+            self.assertEqual(self.g.bundle.validate_test(a), [])
+            self.assertGreaterEqual(_key(a[sorted(a)[0]])["generator"].get("attempt", 0), 1, (fam, seed))
+        for fam, _, opts in FIXED:
+            test = self._read(fam, **opts)
+            self.assertNotIn("attempt", _key(test[sorted(test)[0]])["generator"], (fam, opts))
+
     def test_long_range_baselines_score_below_one(self):
         """D-042 decision 5, revised: the related units vary in position and type, so a
-        positional baseline (the first 4 units, the first k) and two label-only baselines
-        (the nearest, or the first, unit carrying the deciding label) each score below 1
-        in every bundle of the fixed test and of the long-range corpus's seeds."""
+        positional baseline (the first 4 units, the first k), two label-only baselines
+        (the nearest, or the first, unit carrying the deciding label) and a track-and-term
+        baseline (the nearest unit stating the use's term on the use's track, S3 checker
+        round 3) each score below 1 in every bundle of the fixed test and of the
+        long-range corpus's seeds."""
         tests = [self._read("f5", long_range=True)] + long_range_corpus(self.g)
         for test in tests:
             for folder, files in sorted(test.items()):
@@ -511,6 +574,105 @@ def _figure_in_grounding(files):
     man = json.loads(files["context/_review_targets.json"])
     ref = [g for g in man["grounding"] if g not in man["prior"]][0]
     files["context/" + ref] = files["context/" + ref] + "\nThe standard gauge span is 30 days.\n"
+
+
+# Seeds whose own draw cannot make a valid test (found by a seed sweep): family 4's
+# reordered sections that leave the prior's order, family 6's carry mismatch that would
+# make a row negative.
+RETRIED = [("f4", 4003, {}), ("f6", 6097, {})]
+
+
+def _set_key(files, key):
+    files["answer_key.json"] = json.dumps(key)
+
+
+def _all_related_definitions(files):
+    """Every planted entry's related unit becomes the same definition unit."""
+    g = _load()
+    key = _key(files)
+    doc = g.audit.parse_document(files[_target_name(files)], "t")
+    first_def = [u["id"] for u in doc["units"] if any(ln["norm"] == "defined term" for ln in u["lines"])][0]
+    for e in key["planted"]:
+        e["related_unit"] = first_def
+    _set_key(files, key)
+
+
+def _deciders_in_plain_words(files):
+    """The deciding units written in other words name their track plainly again: the
+    value-free track-and-term match then finds every related unit."""
+    fp = _load().family_provisions
+    path = _target_name(files)
+    text = files[path]
+    for track, procedure in fp.PROCEDURE.items():
+        text = text.replace("\nProcedure: %s\n" % procedure, "\nTrack: %s\n" % track)
+    files[path] = text
+
+
+def _target_round_kinds_swapped(files):
+    """Two band rows of different kinds trade kinds: the target round's multi-round
+    entries keep theirs."""
+    key = _key(files)
+    rows = key["band_irregularities"]
+    a = rows[0]
+    b = [r for r in rows if r["kind"] != a["kind"]][0]
+    a["kind"], b["kind"] = b["kind"], a["kind"]
+    _set_key(files, key)
+
+
+def _clean_entry_in_another_document(files):
+    """A multi-round clean entry names the document of another round."""
+    key = _key(files)
+    docs = sorted({e["document_id"] for e in key["multi_round"]["planted"] + key["multi_round"]["clean"]})
+    c = key["multi_round"]["clean"][0]
+    c["document_id"] = [d for d in docs if d != c["document_id"]][0]
+    _set_key(files, key)
+
+
+def _rule_text_replaced(rule, old, new):
+    def mutate(files):
+        conv = [p for p in files if p.startswith("conventions/")][0]
+        if old not in files[conv]:
+            raise AssertionError("%s: %r is not in the conventions" % (rule, old))
+        files[conv] = files[conv].replace(old, new, 1)
+    return mutate
+
+
+# (validator message, family, options, role mutated, mutation)
+VALIDATOR_MUTATIONS = [
+    ("the related units are all definitions, or none is", "f5", {"long_range": True}, "base",
+     _all_related_definitions),
+    ("a baseline that reads no value finds every related unit", "f5", {"long_range": True}, "base",
+     _deciders_in_plain_words),
+    ("the target round's multi-round entries are not the band breaches", "f4", {}, "base",
+     _target_round_kinds_swapped),
+    ("multi-round clean entry", "f4", {"rounds": 3}, "base", _clean_entry_in_another_document),
+    ("rule CONV-DE no longer states what rate_mismatch keys", "f2", {}, "base",
+     _rule_text_replaced("CONV-DE", "the duty rate applied to the consignment's stated total, whether or "
+                                    "not that total adds up", "the duty rate applied to the summed line values")),
+    ("rule CONV-LA no longer states what carry_mismatch keys", "f6", {}, "base",
+     _rule_text_replaced("CONV-LA", "carry the sum of the quantity column of the count before it",
+                         "carry the closing quantity of the count before it")),
+]
+
+
+def observe_validator_mutations(g, read=None):
+    """Each mutation applied to a valid test (read from disk by `read`, else generated):
+    the valid test gives no error, and the mutated one gives its message on the mutated
+    bundle."""
+    lines = []
+    for msg, fam, opts, role, mutate in VALIDATOR_MUTATIONS:
+        test = read(fam, **opts) if read else g.generate(fam, 17, **opts)
+        if g.bundle.validate_test(test):
+            return False, "%s %s: the unmutated test is not valid" % (fam, opts)
+        folder = g.bundle._roles(test)[role]
+        t2 = copy.deepcopy(test)
+        mutate(t2[folder])
+        errs = g.bundle.validate_test(t2)
+        hit = [e for e in errs if e.startswith(folder) and msg in e]
+        if not hit:
+            return False, "%s %s: %r not produced; errors %s" % (fam, opts, msg, errs[:3])
+        lines.append("%s %s %s: %s" % (fam, opts, role, hit[0][:260]))
+    return True, "\n".join(lines)
 
 
 def long_range_corpus(g):
@@ -865,14 +1027,20 @@ def report_baselines():
     g = _load()
     tests = [g.generate("f5", 17, long_range=True)] + long_range_corpus(g)
     lines = ["Long-range baselines (1 would be perfect; every bundle must stay below 1)."]
+    ranges = {}
     for test in tests:
         roles = g.bundle._roles(test)
         for role in ["base"] + list(g.bundle.PROBES):
             files = test[roles[role]]
             s = g.bundle.long_range_baselines(files)
-            lines.append("%-28s %-28s k=%d first_4=%.3f first_k=%.3f label_nearest=%.3f label_first=%.3f"
+            lines.append("%-28s %-28s k=%d first_4=%.3f first_k=%.3f label_nearest=%.3f label_first=%.3f "
+                         "track_term=%.3f"
                          % (roles[role], role, s["k"], s["first_4"], s["first_k"], s["label_nearest"],
-                            s["label_first"]))
+                            s["label_first"], s["track_term"]))
+            for b in g.family_provisions.BASELINES:
+                ranges.setdefault(b, []).append(s[b])
+    lines.append("Range over these bundles: " + ", ".join(
+        "%s %.3f to %.3f" % (b, min(v), max(v)) for b, v in ranges.items()))
     return "\n".join(lines)
 
 
@@ -920,18 +1088,21 @@ def check():
                     "probe 3 on a keyed flaw, every figure recomputed by the package's own audit "
                     "and ground-truth scanners with nothing unkeyed, in every bundle); unit "
                     "mismatches, rate, ratio and copy errors, neighbour-only carries and "
-                    "long-range flaws are planted; family 2's rate and ratio rules as written "
-                    "break exactly where keyed; the same seed gives identical bytes, also in a "
-                    "second process; a removed planted flaw (audit and ground-truth kinds), a "
-                    "flawed twin in every family, a digit in a text value and a missing probe are "
-                    "caught; family 4's rename probes state the ground truth (moves of 2.05 to "
-                    "45 percent in every bundle), its bundles hold only case documents and carry "
-                    "the multi-round key; the long-range layout holds in every bundle and its "
-                    "positional and label-only baselines score below 1; ids follow the published "
-                    "slug rule; no source name matches a trap pattern; family 4's case manifests are "
-                    "accepted by the controller and the generator alike, %d mutations refused by "
-                    "both; %d neutralisations caught and restored. No case compares a key with "
-                    "Shimmer's output (D-042)" % (result.testsRun, len(MUTATIONS), len(NEUTRALISATIONS)))
+                    "long-range flaws are planted; family 2's rate and ratio rules and family 6's "
+                    "carry rule as written break exactly where keyed; every keyed rule's text "
+                    "states what it keys and %d validator messages fire on their mutations; a "
+                    "seed that cannot build is retried deterministically; the same seed gives "
+                    "identical bytes, also in a second process; a removed planted flaw (audit and "
+                    "ground-truth kinds), a flawed twin in every family, a digit in a text value and "
+                    "a missing probe are caught; family 4's rename probes state the ground truth "
+                    "(moves of 2.05 to 45 percent in every bundle), its bundles hold only case "
+                    "documents and carry the multi-round key; the long-range layout holds in every "
+                    "bundle and its positional, label-only and track-and-term baselines score below "
+                    "1; ids follow the published slug rule; no source name matches a trap pattern; "
+                    "family 4's case manifests are accepted by the controller and the generator "
+                    "alike, %d mutations refused by both; %d neutralisations caught and restored. No "
+                    "case compares a key with Shimmer's output (D-042)"
+                    % (result.testsRun, len(VALIDATOR_MUTATIONS), len(MUTATIONS), len(NEUTRALISATIONS)))
 
 
 def report_neutralisations():
@@ -969,5 +1140,7 @@ if __name__ == "__main__":
         print(report_neutralisations())
     elif "--baselines" in sys.argv:
         print(report_baselines())
+    elif "--mutations" in sys.argv:
+        print(observe_validator_mutations(_load())[1])
     else:
         unittest.main()

@@ -58,5 +58,10 @@ def rotate(n, rng, keep_together=()):
     return list(range(c, n)) + list(range(0, c))
 
 
-def make_rng(family, seed):
+def make_rng(family, seed, attempt=0):
+    """The random stream of one build. Attempt 0 is the seed's own stream; a retry
+    (attempt k, generators.generate) draws from a sub-seed derived from the seed and k
+    alone, so the retry sequence of a seed is always the same."""
+    if attempt:
+        return random.Random("%s:%d:retry%d" % (family, int(seed), int(attempt)))
     return random.Random("%s:%d" % (family, int(seed)))

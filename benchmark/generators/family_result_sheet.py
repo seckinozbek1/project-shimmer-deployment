@@ -37,6 +37,17 @@ RULES = [
             "Each result must be written in the measure in which its parameter's range is given, "
             "and each total in the measure of the column it adds up."),
 ]
+# What each keyed kind's rule text must state (bundle.check_rule_statements reads the
+# rendered conventions): the clause a unit of that kind breaks as written.
+RULE_STATEMENTS = {
+    "band_above": ("must lie within the reference range for the parameter",),
+    "band_below": ("must lie within the reference range for the parameter",),
+    "total_mismatch": ("must equal the sum of the volume column",),
+    "blank_cell": ("must be given as a figure in millilitres",),
+    "missing_required_field": ("must state the analyst",),
+    "unit_mismatch": ("must be written in the measure in which its parameter's range is given",
+                      "each total in the measure of the column it adds up"),
+}
 ORDINALS = ["First", "Second", "Third", "Fourth"]
 # The conversions a unit mismatch is planted with, and read back by the scanner.
 CONVERSIONS = [["g/L", "mg/L", 1000], ["L", "mL", 1000]]
@@ -53,8 +64,8 @@ def _inside(rng, lo, hi):
     return round(rng.uniform(lo + 0.15 * span, hi - 0.15 * span), 2)
 
 
-def build(seed):
-    rng = wl.make_rng(FAMILY, seed)
+def build(seed, attempt=0):
+    rng = wl.make_rng(FAMILY, seed, attempt)
     params = rng.sample(PARAMETERS, 6)
     n = rng.randint(20, 24)
     heads = wl.pick(rng, wl.TREES, n)

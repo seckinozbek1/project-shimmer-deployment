@@ -25,7 +25,7 @@ A test is delivered as two separate things:
 - the **test archive**: everything Shimmer needs to run the test, and nothing else;
 - the **answer key** (section 9): one file, `answer_key.json`, delivered to the scorer by its own route. It is never inside the archive, and the machine that runs Shimmer never receives it.
 
-Both are **sealed** once written: nothing in them changes after a result on the test has been seen.
+Both are **sealed** once written: nothing in them changes after a result on the test has been seen. A multi-round case that is also scored as an ordinary two-version review is delivered as two test archives and one key (section 12, "The same bundle as an ordinary review").
 
 **The test archive** is a tar file (compressed or not) whose members sit at these paths, and only these:
 
@@ -278,8 +278,8 @@ There is one rule, the same for every test. Apply it from each rule's own text, 
    A field required once per document is required of the one unit meant to hold it. For example, scope on a label that only the preamble carries.
 2. **Every other rule** (arithmetic, bands, date windows, wording) declares no directive. Its text names the labels of the fields it governs, and it pairs with the units that carry them all. A rule is not a completeness rule just because it says "must".
 3. **Never** write `[scope: ...]` without `[requires: ...]`.
-4. **Every rule names at least one document label, or declares a scope.**
-5. **Coverage.** Every unit except the preamble is in scope of, or pairs with, at least one rule. The preamble needs no scope to exclude it: a rule pairs with the preamble only if the preamble carries every label the rule names. Keep the labels your rules name out of the preamble, unless a rule is meant for it.
+4. **Every rule names at least one document label, or declares a scope.** A document label is a label of the document under review: in a test with an earlier version, the target's; in a multi-round case, the last round's document. So a rule names a renamed term by its later label, and need not name the earlier one (section 9, "Multi-round keys", says how an earlier round's statement is keyed).
+5. **Coverage.** Every unit of the document under review (in a multi-round case, the last round's document) except the preamble is in scope of, or pairs with, at least one rule. The preamble needs no scope to exclude it: a rule pairs with the preamble only if the preamble carries every label the rule names. Keep the labels your rules name out of the preamble, unless a rule is meant for it.
 6. **Scope values must sit in label lines.** If the units in scope differ from the others only by a value, give every unit a label line that states that value, and pin the scope to it. A value that appears only in a table cell cannot be used.
 7. **No `[unless: ...]`.** No rule declares one. A field condition switches the whole rule off on every unit that carries the label, and a rule condition is never checked by Python, so either would make a catch depend on a directive written for one test. State a condition in the rule's text instead:
    - A condition on a field. If the rule is a completeness rule, the units it governs are named by its scope (rule 1), pinned to a value where needed. If the rule's band comes from a reference table or a labelled sentence, naming the field in its text makes the low side conditional on units that carry it (section 7). Otherwise Python does nothing with it.
@@ -324,6 +324,7 @@ There is one rule, the same for every test. Apply it from each rule's own text, 
 - Each mandate rule names its term with the label the offers use, then does one of two things:
   - it states the band that side wants, with two figures in the same measure ("The annual fee must lie between 2% and 4%."); or
   - it requires the term to be stated, in which case section 5, rule 1 applies.
+- A mandate may also hold other rules, such as one requiring a total to equal a sum, in a negotiation-style test and in a multi-round case. The negotiation-style scoring (section 9) reads only change records and band findings, so the findings of such rules count neither as found rows nor as false positives there. In a multi-round case they are round findings like any other (section 9, "Multi-round keys").
 - Keep the same headings across versions: Python matches the two versions by heading slug.
 
 **What Python compares.** Python writes change records unit by unit, in both review modes (section 8).
@@ -485,6 +486,17 @@ Changing one of these for one test is a code change.
 | `planted` | One entry per **planted flaw**. |
 | `clean` | The unit ids of **clean distractors**: units built to look like flaws that are correct. |
 
+**Key forms and their required top-level fields.** Every key names the task in one field, `task_given_to_the_pipeline`, whatever its form.
+
+| Key form | Required top-level fields | Also, when it applies |
+|---|---|---|
+| Single-version | `document`, `task_given_to_the_pipeline`, `planted`, `clean` | `twin_of` (a test with a twin, and that twin); `probe` (a probe, section 11) |
+| Negotiation-style (below) | `document`, `task_given_to_the_pipeline`, `prior_records`, `band_irregularities` | `expected_refusals` (renamed terms, below); `twin_of`; `probe` |
+| Multi-round case that is not negotiation-style | the single-version fields, with `planted` and `clean` entries scoped by round ("Multi-round keys", below) | `archives` (a sealed case scored both ways, section 12) |
+| Negotiation-style and multi-round | the negotiation-style fields and `multi_round` | `expected_refusals`; `archives` |
+
+Older keys under `benchmark/corpora/` name the task `task` in a negotiation-style key. The repository's scorer prints `task` for a negotiation-style test and `task_given_to_the_pipeline` for a single-version one, and prints an empty line when that field is absent. The task is only printed, never scored.
+
 **A planted entry** has these fields:
 
 - `unit`: the full unit id. It is matched as a case-insensitive substring of a finding's unit id.
@@ -547,7 +559,7 @@ A sum, product or date window agrees with the stated figure when they are the sa
 
 **A blank cell in a summed column.** Only cells that hold a number are summed: a blank cell, or a cell with no number in it, adds nothing, and a sum needs at least two cells that hold a number. The blank-cell finding is computed separately. So a blank cell in a column with a stated total always gives the blank-cell `missing_field` finding, and also gives a `sum_mismatch` (with `value_a` the sum of the filled cells) whenever the total differs from that sum. If you plant a blank cell there, either write the total as the sum of the filled cells, or key both findings.
 
-**Negotiation-style test.** Instead of `planted` and `clean`, give `task` (one line, printed only) and two lists:
+**Negotiation-style test.** Instead of `planted` and `clean`, give two lists (and `task_given_to_the_pipeline`, one line, printed only, as every key does):
 
 - `prior_records`: one row per change record the two versions call for (section 6): one per label-line figure per unit that both versions state under the same label, unchanged ones included, and one per term truly withdrawn (`absent_since_prior`), also when an unrelated new term in the same measure sits in its section, where Python refuses it as a possible successor. A term only renamed is not withdrawn and gets no row: list it in `expected_refusals` (below). Each row has:
   - `field_label`, the label in any form (it is normalised before comparison);
@@ -565,13 +577,15 @@ A sum, product or date window agrees with the stated figure when they are the sa
 - **Stray refusals**: refusals and orphans for labels the key does not list. They are counted apart, not as false positives.
 - A `band_irregularities` row is found when an irregular band finding has the same relation, the same normalised label and the same `value_a` within the tolerance of section 6. The unit and `value_b` are not compared, so one finding satisfies every row with the same label, relation and figure: give such rows different figures. A conditional `below_band` (section 7) is found like any other. Its attribution is correct when that finding's operator id equals `rule`.
 - **Band false positives**: every irregular band finding whose label is not listed, conditional ones included. A ratio finding has no label and always counts here. So in a negotiation-style test, never put two figures whose measures divide to a band's measure in one unit.
+- **Which findings count.** The repository's scorer reads change records whose `provenance` is `computed`: Python sets that on its change records, and a model can write the field too (`docs/OUTPUT_FORMAT.md`, section 5.4). It reads band findings from every irregular band finding on the bus, whoever wrote it, so a model's band finding can satisfy a `band_irregularities` row and counts as a band false positive. No other finding (a sum, a product, an absence) is counted in a negotiation-style test. A scorer that must not be moved by model text reads both lists only from findings written by `python` (`docs/OUTPUT_FORMAT.md`, section 5.4), and reports what only a model wrote separately.
 
-**Renamed terms and expected refusals.** A term the later version states under a new label, with its figure unchanged or moved, in its own section or another, is the same term: a correct reviewer does not call it withdrawn. Python cannot tell a rename from a withdrawal by structure, so it refuses where section 6 says, and the refusal carries a typed `reason_kind` (`docs/OUTPUT_FORMAT.md`, section 7.1). List every renamed term in the optional `expected_refusals`:
+**Renamed terms and expected refusals.** A term the later version states under a new label, with its figure unchanged or moved, in its own section or another, is the same term: a correct reviewer does not call it withdrawn. Python cannot tell a rename from a withdrawal by structure, so it refuses where section 6 says, and the refusal carries a typed `reason_kind` (`docs/OUTPUT_FORMAT.md`, section 7.1). List every renamed term in `expected_refusals`. It is a top-level field of a negotiation-style key only, beside `prior_records`; a single-version key has none, and a key that is also a multi-round case keeps it at the top, never inside `multi_round`.
 
 ```json
 "expected_refusals": [
   {"field_label": "annual fee", "later_field_label": "yearly fee",
-   "unit_id": "u03-clause-wren", "reason_kind": "possible_rename"}
+   "unit_id": "u03-clause-wren", "reason_kind": "possible_rename",
+   "value_a": 3.1, "value_b": 3.1, "unit": "%"}
 ]
 ```
 
@@ -580,11 +594,21 @@ A sum, product or date window agrees with the stated figure when they are the sa
 | `field_label` | The earlier label, normalised. |
 | `later_field_label` | The label the later version uses for the same term, normalised. |
 | `unit_id` | The unit of the later version whose heading the earlier statement sat under: where the refusal is recorded. |
-| `reason_kind` | The kind of refusal the evidence supports, decided from the two figures as section 6 defines the kinds: `possible_rename` when the later figure is within 2% of the larger of the two, `possible_successor` when it moved further and the new label is in the same section, `null` when any refusal fits (the new label sits in another section, where section 6 refuses nothing). Plant a moved figure clear of the 2% line: a move of more than 2.0408% of the earlier figure is never within 2% of the larger, whichever way it moves. |
+| `reason_kind` | The kind of refusal the evidence supports, decided from the two figures as section 6 defines the kinds, so one of the three kinds `docs/OUTPUT_FORMAT.md` section 7.1 gives a vanished label: `possible_rename` when the later figure is within 2% of the larger of the two in the same non-empty measure; `possible_successor` when it moved further and the new label is in the same section; `possible_successor_no_unit` when it moved further, the new label is in the same section and neither figure has a measure. `null` when the new label sits in another section: Python is expected to refuse nothing there, and only a matched rename satisfies the row. Plant a moved figure clear of the 2% line: move it by more than 2.05% of the earlier figure. Such a move is never within 2% of the larger, whichever way it moves (the exact limit is 2/98 = 2.0408...%). |
+| `value_a`, `value_b`, `unit` | The figure now and the earlier figure, and their measure (`""` when there is none), as in `prior_records`: the figures a matched rename compares. |
 
-How a row is counted: a refusal of `field_label` satisfies it, and so does a change record on `later_field_label` comparing the two figures (a matched rename); such a record is then not a false positive. An `absent_since_prior` on `field_label` is a false positive (a fabricated withdrawal). A refusal whose kind differs from `reason_kind` still satisfies the row; report the kind beside it. A refusal of a label the key lists here is not a stray refusal. The repository's scorer does not read `expected_refusals` yet, and counts a matched rename's record as a false positive.
+How a row is counted:
 
-**Rename probes are measured in the ordinary two-version review** of the bundle: the last version reviewed against its declared prior (section 6). A multi-round run writes no change records (section 12), so it measures no rename probe.
+- **A refusal** satisfies the row when `reason_kind` is not `null` and `prior_refusals` (`docs/OUTPUT_FORMAT.md`, section 7.1) holds an entry whose `label` normalises to `field_label` and whose `unit_id` equals the row's `unit_id`. A refusal whose kind differs from `reason_kind` still satisfies the row; report the kind beside it.
+- **A matched rename** satisfies the row whatever its `reason_kind`: a change record (`docs/OUTPUT_FORMAT.md`, section 6.5) on `later_field_label` with any relation other than `absent_since_prior`, whose `value_a` is the row's `value_a` (the later figure) and whose `value_b` is the row's `value_b` (the earlier figure), both within the tolerance of section 6, in the row's measure `unit`. Such a record is then not a false positive.
+- An `absent_since_prior` on `field_label` is a false positive (a fabricated withdrawal).
+- A refusal of a label the key lists here is not a stray refusal.
+
+The repository's scorer does not read `expected_refusals` yet, and counts a matched rename's record as a false positive.
+
+**`unit_mismatch` names two different things.** As a planted relation it is `claim.relation` of a planted entry (the table of relations above); as a refusal it is a `reason_kind` in `prior_refusals` (`docs/OUTPUT_FORMAT.md`, section 7.1). They are different fields and are never compared with each other.
+
+**Rename probes are measured in the ordinary two-version review** of the bundle: the last version reviewed against its declared prior (section 6). A multi-round run writes no change records (section 12), so it measures no rename probe. Section 12, "The same bundle as an ordinary review", says how that run is made from a multi-round bundle.
 
 **Multi-round keys.** A multi-round case (section 12) is scored from the Python round findings of each round (`docs/OUTPUT_FORMAT.md`, section 10.2), with these additions to the single-version form:
 
@@ -592,7 +616,9 @@ How a row is counted: a refusal of `field_label` satisfies it, and so does a cha
 - Key every round, not only the last: a figure that breaks its rule in an earlier round is a planted flaw of that round. When the case manifest declares a renamed term as one issue (section 12), a correct reviewer reads the earlier label of an earlier round under the rule that names the later label, so key it under that rule (Python's round review pairs by the label's words and will not); an `issue_id` in the entry, ignored by the scorer, says which issue it is.
 - A bundle that is both a negotiation-style test and a multi-round case keeps its negotiation-style lists at the top of the key and puts the multi-round entries in a top-level `multi_round` object holding `planted` and `clean`, which the ordinary scorer ignores.
 - A finding counts for an entry only when its round and document match. A finding reused into a later round (section 12) belongs to the round it is posted in: key it again for that round if the flaw is still there.
+- **How an entry is matched.** The round findings are the items posted on bus channel `multi_round` (`docs/OUTPUT_FORMAT.md`, section 10.2): the envelope's `doc_id` is the document id, and each item carries `round_id`. A finding **locates** an entry when its `round_id` equals the entry's `round_id`, its envelope's `doc_id` equals the entry's `document_id`, the entry's `unit` is a case-insensitive substring of the finding's unit id (as for a single-version entry), and its relation equals the entry's `relation`. A multi-round run writes no amendments, so an entry is located only by a finding, never by an amendment. A located entry's reason is **confirmed** as for a single-version entry: the same `field_label` and both figures.
 - **False positives** are the irregular round findings on a (round, document, unit) that no planted entry names. A multi-round run writes no amendments, so false positives are counted on findings.
+- **Distractor hits** are the irregular round findings on the (round, document, unit) of a `clean` entry.
 - `twin_of` names a twin case with every flaw repaired in every round. A twin that repairs only the last round (so that its earlier versions stay the test's, as an ordinary two-version twin needs) is not such a twin: leave `twin_of` out of the multi-round entries then.
 - Round findings carry the registry id, not the operator's own id (`docs/OUTPUT_FORMAT.md`, section 10.2): to check `rule`, give the scorer the case's conventions and number the rules as section 3 does.
 - The repository's scorer does not score multi-round cases yet.
@@ -640,10 +666,18 @@ conventions/
 - The file name is exactly `case_manifest.json`, at the top of the archive. It holds one JSON object, in UTF-8 without a byte-order mark. A byte-order mark makes the file unreadable: the preparation fails, and a run started by hand stops before it starts. The file travels byte for byte; its line ends are not rewritten.
 - In a working folder (section 1), keep `case_manifest.json` at the folder's top, beside `context/`. A run on this machine is given its path with `--multi-round --multi-round-manifest <path>` (both options together).
 - **Which files are case documents.** In a multi-round run Shimmer does not read `_review_targets.json`. Every file directly inside `context/` that Shimmer reads as text (`.md`, and also `.txt`, `.rst`, `.log`, `.json`, `.pdf`, `.docx`, `.html`, `.htm`), whose name does not start with `_` and whose text is not empty, is a case document. Write case documents as Markdown only (section 1).
-- **The targets manifest.** Keep it anyway: the preparation tool refuses a test without one, and does not read it. Write it as section 6 describes, with the last round's document as the target, the round before it as the `prior`, and every other case document as grounding. The same bundle can then also be run as an ordinary two-version review (section 9, rename probes).
+- **The targets manifest.** Keep it anyway: the preparation tool refuses a test without one, and does not read it. Write it as section 6 describes, with the last round's document as the target, the round before it as the `prior`, and every other case document as grounding. The same files can then also be run as an ordinary two-version review (below).
 - **No reference corpus.** A multi-round run reads no grounding files: no reference tables, no labelled sentences, no bound sentences. A file in `context/` that no round names is loaded and then not used. Put only case documents in `context/`.
 - **Document ids.** A case document's id is its file name without the extension: `quote_r1.md` has the id `quote_r1`. If two files share a name and differ only in extension, each gets the id `<name>__<extension>` (`quote_r1__md`). Avoid that: give every file its own name.
 - **Conventions.** `conventions/` must hold at least one rule. With none, the round review records `no_conventions` and a cloud run fails its health check.
+- **A renamed term as one issue.** When a later round states a term under a new label, declare it as one issue: the term's source in each round quotes that round's own line (the earlier label in the earlier round, the new label in the later one), and every one of those sources carries the same `issue_id`. Two labels on one issue is what tells a multi-round run that they are one term.
+
+**The same bundle as an ordinary review.** An archive that holds `case_manifest.json` is always prepared and run as a multi-round case. The ordinary two-version review of the same files (the last round's document against its declared prior, section 6) is a second run, on a second archive:
+
+1. The **ordinary-review archive** holds exactly the same members as the multi-round archive, without `case_manifest.json`. Shimmer then reads `_review_targets.json` and runs an ordinary review.
+2. For a **sealed** test, seal both archives (section 1), and name both in the key, in a top-level `archives` object: `{"ordinary_review": "<SHA-256 of the ordinary-review archive's bytes>", "multi_round": "<SHA-256 of the multi-round archive's bytes>"}`. A run is scored only against the lists of the archive it was made from (item 4), and only when that archive's hash is the one the key names.
+3. In a **working folder** (section 1), the staging tool copies no `case_manifest.json`, so a run without `--multi-round` is the ordinary review, and a run given `--multi-round --multi-round-manifest case_manifest.json` is the multi-round run.
+4. **Which key lists are scored from which run.** `prior_records`, `band_irregularities` and `expected_refusals` are scored from the ordinary review: the run whose folder holds `deliverables/`. The round-scoped entries (the `multi_round` object, or the top-level `planted` and `clean` of a multi-round key that is not negotiation-style) are scored from the multi-round run: the run whose folder holds `audit/multi_round.json` (a multi-round run writes no deliverables, `docs/OUTPUT_FORMAT.md` section 10). A run folder that holds neither is scored against nothing.
 
 **Example.** Two rounds of an invented supply quote. `context/quote_r1.md`:
 
@@ -736,7 +770,7 @@ No other top-level field is allowed: one more field is refused. Inside rounds, a
 - **Reuse.** A unit whose own text, paired rules, document label set and document measures are all identical to a unit of an earlier round is not computed again. Its findings are copied from the earliest round that computed them, under the new unit id. A unit that moved position is still recognised, because the unit id is not part of the comparison.
 - Then the producer model proposes typed position records from the spans, and the reviewer model accepts, rejects or withholds each one. Nothing in a multi-round run becomes an amendment, and the run writes no deliverables. The round findings carry the registry id of their rule, not the operator's own id. `docs/OUTPUT_FORMAT.md` describes what the run writes.
 
-**Scoring a multi-round case.** Section 9, "Multi-round keys", gives the key: planted and clean entries scoped by round and document, scored on the Python round findings. Rename probes are measured in the ordinary two-version review of the same bundle, not in a multi-round run. The repository's scorer scores neither yet.
+**Scoring a multi-round case.** Section 9, "Multi-round keys", gives the key: planted and clean entries scoped by round and document, scored on the Python round findings. Rename probes are measured in the ordinary two-version review of the same files (above, "The same bundle as an ordinary review"), not in a multi-round run. The repository's scorer scores neither yet.
 
 ## 13. Glossary
 

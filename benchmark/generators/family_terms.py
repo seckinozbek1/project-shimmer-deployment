@@ -13,7 +13,8 @@ scorer ignores: `version_changes` (the family's own plan of every term), `rename
 Every expectation is GROUND TRUTH, decided here from what this family planted, never
 from what Shimmer computes (D-042): a term renamed with its value unchanged or moved is
 the same term, so a correct reviewer does not call it withdrawn (a refusal, or a matched
-rename, satisfies the key; a withdrawal record is a false positive); a term truly
+rename, satisfies the key, and only a matched rename where the term moved to another
+section, where Python refuses nothing; a withdrawal record is a false positive); a term truly
 withdrawn is `absent_since_prior`, also when an unrelated new term sits in the same
 section in the same measure; a renamed term moved to another section is not withdrawn.
 
@@ -70,9 +71,10 @@ TERMS = [
     ("Support hours", "hours", 20, 60, 0, "Help hours", "Assistance time"),
     ("Uptime target", "%", 95.0, 99.5, 1, "Availability goal", "Service level"),
 ]
-# A moved rename moves by a seeded 2.05 to 45 percent of the earlier figure. The low end
-# sits above 2/0.98 = 2.0408 percent, so a moved figure is never within 2% of the larger
-# of the two (section 6's possible-rename window), whichever way it moves.
+# A moved rename moves by a seeded 2.05 to 45 percent of the earlier figure, more than
+# 2.05 percent exactly (in_move_range). That sits above 2/98 = 2.0408... percent, so a
+# moved figure is never within 2% of the larger of the two (section 6's possible-rename
+# window), whichever way it moves.
 MOVE_LOW, MOVE_HIGH = 0.0205, 0.45
 RENAME_WINDOW = 0.02     # section 6: within 2% of the larger figure in absolute value
 
@@ -88,8 +90,10 @@ RENAME_KINDS = {
 
 def expected_refusal_kind(before, after, same_section):
     """The refusal kind the planted figures support (INPUT_FORMAT sections 6 and 9):
-    another section, any refusal (None); the figures within 2% of the larger,
-    `possible_rename`; otherwise `possible_successor`."""
+    another section, None (Python is expected to refuse nothing there, and only a
+    matched rename satisfies the row); the figures within 2% of the larger,
+    `possible_rename`; otherwise `possible_successor` (every measure here is non-empty,
+    so never `possible_successor_no_unit`)."""
     if not same_section:
         return None
     if abs(after - before) <= RENAME_WINDOW * max(abs(before), abs(after)):
@@ -98,10 +102,10 @@ def expected_refusal_kind(before, after, same_section):
 
 
 def in_move_range(before, after):
-    """A moved rename's figures: moved by MOVE_LOW to MOVE_HIGH of the earlier figure,
-    and so never within 2% of the larger."""
+    """A moved rename's figures: moved by more than MOVE_LOW and at most MOVE_HIGH of the
+    earlier figure, and so never within 2% of the larger."""
     p = abs(after - before) / abs(before)
-    return (MOVE_LOW <= p <= MOVE_HIGH
+    return (MOVE_LOW < p <= MOVE_HIGH
             and abs(after - before) > RENAME_WINDOW * max(abs(before), abs(after)))
 
 
@@ -193,6 +197,11 @@ def _inside_moved(rng, t):
     raise ValueError("no inside move for %s" % t[0])
 
 
+# What each keyed kind's rule text must state (bundle.check_rule_statements reads the
+# rendered mandate): every breach, in any round, breaks the band its rule states.
+RULE_STATEMENTS = {k: ("must lie between",) for k in (
+    "breach_unchanged", "breach_moved_away", "breach_moved_toward", "breach_new_term",
+    "breach_renamed_moved", "breach_reformatted", "breach_in_earlier_round")}
 ROUND_CHANGES = 3          # ordinary terms at another figure in the earliest version
 REUSE_ROLES = ("breach_moved_away", "breach_moved_toward", "changed_inside", "moved_into_band",
                "unchanged_inside")
@@ -200,11 +209,11 @@ SPECIAL = ("breach_new_term", "breach_renamed_moved", "renamed_unchanged", "with
            "withdrawn_beside_newcomer", "newcomer_unrelated", "renamed_moved_section")
 
 
-def _earliest(seed, terms, prior_units, prior_order, title, preamble):
+def _earliest(seed, terms, prior_units, prior_order, title, preamble, attempt=0):
     """The earliest version (round r1 of a three-round case): the prior with
     ROUND_CHANGES ordinary terms, in distinct sections, at a figure more than 5% away.
     Its own random stream."""
-    rng = wl.make_rng(FAMILY + "-rounds", seed)
+    rng = wl.make_rng(FAMILY + "-rounds", seed, attempt)
     pool = [e for e in terms if e["role"] in REUSE_ROLES and e["prior"] is not None]
     rng.shuffle(pool)
     chosen, units = [], set()
@@ -256,10 +265,10 @@ def _pick_roles(rng):
     return roles
 
 
-def build(seed, rounds=2):
+def build(seed, rounds=2, attempt=0):
     if rounds not in (2, 3):
         raise ValueError("family 4 writes two or three rounds")
-    rng = wl.make_rng(FAMILY, seed)
+    rng = wl.make_rng(FAMILY, seed, attempt)
     terms = []
     for role, t in _pick_roles(rng):
         label, meas, lo, hi, dec, alt, alt2 = t
@@ -470,7 +479,9 @@ def build(seed, rounds=2):
                    "expect": v["expect"], "reason": reason, "refusal_kind": refusal,
                    "satisfied_by": None, "false_positive_if": None}
             if v["expect"] == "not_withdrawn":
-                row["satisfied_by"] = ["refusal", "matched_rename"]
+                # INPUT_FORMAT section 9: with no refusal kind (another section, where
+                # Python refuses nothing) only a matched rename satisfies the row.
+                row["satisfied_by"] = ["refusal", "matched_rename"] if refusal else ["matched_rename"]
                 row["false_positive_if"] = "absent_since_prior"
             elif v["expect"] == "absent_since_prior":
                 row["satisfied_by"] = ["absent_since_prior"]
@@ -488,7 +499,8 @@ def build(seed, rounds=2):
         issues[e["label"]] = issues[e["later_label"]] = "issue-" + tr.slug(e["label"])
     earliest, round_changes = (None, [])
     if rounds == 3:
-        earliest, round_changes = _earliest(seed, terms, prior_units, prior_order, title, preamble)
+        earliest, round_changes = _earliest(seed, terms, prior_units, prior_order, title, preamble,
+                                            attempt)
     clean_unit = [e["unit"] for e in terms if e["role"] == "at_bound"][0]
     # For the multi-round key: every label a round may write for a term the mandate
     # governs (its earlier and its later label), with that term's band, rule and issue.
