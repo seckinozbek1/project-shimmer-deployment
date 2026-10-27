@@ -31,6 +31,31 @@ _PURPOSES = {
 }
 
 
+# Reader check round 3 (item 9): how a recorded state READS in a deliverable. The
+# states themselves stay exactly as recorded in agent_activation.json; only the
+# words a reader sees change. Each has a rendering in the second output language
+# (tr) in scripts/ui/localization_catalog.js. An unknown state is shown as recorded.
+STATE_WORDS = {
+    "phase_not_reached": "not run (its phase was not reached)",
+    "eligible_inactive": "eligible, not called",
+    "ineligible": "not eligible",
+    "activated_not_dispatched": "selected, never called",
+    "dispatch_started": "called, no outcome recorded",
+    "completed": "called and completed",
+    "execution_failure": "called, and the call failed",
+    "pre_dispatch_failure": "failed before its call",
+    "no_execution_path": "not called (nothing in this run could call it)",
+    "switched_off": "switched off by the operator",
+}
+
+
+def state_words(state) -> str:
+    """A recorded state in a reader's words, in the run's output language."""
+    import localization
+    state = str(state or "?")
+    return localization.text(STATE_WORDS[state]) if state in STATE_WORDS else state
+
+
 class ActivationAudit:
     def __init__(self, run_context, agents, profile="dense"):
         if profile not in PROFILES:
