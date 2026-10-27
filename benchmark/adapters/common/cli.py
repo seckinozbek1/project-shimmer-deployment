@@ -2,18 +2,22 @@
 
   build  --input <benchmark file> --out <empty folder> --side development|holdout
          --max-context N --output-allowance N --token-counter <file.py> [--b1-prompt F]
-         [--assignment <split file>] [--testmini <file>] [--reports <folder> (FinDVer)]
-         or, for synthetic or development work only, --development (no budget needed,
-         side unchecked unless --side is given; recorded in parts.json)
-  split  --input <benchmark file> [--out F]     the side of every document (section 1)
+         [--assignment <split file>] [--testmini <file>] [--exclude <file>]
+         [the adapter's own options: FinDVer --reports; ContractNLI --frozen-sha256, --parts]
+         or, for development work only, --development (no budget needed, recorded in
+         parts.json; a holdout document is refused unless --side holdout is also given)
+  split  --input <benchmark file> [--out F] [--exclude <file>]   the side of every document
+  bands  --input <benchmark file> [--out F] [--exclude <file>]   every document's words and
+         length band (section 5.6, Words) over a whole input, no build needed
   label  --items <items.json> --arm B0|B1|B2|B3|B4 [--runs <folder>] --out <labels.json>
   score  --labels <labels.json> --bundles <build folder> --out <metrics.json>
 
 The cut budget is computed per document (section 5.3) from the bundle's own conventions
 with the B1 prompt (common/prompt.py). A token counter file defines `count(text) -> int`
 and `count_prompt(system, user) -> int` with the main reading agent's own tokenizer and
-chat template. `label` writes the primary labels and the S-1 and S-2 analyses in one
-file; `score` scores each of them. For B2, B3 and B4, `--runs` holds one run folder per
+chat template. `label` writes the primary labels and the S-1, S-2 and S-3 analyses in one
+file; `score` scores each of them, and S-4 from the primary labels (the items whose marked
+evidence lies wholly in the kept text). For B2, B3 and B4, `--runs` holds one run folder per
 document named by its opaque document id; for B1, one bare_model.py output folder per
 document, named the same way. B3 and B4 are refused while the typed-record key of the
 pipeline's output is not settled (preregistration section 12 item 9).
@@ -24,6 +28,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import statistics
 import sys
 from pathlib import Path
 
@@ -65,14 +70,49 @@ def budget_function(counter, max_context, output_allowance, b1_prompt=None):
     return budget_for
 
 
-def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_allowance=None,
-          token_counter=None, b1_prompt=None, development=False, assignment=None,
-          testmini=None, **adapter_options) -> dict:
-    """Build the bundles. `adapter_options` are the adapter's own BUILD_OPTIONS (FinDVer's
-    --reports), passed to its `documents` with the input path."""
+def read_exclusions(path) -> list:
+    """The source document ids a benchmark's own paper prints as in-context examples
+    (section 1), as role B identified them: a JSON list, or an object whose
+    `source_document_ids` is that list."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    rows = data.get("source_document_ids") if isinstance(data, dict) else data
+    if not isinstance(rows, list):
+        raise ValueError("the exclusion file holds no list of source document ids")
+    return sorted({ids.key_string(r) for r in rows})
+
+
+def apply_exclusions(documents, exclude):
+    """(kept documents, excluded rows): a listed document is removed with all its items."""
+    if not exclude:
+        return documents, []
+    listed = set(read_exclusions(exclude))
+    kept, gone = [], []
+    for doc in documents:
+        if ids.key_string(doc["source_document_id"]) in listed:
+            gone.append({"source_document_id": ids.key_string(doc["source_document_id"]),
+                         "document_id": doc["document_id"], "items": len(doc["items"])})
+        else:
+            kept.append(doc)
+    return kept, sorted(gone, key=lambda r: r["document_id"])
+
+
+def _own_options(adapter, adapter_options):
     unknown = sorted(set(adapter_options) - {_dest(n) for n, _h in getattr(adapter, "BUILD_OPTIONS", ())})
     if unknown:
         raise ValueError("options this adapter does not take: " + ", ".join(unknown))
+
+
+def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_allowance=None,
+          token_counter=None, b1_prompt=None, development=False, assignment=None,
+          testmini=None, exclude=None, synthetic=False, **adapter_options) -> dict:
+    """Build the bundles. `adapter_options` are the adapter's own BUILD_OPTIONS (FinDVer's
+    --reports; ContractNLI's --frozen-sha256 and --parts), passed to its `documents` with
+    the input path. A development build that declares no side refuses a holdout document
+    (D-039 item 14). `synthetic` serves the checks' hand-written fixtures alone, which mix
+    sides on purpose: with `development` it lifts that refusal and the adapter's input
+    check (ContractNLI's frozen file). It is a keyword of this function only, never an
+    option of the command line, and parts.json records it."""
+    _own_options(adapter, adapter_options)
     budget_given = [v is not None for v in (max_context, output_allowance, token_counter)]
     if not development:
         if side not in (ids.DEVELOPMENT, ids.HOLDOUT):
@@ -85,11 +125,25 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
     options = {"side": side, "assignment": assignment, "testmini": testmini,
                "development": development, "input_path": str(input_path)}
     options.update({k: v for k, v in adapter_options.items() if v is not None})
+    lifted = bool(development and synthetic)
+    check_input = getattr(adapter, "check_input", None)
+    input_check = None
+    if check_input is not None and not lifted:
+        input_check = check_input(input_path, side, options)
+        options["frozen_for"] = input_check["frozen_for"]
     records = adapter.read_source(input_path)
     documents = adapter.documents(records, options)
+    documents, excluded = apply_exclusions(documents, exclude)
     for doc in documents:
         doc["benchmark"] = adapter.BENCHMARK
     extra = {"development_build": bool(development)}
+    if lifted:
+        extra["synthetic_fixture_build"] = True
+    if input_check is not None:
+        extra["input_check"] = input_check
+    if exclude:
+        extra["exclusion_sha256"] = _sha(exclude)
+        extra["excluded_documents"] = excluded
     cut_plan = None
     if all(budget_given):
         counter = load_counter(token_counter) if isinstance(token_counter, (str, Path)) else token_counter
@@ -102,9 +156,38 @@ def build(adapter, input_path, out_dir, *, side=None, max_context=None, output_a
         extra["assignment_sha256"] = _sha(assignment)
     if testmini:
         extra["testmini_sha256"] = _sha(testmini)
+    declared = side if side in (ids.DEVELOPMENT, ids.HOLDOUT) else None
     return bundle.write_bundles(out_dir, adapter.BENCHMARK, documents, cut_plan,
-                                declared_side=side if side in (ids.DEVELOPMENT, ids.HOLDOUT) else None,
-                                build_extra=extra)
+                                declared_side=declared, build_extra=extra,
+                                refuse_holdout=declared is None and not lifted)
+
+
+def bands(adapter, input_path, *, exclude=None, **adapter_options) -> dict:
+    """Every document's words and length band by the one word rule (section 5.6, Words),
+    over a whole input with no build: what role B stratifies the holdout sample by and
+    writes S8's B_SIZES.json from (D-039 item 7). Per band: documents, decisions (items)
+    and the median word count. No side is read or checked, and no text is written."""
+    _own_options(adapter, adapter_options)
+    options = {"side": None, "development": True, "input_path": str(input_path)}
+    options.update({k: v for k, v in adapter_options.items() if v is not None})
+    documents = adapter.documents(adapter.read_source(input_path), options)
+    documents, excluded = apply_exclusions(documents, exclude)
+    rows = []
+    for doc in sorted(documents, key=lambda d: d["document_id"]):
+        if bundle.is_empty(doc):
+            continue
+        words = sum(int(p["words"]) if "words" in p else ids.word_count(p["text"]) for p in doc["parts"])
+        rows.append({"document_id": doc["document_id"],
+                     "source_document_id": ids.key_string(doc["source_document_id"]),
+                     "words": words, "length_band": ids.length_band(words), "items": len(doc["items"])})
+    per_band = {}
+    for name, _lower in ids.LENGTH_BANDS:
+        mine = [r for r in rows if r["length_band"] == name]
+        per_band[name] = {"documents": len(mine), "items": sum(r["items"] for r in mine),
+                          "median_words": statistics.median([r["words"] for r in mine]) if mine else None}
+    return {"benchmark": adapter.BENCHMARK, "input_sha256": _sha(input_path),
+            "word_rule": "preregistration section 5.6, Words", "bands": per_band,
+            "excluded_documents": excluded, "documents": rows}
 
 
 def label(adapter, items_path, arm, runs_root=None) -> dict:
@@ -126,12 +209,18 @@ def label(adapter, items_path, arm, runs_root=None) -> dict:
     else:
         raise ValueError("unknown arm " + repr(arm))
     return {"primary": primary, "S-1": mapping.sensitivity_s1(adapter.SPEC, primary),
-            "S-2": mapping.sensitivity_s2(adapter.SPEC, primary)}
+            "S-2": mapping.sensitivity_s2(adapter.SPEC, primary),
+            "S-3": mapping.sensitivity_s3(adapter.SPEC, primary)}
 
 
 def score(adapter, labels: dict, bundles_dir) -> dict:
-    return {name: metrics.score_arm(adapter.SPEC, result, bundles_dir, adapter.headline)
-            for name, result in labels.items()}
+    """Every analysis in the labels file, and S-4 from the primary labels (section 5.3)."""
+    out = {name: metrics.score_arm(adapter.SPEC, result, bundles_dir, adapter.headline)
+           for name, result in labels.items()}
+    if "primary" in labels:
+        out["S-4"] = metrics.score_arm(adapter.SPEC, metrics.without_evidence_beyond_cut(
+            labels["primary"], bundles_dir), bundles_dir, adapter.headline)
+    return out
 
 
 def faults_of(labels: dict) -> list:
@@ -159,14 +248,24 @@ def main(adapter, argv=None) -> int:
     b.add_argument("--assignment", help="the frozen split file written by `split --out` (ContraDoc)")
     b.add_argument("--testmini", help="FinDVer: the testmini file; overlapping reports are refused")
     b.add_argument("--development", action="store_true",
-                   help="synthetic or development work only: no budget needed, recorded")
+                   help="development work only: no budget needed, recorded; a holdout "
+                        "document is refused unless --side holdout is also given")
+    b.add_argument("--exclude", help="the source document ids the benchmark's own paper prints "
+                                     "as in-context examples (section 1), as role B identified them")
     for name, help_text in getattr(adapter, "BUILD_OPTIONS", ()):
         b.add_argument(name, help=help_text)
     s = sub.add_parser("split")
     s.add_argument("--input", required=True)
     s.add_argument("--out")
+    s.add_argument("--exclude", help="as for build: a listed document is marked excluded")
     for name, help_text in getattr(adapter, "SPLIT_OPTIONS", ()):
         s.add_argument(name, help=help_text)
+    bd = sub.add_parser("bands")
+    bd.add_argument("--input", required=True)
+    bd.add_argument("--out")
+    bd.add_argument("--exclude", help="as for build: a listed document is left out")
+    for name, help_text in getattr(adapter, "BUILD_OPTIONS", ()):
+        bd.add_argument(name, help=help_text)
     lab = sub.add_parser("label")
     lab.add_argument("--items", required=True)
     lab.add_argument("--arm", required=True, choices=mapping.ARMS)
@@ -183,17 +282,34 @@ def main(adapter, argv=None) -> int:
                 adapter, args.input, args.out, side=args.side, max_context=args.max_context,
                 output_allowance=args.output_allowance, token_counter=args.token_counter,
                 b1_prompt=args.b1_prompt, development=args.development,
-                assignment=args.assignment, testmini=args.testmini,
+                assignment=args.assignment, testmini=args.testmini, exclude=args.exclude,
                 **{_dest(n): getattr(args, _dest(n))
                    for n, _h in getattr(adapter, "BUILD_OPTIONS", ())}), indent=2))
             return 0
         if args.command == "split":
             rows = adapter.split_rows(adapter.read_source(args.input), args)
+            if getattr(adapter, "check_input", None) is not None:
+                adapter.check_input(args.input, getattr(args, "official", None),
+                                    {"frozen_sha256": getattr(args, "frozen_sha256", None)})
+            if args.exclude:
+                listed = set(read_exclusions(args.exclude))
+                for row in rows:
+                    if ids.key_string(row["source_document_id"]) in listed:
+                        row["side"] = "excluded_demonstration"
             if args.out:
                 _write(args.out, {"benchmark": adapter.BENCHMARK, "input_sha256": _sha(args.input),
+                                  "exclusion_sha256": _sha(args.exclude) if args.exclude else None,
                                   "documents": rows})
             else:
                 print(json.dumps(rows, indent=2, ensure_ascii=False))
+            return 0
+        if args.command == "bands":
+            result = bands(adapter, args.input, exclude=args.exclude,
+                           **{_dest(n): getattr(args, _dest(n))
+                              for n, _h in getattr(adapter, "BUILD_OPTIONS", ())})
+            if args.out:
+                _write(args.out, result)
+            print(json.dumps({"benchmark": result["benchmark"], "bands": result["bands"]}, indent=2))
             return 0
         if args.command == "label":
             if args.arm != "B0" and not args.runs:

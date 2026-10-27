@@ -1,18 +1,19 @@
 {
-  "description": "Hand-written synthetic run outputs for FinDVer (section 5.2): a refusal is ABSTAIN, prior relations are ignored and reported, and a review_data.json without the typed-record key is reported as an adapter fault.",
+  "description": "Hand-written synthetic run outputs for FinDVer (section 5.2): a refusal is ABSTAIN, prior relations are ignored and reported, a review_data.json without the typed-record key is reported as an adapter fault, and a figure-audit record (D-039 item 3) decides an item only in a one-rule bundle (r-one), while in a several-rule bundle (r-run) it is unattached in the primary analysis and attributed in S-3.",
   "items": [
     {"item_id": "f-a", "document_id": "r-run", "rule_id": "CONV-a1a1a1a1a1a1", "benchmark": "findver"},
     {"item_id": "f-b", "document_id": "r-run", "rule_id": "CONV-b2b2b2b2b2b2", "benchmark": "findver"},
     {"item_id": "f-c", "document_id": "r-run", "rule_id": "CONV-c3c3c3c3c3c3", "benchmark": "findver"},
     {"item_id": "f-d", "document_id": "r-run", "rule_id": "CONV-d4d4d4d4d4d4", "benchmark": "findver"},
     {"item_id": "f-e", "document_id": "r-nokey", "rule_id": "CONV-e5e5e5e5e5e5", "benchmark": "findver"},
-    {"item_id": "f-f", "document_id": "r-fail", "rule_id": "CONV-f6f6f6f6f6f6", "benchmark": "findver"}
+    {"item_id": "f-f", "document_id": "r-fail", "rule_id": "CONV-f6f6f6f6f6f6", "benchmark": "findver"},
+    {"item_id": "f-g", "document_id": "r-one", "rule_id": "CONV-a7a7a7a7a7a7", "benchmark": "findver"}
   ],
   "runs": {
     "r-run": {
       "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
       "review_data": {"findings": [
-        {"item_id": "rec-a", "source_rule_id": "CONV-a1a1a1a1a1a1", "unit_id": "u02-p-00002", "relation": "sum_mismatch", "record_verdict": "irregular", "model": "python"},
+        {"item_id": "rec-a", "source_rule_id": "CONV-a1a1a1a1a1a1", "unit_id": "u02-p-00002", "relation": "sum_mismatch", "record_verdict": "irregular", "model": "python", "written_by": "python"},
         {"item_id": "rec-b", "source_rule_id": "CONV-b2b2b2b2b2b2", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "uncertain": "yes"},
         {"item_id": "rec-d", "source_rule_id": "CONV-d4d4d4d4d4d4", "unit_id": "u01-p-00001", "relation": "unchanged_from_prior", "record_verdict": "ok", "provenance": "computed"}
       ]}
@@ -24,6 +25,12 @@
     "r-fail": {
       "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
       "review_data": null
+    },
+    "r-one": {
+      "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
+      "review_data": {"findings": [
+        {"item_id": "rec-g", "source_rule_id": "CONV-a7a7a7a7a7a7", "unit_id": "u03-p-00003", "relation": "missing_field", "record_verdict": "irregular", "written_by": "python"}
+      ]}
     }
   },
   "b1": {
@@ -35,20 +42,31 @@
   },
   "expected": {
     "B2": {
+      "f-a": ["CLEAR", "entailed", "silent"],
+      "f-b": ["UNDECIDED", "ABSTAIN", "refusal"],
+      "f-c": ["CLEAR", "entailed", "silent"],
+      "f-d": ["CLEAR", "entailed", "silent"],
+      "f-e": ["CLEAR", "entailed", "silent"],
+      "f-f": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "f-g": ["FLAG", "refuted", "irregular"]
+    },
+    "B2 S-2": {
+      "f-a": ["CLEAR", "entailed", "silent"],
+      "f-b": ["CLEAR", "entailed", "s2_undecided_as_clear"],
+      "f-c": ["CLEAR", "entailed", "silent"],
+      "f-d": ["CLEAR", "entailed", "silent"],
+      "f-e": ["CLEAR", "entailed", "silent"],
+      "f-f": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "f-g": ["FLAG", "refuted", "irregular"]
+    },
+    "B2 S-3": {
       "f-a": ["FLAG", "refuted", "irregular"],
       "f-b": ["UNDECIDED", "ABSTAIN", "refusal"],
       "f-c": ["CLEAR", "entailed", "silent"],
       "f-d": ["CLEAR", "entailed", "silent"],
       "f-e": ["CLEAR", "entailed", "silent"],
-      "f-f": ["ABSTAIN", "ABSTAIN", "run_failure"]
-    },
-    "B2 S-2": {
-      "f-a": ["FLAG", "refuted", "irregular"],
-      "f-b": ["CLEAR", "entailed", "s2_undecided_as_clear"],
-      "f-c": ["CLEAR", "entailed", "silent"],
-      "f-d": ["CLEAR", "entailed", "silent"],
-      "f-e": ["CLEAR", "entailed", "silent"],
-      "f-f": ["ABSTAIN", "ABSTAIN", "run_failure"]
+      "f-f": ["ABSTAIN", "ABSTAIN", "run_failure"],
+      "f-g": ["FLAG", "refuted", "irregular"]
     },
     "B1": {
       "f-a": ["FLAG", "refuted", "b1_label"],
@@ -56,19 +74,27 @@
       "f-c": ["CLEAR", "entailed", "b1_label"],
       "f-d": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
       "f-e": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
-      "f-f": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"]
+      "f-f": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"],
+      "f-g": ["ABSTAIN", "ABSTAIN", "b1_parse_failure"]
     }
   },
   "expected_detail": {
     "B2": {
-      "f-a": {"layer": "computed", "cited_unit_ids": ["u02-p-00002"]},
-      "f-d": {"faults": ["prior_relation_ignored:1"]}
+      "f-a": {"figure_audit_set_aside": 1, "cited_unit_ids": []},
+      "f-d": {"faults": ["prior_relation_ignored:1"]},
+      "f-g": {"layer": "computed", "cited_unit_ids": ["u03-p-00003"], "figure_audit_set_aside": 0}
+    },
+    "B2 S-3": {
+      "f-a": {"layer": "computed", "cited_unit_ids": ["u02-p-00002"]}
     }
   },
   "expected_counts": {
-    "B2": {"items": 6, "silent": 3, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 2, "document_faults": 1, "item_faults": 1}
+    "B2": {"items": 7, "silent": 4, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 2, "document_faults": 1, "item_faults": 1, "items_with_figure_audit_set_aside": 1}
   },
   "expected_documents": {
-    "B2": {"r-nokey": {"faults": ["typed_records_key_absent:findings"]}}
+    "B2": {"r-nokey": {"faults": ["typed_records_key_absent:findings"]},
+           "r-run": {"unattached": 1, "rules": 4, "figure_audit_set_aside": true},
+           "r-one": {"unattached": 0, "rules": 1, "figure_audit_set_aside": false}},
+    "B2 S-3": {"r-run": {"unattached": 0}}
   }
 }

@@ -67,17 +67,32 @@ def split_side(key) -> str:
 _MARKUP_CHARACTERS = frozenset("|-:")
 
 
-def is_word(token: str) -> bool:
-    """A whitespace-separated token is a word unless it is table markup: made only of `|`,
-    `-` and `:` with at least one `|` (preregistration section 5.6, Words)."""
-    return not ("|" in token and set(token) <= _MARKUP_CHARACTERS)
+def is_table_word(token: str) -> bool:
+    """Inside table text a token made only of `-`, `:` and `|` is markup, not a word
+    (preregistration section 5.6, Words)."""
+    return not set(token) <= _MARKUP_CHARACTERS
+
+
+def is_pipe_row(line: str) -> bool:
+    """A line whose first non-blank character is `|`: a table row, so table text."""
+    return line.lstrip().startswith("|")
+
+
+def cell_word_count(cell: str) -> int:
+    """The words of one table cell (SciTab's column names and cell values): table text."""
+    return sum(1 for token in str(cell).split() if is_table_word(token))
 
 
 def word_count(text: str) -> int:
-    """The one word count (section 5.6, Words): the whitespace-separated tokens of a source
-    text that are not table markup. Bands, the cut line's N and M and every count in
-    parts.json use it, so a table's words are its cell words wherever it is counted."""
-    return sum(1 for token in text.split() if is_word(token))
+    """The one word count (section 5.6, Words): Python's str.split() with no argument, on
+    each line; on a pipe row (table text) a token made only of `-`, `:` and `|` is not a
+    word, on any other line every token is. Bands, the cut line's N and M and every count
+    in parts.json use it, so a table's words are its cell words wherever it is counted."""
+    total = 0
+    for line in text.split("\n"):
+        tokens = line.split()
+        total += sum(1 for t in tokens if is_table_word(t)) if is_pipe_row(line) else len(tokens)
+    return total
 
 
 def length_band(words: int) -> str:

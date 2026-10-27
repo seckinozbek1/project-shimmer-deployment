@@ -11,7 +11,7 @@
     "t-run": {
       "completion": {"schema_version": 1, "run_id": "fixture", "state": "completed", "reached_end": true, "exit_code": 0, "finished_at": "2026-10-27T00:00:00+00:00"},
       "review_data": {"findings": [
-        {"item_id": "rec-a", "source_rule_id": "CONV-AAAAAAAAAAAA", "unit_id": "u01-p-00001", "relation": "above_band", "record_verdict": "irregular", "model": "python"},
+        {"item_id": "rec-a", "source_rule_id": "CONV-AAAAAAAAAAAA", "unit_id": "u01-p-00001", "relation": "above_band", "record_verdict": "irregular", "model": "python", "written_by": "python"},
         {"item_id": "rec-b", "source_rule_id": "CONV-bbbbbbbbbbbb", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "irregular", "confidence": "UNCERTAIN"},
         {"item_id": "rec-d", "source_rule_id": "CONV-dddddddddddd", "unit_id": "u01-p-00001", "relation": "", "record_verdict": "ok"}
       ]}
@@ -31,13 +31,20 @@
   },
   "expected": {
     "B2": {
-      "s-a": ["FLAG", "refutes", "irregular"],
+      "s-a": ["CLEAR", "supports", "silent"],
       "s-b": ["UNDECIDED", "not enough info", "refusal"],
       "s-c": ["CLEAR", "supports", "silent"],
       "s-d": ["CLEAR", "supports", "ok"],
       "s-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
     },
     "B2 S-2": {
+      "s-a": ["CLEAR", "supports", "silent"],
+      "s-b": ["UNDECIDED", "not enough info", "refusal"],
+      "s-c": ["CLEAR", "supports", "silent"],
+      "s-d": ["CLEAR", "supports", "ok"],
+      "s-e": ["ABSTAIN", "ABSTAIN", "run_failure"]
+    },
+    "B2 S-3": {
       "s-a": ["FLAG", "refutes", "irregular"],
       "s-b": ["UNDECIDED", "not enough info", "refusal"],
       "s-c": ["CLEAR", "supports", "silent"],
@@ -60,9 +67,10 @@
     }
   },
   "expected_detail": {
-    "B2": {"s-a": {"layer": "computed", "cited_unit_ids": ["u01-p-00001"]}}
+    "B2": {"s-a": {"figure_audit_set_aside": 1, "cited_unit_ids": []}},
+    "B2 S-3": {"s-a": {"layer": "computed", "cited_unit_ids": ["u01-p-00001"]}}
   },
   "expected_counts": {
-    "B2": {"items": 5, "silent": 1, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 1}
+    "B2": {"items": 5, "silent": 2, "undecided": 1, "refusals": 1, "run_failure_documents": 1, "abstain": 1}
   }
 }

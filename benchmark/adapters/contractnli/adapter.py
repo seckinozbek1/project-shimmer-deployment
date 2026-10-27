@@ -14,12 +14,20 @@ items (S4c item 4). The operator accepted the download terms (D-S3); only role B
 downloads. No development agreement's text holds a blank line, so the earlier rule (one
 part per blank-line paragraph) made every agreement one part; the parts now follow the
 segmentation the release itself gives every agreement (`spans`), as section 5.6 says.
+`--parts merged` is section 5.6's cost fallback (consecutive pieces joined into parts of
+at least 100 words), applied only if S5's measured cost triggers it (section 2).
 
-Usage: as the ContraDoc adapter (build, label, score), and
-    py -3.12 benchmark/adapters/contractnli/adapter.py split --input <file> --official development|holdout
+Sides are held to the frozen files (D-039 item 14): a development build, and a development
+build that declares no side, reads only dev.json (by the SHA-256 the B-dev manifest
+records); a holdout build reads only the file whose SHA-256 role B passes as
+--frozen-sha256 (test.json). train.json is refused either way.
+
+Usage: as the ContraDoc adapter (build, label, score, bands), and
+    py -3.12 benchmark/adapters/contractnli/adapter.py split --input <file> --official development|holdout [--frozen-sha256 H]
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sys
@@ -57,7 +65,20 @@ GOLD_VALUES = {"Entailment": "entailment", "Contradiction": "contradiction",   #
                "NotMentioned": "not mentioned"}
 # The hypothesis keys are `nda-1` ... `nda-20` (17 of them), so rule ids read CONV-CNLI-NDA-1.
 # ---------------------------------------------------------------------------------------
-SPLIT_OPTIONS = (("--official", "development (the dev split) or holdout (the test split)"),)
+# The frozen input of each side (D-039 item 14). The development side is the release's
+# dev.json, by the SHA-256 the B-dev manifest records for the file it passed on; the
+# holdout side is test.json, whose SHA-256 role B records and passes as --frozen-sha256.
+# Any other file (train.json among them) is refused for either side.
+FROZEN_DEV_SHA256 = "310af7d661d2ab50ee3700169cef524c75f39fb296bbf5a515c229eb0f42e68e"
+# The cost fallback of section 5.6 (D-039 item 2): consecutive pieces joined in order into
+# parts of at least this many words, the last part possibly shorter.
+MERGED_PART_WORDS = 100
+PART_RULES = ("span", "merged")
+SPLIT_OPTIONS = (("--official", "development (the dev split) or holdout (the test split)"),
+                 ("--frozen-sha256", "holdout: the SHA-256 of test.json that role B recorded"))
+BUILD_OPTIONS = (("--frozen-sha256", "holdout: the SHA-256 of test.json that role B recorded"),
+                 ("--parts", "span (one part per span, the default) or merged (the cost "
+                             "fallback of section 5.6: parts of at least %d words)" % MERGED_PART_WORDS))
 
 SPEC = mapping.Spec(
     BENCHMARK,
@@ -65,8 +86,29 @@ SPEC = mapping.Spec(
             mapping.UNDECIDED: "not mentioned"},
     b1_labels={"contradiction": mapping.FLAG, "entailment": mapping.CLEAR,
                "not mentioned": mapping.UNDECIDED},
-    s2=False)
+    s2=False, unit_evidence=True)
 CLASSES = ("entailment", "contradiction", "not mentioned")
+
+
+def check_input(path, side, options=None) -> dict:
+    """Refuse an input that is not the frozen file of the declared side: dev.json for the
+    development side (and for a development build that declares none), test.json by the
+    SHA-256 role B passes for the holdout side. train.json is never either."""
+    options = options or {}
+    digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    if side == ids.HOLDOUT:
+        wanted = str(options.get("frozen_sha256") or "").strip().lower()
+        if not wanted:
+            raise ValueError("a ContractNLI holdout input needs --frozen-sha256 (the SHA-256 of "
+                             "test.json that role B recorded)")
+        if wanted == FROZEN_DEV_SHA256:
+            raise ValueError("--frozen-sha256 names the development file, not test.json")
+    else:
+        wanted = FROZEN_DEV_SHA256
+    if digest != wanted:
+        raise ValueError("the input is not the frozen ContractNLI file for the %s side "
+                         "(SHA-256 %s)" % (side or "development", digest))
+    return {"input_sha256": digest, "frozen_for": side or ids.DEVELOPMENT}
 
 
 def read_source(path) -> dict:
@@ -83,9 +125,14 @@ def rule_id(key) -> str:
 
 
 def documents(data, options=None) -> list:
-    """The agreements. The side is the declared official split (section 1)."""
+    """The agreements. The side is the declared official split (section 1), or, in a
+    development build that declares none, the side of the frozen file the input is."""
     options = options or {}
-    side = options.get("side") or "official (undeclared, development build)"
+    side = (options.get("side") or options.get("frozen_for")
+            or "official (undeclared, development build)")
+    rule = options.get("parts") or PART_RULES[0]
+    if rule not in PART_RULES:
+        raise ValueError("--parts is span or merged, not %r" % rule)
     hypotheses = data[LABELS_FIELD]
     keys = sorted(hypotheses)
     if len({rule_id(k) for k in keys}) != len(keys):
@@ -98,7 +145,9 @@ def documents(data, options=None) -> list:
         seen.add(ids.key_string(sid))
         text = record[TEXT_FIELD]
         pieces = span_pieces(text, record.get(SPANS_FIELD), ids.key_string(sid))
-        part_of_span = {p["span"]: k for k, p in enumerate(pieces, start=1) if p["span"] is not None}
+        if rule == "merged":
+            pieces = merged_pieces(text, pieces)
+        part_of_span = {s: k for k, p in enumerate(pieces, start=1) for s in _spans_of(p)}
         annotations = record[ANNOTATION_SETS_FIELD][0][ANNOTATIONS_FIELD]
         rules, items = [], []
         for key in keys:
@@ -129,10 +178,10 @@ def documents(data, options=None) -> list:
             "split_key": sid, "cluster": sid, "side": side,
             "parts": [{"text": text[p["start"]:p["end"]],
                        "words": ids.word_count(text[p["start"]:p["end"]]),
-                       "source": {"span": p["span"], "start": p["start"], "end": p["end"]}}
+                       "source": {k: p[k] for k in ("span", "spans", "start", "end") if k in p}}
                       for p in pieces],
             "rules": rules, "items": items,
-            "record_extra": {"spans": len(record[SPANS_FIELD]),
+            "record_extra": {"part_rule": rule, "spans": len(record[SPANS_FIELD]),
                              "spans_without_text": sorted(
                                  i for i, (s, e) in enumerate(record[SPANS_FIELD])
                                  if not text[s:e].strip())}})
@@ -166,6 +215,33 @@ def span_pieces(text, spans, name="") -> list:
     return [p for p in pieces if text[p["start"]:p["end"]].strip()]
 
 
+def _spans_of(piece) -> list:
+    if "spans" in piece:
+        return list(piece["spans"])
+    return [] if piece.get("span") is None else [piece["span"]]
+
+
+def merged_pieces(text, pieces, minimum=MERGED_PART_WORDS) -> list:
+    """The cost fallback of section 5.6 (D-039 item 2): the pieces of `span_pieces`, in
+    order, joined into parts of at least `minimum` words (the one word rule, on the text
+    from the first piece's start to the last piece's end); the last part may be shorter.
+    Each part lists the spans it holds. [{spans, start, end}]."""
+    out, group = [], []
+
+    def close():
+        out.append({"spans": [s for p in group for s in _spans_of(p)],
+                    "start": group[0]["start"], "end": group[-1]["end"]})
+
+    for piece in pieces:
+        group.append(piece)
+        if ids.word_count(text[group[0]["start"]:piece["end"]]) >= minimum:
+            close()
+            group = []
+    if group:
+        close()
+    return out
+
+
 def split_rows(data, args=None) -> list:
     """The official side of every agreement: the dev split is development, the test split
     the holdout pool (section 1)."""
@@ -178,9 +254,13 @@ def split_rows(data, args=None) -> list:
 
 
 def headline(pairs, rows=None, answers=None, unit_text=None) -> dict:
-    """Accuracy over all items, ABSTAIN counted wrong, and F1 for Contradiction and for
-    Entailment (the paper's measures); the 3 by 3 confusion matrix beside them."""
-    return {"accuracy": metrics.accuracy(pairs),
+    """Accuracy over all items, ABSTAIN counted wrong (the headline, which H1 tests); F1 for
+    Contradiction and for Entailment (the paper's other measures, reported with intervals,
+    not tested); the 3 by 3 confusion matrix beside them."""
+    accuracy = metrics.accuracy(pairs)
+    return {"headline_measure": "accuracy over all items, ABSTAIN counted wrong",
+            "headline_value": accuracy["accuracy"],
+            "accuracy": accuracy,
             "contradiction": metrics.class_scores(pairs, "contradiction"),
             "entailment": metrics.class_scores(pairs, "entailment"),
             "confusion": metrics.confusion(pairs, CLASSES)}
