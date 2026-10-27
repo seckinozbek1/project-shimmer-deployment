@@ -13,8 +13,13 @@ reads for that unit and nothing else: the unit's own text, the full declared rul
 paired to it, the document's field vocabulary and the units of measure the document
 writes. A change anywhere in that set (a figure, a rule, a label that changes the
 vocabulary) recomputes the unit. Unit ids are not part of the signature, so a unit
-that moved position between rounds is still recognised; its reused records carry
-the new id.
+that moved position between rounds is still recognised; its reused records, and
+the plans it records as needing a model, carry the new id. The covered inputs are
+named in SIGNATURE_INPUTS.
+
+The round findings are posted on the run bus (post_findings, backend paired, model
+python) and written to the audit file. Nothing downstream reads them today: the
+case phase's model calls take the case evidence, not these findings.
 
 This is Python only. A plan that needs a model (a judged absence, a pair where
 nothing is computable) is recorded as `needs_model` and not asked here: the case
@@ -45,12 +50,22 @@ def record_path(ctx):
     return Path(ctx.audit_dir()) / RECORD_NAME
 
 
+# What the signature covers, by name. Each one is proven to matter (check 279: a
+# change to it alone recomputes the unit, and the case fails when it is removed
+# from this tuple).
+SIGNATURE_INPUTS = ("unit", "rules", "vocabulary", "known_units")
+# The agent the round findings are posted under, as the paired review posts its
+# computed findings under a convention agent, with backend paired and model python.
+FINDINGS_AGENT = "PRACTICE_AUDITOR"
+
+
 def unit_signature(unit_text, rules, vocabulary, known_units):
     """sha256 over everything the unit's computation reads, and nothing else."""
-    payload = {"unit": unit_text,
-               "rules": sorted((json.dumps(r, sort_keys=True, ensure_ascii=False) for r in rules)),
-               "vocabulary": sorted(" ".join(label) for label in vocabulary),
-               "known_units": sorted(str(u) for u in known_units)}
+    inputs = {"unit": unit_text,
+              "rules": sorted((json.dumps(r, sort_keys=True, ensure_ascii=False) for r in rules)),
+              "vocabulary": sorted(" ".join(label) for label in vocabulary),
+              "known_units": sorted(str(u) for u in known_units)}
+    payload = {name: inputs[name] for name in SIGNATURE_INPUTS}
     data = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(data).hexdigest()
 
@@ -88,6 +103,11 @@ def _rebase(items, unit_id):
     return out
 
 
+def _rebase_asks(asks, unit_id):
+    """A reused unit's model asks under this round's unit id."""
+    return [dict(n, unit_id=unit_id) for n in asks]
+
+
 def review_document(document, rules, earlier, *, round_id):
     """One round's document. `earlier` maps signature -> the record that first
     computed it, and is extended here. Returns (unit rows, findings, plan count)."""
@@ -112,10 +132,13 @@ def review_document(document, rules, earlier, *, round_id):
         source = earlier.get(signature)
         if source is not None:
             reused = _rebase(source["findings"], unit_id)
+            # S2 checker A10: the plans that need a model are rebased too, so
+            # they name this round's unit id, as the findings do.
             rows.append({"unit_id": unit_id, "signature": signature, "status": "reused",
                          "reused_from": {k: source[k] for k in ("round_id", "document_id", "unit_id")},
                          "pairs": len(pairs_by_unit.get(unit_id, [])), "pairs_computed": 0,
-                         "findings": len(reused), "needs_model": source["needs_model"]})
+                         "findings": len(reused),
+                         "needs_model": _rebase_asks(source["needs_model"], unit_id)})
             findings.extend(reused)
             continue
         changed_pairs.extend((unit_id, r) for r in pairs_by_unit.get(unit_id, []))
@@ -176,6 +199,47 @@ def review_rounds(ctx, manifest, documents, *, convention_registry=None):
         record["rounds"].append(entry)
     _write(ctx, record)
     return record
+
+
+def bus_envelopes(record):
+    """One envelope per round document that has findings, for the run bus.
+
+    S2 checker H4: the round findings are Finding records, and a Finding record
+    that lives only in a file is not a record (CLAUDE.md, the canonical envelope).
+    Each item gets an explicit item_id naming its round, document, unit, rule and
+    position, so a later round's record never supersedes an earlier round's on the
+    bus (supersession is by item_id). The audit file keeps the records as they are.
+    """
+    import agent_wrapper
+    out = []
+    for rnd in record.get("rounds") or []:
+        for doc in rnd.get("documents") or []:
+            items = []
+            for i, f in enumerate(doc.get("findings") or []):
+                item = deepcopy(f)
+                item["item_id"] = "round:%s:%s:%s:%s:%d" % (
+                    rnd.get("round_id"), doc.get("document_id"), f.get("unit_id"),
+                    f.get("rule_id"), i)
+                item["round_id"] = rnd.get("round_id")
+                items.append(item)
+            if items:
+                out.append(agent_wrapper.make_envelope(FINDINGS_AGENT, str(doc.get("document_id")), items))
+    return out
+
+
+def post_findings(record, wrapper):
+    """Post every round document's computed findings, backend paired, model python,
+    as the paired review posts its own. Returns the number of envelopes posted."""
+    envelopes = bus_envelopes(record)
+    for envelope in envelopes:
+        wrapper.post_to_bus(
+            recipient="ORCHESTRATOR", channel="multi_round", msg_type="INFORM",
+            body={"event": "AGENT_OUTPUT", "backend": "paired", "model": "python",
+                  "item_count": len(envelope["items"]), "parse_trace": {}, "payload": envelope},
+            constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED",
+                                "resolution": "computed in code per round from the unit's own "
+                                              "figures; no model judged these values"})
+    return len(envelopes)
 
 
 def _write(ctx, record):

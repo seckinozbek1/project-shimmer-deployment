@@ -132,7 +132,7 @@ def evidence_sentence(amendment) -> str:
 
 @localization.presentation
 def _render_md(payload, document_name, category_for_conv):
-    """Reader check RC14: ONE layout for every output language (the Turkish file
+    """Reader check RC14: ONE layout for every output language (the tr file
     used to be JSON blocks with literal newlines and no counts). Labels go through
     the catalog; the document's own text, ids and figures are kept exactly."""
     t = localization.text

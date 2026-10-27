@@ -196,7 +196,11 @@ MODEL_FINDING_MARK = ("Written by a model. Not promoted to an amendment. "
 COMPUTED_FINDING_MARK = "Computed by Python from the document's own figures."
 # Reader check RD14: an absence is checked, not computed from figures.
 CHECKED_ABSENCE_MARK = "Checked in code: the field is absent from this unit's text."
+# The relations that say a field is absent (the one copy; paired_review reads it).
 ABSENCE_RELATIONS = ("missing_field", "licence_missing")
+# Reader check RD1/RD4/RD6: what a model's note says when no record names the model
+# that wrote it (the one copy; paired_review and summary_generators read it).
+NOTE_MODEL_NOT_RECORDED = "not recorded"
 # Reader check RD9: how a relation READS in a deliverable. The relation names are
 # the Finding record's vocabulary and stay exactly as they are everywhere else;
 # only the words a reader sees change (the irregular reading, then the ok one).
@@ -251,7 +255,13 @@ def stamp_written_by(results, items):
     out = []
     for item in items or []:
         if isinstance(item, dict):
-            out.append(dict(item, written_by=owner.get(id(item), WRITTEN_BY_MODEL)))
+            who = owner.get(id(item), WRITTEN_BY_MODEL)
+            stamped = dict(item, written_by=who)
+            if who == WRITTEN_BY_MODEL:
+                # S2 checker A4: `provenance` is Python's claim about its own
+                # record; a model that writes it does not get to make that claim.
+                stamped.pop("provenance", None)
+            out.append(stamped)
         else:
             out.append(item)
     return out
@@ -282,7 +292,7 @@ CHECKED_SOUNDING_FIELDS = ("confidence", "record_verdict", "verdict")
 def model_finding_for_reader(item) -> dict:
     """A model-written record as the deliverables carry it: its claim and figures,
     marked unchecked, without the fields that would make it read as checked."""
-    out = {k: v for k, v in dict(item).items() if k not in CHECKED_SOUNDING_FIELDS}
+    out = {k: v for k, v in dict(item).items() if k not in CHECKED_SOUNDING_FIELDS and k != "provenance"}
     claimed = item.get("record_verdict") or item.get("verdict")
     if claimed:
         out["model_claimed_verdict"] = claimed
@@ -585,7 +595,8 @@ def render_prior_comparison(findings, *, refusals=(), orphans=(), outside=(),
     token "Amendment ", which amendment_render's drift guard counts.
     """
     prior = [f for f in findings or []
-             if f.get("relation") in PRIOR_RELATIONS and f.get("provenance") == "computed"]
+             if f.get("relation") in PRIOR_RELATIONS and f.get("provenance") == "computed"
+             and f.get("written_by") != WRITTEN_BY_MODEL]
     refusals, orphans, outside = list(refusals or []), list(orphans or []), list(outside or [])
     if not prior and not refusals and not orphans and not outside:
         return []

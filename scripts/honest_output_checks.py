@@ -1,4 +1,6 @@
-"""Gate checks for S2a (honest deliverables), points 1 to 7.
+"""Gate checks for S2a (honest deliverables): points 1 to 7, the reader-check
+rounds 1 and 2 items (RC1 to RC18, RD1 to RD18), and the S2 checker round 1 items
+(A4, A5, A8, C3/H5). Check 278 runs every proof here.
 
 Every proof runs the REAL writers on a mocked run: the real phase-6 synthesis,
 the real run-summary writer, the real audit synthesizer, the server's own
@@ -9,11 +11,18 @@ computed findings are minted by paired_review.finding_from_check, the model's
 findings are authored envelopes posted under a model backend, and the phase-6
 wrapper factory is replaced by a function that refuses to build a wrapper.
 
-Each point is proven by neutralise, fail, restore, pass (effect_proof).
+Each point is proven by neutralise, fail, restore, pass (effect_proof). The console
+proof needs Node on PATH; without it that one proof is skipped and the PASS detail
+says so rather than claiming the console.
 
     py -3.12 -X utf8 scripts/honest_output_checks.py                # run the proofs
     py -3.12 -X utf8 scripts/honest_output_checks.py --write DIR    # write one mocked
                                                                     # run's deliverables
+
+--write DIR writes the deliverables of one mocked run in each output language under
+DIR/en and DIR/tr (the run folder, deliverables and audit synthesis, with three
+distinct escalations and two content-free copies on the bus), for a human reader
+to inspect. It runs no proof, contacts nothing, and writes nothing outside DIR.
 """
 from __future__ import annotations
 
@@ -111,7 +120,29 @@ class _Capture(logging.Handler):
         self.events.append(record.getMessage())
 
 
-def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, language="en"):
+def prior_case_items(doc_id="batch_sheet"):
+    """PRE-AUTHORED, NOT MODEL OUTPUT. (a) A record shaped as Python's
+    earlier-version comparison posts it (backend computed, model python). (b) Two
+    items a model wrote in wide mode with figures of its own: one claiming an
+    earlier-version relation AND `provenance: computed` (S2 checker A4), one claiming
+    a band breach (A5). The figures 99 and 77 appear nowhere else in the run."""
+    units = pr.unit_texts_for(DOC_TEXT, doc_id)
+    alpha, beta, gamma = (_unit(units, s) for s in ("entry-alpha", "entry-beta", "entry-gamma"))
+    python_prior = {"kind": "finding", "record_verdict": "ok", "rule_id": "CONV-001", "unit_id": gamma,
+                    "relation": "changed_from_prior", "value_a": 12, "unit_a": "units", "value_b": 11,
+                    "unit_b": "units", "field_label": "reading", "delta": 1, "provenance": "computed",
+                    "source_refs": ["REF-0001"], "ref": "REF-0001", "confidence": "CONFIDENT",
+                    "explanation": "The reading changed from 11 units to 12 units."}
+    model_prior = dict(python_prior, unit_id=alpha, value_a=99, value_b=98,
+                       explanation="The model says the reading moved.")
+    model_band = {"kind": "finding", "record_verdict": "irregular", "rule_id": "CONV-001", "unit_id": beta,
+                  "relation": "above_band", "value_a": 77, "unit_a": "units", "value_b": 60, "unit_b": "units",
+                  "source_refs": ["REF-0002"], "ref": "REF-0002", "confidence": "CONFIDENT",
+                  "explanation": "The model says the reading is above the range."}
+    return python_prior, [model_prior, model_band]
+
+
+def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, language="en", prior_case=False):
     """One mocked run, faithful to a real one where it matters: the computed
     findings come from the REAL phase 5.5 paired review (pairing map, planner,
     arithmetic, mint, bus post under paired/python); only the judging model's
@@ -169,17 +200,25 @@ def mocked_run(out_root, *, style_guardian=True, index_unit_passages=True, langu
                 conv_review = asyncio.run(pl.phase_5_5_convention_review(
                     orch, {}, [doc], "declared proof", registry, index, embed_store=None,
                     max_concurrent_docs=1, review_mode="paired"))
+            python_prior, model_extras = prior_case_items(doc["id"]) if prior_case else (None, [])
+            posts = []
+            if prior_case:
+                posts.append({"scope": "doc", "doc_id": doc["id"], "agent": "PRACTICE_AUDITOR", "ok": True,
+                              "backend": "computed", "model": "python",
+                              "parsed": {"agent": "PRACTICE_AUDITOR", "doc_id": doc["id"], "items": [python_prior]}})
             if style_guardian:
                 record_call("STYLE_GUARDIAN", "fixture-call-1", "5.5")
-                env = {"scope": "doc", "doc_id": doc["id"], "agent": "STYLE_GUARDIAN", "ok": True,
-                       "backend": "local_auditor", "model": "fixture-auditor", "call_id": "fixture-call-1",
-                       "parsed": {"agent": "STYLE_GUARDIAN", "doc_id": doc["id"], "items": [model_finding()]}}
-                pl._build_wrapper("STYLE_GUARDIAN", orch, {}).post_to_bus(
+                posts.append({"scope": "doc", "doc_id": doc["id"], "agent": "STYLE_GUARDIAN", "ok": True,
+                              "backend": "local_auditor", "model": "fixture-auditor", "call_id": "fixture-call-1",
+                              "parsed": {"agent": "STYLE_GUARDIAN", "doc_id": doc["id"],
+                                         "items": [model_finding()] + model_extras}})
+            for env in posts:
+                pl._build_wrapper(env["agent"], orch, {}).post_to_bus(
                     recipient="ORCHESTRATOR", channel="main", msg_type="INFORM",
                     body={"event": "AGENT_OUTPUT", "backend": env["backend"], "model": env["model"],
                           "payload": env["parsed"]},
                     constitution_check={"laws_consulted": ["LAW-V"], "result": "RESOLVED"})
-                conv_review = list(conv_review) + [env]
+            conv_review = list(conv_review) + posts
             with patch.object(pl, "_build_wrapper", side_effect=AssertionError("no model wrapper in phase 6")):
                 deliverables = asyncio.run(pl.phase_6_synthesis(
                     orch, {}, [doc], [], [], conv_review, "declared proof", registry, index,
@@ -253,7 +292,6 @@ def observe_marks():
         files = {name: _read(path) for name, path in run["files"].items()}
         master = json.loads(files["review_data.json"])
         records = server_findings(run["run_dir"])
-        console = console_marks(records)
         return {
             "document_summary": all(mark in ln for ln in _model_lines(files["document_summary.md"], unit))
                                 and bool(_model_lines(files["document_summary.md"], unit)),
@@ -269,7 +307,6 @@ def observe_marks():
                                                           a.get("finding_value_a")) for a in master["amendments"]),
             "run_summary": mark in _read(run["run_summary"]),
             "server_written_by": sorted({(r["relation"], r.get("written_by")) for r in records}),
-            "console_model_marked": None if console is None else [bool(b) and mark in b for b, a in console],
         }
 
 
@@ -281,9 +318,47 @@ def check_marks():
           and o["master_model_checked_fields"] == [] and o["master_model_flags"] == [(False, False, "irregular")]
           and "%s|CONV-003|4" % unit not in o["master_amendment_pairs"]
           and ("sum_mismatch", "model") in o["server_written_by"]
-          and ("above_band", "python") in o["server_written_by"]
-          and (o["console_model_marked"] is None or True in o["console_model_marked"]))
+          and ("above_band", "python") in o["server_written_by"])
     return ("PASS" if ok else "FAIL", "model finding marked in every reader-facing file")
+
+
+CONSOLE_SKIPPED = "console proof skipped: node is not on PATH"
+
+
+def node_available():
+    return shutil.which("node") is not None
+
+
+def observe_console():
+    """S2 checker H5/C3: the console's own marking function on the server's records,
+    in both output languages: per record, who wrote it and which mark each side shows."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_honest_console_") as td:
+        run = mocked_run(td)
+        records = server_findings(run["run_dir"])
+    out = {"records": len(records)}
+    for language in ("en", "tr"):
+        shown = console_marks(records, language)
+        model_mark = loc.message(finding_record.MODEL_FINDING_MARK, language)
+        python_mark = loc.message(finding_record.COMPUTED_FINDING_MARK, language)
+        if not isinstance(shown, list):
+            out[language] = shown
+            continue
+        out[language] = [(r.get("written_by"), model_mark in before, python_mark in after)
+                         for r, (before, after) in zip(records, shown)]
+    return out
+
+
+def check_console():
+    o = observe_console()
+    ok = o["records"] > 0
+    for language in ("en", "tr"):
+        rows = o.get(language)
+        ok = (ok and isinstance(rows, list) and len(rows) == o["records"]
+              and any(w == "model" for w, _, _ in rows) and any(w == "python" for w, _, _ in rows)
+              # every model record carries the model mark, and no Python record does
+              and all(model == (w == "model") for w, model, _ in rows)
+              and all(python == (w == "python") for w, _, python in rows))
+    return ("PASS" if ok else "FAIL", "the console marks every model record and no Python record, en and tr")
 
 
 def observe_producer():
@@ -316,7 +391,7 @@ def check_producer():
           and "STYLE_GUARDIAN" in b["body"]
           and b["log"] == "findings_provenance computed=3 model=1 model_agents=STYLE_GUARDIAN"
           and not b["names_practice_auditor"])
-    # S2a-3 inside S2a-2: the Turkish rendering of both generated sentences.
+    # S2a-3 inside S2a-2: the tr rendering of both generated sentences.
     for row in (a, b):
         ok = ok and row["tr_sentence"] != row["sentence"] and "computed by Python" not in row["tr_sentence"]
         ok = ok and row["tr_body"] != row["body"] and "computed by Python" not in row["tr_body"]
@@ -324,7 +399,7 @@ def check_producer():
     return ("PASS" if ok else "FAIL", "producer sentence generated from the run")
 
 
-# Every English sentence this stage writes that a Turkish reader also receives.
+# Every English sentence this stage writes that a tr reader also receives.
 def _localized_samples():
     prov_none = summary_generators.findings_provenance([])
     prov = {"total": 2, "computed": 1, "model": 1, "model_agents": ["STYLE_GUARDIAN"]}
@@ -357,7 +432,7 @@ def check_catalog():
                "Checked in code", "compared with", "reads:", "add up to", "The model wrote",
                "Proposed amendments", "Justification", "change proposal", "the operator decides")
     ok = all(r["tr"] != r["en"] and not any(w in r["tr"] for w in english) for r in rows)
-    return ("PASS" if ok else "FAIL", "%d Turkish renderings" % len(rows))
+    return ("PASS" if ok else "FAIL", "%d tr renderings" % len(rows))
 
 
 def template_cases():
@@ -374,7 +449,7 @@ def template_cases():
              stated_field="share"),
         dict(base, relation="sum_mismatch", computed=8.0, computed_unit="kg", stated=9.0, stated_unit="kg",
              stated_field="line total"),
-        dict(base, relation="product_mismatch", computed=20.0, computed_unit="EUR", stated=25.0, stated_unit="EUR",
+        dict(base, relation="product_mismatch", computed=20.0, computed_unit="points", stated=25.0, stated_unit="points",
              stated_field="line price"),
         pr._absence_check(("sample", "identifier")),
         dict(base, relation="missing_field", computed=2, computed_unit="values", stated=4, stated_unit="rows",
@@ -454,6 +529,93 @@ def check_absence_location():
           and not i["header_ref_used"]
           and n["locations"] == ["document-level"] and n["unknown"] == [True] and not n["header_ref_used"])
     return ("PASS" if ok else "FAIL", "absence amendment points to its unit")
+
+
+def _section(text, heading):
+    """The lines under a level-2 heading, up to the next level-2 heading."""
+    if heading not in text:
+        return None
+    body = text.split(heading, 1)[1]
+    return body.split("\n## ", 1)[0]
+
+
+def observe_prior_sections():
+    """S2 checker A4/A5: an earlier-version section driven by Python's own record,
+    with a model's prior claim (provenance written by the model) and a model's
+    band claim in the same run."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_honest_prior_") as td:
+        run = mocked_run(td, prior_case=True)
+        units = pr.unit_texts_for(DOC_TEXT, "batch_sheet")
+        gamma = _unit(units, "entry-gamma")
+        master = json.loads(_read(run["files"]["review_data.json"]))
+        out = {"master_prior_units": sorted(f.get("unit_id") for f in master.get("prior_comparisons") or []),
+               "master_prior_values": sorted(f.get("value_a") for f in master.get("prior_comparisons") or [])}
+        for name in ("document_summary.md", "review_findings.md"):
+            text = _read(run["files"][name])
+            section = _section(text, "## Compared with the earlier version")
+            out[name] = None if section is None else {
+                "python_prior": gamma in section,
+                "model_prior": "99" in section,
+                "model_band": "77" in section,
+                "python_band": "61" in section,
+                "model_items_elsewhere": "99" in text.replace(section, "") and "77" in text.replace(section, ""),
+            }
+        return out
+
+
+def check_prior_sections():
+    o = observe_prior_sections()
+    ok = o["master_prior_units"] == [_unit(pr.unit_texts_for(DOC_TEXT, "batch_sheet"), "entry-gamma")] \
+        and o["master_prior_values"] == [12]
+    ok = ok and o["document_summary.md"] == {"python_prior": True, "model_prior": False, "model_band": False,
+                                             "python_band": True, "model_items_elsewhere": True}
+    rf = o["review_findings.md"]
+    ok = ok and rf is not None and rf["python_prior"] and not rf["model_prior"] and not rf["model_band"]
+    return ("PASS" if ok else "FAIL", "only Python's records in the earlier-version and band sections")
+
+
+def observe_unplaced():
+    """S2 checker A8: no unit passage indexed, so Python can place no unit."""
+    with tempfile.TemporaryDirectory(prefix="shimmer_honest_unplaced_") as td:
+        run = mocked_run(td, style_guardian=False, index_unit_passages=False)
+        records = [r for r in server_findings(run["run_dir"]) if r.get("written_by") == "python"]
+        master = json.loads(_read(run["files"]["review_data.json"]))
+        return {"findings": sorted((r.get("unit_id"), r.get("relation"), r.get("ref"), tuple(r.get("source_refs") or []))
+                                   for r in records),
+                "amendments": sorted((a.get("finding_unit_id"), a["location"], tuple(a.get("ref_ids") or []),
+                                      pr.GROUND_UNPLACED.split("; ", 1)[1] in a["comment"],
+                                      "cited passage" in a["comment"])
+                                     for a in master["amendments"])}
+
+
+def check_unplaced():
+    o = observe_unplaced()
+    ok = (len(o["findings"]) == 3 and all(ref in (None, "document-level") and refs == ()
+                                          for _, _, ref, refs in o["findings"])
+          and len(o["amendments"]) == 3
+          and all(loc_ == "document-level" and refs == () and says and not cited
+                  for _, loc_, refs, says, cited in o["amendments"]))
+    return ("PASS" if ok else "FAIL", "an unplaced unit's finding and amendment cite no other passage")
+
+
+LOTS = "## Lot 1\n\nReading: 3 units\n\n## Lot 12\n\nReading: 4 units\n"
+
+
+def observe_heading_match():
+    """S2 checker A8: a heading placed only where it opens a passage as a whole line."""
+    units = pr.unit_texts_for(LOTS, "lots")
+    prefix = pr.unit_passage_refs(units, [{"document_id": "lots", "ref_id": "REF-0012",
+                                           "text_excerpt": "## Lot 12\n\nReading: 4 units"}], "lots")
+    inside = pr.unit_passage_refs(units, [{"document_id": "lots", "ref_id": "REF-0050",
+                                           "text_excerpt": "An introduction naming ## Lot 1 in passing."}], "lots")
+    return {"units": sorted(units), "prefix": prefix, "inside": inside}
+
+
+def check_heading_match():
+    o = observe_heading_match()
+    lot12 = next(u for u in o["units"] if u.endswith("lot-12"))
+    ok = o["prefix"] == {lot12: "REF-0012"} and o["inside"] == {}
+    return ("PASS" if ok else "FAIL", "'## Lot 1' is not placed at '## Lot 12' or inside another passage")
 
 
 def post_escalations(bus, *, distinct, copies):
@@ -554,7 +716,7 @@ def _passages(refs_path):
 
 
 def observe_reader_check():
-    """Reader check round 1, read off one English and one Turkish mocked run."""
+    """Reader check round 1, read off one English and one tr mocked run."""
     with tempfile.TemporaryDirectory(prefix="shimmer_honest_reader_") as td:
         en = mocked_run(Path(td) / "en")
         tr = mocked_run(Path(td) / "tr", language="tr")
@@ -626,7 +788,7 @@ def observe_reader_check():
             # RD14: an absence is checked, not computed from figures
             "absence_mark": ("required field: sample identifier; found: none; cites REF-0005 (Checked in code"
                              in files["document_summary.md"]),
-            # RD15: the Turkish band sentence quotes the document's own field name
+            # RD15: the tr band sentence quotes the document's own field name
             "tr_field_quoted": "'reading' değeri 61 units" in tr_files["review_findings.md"],
             # RD18: figures as written, the second id explained, flagged passages
             "as_written": "the reading is 61 units, above the upper bound of 60 units" in alpha.get("comment", ""),
@@ -646,7 +808,7 @@ def observe_reader_check():
             "names_and_rule_words": ("(Entry Beta)" in beta.get("comment", "")
                                      and 'Rule CONV-003 reads: "' in beta.get("comment", "")),
             "per_agent_title": "raw reply for this document" in files["reviewed_document.md"].splitlines()[0],
-            # RC4/RC11/RC13/RC14: the Turkish findings file has the English layout and no raw dump
+            # RC4/RC11/RC13/RC14: the tr findings file has the English layout and no raw dump
             "tr_layout": ("### Değişiklik 1 [" in tr_files["review_findings.md"]
                           and "- değişiklikler: 3" in tr_files["review_findings.md"]
                           and "İnceleme: işaretlenen bölümler" in tr_files["review_findings.md"]
@@ -687,7 +849,7 @@ def check_reader_check():
 
 
 def _json_block_renderer(payload, document_name, category_for_conv, **kwargs):
-    """The removed Turkish layout (JSON blocks), as a neutralisation."""
+    """The removed tr layout (JSON blocks), as a neutralisation."""
     return "# x\n```json\n" + json.dumps(payload, ensure_ascii=False, indent=2) + "\n```\n" + "\n".join(
         "### Değişiklik %d" % i for i, _ in enumerate(payload.get("amendments", []), 1))
 
@@ -706,7 +868,7 @@ def _old_context_sentence(n, provenance, name):
 
 
 class _CatalogWithout:
-    """The catalog with this stage's Turkish rows removed (the neutralisation)."""
+    """The catalog with this stage's tr rows removed (the neutralisation)."""
 
     def __enter__(self):
         self.saved = loc.catalog()
@@ -736,11 +898,17 @@ class HonestOutputChecks(unittest.TestCase):
         self.prove("s2a1_marks", observe_marks, check_marks,
                    lambda: patch.object(finding_record, "written_by", lambda backend, model: "python"))
 
+    def test_c3_console_marks_every_model_record(self):
+        if not node_available():
+            self.skipTest(CONSOLE_SKIPPED)
+        self.prove("c3_console", observe_console, check_console,
+                   lambda: patch.object(finding_record, "written_by", lambda backend, model: "python"))
+
     def test_s2a2_producer_sentence_from_the_run(self):
         self.prove("s2a2_producer", observe_producer, check_producer,
                    lambda: patch.object(summary_generators, "context_findings_sentence", _old_context_sentence))
 
-    def test_s2a3_turkish_catalog_covers_every_new_sentence(self):
+    def test_s2a3_tr_catalog_covers_every_new_sentence(self):
         self.prove("s2a3_catalog", observe_catalog, check_catalog, _CatalogWithout)
 
     def test_s2a4_templates_read_as_plain_english(self):
@@ -777,7 +945,7 @@ class HonestOutputChecks(unittest.TestCase):
                    lambda: patch.object(pr, "ABSENCE_PROVENANCE",
                                         "Computed in code from the figures in this unit, not judged by a model."))
 
-    def test_rc14_turkish_findings_file_has_the_english_layout(self):
+    def test_rc14_tr_findings_file_has_the_english_layout(self):
         self.prove("rc14_tr_layout", observe_reader_check, check_reader_check,
                    lambda: patch.object(amendment_render, "_render_md", _json_block_renderer))
 
@@ -839,6 +1007,21 @@ class HonestOutputChecks(unittest.TestCase):
         self.prove("rd18_written", observe_reader_check, check_reader_check,
                    lambda: patch.object(pr, "_written", lambda value, tokens: None))
 
+    # S2 checker round 1: each mechanism, neutralised alone, must fail the check.
+    def test_a4_a5_model_items_kept_out_of_the_prior_and_band_sections(self):
+        self.prove("a4_a5_prior", observe_prior_sections, check_prior_sections,
+                   lambda: patch.object(finding_record, "stamp_written_by",
+                                        lambda results, items: [dict(i, written_by="python") if isinstance(i, dict)
+                                                                else i for i in items or []]))
+
+    def test_a8_unplaced_unit_cites_nothing_of_another(self):
+        self.prove("a8_unplaced", observe_unplaced, check_unplaced,
+                   lambda: patch.object(pr, "unit_ref_for", lambda doc, unit_id: pr._NO_UNIT_REF))
+
+    def test_a8_heading_matched_as_a_whole_line(self):
+        self.prove("a8_heading", observe_heading_match, check_heading_match,
+                   lambda: patch.object(pr, "opens_with", lambda passage, head: head in passage))
+
     def test_s2a7_model_only_relations_listed_apart(self):
         self.prove("s2a7_relations", observe_relations, check_relations,
                    lambda: patch.object(finding_record, "is_model_written", lambda item: False))
@@ -852,14 +1035,19 @@ def check():
         problems = [str(case).split(" ")[0] + ": " + str(err).strip().splitlines()[-1][:160]
                     for case, err in list(result.failures) + list(result.errors)]
         return "FAIL", "; ".join(problems[:4])
+    ran = result.testsRun - len(result.skipped)
+    console = ("the console in en and tr" if not result.skipped
+               else "NOT the console (" + CONSOLE_SKIPPED + ")")
     return "PASS", ("%d S2a proofs, each neutralise, fail, restore, pass: model findings marked in "
-                    "every reader-facing file and the console, producer sentence from the run, "
-                    "Turkish catalog, plain templates, absence location, audit-synthesis count, "
-                    "model-only relations apart" % result.testsRun)
+                    "the markdown deliverables, review_data.json, the server's records and %s; "
+                    "producer sentence from the run, tr catalog, plain templates, absence location, "
+                    "audit-synthesis count, model-only relations apart, model items kept out of the "
+                    "prior-comparison and band sections, unplaced units cite nothing of another's, "
+                    "and the reader-check rounds 1 and 2 items" % (ran, console))
 
 
 def write_mocked_deliverables(target):
-    """Write one mocked run's deliverables (English and Turkish) under `target`."""
+    """Write one mocked run's deliverables (English and tr) under `target`."""
     from message_bus import MessageBus
     target = Path(target)
     for language in ("en", "tr"):
