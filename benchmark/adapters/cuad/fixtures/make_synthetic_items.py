@@ -1,5 +1,6 @@
 """Writes synthetic_items.json beside this file: three hand-written synthetic contracts in
-the PROVISIONAL CUAD v1 schema, each with one QA entry per category (41). The contract
+the CUAD v1 schema (confirmed on the B-dev development items), each with one QA entry per
+category (41), the QA id ending in the category as the release spells it. The contract
 texts and the categories each one answers are written here by hand; only the 41 QA
 entries per contract are expanded by the loop below. The third contract repeats the
 first's text under a title that sorts first, so the duplicate merge keeps it.
@@ -13,7 +14,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1]))
 
-from cuad.adapter import CATEGORIES  # noqa: E402
+from cuad.adapter import CATEGORIES, data_spelling  # noqa: E402
 
 ALPHA = ("SUPPLY AGREEMENT\n\nThis agreement is made between Alpha Works and Beta Stores.\n\n"
          "This agreement is governed by the laws of the State of Nowhere.\n\n"
@@ -29,11 +30,14 @@ BETA_PRESENT = {"Document Name": "SERVICE AGREEMENT", "Insurance": "keep insuran
 
 def entry(title, context, present):
     qas = []
-    for name in CATEGORIES:
+    for index, name in enumerate(CATEGORIES, start=1):
         answers = ([{"text": present[name], "answer_start": context.index(present[name])}]
                    if name in present else [])
-        qas.append({"id": title + "__" + name,
-                    "question": "Highlight the parts (if any) of this contract related to \"%s\"." % name,
+        # The QA id carries the category as the release spells it (confirmed on the B-dev
+        # development items), which differs from the paper's name for 15 rows.
+        spelling = data_spelling(index)
+        qas.append({"id": title + "__" + spelling,
+                    "question": "Highlight the parts (if any) of this contract related to \"%s\"." % spelling,
                     "answers": answers, "is_impossible": not answers})
     return {"title": title, "paragraphs": [{"context": context, "qas": qas}]}
 
