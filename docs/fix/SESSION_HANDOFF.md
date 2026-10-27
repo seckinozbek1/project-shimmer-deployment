@@ -22,7 +22,7 @@ Written 11 September 2026, at the close of a three-day session.
 | half-done | Nothing. Every piece of work in this session ended at a commit with a green gate. |
 
 `C:\Users\secki\local\shimmer-fix` is a DIFFERENT repository (the private one, remote
-`project-shimmer-maat`). Never touch it. Its dirty working tree is the operator's.
+`a private repository, not named here`). Never touch it. Its dirty working tree is the operator's.
 
 Gate: **215 checks**. The green line on this machine is
 `PASS=213 WARN=0 SKIP=0 FAIL/ERROR=2 TOTAL=215`. The two failures are permanent here and

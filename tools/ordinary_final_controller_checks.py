@@ -3,17 +3,22 @@
 Every provider action, ssh, scp, ssh-keygen, the watchdog process and the clock are
 replaced. The real controller execute() runs end to end against them, so the
 phase sequence, the detached-phase polling, the failure teardown and the cleanup
-are the controller's own code paths. No credential is read, no network is used,
-no instance exists. Run v3 (2026-09-18) is the case under test: a phase whose
+are the controller's own code paths. No real credential is read (one test reads a
+fixture file holding a random sentinel, through the real adapter with only curl
+replaced, to prove no key value is ever printed), no network is used, no
+instance exists. Run v3 (2026-09-18) is the case under test: a phase whose
 remote work completes while the connection carrying it dies must be recognised
 as completed, never failed, and the workload must then run.
 """
 import base64
 import contextlib
 import hashlib
+import importlib.util
 import io
 import json
+import os
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -25,8 +30,11 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'scripts')]
+import agent_wrapper
+import cloud_run_watchdog
+import lambda_experiment_provider as provider_adapter
 import ordinary_final_cloud as controller
-from ordinary_final_run import write, sha
+from ordinary_final_run import read, write, sha
 
 INSTANCE = 'a' * 32
 KEY_ID = 'b' * 32
@@ -59,8 +67,10 @@ class FakeProvider:
 
     def __init__(self, credential=None):
         if FakeProvider.state is None:
-            FakeProvider.state = dict(instances=[], keys=[], launches=0, terminate_calls=0, status={})
+            FakeProvider.state = dict(instances=[], keys=[], launches=0, terminate_calls=0, status={}, credentials=[])
         self.s = FakeProvider.state
+        # The path the controller handed over, never its contents: nothing is read.
+        self.s.setdefault('credentials', []).append(credential)
 
     def request(self, endpoint, body=None, method=None):
         s = self.s
@@ -97,6 +107,66 @@ class FakeProvider:
         self.s['terminate_calls'] += 1
         self.s['status'][instance_id] = 'terminated'
         self.s['instances'] = [x for x in self.s['instances'] if x[0] != instance_id]
+
+
+class FakeCurl:
+    """The provider's HTTP API behind the REAL adapter (LambdaExperiment and the
+    LambdaTermination it extends). Only the curl process is replaced: the adapter
+    loads the credential from the operator file and writes it into curl's stdin
+    configuration exactly as it does live, and every response is in the provider's
+    raw shape, so the adapter's own projection runs. Nothing reaches the network."""
+    def __init__(self):
+        self.instances, self.keys, self.launches, self.argvs, self.stdins = [], [], 0, [], []
+
+    @staticmethod
+    def raw_type():
+        return dict(name='gpu_1x_a10', gpu_description='A10 (24 GB PCIe)', architecture='x86_64',
+                    specs=dict(gpus=1, vcpus=30, memory_gib=200, storage_gib=1400), price_cents_per_hour=129)
+
+    def answer(self, endpoint, method, body):
+        if endpoint == 'instances':
+            return [dict(id=i, name=n, status='active', ip='10.0.0.2', region=dict(name='us-east-1'),
+                         instance_type=self.raw_type()) for i, n in self.instances]
+        if endpoint == 'instance-types':
+            return {'gpu_1x_a10': dict(instance_type=self.raw_type(),
+                                       regions_with_capacity_available=[dict(name='us-east-1')])}
+        if endpoint == 'images':
+            return [dict(id=IMAGE['id'], family=IMAGE['family'], version=IMAGE['version'],
+                         architecture=IMAGE['architecture'], region=dict(name=IMAGE['region']))]
+        if endpoint == 'ssh-keys' and body is not None:
+            self.keys.append(dict(id=KEY_ID, name=body['name']))
+            return dict(id=KEY_ID, name=body['name'], public_key=body['public_key'])
+        if endpoint == 'ssh-keys':
+            return list(self.keys)
+        if endpoint.startswith('ssh-keys/') and method == 'DELETE':
+            self.keys = [k for k in self.keys if k['id'] != endpoint.split('/')[1]]
+            return {}
+        if endpoint == 'instance-operations/launch':
+            self.launches += 1
+            self.instances.append((INSTANCE, body['name']))
+            return dict(instance_ids=[INSTANCE])
+        if endpoint == 'instance-operations/terminate':
+            self.instances = [x for x in self.instances if x[0] not in body['instance_ids']]
+            return dict(terminated_instances=[])
+        raise AssertionError('unexpected provider endpoint ' + endpoint)
+
+    def run(self, args, input=None, **kwargs):
+        self.argvs.append(list(args))
+        self.stdins.append(input)
+        endpoint = args[-1].split('/api/v1/', 1)[1]
+        method = args[args.index('--request') + 1] if '--request' in args else None
+        body = json.loads(args[args.index('--data-binary') + 1]) if '--data-binary' in args else None
+        payload = json.dumps(dict(data=self.answer(endpoint, method, body)))
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout=payload + '\n200', stderr='')
+
+    @contextlib.contextmanager
+    def installed(self):
+        """Replace only curl, in the two adapter modules; the adapter code itself runs."""
+        process = SimpleNamespace(run=self.run, CompletedProcess=subprocess.CompletedProcess)
+        which = SimpleNamespace(which=lambda name: 'curl-fixture' if name.startswith('curl') else None)
+        with patch.object(provider_adapter, 'subprocess', process), patch.object(provider_adapter, 'shutil', which), \
+                patch.object(cloud_run_watchdog, 'subprocess', process), patch.object(cloud_run_watchdog, 'shutil', which):
+            yield self
 
 
 class FakeTransport:
@@ -211,6 +281,7 @@ class FakeTransport:
                 files[digest] = digest
 
     def popen(self, argv, **kwargs):
+        self.popen_argv = list(argv)
         write(self.base / 'WATCHDOG_ARMED.json', dict(instance_id=INSTANCE, pid=777, heartbeat_epoch=controller.time.time(),
                                                       execution_manifest_sha256=sha(self.base / 'execution_manifest.json')))
         return SimpleNamespace(pid=777, poll=lambda: None)
@@ -234,12 +305,17 @@ class ControllerChecks(unittest.TestCase):
               manifest_sha256=sha(self.base / 'execution_manifest.json'), bytes=14))
         FakeProvider.state = None
         self.clock = FakeClock(self.base)
+        # A stand-in operator file the resolver can find. It holds no key and is never
+        # read: the provider is mocked, and the controller only passes its path on.
+        self.credential = self.root / 'operator_provider_access.txt'
+        self.credential.write_text('placeholder, not a key\n', encoding='utf8')
 
     def declare_copy(self, mount='/lambda/nfs/fixture'):
         write(self.base / 'asset_copy_declaration.json', dict(filesystem_name='fixture-fs', mount=mount, operator_authorized=True))
 
-    def execute(self, polls=None, outputs=None, progress=None, existing=(), mount=None):
-        """Run the real controller against the fakes; return (transport, console, failure or None)."""
+    def execute(self, polls=None, outputs=None, progress=None, existing=(), mount=None, provider=None):
+        """Run the real controller against the fakes; return (transport, console, failure or None).
+        `provider` replaces FakeProvider (the real adapter, over FakeCurl, in the key test)."""
         outputs = dict(outputs or {})
         outputs.setdefault('evidence_hash', (hashlib.sha256(EVIDENCE).hexdigest() + '  collected_evidence.tar.gz\n').encode())
         transport = FakeTransport(self.base, polls, outputs, progress, existing, mount)
@@ -250,9 +326,10 @@ class ControllerChecks(unittest.TestCase):
         with patch.object(controller, 'ROOT', self.root), patch.object(controller, 'BASE', self.base), \
                 patch.object(controller, 'MANIFEST', sha(self.base / 'execution_manifest.json')), \
                 patch.object(controller, 'SEAL', sha(self.base / 'seal.json')), \
-                patch.object(controller, 'LambdaExperiment', FakeProvider), \
+                patch.object(controller, 'LambdaExperiment', provider or FakeProvider), \
                 patch.object(controller, 'subprocess', fake_subprocess), \
                 patch.object(controller, 'time', self.clock), \
+                patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}), \
                 contextlib.redirect_stdout(console):
             controller.execute()
         failure = self.base / 'controller_failure.json'
@@ -744,6 +821,229 @@ class ControllerChecks(unittest.TestCase):
         finally:
             linux('rm -rf ' + shlex_quote(root) + ' ' + shlex_quote(phases))
 
+    # ---- the credential is located at use, never at import, never from a written path -----
+
+    def unresolvable(self):
+        """Every resolver candidate points at a file that does not exist, and the
+        environment variable is unset: the state of a machine with no operator file."""
+        absent = [(agent_wrapper.CONFIG_ENV_VAR, self.root / 'absent' / 'a.txt'),
+                  ('sibling', self.root / 'absent' / 'b.txt'), ('.env_path pointer', self.root / 'absent' / 'c.txt')]
+        environment = {k: v for k, v in os.environ.items() if k != agent_wrapper.CONFIG_ENV_VAR}
+        return absent, environment
+
+    def test_credential_resolves_from_shimmer_config_path_at_the_moment_of_use(self):
+        """(a) The controller's resolver returns the file SHIMMER_CONFIG_PATH names, and
+        that same path, and no other, reaches every provider handle and the watchdog."""
+        with patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}):
+            self.assertEqual(controller.credential_path(), self.credential)
+        transport, console, failure = self.execute()
+        self.assertIsNone(failure, failure)
+        # The launch handle and the independent cleanup handle, both given the resolved path.
+        self.assertGreaterEqual(len(FakeProvider.state['credentials']), 2)
+        self.assertEqual(set(map(str, FakeProvider.state['credentials'])), {str(self.credential)})
+        argv = transport.popen_argv
+        self.assertEqual(argv[argv.index('--credential-file') + 1], str(self.credential))
+        self.assert_torn_down()
+
+    def test_no_resolvable_credential_refuses_in_one_line_naming_shimmer_config_path(self):
+        """(b) With nothing to find, every live reader refuses in one line naming
+        SHIMMER_CONFIG_PATH, before any provider handle exists."""
+        absent, environment = self.unresolvable()
+        with patch.object(agent_wrapper, 'candidate_config_paths', lambda: list(absent)), \
+                patch.dict(os.environ, environment, clear=True):
+            self.assertIsNone(agent_wrapper.resolve_config_path())
+            with self.assertRaises(RuntimeError) as caught:
+                controller.credential_path()
+            message = str(caught.exception)
+            self.assertIn('SHIMMER_CONFIG_PATH', message)
+            self.assertNotIn('\n', message)
+            self.assertEqual(message, controller.CREDENTIAL_REFUSAL)
+            # The controller itself: refused before the provider, an instance or a launch intent.
+            with self.assertRaisesRegex(RuntimeError, '^' + re.escape(controller.CREDENTIAL_REFUSAL) + '$'):
+                self.execute()
+            self.assertIsNone(FakeProvider.state)
+            self.assertFalse((self.base / 'LAUNCH_INTENT.json').exists())
+            # The status reader reports the refusal as the instance line, and queries nothing.
+            import ordinary_final_status as status
+            write(self.base / 'launch.json', dict(instance_id=INSTANCE, epoch=1.0, hourly_rate=1.29))
+            out = io.StringIO()
+            with patch('lambda_experiment_provider.LambdaExperiment', side_effect=AssertionError('provider reached')), \
+                    contextlib.redirect_stdout(out):
+                status.main(self.base, 'T', True)
+            self.assertIn('instance (provider): unknown (' + controller.CREDENTIAL_REFUSAL + ')', out.getvalue())
+            # The two preflights refuse at the same line, before any provider handle.
+            import ordinary_final_bound_preflight as bound_preflight
+            import ordinary_final_v3_preflight as v3_preflight
+            write(self.base / 'authorization_binding.json', dict(manifest_sha256=sha(self.base / 'execution_manifest.json')))
+            for module, call in ((bound_preflight, lambda: bound_preflight.main(self.base)), (v3_preflight, v3_preflight.main)):
+                with self.subTest(reader=module.__name__), \
+                        patch.object(module, 'LambdaExperiment', side_effect=AssertionError('provider reached')), \
+                        patch.object(v3_preflight, 'BASE', self.base), \
+                        patch.object(v3_preflight, 'MANIFEST', sha(self.base / 'execution_manifest.json')):
+                    with self.assertRaisesRegex(RuntimeError, '^' + re.escape(controller.CREDENTIAL_REFUSAL) + '$'):
+                        call()
+            self.assertFalse((self.base / 'authorized_live_preflight.json').exists())
+
+    def test_importing_the_controller_tools_resolves_nothing(self):
+        """(c) Loading each live tool runs its module code and nothing locates a
+        credential or starts a process: resolution belongs to the moment of use."""
+        calls = []
+        saved = list(sys.path)
+
+        def recorder(name):
+            def record(*args, **kwargs):
+                calls.append(name)
+                raise AssertionError(name + ' called at import')
+            return record
+        names = ('ordinary_final_cloud', 'ordinary_final_status', 'ordinary_final_bound_preflight',
+                 'ordinary_final_v3_preflight', 'ordinary_final_rehearsal')
+        loaded = {}
+        try:
+            with patch.object(agent_wrapper, 'resolve_config_path', recorder('resolve_config_path')), \
+                    patch.object(agent_wrapper, 'candidate_config_paths', recorder('candidate_config_paths')), \
+                    patch.object(subprocess, 'run', recorder('subprocess.run')), \
+                    patch.object(subprocess, 'Popen', recorder('subprocess.Popen')):
+                for name in names:
+                    spec = importlib.util.spec_from_file_location('_import_probe_' + name, ROOT / 'tools' / (name + '.py'))
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    loaded[name] = module
+        finally:
+            sys.path[:] = saved
+        self.assertEqual(calls, [])
+        self.assertEqual(sorted(loaded), sorted(names))
+        for name, module in loaded.items():
+            self.assertFalse(hasattr(module, 'CREDENTIAL'), name + ' still fixes a credential path at import')
+        self.assertFalse(hasattr(loaded['ordinary_final_rehearsal'], 'LINUX_ROOT'))
+
+    def test_no_key_value_is_ever_printed(self):
+        """(e) S1 Part 3: no key is ever printed. A fixture operator file assigns a
+        unique sentinel to the variable the loader reads (LAMBDA_API_KEY, by AST), and
+        SHIMMER_CONFIG_PATH names it. The REAL adapter loads it on every provider call
+        (only curl is replaced), through the controller's whole run, its refusal
+        paths, the status reader and both live preflights. The sentinel reaches curl's
+        stdin configuration, and appears in no argv, no stdout, no stderr, no console
+        line and no file the run writes.
+
+        The loader takes the LAMBDA_API_KEY environment variable when it is given no
+        credential file, so the variable is removed for the whole test (restored
+        after): otherwise an operator shell that exports it would make any load without
+        a credential file return that value, and a neutralised printing loader would
+        print it."""
+        import uuid
+        self.enterContext(patch.dict(os.environ))
+        os.environ.pop('LAMBDA_API_KEY', None)
+        sentinel = 'shimmer' + uuid.uuid4().hex + 'sentinel'
+        self.credential.write_text('LAMBDA_API_KEY = ' + repr(sentinel) + '\n', encoding='utf8')
+        curl = FakeCurl()
+        out, err = io.StringIO(), io.StringIO()
+        console = []
+        with curl.installed(), contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            # The controller's credential path, end to end with the real adapter.
+            with patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}):
+                self.assertEqual(controller.credential_path(), self.credential)
+            transport, console, failure = self.execute(provider=provider_adapter.LambdaExperiment)
+            self.assertIsNone(failure, failure)
+            self.assertEqual(curl.launches, 1)
+            self.assertEqual(json.loads((self.base / 'cleanup.json').read_text())['inventory_empty'], True)
+            argv = transport.popen_argv
+            self.assertEqual(argv[argv.index('--credential-file') + 1], str(self.credential))
+            # The refusal paths: nothing resolvable, and an operator file the loader refuses.
+            absent, environment = self.unresolvable()
+            with patch.object(agent_wrapper, 'candidate_config_paths', lambda: list(absent)), \
+                    patch.dict(os.environ, environment, clear=True):
+                with self.assertRaisesRegex(RuntimeError, '^' + re.escape(controller.CREDENTIAL_REFUSAL) + '$'):
+                    controller.credential_path()
+            refused = self.root / 'operator_provider_access_refused.txt'
+            for text in ('LAMBDA_API_KEY = ' + repr(sentinel) + '\n') * 2, 'LAMBDA_API_KEY = ' + repr(sentinel + ' x') + '\n':
+                refused.write_text(text, encoding='utf8')
+                for call in (lambda: cloud_run_watchdog.load_credential(refused),
+                             lambda: provider_adapter.LambdaExperiment(refused).request('images'),
+                             lambda: provider_adapter.LambdaExperiment(refused).request('instances')):
+                    with self.assertRaises(ValueError) as caught:
+                        call()
+                    print('refused:', caught.exception)
+                    self.assertFalse(sentinel in str(caught.exception), 'sentinel in a refusal message')
+            refused.unlink()
+            with patch.dict(os.environ, {agent_wrapper.CONFIG_ENV_VAR: str(self.credential)}):
+                # The status reader, querying the provider.
+                import ordinary_final_status as status
+                before = len(curl.argvs)
+                tasklist = SimpleNamespace(run=lambda *a, **k: SimpleNamespace(stdout=''))  # no local process query
+                with patch.object(status, 'subprocess', tasklist):
+                    status.main(self.base, 'T', True)
+                self.assertGreater(len(curl.argvs), before)
+                self.assertIn('instance (provider): not in inventory', out.getvalue())
+                # Both live preflights, each printing its receipt.
+                import ordinary_final_bound_preflight as bound_preflight
+                import ordinary_final_v3_preflight as v3_preflight
+                manifest = read(self.base / 'execution_manifest.json')
+                write(self.base / 'execution_manifest.json', dict(manifest, max_hourly_rate=1.29))
+                write(self.base / 'authorization_binding.json', dict(manifest_sha256=sha(self.base / 'execution_manifest.json')))
+                for call in (lambda: bound_preflight.main(self.base), v3_preflight.main):
+                    (self.base / 'authorized_live_preflight.json').unlink(missing_ok=True)
+                    with patch.object(v3_preflight, 'BASE', self.base), \
+                            patch.object(v3_preflight, 'MANIFEST', sha(self.base / 'execution_manifest.json')):
+                        call()
+                    self.assertTrue(read(self.base / 'authorized_live_preflight.json')['passed'])
+        # The credential really was loaded and used, so its absence below means something.
+        # Every assertion is boolean with a fixed message, so a failure never echoes the value.
+        self.assertTrue(any(sentinel in (s or '') for s in curl.stdins), 'the adapter never loaded the fixture value')
+        self.assertFalse(any(sentinel in a for argv in curl.argvs for a in argv), 'sentinel in a curl argv')
+        self.assertGreater(len(out.getvalue()), 0)
+        self.assertFalse(sentinel in out.getvalue(), 'sentinel printed to stdout')
+        self.assertFalse(sentinel in err.getvalue(), 'sentinel printed to stderr')
+        self.assertFalse(sentinel in '\n'.join(console), 'sentinel printed to the controller console')
+        written = [p for p in self.root.rglob('*') if p.is_file() and p != self.credential]
+        self.assertTrue(written)
+        self.assertEqual([p.name for p in written if sentinel.encode() in p.read_bytes()], [],
+                         'sentinel written to a run file')
+
+    def test_rehearsal_removes_only_its_own_folder_under_the_linux_home(self):
+        """(d) The rehearsal's folder is <Linux home>/shimmer-rehearsal, read at run time,
+        and every rm -rf it computes targets that folder or a path below it."""
+        import ordinary_final_rehearsal as rehearsal
+        commands = []
+        home = dict(value='/home/fixture')
+
+        def fake_linux(command, timeout=600, stdin=None):
+            commands.append(command)
+            return subprocess.CompletedProcess(args=command, returncode=0, stdout=home['value'].encode(), stderr=b'')
+        root = '/home/fixture/shimmer-rehearsal'
+        with patch.object(rehearsal, 'linux', fake_linux):
+            layout = rehearsal.resolve_layout()
+            self.assertEqual(commands, ['printf %s "$HOME"'])  # one lookup, through the Linux shell
+            self.assertEqual(layout.root, root)
+            for path in (layout.remote, layout.phases, layout.mount):
+                self.assertTrue(path.startswith(root + '/'), path)
+            # The removal the rehearsal issues before each controller run, executed.
+            commands.clear()
+            with patch.object(controller, 'execute', lambda: None):
+                rehearsal.run_controller(self.base, True, layout)
+            targets = []
+            for command in commands:
+                for segment in re.split(r';|&&', command):
+                    words = shlex.split(segment)
+                    if words[:2] == ['rm', '-rf']:
+                        targets.extend(words[2:])
+            self.assertEqual(sorted(targets), sorted([layout.remote, layout.phases]))
+            for path in (layout.root, layout.remote, layout.phases, layout.mount):
+                self.assertEqual(shlex.split(rehearsal.remove_command(layout, path)), ['rm', '-rf', path])
+            for target in targets:
+                self.assertTrue(target == root or target.startswith(root + '/'), target)
+            # A parent, the root, a sibling or an escape is refused.
+            for bad in ('/home/fixture', '/home', '/', '', root + '-other', root + '/../x', root + '/./x', root + '//x'):
+                with self.assertRaisesRegex(RuntimeError, 'Removal outside the rehearsal folder refused'):
+                    rehearsal.remove_command(layout, bad)
+            # An empty, root or relative home is refused before any folder is named.
+            for value in ('', '/', '//', ' ', 'home/fixture', '/home/../', '/home/fix ture'):
+                home['value'] = value
+                with self.assertRaisesRegex(RuntimeError, 'Linux home unusable'):
+                    rehearsal.resolve_layout()
+        # Every rm -rf in the rehearsal is built by remove_command and nowhere else.
+        source = Path(rehearsal.__file__).read_text(encoding='utf-8')
+        self.assertEqual(source.count("'rm -rf "), 1)
+
 
 def shlex_quote(value):
     import shlex
@@ -787,6 +1087,17 @@ def v4_phases_dir(remote):
     return remote.rstrip('/') + '/phases'
 
 
+_ORIGINAL_LOADER = cloud_run_watchdog.load_credential
+
+
+def printing_load_credential(credential_file=None):
+    """A loader that prints the value it loaded: the leak the key test must catch.
+    Calls the original captured at import, so the neutralised run loads for real."""
+    value = _ORIGINAL_LOADER(credential_file)
+    print('loaded provider access value:', value)
+    return value
+
+
 _CONTROLLER_FILES = {'ordinary_final_cloud.py', 'ordinary_final_bound_cloud.py',
                      'lambda_experiment_provider.py', 'ordinary_final_run.py'}
 
@@ -806,6 +1117,10 @@ def read_without_the_controller_binding(path):
     return value
 
 
+# Imported here, after FakeProvider and INSTANCE exist, because the rehearsal imports them.
+import ordinary_final_rehearsal as rehearsal
+
+
 # (test, owner, attribute, mutant): the one mechanism each load-bearing test proves.
 NEUTRALIZATIONS = [
     ('test_dead_connection_after_remote_completion_is_completed_and_the_run_proceeds', controller, 'poll_outcome', neutralized_poll_outcome),
@@ -817,6 +1132,21 @@ NEUTRALIZATIONS = [
     # A seal that does not bind the controller: a changed controller launches.
     ('test_controller_binding_a_changed_controller_refuses_before_any_instance', controller, 'read',
      read_without_the_controller_binding),
+    # A credential path fixed in the file instead of resolved: SHIMMER_CONFIG_PATH is ignored.
+    ('test_credential_resolves_from_shimmer_config_path_at_the_moment_of_use', controller, 'credential_path',
+     lambda: Path('fixed-when-written.txt')),
+    # The refusal dropped: an unresolvable credential reaches the provider as None.
+    ('test_no_resolvable_credential_refuses_in_one_line_naming_shimmer_config_path', controller, 'credential_path',
+     lambda: agent_wrapper.resolve_config_path()),
+    # A loader that prints what it loaded: the sentinel reaches stdout. Proven through
+    # BOTH names the loader is reached by: the watchdog's own, and the adapter's, which
+    # imports it by name (lambda_experiment_provider.py, from cloud_run_watchdog import
+    # load_credential), so patching the watchdog alone never reaches an adapter call.
+    ('test_no_key_value_is_ever_printed', cloud_run_watchdog, 'load_credential', printing_load_credential),
+    ('test_no_key_value_is_ever_printed', provider_adapter, 'load_credential', printing_load_credential),
+    # A widened removal target: the Linux home itself instead of the rehearsal folder under it.
+    ('test_rehearsal_removes_only_its_own_folder_under_the_linux_home', rehearsal, 'rehearsal_root',
+     lambda home: home.strip().rstrip('/') or '/'),
 ]
 
 

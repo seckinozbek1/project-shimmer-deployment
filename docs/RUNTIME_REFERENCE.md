@@ -136,8 +136,10 @@ retry. Draft's initial free-text call bypasses this envelope path.
 `audit/agent_activation.json` records eligibility, requested activation, actual
 dispatch attempt, reason, phase, trigger, repeat bound and outcome. A dispatch is
 not necessarily successful generation. `phase_not_reached` has unknown eligibility;
-`ineligible`, `eligible_inactive`, `activated_not_dispatched`, preparation failure,
-execution failure, completion, recovery and truncation must not be collapsed.
+`ineligible`, `eligible_inactive`, `activated_not_dispatched`, `switched_off` (an
+agent the operator switched off under a ratified amendment, for example INST_FINDER),
+preparation failure, execution failure, completion, recovery and truncation must not
+be collapsed.
 
 ## Outputs and operator surfaces
 
@@ -189,7 +191,31 @@ output/runs/<run folder>/
   logs/call_evidence.jsonl     pipeline_stdout.log (server runs)
   audit/reference_index.json  pairing_map.json / convention_assignment.json
   audit/agent_activation.json run_completion.json / run_identity.json
+  audit/model_replies/         <sequence>_<call_id>.json per call, outcomes.jsonl
 ```
+
+**Saved model replies.** Every model call writes exactly one record into
+`audit/model_replies/`, from inside the backend function that holds the raw text
+(`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and from Auditor896's
+`predict`, through `scripts/reply_records.py`. A record holds the sequence number
+(taken under a lock), call id, run id, agent, backend, model id and mode as resolved
+at run time, timestamp, phase, document id, decoding settings, and the payload and
+reply, each with its SHA-256 and byte length and, in a run without redaction, its
+full text. For the two local backend functions (`call_qwen`, `call_local`, serving
+the `qwen_local`, `local_producer` and `local_auditor` backends) the payload is the
+exact rendered prompt given to the model; for the two cloud backend functions it is
+a canonical JSON form of the messages list sent (sorted keys, compact separators),
+not the SDK's own wire bytes; for Auditor896 it is the classifier's input messages. With redaction enabled the text is never stored. The outcome is appended
+later to `outcomes.jsonl` by call id (`accepted_to_bus`, `advisory_not_record`,
+`not_promoted`, `contract_violation`, `refused`, `backend_failure`, `classified`,
+`classifier_failed`, `free_text`); a later line for the same call wins, and a call
+with no line reads as `not_decided`. A call with no run context writes nothing.
+Embedding calls are not saved. No server route serves these files yet. They are
+gitignored, and `scripts/guard_secrets.py --staged` refuses any staged path with the
+segment `audit/model_replies/` at any depth, and any staged tar or `.zip` archive (for
+example a collected evidence `.tar.gz`) whose members include such a path; other
+compressed files it recognises but cannot read are refused (gate checks 275 and 276;
+the full rule is in `docs/THREAT_MODEL.md`).
 
 `review_data.json` is the amendment master; Markdown and DOCX are renders, not
 independent findings. Audit synthesis, editorial records, DELTA proposals,
@@ -306,6 +332,7 @@ outside source; this table contains no credentials.
 | `SHIMMER_LOCAL_RUN_TIMEOUT_S` | `7200` | overrides `RUN_TIMEOUT_S` when `SHIMMER_BACKEND_PROFILE=local`. Local inference is far slower than cloud API calls; 2 hours is the default. `0` means unbounded |
 | `SHIMMER_BACKEND_PROFILE` | (unset) | `local` selects the local-only backend profile (Review uses local models with no provider API calls; Draft memo generation remains unsupported in Local). Unset defaults to Cloud; use the supported local/cloud profile values |
 | `SHIMMER_PROVIDER_TIMEOUT_S` | `600` | per-request wall-clock timeout (seconds) passed to the Anthropic and OpenAI clients; read by the pipeline subprocess, not the server process itself |
+| `SHIMMER_INST_FINDER` | (unset: on) | read by the pipeline subprocess, not the server process itself. `off` switches the corpus-level agent INST_FINDER off for the run, honoured only when `config/constitution.json` holds an operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER (draft: `docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`); without one the run refuses to start (exit 9). Any other value, or none, keeps it on. Saved in `audit/agent_switches.json` and stated in `_run_summary.md`; applies to every test the same way |
 | `SHIMMER_MAX_UPLOAD_MB` | `25` | per-file upload size cap in megabytes for `/submit` |
 | `SHIMMER_MAX_UPLOAD_TOTAL_MB` | `200` | whole-submission upload size cap in megabytes |
 | `SHIMMER_MAX_UPLOAD_FILES` | `50` | max number of files accepted in one `/submit` |

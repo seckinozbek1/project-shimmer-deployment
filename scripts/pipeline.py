@@ -48,6 +48,7 @@ import execution_topology
 import run_options
 import semantic_waves
 import agent_activation
+import reply_records
 from agent_wrapper import (AgentWrapper, load_api_keys, decode_items,
                            current_items, make_envelope, is_envelope)
 import amendment_render
@@ -566,13 +567,17 @@ def _local_progress_reset(expected: int) -> None:
     _LOCAL_PROGRESS_STOP.clear()
 
 
-def _local_progress_baseline(num_op_docs: int) -> int:
+def _local_progress_baseline(num_op_docs: int, run_ctx=None) -> int:
     """The known-minimum agent-call count for the calls _run_one covers (see the scope
-    note above): corpus-level (always 3), per-doc production/audit/convention-review
+    note above): corpus-level (3, less any agent the operator switched off by a
+    ratified SHIMMER_INST_FINDER setting, a declared state and never counted as a
+    missing call), per-doc production/audit/convention-review
     (always run once per op doc), AMENDMENT_DRAFTER (usually once per doc; the rare
     bus-reuse skip is not subtracted, an accepted small overcount for a progress display,
-    not a correctness-critical count)."""
-    return (len(PRODUCTION_AGENTS_CORPUS_LEVEL)
+    not a correctness-critical count). The switch is the decision main() saved in
+    `run_ctx` at start-up (_inst_finder_decision)."""
+    switched_off = set(_inst_finder_decision(run_ctx, ROOT)["switched_off"])
+    return (len([name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off])
             + len(PRODUCTION_AGENTS_PER_DOC) * num_op_docs
             + len(AUDIT_AGENTS_PER_DOC) * num_op_docs
             + len(CONVENTION_REVIEW_AGENTS) * num_op_docs
@@ -760,6 +765,8 @@ def _draft_generate_with_evidence(drafter, stable, dynamic, *, passages, run_ctx
             reason="draft_task_memo", source_phase="0", evidence={"task": "draft"})
     finally:
         drafter._cost_call_id = ""
+    reply_records.write_outcome(run_ctx, call_id, "free_text" if getattr(r, "ok", False)
+                                else "backend_failure", source="draft_memo")
     return r.raw_text if getattr(r, "ok", False) else ""
 
 
@@ -1307,6 +1314,87 @@ async def _deepen_legal_analyst_findings_local(wrapper, findings, doc, embed_sto
     return out
 
 
+def _inst_finder_switch(root):
+    """The operator's INST_FINDER setting for this run, read from the environment
+    variable SHIMMER_INST_FINDER, as a flat record.
+
+    The value `off` asks for INST_FINDER to be switched off; any other value, or
+    no value, means on, and on is the default. Switching a production agent off
+    changes governed inter-agent structure, so `off` is honoured ONLY when
+    <root>/config/constitution.json holds an amendment with operator_approved
+    true whose `change` names both INST_FINDER and SHIMMER_INST_FINDER (no
+    amendment id is written here; docs/INST_FINDER_SWITCH_DELTA_DRAFT.md is the
+    draft). Otherwise the record carries a one-line refusal and the run must not
+    start: the setting is never ignored silently.
+
+    The agent is never removed from PRODUCTION_AGENTS_CORPUS_LEVEL or from the
+    registry: `switched_off` names the agents phase 3-4 does not dispatch."""
+    value = os.environ.get("SHIMMER_INST_FINDER")
+    record = {"variable": "SHIMMER_INST_FINDER", "value": value, "agent": "INST_FINDER",
+              "setting": "off" if value == "off" else "on",
+              "switched_off": [], "ratified_by": None, "refusal": None}
+    if record["setting"] == "on":
+        return record
+    try:
+        amendments = json.loads((Path(root) / "config" / "constitution.json").read_text(
+            encoding="utf-8")).get("amendments") or []
+    except (OSError, ValueError, AttributeError):
+        amendments = []
+    for amendment in amendments:
+        if not isinstance(amendment, dict) or amendment.get("operator_approved") is not True:
+            continue
+        change = amendment.get("change")
+        text = change if isinstance(change, str) else json.dumps(change, ensure_ascii=False)
+        if (re.search(r"(?<![A-Za-z0-9_])INST_FINDER(?![A-Za-z0-9_])", text)
+                and re.search(r"(?<![A-Za-z0-9_])SHIMMER_INST_FINDER(?![A-Za-z0-9_])", text)):
+            record["switched_off"] = ["INST_FINDER"]
+            record["ratified_by"] = str(amendment.get("id") or "")
+            return record
+    record["refusal"] = (
+        "[inst-finder-switch] STOP: SHIMMER_INST_FINDER=off switches INST_FINDER off, a change "
+        "to governed inter-agent structure, and config/constitution.json holds no "
+        "operator-approved amendment whose change names INST_FINDER and SHIMMER_INST_FINDER; "
+        "ratify the DELTA drafted in docs/INST_FINDER_SWITCH_DELTA_DRAFT.md, or unset the variable.")
+    return record
+
+
+def _inst_finder_startup_guard(run_ctx, root):
+    """The start-up guard for SHIMMER_INST_FINDER: saves the setting in the run
+    folder beside the run options (audit/agent_switches.json, written on every
+    run, `on` included) and returns the one-line refusal when `off` is not
+    ratified, else None. main() prints the refusal and exits 9 before any model
+    call."""
+    switch = _inst_finder_switch(root)
+    path = run_ctx.audit_dir() / "agent_switches.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(dict(schema_version=1, **switch), indent=2, ensure_ascii=False)
+                    + "\n", encoding="utf-8")
+    return switch["refusal"]
+
+
+def _inst_finder_decision(run_ctx, root):
+    """The INST_FINDER decision for this run, made ONCE. main() makes it at start
+    and saves it (audit/agent_switches.json, through _inst_finder_startup_guard);
+    phase 3-4, the progress baseline and the cost projection read that saved
+    record, so a constitution or environment changed after start-up cannot change
+    what is dispatched or counted. Only where no record was saved (a fixture, or a
+    helper called with no run context) is the decision computed here from `root`.
+    A saved record that cannot be read refuses rather than being recomputed."""
+    audit_dir = getattr(run_ctx, "audit_dir", None)
+    path = audit_dir() / "agent_switches.json" if callable(audit_dir) else None
+    if path is None or not path.exists():
+        return _inst_finder_switch(root)
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        record = None
+    if not (isinstance(record, dict) and isinstance(record.get("switched_off"), list)
+            and all(key in record for key in ("variable", "value", "ratified_by", "refusal"))):
+        raise RuntimeError("[inst-finder-switch] STOP: the decision saved at start-up "
+                           "(audit/agent_switches.json) cannot be read; the run does not guess it.")
+    return record
+
+
 # ---------- pipeline phases ----------------------------------------------------------------
 
 @execution_topology.phase_boundary
@@ -1322,8 +1410,27 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     digest = "\n\n=========\n\n".join(
         f"### Document: {d['name']}\n\n{_truncate(d['text'], 1200)}" for d in all_docs
     )
+    # SHIMMER_INST_FINDER: an agent the operator switched off (ratified DELTA only)
+    # stays in PRODUCTION_AGENTS_CORPUS_LEVEL and is skipped here, recorded as not
+    # called. `dispatched` labels the gathered results, so each carries its own name.
+    # The decision is the one main() saved at start-up (_inst_finder_decision).
+    switch = _inst_finder_decision(getattr(orch, "run_context", None),
+                                   getattr(getattr(orch, "run_context", None), "project_root", None) or ROOT)
+    if switch["refusal"]:
+        raise RuntimeError(switch["refusal"])
+    switched_off = set(switch["switched_off"])
+    dispatched = [name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off]
     corpus_calls = []
     for agent_name in PRODUCTION_AGENTS_CORPUS_LEVEL:
+        if agent_name in switched_off:
+            agent_activation.not_called(getattr(orch, "run_context", None), agent_name,
+                reason="switched off by operator setting", source_phase="3-4", eligible=False,
+                state="switched_off", trigger_source="operator_setting",
+                evidence={"variable": switch["variable"], "value": switch["value"],
+                          "ratified_by": switch["ratified_by"]})
+            log_event(_LOG, f"production_agent_switched_off agent={agent_name} source=SHIMMER_INST_FINDER",
+                      run_id=_run_id_of(orch), phase="3-4", agent=agent_name)
+            continue
         wrapper = _build_wrapper(agent_name, orch, keys)
         payload = {"task": "corpus_level_analysis",
                    "documents": [d["name"] for d in all_docs],
@@ -1341,7 +1448,7 @@ async def phase_3_4_content_production(orch, keys, op_docs, ctx_docs,
     if corpus_calls:
         corpus_results = await _gather_or_serial(corpus_calls)
         results.extend({"scope": "corpus", "agent": name, **r}
-                       for name,r in zip(PRODUCTION_AGENTS_CORPUS_LEVEL,corpus_results))
+                       for name,r in zip(dispatched,corpus_results))
     # Per-doc only for OPERATIONAL docs (context is reference only).
     # Per Part XXI amendment, LEGAL_ANALYST gets provision-aware context refs.
     # Per Part XXVI, LEGAL_ANALYST also receives the structural inventory
@@ -2934,6 +3041,24 @@ def write_deliverables_run_summary(deliv_dir, op_docs, deliverables, *,
         f'{localization.text('- documents reviewed: ')}{len(op_docs)}',
         f'{localization.text('- total amendments: ')}{total_amendments}',
         f'{localization.text('- total cost: $')}{total_cost_usd:.4f}',
+    ]
+    # SHIMMER_INST_FINDER, stated in every run summary from the record main() saved
+    # in this run's audit folder before any model call (a summary written outside a
+    # run has no record, and says so rather than guessing).
+    switch_path = deliv_dir.parent / "audit" / "agent_switches.json"
+    try:
+        switch = json.loads(switch_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        switch = None
+    if not isinstance(switch, dict):
+        lines.append(localization.text('- INST_FINDER: setting not recorded for this summary'))
+    elif switch.get("switched_off"):
+        lines.append(f'{localization.text('- INST_FINDER: switched off by the ratified SHIMMER_INST_FINDER setting, amendment ')}{switch.get('ratified_by')}')
+    elif switch.get("setting") == "off":
+        lines.append(localization.text('- INST_FINDER: SHIMMER_INST_FINDER=off without a ratified amendment; the run refused to start'))
+    else:
+        lines.append(localization.text('- INST_FINDER: on (SHIMMER_INST_FINDER is not off)'))
+    lines += [
         "",
         localization.text('## Documents'),
         "",
@@ -3220,6 +3345,8 @@ async def phase_6_synthesis(orch, keys, op_docs, production, audit, conv_review,
                           f"model_findings_not_promoted count={len(_withheld)} "
                           f"agents={sorted({str(f.get('agent') or '?') for f in _withheld})}",
                           run_id=_run_id_of(orch), phase="6", doc_id=doc["id"])
+                reply_records.mark_not_promoted(orch.run_context, (production, audit, conv_review),
+                                                _withheld, doc_id=doc["id"])
             raw_amendments, synthesised = paired_review_mod.ensure_amendments_for_findings(
                 raw_amendments, _promotable, unit_texts=_unit_texts,
                 refusal_sink=_amendment_refusals, rules_by_id=_rules_by_id)
@@ -3963,7 +4090,7 @@ def _resolve_operator_handler(args, run_ctx):
 
 # ---------- main ----------------------------------------------------------------------------
 
-def _cost_projection(num_op_docs, num_ctx_docs):
+def _cost_projection(num_op_docs, num_ctx_docs, run_ctx=None):
     # Editorial review board (INFRA-040): WORST-CASE ceiling = all six ranks fire on every
     # operational deliverable, split by family 3 Claude (EDITOR_CLERK / EDITOR_HEAD_OF_UNIT /
     # EDITOR_HEAD_OF_SECTION) + 3 GPT (EDITOR_HEAD_OF_DEPARTMENT / EDITOR_DEPUTY_DG /
@@ -3973,8 +4100,12 @@ def _cost_projection(num_op_docs, num_ctx_docs):
     # its real contribution is 0. We project the ceiling so the estimate never under-counts.
     board_claude_calls = 3 * num_op_docs   # WORST CASE: CLERK + HEAD_OF_UNIT + HEAD_OF_SECTION
     board_gpt_calls = 3 * num_op_docs      # WORST CASE: HEAD_OF_DEPARTMENT + DEPUTY_DG + DG
+    # A corpus-level agent switched off by the ratified SHIMMER_INST_FINDER setting
+    # is not called, so it is not projected (a declared state, not a failure). The
+    # switch is the decision main() saved in `run_ctx` at start-up.
+    switched_off = set(_inst_finder_decision(run_ctx, ROOT)["switched_off"])
     claude_calls = (len(PRODUCTION_AGENTS_PER_DOC) * num_op_docs
-                    + len(PRODUCTION_AGENTS_CORPUS_LEVEL)
+                    + len([name for name in PRODUCTION_AGENTS_CORPUS_LEVEL if name not in switched_off])
                     + len(CONVENTION_REVIEW_AGENTS) * num_op_docs  # style_guardian via Claude
                     + num_op_docs  # AMENDMENT_DRAFTER
                     + board_claude_calls)  # editorial board, Claude ranks (worst-case ceiling)
@@ -4181,6 +4312,12 @@ def main(argv=None):
         run_ctx = run_context_mod.create_run(ROOT)
     completion = run_completion_mod.begin(run_ctx)
     run_options.configure(run_ctx, args.input_language, args.output_language, args.agent_briefs)
+    # SHIMMER_INST_FINDER: saved beside the run options on every run; `off` without a
+    # ratified DELTA refuses here, before any model call, and is never ignored silently.
+    inst_finder_refusal = _inst_finder_startup_guard(run_ctx, ROOT)
+    if inst_finder_refusal:
+        print(inst_finder_refusal, file=sys.stderr)
+        return 9
     if multi_manifest is not None:
         multi_record = multi_round.begin(run_ctx, multi_manifest)
         if not (args.no_redaction_override and args.sensitivity_layer_inactive_override):
@@ -4502,7 +4639,7 @@ def main(argv=None):
     log_event(_LOG, f"corpus_loaded context_docs={len(ctx_docs)} operational_docs={len(op_docs)}",
               run_id=run_ctx.run_id, phase="0")
 
-    projection = _cost_projection(len(op_docs), len(ctx_docs))
+    projection = _cost_projection(len(op_docs), len(ctx_docs), run_ctx=run_ctx)
     print("\n=== PROJECT SHIMMER: pre-run estimate ===", file=sys.stderr)
     print(f"  Operational documents: {len(op_docs)}", file=sys.stderr)
     print(f"  Context documents:     {len(ctx_docs)}", file=sys.stderr)
@@ -4705,7 +4842,7 @@ def main(argv=None):
     # run (stopped at the "complete" emission below); daemon=True so it can never keep
     # the process alive on its own.
     if _is_local_profile():
-        _local_progress_reset(_local_progress_baseline(len(op_docs)))
+        _local_progress_reset(_local_progress_baseline(len(op_docs), run_ctx=run_ctx))
         threading.Thread(target=_local_progress_memory_sampler,
                          args=(_LOCAL_PROGRESS_STOP,), daemon=True).start()
 

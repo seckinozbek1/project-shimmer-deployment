@@ -91,7 +91,14 @@ processing swarm governed by an append-only constitution.
   (`Controller source changed`) with no instance, key or launch intent created. Before this the
   seal pinned the runtime the controller carries but not the controller; only the launch
   receipt recorded its hash, after the instance existed. Proven both ways with a neutralization
-  that drops the controller from the binding (controller gate).
+  that drops the controller from the binding (controller gate). The controller carries no
+  credential path (loop S1, 2026-10-27): `credential_path()` calls
+  `agent_wrapper.resolve_config_path()` just before the first provider call, never at import,
+  and with nothing found refuses in one line naming `SHIMMER_CONFIG_PATH` before any provider
+  call, instance, key or launch intent. The watchdog argument and the independent cleanup use
+  the same path; the status reader and both live preflights use the same function. This edit
+  changed the bound controller file, so every bundle sealed before it (v12 included) refuses
+  with `Controller source changed` and must be re-sealed; past results are unaffected.
 - ASSET-COPY-A: the ordinary final controller (`tools/ordinary_final_cloud.py`) can use a
   PROVIDER-SIDE COPY of the sealed asset archive, and it is OFF unless the bundle carries an
   operator-written `asset_copy_declaration.json` (`filesystem_name`, `mount`,
@@ -111,7 +118,11 @@ processing swarm governed by an append-only constitution.
   `tools/ordinary_final_controller_checks.py` (states MATCH, MISSING, MISMATCH, UNREACHABLE;
   a copy under another digest never matches; the fallback argv equals the v9 argv; no seed
   without integrity; a neutralised probe that stops hashing is caught) and the rehearsal runs
-  three copy polarities through a real shell. No run has used it; it is unauthorized until the
+  three copy polarities through a real shell. The rehearsal works only in
+  `<Linux home>/shimmer-rehearsal`, read through its own shell at run time; it refuses an
+  empty, root or relative home, and builds every `rm -rf` through one guard that refuses
+  anything outside that folder (checked in `tools/ordinary_final_controller_checks.py`).
+  No run has used the asset copy; it is unauthorized until the
   operator says otherwise, and it changes nothing when undeclared.
 - Test corpora from other domains live in `benchmark/corpora/` (real public data, outside the
   vocabulary probe's roots) and are staged with `tools/stage_corpus.py`. Run one before
@@ -233,6 +244,26 @@ processing swarm governed by an append-only constitution.
   rather than carrying a second copy. `explanation` is for the human reader and is stripped
   from any payload travelling to another agent (`strip_reasoning`).
 
+- INST-SWITCH-A (loop S1, 2026-10-27): `SHIMMER_INST_FINDER=off` is honoured only under an
+  operator-approved constitution amendment whose change names INST_FINDER and
+  SHIMMER_INST_FINDER (no amendment id in code); otherwise the run refuses at start (exit 9),
+  never ignoring the setting. The amendment is DRAFTED, not ratified
+  (`docs/INST_FINDER_SWITCH_DELTA_DRAFT.md`); agents never ratify it. INST_FINDER stays in
+  `PRODUCTION_AGENTS_CORPUS_LEVEL` and the registry; the loop (header unchanged) skips it,
+  records `not_called` with state `switched_off`, and labels results from the dispatched list.
+  The setting is saved in `audit/agent_switches.json` and the run summary. Check 277.
+- REPLIES-A (loop S1, 2026-10-27; Annex A 11.6.4): every model call writes exactly one record
+  through `reply_records.write`, inside the backend function that holds the raw text
+  (`call_claude`, `call_gpt`, `call_qwen`, `call_local`) and in Auditor896's `predict`, never in
+  `dispatch` or `run_task` (the draft memo calls `call_claude` directly). Records go to
+  `<run_dir>/audit/model_replies/`; outcomes are appended separately by call id to
+  `outcomes.jsonl`; a redaction-enabled run keeps `sha256:` and `length_bytes:` only; a call with
+  no run context writes nothing (never a fallback to `output/`). Saving a reply never promotes
+  it: check 269 still holds that only Python-computed findings become amendments.
+  `guard_secrets.py --staged` refuses `audit/model_replies/` and `seals/` at any depth (case
+  folded), including inside a staged archive such as the controller's collected evidence
+  `.tar.gz`, which has been force-committed under `docs/fix/` before. Checks 275 and 276.
+
 ## Review modes
 
 - Phase 5.5 runs `wide` (each agent sees the whole document and the whole registry) or
@@ -328,7 +359,11 @@ processing swarm governed by an append-only constitution.
   (`paired_review.ensure_amendments_for_findings`). The AMENDMENT_DRAFTER model call is OFF
   by default. Measured, not preferred: with one run's arithmetic held identical and only the
   prose changed, recall moved 2/9 to 5/9, and a true band finding scored as a false positive
-  for saying "exceeds the typical yield range" instead of naming the figures.
+  for saying "exceeds the typical yield range" instead of naming the figures. Context for that
+  figure (from the operator's own records): it was measured on 7 September 2026, on the
+  synthetic wheat test, on code from the earlier `shimmer-fix` repository that is not in this
+  repository's history; it was a single draw; it was a location count, not a reason-confirmed count; and the
+  wheat test and its key are not published here.
 - The COMPUTED FIGURES LEAD every comment, with their units, the registry rule id, the
   operator's own id and the REF-* the finding rests on. They were a fallback used only when the
   model said nothing; the model almost always said something. Never make them a fallback again.

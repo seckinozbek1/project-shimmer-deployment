@@ -19,7 +19,6 @@ from run_remote_experiment import poll_state, termination
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE=ROOT/'docs/fix/ordinary_final_cloud_run'
-CREDENTIAL=Path('C:/Users/secki/local/api_keys/config.py')
 REMOTE='/home/ubuntu/shimmer-ordinary-final'
 MANIFEST='dcc3aa913b2e59ca2831bc92009b9f888ca0a23e617f4a8d02acb0761876f223'
 SEAL='93d2c5b2fe371f19143abe536569fe7bf15bcf9307b3136826b6440e028a4916'
@@ -28,6 +27,25 @@ INSTANCE_NAME='shimmer-ordinary-final-776d8c1'
 
 
 def save(name,value):write(BASE/name,value)
+
+
+CREDENTIAL_REFUSAL='No provider credential file found; set SHIMMER_CONFIG_PATH to the operator credential file'
+
+
+def credential_path():
+    """The provider credential file, resolved at the moment of use and never at import.
+
+    It is the repository's one resolver, agent_wrapper.resolve_config_path(): first
+    $SHIMMER_CONFIG_PATH, then the sibling ../api_keys/config.py, then the repo-root
+    .env_path pointer. No path is written in this file and nothing is read here; the
+    file is only located. With none found the caller is refused in one line that
+    names SHIMMER_CONFIG_PATH."""
+    scripts=str(Path(__file__).resolve().parents[1]/'scripts')
+    if scripts not in sys.path:sys.path.append(scripts)
+    import agent_wrapper
+    path=agent_wrapper.resolve_config_path()
+    require(path is not None,CREDENTIAL_REFUSAL)
+    return Path(path)
 
 
 # A remote phase runs detached from any one connection. Run v3 (2026-09-18) lost a
@@ -185,6 +203,7 @@ def execute():
                       filesystem_name=copy['filesystem_name'] if copy else None,
                       path=asset_copy_path(copy['mount'],assets['sha256']) if copy else None)
     save('asset_copy_receipt.json',copy_receipt)
+    CREDENTIAL=credential_path()
     provider=LambdaExperiment(CREDENTIAL)
     require(provider.request('instances')['data']==[],'Provider inventory not empty')
     current=next(x for x in provider.request('instance-types')['data'] if x['metadata']['type']=='gpu_1x_a10')

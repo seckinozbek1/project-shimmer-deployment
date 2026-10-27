@@ -185,3 +185,13 @@ benchmark/keys/
 
 # Autonomous loop private records (never committed)
 docs/loop/private/
+
+# Seal manifests of sealed tests (Annex B.3). Never committed, even force-added:
+# `scripts/guard_secrets.py --staged` refuses a staged seals/ path at any depth,
+# also inside a staged archive.
+seals/
+
+# Saved model replies of a run (one record per model call, loop S1 Part 4). Never
+# committed, even force-added: `guard_secrets.py --staged` refuses the segment,
+# also inside a staged archive.
+**/audit/model_replies/

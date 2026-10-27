@@ -24756,6 +24756,43 @@ def check_268_record_example_carries_declared_values():
     return check_record()
 
 
+def check_275_staged_seal_paths_are_refused():
+    """Annex B.3 (loop of 2026-10-27): seal manifests live in the gitignored
+    `seals/` folder and are never committed, even force-added. Before this,
+    guard_secrets.py scanned file contents across the whole tree and had no
+    git, index or path logic at all, while the threat model said it scanned the
+    staged diff. `guard_secrets.py --staged` now reads git's staged-name list
+    (force-added paths included) and refuses any path under `seals/`."""
+    from staged_path_checks import check
+    return check()
+
+
+def check_276_every_model_reply_is_saved_once_with_its_outcome():
+    """Annex A 11.6.4 (loop of 2026-10-27, S1 Part 4): every model reply is saved,
+    including replies the pipeline withholds. Before this, the raw text of a reply
+    reached disk only when it broke its output contract; v12's one call aimed at the
+    missed flaw was neither promoted nor kept. Each backend function (call_claude,
+    call_gpt, call_qwen, call_local) and Auditor896's predict now write exactly one
+    record through reply_records.write into <run_dir>/audit/model_replies/, the
+    outcome is appended later by call id, a redaction-enabled run keeps only SHA-256
+    and byte lengths, and a call with no run context writes nothing anywhere."""
+    from reply_records_checks import check
+    return check()
+
+
+def check_277_inst_finder_switch_needs_a_ratified_amendment():
+    """Loop of 2026-10-27, S1 Part 7: an operator setting SHIMMER_INST_FINDER (default
+    on) can switch the corpus-level agent INST_FINDER off. Switching an agent off
+    changes governed inter-agent structure, so the setting is honoured only under an
+    operator-approved constitution amendment naming INST_FINDER and SHIMMER_INST_FINDER;
+    without one the run refuses at start, never ignoring the setting silently. When off,
+    the agent stays in the corpus list and the registry, is recorded not_called, and
+    every corpus result carries the name of the agent actually called, with semantic
+    waves on and off."""
+    from inst_finder_switch_checks import check
+    return check()
+
+
 CHECKS = [
     ("00 ast.parse on all modules", ast_parse_all_modules),
     ("01 Directory structure", check_01_directory),
@@ -25108,6 +25145,12 @@ CHECKS = [
      check_273_preamble_unit_moves_nothing_and_reaches_the_sheet_header),
     ("274 every long phase reports a measured progress reading or refuses in words",
      check_274_every_long_phase_reports_a_measured_reading_or_refuses),
+    ("275 a staged or force-added seal manifest path is refused before commit",
+     check_275_staged_seal_paths_are_refused),
+    ("276 every model reply is saved once per call with its outcome",
+     check_276_every_model_reply_is_saved_once_with_its_outcome),
+    ("277 the INST_FINDER switch is honoured only under a ratified amendment",
+     check_277_inst_finder_switch_needs_a_ratified_amendment),
 ]
 
 
