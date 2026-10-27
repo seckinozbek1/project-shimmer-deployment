@@ -460,7 +460,7 @@ In the Markdown files every such finding carries the sentence "Written by a mode
 
 Written in every ordinary review, before any agent is asked. One object keyed by document id.
 
-**Which review mode ran.** One file of the run folder names it: `audit/absence_quote_prediction.json` records `review_mode` (`scripts/absence_prediction.py`, written from `pipeline._paired_convention_review`), but that file is telemetry a scorer must not depend on (section 12). A paired run's pairing map carries `calls_made` and `judging_calls`; a wide run's does not. A server run also names the mode in `status.json` (`review_mode`). A cloud run is always paired: the cloud tool passes `--review-mode paired`.
+**Which review mode ran.** One file of the run folder names it: `audit/absence_quote_prediction.json` records `review_mode` (`scripts/absence_prediction.py`, built in `pipeline.phase_5_5_convention_review` in both modes), but that file is telemetry a scorer must not depend on (section 12). A paired run's pairing map carries `calls_made` and `judging_calls`; a wide run's does not. A server run also names the mode in `status.json` (`review_mode`). A cloud run is always paired: the cloud tool passes `--review-mode paired`.
 
 `calls_made`, `judging_calls`, the absence fields (`absence` to `absence_refused_count`), `reattributed`, `suspended` and each unit's `band_conditions` are added by the paired review only. `not_judged` and `not_judged_count` are written in both modes: in the wide mode they list the rules the convention assignment kept from both convention-review agents (`pipeline._wide_not_judged`). For each document:
 
